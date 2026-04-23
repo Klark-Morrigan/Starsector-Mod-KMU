@@ -17,7 +17,7 @@ or tuning a modded campaign. Console commands can add a condition, but they are
 text-driven, easy to mistype, and usually include extra cleanup such as removing
 mutually exclusive conditions.
 
-The first feature in Klark Morgan's Utilities is a colony-screen planetary
+The first feature in Klark Morrigan's Utilities is a colony-screen planetary
 condition editor. It starts from the practical problem of wanting a fast,
 visual, in-context way to add any planetary condition to the colony currently
 being inspected.
