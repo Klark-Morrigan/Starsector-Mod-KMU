@@ -1,4 +1,9 @@
 *.class
 .compile-check/
+.gradle/
+build/
+dist/
+out/
+jars/KMU.jar
 .idea/
 .vscode/
