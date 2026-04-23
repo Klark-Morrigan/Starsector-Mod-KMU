@@ -1,0 +1,9 @@
+{
+  "id": "klark_morrigans_utilities",
+  "name": "Klark Morrigan's Utilities",
+  "author": "Klark Morrigan",
+  "utility": "true",
+  "version": "0.0.0",
+  "description": "Utility tools for inspecting and editing campaign state.",
+  "gameVersion": "0.98a-RC8"
+}
