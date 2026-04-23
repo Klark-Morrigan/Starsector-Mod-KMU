@@ -1,0 +1,4 @@
+*.class
+.compile-check/
+.idea/
+.vscode/
