@@ -44,5 +44,17 @@ tests, and generated release output should stay separate. Production Java source
 belongs in `src/main/java`, tests belong in `src/test/java`, and the game should
 load compiled code from `jars/KMU.jar`.
 
+Local build commands:
+
+```powershell
+.\gradlew.bat -PstarsectorRoot=C:\a_Games\Starsector test
+.\gradlew.bat -PstarsectorRoot=C:\a_Games\Starsector jar
+```
+
+The Gradle wrapper is the supported local and CI build path. It uses the local
+Starsector install as a compile-only API source via `STARSECTOR_HOME` or
+`-PstarsectorRoot=<path>`. Production code targets Java 17 to match the bundled
+Starsector runtime used by the current game install.
+
 Release shape doc:
 [release.md](docs/dev/release.md)

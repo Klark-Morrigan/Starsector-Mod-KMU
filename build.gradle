@@ -1,0 +1,62 @@
+plugins {
+    id 'java'
+}
+
+import groovy.json.JsonSlurper
+
+def modInfoFile = file('mod_info.json')
+def modInfo = new JsonSlurper().parse(modInfoFile)
+
+if (!modInfo.version) {
+    throw new GradleException("Missing version in ${modInfoFile}")
+}
+
+group = 'kmu'
+version = modInfo.version
+
+def configuredStarsectorRoot = findProperty('starsectorRoot') ?:
+        System.getenv('STARSECTOR_HOME') ?:
+        new File(projectDir, '../..').canonicalPath
+
+def apiJarFile = file("${configuredStarsectorRoot}/starsector-core/starfarer.api.jar")
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly files(apiJarFile)
+
+    testImplementation platform('org.junit:junit-bom:5.13.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.assertj:assertj-core:3.27.7'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testCompileOnly files(apiJarFile)
+    testRuntimeOnly files(apiJarFile)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+
+    doFirst {
+        if (!apiJarFile.exists()) {
+            throw new GradleException(
+                    "Could not find starfarer.api.jar at ${apiJarFile}. " +
+                    "Set STARSECTOR_HOME or pass -PstarsectorRoot=<path>.")
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+jar {
+    archiveFileName = "${project.name}.jar"
+    destinationDirectory = file("$projectDir/jars")
+}

@@ -28,6 +28,11 @@ The intended layout is:
 KMU/
   mod_info.json
   README.md
+  build.gradle
+  settings.gradle
+  gradlew
+  gradlew.bat
+  gradle/
   docs/
   src/
     main/java/
