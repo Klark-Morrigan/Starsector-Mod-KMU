@@ -4,6 +4,6 @@
 build/
 dist/
 out/
-jars/KMU.jar
+jars/*.jar
 .idea/
 .vscode/
