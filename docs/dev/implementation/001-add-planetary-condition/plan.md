@@ -40,6 +40,10 @@ Implementation posture:
 - Prefer public UI APIs for our own panels and dialogs.
 - Use reflection only for discovering or attaching to existing Starsector UI
   panels, and keep that reflection behind small KMU-owned helpers.
+- All KMU modded-code boundaries should fail closed instead of crashing the
+  campaign UI: catch expected `RuntimeException` failures from Starsector or
+  third-party mod APIs, return explicit failure results or empty safe state, and
+  preserve enough error detail for logging or UI feedback.
 
 ## Step 1 - Mod Scaffold
 
@@ -78,7 +82,9 @@ Implementation:
   `market.getFirstCondition(id).setSurveyed(true)` when available;
 - call `MarketAPI.reapplyConditions()` after mutation;
 - do not remove conflicts, incompatible conditions, or same-group conditions;
-- do not check ownership.
+- do not check ownership;
+- return structured failure results instead of allowing Starsector API
+  exceptions to crash the UI action.
 
 Tests:
 
@@ -86,7 +92,9 @@ Tests:
 - unit test duplicate prevention;
 - unit test invalid condition handling;
 - unit test that adding a valid absent condition calls add, surveyed, and
-  reapply in that order.
+  reapply in that order;
+- unit test repository and market adapter boundaries with dynamic proxies;
+- unit test failure handling for repository and market API exceptions.
 
 ## Step 3 - Editor Entry Point And Market Context
 
