@@ -5,5 +5,7 @@
   "utility": "true",
   "version": "0.0.0",
   "description": "Utility tools for inspecting and editing campaign state.",
-  "gameVersion": "0.98a-RC8"
+  "gameVersion": "0.98a-RC8",
+  "jars": ["jars/KMU.jar"],
+  "modPlugin": "kmu.KMU_ModPlugin"
 }
