@@ -21,8 +21,13 @@ repository release shape in `docs/dev/release.md`: production code in
 `src/main/java`, tests in `src/test/java`, and compiled runtime code in
 `jars/KMU.jar`.
 
-Tests: confirm the production Java compiles into `jars/KMU.jar` against the
-local Starsector API and against any declared helper-library jars.
+Tests:
+
+- confirm the production Java compiles into `jars/KMU.jar` against the local
+  Starsector API jar;
+- compile and run any repository test classes in `src/test/java`;
+- if helper libraries are later declared for this feature, extend the compile
+  classpath and re-run the same verification against those jars as well.
 
 ## Library Candidates
 
