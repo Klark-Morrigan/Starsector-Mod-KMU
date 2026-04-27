@@ -51,9 +51,25 @@ stay at the mod root because Starsector expects that shape. Java source should
 not be placed in `data/scripts` unless we deliberately choose loose scripts for
 a one-off experiment.
 
-Once the first compiled code exists, `mod_info.json` should include
-`"jars": ["jars/KMU.jar"]`. Until that jar is produced, leaving the field out
-keeps the docs-only scaffold load-safe.
+Some development files also intentionally stay at the repository root because
+their tools expect that location:
+
+- `.gitignore` for git ignore rules;
+- `README.md` for repository and release browsing;
+- `build.gradle`, `settings.gradle`, `gradlew`, `gradlew.bat`, and `gradle/`
+  for the Gradle root project and wrapper.
+
+`build.gradle` and `settings.gradle` are now present so the repository can grow
+into a standard Gradle-based Java build. JUnit 5 and AssertJ are configured
+there for dependency-managed tests, and the Gradle wrapper is the primary local
+and CI build entry point.
+
+Both build paths should target Java 17, matching the bundled Starsector runtime
+for the current installed game version.
+
+`mod_info.json` declares `"jars": ["jars/KMU.jar"]` and
+`"modPlugin": "kmu.KMU_ModPlugin"`. During local development, build the jar
+before enabling KMU in Starsector.
 
 ## Runtime Payload
 
@@ -66,7 +82,8 @@ game or player-facing docs need:
 - `jars/KMU.jar`
 
 It should not include `src/`, `docs/dev/`, tests, `.git`, IDE files, compile
-scratch directories, or build-system caches.
+scratch directories, build-system caches, Gradle wrapper files, or Gradle build
+files.
 
 ## Tests
 
@@ -77,6 +94,14 @@ manual or in-game verification.
 
 The build should compile `src/main/java` against `starfarer.api.jar` and any
 declared helper-library jars, then run tests before producing `jars/KMU.jar`.
+Tests are executed by Gradle on JUnit 5. Standard test output and failures
+appear in the local terminal and CI job log, and Gradle also writes test
+reports under `build/reports/tests/`.
+
+Gradle is configured to resolve JUnit 5 and AssertJ from Maven Central and to
+resolve `starfarer.api.jar` from a local Starsector install through
+`STARSECTOR_HOME` or `-PstarsectorRoot=<path>`. This keeps the game jars out of
+git while still allowing a normal Java test stack.
 
 ## Dependencies
 
