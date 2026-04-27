@@ -11,29 +11,61 @@ flowchart LR
         Plugin["KMU_ModPlugin<br/>Starsector mod entry point"]
     end
 
-    subgraph Core["Core Feature Layer"]
-        Service["KmuConditionService<br/>Use-case logic"]
-        Result["KmuConditionAddResult<br/>Structured operation result"]
-        Status["KmuConditionAddStatus<br/>Result enum"]
-        Spec["KmuConditionSpec<br/>Condition value object"]
-    end
+    subgraph Feature["Condition Feature"]
+        direction TB
 
-    subgraph Ports["Ports / Interfaces"]
-        RepositoryPort["KmuConditionRepository<br/>Condition spec lookup port"]
-        MarketPort["KmuEditableMarket<br/>Market mutation port"]
-        ReporterPort["KmuErrorReporter<br/>Error reporting port"]
+        subgraph Core["Core Logic"]
+            direction TB
+            Service["KmuConditionService<br/>Use-case orchestration"]
+        end
+
+        subgraph Domain["Domain Values"]
+            direction TB
+            Spec["KmuConditionSpec<br/>Condition value object"]
+        end
+
+        subgraph Results["Operation Results"]
+            direction TB
+            Result["KmuConditionAddResult<br/>Structured add result"]
+            Status["KmuConditionAddStatus<br/>Result status enum"]
+        end
+
+        subgraph Ports["Feature Ports"]
+            direction TB
+            RepositoryPort["KmuConditionRepository<br/>Condition spec lookup"]
+            MarketPort["KmuEditableMarket<br/>Market read/write operations"]
+            ReporterPort["KmuErrorReporter<br/>Failure reporting"]
+        end
     end
 
     subgraph Adapters["Starsector Adapter Layer"]
-        RepositoryAdapter["StarsectorConditionRepository<br/>SettingsAPI adapter"]
-        MarketAdapter["StarsectorEditableMarket<br/>MarketAPI adapter"]
+        direction TB
+
+        subgraph RepositoryAdapters["Condition Spec Adapters"]
+            direction TB
+            RepositoryAdapter["StarsectorConditionRepository<br/>SettingsAPI adapter"]
+        end
+
+        subgraph MarketAdapters["Market Adapters"]
+            direction TB
+            MarketAdapter["StarsectorEditableMarket<br/>MarketAPI adapter"]
+        end
     end
 
     subgraph External["External Starsector API"]
-        SettingsAPI["SettingsAPI"]
-        MarketAPI["MarketAPI"]
-        MarketConditionAPI["MarketConditionAPI"]
-        MarketConditionSpecAPI["MarketConditionSpecAPI"]
+        direction TB
+
+        subgraph SettingsApiGroup["Settings / Specs"]
+            direction TB
+            SettingsAPI["SettingsAPI"]
+            MarketConditionSpecAPI["MarketConditionSpecAPI"]
+        end
+
+        subgraph MarketApiGroup["Markets / Conditions"]
+            direction TB
+            MarketAPI["MarketAPI"]
+            MarketConditionAPI["MarketConditionAPI"]
+        end
     end
 
     Plugin -. later wires .-> Service
