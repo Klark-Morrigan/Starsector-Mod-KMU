@@ -1,4 +1,4 @@
-package kmu.conditions;
+package kmu;
 
 @FunctionalInterface
 public interface KmuErrorReporter {
