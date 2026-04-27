@@ -19,6 +19,7 @@ def configuredStarsectorRoot = findProperty('starsectorRoot') ?:
         new File(projectDir, '../..').canonicalPath
 
 def apiJarFile = file("${configuredStarsectorRoot}/starsector-core/starfarer.api.jar")
+def starsectorCoreJars = fileTree(dir: "${configuredStarsectorRoot}/starsector-core", include: ['*.jar'])
 
 repositories {
     mavenCentral()
@@ -34,6 +35,7 @@ dependencies {
 
     testCompileOnly files(apiJarFile)
     testRuntimeOnly files(apiJarFile)
+    testRuntimeOnly starsectorCoreJars
 }
 
 tasks.withType(JavaCompile).configureEach {
