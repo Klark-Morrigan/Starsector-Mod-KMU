@@ -10,42 +10,75 @@ import java.util.Optional;
 public final class KmuConditionEditorEntryPoint {
     private final KmuMarketUiContextResolver contextResolver;
     private final KmuConditionEditor editor;
+    private final KmuConditionEditorTargetValidator targetValidator;
     private final KmuErrorReporter errorReporter;
 
     public KmuConditionEditorEntryPoint(
             KmuMarketUiContextResolver contextResolver,
             KmuConditionEditor editor) {
-        this(contextResolver, editor, KmuErrorReporter.noop());
+        this(contextResolver, editor, new StarsectorConditionEditorTargetValidator(), KmuErrorReporter.noop());
     }
 
     public KmuConditionEditorEntryPoint(
             KmuMarketUiContextResolver contextResolver,
             KmuConditionEditor editor,
             KmuErrorReporter errorReporter) {
+        this(contextResolver, editor, new StarsectorConditionEditorTargetValidator(), errorReporter);
+    }
+
+    public KmuConditionEditorEntryPoint(
+            KmuMarketUiContextResolver contextResolver,
+            KmuConditionEditor editor,
+            KmuConditionEditorTargetValidator targetValidator,
+            KmuErrorReporter errorReporter) {
         this.contextResolver = Objects.requireNonNull(contextResolver, "contextResolver");
         this.editor = Objects.requireNonNull(editor, "editor");
+        this.targetValidator = Objects.requireNonNull(targetValidator, "targetValidator");
         this.errorReporter = Objects.requireNonNull(errorReporter, "errorReporter");
     }
 
     public boolean openForCurrentMarket() {
+        return openForCurrentMarketDetailed().isOpened();
+    }
+
+    public KmuConditionEditorOpenResult openForCurrentMarketDetailed() {
         Optional<KmuMarketUiContext> context;
         try {
             context = contextResolver.findCurrentMarketContext();
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to resolve current market context.", exception);
-            return false;
+            return KmuConditionEditorOpenResult.failed(
+                    "Failed to resolve current market context.",
+                    exception);
         }
 
         if (!context.isPresent()) {
-            return false;
+            return KmuConditionEditorOpenResult.noMarketContext();
+        }
+
+        KmuMarketUiContext marketContext = context.get();
+        Optional<String> unsupportedReason;
+        try {
+            unsupportedReason = targetValidator.getUnsupportedReason(marketContext);
+        } catch (RuntimeException exception) {
+            errorReporter.report("Failed to validate planetary condition editor target.", exception);
+            return KmuConditionEditorOpenResult.failed(
+                    "Failed to validate planetary condition editor target.",
+                    exception);
+        }
+
+        if (unsupportedReason.isPresent()) {
+            return KmuConditionEditorOpenResult.unsupportedTarget(unsupportedReason.get());
         }
 
         try {
-            editor.open(context.get());
-            return true;
+            editor.open(marketContext);
+            return KmuConditionEditorOpenResult.opened();
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to open planetary condition editor.", exception);
-            return false;
+            return KmuConditionEditorOpenResult.failed(
+                    "Failed to open planetary condition editor.",
+                    exception);
         }
     }
 }

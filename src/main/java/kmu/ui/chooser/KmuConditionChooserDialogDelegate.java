@@ -2,13 +2,17 @@ package kmu.ui.chooser;
 
 import com.fs.starfarer.api.campaign.CustomDialogDelegate;
 import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
+import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
+import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
 
 import java.awt.Color;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class KmuConditionChooserDialogDelegate implements CustomDialogDelegate {
     private static final float DEFAULT_WIDTH = 720f;
@@ -22,6 +26,7 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
     private final KmuConditionChooserActionHandler actionHandler;
     private final float width;
     private final float height;
+    private final CustomUIPanelPlugin panelPlugin = new ActionPanelPlugin();
     private CustomPanelAPI panel;
     private TooltipMakerAPI body;
 
@@ -44,6 +49,14 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
 
     public java.util.Optional<KmuConditionChooserFeedback> getFeedback() {
         return actionHandler.getFeedback();
+    }
+
+    public float getWidth() {
+        return width;
+    }
+
+    public float getHeight() {
+        return height;
     }
 
     @Override
@@ -77,7 +90,7 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
 
     @Override
     public CustomUIPanelPlugin getCustomPanelPlugin() {
-        return null;
+        return panelPlugin;
     }
 
     void handleAction(KmuConditionChooserAction action) {
@@ -95,9 +108,7 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
 
         body = panel.createUIElement(width, height, true);
         body.setActionListenerDelegate((buttonId, data) -> {
-            if (buttonId instanceof KmuConditionChooserAction) {
-                handleAction((KmuConditionChooserAction) buttonId);
-            }
+            resolveActionFromUiEvent(buttonId, data).ifPresent(this::handleAction);
         });
         renderBody(body);
         panel.addUIElement(body).inTL(0f, 0f);
@@ -143,12 +154,14 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
             body.addPara(entry.descriptionLine(), 2f, Misc.getGrayColor(), entry.getConditionId());
         }
 
+        KmuConditionChooserAction action = KmuConditionChooserAction.fromEntry(entry);
         ButtonAPI button = body.addButton(
                 actionButtonText(entry),
-                KmuConditionChooserAction.fromEntry(entry),
+                action,
                 ACTION_BUTTON_WIDTH,
                 ACTION_BUTTON_HEIGHT,
                 4f);
+        button.setCustomData(action);
         button.setEnabled(!entry.isPresent());
 
         body.addTooltipToPrevious(
@@ -158,6 +171,58 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
 
     private String actionButtonText(KmuConditionChooserEntry entry) {
         return entry.isPresent() ? "Present" : "Add";
+    }
+
+    static Optional<KmuConditionChooserAction> resolveActionFromUiEvent(Object buttonId, Object data) {
+        Optional<KmuConditionChooserAction> directAction = asAction(buttonId);
+        if (directAction.isPresent()) {
+            return directAction;
+        }
+
+        Optional<KmuConditionChooserAction> dataAction = asAction(data);
+        if (dataAction.isPresent()) {
+            return dataAction;
+        }
+
+        if (buttonId instanceof ButtonAPI) {
+            return asAction(((ButtonAPI) buttonId).getCustomData());
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<KmuConditionChooserAction> asAction(Object value) {
+        if (value instanceof KmuConditionChooserAction) {
+            return Optional.of((KmuConditionChooserAction) value);
+        }
+        return Optional.empty();
+    }
+
+    private final class ActionPanelPlugin implements CustomUIPanelPlugin {
+        @Override
+        public void positionChanged(PositionAPI position) {
+        }
+
+        @Override
+        public void renderBelow(float alphaMult) {
+        }
+
+        @Override
+        public void render(float alphaMult) {
+        }
+
+        @Override
+        public void advance(float amount) {
+        }
+
+        @Override
+        public void processInput(List<InputEventAPI> events) {
+        }
+
+        @Override
+        public void buttonPressed(Object buttonId) {
+            resolveActionFromUiEvent(buttonId, null)
+                    .ifPresent(KmuConditionChooserDialogDelegate.this::handleAction);
+        }
     }
 
     private static final class EntryTooltipCreator implements TooltipMakerAPI.TooltipCreator {
