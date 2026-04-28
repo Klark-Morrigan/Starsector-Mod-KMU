@@ -8,8 +8,11 @@
 - [Step 3 - Editor Entry Point And Market Context](#step-3---editor-entry-point-and-market-context)
 - [Step 4 - Condition Chooser UI](#step-4---condition-chooser-ui)
 - [Step 5 - Condition Add Action](#step-5---condition-add-action)
-- [Step 6 - Verification](#step-6---verification)
-- [Step 7 - Release Automation](#step-7---release-automation)
+- [Step 6 - Console Command Entry Point](#step-6---console-command-entry-point)
+- [Step 7 - Console Entry Verification](#step-7---console-entry-verification)
+- [Step 8 - Injected Market UI Button](#step-8---injected-market-ui-button)
+- [Step 9 - Injected UI Verification](#step-9---injected-ui-verification)
+- [Step 10 - Release Automation](#step-10---release-automation)
 
 ## Research Baseline
 
@@ -115,6 +118,13 @@ Implementation:
 - support the remote colony/outposts ledger case through
   `SectorAPI.getCurrentlyOpenMarket()`;
 - keep ownership out of the detection logic;
+- add a target-eligibility abstraction before opening the editor:
+  - allow markets with a planet entity or planet-condition-only market;
+  - allow a resolved `CURRENTLY_OPEN_MARKET` source so the colony/outposts
+    ledger can open a remote market;
+  - reject generic campaign, fleet, station, and dialog contexts that do not
+    support planetary conditions;
+  - fail closed and report a user-facing reason when eligibility checks throw;
 - prefer opening a KMU custom dialog/panel through public APIs when possible;
 - keep reflected `UIPanelAPI` discovery optional and behind
   `KmuMarketUiContext` for a later UI-injection step;
@@ -137,7 +147,11 @@ Tests:
 - compile-time coverage for the market-context classes;
 - unit test currently-open market, interaction-dialog target, and player-fleet
   interaction target resolution;
+- unit test eligibility for planet markets, planet-condition-only markets, and
+  currently-open market/ledger contexts;
+- unit test rejection for non-planet markets and missing market context;
 - unit test fail-closed behavior when one market context source throws;
+- unit test fail-closed behavior when target-eligibility checks throw;
 - in-game smoke test while present at a colony;
 - in-game smoke test from the outposts ledger;
 - in-game smoke test on a non-player-owned colony.
@@ -209,24 +223,119 @@ sequenceDiagram
     Chooser-->>User: Refreshed condition state
 ```
 
-## Step 6 - Verification
+## Step 6 - Console Command Entry Point
 
-Compile the production jar and smoke test in game.
+Add a developer-facing Console Commands entry point for opening the condition
+editor.
+
+Reason: the chooser and mutation path need an in-game entry point before full
+vanilla UI injection is worth implementing. Console Commands gives KMU a stable
+manual smoke-test route and will also support future KMU developer utilities.
+The console command and the later injected button must call the same
+`KmuConditionEditorEntryPoint`.
+
+Implementation:
+
+- do not declare Console Commands (`lw_console`) as a hard dependency in
+  `mod_info.json`;
+- add the Console Commands jar as a compile-only Gradle dependency from the
+  local Starsector `mods` folder;
+- add `data/console/commands.csv`;
+- reserve the `kmu` console tag/category for KMU commands;
+- prefix every KMU console command with `kmu_`;
+- name every KMU console command with at least one verb and one noun;
+- add the first command as `kmu_open_conditions`;
+- implement the command outside `data/scripts` so Starsector does not try to
+  compile it when Console Commands is not active;
+- have `kmu_open_conditions` require campaign/market context, then rely on the
+  shared editor entry point to reject unsupported locations before opening the
+  chooser;
+- report wrong context or open failures through Console Commands output instead
+  of crashing.
+
+Tests:
+
+- unit test the command rejects non-campaign contexts;
+- unit test the command calls the editor entry point in campaign market context;
+- unit test the command surfaces unsupported-location failures from the shared
+  entry point without bypassing the eligibility gate;
+- unit test command failure handling when the entry point returns false or
+  throws;
+- compile against the local Console Commands jar and Starsector API jar.
+
+## Step 7 - Console Entry Verification
+
+Compile the production jar and smoke test the console entry in game.
 
 Reason: Starsector UI hooks rely on runtime behavior and, if vanilla panel
-injection is used, internal classes. Runtime verification is required in
-addition to compilation.
+injection is later used, internal classes. Runtime verification is required in
+addition to compilation, and the console entry is the first reachable in-game
+path.
 
 Tests:
 
 - run `gradlew test jar` against the local Starsector API jar;
-- open each target screen in game;
+- enable KMU and Console Commands in the Starsector launcher for this smoke
+  test;
+- open Console Commands with its configured keybind;
+- run `kmu_open_conditions` while no market context is active and confirm a clear
+  wrong-context/failure message;
+- run `kmu_open_conditions` while a colony or market context is active;
 - add a condition;
 - confirm condition color/state updates in the chooser;
 - save and reload;
 - confirm the condition persists.
 
-## Step 7 - Release Automation
+## Step 8 - Injected Market UI Button
+
+Add the intended in-game button on the relevant market/colony UI surface.
+
+Reason: Console Commands is the developer and smoke-test route, but the feature
+should be discoverable from the market UI. The injected button must be a thin
+adapter over the same editor entry point used by `kmu_open_conditions`.
+
+Implementation:
+
+- implement a small reflection layer only for locating and attaching to the
+  relevant Starsector UI panels;
+- keep reflection behind KMU-owned helpers;
+- add a listener or script that detects the active colony/survey/market panel;
+- attach a `Planetary Conditions` button once per relevant panel instance;
+- route the button click to `KmuConditionEditorEntryPoint`;
+- fail closed if the expected panel tree is unavailable.
+
+Tests:
+
+- unit test reflection helpers against simple proxy/dummy objects where
+  possible;
+- unit test that listener state prevents duplicate button insertion;
+- unit test that button action calls the same editor entry point as the console
+  command;
+- unit test fail-closed behavior when panel lookup fails.
+
+## Step 9 - Injected UI Verification
+
+Smoke test the injected UI path in game.
+
+Reason: the injected button is the highest-risk part because it depends on
+runtime UI structure. It needs a separate verification pass after the console
+route is already proven.
+
+Tests:
+
+- run `gradlew test jar` against the local Starsector API jar;
+- open each target market or colony screen in game;
+- confirm the `Planetary Conditions` button appears once;
+- click the button and confirm it opens the same chooser as
+  `kmu_open_conditions`;
+- add a condition;
+- confirm condition color/state updates in the chooser;
+- confirm incompatible conditions remain present after reapply;
+- repeat on a non-player-owned colony;
+- save and reload;
+- confirm the condition persists.
+
+## Step 10 - Release Automation
 
 Add a GitHub Actions workflow that produces the packaged release zip.
 
