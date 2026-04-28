@@ -158,8 +158,8 @@ Tests:
 
 ## Step 4 - Condition Chooser UI
 
-Add a `Planetary Conditions` editor surface and a scrollable chooser listing all
-planetary condition specs.
+Add a `Planetary Conditions` editor surface and a scrollable icon-grid chooser
+listing all planetary condition specs.
 
 Reason: the editor should be visual, discoverable, and usable with long modded
 condition lists.
@@ -168,17 +168,42 @@ Implementation:
 
 - build the chooser with Starsector `CustomPanelAPI` and `TooltipMakerAPI`;
 - list every planetary condition spec returned by the condition service;
-- show present entries with normal UI coloring;
-- show absent entries with darkened UI coloring;
-- include condition name, id, icon when available, and tooltip text;
-- use spec-based tooltip fallback for absent conditions whose plugin tooltip
-  requires a live market condition.
+- present the picker as a grid of condition icons, not as text rows;
+- keep grid cells stable while preserving the condition image's vanilla visual
+  treatment, including source-image transparency and apparent image size
+  (some are wide and aren't square);
+- put condition names in tooltips (if tooltips don't provide one yet), not as
+  always-visible grid labels;
+- use grey-out filtering as the only visible present/absent state indicator;
+- do not show `Present`, `Absent`, `Add`, ids, or other state text directly in
+  the grid;
+- clicking an absent icon is the add action;
+- clicking a present icon does not mutate the market;
+- for present conditions, render icons and tooltips through the live
+  `MarketConditionAPI` / `MarketConditionPlugin` path so they match the planet
+  condition UI;
+- append a low-visibility metadata footer to every tooltip, after the primary
+  live-plugin or spec/Codex-style content;
+- the tooltip footer may include internal condition id, icon path, and source
+  mod only;
+- use a spec-based tooltip fallback only for absent conditions whose plugin
+  tooltip requires a live market condition.
 
 Tests:
 
 - unit test chooser view-model construction from specs and current market ids;
 - unit test chooser editor handoff from resolved `MarketAPI` to dialog delegate;
+- unit test present conditions render icon and tooltip data through the live
+  condition plugin path;
+- unit test present and absent tooltips both append id, icon path, and source
+  mod only in low-visibility footer metadata;
+- unit test present and absent state is exposed to rendering as icon grey-out
+  state, not visible text;
 - in-game smoke test with vanilla and modded conditions loaded;
+- compare present condition icons and tooltips against the same conditions on
+  the planet condition row;
+- confirm condition names are visible in tooltips and not as permanent grid
+  labels;
 - confirm long lists remain scrollable and selectable.
 
 ## Step 5 - Condition Add Action
@@ -190,10 +215,13 @@ invalid test states and allow direct editing of non-player faction colonies.
 
 Implementation:
 
-- clicking an absent condition calls the condition service;
-- clicking a present condition does not add a duplicate;
+- clicking an absent condition icon calls the condition service;
+- clicking a present condition icon does not add a duplicate;
 - after mutation, refresh the chooser state from the market;
-- show a small message or visual refresh so the user can tell the click worked;
+- after refresh, the newly present condition uses the live condition plugin icon
+  and tooltip path;
+- show success/failure feedback without replacing the grey-out state with
+  permanent visible status text;
 - leave removal for a later feature.
 
 Tests:
