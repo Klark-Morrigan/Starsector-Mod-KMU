@@ -16,6 +16,7 @@ flowchart LR
         direction TB
         UI["kmu.ui"]
         Conditions["kmu.conditions"]
+        Console["kmu.console"]
     end
 
     subgraph Shared["Shared Utilities"]
@@ -26,15 +27,18 @@ flowchart LR
     ThinPlugin -. describes .-> Plugin
     PackageRules -. describes .-> UI
     PackageRules -. describes .-> Conditions
+    PackageRules -. describes .-> Console
     SharedRule -. describes .-> Reporter
     Legend -. explains colors .-> Plugin
 
     Plugin -. later wires .-> UI
 
+    Console -->|opens editor through| UI
     UI -->|uses services| Conditions
     UI -->|reports failures| Reporter
 
     Conditions -->|reports failures| Reporter
+    Console -->|reports command failures| Reporter
 
     classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
     classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
@@ -49,5 +53,5 @@ flowchart LR
     class ThinPlugin,PackageRules,SharedRule note
     class Legend legend
     class Plugin orchestration
-    class UI,Conditions core
+    class UI,Conditions,Console core
     class Reporter shared

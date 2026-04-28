@@ -31,6 +31,10 @@ condition to the market without removing mutually exclusive or same-group
 conditions. At this stage, any inspected colony can be edited regardless of
 ownership.
 
+When Console Commands is enabled, KMU registers `kmu_open_conditions` as an
+optional developer entry point for the same editor. KMU console commands use the
+`kmu_` prefix and verb-noun names.
+
 ## Library Policy
 
 KMU should use helper libraries when they make UI work safer, smaller, or easier

@@ -1,0 +1,67 @@
+flowchart LR
+    subgraph Meta["Notes / Legend"]
+        direction TB
+        CommandNote["Console command is<br/>optional integration"]
+        NamingNote["KMU commands use<br/>kmu_ verb_noun names"]
+        EntryNote["Calls shared editor<br/>entry point"]
+        FailureNote["Maps open results<br/>to command results"]
+        Legend["Legend:<br/>blue = command orchestration<br/>cyan = value/result<br/>orange = port/interface<br/>gray = external API<br/>yellow = note"]
+    end
+
+    subgraph Registration["Console Registration"]
+        direction TB
+        CommandsCsv["data/console/commands.csv"]
+    end
+
+    subgraph CommandLayer["Command Layer"]
+        direction TB
+        OpenCommand["KmuOpenConditionsCommand"]
+    end
+
+    subgraph EditorEntry["Shared Editor Entry"]
+        direction TB
+        EntryPoint["KmuConditionEditorEntryPoint"]
+        OpenResult["KmuConditionEditorOpenResult"]
+        OpenStatus["KmuConditionEditorOpenStatus"]
+    end
+
+    subgraph External["Console Commands API"]
+        direction TB
+        BaseCommand["BaseCommand"]
+        CommandContext["CommandContext"]
+        CommandResult["CommandResult"]
+        Console["Console"]
+    end
+
+    CommandNote -. describes .-> OpenCommand
+    NamingNote -. constrains .-> CommandsCsv
+    EntryNote -. describes .-> EntryPoint
+    FailureNote -. describes .-> OpenResult
+    Legend -. explains colors .-> OpenCommand
+
+    CommandsCsv -->|registers command class| OpenCommand
+    OpenCommand -. implements .-> BaseCommand
+    OpenCommand -->|checks runtime context| CommandContext
+    OpenCommand -->|opens editor through| EntryPoint
+    OpenCommand -->|writes feedback with| Console
+    OpenCommand -->|returns| CommandResult
+
+    EntryPoint -->|returns detailed result| OpenResult
+    OpenResult -->|classifies outcome| OpenStatus
+
+    classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
+    classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
+    classDef orchestration fill:#e8f1ff,stroke:#2f67b1,color:#0f2747
+    classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
+    classDef value fill:#eef8ff,stroke:#3b82a0,color:#113247
+    classDef port fill:#fff0e6,stroke:#c76a24,color:#4a2108
+    classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
+    classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
+    classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
+
+    class CommandNote,NamingNote,EntryNote,FailureNote note
+    class Legend legend
+    class OpenCommand,EntryPoint orchestration
+    class OpenResult,OpenStatus value
+    class BaseCommand port
+    class CommandsCsv,CommandContext,CommandResult,Console external

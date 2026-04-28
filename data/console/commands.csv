@@ -1,0 +1,2 @@
+command,class,tags,syntax,help
+kmu_open_conditions,kmu.console.KmuOpenConditionsCommand,"kmu,campaign,market",kmu_open_conditions,Opens Klark Morrigan's Utilities planetary condition editor for the current supported market context.
