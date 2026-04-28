@@ -1,4 +1,4 @@
-package kmu.ui;
+package kmu.ui.context;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;

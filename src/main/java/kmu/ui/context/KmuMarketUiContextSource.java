@@ -1,4 +1,4 @@
-package kmu.ui;
+package kmu.ui.context;
 
 public enum KmuMarketUiContextSource {
     CURRENTLY_OPEN_MARKET,

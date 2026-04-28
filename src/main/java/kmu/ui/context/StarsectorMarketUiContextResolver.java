@@ -1,4 +1,4 @@
-package kmu.ui;
+package kmu.ui.context;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
