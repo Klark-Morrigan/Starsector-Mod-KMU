@@ -183,6 +183,11 @@ Implementation:
 
 Tests:
 
+- unit test that an absent entry adds the condition, marks it surveyed, reapplies
+  conditions, refreshes the model, and records success feedback;
+- unit test that a present entry does not mutate the market;
+- unit test that failed add attempts refresh the model and record failure
+  feedback;
 - add two normally incompatible conditions and confirm both remain present after
   reapply;
 - repeat on a non-player-owned colony;

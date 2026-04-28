@@ -23,12 +23,13 @@ Problem doc:
 Plan doc:
 [plan.md](docs/dev/implementation/001-add-planetary-condition/plan.md)
 
-The proposed first feature adds a `Planetary Conditions` button while a colony
-market is open. The button opens every planetary market condition as a clickable
+The planned first feature is a `Planetary Conditions` editor for an active
+colony market. The editor opens every planetary market condition as a clickable
 entry with a tooltip. Entries already on the planet use the player's normal UI
-color; entries not present are darkened. Clicking an entry adds that condition
-to the market without removing mutually exclusive or same-group conditions. At
-this stage, any inspected colony can be edited regardless of ownership.
+color; entries not present are darkened. Clicking an absent entry adds that
+condition to the market without removing mutually exclusive or same-group
+conditions. At this stage, any inspected colony can be edited regardless of
+ownership.
 
 ## Library Policy
 
@@ -58,3 +59,9 @@ Starsector runtime used by the current game install.
 
 Release shape doc:
 [release.md](docs/dev/release.md)
+
+## Documentation Status
+
+Development docs live under `docs/dev`. Package-level Mermaid diagrams live
+beside the Java packages they describe under `src/main/java/kmu`, with shared
+diagram conventions in `src/main/java/kmu/diagram-style.md`.
