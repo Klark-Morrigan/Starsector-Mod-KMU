@@ -14,9 +14,21 @@ flowchart LR
     subgraph Feature["Condition Feature"]
         direction TB
 
+        subgraph EditorEntry["Editor Entry"]
+            direction TB
+            EntryPoint["KmuConditionEditorEntryPoint<br/>Open editor for current market"]
+            Editor["KmuConditionEditor<br/>Future editor UI port"]
+        end
+
         subgraph Core["Core Logic"]
             direction TB
             Service["KmuConditionService<br/>Use-case orchestration"]
+        end
+
+        subgraph MarketContext["Market UI Context"]
+            direction TB
+            Context["KmuMarketUiContext<br/>Resolved market and optional panel"]
+            ContextSource["KmuMarketUiContextSource<br/>Context source enum"]
         end
 
         subgraph Domain["Domain Values"]
@@ -34,12 +46,22 @@ flowchart LR
             direction TB
             RepositoryPort["KmuConditionRepository<br/>Condition spec lookup"]
             MarketPort["KmuEditableMarket<br/>Market read/write operations"]
-            ReporterPort["KmuErrorReporter<br/>Failure reporting"]
+            ContextResolverPort["KmuMarketUiContextResolver<br/>Current market context lookup"]
         end
+    end
+
+    subgraph Shared["Shared Utilities"]
+        direction TB
+        ReporterPort["KmuErrorReporter<br/>Failure reporting"]
     end
 
     subgraph Adapters["Starsector Adapter Layer"]
         direction TB
+
+        subgraph ContextAdapters["Market Context Adapters"]
+            direction TB
+            ContextResolverAdapter["StarsectorMarketUiContextResolver<br/>Sector/CampaignUI adapter"]
+        end
 
         subgraph RepositoryAdapters["Condition Spec Adapters"]
             direction TB
@@ -61,6 +83,16 @@ flowchart LR
             MarketConditionSpecAPI["MarketConditionSpecAPI"]
         end
 
+        subgraph CampaignApiGroup["Campaign Context"]
+            direction TB
+            SectorAPI["SectorAPI"]
+            CampaignUIAPI["CampaignUIAPI"]
+            InteractionDialogAPI["InteractionDialogAPI"]
+            CampaignFleetAPI["CampaignFleetAPI"]
+            SectorEntityToken["SectorEntityToken"]
+            UIPanelAPI["UIPanelAPI"]
+        end
+
         subgraph MarketApiGroup["Markets / Conditions"]
             direction TB
             MarketAPI["MarketAPI"]
@@ -68,7 +100,11 @@ flowchart LR
         end
     end
 
-    Plugin -. later wires .-> Service
+    Plugin -. later wires .-> EntryPoint
+
+    EntryPoint --> ContextResolverPort
+    EntryPoint --> Editor
+    EntryPoint --> ReporterPort
 
     Service --> RepositoryPort
     Service --> MarketPort
@@ -77,9 +113,18 @@ flowchart LR
     Service --> Spec
 
     Result --> Status
+    Context --> ContextSource
 
+    ContextResolverAdapter -. implements .-> ContextResolverPort
     RepositoryAdapter -. implements .-> RepositoryPort
     MarketAdapter -. implements .-> MarketPort
+
+    ContextResolverAdapter --> SectorAPI
+    ContextResolverAdapter --> CampaignUIAPI
+    ContextResolverAdapter --> InteractionDialogAPI
+    ContextResolverAdapter --> CampaignFleetAPI
+    ContextResolverAdapter --> SectorEntityToken
+    ContextResolverAdapter --> Context
 
     RepositoryAdapter --> SettingsAPI
     RepositoryAdapter --> MarketConditionSpecAPI
@@ -87,6 +132,8 @@ flowchart LR
 
     MarketAdapter --> MarketAPI
     MarketAdapter --> MarketConditionAPI
+    Context --> MarketAPI
+    Context --> UIPanelAPI
 ```
 
 ## Layer Notes
@@ -96,10 +143,17 @@ flowchart LR
 - `KMU_ModPlugin`
 - Should stay thin.
 - Later it should create services and connect them to UI/runtime hooks.
+- `KmuConditionEditorEntryPoint` is the feature-level opening contract for the
+  future editor UI.
 
 ### Core Feature Layer
 
 - `KmuConditionService`
+- `KmuConditionEditorEntryPoint`
+- `KmuConditionEditor`
+- `KmuMarketUiContext`
+- `KmuMarketUiContextResolver`
+- `KmuMarketUiContextSource`
 - `KmuConditionSpec`
 - `KmuConditionAddResult`
 - `KmuConditionAddStatus`
@@ -110,7 +164,7 @@ flowchart LR
 
 - `KmuConditionRepository`
 - `KmuEditableMarket`
-- `KmuErrorReporter`
+- `KmuMarketUiContextResolver`
 - These are KMU-owned contracts.
 - They keep core logic testable without launching Starsector.
 
@@ -118,9 +172,15 @@ flowchart LR
 
 - `StarsectorConditionRepository`
 - `StarsectorEditableMarket`
+- `StarsectorMarketUiContextResolver`
 - Converts Starsector APIs into KMU ports.
-- This is where `SettingsAPI`, `MarketAPI`, `MarketConditionAPI`, and
-  `MarketConditionSpecAPI` are allowed.
+- This is where `SettingsAPI`, `SectorAPI`, `CampaignUIAPI`, `MarketAPI`,
+  `MarketConditionAPI`, and `MarketConditionSpecAPI` are allowed.
+
+### Shared Utilities
+
+- `KmuErrorReporter`
+- Used by feature services and adapters to report recoverable runtime failures.
 
 ### External Starsector API
 
