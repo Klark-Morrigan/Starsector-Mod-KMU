@@ -1,0 +1,65 @@
+flowchart LR
+    subgraph Meta["Notes / Legend"]
+        direction TB
+        EditorNote["Open-editor<br/>contract"]
+        ContextNote["Market discovery<br/>and optional panel"]
+        ChooserNote["Condition list<br/>model and rendering"]
+        DirectionNote["conditions must not<br/>depend on UI"]
+        Legend["Legend:<br/>blue = UI orchestration<br/>green = core/domain/model<br/>gray = external API<br/>pink = shared utility"]
+    end
+
+    subgraph UI["UI Packages"]
+        direction TB
+        Editor["kmu.ui.editor"]
+        Context["kmu.ui.context"]
+        Chooser["kmu.ui.chooser"]
+    end
+
+    subgraph Core["Core Feature Packages"]
+        direction TB
+        Conditions["kmu.conditions"]
+    end
+
+    subgraph Shared["Shared Utilities"]
+        direction TB
+        Reporter["KmuErrorReporter"]
+    end
+
+    subgraph External["External APIs"]
+        direction TB
+        StarsectorUI["Starsector campaign/UI API"]
+    end
+
+    EditorNote -. describes .-> Editor
+    ContextNote -. describes .-> Context
+    ChooserNote -. describes .-> Chooser
+    DirectionNote -. constrains .-> Conditions
+    Legend -. explains colors .-> Editor
+
+    Editor -->|resolves context| Context
+    Editor -->|reports failures| Reporter
+
+    Chooser -->|implements editor port| Editor
+    Chooser -->|uses market context| Context
+    Chooser -->|reads condition state| Conditions
+    Chooser -->|renders dialog| StarsectorUI
+
+    Context -->|reports failures| Reporter
+    Context -->|reads campaign state| StarsectorUI
+
+    classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
+    classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
+    classDef orchestration fill:#e8f1ff,stroke:#2f67b1,color:#0f2747
+    classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
+    classDef value fill:#eef8ff,stroke:#3b82a0,color:#113247
+    classDef port fill:#fff0e6,stroke:#c76a24,color:#4a2108
+    classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
+    classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
+    classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
+
+    class EditorNote,ContextNote,ChooserNote,DirectionNote note
+    class Legend legend
+    class Editor,Context,Chooser orchestration
+    class Conditions core
+    class Reporter shared
+    class StarsectorUI external

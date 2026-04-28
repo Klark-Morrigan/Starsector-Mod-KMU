@@ -1,0 +1,85 @@
+flowchart LR
+    subgraph Meta["Notes / Legend"]
+        direction TB
+        ModelNote["Plain Java model<br/>stays unit-testable"]
+        DialogNote["Dialog delegate is<br/>Starsector UI boundary"]
+        StepNote["Click-to-add<br/>belongs to Step 5"]
+        Legend["Legend:<br/>blue = UI orchestration<br/>green = model/core behavior<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API"]
+    end
+
+    subgraph Orchestration["UI Orchestration"]
+        direction TB
+        ChooserEditor["KmuConditionChooserEditor"]
+        DialogDelegate["KmuConditionChooserDialogDelegate"]
+    end
+
+    subgraph ModelLayer["Chooser Model"]
+        direction TB
+        ModelFactory["KmuConditionChooserModelFactory"]
+        Model["KmuConditionChooserModel"]
+        Entry["KmuConditionChooserEntry"]
+        EntryState["KmuConditionChooserEntryState"]
+        ConditionService["KmuConditionService"]
+    end
+
+    subgraph Ports["Ports / Interfaces"]
+        direction TB
+        EditorPort["KmuConditionEditor"]
+        DialogOpener["KmuConditionChooserDialogOpener"]
+        EditableMarket["KmuEditableMarket"]
+    end
+
+    subgraph Adapters["Adapters"]
+        direction TB
+        StarsectorEditableMarket["StarsectorEditableMarket"]
+    end
+
+    subgraph External["External / Other Layers"]
+        direction TB
+        Context["KmuMarketUiContext"]
+        CustomDialogDelegate["CustomDialogDelegate"]
+        CustomPanelAPI["CustomPanelAPI"]
+        TooltipMakerAPI["TooltipMakerAPI"]
+    end
+
+    ModelNote -. describes .-> Model
+    DialogNote -. describes .-> DialogDelegate
+    StepNote -. constrains .-> DialogOpener
+    Legend -. explains colors .-> ChooserEditor
+
+    ChooserEditor -. implements .-> EditorPort
+    ChooserEditor -->|receives market| Context
+    ChooserEditor -->|builds model with| ModelFactory
+    ChooserEditor -->|opens dialog through| DialogOpener
+    ChooserEditor -->|wraps market as| StarsectorEditableMarket
+
+    ModelFactory -->|queries state via| ConditionService
+    ModelFactory -->|reads current ids| EditableMarket
+    ModelFactory -->|creates| Model
+
+    Model -->|contains| Entry
+    Entry -->|has state| EntryState
+
+    DialogOpener -->|opens| DialogDelegate
+    DialogDelegate -. implements .-> CustomDialogDelegate
+    DialogDelegate -->|renders| Model
+    DialogDelegate -->|creates panel in| CustomPanelAPI
+    DialogDelegate -->|adds rows/tooltips with| TooltipMakerAPI
+
+    classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
+    classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
+    classDef orchestration fill:#e8f1ff,stroke:#2f67b1,color:#0f2747
+    classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
+    classDef value fill:#eef8ff,stroke:#3b82a0,color:#113247
+    classDef port fill:#fff0e6,stroke:#c76a24,color:#4a2108
+    classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
+    classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
+    classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
+
+    class ModelNote,DialogNote,StepNote note
+    class Legend legend
+    class ChooserEditor,DialogDelegate orchestration
+    class ModelFactory,Model,Entry,EntryState,ConditionService core
+    class EditorPort,DialogOpener,EditableMarket port
+    class StarsectorEditableMarket adapter
+    class Context,CustomDialogDelegate,CustomPanelAPI,TooltipMakerAPI external

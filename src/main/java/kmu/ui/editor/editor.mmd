@@ -1,0 +1,60 @@
+flowchart LR
+    subgraph Meta["Notes / Legend"]
+        direction TB
+        EntryNote["Coordinates lookup<br/>and editor opening"]
+        EditorNote["Replaceable UI port<br/>implemented by surfaces"]
+        FailureNote["Open failures report<br/>and return false"]
+        BoundaryNote["No condition mutation<br/>rules here"]
+        Legend["Legend:<br/>blue = orchestration<br/>orange = port/interface<br/>cyan = value/context<br/>pink = shared utility"]
+    end
+
+    subgraph Orchestration["Editor Orchestration"]
+        direction TB
+        EntryPoint["KmuConditionEditorEntryPoint"]
+    end
+
+    subgraph Ports["Ports / Interfaces"]
+        direction TB
+        EditorPort["KmuConditionEditor"]
+        ContextResolver["KmuMarketUiContextResolver"]
+    end
+
+    subgraph Values["Context Values"]
+        direction TB
+        Context["KmuMarketUiContext"]
+    end
+
+    subgraph Shared["Shared Utilities"]
+        direction TB
+        Reporter["KmuErrorReporter"]
+    end
+
+    EntryNote -. describes .-> EntryPoint
+    EditorNote -. describes .-> EditorPort
+    FailureNote -. describes .-> Reporter
+    BoundaryNote -. constrains .-> EntryPoint
+    Legend -. explains colors .-> EntryPoint
+
+    EntryPoint -->|asks for current context| ContextResolver
+    EntryPoint -->|opens resolved context with| EditorPort
+    EntryPoint -->|reports failures| Reporter
+
+    ContextResolver -->|returns optional| Context
+    EditorPort -->|accepts| Context
+
+    classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
+    classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
+    classDef orchestration fill:#e8f1ff,stroke:#2f67b1,color:#0f2747
+    classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
+    classDef value fill:#eef8ff,stroke:#3b82a0,color:#113247
+    classDef port fill:#fff0e6,stroke:#c76a24,color:#4a2108
+    classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
+    classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
+    classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
+
+    class EntryNote,EditorNote,FailureNote,BoundaryNote note
+    class Legend legend
+    class EntryPoint orchestration
+    class EditorPort,ContextResolver port
+    class Context value
+    class Reporter shared
