@@ -1,4 +1,6 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.model;
+
+import kmu.ui.chooser.tooltip.KmuConditionTooltipRenderer;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -9,6 +11,8 @@ public final class KmuConditionChooserEntry {
     private final String icon;
     private final KmuConditionChooserEntryState state;
     private final String tooltipText;
+    private final String sourceModName;
+    private final KmuConditionTooltipRenderer tooltipRenderer;
 
     public KmuConditionChooserEntry(
             String conditionId,
@@ -16,11 +20,34 @@ public final class KmuConditionChooserEntry {
             String icon,
             KmuConditionChooserEntryState state,
             String tooltipText) {
+        this(conditionId, name, icon, state, tooltipText, null);
+    }
+
+    public KmuConditionChooserEntry(
+            String conditionId,
+            String name,
+            String icon,
+            KmuConditionChooserEntryState state,
+            String tooltipText,
+            String sourceModName) {
+        this(conditionId, name, icon, state, tooltipText, sourceModName, null);
+    }
+
+    KmuConditionChooserEntry(
+            String conditionId,
+            String name,
+            String icon,
+            KmuConditionChooserEntryState state,
+            String tooltipText,
+            String sourceModName,
+            KmuConditionTooltipRenderer tooltipRenderer) {
         this.conditionId = requireNonBlank(conditionId, "conditionId");
         this.name = requireNonBlank(name, "name");
         this.icon = normalizeOptional(icon);
         this.state = Objects.requireNonNull(state, "state");
-        this.tooltipText = requireNonBlank(tooltipText, "tooltipText");
+        this.tooltipText = tooltipText == null ? "" : tooltipText.trim();
+        this.sourceModName = normalizeOptional(sourceModName);
+        this.tooltipRenderer = tooltipRenderer;
     }
 
     public String getConditionId() {
@@ -41,6 +68,14 @@ public final class KmuConditionChooserEntry {
 
     public String getTooltipText() {
         return tooltipText;
+    }
+
+    public Optional<String> getSourceModName() {
+        return Optional.ofNullable(sourceModName);
+    }
+
+    public Optional<KmuConditionTooltipRenderer> getTooltipRenderer() {
+        return Optional.ofNullable(tooltipRenderer);
     }
 
     public boolean isPresent() {

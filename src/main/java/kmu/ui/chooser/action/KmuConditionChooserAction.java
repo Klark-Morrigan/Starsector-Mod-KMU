@@ -1,4 +1,6 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.action;
+
+import kmu.ui.chooser.model.KmuConditionChooserEntry;
 
 import java.util.Objects;
 

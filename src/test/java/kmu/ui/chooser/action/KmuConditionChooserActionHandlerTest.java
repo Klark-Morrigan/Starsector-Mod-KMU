@@ -1,4 +1,4 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.action;
 
 import kmu.conditions.KmuConditionAddResult;
 import kmu.conditions.KmuConditionAddStatus;
@@ -6,6 +6,10 @@ import kmu.conditions.KmuConditionRepository;
 import kmu.conditions.KmuConditionService;
 import kmu.conditions.KmuConditionSpec;
 import kmu.conditions.KmuEditableMarket;
+import kmu.ui.chooser.model.KmuConditionChooserEntry;
+import kmu.ui.chooser.model.KmuConditionChooserEntryState;
+import kmu.ui.chooser.model.KmuConditionChooserModel;
+import kmu.ui.chooser.model.KmuConditionChooserModelFactory;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -54,16 +58,14 @@ class KmuConditionChooserActionHandlerTest {
                 service,
                 new KmuConditionChooserModelFactory(service),
                 market);
+        KmuConditionChooserModel originalModel = handler.getModel();
         KmuConditionChooserEntry entry = handler.getModel().getEntries().get(0);
 
         KmuConditionAddResult result = handler.handle(KmuConditionChooserAction.fromEntry(entry));
 
         assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
-        assertThat(handler.getFeedback())
-                .hasValueSatisfying(feedback -> {
-                    assertThat(feedback.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
-                    assertThat(feedback.getMessage()).isEqualTo("Already present: hot");
-                });
+        assertThat(handler.getModel()).isSameAs(originalModel);
+        assertThat(handler.getFeedback()).isEmpty();
         assertThat(market.conditionIds).containsExactly("hot");
         assertThat(market.calls).isEmpty();
     }

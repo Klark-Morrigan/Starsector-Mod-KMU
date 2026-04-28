@@ -56,6 +56,22 @@ class KmuConditionServiceTest {
     }
 
     @Test
+    void visibleSpecsIncludePlanetarySpecsAndCurrentNonPlanetaryConditions() {
+        FakeConditionRepository repository = new FakeConditionRepository(
+                spec("hot", "Hot", true),
+                spec("abandoned_station", "Abandoned Station", false),
+                spec("population_3", "Population 3", false));
+        KmuConditionService service = new KmuConditionService(repository);
+        FakeEditableMarket market = new FakeEditableMarket("abandoned_station");
+
+        List<KmuConditionSpec> specs = service.listConditionSpecsVisibleForMarket(market);
+
+        assertThat(specs)
+                .extracting(KmuConditionSpec::getId)
+                .containsExactly("hot", "abandoned_station");
+    }
+
+    @Test
     void returnsCurrentConditionIdsFromMarket() {
         KmuConditionService service = new KmuConditionService(new FakeConditionRepository());
         FakeEditableMarket market = new FakeEditableMarket("hot", "ore_sparse");

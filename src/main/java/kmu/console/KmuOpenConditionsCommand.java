@@ -3,7 +3,7 @@ package kmu.console;
 import kmu.conditions.KmuConditionService;
 import kmu.conditions.StarsectorConditionRepository;
 import kmu.ui.chooser.KmuConditionChooserEditor;
-import kmu.ui.chooser.StarsectorInteractionDialogChooserOpener;
+import kmu.ui.chooser.dialog.StarsectorInteractionDialogChooserOpener;
 import kmu.ui.context.StarsectorMarketUiContextResolver;
 import kmu.ui.editor.KmuConditionEditorEntryPoint;
 import kmu.ui.editor.KmuConditionEditorOpenResult;

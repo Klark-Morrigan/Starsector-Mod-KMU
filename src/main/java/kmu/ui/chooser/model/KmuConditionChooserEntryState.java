@@ -1,4 +1,4 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.model;
 
 public enum KmuConditionChooserEntryState {
     PRESENT("Present"),

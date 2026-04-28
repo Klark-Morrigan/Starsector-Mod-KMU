@@ -34,6 +34,20 @@ public final class KmuConditionService {
         }
     }
 
+    public List<KmuConditionSpec> listConditionSpecsVisibleForMarket(KmuEditableMarket market) {
+        Objects.requireNonNull(market, "market");
+        Set<String> currentConditionIds = getCurrentConditionIds(market);
+        try {
+            return repository.getAllConditionSpecs().stream()
+                    .filter(Objects::nonNull)
+                    .filter(spec -> spec.isPlanetary() || currentConditionIds.contains(spec.getId()))
+                    .collect(Collectors.toUnmodifiableList());
+        } catch (RuntimeException exception) {
+            errorReporter.report("Failed to list visible market condition specs.", exception);
+            return Collections.emptyList();
+        }
+    }
+
     public Set<String> getCurrentConditionIds(KmuEditableMarket market) {
         Objects.requireNonNull(market, "market");
         try {

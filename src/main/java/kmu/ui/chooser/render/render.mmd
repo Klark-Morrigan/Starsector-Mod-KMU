@@ -1,0 +1,61 @@
+flowchart LR
+    subgraph Meta["Notes / Legend"]
+        direction TB
+        ScopeNote["Render layer owns<br/>layout and icon painting"]
+        StateNote["GridHandle updates<br/>buttons in place"]
+        ShapeNote["Button shape follows<br/>source icon aspect ratio"]
+        Legend["Legend:<br/>blue = rendering component<br/>green = model<br/>gray = Starsector UI API"]
+    end
+
+    subgraph RenderLayer["Render Layer"]
+        direction TB
+        Container["KmuConditionPickerContainer"]
+        RenderResult["KmuConditionPickerRenderResult"]
+        Grid["KmuConditionIconGrid"]
+        GridHandle["KmuConditionIconGrid.GridHandle"]
+        Button["KmuConditionIconButton"]
+        Metrics["KmuConditionIconButton.ButtonMetrics"]
+    end
+
+    subgraph Dependencies["Dependencies"]
+        direction TB
+        Model["KmuConditionChooserModel"]
+        Entry["KmuConditionChooserEntry"]
+        Action["KmuConditionChooserAction"]
+        CustomPanelAPI["CustomPanelAPI"]
+        TooltipMakerAPI["TooltipMakerAPI"]
+        SpriteAPI["SpriteAPI"]
+        InputEventAPI["InputEventAPI"]
+    end
+
+    ScopeNote -. describes .-> Container
+    StateNote -. describes .-> GridHandle
+    ShapeNote -. constrains .-> Metrics
+    Legend -. explains colors .-> Container
+
+    Container -->|renders summary from| Model
+    Container -->|creates grid with| Grid
+    Container -->|returns| RenderResult
+    RenderResult -->|updates one entry through| GridHandle
+    Grid -->|row-packs entries from| Model
+    Grid -->|creates| Button
+    Grid -->|stores buttons in| GridHandle
+    Button -->|renders| Entry
+    Button -->|emits| Action
+    Button -->|measures icon into| Metrics
+    Button -->|draws sprite from| SpriteAPI
+    Button -->|handles clicks from| InputEventAPI
+    Grid -->|creates panels in| CustomPanelAPI
+    Button -->|adds tooltip through| TooltipMakerAPI
+
+    classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
+    classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
+    classDef orchestration fill:#e8f1ff,stroke:#2f67b1,color:#0f2747
+    classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
+    classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
+
+    class ScopeNote,StateNote,ShapeNote note
+    class Legend legend
+    class Container,RenderResult,Grid,GridHandle,Button,Metrics orchestration
+    class Model,Entry,Action core
+    class CustomPanelAPI,TooltipMakerAPI,SpriteAPI,InputEventAPI external

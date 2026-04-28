@@ -1,4 +1,4 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.dialog;
 
 @FunctionalInterface
 public interface KmuConditionChooserDialogOpener {

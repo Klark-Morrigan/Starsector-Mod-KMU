@@ -1,0 +1,65 @@
+flowchart LR
+    subgraph Meta["Notes / Legend"]
+        direction TB
+        ScopeNote["Dialog layer owns<br/>Starsector dialog lifecycle"]
+        StateNote["Normal adds update<br/>rendered state in place"]
+        BoundaryNote["Only this layer<br/>talks to CustomDialogDelegate"]
+        Legend["Legend:<br/>blue = UI orchestration<br/>green = action/model<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API"]
+    end
+
+    subgraph DialogLayer["Dialog Layer"]
+        direction TB
+        Delegate["KmuConditionChooserDialogDelegate"]
+        OpenerPort["KmuConditionChooserDialogOpener"]
+        InteractionOpener["StarsectorInteractionDialogChooserOpener"]
+    end
+
+    subgraph Collaborators["Collaborators"]
+        direction TB
+        Handler["KmuConditionChooserActionHandler"]
+        FeedbackSink["KmuConditionChooserFeedbackSink"]
+        Container["KmuConditionPickerContainer"]
+        RenderResult["KmuConditionPickerRenderResult"]
+    end
+
+    subgraph External["External Starsector API"]
+        direction TB
+        CustomDialogDelegate["CustomDialogDelegate"]
+        CustomPanelAPI["CustomPanelAPI"]
+        InteractionDialogAPI["InteractionDialogAPI"]
+        CampaignUIAPI["CampaignUIAPI"]
+        SectorAPI["SectorAPI"]
+    end
+
+    ScopeNote -. describes .-> Delegate
+    StateNote -. constrains .-> RenderResult
+    BoundaryNote -. describes .-> CustomDialogDelegate
+    Legend -. explains colors .-> Delegate
+
+    Delegate -. implements .-> CustomDialogDelegate
+    Delegate -->|renders body with| Container
+    Delegate -->|keeps update handles from| RenderResult
+    Delegate -->|dispatches actions to| Handler
+    Delegate -->|reports feedback through| FeedbackSink
+    Delegate -->|creates UI in| CustomPanelAPI
+
+    InteractionOpener -. implements .-> OpenerPort
+    InteractionOpener -->|gets campaign UI from| SectorAPI
+    InteractionOpener -->|gets current dialog from| CampaignUIAPI
+    InteractionOpener -->|opens delegate with| InteractionDialogAPI
+
+    classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
+    classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
+    classDef orchestration fill:#e8f1ff,stroke:#2f67b1,color:#0f2747
+    classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
+    classDef port fill:#fff0e6,stroke:#c76a24,color:#4a2108
+    classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
+    classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
+
+    class ScopeNote,StateNote,BoundaryNote note
+    class Legend legend
+    class Delegate,Container,RenderResult orchestration
+    class Handler core
+    class OpenerPort,FeedbackSink port
+    class InteractionOpener adapter
+    class CustomDialogDelegate,CustomPanelAPI,InteractionDialogAPI,CampaignUIAPI,SectorAPI external

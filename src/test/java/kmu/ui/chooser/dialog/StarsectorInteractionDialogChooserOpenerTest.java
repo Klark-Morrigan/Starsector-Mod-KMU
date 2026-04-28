@@ -1,10 +1,13 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.dialog;
 
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.conditions.KmuConditionRepository;
 import kmu.conditions.KmuConditionService;
+import kmu.conditions.KmuEditableMarket;
+import kmu.ui.chooser.action.KmuConditionChooserActionHandler;
+import kmu.ui.chooser.model.KmuConditionChooserModelFactory;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;

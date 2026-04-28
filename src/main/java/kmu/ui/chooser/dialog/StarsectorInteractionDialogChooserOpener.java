@@ -1,4 +1,4 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.dialog;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;

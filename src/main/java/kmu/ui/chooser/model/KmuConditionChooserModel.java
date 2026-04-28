@@ -1,9 +1,10 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class KmuConditionChooserModel {
     private final List<KmuConditionChooserEntry> entries;
@@ -32,5 +33,15 @@ public final class KmuConditionChooserModel {
 
     public int getAbsentCount() {
         return getEntryCount() - getPresentCount();
+    }
+
+    public Optional<KmuConditionChooserEntry> findEntry(String conditionId) {
+        if (conditionId == null || conditionId.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        String normalizedId = conditionId.trim();
+        return entries.stream()
+                .filter(entry -> entry.getConditionId().equals(normalizedId))
+                .findFirst();
     }
 }

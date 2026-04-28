@@ -1,14 +1,22 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.dialog;
 
 import com.fs.starfarer.api.ui.ButtonAPI;
 import kmu.conditions.KmuConditionRepository;
 import kmu.conditions.KmuConditionService;
 import kmu.conditions.KmuConditionSpec;
 import kmu.conditions.KmuEditableMarket;
+import kmu.ui.chooser.action.KmuConditionChooserAction;
+import kmu.ui.chooser.action.KmuConditionChooserActionHandler;
+import kmu.ui.chooser.action.KmuConditionChooserFeedback;
+import kmu.ui.chooser.action.KmuConditionChooserFeedbackSink;
+import kmu.ui.chooser.model.KmuConditionChooserEntry;
+import kmu.ui.chooser.model.KmuConditionChooserEntryState;
+import kmu.ui.chooser.model.KmuConditionChooserModelFactory;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -57,7 +65,12 @@ class KmuConditionChooserDialogDelegateTest {
                 service,
                 new KmuConditionChooserModelFactory(service),
                 market);
-        KmuConditionChooserDialogDelegate delegate = new KmuConditionChooserDialogDelegate(actionHandler);
+        RecordingFeedbackSink feedbackSink = new RecordingFeedbackSink();
+        KmuConditionChooserDialogDelegate delegate = new KmuConditionChooserDialogDelegate(
+                actionHandler,
+                feedbackSink,
+                720f,
+                560f);
         KmuConditionChooserAction action = KmuConditionChooserAction.fromEntry(
                 actionHandler.getModel().getEntries().get(0));
 
@@ -67,6 +80,31 @@ class KmuConditionChooserDialogDelegateTest {
                 .extracting(KmuConditionChooserEntry::getState)
                 .containsExactly(KmuConditionChooserEntryState.PRESENT);
         assertThat(market.conditionIds).containsExactly("hot");
+        assertThat(feedbackSink.messages).containsExactly("Added condition: hot");
+    }
+
+    @Test
+    void panelPluginIgnoresPresentConditionActionsWithoutFeedback() {
+        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+                new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
+        FakeEditableMarket market = new FakeEditableMarket("hot");
+        KmuConditionChooserActionHandler actionHandler = new KmuConditionChooserActionHandler(
+                service,
+                new KmuConditionChooserModelFactory(service),
+                market);
+        RecordingFeedbackSink feedbackSink = new RecordingFeedbackSink();
+        KmuConditionChooserDialogDelegate delegate = new KmuConditionChooserDialogDelegate(
+                actionHandler,
+                feedbackSink,
+                720f,
+                560f);
+        KmuConditionChooserAction action = KmuConditionChooserAction.fromEntry(
+                actionHandler.getModel().getEntries().get(0));
+
+        delegate.getCustomPanelPlugin().buttonPressed(action);
+
+        assertThat(market.conditionIds).containsExactly("hot");
+        assertThat(feedbackSink.messages).isEmpty();
     }
 
     private static KmuConditionChooserAction action() {
@@ -153,6 +191,12 @@ class KmuConditionChooserDialogDelegateTest {
     private static final class FakeEditableMarket implements KmuEditableMarket {
         private final Set<String> conditionIds = new LinkedHashSet<>();
 
+        private FakeEditableMarket(String... conditionIds) {
+            for (String conditionId : conditionIds) {
+                this.conditionIds.add(conditionId);
+            }
+        }
+
         @Override
         public Set<String> getConditionIds() {
             return conditionIds;
@@ -174,6 +218,15 @@ class KmuConditionChooserDialogDelegateTest {
 
         @Override
         public void reapplyConditions() {
+        }
+    }
+
+    private static final class RecordingFeedbackSink implements KmuConditionChooserFeedbackSink {
+        private final List<String> messages = new ArrayList<>();
+
+        @Override
+        public void report(KmuConditionChooserFeedback feedback) {
+            messages.add(feedback.getMessage());
         }
     }
 }

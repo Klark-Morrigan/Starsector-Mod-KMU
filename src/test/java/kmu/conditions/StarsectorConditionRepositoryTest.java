@@ -142,6 +142,10 @@ class StarsectorConditionRepositoryTest {
                     return name;
                 case "getIcon":
                     return icon;
+                case "getDesc":
+                    return name + " description";
+                case "getSourceMod":
+                    return null;
                 case "isPlanetary":
                     return planetary;
                 default:

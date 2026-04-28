@@ -1,4 +1,4 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.model;
 
 import kmu.conditions.KmuConditionRepository;
 import kmu.conditions.KmuConditionService;
@@ -39,9 +39,9 @@ class KmuConditionChooserModelFactoryTest {
     }
 
     @Test
-    void includesSpecDataAndFallbackTooltipText() {
+    void includesSpecDataAndSpecDescriptionTooltipText() {
         KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
-                new KmuConditionSpec("cold", "Cold", null, true)));
+                new KmuConditionSpec("cold", "Cold", null, "Cold condition description.", "Vanilla", true)));
         KmuConditionChooserModelFactory factory = new KmuConditionChooserModelFactory(service);
 
         KmuConditionChooserEntry entry = factory.create(new FakeEditableMarket())
@@ -52,7 +52,8 @@ class KmuConditionChooserModelFactoryTest {
         assertThat(entry.getName()).isEqualTo("Cold");
         assertThat(entry.getIcon()).isEmpty();
         assertThat(entry.descriptionLine()).isEqualTo("cold - Absent");
-        assertThat(entry.getTooltipText()).contains("spec data only");
+        assertThat(entry.getTooltipText()).isEqualTo("Cold condition description.");
+        assertThat(entry.getSourceModName()).contains("Vanilla");
     }
 
     @Test

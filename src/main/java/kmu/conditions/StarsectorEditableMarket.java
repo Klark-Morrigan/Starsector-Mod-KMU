@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,13 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
     @Override
     public boolean hasCondition(String conditionId) {
         return market.hasCondition(conditionId);
+    }
+
+    public Optional<MarketConditionAPI> findCondition(String conditionId) {
+        if (conditionId == null || conditionId.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(market.getFirstCondition(conditionId.trim()));
     }
 
     @Override

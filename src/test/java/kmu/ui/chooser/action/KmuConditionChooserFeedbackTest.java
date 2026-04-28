@@ -1,4 +1,4 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.action;
 
 import kmu.conditions.KmuConditionAddResult;
 import kmu.conditions.KmuConditionAddStatus;

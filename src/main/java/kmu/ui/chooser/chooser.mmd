@@ -1,107 +1,81 @@
 flowchart LR
     subgraph Meta["Notes / Legend"]
         direction TB
-        ModelNote["Plain Java model<br/>stays unit-testable"]
-        DialogNote["Dialog delegate is<br/>Starsector UI boundary"]
-        StepNote["Click-to-add<br/>belongs to Step 5"]
-        OpenerNote["Runtime opener uses<br/>active interaction dialog"]
-        Legend["Legend:<br/>blue = UI orchestration<br/>green = model/core behavior<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API"]
+        ScopeNote["Chooser overview only<br/>subpackage diagrams hold detail"]
+        StyleNote["Style reference:<br/>kmu/diagram-style.md"]
+        BoundaryNote["Chooser depends on<br/>conditions and Starsector UI"]
+        Legend["Legend:<br/>blue = UI orchestration<br/>green = model/action<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API"]
     end
 
-    subgraph Orchestration["UI Orchestration"]
+    subgraph Root["Chooser Root"]
         direction TB
-        ChooserEditor["KmuConditionChooserEditor"]
-        ActionHandler["KmuConditionChooserActionHandler"]
-        DialogDelegate["KmuConditionChooserDialogDelegate"]
+        Editor["KmuConditionChooserEditor"]
     end
 
-    subgraph ModelLayer["Chooser Model"]
+    subgraph Action["action"]
         direction TB
-        ModelFactory["KmuConditionChooserModelFactory"]
-        Model["KmuConditionChooserModel"]
-        Entry["KmuConditionChooserEntry"]
-        EntryState["KmuConditionChooserEntryState"]
-        Action["KmuConditionChooserAction"]
-        Feedback["KmuConditionChooserFeedback"]
-        ConditionService["KmuConditionService"]
+        ActionLayer["Action handling<br/>and feedback result"]
     end
 
-    subgraph Ports["Ports / Interfaces"]
+    subgraph Model["model"]
         direction TB
-        EditorPort["KmuConditionEditor"]
-        DialogOpener["KmuConditionChooserDialogOpener"]
-        EditableMarket["KmuEditableMarket"]
+        ModelLayer["Chooser view model<br/>and model factory"]
     end
 
-    subgraph Adapters["Adapters"]
+    subgraph Dialog["dialog"]
         direction TB
-        StarsectorEditableMarket["StarsectorEditableMarket"]
-        StarsectorDialogOpener["StarsectorInteractionDialogChooserOpener"]
+        DialogLayer["Dialog lifecycle<br/>and opener adapter"]
     end
 
-    subgraph External["External / Other Layers"]
+    subgraph Render["render"]
         direction TB
-        Context["KmuMarketUiContext"]
-        CustomDialogDelegate["CustomDialogDelegate"]
-        CustomPanelAPI["CustomPanelAPI"]
-        TooltipMakerAPI["TooltipMakerAPI"]
-        SectorAPI["SectorAPI"]
-        CampaignUIAPI["CampaignUIAPI"]
-        InteractionDialogAPI["InteractionDialogAPI"]
+        RenderLayer["Icon grid<br/>and in-place updates"]
     end
 
-    ModelNote -. describes .-> Model
-    DialogNote -. describes .-> DialogDelegate
-    StepNote -. constrains .-> DialogOpener
-    OpenerNote -. describes .-> StarsectorDialogOpener
-    Legend -. explains colors .-> ChooserEditor
+    subgraph Tooltip["tooltip"]
+        direction TB
+        TooltipLayer["Live vanilla tooltip<br/>adapter"]
+    end
 
-    ChooserEditor -. implements .-> EditorPort
-    ChooserEditor -->|receives market| Context
-    ChooserEditor -->|creates action session with| ActionHandler
-    ChooserEditor -->|opens dialog through| DialogOpener
-    ChooserEditor -->|wraps market as| StarsectorEditableMarket
+    subgraph External["External Layers"]
+        direction TB
+        Conditions["kmu.conditions"]
+        EditorPort["kmu.ui.editor.KmuConditionEditor"]
+        Context["kmu.ui.context.KmuMarketUiContext"]
+        StarsectorUI["Starsector UI API"]
+    end
 
-    ActionHandler -->|builds model with| ModelFactory
-    ActionHandler -->|adds condition through| ConditionService
-    ActionHandler -->|refreshes| Model
-    ActionHandler -->|records| Feedback
-    ActionHandler -->|handles| Action
+    ScopeNote -. describes .-> Root
+    StyleNote -. describes .-> Legend
+    BoundaryNote -. constrains .-> Editor
+    Legend -. explains colors .-> Editor
 
-    ModelFactory -->|queries state via| ConditionService
-    ModelFactory -->|reads current ids| EditableMarket
-    ModelFactory -->|creates| Model
+    Editor -. implements .-> EditorPort
+    Editor -->|receives context| Context
+    Editor -->|creates action session| ActionLayer
+    Editor -->|opens dialog| DialogLayer
 
-    Model -->|contains| Entry
-    Entry -->|has state| EntryState
-    Action -->|targets| Entry
-
-    DialogOpener -->|opens| DialogDelegate
-    StarsectorDialogOpener -. implements .-> DialogOpener
-    StarsectorDialogOpener -->|reads campaign UI from| SectorAPI
-    StarsectorDialogOpener -->|gets current dialog from| CampaignUIAPI
-    StarsectorDialogOpener -->|shows custom dialog with| InteractionDialogAPI
-    DialogDelegate -. implements .-> CustomDialogDelegate
-    DialogDelegate -->|renders| Model
-    DialogDelegate -->|dispatches actions to| ActionHandler
-    DialogDelegate -->|shows| Feedback
-    DialogDelegate -->|creates panel in| CustomPanelAPI
-    DialogDelegate -->|adds rows/tooltips with| TooltipMakerAPI
+    ActionLayer -->|mutates via| Conditions
+    ActionLayer -->|refreshes| ModelLayer
+    DialogLayer -->|renders| RenderLayer
+    DialogLayer -->|dispatches user actions| ActionLayer
+    DialogLayer -->|uses| StarsectorUI
+    RenderLayer -->|reads entries| ModelLayer
+    RenderLayer -->|requests tooltips| TooltipLayer
+    TooltipLayer -->|delegates to| StarsectorUI
 
     classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
     classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
     classDef orchestration fill:#e8f1ff,stroke:#2f67b1,color:#0f2747
     classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
-    classDef value fill:#eef8ff,stroke:#3b82a0,color:#113247
     classDef port fill:#fff0e6,stroke:#c76a24,color:#4a2108
     classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
-    classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
 
-    class ModelNote,DialogNote,StepNote,OpenerNote note
+    class ScopeNote,StyleNote,BoundaryNote note
     class Legend legend
-    class ChooserEditor,ActionHandler,DialogDelegate orchestration
-    class ModelFactory,Model,Entry,EntryState,Action,Feedback,ConditionService core
-    class EditorPort,DialogOpener,EditableMarket port
-    class StarsectorEditableMarket,StarsectorDialogOpener adapter
-    class Context,CustomDialogDelegate,CustomPanelAPI,TooltipMakerAPI,SectorAPI,CampaignUIAPI,InteractionDialogAPI external
+    class Editor,DialogLayer,RenderLayer orchestration
+    class ActionLayer,ModelLayer core
+    class EditorPort port
+    class TooltipLayer adapter
+    class Conditions,Context,StarsectorUI external

@@ -1,8 +1,10 @@
-package kmu.ui.chooser;
+package kmu.ui.chooser.action;
 
 import kmu.conditions.KmuConditionAddResult;
 import kmu.conditions.KmuConditionService;
 import kmu.conditions.KmuEditableMarket;
+import kmu.ui.chooser.model.KmuConditionChooserModel;
+import kmu.ui.chooser.model.KmuConditionChooserModelFactory;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -35,10 +37,12 @@ public final class KmuConditionChooserActionHandler {
     public KmuConditionAddResult handle(KmuConditionChooserAction action) {
         Objects.requireNonNull(action, "action");
 
-        KmuConditionAddResult result = action.isPresentAtRender()
-                ? KmuConditionAddResult.alreadyPresent(action.getConditionId())
-                : conditionService.addPlanetaryConditionIfAbsent(market, action.getConditionId());
+        if (action.isPresentAtRender()) {
+            feedback = null;
+            return KmuConditionAddResult.alreadyPresent(action.getConditionId());
+        }
 
+        KmuConditionAddResult result = conditionService.addPlanetaryConditionIfAbsent(market, action.getConditionId());
         model = modelFactory.create(market);
         feedback = KmuConditionChooserFeedback.from(result);
         return result;

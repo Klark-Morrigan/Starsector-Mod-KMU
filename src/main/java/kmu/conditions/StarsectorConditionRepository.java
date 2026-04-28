@@ -1,6 +1,7 @@
 package kmu.conditions;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.ModSpecAPI;
 import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.characters.MarketConditionSpecAPI;
 
@@ -53,9 +54,16 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
                     spec.getId(),
                     spec.getName(),
                     spec.getIcon(),
+                    spec.getDesc(),
+                    sourceModName(spec),
                     spec.isPlanetary());
         } catch (RuntimeException exception) {
             return null;
         }
+    }
+
+    private String sourceModName(MarketConditionSpecAPI spec) {
+        ModSpecAPI sourceMod = spec.getSourceMod();
+        return sourceMod == null ? null : sourceMod.getName();
     }
 }
