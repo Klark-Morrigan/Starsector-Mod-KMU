@@ -21,6 +21,18 @@ class KmuConditionPickerContainerTest {
                 .isEqualTo("2 planetary conditions found; 1 already present on this market.");
     }
 
+    @Test
+    void reservesRightPaddingForScrollbar() {
+        assertThat(KmuConditionPickerContainer.gridWidth(400f))
+                .isEqualTo(400f - KmuConditionPickerContainer.GRID_SCROLLBAR_RIGHT_PAD);
+    }
+
+    @Test
+    void keepsGridWidthPositiveForNarrowContainers() {
+        assertThat(KmuConditionPickerContainer.gridWidth(12f))
+                .isEqualTo(1f);
+    }
+
     private static KmuConditionChooserEntry entry(String id, KmuConditionChooserEntryState state) {
         return new KmuConditionChooserEntry(
                 id,

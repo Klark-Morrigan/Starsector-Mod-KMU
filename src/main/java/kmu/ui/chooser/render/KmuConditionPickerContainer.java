@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 
 public final class KmuConditionPickerContainer {
     private static final float ENTRY_PAD = 8f;
+    static final float GRID_SCROLLBAR_RIGHT_PAD = 32f;
 
     private final CustomPanelAPI panel;
     private final KmuConditionIconGrid grid;
@@ -43,8 +44,18 @@ public final class KmuConditionPickerContainer {
             return new KmuConditionPickerRenderResult(summaryLabel, Collections.emptyList(), null);
         }
 
-        KmuConditionIconGrid.GridHandle gridHandle = grid.addTo(panel, body, model, width, ENTRY_PAD, actionConsumer);
+        KmuConditionIconGrid.GridHandle gridHandle = grid.addTo(
+                panel,
+                body,
+                model,
+                gridWidth(width),
+                ENTRY_PAD,
+                actionConsumer);
         return new KmuConditionPickerRenderResult(summaryLabel, gridHandle.getComponents(), gridHandle);
+    }
+
+    static float gridWidth(float containerWidth) {
+        return Math.max(1f, containerWidth - GRID_SCROLLBAR_RIGHT_PAD);
     }
 
     public static String summaryText(KmuConditionChooserModel model) {
