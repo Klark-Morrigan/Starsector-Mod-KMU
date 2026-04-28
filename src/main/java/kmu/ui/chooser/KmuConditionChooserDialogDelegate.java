@@ -2,6 +2,7 @@ package kmu.ui.chooser;
 
 import com.fs.starfarer.api.campaign.CustomDialogDelegate;
 import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
+import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
@@ -15,43 +16,40 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
     private static final float ICON_SIZE = 36f;
     private static final float ENTRY_PAD = 8f;
     private static final float TOOLTIP_WIDTH = 420f;
+    private static final float ACTION_BUTTON_WIDTH = 120f;
+    private static final float ACTION_BUTTON_HEIGHT = 24f;
 
-    private final KmuConditionChooserModel model;
+    private final KmuConditionChooserActionHandler actionHandler;
     private final float width;
     private final float height;
+    private CustomPanelAPI panel;
+    private TooltipMakerAPI body;
 
-    public KmuConditionChooserDialogDelegate(KmuConditionChooserModel model) {
-        this(model, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    public KmuConditionChooserDialogDelegate(KmuConditionChooserActionHandler actionHandler) {
+        this(actionHandler, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     }
 
     public KmuConditionChooserDialogDelegate(
-            KmuConditionChooserModel model,
+            KmuConditionChooserActionHandler actionHandler,
             float width,
             float height) {
-        this.model = Objects.requireNonNull(model, "model");
+        this.actionHandler = Objects.requireNonNull(actionHandler, "actionHandler");
         this.width = width;
         this.height = height;
     }
 
     public KmuConditionChooserModel getModel() {
-        return model;
+        return actionHandler.getModel();
+    }
+
+    public java.util.Optional<KmuConditionChooserFeedback> getFeedback() {
+        return actionHandler.getFeedback();
     }
 
     @Override
     public void createCustomDialog(CustomPanelAPI panel, CustomDialogCallback callback) {
-        TooltipMakerAPI body = panel.createUIElement(width, height, true);
-        body.addTitle("Planetary Conditions");
-        body.addPara(summaryText(), ENTRY_PAD);
-
-        if (model.isEmpty()) {
-            body.addPara("No planetary condition specs are available.", ENTRY_PAD, Misc.getGrayColor());
-        } else {
-            for (KmuConditionChooserEntry entry : model.getEntries()) {
-                addEntry(body, entry);
-            }
-        }
-
-        panel.addUIElement(body).inTL(0f, 0f);
+        this.panel = Objects.requireNonNull(panel, "panel");
+        refreshBody();
     }
 
     @Override
@@ -82,7 +80,49 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
         return null;
     }
 
+    void handleAction(KmuConditionChooserAction action) {
+        actionHandler.handle(action);
+        refreshBody();
+    }
+
+    private void refreshBody() {
+        if (panel == null) {
+            return;
+        }
+        if (body != null) {
+            panel.removeComponent(body);
+        }
+
+        body = panel.createUIElement(width, height, true);
+        body.setActionListenerDelegate((buttonId, data) -> {
+            if (buttonId instanceof KmuConditionChooserAction) {
+                handleAction((KmuConditionChooserAction) buttonId);
+            }
+        });
+        renderBody(body);
+        panel.addUIElement(body).inTL(0f, 0f);
+    }
+
+    private void renderBody(TooltipMakerAPI body) {
+        KmuConditionChooserModel model = actionHandler.getModel();
+        body.addTitle("Planetary Conditions");
+        body.addPara(summaryText(), ENTRY_PAD);
+        actionHandler.getFeedback().ifPresent(feedback -> body.addPara(
+                feedback.getMessage(),
+                ENTRY_PAD,
+                feedback.isFailure() ? Misc.getNegativeHighlightColor() : Misc.getPositiveHighlightColor()));
+
+        if (model.isEmpty()) {
+            body.addPara("No planetary condition specs are available.", ENTRY_PAD, Misc.getGrayColor());
+        } else {
+            for (KmuConditionChooserEntry entry : model.getEntries()) {
+                addEntry(body, entry);
+            }
+        }
+    }
+
     private String summaryText() {
+        KmuConditionChooserModel model = actionHandler.getModel();
         return model.getEntryCount()
                 + " planetary conditions found; "
                 + model.getPresentCount()
@@ -103,9 +143,21 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
             body.addPara(entry.descriptionLine(), 2f, Misc.getGrayColor(), entry.getConditionId());
         }
 
+        ButtonAPI button = body.addButton(
+                actionButtonText(entry),
+                KmuConditionChooserAction.fromEntry(entry),
+                ACTION_BUTTON_WIDTH,
+                ACTION_BUTTON_HEIGHT,
+                4f);
+        button.setEnabled(!entry.isPresent());
+
         body.addTooltipToPrevious(
                 new EntryTooltipCreator(entry, highlightColor),
                 TooltipMakerAPI.TooltipLocation.RIGHT);
+    }
+
+    private String actionButtonText(KmuConditionChooserEntry entry) {
+        return entry.isPresent() ? "Present" : "Add";
     }
 
     private static final class EntryTooltipCreator implements TooltipMakerAPI.TooltipCreator {

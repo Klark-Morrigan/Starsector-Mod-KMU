@@ -28,6 +28,7 @@ class KmuConditionChooserEditorTest {
                 spec("cold", "Cold", true)));
         AtomicReference<KmuConditionChooserDialogDelegate> openedDialog = new AtomicReference<>();
         KmuConditionChooserEditor editor = new KmuConditionChooserEditor(
+                service,
                 new KmuConditionChooserModelFactory(service),
                 openedDialog::set);
         MarketAPI market = marketWithConditions("hot");
