@@ -169,9 +169,14 @@ Implementation:
 - build the chooser with Starsector `CustomPanelAPI` and `TooltipMakerAPI`;
 - list every planetary condition spec returned by the condition service;
 - present the picker as a grid of condition icons, not as text rows;
-- keep grid cells stable while preserving the condition image's vanilla visual
-  treatment, including source-image transparency and apparent image size
-  (some are wide and aren't square);
+- preserve each condition image's aspect ratio and apparent vanilla image size;
+- let each button take its shape from its image, including wide 2:1-style
+  icons instead of forcing every condition into a square cell;
+- pack variable-size icon buttons into rigid rows, with as many buttons in each
+  row as fit the available width;
+- add a faint low-noise button backdrop and margin so button boundaries are
+  detectable without making the grid visually busy;
+- keep the dialog surface opaque enough that greyed-out icons remain readable;
 - put condition names in tooltips (if tooltips don't provide one yet), not as
   always-visible grid labels;
 - use grey-out filtering as the only visible present/absent state indicator;
@@ -205,6 +210,8 @@ Tests:
 - confirm condition names are visible in tooltips and not as permanent grid
   labels;
 - confirm long lists remain scrollable and selectable.
+- confirm mixed square and wide icons do not stretch and row-pack correctly;
+- confirm the button backdrop is visible but not visually dominant.
 
 ## Step 5 - Condition Add Action
 
@@ -217,20 +224,27 @@ Implementation:
 
 - clicking an absent condition icon calls the condition service;
 - clicking a present condition icon does not add a duplicate;
-- after mutation, refresh the chooser state from the market;
-- after refresh, the newly present condition uses the live condition plugin icon
-  and tooltip path;
-- show success/failure feedback without replacing the grey-out state with
-  permanent visible status text;
+- after mutation, refresh the chooser state from the market model but update the
+  affected button and header in place instead of rebuilding the scroll body;
+- do not refresh the grid, reset scroll position, or recreate clickable icon
+  panels for present-condition clicks;
+- after mutation, the newly present condition uses the live condition plugin icon
+  and tooltip path when Starsector exposes them;
+- show success/failure feedback through Starsector's campaign message/event-log
+  channel, not as permanent text inside the grid or dialog body;
 - leave removal for a later feature.
 
 Tests:
 
 - unit test that an absent entry adds the condition, marks it surveyed, reapplies
-  conditions, refreshes the model, and records success feedback;
-- unit test that a present entry does not mutate the market;
-- unit test that failed add attempts refresh the model and record failure
-  feedback;
+  conditions, refreshes the model, updates only the affected button/header, and
+  records success feedback;
+- unit test that a present entry does not mutate the market, does not rebuild the
+  grid, and does not emit feedback;
+- unit test that failed add attempts refresh the model, update the affected
+  button if the market changed before failure, and record failure feedback;
+- unit test that action feedback is reported through the campaign message sink
+  rather than rendered inside the grid body;
 - add two normally incompatible conditions and confirm both remain present after
   reapply;
 - repeat on a non-player-owned colony;
