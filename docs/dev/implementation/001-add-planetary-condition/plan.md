@@ -109,10 +109,14 @@ Implementation:
 
 - start with a KMU market-context abstraction that contains the `MarketAPI` and,
   when available, the discovered `UIPanelAPI`;
-- support the player-present-at-market case;
-- support the remote colony/outposts ledger case;
+- support the player-present-at-market case through interaction dialog target
+  and player fleet interaction target lookup;
+- support the remote colony/outposts ledger case through
+  `SectorAPI.getCurrentlyOpenMarket()`;
 - keep ownership out of the detection logic;
 - prefer opening a KMU custom dialog/panel through public APIs when possible;
+- keep reflected `UIPanelAPI` discovery optional and behind
+  `KmuMarketUiContext` for a later UI-injection step;
 - if a vanilla screen button is required, implement a small reflection layer:
   - `KmuReflection`;
   - `KmuCoreUiLocator`;
@@ -130,6 +134,9 @@ Reference patterns:
 Tests:
 
 - compile-time coverage for the market-context classes;
+- unit test currently-open market, interaction-dialog target, and player-fleet
+  interaction target resolution;
+- unit test fail-closed behavior when one market context source throws;
 - in-game smoke test while present at a colony;
 - in-game smoke test from the outposts ledger;
 - in-game smoke test on a non-player-owned colony.
