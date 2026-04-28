@@ -125,9 +125,10 @@ Useful public API:
 - `ashlib.data.plugins.coreui.CommandUIPlugin`
 - UI widgets such as `BasePopUpDialog` and `CustomButton`
 
-Assessment: reference only. AshLib is outdated and not compatible with
-Starsector 0.98, so KMU should not declare it as a dependency. Its command-tab
-and UI widget classes are still useful as implementation examples.
+Assessment: reference only for this feature right now. KMU should not declare it
+as a dependency unless a later step finds a concrete benefit over the local
+adapters and public Starsector APIs. Its command-tab and UI widget classes are
+useful implementation examples.
 
 ### BoxUtil, ParticleEngine, GraphicsLib, NebuLib, RetroLib
 
@@ -280,11 +281,12 @@ public dialog/industry option APIs without directly patching the colony panel.
    - one `EveryFrameScript` or `CoreUITabListener` that discovers contexts and
      notifies listeners.
 
-5. Treat AshLib as code reference only.
+5. Treat AshLib as code reference only for this feature.
 
-   Do not add AshLib to `mod_info.json` or the Gradle runtime classpath for
-   0.98. If its command-tab or widget patterns are useful, copy the relevant
-   design locally and compile against the Starsector API instead.
+   Do not add AshLib to `mod_info.json` or the Gradle runtime classpath unless
+   KMU needs one of its public APIs directly. If its command-tab or widget
+   patterns are useful, copy the relevant design locally and compile against the
+   Starsector API instead.
 
 6. Use LunaLib later for user settings if needed.
 

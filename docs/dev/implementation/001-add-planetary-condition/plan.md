@@ -19,8 +19,9 @@ Detailed research lives in
 Decisions from that research:
 
 - Do not add a hard library dependency for this feature yet.
-- Do not depend on AshLib. It is outdated and not compatible with Starsector
-  `0.98`; use it only as code reference.
+- Do not depend on AshLib for this feature yet. Current KMU needs are covered
+  by Starsector's public API and small local adapters; use AshLib as code
+  reference unless a later step finds a concrete dependency benefit.
 - Use Starsector's public API for condition data and mutation:
   `getAllMarketConditionSpecs`, `getMarketConditionSpec`, `MarketAPI.addCondition`,
   `MarketAPI.removeCondition`, `MarketAPI.hasCondition`, `MarketAPI.getCondition`,
