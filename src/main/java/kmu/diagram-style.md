@@ -18,6 +18,16 @@ consistent when editing package diagrams.
 | `external` | Starsector API or other external API | Gray |
 | `shared` | Shared KMU utility | Pink |
 
+## Diagram Conventions
+
+- Organize every diagram into explicit layer subgraphs.
+- Label arrows with the reason for the dependency or call.
+- Put architecture notes in rendered note nodes, not hidden Mermaid comments.
+- Include a small rendered legend when the diagram uses more than one class
+  color.
+- Keep each `.mmd` file self-contained; Mermaid cannot import these shared
+  definitions directly.
+
 ## Canonical Class Definitions
 
 ```mermaid

@@ -10,6 +10,7 @@ flowchart LR
     subgraph Orchestration["UI Orchestration"]
         direction TB
         ChooserEditor["KmuConditionChooserEditor"]
+        ActionHandler["KmuConditionChooserActionHandler"]
         DialogDelegate["KmuConditionChooserDialogDelegate"]
     end
 
@@ -19,6 +20,8 @@ flowchart LR
         Model["KmuConditionChooserModel"]
         Entry["KmuConditionChooserEntry"]
         EntryState["KmuConditionChooserEntryState"]
+        Action["KmuConditionChooserAction"]
+        Feedback["KmuConditionChooserFeedback"]
         ConditionService["KmuConditionService"]
     end
 
@@ -49,9 +52,15 @@ flowchart LR
 
     ChooserEditor -. implements .-> EditorPort
     ChooserEditor -->|receives market| Context
-    ChooserEditor -->|builds model with| ModelFactory
+    ChooserEditor -->|creates action session with| ActionHandler
     ChooserEditor -->|opens dialog through| DialogOpener
     ChooserEditor -->|wraps market as| StarsectorEditableMarket
+
+    ActionHandler -->|builds model with| ModelFactory
+    ActionHandler -->|adds condition through| ConditionService
+    ActionHandler -->|refreshes| Model
+    ActionHandler -->|records| Feedback
+    ActionHandler -->|handles| Action
 
     ModelFactory -->|queries state via| ConditionService
     ModelFactory -->|reads current ids| EditableMarket
@@ -59,10 +68,13 @@ flowchart LR
 
     Model -->|contains| Entry
     Entry -->|has state| EntryState
+    Action -->|targets| Entry
 
     DialogOpener -->|opens| DialogDelegate
     DialogDelegate -. implements .-> CustomDialogDelegate
     DialogDelegate -->|renders| Model
+    DialogDelegate -->|dispatches actions to| ActionHandler
+    DialogDelegate -->|shows| Feedback
     DialogDelegate -->|creates panel in| CustomPanelAPI
     DialogDelegate -->|adds rows/tooltips with| TooltipMakerAPI
 
@@ -78,8 +90,8 @@ flowchart LR
 
     class ModelNote,DialogNote,StepNote note
     class Legend legend
-    class ChooserEditor,DialogDelegate orchestration
-    class ModelFactory,Model,Entry,EntryState,ConditionService core
+    class ChooserEditor,ActionHandler,DialogDelegate orchestration
+    class ModelFactory,Model,Entry,EntryState,Action,Feedback,ConditionService core
     class EditorPort,DialogOpener,EditableMarket port
     class StarsectorEditableMarket adapter
     class Context,CustomDialogDelegate,CustomPanelAPI,TooltipMakerAPI external
