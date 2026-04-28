@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public final class StarsectorConditionRepository implements KmuConditionRepository {
+    static final String VANILLA_SOURCE_NAME = "Starsector";
+
     private final SettingsAPI settings;
 
     public StarsectorConditionRepository() {
@@ -64,6 +66,13 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
 
     private String sourceModName(MarketConditionSpecAPI spec) {
         ModSpecAPI sourceMod = spec.getSourceMod();
-        return sourceMod == null ? null : sourceMod.getName();
+        if (sourceMod == null) {
+            return VANILLA_SOURCE_NAME;
+        }
+        String sourceModName = sourceMod.getName();
+        if (sourceModName == null || sourceModName.trim().isEmpty()) {
+            return VANILLA_SOURCE_NAME;
+        }
+        return sourceModName;
     }
 }

@@ -1,6 +1,7 @@
 package kmu.conditions;
 
 import com.fs.starfarer.api.SettingsAPI;
+import com.fs.starfarer.api.ModSpecAPI;
 import com.fs.starfarer.api.characters.MarketConditionSpecAPI;
 import org.junit.jupiter.api.Test;
 
@@ -34,6 +35,7 @@ class StarsectorConditionRepositoryTest {
                 .containsExactly("hot", "population_3");
         assertThat(specs.get(0).getName()).isEqualTo("Hot");
         assertThat(specs.get(0).getIcon()).isEqualTo("graphics/icons/hot.png");
+        assertThat(specs.get(0).getSourceModName()).isEqualTo("Starsector");
         assertThat(specs.get(0).isPlanetary()).isTrue();
     }
 
@@ -87,6 +89,23 @@ class StarsectorConditionRepositoryTest {
     }
 
     @Test
+    void mapsSourceModNameWhenSpecDeclaresOne() {
+        MarketConditionSpecAPI hot = spec(
+                "hot",
+                "Hot",
+                "graphics/icons/hot.png",
+                true,
+                sourceMod("Utility Pack"));
+        StarsectorConditionRepository repository = new StarsectorConditionRepository(
+                settings(List.of(hot), Map.of(), new ArrayList<>()));
+
+        assertThat(repository.getAllConditionSpecs())
+                .singleElement()
+                .extracting(KmuConditionSpec::getSourceModName)
+                .isEqualTo("Utility Pack");
+    }
+
+    @Test
     void returnsEmptyForBlankOrMissingLookup() {
         StarsectorConditionRepository repository = new StarsectorConditionRepository(
                 settings(List.of(), Map.of(), new ArrayList<>()));
@@ -134,6 +153,15 @@ class StarsectorConditionRepositoryTest {
     }
 
     private static MarketConditionSpecAPI spec(String id, String name, String icon, boolean planetary) {
+        return spec(id, name, icon, planetary, null);
+    }
+
+    private static MarketConditionSpecAPI spec(
+            String id,
+            String name,
+            String icon,
+            boolean planetary,
+            ModSpecAPI sourceMod) {
         return proxy(MarketConditionSpecAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getId":
@@ -145,12 +173,21 @@ class StarsectorConditionRepositoryTest {
                 case "getDesc":
                     return name + " description";
                 case "getSourceMod":
-                    return null;
+                    return sourceMod;
                 case "isPlanetary":
                     return planetary;
                 default:
                     return handleObjectMethodOrThrow(proxy, method, args);
             }
+        });
+    }
+
+    private static ModSpecAPI sourceMod(String name) {
+        return proxy(ModSpecAPI.class, (proxy, method, args) -> {
+            if ("getName".equals(method.getName())) {
+                return name;
+            }
+            return handleObjectMethodOrThrow(proxy, method, args);
         });
     }
 
