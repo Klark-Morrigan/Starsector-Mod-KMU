@@ -162,6 +162,7 @@ Implementation:
 Tests:
 
 - unit test chooser view-model construction from specs and current market ids;
+- unit test chooser editor handoff from resolved `MarketAPI` to dialog delegate;
 - in-game smoke test with vanilla and modded conditions loaded;
 - confirm long lists remain scrollable and selectable.
 
