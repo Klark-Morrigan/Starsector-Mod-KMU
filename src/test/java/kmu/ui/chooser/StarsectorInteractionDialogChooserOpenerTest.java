@@ -1,0 +1,160 @@
+package kmu.ui.chooser;
+
+import com.fs.starfarer.api.campaign.CampaignUIAPI;
+import com.fs.starfarer.api.campaign.InteractionDialogAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
+import kmu.conditions.KmuConditionRepository;
+import kmu.conditions.KmuConditionService;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class StarsectorInteractionDialogChooserOpenerTest {
+    @Test
+    void opensDelegateWithConfiguredDimensions() {
+        AtomicReference<KmuConditionChooserDialogDelegate> openedDelegate = new AtomicReference<>();
+        AtomicReference<Float> openedWidth = new AtomicReference<>();
+        AtomicReference<Float> openedHeight = new AtomicReference<>();
+        InteractionDialogAPI dialog = dialog(openedDelegate, openedWidth, openedHeight);
+        StarsectorInteractionDialogChooserOpener opener = new StarsectorInteractionDialogChooserOpener(
+                sector(campaignUI(dialog)));
+        KmuConditionChooserDialogDelegate delegate = delegate(640f, 480f);
+
+        opener.open(delegate);
+
+        assertThat(openedDelegate).hasValue(delegate);
+        assertThat(openedWidth).hasValue(640f);
+        assertThat(openedHeight).hasValue(480f);
+    }
+
+    @Test
+    void failsWhenCampaignUiIsMissing() {
+        StarsectorInteractionDialogChooserOpener opener = new StarsectorInteractionDialogChooserOpener(
+                sector(null));
+
+        assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("No campaign UI is active.");
+    }
+
+    @Test
+    void failsWhenInteractionDialogIsMissing() {
+        StarsectorInteractionDialogChooserOpener opener = new StarsectorInteractionDialogChooserOpener(
+                sector(campaignUI(null)));
+
+        assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("No interaction dialog is active.");
+    }
+
+    private static KmuConditionChooserDialogDelegate delegate(float width, float height) {
+        return new KmuConditionChooserDialogDelegate(
+                new KmuConditionChooserActionHandler(
+                        new KmuConditionService(emptyRepository()),
+                        new KmuConditionChooserModelFactory(new KmuConditionService(emptyRepository())),
+                        new KmuEditableMarketStub()),
+                width,
+                height);
+    }
+
+    private static KmuConditionRepository emptyRepository() {
+        return new KmuConditionRepository() {
+            @Override
+            public java.util.List<kmu.conditions.KmuConditionSpec> getAllConditionSpecs() {
+                return java.util.Collections.emptyList();
+            }
+
+            @Override
+            public java.util.Optional<kmu.conditions.KmuConditionSpec> findConditionSpec(String conditionId) {
+                return java.util.Optional.empty();
+            }
+        };
+    }
+
+    private static SectorAPI sector(CampaignUIAPI campaignUI) {
+        return proxy(SectorAPI.class, (proxy, method, args) -> {
+            if (method.getName().equals("getCampaignUI")) {
+                return campaignUI;
+            }
+            return handleObjectMethodOrThrow(proxy, method, args);
+        });
+    }
+
+    private static CampaignUIAPI campaignUI(InteractionDialogAPI dialog) {
+        return proxy(CampaignUIAPI.class, (proxy, method, args) -> {
+            if (method.getName().equals("getCurrentInteractionDialog")) {
+                return dialog;
+            }
+            return handleObjectMethodOrThrow(proxy, method, args);
+        });
+    }
+
+    private static InteractionDialogAPI dialog(
+            AtomicReference<KmuConditionChooserDialogDelegate> openedDelegate,
+            AtomicReference<Float> openedWidth,
+            AtomicReference<Float> openedHeight) {
+        return proxy(InteractionDialogAPI.class, (proxy, method, args) -> {
+            if (method.getName().equals("showCustomDialog")) {
+                openedWidth.set((Float) args[0]);
+                openedHeight.set((Float) args[1]);
+                openedDelegate.set((KmuConditionChooserDialogDelegate) args[2]);
+                return null;
+            }
+            return handleObjectMethodOrThrow(proxy, method, args);
+        });
+    }
+
+    private static Object handleObjectMethodOrThrow(Object proxy, Method method, Object[] args) {
+        if (method.getDeclaringClass().equals(Object.class)) {
+            switch (method.getName()) {
+                case "toString":
+                    return proxy.getClass().getInterfaces()[0].getSimpleName() + "Proxy";
+                case "hashCode":
+                    return System.identityHashCode(proxy);
+                case "equals":
+                    return proxy == args[0];
+                default:
+                    break;
+            }
+        }
+        throw new UnsupportedOperationException(method.toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T proxy(Class<T> type, InvocationHandler handler) {
+        return (T) Proxy.newProxyInstance(
+                type.getClassLoader(),
+                new Class<?>[]{type},
+                handler);
+    }
+
+    private static final class KmuEditableMarketStub implements kmu.conditions.KmuEditableMarket {
+        @Override
+        public java.util.Set<String> getConditionIds() {
+            return java.util.Collections.emptySet();
+        }
+
+        @Override
+        public boolean hasCondition(String conditionId) {
+            return false;
+        }
+
+        @Override
+        public void addCondition(String conditionId) {
+        }
+
+        @Override
+        public void markConditionSurveyed(String conditionId) {
+        }
+
+        @Override
+        public void reapplyConditions() {
+        }
+    }
+}

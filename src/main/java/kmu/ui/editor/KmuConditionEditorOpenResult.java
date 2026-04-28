@@ -1,0 +1,66 @@
+package kmu.ui.editor;
+
+import java.util.Objects;
+import java.util.Optional;
+
+public final class KmuConditionEditorOpenResult {
+    private final KmuConditionEditorOpenStatus status;
+    private final String message;
+    private final RuntimeException cause;
+
+    private KmuConditionEditorOpenResult(
+            KmuConditionEditorOpenStatus status,
+            String message,
+            RuntimeException cause) {
+        this.status = Objects.requireNonNull(status, "status");
+        this.message = Objects.requireNonNull(message, "message");
+        this.cause = cause;
+    }
+
+    public static KmuConditionEditorOpenResult opened() {
+        return new KmuConditionEditorOpenResult(
+                KmuConditionEditorOpenStatus.OPENED,
+                "Opened planetary condition editor.",
+                null);
+    }
+
+    public static KmuConditionEditorOpenResult noMarketContext() {
+        return new KmuConditionEditorOpenResult(
+                KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT,
+                "No active market context supports planetary condition editing.",
+                null);
+    }
+
+    public static KmuConditionEditorOpenResult unsupportedTarget(String reason) {
+        String message = reason == null || reason.trim().isEmpty()
+                ? "Current market does not support planetary condition editing."
+                : reason.trim();
+        return new KmuConditionEditorOpenResult(
+                KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET,
+                message,
+                null);
+    }
+
+    public static KmuConditionEditorOpenResult failed(String message, RuntimeException cause) {
+        return new KmuConditionEditorOpenResult(
+                KmuConditionEditorOpenStatus.FAILED,
+                Objects.requireNonNull(message, "message"),
+                Objects.requireNonNull(cause, "cause"));
+    }
+
+    public KmuConditionEditorOpenStatus getStatus() {
+        return status;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public Optional<RuntimeException> getCause() {
+        return Optional.ofNullable(cause);
+    }
+
+    public boolean isOpened() {
+        return status == KmuConditionEditorOpenStatus.OPENED;
+    }
+}

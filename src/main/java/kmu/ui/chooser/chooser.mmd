@@ -4,6 +4,7 @@ flowchart LR
         ModelNote["Plain Java model<br/>stays unit-testable"]
         DialogNote["Dialog delegate is<br/>Starsector UI boundary"]
         StepNote["Click-to-add<br/>belongs to Step 5"]
+        OpenerNote["Runtime opener uses<br/>active interaction dialog"]
         Legend["Legend:<br/>blue = UI orchestration<br/>green = model/core behavior<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API"]
     end
 
@@ -35,6 +36,7 @@ flowchart LR
     subgraph Adapters["Adapters"]
         direction TB
         StarsectorEditableMarket["StarsectorEditableMarket"]
+        StarsectorDialogOpener["StarsectorInteractionDialogChooserOpener"]
     end
 
     subgraph External["External / Other Layers"]
@@ -43,11 +45,15 @@ flowchart LR
         CustomDialogDelegate["CustomDialogDelegate"]
         CustomPanelAPI["CustomPanelAPI"]
         TooltipMakerAPI["TooltipMakerAPI"]
+        SectorAPI["SectorAPI"]
+        CampaignUIAPI["CampaignUIAPI"]
+        InteractionDialogAPI["InteractionDialogAPI"]
     end
 
     ModelNote -. describes .-> Model
     DialogNote -. describes .-> DialogDelegate
     StepNote -. constrains .-> DialogOpener
+    OpenerNote -. describes .-> StarsectorDialogOpener
     Legend -. explains colors .-> ChooserEditor
 
     ChooserEditor -. implements .-> EditorPort
@@ -71,6 +77,10 @@ flowchart LR
     Action -->|targets| Entry
 
     DialogOpener -->|opens| DialogDelegate
+    StarsectorDialogOpener -. implements .-> DialogOpener
+    StarsectorDialogOpener -->|reads campaign UI from| SectorAPI
+    StarsectorDialogOpener -->|gets current dialog from| CampaignUIAPI
+    StarsectorDialogOpener -->|shows custom dialog with| InteractionDialogAPI
     DialogDelegate -. implements .-> CustomDialogDelegate
     DialogDelegate -->|renders| Model
     DialogDelegate -->|dispatches actions to| ActionHandler
@@ -88,10 +98,10 @@ flowchart LR
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
     classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
 
-    class ModelNote,DialogNote,StepNote note
+    class ModelNote,DialogNote,StepNote,OpenerNote note
     class Legend legend
     class ChooserEditor,ActionHandler,DialogDelegate orchestration
     class ModelFactory,Model,Entry,EntryState,Action,Feedback,ConditionService core
     class EditorPort,DialogOpener,EditableMarket port
-    class StarsectorEditableMarket adapter
-    class Context,CustomDialogDelegate,CustomPanelAPI,TooltipMakerAPI external
+    class StarsectorEditableMarket,StarsectorDialogOpener adapter
+    class Context,CustomDialogDelegate,CustomPanelAPI,TooltipMakerAPI,SectorAPI,CampaignUIAPI,InteractionDialogAPI external
