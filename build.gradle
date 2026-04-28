@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
 }
 
 import groovy.json.JsonSlurper
@@ -66,6 +67,27 @@ test {
     testLogging {
         events 'passed', 'skipped', 'failed'
     }
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = '0.8.13'
+}
+
+jacocoTestReport {
+    dependsOn test
+
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = true
+    }
+}
+
+tasks.register('coverage') {
+    group = 'verification'
+    description = 'Runs tests and generates JaCoCo coverage reports.'
+    dependsOn test, jacocoTestReport
 }
 
 jar {
