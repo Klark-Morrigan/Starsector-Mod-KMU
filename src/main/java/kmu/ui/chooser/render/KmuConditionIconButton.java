@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.BaseCustomUIPanelPlugin;
 import com.fs.starfarer.api.graphics.SpriteAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
+import com.fs.starfarer.api.ui.Alignment;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
@@ -26,6 +27,7 @@ public final class KmuConditionIconButton {
     private static final float FALLBACK_ICON_SIZE = 64f;
     private static final float MIN_BUTTON_SIZE = 34f;
     private static final float METADATA_PAD = 4f;
+    private static final float METADATA_SECTION_PAD = 10f;
     private static final float TOOLTIP_WIDTH = 420f;
     private static final float ABSENT_ALPHA = 0.55f;
     private static final float BUTTON_BACKDROP_ALPHA = 0.28f;
@@ -327,17 +329,26 @@ public final class KmuConditionIconButton {
         }
 
         private void addMetadataFooter(TooltipMakerAPI tooltip, KmuConditionChooserEntry entry) {
-            tooltip.addPara("id: " + entry.getConditionId(), METADATA_PAD, Misc.getGrayColor(), entry.getConditionId());
+            tooltip.addSectionHeading(
+                    "Metadata",
+                    Misc.getGrayColor(),
+                    Misc.getDarkPlayerColor(),
+                    Alignment.MID,
+                    METADATA_SECTION_PAD);
+            tooltip.setParaFontColor(Misc.getGrayColor());
+            addMetadataLine(tooltip, "id", entry.getConditionId());
             entry.getIcon().ifPresent(icon -> tooltip.addPara(
-                    "icon: " + icon,
-                    METADATA_PAD,
-                    Misc.getGrayColor(),
-                    icon));
-            entry.getSourceModName().ifPresent(sourceMod -> tooltip.addPara(
-                    "source: " + sourceMod,
-                    METADATA_PAD,
-                    Misc.getGrayColor(),
-                    sourceMod));
+                    metadataText("icon", icon),
+                    METADATA_PAD));
+            addMetadataLine(tooltip, "source", entry.getSourceModName().orElse("Starsector"));
+        }
+
+        private void addMetadataLine(TooltipMakerAPI tooltip, String label, String value) {
+            tooltip.addPara(metadataText(label, value), METADATA_PAD);
+        }
+
+        private String metadataText(String label, String value) {
+            return label + ": " + value;
         }
     }
 }
