@@ -192,11 +192,13 @@ Implementation:
   `MarketConditionPlugin.showIcon()` returns false;
 - show suppressed-present conditions with a light red button backdrop and red
   border, while keeping the condition icon legible and not greyed out;
-- show hidden-but-unsuppressed present conditions with a very dark violet
-  button backdrop and dark violet border, while keeping the condition icon
-  legible and not greyed out;
-- if a condition is both suppressed and hidden, prefer the suppressed visual
-  treatment because it is the stronger behavioral warning;
+- show visible, unsuppressed present conditions with a positive green button
+  backdrop and border, while keeping the condition icon legible and not greyed
+  out;
+- do not apply a special color treatment to hidden conditions; explain hidden
+  state in the tooltip instead;
+- if a condition is suppressed, prefer the suppressed visual treatment over
+  other visual states because it is the stronger behavioral warning;
 - do not show `Present`, `Absent`, `Add`, ids, or other state text directly in
   the grid;
 - clicking an absent icon is the add action;
@@ -234,8 +236,9 @@ Tests:
 - unit test suppressed and hidden state detection from Starsector market/plugin
   adapters;
 - unit test suppressed-present conditions are not greyed out;
-- unit test hidden-but-unsuppressed conditions use the dark violet button
+- unit test visible unsuppressed conditions use the positive green button
   treatment and are not greyed out;
+- unit test hidden conditions do not receive the positive green treatment;
 - in-game smoke test with vanilla and modded conditions loaded;
 - compare present condition icons and tooltips against the same conditions on
   the planet condition row;

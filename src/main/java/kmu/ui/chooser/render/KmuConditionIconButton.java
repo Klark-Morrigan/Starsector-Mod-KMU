@@ -23,25 +23,52 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class KmuConditionIconButton {
-    static final float ICON_MARGIN = 6f;
-    static final float VANILLA_COLONY_CONDITION_ICON_HEIGHT = 40f;
-    private static final float FALLBACK_ICON_SIZE = VANILLA_COLONY_CONDITION_ICON_HEIGHT;
-    private static final float MIN_BUTTON_SIZE = 34f;
-    private static final float METADATA_PAD = 4f;
-    private static final float TOOLTIP_WIDTH = 420f;
-    private static final float ABSENT_ALPHA = 0.55f;
-    private static final float BUTTON_BACKDROP_ALPHA = 0.28f;
-    private static final float BUTTON_BORDER_ALPHA = 0.18f;
-    private static final float SUPPRESSED_BACKDROP_ALPHA = 0.34f;
-    private static final float SUPPRESSED_BORDER_ALPHA = 0.50f;
-    private static final float HIDDEN_BACKDROP_ALPHA = 0.32f;
-    private static final float HIDDEN_BORDER_ALPHA = 0.42f;
-    private static final Color PRESENT_TINT = Color.WHITE;
-    private static final Color ABSENT_TINT = new Color(130, 130, 130);
-    private static final Color SUPPRESSED_BACKDROP_TINT = new Color(150, 50, 45);
-    private static final Color SUPPRESSED_BORDER_TINT = new Color(255, 90, 80);
-    private static final Color HIDDEN_BACKDROP_TINT = new Color(45, 28, 70);
-    private static final Color HIDDEN_BORDER_TINT = new Color(92, 61, 132);
+    static final class Sizing {
+        static final float ICON_MARGIN = 4f;
+        static final float VANILLA_COLONY_CONDITION_ICON_HEIGHT = 40f;
+        static final float FALLBACK_ICON_SIZE = VANILLA_COLONY_CONDITION_ICON_HEIGHT;
+        static final float MIN_BUTTON_SIZE = 34f;
+
+        private Sizing() {
+        }
+
+        static float squareButtonWidth() {
+            return VANILLA_COLONY_CONDITION_ICON_HEIGHT + ICON_MARGIN * 2f;
+        }
+    }
+
+    private static final class TooltipLayout {
+        private static final float METADATA_PAD = 4f;
+        private static final float TOOLTIP_WIDTH = 420f;
+
+        private TooltipLayout() {
+        }
+    }
+
+    private static final class Alpha {
+        private static final float ABSENT_ICON = 0.55f;
+        private static final float BUTTON_BACKDROP = 0.28f;
+        private static final float BUTTON_BORDER = 0.18f;
+        private static final float SUPPRESSED_BACKDROP = 0.34f;
+        private static final float SUPPRESSED_BORDER = 0.50f;
+        private static final float VISIBLE_PRESENT_BACKDROP = 0.28f;
+        private static final float VISIBLE_PRESENT_BORDER = 0.42f;
+
+        private Alpha() {
+        }
+    }
+
+    private static final class Palette {
+        private static final Color PRESENT_ICON = Color.WHITE;
+        private static final Color ABSENT_ICON = new Color(130, 130, 130);
+        private static final Color SUPPRESSED_BACKDROP = new Color(150, 50, 45);
+        private static final Color SUPPRESSED_BORDER = new Color(255, 90, 80);
+        private static final Color VISIBLE_PRESENT_BACKDROP = new Color(35, 80, 45);
+        private static final Color VISIBLE_PRESENT_BORDER = new Color(90, 220, 95);
+
+        private Palette() {
+        }
+    }
 
     private KmuConditionChooserEntry entry;
     private final Consumer<KmuConditionChooserAction> actionConsumer;
@@ -86,17 +113,17 @@ public final class KmuConditionIconButton {
         Objects.requireNonNull(entry, "entry");
         Optional<String> icon = entry.getIcon();
         if (!icon.isPresent()) {
-            return metricsForSource(FALLBACK_ICON_SIZE, FALLBACK_ICON_SIZE);
+            return metricsForSource(Sizing.FALLBACK_ICON_SIZE, Sizing.FALLBACK_ICON_SIZE);
         }
 
         try {
             SpriteAPI sprite = Global.getSettings().getSprite(icon.get());
             if (sprite == null) {
-                return metricsForSource(FALLBACK_ICON_SIZE, FALLBACK_ICON_SIZE);
+                return metricsForSource(Sizing.FALLBACK_ICON_SIZE, Sizing.FALLBACK_ICON_SIZE);
             }
             return metricsForSource(sprite.getWidth(), sprite.getHeight());
         } catch (RuntimeException exception) {
-            return metricsForSource(FALLBACK_ICON_SIZE, FALLBACK_ICON_SIZE);
+            return metricsForSource(Sizing.FALLBACK_ICON_SIZE, Sizing.FALLBACK_ICON_SIZE);
         }
     }
 
@@ -107,10 +134,10 @@ public final class KmuConditionIconButton {
     static Color backdropColorFor(KmuConditionChooserEntry entry) {
         Objects.requireNonNull(entry, "entry");
         if (entry.isSuppressed()) {
-            return SUPPRESSED_BACKDROP_TINT;
+            return Palette.SUPPRESSED_BACKDROP;
         }
-        if (entry.isHidden()) {
-            return HIDDEN_BACKDROP_TINT;
+        if (isVisibleUnsuppressedPresent(entry)) {
+            return Palette.VISIBLE_PRESENT_BACKDROP;
         }
         return Misc.getDarkPlayerColor();
     }
@@ -118,10 +145,10 @@ public final class KmuConditionIconButton {
     static Color borderColorFor(KmuConditionChooserEntry entry) {
         Objects.requireNonNull(entry, "entry");
         if (entry.isSuppressed()) {
-            return SUPPRESSED_BORDER_TINT;
+            return Palette.SUPPRESSED_BORDER;
         }
-        if (entry.isHidden()) {
-            return HIDDEN_BORDER_TINT;
+        if (isVisibleUnsuppressedPresent(entry)) {
+            return Palette.VISIBLE_PRESENT_BORDER;
         }
         return Misc.getBasePlayerColor();
     }
@@ -129,29 +156,34 @@ public final class KmuConditionIconButton {
     static float backdropAlphaFor(KmuConditionChooserEntry entry) {
         Objects.requireNonNull(entry, "entry");
         if (entry.isSuppressed()) {
-            return SUPPRESSED_BACKDROP_ALPHA;
+            return Alpha.SUPPRESSED_BACKDROP;
         }
-        if (entry.isHidden()) {
-            return HIDDEN_BACKDROP_ALPHA;
+        if (isVisibleUnsuppressedPresent(entry)) {
+            return Alpha.VISIBLE_PRESENT_BACKDROP;
         }
-        return BUTTON_BACKDROP_ALPHA;
+        return Alpha.BUTTON_BACKDROP;
     }
 
     static float borderAlphaFor(KmuConditionChooserEntry entry) {
         Objects.requireNonNull(entry, "entry");
         if (entry.isSuppressed()) {
-            return SUPPRESSED_BORDER_ALPHA;
+            return Alpha.SUPPRESSED_BORDER;
         }
-        if (entry.isHidden()) {
-            return HIDDEN_BORDER_ALPHA;
+        if (isVisibleUnsuppressedPresent(entry)) {
+            return Alpha.VISIBLE_PRESENT_BORDER;
         }
-        return BUTTON_BORDER_ALPHA;
+        return Alpha.BUTTON_BORDER;
+    }
+
+    static boolean isVisibleUnsuppressedPresent(KmuConditionChooserEntry entry) {
+        Objects.requireNonNull(entry, "entry");
+        return entry.isPresent() && !entry.isSuppressed() && !entry.isHidden();
     }
 
     static ButtonMetrics metricsForSource(float sourceWidth, float sourceHeight) {
         IconBounds iconBounds = iconBounds(sourceWidth, sourceHeight);
-        float buttonWidth = Math.max(MIN_BUTTON_SIZE, iconBounds.getWidth() + ICON_MARGIN * 2f);
-        float buttonHeight = Math.max(MIN_BUTTON_SIZE, iconBounds.getHeight() + ICON_MARGIN * 2f);
+        float buttonWidth = Math.max(Sizing.MIN_BUTTON_SIZE, iconBounds.getWidth() + Sizing.ICON_MARGIN * 2f);
+        float buttonHeight = Math.max(Sizing.MIN_BUTTON_SIZE, iconBounds.getHeight() + Sizing.ICON_MARGIN * 2f);
         float iconOffsetX = (buttonWidth - iconBounds.getWidth()) / 2f;
         float iconOffsetY = (buttonHeight - iconBounds.getHeight()) / 2f;
         return new ButtonMetrics(
@@ -165,10 +197,10 @@ public final class KmuConditionIconButton {
 
     static IconBounds iconBounds(float sourceWidth, float sourceHeight) {
         if (sourceWidth <= 0f || sourceHeight <= 0f) {
-            return new IconBounds(FALLBACK_ICON_SIZE, FALLBACK_ICON_SIZE);
+            return new IconBounds(Sizing.FALLBACK_ICON_SIZE, Sizing.FALLBACK_ICON_SIZE);
         }
 
-        float scale = Math.min(1f, VANILLA_COLONY_CONDITION_ICON_HEIGHT / sourceHeight);
+        float scale = Math.min(1f, Sizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT / sourceHeight);
         return new IconBounds(sourceWidth * scale, sourceHeight * scale);
     }
 
@@ -311,10 +343,10 @@ public final class KmuConditionIconButton {
             float previousAlpha = sprite.getAlphaMult();
             float previousWidth = sprite.getWidth();
             float previousHeight = sprite.getHeight();
-            float alpha = shouldGreyOut(entry) ? ABSENT_ALPHA : 1f;
+            float alpha = shouldGreyOut(entry) ? Alpha.ABSENT_ICON : 1f;
 
             sprite.setSize(metrics.getIconWidth(), metrics.getIconHeight());
-            sprite.setColor(shouldGreyOut(entry) ? ABSENT_TINT : PRESENT_TINT);
+            sprite.setColor(shouldGreyOut(entry) ? Palette.ABSENT_ICON : Palette.PRESENT_ICON);
             sprite.setAlphaMult(alpha * alphaMult);
             sprite.render(
                     position.getX() + metrics.getIconOffsetX(),
@@ -354,7 +386,7 @@ public final class KmuConditionIconButton {
             if (renderer.isPresent()) {
                 return renderer.get().getTooltipWidth();
             }
-            return TOOLTIP_WIDTH;
+            return TooltipLayout.TOOLTIP_WIDTH;
         }
 
         @Override
@@ -369,7 +401,7 @@ public final class KmuConditionIconButton {
 
             tooltip.addTitle(entry.getName());
             if (!entry.getTooltipText().trim().isEmpty()) {
-                tooltip.addPara(entry.getTooltipText(), METADATA_PAD);
+                tooltip.addPara(entry.getTooltipText(), TooltipLayout.METADATA_PAD);
             }
             addStatusSections(tooltip, entry);
             addMetadataFooter(tooltip, entry);

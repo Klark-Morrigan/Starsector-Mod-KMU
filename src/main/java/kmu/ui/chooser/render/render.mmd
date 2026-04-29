@@ -6,7 +6,7 @@ flowchart LR
         ShapeNote["Icons cap to vanilla<br/>condition height and keep ratio"]
         WidthNote["Default width derives from<br/>12 square condition cells"]
         SuppressedNote["Suppressed entries use<br/>light red backdrop"]
-        HiddenNote["Hidden unsuppressed entries use<br/>dark violet backdrop"]
+        PresentNote["Visible unsuppressed entries use<br/>positive green backdrop"]
         Legend["Legend:<br/>blue = rendering component<br/>green = model<br/>gray = Starsector UI API"]
     end
 
@@ -34,8 +34,9 @@ flowchart LR
     ScopeNote -. describes .-> Container
     StateNote -. describes .-> GridHandle
     ShapeNote -. constrains .-> Metrics
+    WidthNote -. constrains .-> Container
     SuppressedNote -. constrains .-> Button
-    HiddenNote -. constrains .-> Button
+    PresentNote -. constrains .-> Button
     Legend -. explains colors .-> Container
 
     Container -->|renders summary from| Model
@@ -59,7 +60,7 @@ flowchart LR
     classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
 
-    class ScopeNote,StateNote,ShapeNote,SuppressedNote,HiddenNote note
+    class ScopeNote,StateNote,ShapeNote,WidthNote,SuppressedNote,PresentNote note
     class Legend legend
     class Container,RenderResult,Grid,GridHandle,Button,Metrics orchestration
     class Model,Entry,Action core

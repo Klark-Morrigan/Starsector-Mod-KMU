@@ -23,13 +23,23 @@ class KmuConditionIconButtonTest {
     }
 
     @Test
-    void stylesHiddenEntriesWithDarkVioletBackdrop() {
+    void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenTint() {
+        KmuConditionChooserEntry entry = entry(KmuConditionChooserEntryState.PRESENT);
+
+        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isTrue();
+        assertThat(KmuConditionIconButton.backdropColorFor(entry)).isEqualTo(new Color(35, 80, 45));
+        assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(new Color(90, 220, 95));
+        assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(0.28f);
+        assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(0.42f);
+    }
+
+    @Test
+    void doesNotApplySpecialTintToHiddenEntries() {
         KmuConditionChooserEntry entry = hiddenEntry();
 
-        assertThat(KmuConditionIconButton.backdropColorFor(entry)).isEqualTo(new Color(45, 28, 70));
-        assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(new Color(92, 61, 132));
-        assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(0.32f);
-        assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(0.42f);
+        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
+        assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(0.28f);
+        assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(0.18f);
     }
 
     @Test
@@ -54,8 +64,8 @@ class KmuConditionIconButtonTest {
 
         assertThat(wide.getIconWidth()).isEqualTo(120f);
         assertThat(wide.getIconHeight()).isEqualTo(40f);
-        assertThat(wide.getButtonWidth()).isEqualTo(120f + KmuConditionIconButton.ICON_MARGIN * 2f);
-        assertThat(wide.getButtonHeight()).isEqualTo(40f + KmuConditionIconButton.ICON_MARGIN * 2f);
+        assertThat(wide.getButtonWidth()).isEqualTo(120f + KmuConditionIconButton.Sizing.ICON_MARGIN * 2f);
+        assertThat(wide.getButtonHeight()).isEqualTo(40f + KmuConditionIconButton.Sizing.ICON_MARGIN * 2f);
     }
 
     @Test
@@ -63,7 +73,8 @@ class KmuConditionIconButtonTest {
         KmuConditionIconButton.ButtonMetrics wide = KmuConditionIconButton.metricsForSource(180f, 40f);
 
         assertThat(wide.getIconWidth()).isEqualTo(180f);
-        assertThat(wide.getIconHeight()).isEqualTo(KmuConditionIconButton.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+        assertThat(wide.getIconHeight())
+                .isEqualTo(KmuConditionIconButton.Sizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
     }
 
     @Test
@@ -71,7 +82,8 @@ class KmuConditionIconButtonTest {
         KmuConditionIconButton.ButtonMetrics tall = KmuConditionIconButton.metricsForSource(64f, 192f);
 
         assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
-        assertThat(tall.getIconHeight()).isEqualTo(KmuConditionIconButton.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+        assertThat(tall.getIconHeight())
+                .isEqualTo(KmuConditionIconButton.Sizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
     }
 
     @Test
