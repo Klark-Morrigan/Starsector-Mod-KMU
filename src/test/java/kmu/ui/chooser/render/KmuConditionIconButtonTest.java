@@ -88,7 +88,7 @@ class KmuConditionIconButtonTest {
     }
 
     @Test
-    void preservesOriginalIconSizeWhenItFits() {
+    void rendersIconsAtVanillaHeightWhenSourceAlreadyMatches() {
         KmuConditionIconButton.ButtonMetrics wide = KmuConditionIconButton.metricsForSource(120f, 40f);
 
         assertThat(wide.getIconWidth()).isEqualTo(120f);
@@ -98,7 +98,18 @@ class KmuConditionIconButtonTest {
     }
 
     @Test
-    void preservesWideIconWidthWhenHeightMatchesVanillaCap() {
+    void upscalesSmallerIconsToVanillaHeightWithoutChangingAspectRatio() {
+        KmuConditionIconButton.ButtonMetrics small = KmuConditionIconButton.metricsForSource(20f, 20f);
+
+        assertThat(small.getIconWidth()).isEqualTo(40f);
+        assertThat(small.getIconHeight())
+                .isEqualTo(KmuConditionIconButton.Sizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+        assertThat(small.getButtonWidth()).isEqualTo(40f + KmuConditionIconButton.Sizing.ICON_MARGIN * 2f);
+        assertThat(small.getButtonHeight()).isEqualTo(40f + KmuConditionIconButton.Sizing.ICON_MARGIN * 2f);
+    }
+
+    @Test
+    void preservesWideIconWidthWhenHeightMatchesVanillaTarget() {
         KmuConditionIconButton.ButtonMetrics wide = KmuConditionIconButton.metricsForSource(180f, 40f);
 
         assertThat(wide.getIconWidth()).isEqualTo(180f);
@@ -107,7 +118,7 @@ class KmuConditionIconButtonTest {
     }
 
     @Test
-    void downscalesOversizedIconsByHeightWithoutChangingAspectRatio() {
+    void downscalesOversizedIconsToVanillaHeightWithoutChangingAspectRatio() {
         KmuConditionIconButton.ButtonMetrics tall = KmuConditionIconButton.metricsForSource(64f, 192f);
 
         assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
