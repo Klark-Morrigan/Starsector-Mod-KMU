@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class KmuConditionIconGrid {
-    private static final float CELL_GAP = 8f;
+    static final float CELL_GAP = 8f;
 
     public GridHandle addTo(
             CustomPanelAPI parentPanel,

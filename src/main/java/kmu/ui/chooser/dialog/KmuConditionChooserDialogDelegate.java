@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class KmuConditionChooserDialogDelegate implements CustomDialogDelegate {
-    private static final float DEFAULT_WIDTH = 720f;
+    private static final float DEFAULT_WIDTH = KmuConditionPickerContainer.defaultContainerWidth();
     private static final float DEFAULT_HEIGHT = 560f;
     private static final float BODY_BG_ALPHA = 0.85f;
 

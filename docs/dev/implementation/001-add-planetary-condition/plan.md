@@ -178,6 +178,9 @@ Implementation:
   icons instead of forcing every condition into a square cell;
 - pack variable-size icon buttons into rigid rows, with as many buttons in each
   row as fit the available width;
+- start with a 12-column square-condition-cell constant for the default
+  dialog/grid width, calculate container width from that value, and leave it
+  ready to become a LunaLib setting later;
 - add a faint low-noise button backdrop and margin so button boundaries are
   detectable without making the grid visually busy;
 - keep the dialog surface opaque enough that greyed-out icons remain readable;
@@ -240,6 +243,7 @@ Tests:
 - confirm long lists remain scrollable and selectable.
 - confirm mixed square and wide icons do not stretch, cap by vanilla condition
   icon height, and row-pack correctly;
+- confirm square vanilla icon rows end cleanly at the right edge of the grid;
 - confirm the button backdrop is visible but not visually dominant.
 
 ## Step 5 - Condition Add Action

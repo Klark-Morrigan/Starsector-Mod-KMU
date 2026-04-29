@@ -24,7 +24,23 @@ class KmuConditionPickerContainerTest {
     @Test
     void reservesRightPaddingForScrollbar() {
         assertThat(KmuConditionPickerContainer.gridWidth(400f))
-                .isEqualTo(400f - KmuConditionPickerContainer.GRID_SCROLLBAR_RIGHT_PAD);
+                .isEqualTo(328f);
+    }
+
+    @Test
+    void snapsGridWidthToFullRowsOfSquareVanillaCells() {
+        assertThat(KmuConditionPickerContainer.DEFAULT_SQUARE_ICON_COLUMNS)
+                .isEqualTo(12);
+        assertThat(KmuConditionPickerContainer.defaultContainerWidth())
+                .isEqualTo(696f);
+        assertThat(KmuConditionPickerContainer.gridWidth(KmuConditionPickerContainer.defaultContainerWidth()))
+                .isEqualTo(664f);
+    }
+
+    @Test
+    void derivesContainerWidthFromSquareVanillaCellCount() {
+        assertThat(KmuConditionPickerContainer.containerWidthForSquareIconColumns(1))
+                .isEqualTo(80f);
     }
 
     @Test

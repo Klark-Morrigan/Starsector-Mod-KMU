@@ -12,8 +12,12 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class KmuConditionPickerContainer {
+    public static final int DEFAULT_SQUARE_ICON_COLUMNS = 12;
+
     private static final float ENTRY_PAD = 8f;
     static final float GRID_SCROLLBAR_RIGHT_PAD = 32f;
+    private static final float SQUARE_ICON_ROW_UNIT =
+            KmuConditionIconButton.Sizing.squareButtonWidth() + KmuConditionIconGrid.CELL_GAP;
 
     private final CustomPanelAPI panel;
     private final KmuConditionIconGrid grid;
@@ -55,7 +59,28 @@ public final class KmuConditionPickerContainer {
     }
 
     static float gridWidth(float containerWidth) {
-        return Math.max(1f, containerWidth - GRID_SCROLLBAR_RIGHT_PAD);
+        float availableWidth = Math.max(1f, containerWidth - GRID_SCROLLBAR_RIGHT_PAD);
+        float squareButtonWidth = KmuConditionIconButton.Sizing.squareButtonWidth();
+        if (availableWidth < squareButtonWidth) {
+            return availableWidth;
+        }
+
+        float units = (float) Math.floor((availableWidth + KmuConditionIconGrid.CELL_GAP) / SQUARE_ICON_ROW_UNIT);
+        return Math.max(squareButtonWidth, units * SQUARE_ICON_ROW_UNIT - KmuConditionIconGrid.CELL_GAP);
+    }
+
+    public static float defaultContainerWidth() {
+        return containerWidthForSquareIconColumns(DEFAULT_SQUARE_ICON_COLUMNS);
+    }
+
+    public static float containerWidthForSquareIconColumns(int squareIconColumns) {
+        return gridWidthForSquareIconColumns(squareIconColumns) + GRID_SCROLLBAR_RIGHT_PAD;
+    }
+
+    static float gridWidthForSquareIconColumns(int squareIconColumns) {
+        int safeColumns = Math.max(1, squareIconColumns);
+        return safeColumns * KmuConditionIconButton.Sizing.squareButtonWidth()
+                + (safeColumns - 1) * KmuConditionIconGrid.CELL_GAP;
     }
 
     public static String summaryText(KmuConditionChooserModel model) {
