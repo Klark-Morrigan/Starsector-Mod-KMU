@@ -3,6 +3,8 @@ package kmu.ui.chooser.render;
 import kmu.ui.chooser.model.KmuConditionChooserEntry;
 import kmu.ui.chooser.model.KmuConditionChooserEntryState;
 
+import java.awt.Color;
+
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,6 +16,36 @@ class KmuConditionIconButtonTest {
                 .isTrue();
         assertThat(KmuConditionIconButton.shouldGreyOut(entry(KmuConditionChooserEntryState.PRESENT)))
                 .isFalse();
+        assertThat(KmuConditionIconButton.shouldGreyOut(suppressedEntry()))
+                .isFalse();
+        assertThat(KmuConditionIconButton.shouldGreyOut(hiddenEntry()))
+                .isFalse();
+    }
+
+    @Test
+    void stylesHiddenEntriesWithDarkVioletBackdrop() {
+        KmuConditionChooserEntry entry = hiddenEntry();
+
+        assertThat(KmuConditionIconButton.backdropColorFor(entry)).isEqualTo(new Color(45, 28, 70));
+        assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(new Color(92, 61, 132));
+        assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(0.32f);
+        assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(0.42f);
+    }
+
+    @Test
+    void prioritizesSuppressedStyleWhenEntryIsBothSuppressedAndHidden() {
+        KmuConditionChooserEntry entry = new KmuConditionChooserEntry(
+                "hot",
+                "Hot",
+                "graphics/icons/markets/hot.png",
+                KmuConditionChooserEntryState.PRESENT,
+                "Test tooltip",
+                "Starsector",
+                true,
+                true);
+
+        assertThat(KmuConditionIconButton.backdropColorFor(entry)).isEqualTo(new Color(150, 50, 45));
+        assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(new Color(255, 90, 80));
     }
 
     @Test
@@ -54,5 +86,29 @@ class KmuConditionIconButtonTest {
                 "graphics/icons/markets/hot.png",
                 state,
                 "Test tooltip");
+    }
+
+    private static KmuConditionChooserEntry suppressedEntry() {
+        return new KmuConditionChooserEntry(
+                "hot",
+                "Hot",
+                "graphics/icons/markets/hot.png",
+                KmuConditionChooserEntryState.PRESENT,
+                "Test tooltip",
+                "Starsector",
+                true,
+                false);
+    }
+
+    private static KmuConditionChooserEntry hiddenEntry() {
+        return new KmuConditionChooserEntry(
+                "hot",
+                "Hot",
+                "graphics/icons/markets/hot.png",
+                KmuConditionChooserEntryState.PRESENT,
+                "Test tooltip",
+                "Starsector",
+                false,
+                true);
     }
 }

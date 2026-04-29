@@ -39,14 +39,17 @@ public final class KmuConditionChooserModelFactory {
         KmuConditionChooserEntryState state = currentConditionIds.contains(spec.getId())
                 ? KmuConditionChooserEntryState.PRESENT
                 : KmuConditionChooserEntryState.ABSENT;
+        Optional<MarketConditionAPI> liveCondition = liveConditionFor(spec, state, market);
         return new KmuConditionChooserEntry(
                 spec.getId(),
                 spec.getName(),
-                iconFor(spec, state, market),
+                iconFor(spec, liveCondition),
                 state,
                 tooltipText(spec, state),
                 spec.getSourceModName(),
-                tooltipRendererFor(spec, state, market).orElse(null));
+                tooltipRendererFor(liveCondition).orElse(null),
+                isSuppressed(spec, state, market),
+                liveCondition.map(this::isHidden).orElse(false));
     }
 
     private String tooltipText(KmuConditionSpec spec, KmuConditionChooserEntryState state) {
@@ -64,22 +67,32 @@ public final class KmuConditionChooserModelFactory {
         return description.trim();
     }
 
-    private Optional<KmuConditionTooltipRenderer> tooltipRendererFor(
-            KmuConditionSpec spec,
-            KmuConditionChooserEntryState state,
-            KmuEditableMarket market) {
-        return liveConditionFor(spec, state, market)
+    private Optional<KmuConditionTooltipRenderer> tooltipRendererFor(Optional<MarketConditionAPI> liveCondition) {
+        return liveCondition
                 .map(StarsectorConditionTooltipRenderer::new);
     }
 
     private String iconFor(
             KmuConditionSpec spec,
-            KmuConditionChooserEntryState state,
-            KmuEditableMarket market) {
-        return liveConditionFor(spec, state, market)
+            Optional<MarketConditionAPI> liveCondition) {
+        return liveCondition
                 .map(this::liveIconName)
                 .filter(icon -> icon != null && !icon.trim().isEmpty())
                 .orElse(spec.getIcon());
+    }
+
+    private boolean isSuppressed(
+            KmuConditionSpec spec,
+            KmuConditionChooserEntryState state,
+            KmuEditableMarket market) {
+        if (state != KmuConditionChooserEntryState.PRESENT) {
+            return false;
+        }
+        try {
+            return market.isConditionSuppressed(spec.getId());
+        } catch (RuntimeException exception) {
+            return false;
+        }
     }
 
     private Optional<MarketConditionAPI> liveConditionFor(
@@ -106,6 +119,15 @@ public final class KmuConditionChooserModelFactory {
             return plugin.getIconName();
         } catch (RuntimeException exception) {
             return null;
+        }
+    }
+
+    private boolean isHidden(MarketConditionAPI condition) {
+        try {
+            MarketConditionPlugin plugin = condition.getPlugin();
+            return plugin != null && !plugin.showIcon();
+        } catch (RuntimeException exception) {
+            return false;
         }
     }
 }

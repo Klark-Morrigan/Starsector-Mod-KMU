@@ -4,6 +4,7 @@ flowchart LR
         ScopeNote["Model layer is<br/>plain Java view state"]
         FactoryNote["Factory translates<br/>market/spec data to entries"]
         TooltipNote["Entries may carry<br/>optional tooltip renderer"]
+        StateFactNote["Suppressed and hidden<br/>are independent facts"]
         Legend["Legend:<br/>green = model behavior<br/>orange = port/interface<br/>purple = adapter<br/>gray = external layer"]
     end
 
@@ -13,6 +14,8 @@ flowchart LR
         Model["KmuConditionChooserModel"]
         Entry["KmuConditionChooserEntry"]
         State["KmuConditionChooserEntryState"]
+        SuppressedFact["suppressed flag"]
+        HiddenFact["hidden flag"]
     end
 
     subgraph Dependencies["Dependencies"]
@@ -27,6 +30,7 @@ flowchart LR
     ScopeNote -. describes .-> Model
     FactoryNote -. describes .-> Factory
     TooltipNote -. describes .-> Entry
+    StateFactNote -. describes .-> Entry
     Legend -. explains colors .-> Factory
 
     Factory -->|lists visible specs| Service
@@ -35,6 +39,8 @@ flowchart LR
     Factory -->|creates| Model
     Model -->|contains| Entry
     Entry -->|has| State
+    Entry -->|records| SuppressedFact
+    Entry -->|records| HiddenFact
     Entry -->|may carry| TooltipRenderer
     StarsectorTooltipRenderer -. implements .-> TooltipRenderer
 
@@ -45,9 +51,9 @@ flowchart LR
     classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
 
-    class ScopeNote,FactoryNote,TooltipNote note
+    class ScopeNote,FactoryNote,TooltipNote,StateFactNote note
     class Legend legend
-    class Factory,Model,Entry,State core
+    class Factory,Model,Entry,State,SuppressedFact,HiddenFact core
     class Market,TooltipRenderer port
     class StarsectorMarket,StarsectorTooltipRenderer adapter
     class Service external

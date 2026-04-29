@@ -4,16 +4,18 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.BaseCustomUIPanelPlugin;
 import com.fs.starfarer.api.graphics.SpriteAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
-import com.fs.starfarer.api.ui.Alignment;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
 import kmu.ui.chooser.action.KmuConditionChooserAction;
 import kmu.ui.chooser.model.KmuConditionChooserEntry;
+import kmu.ui.chooser.tooltip.KmuTooltipSection;
+import kmu.ui.chooser.tooltip.KmuTooltipSectionStyle;
 import kmu.ui.chooser.tooltip.KmuConditionTooltipRenderer;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,13 +29,20 @@ public final class KmuConditionIconButton {
     private static final float FALLBACK_ICON_SIZE = 64f;
     private static final float MIN_BUTTON_SIZE = 34f;
     private static final float METADATA_PAD = 4f;
-    private static final float METADATA_SECTION_PAD = 10f;
     private static final float TOOLTIP_WIDTH = 420f;
     private static final float ABSENT_ALPHA = 0.55f;
     private static final float BUTTON_BACKDROP_ALPHA = 0.28f;
     private static final float BUTTON_BORDER_ALPHA = 0.18f;
+    private static final float SUPPRESSED_BACKDROP_ALPHA = 0.34f;
+    private static final float SUPPRESSED_BORDER_ALPHA = 0.50f;
+    private static final float HIDDEN_BACKDROP_ALPHA = 0.32f;
+    private static final float HIDDEN_BORDER_ALPHA = 0.42f;
     private static final Color PRESENT_TINT = Color.WHITE;
     private static final Color ABSENT_TINT = new Color(130, 130, 130);
+    private static final Color SUPPRESSED_BACKDROP_TINT = new Color(150, 50, 45);
+    private static final Color SUPPRESSED_BORDER_TINT = new Color(255, 90, 80);
+    private static final Color HIDDEN_BACKDROP_TINT = new Color(45, 28, 70);
+    private static final Color HIDDEN_BORDER_TINT = new Color(92, 61, 132);
 
     private KmuConditionChooserEntry entry;
     private final Consumer<KmuConditionChooserAction> actionConsumer;
@@ -94,6 +103,50 @@ public final class KmuConditionIconButton {
 
     static boolean shouldGreyOut(KmuConditionChooserEntry entry) {
         return !Objects.requireNonNull(entry, "entry").isPresent();
+    }
+
+    static Color backdropColorFor(KmuConditionChooserEntry entry) {
+        Objects.requireNonNull(entry, "entry");
+        if (entry.isSuppressed()) {
+            return SUPPRESSED_BACKDROP_TINT;
+        }
+        if (entry.isHidden()) {
+            return HIDDEN_BACKDROP_TINT;
+        }
+        return Misc.getDarkPlayerColor();
+    }
+
+    static Color borderColorFor(KmuConditionChooserEntry entry) {
+        Objects.requireNonNull(entry, "entry");
+        if (entry.isSuppressed()) {
+            return SUPPRESSED_BORDER_TINT;
+        }
+        if (entry.isHidden()) {
+            return HIDDEN_BORDER_TINT;
+        }
+        return Misc.getBasePlayerColor();
+    }
+
+    static float backdropAlphaFor(KmuConditionChooserEntry entry) {
+        Objects.requireNonNull(entry, "entry");
+        if (entry.isSuppressed()) {
+            return SUPPRESSED_BACKDROP_ALPHA;
+        }
+        if (entry.isHidden()) {
+            return HIDDEN_BACKDROP_ALPHA;
+        }
+        return BUTTON_BACKDROP_ALPHA;
+    }
+
+    static float borderAlphaFor(KmuConditionChooserEntry entry) {
+        Objects.requireNonNull(entry, "entry");
+        if (entry.isSuppressed()) {
+            return SUPPRESSED_BORDER_ALPHA;
+        }
+        if (entry.isHidden()) {
+            return HIDDEN_BORDER_ALPHA;
+        }
+        return BUTTON_BORDER_ALPHA;
     }
 
     static ButtonMetrics metricsForSource(float sourceWidth, float sourceHeight) {
@@ -209,11 +262,16 @@ public final class KmuConditionIconButton {
             float y = position.getY();
             float width = position.getWidth();
             float height = position.getHeight();
-            Misc.renderQuadAlpha(x, y, width, height, Misc.getDarkPlayerColor(), BUTTON_BACKDROP_ALPHA * alphaMult);
-            Misc.renderQuadAlpha(x, y, width, 1f, Misc.getBasePlayerColor(), BUTTON_BORDER_ALPHA * alphaMult);
-            Misc.renderQuadAlpha(x, y + height - 1f, width, 1f, Misc.getBasePlayerColor(), BUTTON_BORDER_ALPHA * alphaMult);
-            Misc.renderQuadAlpha(x, y, 1f, height, Misc.getBasePlayerColor(), BUTTON_BORDER_ALPHA * alphaMult);
-            Misc.renderQuadAlpha(x + width - 1f, y, 1f, height, Misc.getBasePlayerColor(), BUTTON_BORDER_ALPHA * alphaMult);
+            Color backdropColor = backdropColorFor(entry);
+            Color borderColor = borderColorFor(entry);
+            float backdropAlpha = backdropAlphaFor(entry);
+            float borderAlpha = borderAlphaFor(entry);
+
+            Misc.renderQuadAlpha(x, y, width, height, backdropColor, backdropAlpha * alphaMult);
+            Misc.renderQuadAlpha(x, y, width, 1f, borderColor, borderAlpha * alphaMult);
+            Misc.renderQuadAlpha(x, y + height - 1f, width, 1f, borderColor, borderAlpha * alphaMult);
+            Misc.renderQuadAlpha(x, y, 1f, height, borderColor, borderAlpha * alphaMult);
+            Misc.renderQuadAlpha(x + width - 1f, y, 1f, height, borderColor, borderAlpha * alphaMult);
         }
 
         @Override
@@ -305,6 +363,7 @@ public final class KmuConditionIconButton {
             KmuConditionChooserEntry entry = entrySupplier.get();
             Optional<KmuConditionTooltipRenderer> renderer = entry.getTooltipRenderer();
             if (renderer.isPresent() && renderLiveTooltip(tooltip, expanded, renderer.get())) {
+                addStatusSections(tooltip, entry);
                 addMetadataFooter(tooltip, entry);
                 return;
             }
@@ -313,6 +372,7 @@ public final class KmuConditionIconButton {
             if (!entry.getTooltipText().trim().isEmpty()) {
                 tooltip.addPara(entry.getTooltipText(), METADATA_PAD);
             }
+            addStatusSections(tooltip, entry);
             addMetadataFooter(tooltip, entry);
         }
 
@@ -328,23 +388,33 @@ public final class KmuConditionIconButton {
             }
         }
 
-        private void addMetadataFooter(TooltipMakerAPI tooltip, KmuConditionChooserEntry entry) {
-            tooltip.addSectionHeading(
-                    "Metadata",
-                    Misc.getGrayColor(),
-                    Misc.getDarkPlayerColor(),
-                    Alignment.MID,
-                    METADATA_SECTION_PAD);
-            tooltip.setParaFontColor(Misc.getGrayColor());
-            addMetadataLine(tooltip, "id", entry.getConditionId());
-            entry.getIcon().ifPresent(icon -> tooltip.addPara(
-                    metadataText("icon", icon),
-                    METADATA_PAD));
-            addMetadataLine(tooltip, "source", entry.getSourceModName().orElse("Starsector"));
+        private void addStatusSections(TooltipMakerAPI tooltip, KmuConditionChooserEntry entry) {
+            if (entry.isSuppressed()) {
+                KmuTooltipSection.add(
+                        tooltip,
+                        KmuTooltipSectionStyle.WARNING,
+                        "Suppressed",
+                        "This condition is present on the market, but Starsector reports its effects as suppressed. "
+                                + "The API does not expose the source of suppression.");
+            }
+            if (entry.isHidden()) {
+                KmuTooltipSection.add(
+                        tooltip,
+                        KmuTooltipSectionStyle.WARNING,
+                        "Hidden",
+                        "This condition is present on the market, but its live plugin hides it from the vanilla "
+                                + "condition row. The API does not expose a standardized reason for hiding.");
+            }
         }
 
-        private void addMetadataLine(TooltipMakerAPI tooltip, String label, String value) {
-            tooltip.addPara(metadataText(label, value), METADATA_PAD);
+        private void addMetadataFooter(TooltipMakerAPI tooltip, KmuConditionChooserEntry entry) {
+            List<String> metadataLines = new ArrayList<>();
+            metadataLines.add(metadataText("id", entry.getConditionId()));
+            entry.getIcon().ifPresent(icon -> metadataLines.add(metadataText("icon", icon)));
+            metadataLines.add(metadataText("source", entry.getSourceModName().orElse("Starsector")));
+            metadataLines.add(metadataText("suppressed", String.valueOf(entry.isSuppressed())));
+            metadataLines.add(metadataText("hidden", String.valueOf(entry.isHidden())));
+            KmuTooltipSection.add(tooltip, KmuTooltipSectionStyle.LOW_VIS, "Metadata", metadataLines);
         }
 
         private String metadataText(String label, String value) {

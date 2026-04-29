@@ -7,6 +7,10 @@ public interface KmuEditableMarket {
 
     boolean hasCondition(String conditionId);
 
+    default boolean isConditionSuppressed(String conditionId) {
+        return false;
+    }
+
     void addCondition(String conditionId);
 
     void markConditionSurveyed(String conditionId);

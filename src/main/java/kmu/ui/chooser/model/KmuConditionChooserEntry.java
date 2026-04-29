@@ -13,6 +13,8 @@ public final class KmuConditionChooserEntry {
     private final String tooltipText;
     private final String sourceModName;
     private final KmuConditionTooltipRenderer tooltipRenderer;
+    private final boolean suppressed;
+    private final boolean hidden;
 
     public KmuConditionChooserEntry(
             String conditionId,
@@ -30,7 +32,19 @@ public final class KmuConditionChooserEntry {
             KmuConditionChooserEntryState state,
             String tooltipText,
             String sourceModName) {
-        this(conditionId, name, icon, state, tooltipText, sourceModName, null);
+        this(conditionId, name, icon, state, tooltipText, sourceModName, false, false);
+    }
+
+    public KmuConditionChooserEntry(
+            String conditionId,
+            String name,
+            String icon,
+            KmuConditionChooserEntryState state,
+            String tooltipText,
+            String sourceModName,
+            boolean suppressed,
+            boolean hidden) {
+        this(conditionId, name, icon, state, tooltipText, sourceModName, null, suppressed, hidden);
     }
 
     KmuConditionChooserEntry(
@@ -41,6 +55,19 @@ public final class KmuConditionChooserEntry {
             String tooltipText,
             String sourceModName,
             KmuConditionTooltipRenderer tooltipRenderer) {
+        this(conditionId, name, icon, state, tooltipText, sourceModName, tooltipRenderer, false, false);
+    }
+
+    KmuConditionChooserEntry(
+            String conditionId,
+            String name,
+            String icon,
+            KmuConditionChooserEntryState state,
+            String tooltipText,
+            String sourceModName,
+            KmuConditionTooltipRenderer tooltipRenderer,
+            boolean suppressed,
+            boolean hidden) {
         this.conditionId = requireNonBlank(conditionId, "conditionId");
         this.name = requireNonBlank(name, "name");
         this.icon = normalizeOptional(icon);
@@ -48,6 +75,8 @@ public final class KmuConditionChooserEntry {
         this.tooltipText = tooltipText == null ? "" : tooltipText.trim();
         this.sourceModName = normalizeOptional(sourceModName);
         this.tooltipRenderer = tooltipRenderer;
+        this.suppressed = suppressed;
+        this.hidden = hidden;
     }
 
     public String getConditionId() {
@@ -80,6 +109,14 @@ public final class KmuConditionChooserEntry {
 
     public boolean isPresent() {
         return state == KmuConditionChooserEntryState.PRESENT;
+    }
+
+    public boolean isSuppressed() {
+        return suppressed;
+    }
+
+    public boolean isHidden() {
+        return hidden;
     }
 
     public String descriptionLine() {

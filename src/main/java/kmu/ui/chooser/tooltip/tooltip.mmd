@@ -2,15 +2,18 @@ flowchart LR
     subgraph Meta["Notes / Legend"]
         direction TB
         ScopeNote["Tooltip layer adapts<br/>live vanilla condition plugins"]
-        FallbackNote["Render layer appends<br/>metadata footer after tooltip"]
+        SectionNote["Section helper renders<br/>metadata/status banners"]
+        FallbackNote["Render layer appends<br/>status and metadata sections"]
         SafetyNote["Tooltip failures<br/>must fail closed"]
-        Legend["Legend:<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API"]
+        Legend["Legend:<br/>blue = helper<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API"]
     end
 
     subgraph TooltipLayer["Tooltip Layer"]
         direction TB
         TooltipPort["KmuConditionTooltipRenderer"]
         StarsectorRenderer["StarsectorConditionTooltipRenderer"]
+        TooltipSection["KmuTooltipSection"]
+        TooltipSectionStyle["KmuTooltipSectionStyle"]
     end
 
     subgraph External["External Starsector API"]
@@ -21,6 +24,7 @@ flowchart LR
     end
 
     ScopeNote -. describes .-> TooltipPort
+    SectionNote -. describes .-> TooltipSection
     FallbackNote -. constrains .-> TooltipMakerAPI
     SafetyNote -. constrains .-> StarsectorRenderer
     Legend -. explains colors .-> TooltipPort
@@ -29,15 +33,19 @@ flowchart LR
     StarsectorRenderer -->|wraps| MarketConditionAPI
     StarsectorRenderer -->|delegates createTooltip to| MarketConditionPlugin
     StarsectorRenderer -->|writes into| TooltipMakerAPI
+    TooltipSection -->|uses colors from| TooltipSectionStyle
+    TooltipSection -->|writes section heading into| TooltipMakerAPI
 
     classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
     classDef legend fill:#ffffff,stroke:#9ca3af,color:#242424
     classDef port fill:#fff0e6,stroke:#c76a24,color:#4a2108
+    classDef helper fill:#e8f1ff,stroke:#2f67b1,color:#0f2747
     classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
 
-    class ScopeNote,FallbackNote,SafetyNote note
+    class ScopeNote,SectionNote,FallbackNote,SafetyNote note
     class Legend legend
     class TooltipPort port
+    class TooltipSection,TooltipSectionStyle helper
     class StarsectorRenderer adapter
     class MarketConditionAPI,MarketConditionPlugin,TooltipMakerAPI external

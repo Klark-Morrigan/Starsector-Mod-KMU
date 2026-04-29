@@ -35,6 +35,11 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
         return market.hasCondition(conditionId);
     }
 
+    @Override
+    public boolean isConditionSuppressed(String conditionId) {
+        return market.isConditionSuppressed(conditionId);
+    }
+
     public Optional<MarketConditionAPI> findCondition(String conditionId) {
         if (conditionId == null || conditionId.trim().isEmpty()) {
             return Optional.empty();

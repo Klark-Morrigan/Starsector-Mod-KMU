@@ -66,6 +66,15 @@ class StarsectorEditableMarketTest {
     }
 
     @Test
+    void delegatesConditionSuppressionLookup() {
+        StarsectorEditableMarket market = new StarsectorEditableMarket(
+                market(List.of(), Map.of(), new ArrayList<>(), Set.of("hot")));
+
+        assertThat(market.isConditionSuppressed("hot")).isTrue();
+        assertThat(market.isConditionSuppressed("cold")).isFalse();
+    }
+
+    @Test
     void propagatesAddConditionFailuresForServiceBoundaryToHandle() {
         RuntimeException exception = new IllegalStateException("add condition failed");
         StarsectorEditableMarket market = new StarsectorEditableMarket(
@@ -145,12 +154,22 @@ class StarsectorEditableMarketTest {
             List<MarketConditionAPI> conditions,
             Map<String, MarketConditionAPI> conditionsById,
             List<String> calls) {
+        return market(conditions, conditionsById, calls, Set.of());
+    }
+
+    private static MarketAPI market(
+            List<MarketConditionAPI> conditions,
+            Map<String, MarketConditionAPI> conditionsById,
+            List<String> calls,
+            Set<String> suppressedConditionIds) {
         return proxy(MarketAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getConditions":
                     return conditions;
                 case "hasCondition":
                     return conditionsById.containsKey((String) args[0]);
+                case "isConditionSuppressed":
+                    return suppressedConditionIds.contains((String) args[0]);
                 case "addCondition":
                     calls.add("add:" + args[0]);
                     return args[0];
