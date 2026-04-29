@@ -61,12 +61,31 @@ public final class KmuConditionIconButton {
     private static final class Palette {
         private static final Color PRESENT_ICON = Color.WHITE;
         private static final Color ABSENT_ICON = new Color(130, 130, 130);
+        private static final Color DEFAULT_BACKDROP = new Color(31, 94, 112, 175);
+        private static final Color DEFAULT_BORDER = new Color(170, 222, 255, 255);
         private static final Color SUPPRESSED_BACKDROP = new Color(150, 50, 45);
         private static final Color SUPPRESSED_BORDER = new Color(255, 90, 80);
         private static final Color VISIBLE_PRESENT_BACKDROP = new Color(35, 80, 45);
         private static final Color VISIBLE_PRESENT_BORDER = new Color(90, 220, 95);
 
         private Palette() {
+        }
+
+        private static Color defaultBackdrop() {
+            return starsectorColor(Misc::getDarkPlayerColor, DEFAULT_BACKDROP);
+        }
+
+        private static Color defaultBorder() {
+            return starsectorColor(Misc::getBasePlayerColor, DEFAULT_BORDER);
+        }
+
+        private static Color starsectorColor(Supplier<Color> colorSupplier, Color fallback) {
+            try {
+                Color color = colorSupplier.get();
+                return color != null ? color : fallback;
+            } catch (Throwable exception) {
+                return fallback;
+            }
         }
     }
 
@@ -139,7 +158,7 @@ public final class KmuConditionIconButton {
         if (isVisibleUnsuppressedPresent(entry)) {
             return Palette.VISIBLE_PRESENT_BACKDROP;
         }
-        return Misc.getDarkPlayerColor();
+        return Palette.defaultBackdrop();
     }
 
     static Color borderColorFor(KmuConditionChooserEntry entry) {
@@ -150,7 +169,7 @@ public final class KmuConditionIconButton {
         if (isVisibleUnsuppressedPresent(entry)) {
             return Palette.VISIBLE_PRESENT_BORDER;
         }
-        return Misc.getBasePlayerColor();
+        return Palette.defaultBorder();
     }
 
     static float backdropAlphaFor(KmuConditionChooserEntry entry) {

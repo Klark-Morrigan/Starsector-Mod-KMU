@@ -10,6 +10,13 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionIconButtonTest {
+    private static final Color DEFAULT_BACKDROP = new Color(31, 94, 112, 175);
+    private static final Color DEFAULT_BORDER = new Color(170, 222, 255, 255);
+    private static final Color VISIBLE_PRESENT_BACKDROP = new Color(35, 80, 45);
+    private static final Color VISIBLE_PRESENT_BORDER = new Color(90, 220, 95);
+    private static final Color SUPPRESSED_BACKDROP = new Color(150, 50, 45);
+    private static final Color SUPPRESSED_BORDER = new Color(255, 90, 80);
+
     @Test
     void greysOutAbsentEntriesOnly() {
         assertThat(KmuConditionIconButton.shouldGreyOut(entry(KmuConditionChooserEntryState.ABSENT)))
@@ -23,23 +30,39 @@ class KmuConditionIconButtonTest {
     }
 
     @Test
-    void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenTint() {
-        KmuConditionChooserEntry entry = entry(KmuConditionChooserEntryState.PRESENT);
+    void stylesAbsentEntriesWithDefaultButtonColorsAndGreyedOutIcon() {
+        KmuConditionChooserEntry entry = entry(KmuConditionChooserEntryState.ABSENT);
 
-        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isTrue();
-        assertThat(KmuConditionIconButton.backdropColorFor(entry)).isEqualTo(new Color(35, 80, 45));
-        assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(new Color(90, 220, 95));
-        assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(0.28f);
-        assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(0.42f);
+        assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
+        assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isTrue();
+        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
     }
 
     @Test
-    void doesNotApplySpecialTintToHiddenEntries() {
+    void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenButtonColors() {
+        KmuConditionChooserEntry entry = entry(KmuConditionChooserEntryState.PRESENT);
+
+        assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
+        assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isFalse();
+        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isTrue();
+    }
+
+    @Test
+    void stylesHiddenPresentEntriesWithDefaultButtonColorsAndFullIcon() {
         KmuConditionChooserEntry entry = hiddenEntry();
 
+        assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
+        assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isFalse();
         assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
-        assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(0.28f);
-        assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(0.18f);
+    }
+
+    @Test
+    void stylesSuppressedPresentEntriesWithWarningButtonColorsAndFullIcon() {
+        KmuConditionChooserEntry entry = suppressedEntry();
+
+        assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
+        assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isFalse();
+        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
     }
 
     @Test
@@ -54,8 +77,7 @@ class KmuConditionIconButtonTest {
                 true,
                 true);
 
-        assertThat(KmuConditionIconButton.backdropColorFor(entry)).isEqualTo(new Color(150, 50, 45));
-        assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(new Color(255, 90, 80));
+        assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
     }
 
     @Test
@@ -130,5 +152,17 @@ class KmuConditionIconButtonTest {
                 "Starsector",
                 false,
                 true);
+    }
+
+    private static void assertButtonStyle(
+            KmuConditionChooserEntry entry,
+            Color backdropColor,
+            Color borderColor,
+            float backdropAlpha,
+            float borderAlpha) {
+        assertThat(KmuConditionIconButton.backdropColorFor(entry)).isEqualTo(backdropColor);
+        assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(borderColor);
+        assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(backdropAlpha);
+        assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(borderAlpha);
     }
 }
