@@ -3,7 +3,14 @@ package kmu.ui.chooser.render;
 import kmu.ui.chooser.model.KmuConditionChooserEntry;
 import kmu.ui.chooser.model.KmuConditionChooserEntryState;
 
+import com.fs.starfarer.api.ui.TooltipMakerAPI;
+
 import java.awt.Color;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -121,6 +128,31 @@ class KmuConditionIconButtonTest {
         assertThat(KmuConditionIconButton.shouldGreyOut(button.getEntry())).isFalse();
     }
 
+    @Test
+    void appendsMetadataFooterInExpectedOrder() {
+        RecordingTooltip tooltip = RecordingTooltip.create();
+        KmuConditionChooserEntry entry = new KmuConditionChooserEntry(
+                "hot",
+                "Hot",
+                "graphics/icons/markets/hot.png",
+                KmuConditionChooserEntryState.PRESENT,
+                "Test tooltip",
+                "Starsector",
+                true,
+                false);
+
+        new KmuConditionIconButton.EntryTooltipCreator(() -> entry)
+                .createTooltip(tooltip.api(), false, null);
+
+        assertThat(tooltip.headings()).contains("Metadata");
+        assertThat(tooltip.paragraphs()).containsSequence(
+                "source: Starsector",
+                "id: hot",
+                "icon: graphics/icons/markets/hot.png",
+                "hidden: false",
+                "suppressed: true");
+    }
+
     private static KmuConditionChooserEntry entry(KmuConditionChooserEntryState state) {
         return new KmuConditionChooserEntry(
                 "hot",
@@ -164,5 +196,91 @@ class KmuConditionIconButtonTest {
         assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(borderColor);
         assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(backdropAlpha);
         assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(borderAlpha);
+    }
+
+    private static final class RecordingTooltip implements InvocationHandler {
+        private final List<String> headings = new ArrayList<>();
+        private final List<String> paragraphs = new ArrayList<>();
+        private final TooltipMakerAPI api;
+
+        private RecordingTooltip() {
+            this.api = (TooltipMakerAPI) Proxy.newProxyInstance(
+                    TooltipMakerAPI.class.getClassLoader(),
+                    new Class<?>[]{TooltipMakerAPI.class},
+                    this);
+        }
+
+        static RecordingTooltip create() {
+            return new RecordingTooltip();
+        }
+
+        TooltipMakerAPI api() {
+            return api;
+        }
+
+        List<String> headings() {
+            return headings;
+        }
+
+        List<String> paragraphs() {
+            return paragraphs;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+            if ("addTitle".equals(method.getName()) && args != null && args.length >= 1) {
+                headings.add((String) args[0]);
+                return null;
+            }
+            if ("addSectionHeading".equals(method.getName()) && args != null && args.length >= 1) {
+                headings.add((String) args[0]);
+                return null;
+            }
+            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                paragraphs.add((String) args[0]);
+                return null;
+            }
+            if ("toString".equals(method.getName())) {
+                return "RecordingTooltip";
+            }
+            if ("hashCode".equals(method.getName())) {
+                return System.identityHashCode(proxy);
+            }
+            if ("equals".equals(method.getName())) {
+                return proxy == args[0];
+            }
+            return defaultValue(method.getReturnType());
+        }
+
+        private Object defaultValue(Class<?> returnType) {
+            if (!returnType.isPrimitive()) {
+                return null;
+            }
+            if (boolean.class.equals(returnType)) {
+                return false;
+            }
+            if (char.class.equals(returnType)) {
+                return '\0';
+            }
+            if (byte.class.equals(returnType)) {
+                return (byte) 0;
+            }
+            if (short.class.equals(returnType)) {
+                return (short) 0;
+            }
+            if (int.class.equals(returnType)) {
+                return 0;
+            }
+            if (long.class.equals(returnType)) {
+                return 0L;
+            }
+            if (float.class.equals(returnType)) {
+                return 0f;
+            }
+            if (double.class.equals(returnType)) {
+                return 0d;
+            }
+            return null;
+        }
     }
 }

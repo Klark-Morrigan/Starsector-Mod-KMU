@@ -384,10 +384,10 @@ public final class KmuConditionIconButton {
         }
     }
 
-    private static final class EntryTooltipCreator implements TooltipMakerAPI.TooltipCreator {
+    static final class EntryTooltipCreator implements TooltipMakerAPI.TooltipCreator {
         private final Supplier<KmuConditionChooserEntry> entrySupplier;
 
-        private EntryTooltipCreator(Supplier<KmuConditionChooserEntry> entrySupplier) {
+        EntryTooltipCreator(Supplier<KmuConditionChooserEntry> entrySupplier) {
             this.entrySupplier = Objects.requireNonNull(entrySupplier, "entrySupplier");
         }
 
@@ -461,11 +461,11 @@ public final class KmuConditionIconButton {
 
         private void addMetadataFooter(TooltipMakerAPI tooltip, KmuConditionChooserEntry entry) {
             List<String> metadataLines = new ArrayList<>();
+            metadataLines.add(metadataText("source", entry.getSourceModName().orElse("Starsector")));
             metadataLines.add(metadataText("id", entry.getConditionId()));
             entry.getIcon().ifPresent(icon -> metadataLines.add(metadataText("icon", icon)));
-            metadataLines.add(metadataText("source", entry.getSourceModName().orElse("Starsector")));
-            metadataLines.add(metadataText("suppressed", String.valueOf(entry.isSuppressed())));
             metadataLines.add(metadataText("hidden", String.valueOf(entry.isHidden())));
+            metadataLines.add(metadataText("suppressed", String.valueOf(entry.isSuppressed())));
             KmuTooltipSection.add(tooltip, KmuTooltipSectionStyle.MUTED, "Metadata", metadataLines);
         }
 
