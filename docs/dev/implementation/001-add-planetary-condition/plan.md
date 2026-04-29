@@ -172,6 +172,8 @@ Implementation:
 - list every planetary condition spec returned by the condition service;
 - present the picker as a grid of condition icons, not as text rows;
 - preserve each condition image's aspect ratio and apparent vanilla image size;
+- cap icon height to the vanilla colony condition icon asset height, while
+  allowing wide condition icons to keep their proportional width;
 - let each button take its shape from its image, including wide 2:1-style
   icons instead of forcing every condition into a square cell;
 - pack variable-size icon buttons into rigid rows, with as many buttons in each
@@ -236,7 +238,8 @@ Tests:
 - confirm condition names are visible in tooltips and not as permanent grid
   labels;
 - confirm long lists remain scrollable and selectable.
-- confirm mixed square and wide icons do not stretch and row-pack correctly;
+- confirm mixed square and wide icons do not stretch, cap by vanilla condition
+  icon height, and row-pack correctly;
 - confirm the button backdrop is visible but not visually dominant.
 
 ## Step 5 - Condition Add Action

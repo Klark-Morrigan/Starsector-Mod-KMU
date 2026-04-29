@@ -24,9 +24,8 @@ import java.util.function.Supplier;
 
 public final class KmuConditionIconButton {
     static final float ICON_MARGIN = 6f;
-    static final float MAX_ICON_WIDTH = 128f;
-    static final float MAX_ICON_HEIGHT = 96f;
-    private static final float FALLBACK_ICON_SIZE = 64f;
+    static final float VANILLA_COLONY_CONDITION_ICON_HEIGHT = 40f;
+    private static final float FALLBACK_ICON_SIZE = VANILLA_COLONY_CONDITION_ICON_HEIGHT;
     private static final float MIN_BUTTON_SIZE = 34f;
     private static final float METADATA_PAD = 4f;
     private static final float TOOLTIP_WIDTH = 420f;
@@ -169,7 +168,7 @@ public final class KmuConditionIconButton {
             return new IconBounds(FALLBACK_ICON_SIZE, FALLBACK_ICON_SIZE);
         }
 
-        float scale = Math.min(1f, Math.min(MAX_ICON_WIDTH / sourceWidth, MAX_ICON_HEIGHT / sourceHeight));
+        float scale = Math.min(1f, VANILLA_COLONY_CONDITION_ICON_HEIGHT / sourceHeight);
         return new IconBounds(sourceWidth * scale, sourceHeight * scale);
     }
 

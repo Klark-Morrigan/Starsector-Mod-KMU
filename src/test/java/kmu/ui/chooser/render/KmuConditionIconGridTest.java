@@ -15,7 +15,7 @@ class KmuConditionIconGridTest {
                 KmuConditionIconButton.metricsForSource(128f, 64f),
                 KmuConditionIconButton.metricsForSource(64f, 64f));
 
-        List<KmuConditionIconGrid.Placement> placements = KmuConditionIconGrid.layout(metrics, 240f);
+        List<KmuConditionIconGrid.Placement> placements = KmuConditionIconGrid.layout(metrics, 160f);
 
         assertThat(placements).hasSize(3);
         assertThat(placements.get(0).getX()).isZero();
@@ -30,7 +30,7 @@ class KmuConditionIconGridTest {
                 KmuConditionIconButton.metricsForSource(64f, 64f),
                 KmuConditionIconButton.metricsForSource(128f, 64f),
                 KmuConditionIconButton.metricsForSource(64f, 64f));
-        List<KmuConditionIconGrid.Placement> placements = KmuConditionIconGrid.layout(metrics, 240f);
+        List<KmuConditionIconGrid.Placement> placements = KmuConditionIconGrid.layout(metrics, 160f);
 
         assertThat(KmuConditionIconGrid.heightForPlacements(placements))
                 .isEqualTo(placements.get(2).getY() + metrics.get(2).getButtonHeight());

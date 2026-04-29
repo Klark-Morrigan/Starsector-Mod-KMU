@@ -59,11 +59,19 @@ class KmuConditionIconButtonTest {
     }
 
     @Test
-    void downscalesOversizedIconsWithoutChangingAspectRatio() {
+    void preservesWideIconWidthWhenHeightMatchesVanillaCap() {
+        KmuConditionIconButton.ButtonMetrics wide = KmuConditionIconButton.metricsForSource(180f, 40f);
+
+        assertThat(wide.getIconWidth()).isEqualTo(180f);
+        assertThat(wide.getIconHeight()).isEqualTo(KmuConditionIconButton.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+    }
+
+    @Test
+    void downscalesOversizedIconsByHeightWithoutChangingAspectRatio() {
         KmuConditionIconButton.ButtonMetrics tall = KmuConditionIconButton.metricsForSource(64f, 192f);
 
-        assertThat(tall.getIconWidth()).isEqualTo(32f);
-        assertThat(tall.getIconHeight()).isEqualTo(KmuConditionIconButton.MAX_ICON_HEIGHT);
+        assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
+        assertThat(tall.getIconHeight()).isEqualTo(KmuConditionIconButton.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
     }
 
     @Test
