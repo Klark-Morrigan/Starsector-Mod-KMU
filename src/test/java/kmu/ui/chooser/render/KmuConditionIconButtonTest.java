@@ -153,6 +153,29 @@ class KmuConditionIconButtonTest {
                 "suppressed: true");
     }
 
+    @Test
+    void omitsHiddenAndSuppressedMetadataForAbsentEntries() {
+        RecordingTooltip tooltip = RecordingTooltip.create();
+        KmuConditionChooserEntry entry = new KmuConditionChooserEntry(
+                "hot",
+                "Hot",
+                "graphics/icons/markets/hot.png",
+                KmuConditionChooserEntryState.ABSENT,
+                "Test tooltip",
+                "Starsector",
+                true,
+                true);
+
+        new KmuConditionIconButton.EntryTooltipCreator(() -> entry)
+                .createTooltip(tooltip.api(), false, null);
+
+        assertThat(tooltip.paragraphs()).containsSequence(
+                "source: Starsector",
+                "id: hot",
+                "icon: graphics/icons/markets/hot.png");
+        assertThat(tooltip.paragraphs()).doesNotContain("hidden: true", "suppressed: true");
+    }
+
     private static KmuConditionChooserEntry entry(KmuConditionChooserEntryState state) {
         return new KmuConditionChooserEntry(
                 "hot",

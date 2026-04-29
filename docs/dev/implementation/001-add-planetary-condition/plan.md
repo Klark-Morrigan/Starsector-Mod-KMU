@@ -218,8 +218,8 @@ Implementation:
   text explaining that the live plugin hides the condition from the vanilla
   condition row, that KMU has not detected the exact reason yet, and asking the
   player to report the case to the KMU mod developer;
-- the tooltip metadata footer may include internal condition id, icon path,
-  source mod, suppressed status, and hidden status;
+- the tooltip metadata footer may include source mod, internal condition id,
+  icon path, and present-only hidden/suppressed status;
 - use a spec-based tooltip fallback only for absent conditions whose plugin
   tooltip requires a live market condition.
 
@@ -229,8 +229,9 @@ Tests:
 - unit test chooser editor handoff from resolved `MarketAPI` to dialog delegate;
 - unit test present conditions render icon and tooltip data through the live
   condition plugin path;
-- unit test present and absent tooltips both append id, icon path, and source
-  mod in footer metadata with low-visibility body text;
+- unit test present and absent tooltips both append source mod, id, and icon
+  path in footer metadata with low-visibility body text;
+- unit test absent tooltip metadata does not show hidden or suppressed fields;
 - unit test present and absent state is exposed to rendering as icon grey-out
   state, not visible text;
 - unit test suppressed and hidden state detection from Starsector market/plugin
