@@ -394,16 +394,18 @@ public final class KmuConditionIconButton {
                         tooltip,
                         KmuTooltipSectionStyle.WARNING,
                         "Suppressed",
-                        "This condition is present on the market, but Starsector reports its effects as suppressed. "
-                                + "The API does not expose the source of suppression.");
+                        "This condition is present on the market, but it's suppressed. "
+                                + "KMU has not detected the exact reason yet. Report this case to the KMU mod "
+                                + "developer.");
             }
             if (entry.isHidden()) {
                 KmuTooltipSection.add(
                         tooltip,
                         KmuTooltipSectionStyle.WARNING,
                         "Hidden",
-                        "This condition is present on the market, but its live plugin hides it from the vanilla "
-                                + "condition row. The API does not expose a standardized reason for hiding.");
+                        "This condition is present on the market, but it's hidden. "
+                                + "KMU has not detected the exact reason yet. Report this case to "
+                                + "the KMU mod developer.");
             }
         }
 

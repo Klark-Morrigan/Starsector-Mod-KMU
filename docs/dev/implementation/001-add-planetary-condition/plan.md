@@ -204,11 +204,12 @@ Implementation:
 - use a scoped tooltip section helper for reusable tooltip banners and body
   text;
 - show a red `Suppressed` tooltip banner for present suppressed conditions with
-  generic text explaining that the API exposes suppression status but not a
-  standardized reason;
+  fallback text explaining that KMU has not detected the exact reason yet and
+  asking the player to report the case to the KMU mod developer;
 - show a red `Hidden` tooltip banner for present hidden conditions with generic
   text explaining that the live plugin hides the condition from the vanilla
-  condition row but does not expose a standardized reason;
+  condition row, that KMU has not detected the exact reason yet, and asking the
+  player to report the case to the KMU mod developer;
 - the tooltip metadata footer may include internal condition id, icon path,
   source mod, suppressed status, and hidden status;
 - use a spec-based tooltip fallback only for absent conditions whose plugin
@@ -380,8 +381,8 @@ Implementation:
   industry id, or market fact it used;
 - show provider output under the `Suppressed` tooltip banner when a reason is
   available;
-- retain the generic suppression banner text when no provider can explain the
-  state.
+- retain fallback suppression banner text asking the player to report the case
+  to the KMU mod developer when no provider can explain the state.
 
 Tests:
 
@@ -420,7 +421,8 @@ Implementation:
 - do not infer a hiding reason from suppressed status alone;
 - show provider output under the `Hidden` tooltip banner when a reason is
   available;
-- retain the generic hidden banner text when no provider can explain the state.
+- retain fallback hidden banner text asking the player to report the case to the
+  KMU mod developer when no provider can explain the state.
 
 Tests:
 
