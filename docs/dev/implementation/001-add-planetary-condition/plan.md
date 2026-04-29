@@ -180,6 +180,16 @@ Implementation:
 - put condition names in tooltips (if tooltips don't provide one yet), not as
   always-visible grid labels;
 - use grey-out filtering as the only visible present/absent state indicator;
+- detect present suppressed conditions with `MarketAPI.isConditionSuppressed(id)`;
+- detect present hidden conditions from the live condition plugin when
+  `MarketConditionPlugin.showIcon()` returns false;
+- show suppressed-present conditions with a light red button backdrop and red
+  border, while keeping the condition icon legible and not greyed out;
+- show hidden-but-unsuppressed present conditions with a very dark violet
+  button backdrop and dark violet border, while keeping the condition icon
+  legible and not greyed out;
+- if a condition is both suppressed and hidden, prefer the suppressed visual
+  treatment because it is the stronger behavioral warning;
 - do not show `Present`, `Absent`, `Add`, ids, or other state text directly in
   the grid;
 - clicking an absent icon is the add action;
@@ -189,8 +199,16 @@ Implementation:
   condition UI;
 - append a low-visibility metadata footer to every tooltip, after the primary
   live-plugin or spec/Codex-style content;
-- the tooltip footer may include internal condition id, icon path, and source
-  mod only;
+- use a scoped tooltip section helper for reusable tooltip banners and body
+  text;
+- show a red `Suppressed` tooltip banner for present suppressed conditions with
+  generic text explaining that the API exposes suppression status but not a
+  standardized reason;
+- show a red `Hidden` tooltip banner for present hidden conditions with generic
+  text explaining that the live plugin hides the condition from the vanilla
+  condition row but does not expose a standardized reason;
+- the tooltip metadata footer may include internal condition id, icon path,
+  source mod, suppressed status, and hidden status;
 - use a spec-based tooltip fallback only for absent conditions whose plugin
   tooltip requires a live market condition.
 
@@ -201,9 +219,14 @@ Tests:
 - unit test present conditions render icon and tooltip data through the live
   condition plugin path;
 - unit test present and absent tooltips both append id, icon path, and source
-  mod only in low-visibility footer metadata;
+  mod in low-visibility footer metadata;
 - unit test present and absent state is exposed to rendering as icon grey-out
   state, not visible text;
+- unit test suppressed and hidden state detection from Starsector market/plugin
+  adapters;
+- unit test suppressed-present conditions are not greyed out;
+- unit test hidden-but-unsuppressed conditions use the dark violet button
+  treatment and are not greyed out;
 - in-game smoke test with vanilla and modded conditions loaded;
 - compare present condition icons and tooltips against the same conditions on
   the planet condition row;
