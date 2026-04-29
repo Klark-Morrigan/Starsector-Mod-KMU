@@ -1,40 +1,38 @@
 package kmu.ui.chooser.tooltip;
 
-import com.fs.starfarer.api.util.Misc;
-
 import java.awt.Color;
 
 public enum KmuTooltipSectionStyle {
-    LOW_VIS {
+    MUTED {
         @Override
         Color titleColor() {
-            return Misc.getGrayColor();
+            return KmuTooltipSectionPalette.standardBlueTitle();
         }
 
         @Override
         Color backgroundColor() {
-            return Misc.getDarkPlayerColor();
+            return KmuTooltipSectionPalette.standardSectionBackdrop();
         }
 
         @Override
         Color bodyColor() {
-            return Misc.getGrayColor();
+            return KmuTooltipSectionPalette.mutedText();
         }
     },
     WARNING {
         @Override
         Color titleColor() {
-            return Misc.getNegativeHighlightColor();
+            return KmuTooltipSectionPalette.warningTitle();
         }
 
         @Override
         Color backgroundColor() {
-            return new Color(70, 20, 20);
+            return KmuTooltipSectionPalette.WARNING_BACKDROP;
         }
 
         @Override
         Color bodyColor() {
-            return Misc.getGrayColor();
+            return KmuTooltipSectionPalette.standardText();
         }
     };
 

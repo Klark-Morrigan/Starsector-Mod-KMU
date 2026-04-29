@@ -415,7 +415,7 @@ public final class KmuConditionIconButton {
             metadataLines.add(metadataText("source", entry.getSourceModName().orElse("Starsector")));
             metadataLines.add(metadataText("suppressed", String.valueOf(entry.isSuppressed())));
             metadataLines.add(metadataText("hidden", String.valueOf(entry.isHidden())));
-            KmuTooltipSection.add(tooltip, KmuTooltipSectionStyle.LOW_VIS, "Metadata", metadataLines);
+            KmuTooltipSection.add(tooltip, KmuTooltipSectionStyle.MUTED, "Metadata", metadataLines);
         }
 
         private String metadataText(String label, String value) {

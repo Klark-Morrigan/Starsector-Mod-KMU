@@ -204,8 +204,9 @@ Implementation:
 - for present conditions, render icons and tooltips through the live
   `MarketConditionAPI` / `MarketConditionPlugin` path so they match the planet
   condition UI;
-- append a low-visibility metadata footer to every tooltip, after the primary
-  live-plugin or spec/Codex-style content;
+- append a metadata footer to every tooltip, after the primary live-plugin or
+  spec/Codex-style content, using a standard Starsector-style section banner
+  and low-visibility body text;
 - use a scoped tooltip section helper for reusable tooltip banners and body
   text;
 - show a red `Suppressed` tooltip banner for present suppressed conditions with
@@ -227,7 +228,7 @@ Tests:
 - unit test present conditions render icon and tooltip data through the live
   condition plugin path;
 - unit test present and absent tooltips both append id, icon path, and source
-  mod in low-visibility footer metadata;
+  mod in footer metadata with low-visibility body text;
 - unit test present and absent state is exposed to rendering as icon grey-out
   state, not visible text;
 - unit test suppressed and hidden state detection from Starsector market/plugin

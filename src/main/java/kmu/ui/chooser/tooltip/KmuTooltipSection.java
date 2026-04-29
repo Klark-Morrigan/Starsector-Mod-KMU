@@ -38,10 +38,9 @@ public final class KmuTooltipSection {
                 style.backgroundColor(),
                 Alignment.MID,
                 HEADING_PAD);
-        tooltip.setParaFontColor(style.bodyColor());
         for (String line : lines) {
             if (line != null && !line.trim().isEmpty()) {
-                tooltip.addPara(line, LINE_PAD);
+                tooltip.addPara(line, LINE_PAD, style.bodyColor());
             }
         }
     }
