@@ -11,10 +11,9 @@
 - [Step 6 - Console Command Entry Point](#step-6---console-command-entry-point)
 - [Step 7 - Console Entry Verification](#step-7---console-entry-verification)
 - [Step 8 - Suppression Reason Providers](#step-8---suppression-reason-providers)
-- [Step 9 - Hidden Visibility Reason Providers](#step-9---hidden-visibility-reason-providers)
-- [Step 10 - Injected Market UI Button](#step-10---injected-market-ui-button)
-- [Step 11 - Injected UI Verification](#step-11---injected-ui-verification)
-- [Step 12 - Release Automation](#step-12---release-automation)
+- [Step 9 - Injected Market UI Button](#step-9---injected-market-ui-button)
+- [Step 10 - Injected UI Verification](#step-10---injected-ui-verification)
+- [Step 11 - Release Automation](#step-11---release-automation)
 
 ## Research Baseline
 
@@ -429,48 +428,7 @@ Tests:
 - in-game smoke test a TASC domed-city/station case where `no_atmosphere` is
   present but suppressed.
 
-## Step 9 - Hidden Visibility Reason Providers
-
-Add heuristic reason providers for hidden-present condition states.
-
-Reason: `MarketConditionPlugin.showIcon()` can tell KMU that a live condition
-is hidden from the vanilla condition row, but it does not expose a standardized
-reason. Hidden conditions are a separate UI problem from suppression: their
-effects may still apply, but the vanilla screen chooses not to display them.
-
-Implementation:
-
-- create a hidden-visibility reason provider abstraction that accepts the
-  market, condition id, and detected facts (`present`, `hidden`);
-- reuse the structured reason result shape from the suppression-reason work
-  where practical, but keep provider interfaces separate so suppression and
-  visibility heuristics can evolve independently;
-- keep all hidden-visibility reason providers optional and fail-closed;
-- add a provider registry that can combine multiple low-risk providers;
-- add a Starsector/public-API provider that can inspect the live condition
-  plugin class, current market industries, conditions, tags, and memory for
-  obvious signals without mutating the market;
-- add mod-specific providers only when they can cite the source file, plugin
-  class, tag, or market fact they used;
-- do not infer a hiding reason from suppressed status alone;
-- show provider output under the `Hidden` tooltip banner when a reason is
-  available;
-- retain fallback hidden banner text asking the player to report the case to the
-  KMU mod developer when no provider can explain the state.
-
-Tests:
-
-- unit test hidden-visibility provider aggregation order and fail-closed
-  behavior;
-- unit test unavailable hidden reasons remain explicit and generic;
-- unit test hidden reasons are not produced solely because a condition is
-  suppressed;
-- unit test reason text is attached to the `Hidden` tooltip section without
-  changing condition mutation behavior;
-- in-game smoke test at least one present hidden condition from a vanilla or
-  modded market case.
-
-## Step 10 - Injected Market UI Button
+## Step 9 - Injected Market UI Button
 
 Add the intended in-game button on the relevant market/colony UI surface.
 
@@ -497,7 +455,7 @@ Tests:
   command;
 - unit test fail-closed behavior when panel lookup fails.
 
-## Step 11 - Injected UI Verification
+## Step 10 - Injected UI Verification
 
 Smoke test the injected UI path in game.
 
@@ -519,7 +477,7 @@ Tests:
 - save and reload;
 - confirm the condition persists.
 
-## Step 12 - Release Automation
+## Step 11 - Release Automation
 
 Add a GitHub Actions workflow that produces the packaged release zip.
 
