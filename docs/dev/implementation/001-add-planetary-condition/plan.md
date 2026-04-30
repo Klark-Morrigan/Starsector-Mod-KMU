@@ -119,6 +119,9 @@ Implementation:
   and player fleet interaction target lookup;
 - support the remote colony/outposts ledger case through
   `SectorAPI.getCurrentlyOpenMarket()`;
+- support markets opened from intel/notification flows by registering a small
+  KMU core-UI market tracker on game load and using its tracked market only
+  after direct public context sources fail;
 - keep ownership out of the detection logic;
 - add a target-eligibility abstraction before opening the editor:
   - allow markets with a planet entity or planet-condition-only market;
@@ -149,6 +152,9 @@ Tests:
 - compile-time coverage for the market-context classes;
 - unit test currently-open market, interaction-dialog target, and player-fleet
   interaction target resolution;
+- unit test tracked core-UI market resolution for notification/open-tab paths;
+- unit test game-load registration of the context tracker without installing
+  duplicate listeners;
 - unit test eligibility for planet markets, planet-condition-only markets, and
   currently-open market/ledger contexts;
 - unit test rejection for non-planet markets and missing market context;
@@ -156,6 +162,8 @@ Tests:
 - unit test fail-closed behavior when target-eligibility checks throw;
 - in-game smoke test while present at a colony;
 - in-game smoke test from the outposts ledger;
+- in-game smoke test from a market opened by an industry construction
+  completion notification;
 - in-game smoke test on a non-player-owned colony.
 
 ## Step 4 - Condition Chooser UI
@@ -169,6 +177,13 @@ condition lists.
 Implementation:
 
 - build the chooser with Starsector `CustomPanelAPI` and `TooltipMakerAPI`;
+- show the resolved market/colony name, star system name, and constellation name
+  in the picker summary;
+- show total, present, hidden, and suppressed condition counts in the picker
+  summary;
+- highlight market/system/constellation names and total/present/hidden counts
+  with the standard Starsector highlight color;
+- highlight the suppressed count with the negative/red highlight color;
 - list every planetary condition spec returned by the condition service;
 - present the picker as a grid of condition icons, not as text rows;
 - preserve each condition image's aspect ratio and render every condition icon
@@ -227,6 +242,9 @@ Implementation:
 Tests:
 
 - unit test chooser view-model construction from specs and current market ids;
+- unit test chooser model location extraction from Starsector market metadata;
+- unit test summary text and highlights for market/system/constellation, total,
+  present, hidden, and suppressed values;
 - unit test chooser editor handoff from resolved `MarketAPI` to dialog delegate;
 - unit test present conditions render icon and tooltip data through the live
   condition plugin path;
@@ -362,6 +380,9 @@ Tests:
 - run `kmu_open_conditions` while no market context is active and confirm a clear
   wrong-context/failure message;
 - run `kmu_open_conditions` while a colony or market context is active;
+- run `kmu_open_conditions` from a market opened through an industry
+  construction completion notification and confirm the shared context resolver
+  permits the picker when the market supports planetary conditions;
 - add a condition;
 - confirm condition color/state updates in the chooser;
 - save and reload;

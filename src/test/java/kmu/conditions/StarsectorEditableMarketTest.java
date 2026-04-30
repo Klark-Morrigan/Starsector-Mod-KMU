@@ -32,6 +32,14 @@ class StarsectorEditableMarketTest {
     }
 
     @Test
+    void exposesWrappedStarsectorMarketForUiMetadata() {
+        MarketAPI starsectorMarket = market(List.of(), Map.of(), new ArrayList<>());
+        StarsectorEditableMarket market = new StarsectorEditableMarket(starsectorMarket);
+
+        assertThat(market.getMarket()).isSameAs(starsectorMarket);
+    }
+
+    @Test
     void returnsEmptyConditionIdsWhenMarketConditionsAreNull() {
         StarsectorEditableMarket market = new StarsectorEditableMarket(
                 market(null, Map.of(), new ArrayList<>()));

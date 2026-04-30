@@ -7,6 +7,7 @@ flowchart LR
         WidthNote["Default width derives from<br/>12 square condition cells"]
         SuppressedNote["Suppressed entries use<br/>light red backdrop"]
         PresentNote["Visible unsuppressed entries use<br/>positive green backdrop"]
+        SummaryNote["Summary highlights location,<br/>counts, and suppressed warnings"]
         Legend["Legend:<br/>blue = rendering component<br/>green = model<br/>gray = Starsector UI API"]
     end
 
@@ -23,6 +24,7 @@ flowchart LR
     subgraph Dependencies["Dependencies"]
         direction TB
         Model["KmuConditionChooserModel"]
+        Strings["KmuStrings"]
         Entry["KmuConditionChooserEntry"]
         Action["KmuConditionChooserAction"]
         CustomPanelAPI["CustomPanelAPI"]
@@ -37,9 +39,11 @@ flowchart LR
     WidthNote -. constrains .-> Container
     SuppressedNote -. constrains .-> Button
     PresentNote -. constrains .-> Button
+    SummaryNote -. constrains .-> Container
     Legend -. explains colors .-> Container
 
     Container -->|renders summary from| Model
+    Container -->|localizes text through| Strings
     Container -->|creates grid with| Grid
     Container -->|returns| RenderResult
     RenderResult -->|updates one entry through| GridHandle
@@ -60,8 +64,8 @@ flowchart LR
     classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
 
-    class ScopeNote,StateNote,ShapeNote,WidthNote,SuppressedNote,PresentNote note
+    class ScopeNote,StateNote,ShapeNote,WidthNote,SuppressedNote,PresentNote,SummaryNote note
     class Legend legend
     class Container,RenderResult,Grid,GridHandle,Button,Metrics orchestration
-    class Model,Entry,Action core
+    class Model,Strings,Entry,Action core
     class CustomPanelAPI,TooltipMakerAPI,SpriteAPI,InputEventAPI external

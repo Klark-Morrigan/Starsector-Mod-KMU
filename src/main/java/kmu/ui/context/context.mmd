@@ -2,7 +2,8 @@ flowchart LR
     subgraph Meta["Notes / Legend"]
         direction TB
         ContextNote["Resolved market plus<br/>optional panel"]
-        ResolverNote["Tries public campaign<br/>context sources first"]
+        ResolverNote["Tries live public campaign<br/>context sources first"]
+        TrackerNote["Tracks core UI market<br/>open events for notification paths"]
         FailureNote["Failures report and<br/>return empty context"]
         OwnershipNote["No ownership filtering<br/>in detection"]
         Legend["Legend:<br/>cyan = value/context<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API<br/>pink = shared utility"]
@@ -22,6 +23,7 @@ flowchart LR
     subgraph Adapters["Starsector Adapters"]
         direction TB
         StarsectorResolver["StarsectorMarketUiContextResolver"]
+        ContextTracker["StarsectorMarketUiContextTracker"]
     end
 
     subgraph Shared["Shared Utilities"]
@@ -35,6 +37,9 @@ flowchart LR
         CampaignUIAPI["CampaignUIAPI"]
         InteractionDialogAPI["InteractionDialogAPI"]
         CampaignFleetAPI["CampaignFleetAPI"]
+        ListenerManagerAPI["ListenerManagerAPI"]
+        CoreUITabListener["CoreUITabListener"]
+        CoreUITabId["CoreUITabId"]
         SectorEntityToken["SectorEntityToken"]
         MarketAPI["MarketAPI"]
         UIPanelAPI["UIPanelAPI"]
@@ -42,6 +47,7 @@ flowchart LR
 
     ContextNote -. describes .-> Context
     ResolverNote -. describes .-> StarsectorResolver
+    TrackerNote -. describes .-> ContextTracker
     FailureNote -. describes .-> Reporter
     OwnershipNote -. constrains .-> Context
     Legend -. explains colors .-> Context
@@ -51,9 +57,15 @@ flowchart LR
     StarsectorResolver -->|finds current dialog| CampaignUIAPI
     StarsectorResolver -->|reads target| InteractionDialogAPI
     StarsectorResolver -->|reads fallback target| CampaignFleetAPI
+    StarsectorResolver -->|reads tracked market from| ListenerManagerAPI
     StarsectorResolver -->|extracts market from| SectorEntityToken
     StarsectorResolver -->|reports failures| Reporter
     StarsectorResolver -->|returns| Context
+
+    ContextTracker -. implements .-> CoreUITabListener
+    ContextTracker -->|observes opening tab| CoreUITabId
+    ContextTracker -->|extracts market from| MarketAPI
+    ContextTracker -->|extracts market from| SectorEntityToken
 
     ResolverPort -->|returns optional| Context
     Context -->|records source| Source
@@ -70,10 +82,10 @@ flowchart LR
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
     classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
 
-    class ContextNote,ResolverNote,FailureNote,OwnershipNote note
+    class ContextNote,ResolverNote,TrackerNote,FailureNote,OwnershipNote note
     class Legend legend
     class Context,Source value
     class ResolverPort port
-    class StarsectorResolver adapter
-    class SectorAPI,CampaignUIAPI,InteractionDialogAPI,CampaignFleetAPI,SectorEntityToken,MarketAPI,UIPanelAPI external
+    class StarsectorResolver,ContextTracker adapter
+    class SectorAPI,CampaignUIAPI,InteractionDialogAPI,CampaignFleetAPI,ListenerManagerAPI,CoreUITabListener,CoreUITabId,SectorEntityToken,MarketAPI,UIPanelAPI external
     class Reporter shared

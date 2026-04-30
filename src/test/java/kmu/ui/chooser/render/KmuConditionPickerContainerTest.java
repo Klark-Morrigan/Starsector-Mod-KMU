@@ -2,10 +2,12 @@ package kmu.ui.chooser.render;
 
 import kmu.ui.chooser.model.KmuConditionChooserEntry;
 import kmu.ui.chooser.model.KmuConditionChooserEntryState;
+import kmu.ui.chooser.model.KmuConditionChooserLocation;
 import kmu.ui.chooser.model.KmuConditionChooserModel;
 
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,21 +16,47 @@ class KmuConditionPickerContainerTest {
     @Test
     void summarizesTotalAndPresentConditions() {
         KmuConditionChooserModel model = new KmuConditionChooserModel(Arrays.asList(
-                entry("hot", KmuConditionChooserEntryState.PRESENT),
-                entry("cold", KmuConditionChooserEntryState.ABSENT)));
+                entry("hot", KmuConditionChooserEntryState.PRESENT, false, false),
+                entry("cold", KmuConditionChooserEntryState.ABSENT, false, false),
+                entry("hidden", KmuConditionChooserEntryState.PRESENT, false, true),
+                entry("suppressed", KmuConditionChooserEntryState.PRESENT, true, false)),
+                new KmuConditionChooserLocation("Valis Outpost", "Corvus Star System", "Corvus Constellation"));
 
         assertThat(KmuConditionPickerContainer.summaryText(model))
-                .isEqualTo("2 planetary conditions found; 1 already present on this market.");
+                .isEqualTo("Valis Outpost, Corvus Star System, Corvus Constellation. "
+                        + "Conditions: 4 total; 3 present; 1 hidden; 1 suppressed.");
     }
 
     @Test
     void exposesSummaryNumberHighlights() {
         KmuConditionChooserModel model = new KmuConditionChooserModel(Arrays.asList(
-                entry("hot", KmuConditionChooserEntryState.PRESENT),
-                entry("cold", KmuConditionChooserEntryState.ABSENT)));
+                entry("hot", KmuConditionChooserEntryState.PRESENT, false, false),
+                entry("cold", KmuConditionChooserEntryState.ABSENT, false, false),
+                entry("hidden", KmuConditionChooserEntryState.PRESENT, false, true),
+                entry("suppressed", KmuConditionChooserEntryState.PRESENT, true, false)),
+                new KmuConditionChooserLocation("Valis Outpost", "Corvus Star System", "Corvus Constellation"));
 
         assertThat(KmuConditionPickerContainer.summaryHighlights(model))
-                .containsExactly("2", "1");
+                .containsExactly(
+                        "Valis Outpost",
+                        "Corvus Star System",
+                        "Corvus Constellation",
+                        "4 total",
+                        "3 present",
+                        "1 hidden",
+                        "1 suppressed");
+    }
+
+    @Test
+    void exposesRedSummaryHighlightForSuppressedCount() {
+        Color highlight = new Color(255, 220, 80);
+        Color suppressed = new Color(255, 80, 80);
+        Color[] colors = KmuConditionPickerContainer.summaryHighlightColors(highlight, suppressed);
+
+        assertThat(colors).hasSize(7);
+        assertThat(colors[0]).isEqualTo(highlight);
+        assertThat(colors[5]).isEqualTo(highlight);
+        assertThat(colors[6]).isEqualTo(suppressed);
     }
 
     @Test
@@ -60,11 +88,22 @@ class KmuConditionPickerContainerTest {
     }
 
     private static KmuConditionChooserEntry entry(String id, KmuConditionChooserEntryState state) {
+        return entry(id, state, false, false);
+    }
+
+    private static KmuConditionChooserEntry entry(
+            String id,
+            KmuConditionChooserEntryState state,
+            boolean suppressed,
+            boolean hidden) {
         return new KmuConditionChooserEntry(
                 id,
                 id,
                 "graphics/icons/markets/" + id + ".png",
                 state,
-                "Test tooltip");
+                "Test tooltip",
+                null,
+                suppressed,
+                hidden);
     }
 }

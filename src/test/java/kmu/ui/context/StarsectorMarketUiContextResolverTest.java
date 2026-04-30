@@ -2,10 +2,12 @@ package kmu.ui.context;
 
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
+import com.fs.starfarer.api.campaign.CoreUITabId;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -70,6 +72,27 @@ class StarsectorMarketUiContextResolverTest {
     }
 
     @Test
+    void resolvesTrackedCoreUiMarketAfterDirectContextSources() {
+        MarketAPI trackedMarket = market();
+        StarsectorMarketUiContextTracker tracker = new StarsectorMarketUiContextTracker();
+        tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, trackedMarket);
+        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+                sector(
+                        (MarketAPI) null,
+                        campaignUi(null),
+                        playerFleet(entity(null)),
+                        listenerManager(tracker)));
+
+        Optional<KmuMarketUiContext> context = resolver.findCurrentMarketContext();
+
+        assertThat(context).hasValueSatisfying(value -> {
+            assertThat(value.getMarket()).isSameAs(trackedMarket);
+            assertThat(value.getPanel()).isEmpty();
+            assertThat(value.getSource()).isEqualTo(KmuMarketUiContextSource.TRACKED_CORE_UI_MARKET);
+        });
+    }
+
+    @Test
     void continuesAfterCurrentlyOpenMarketFailure() {
         RuntimeException exception = new IllegalStateException("open market failed");
         List<String> reports = new ArrayList<>();
@@ -125,6 +148,23 @@ class StarsectorMarketUiContextResolverTest {
         assertThat(resolver.findCurrentMarketContext()).isEmpty();
         assertThat(reports)
                 .containsExactly("Failed to resolve player fleet interaction target market. / player fleet failed");
+    }
+
+    @Test
+    void returnsEmptyAndReportsWhenTrackedCoreUiLookupFails() {
+        RuntimeException exception = new IllegalStateException("listener manager failed");
+        List<String> reports = new ArrayList<>();
+        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+                sector(
+                        (MarketAPI) null,
+                        campaignUi(null),
+                        playerFleet(entity(null)),
+                        throwingListenerManager(exception)),
+                (message, cause) -> reports.add(message + " / " + cause.getMessage()));
+
+        assertThat(resolver.findCurrentMarketContext()).isEmpty();
+        assertThat(reports)
+                .containsExactly("Failed to resolve tracked core UI market. / listener manager failed");
     }
 
     @Test
@@ -186,6 +226,14 @@ class StarsectorMarketUiContextResolverTest {
             Object currentlyOpenMarketOrException,
             CampaignUIAPI campaignUI,
             CampaignFleetAPI playerFleet) {
+        return sector(currentlyOpenMarketOrException, campaignUI, playerFleet, listenerManager());
+    }
+
+    private static SectorAPI sector(
+            Object currentlyOpenMarketOrException,
+            CampaignUIAPI campaignUI,
+            CampaignFleetAPI playerFleet,
+            ListenerManagerAPI listenerManager) {
         return proxy(SectorAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getCurrentlyOpenMarket":
@@ -197,9 +245,30 @@ class StarsectorMarketUiContextResolverTest {
                     return campaignUI;
                 case "getPlayerFleet":
                     return playerFleet;
+                case "getListenerManager":
+                    return listenerManager;
                 default:
                     return handleObjectMethodOrThrow(proxy, method, args);
             }
+        });
+    }
+
+    private static ListenerManagerAPI listenerManager(StarsectorMarketUiContextTracker... trackers) {
+        return proxy(ListenerManagerAPI.class, (proxy, method, args) -> {
+            if (method.getName().equals("getListeners")
+                    && args[0].equals(StarsectorMarketUiContextTracker.class)) {
+                return List.of(trackers);
+            }
+            return handleObjectMethodOrThrow(proxy, method, args);
+        });
+    }
+
+    private static ListenerManagerAPI throwingListenerManager(RuntimeException exception) {
+        return proxy(ListenerManagerAPI.class, (proxy, method, args) -> {
+            if (method.getName().equals("getListeners")) {
+                throw exception;
+            }
+            return handleObjectMethodOrThrow(proxy, method, args);
         });
     }
 

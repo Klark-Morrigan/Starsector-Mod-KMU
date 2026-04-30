@@ -2,6 +2,7 @@ flowchart LR
     subgraph Meta["Notes / Legend"]
         direction TB
         ThinPlugin["Thin entry point<br/>wires runtime pieces"]
+        TrackerNote["Registers market context<br/>tracker on game load"]
         PackageRules["Feature packages<br/>own behavior"]
         SharedRule["Shared utilities<br/>avoid package cycles"]
         Legend["Legend:<br/>blue = entry/orchestration<br/>green = core/domain/model<br/>pink = shared utility<br/>yellow = note"]
@@ -25,13 +26,14 @@ flowchart LR
     end
 
     ThinPlugin -. describes .-> Plugin
+    TrackerNote -. describes .-> Plugin
     PackageRules -. describes .-> UI
     PackageRules -. describes .-> Conditions
     PackageRules -. describes .-> Console
     SharedRule -. describes .-> Reporter
     Legend -. explains colors .-> Plugin
 
-    Plugin -. later wires .-> UI
+    Plugin -->|registers context tracker| UI
 
     Console -->|opens editor through| UI
     UI -->|uses services| Conditions
@@ -50,7 +52,7 @@ flowchart LR
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
     classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
 
-    class ThinPlugin,PackageRules,SharedRule note
+    class ThinPlugin,TrackerNote,PackageRules,SharedRule note
     class Legend legend
     class Plugin orchestration
     class UI,Conditions,Console core

@@ -5,6 +5,7 @@ flowchart LR
         FactoryNote["Factory translates<br/>market/spec data to entries"]
         TooltipNote["Entries may carry<br/>optional tooltip renderer"]
         StateFactNote["Suppressed and hidden<br/>are independent facts"]
+        LocationNote["Location metadata<br/>feeds picker summary"]
         Legend["Legend:<br/>green = model behavior<br/>orange = port/interface<br/>purple = adapter<br/>gray = external layer"]
     end
 
@@ -12,6 +13,7 @@ flowchart LR
         direction TB
         Factory["KmuConditionChooserModelFactory"]
         Model["KmuConditionChooserModel"]
+        Location["KmuConditionChooserLocation"]
         Entry["KmuConditionChooserEntry"]
         State["KmuConditionChooserEntryState"]
         SuppressedFact["suppressed flag"]
@@ -31,13 +33,16 @@ flowchart LR
     FactoryNote -. describes .-> Factory
     TooltipNote -. describes .-> Entry
     StateFactNote -. describes .-> Entry
+    LocationNote -. describes .-> Location
     Legend -. explains colors .-> Factory
 
     Factory -->|lists visible specs| Service
     Factory -->|reads current ids| Market
     Factory -->|optionally reads live condition| StarsectorMarket
     Factory -->|creates| Model
+    Factory -->|extracts location from| StarsectorMarket
     Model -->|contains| Entry
+    Model -->|contains| Location
     Entry -->|has| State
     Entry -->|records| SuppressedFact
     Entry -->|records| HiddenFact
@@ -51,9 +56,9 @@ flowchart LR
     classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
 
-    class ScopeNote,FactoryNote,TooltipNote,StateFactNote note
+    class ScopeNote,FactoryNote,TooltipNote,StateFactNote,LocationNote note
     class Legend legend
-    class Factory,Model,Entry,State,SuppressedFact,HiddenFact core
+    class Factory,Model,Location,Entry,State,SuppressedFact,HiddenFact core
     class Market,TooltipRenderer port
     class StarsectorMarket,StarsectorTooltipRenderer adapter
     class Service external

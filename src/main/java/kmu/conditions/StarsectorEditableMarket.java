@@ -17,6 +17,10 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
         this.market = Objects.requireNonNull(market, "market");
     }
 
+    public MarketAPI getMarket() {
+        return market;
+    }
+
     @Override
     public Set<String> getConditionIds() {
         List<MarketConditionAPI> conditions = market.getConditions();

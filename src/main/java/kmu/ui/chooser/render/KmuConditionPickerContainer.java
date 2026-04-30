@@ -4,9 +4,12 @@ import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
+import kmu.KmuStrings;
 import kmu.ui.chooser.action.KmuConditionChooserAction;
+import kmu.ui.chooser.model.KmuConditionChooserLocation;
 import kmu.ui.chooser.model.KmuConditionChooserModel;
 
+import java.awt.Color;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -40,12 +43,17 @@ public final class KmuConditionPickerContainer {
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
-        body.addTitle("Planetary Conditions");
+        body.addTitle(KmuStrings.get(KmuStrings.CONDITION_PICKER_TITLE, "Planetary Conditions"));
         LabelAPI summaryLabel = body.addPara(summaryText(model), ENTRY_PAD);
         applySummaryHighlights(summaryLabel, model);
 
         if (model.isEmpty()) {
-            body.addPara("No planetary condition specs are available.", ENTRY_PAD, Misc.getGrayColor());
+            body.addPara(
+                    KmuStrings.get(
+                            KmuStrings.CONDITION_PICKER_EMPTY,
+                            "No planetary condition specs are available."),
+                    ENTRY_PAD,
+                    Misc.getGrayColor());
             return new KmuConditionPickerRenderResult(summaryLabel, Collections.emptyList(), null);
         }
 
@@ -85,10 +93,17 @@ public final class KmuConditionPickerContainer {
     }
 
     public static String summaryText(KmuConditionChooserModel model) {
-        return model.getEntryCount()
-                + " planetary conditions found; "
-                + model.getPresentCount()
-                + " already present on this market.";
+        KmuConditionChooserLocation location = model.getLocation();
+        return KmuStrings.format(
+                KmuStrings.CONDITION_PICKER_SUMMARY,
+                "%s, %s, %s. Conditions: %d total; %d present; %d hidden; %d suppressed.",
+                location.getMarketName(),
+                location.getStarSystemName(),
+                location.getConstellationName(),
+                model.getEntryCount(),
+                model.getPresentCount(),
+                model.getHiddenCount(),
+                model.getSuppressedCount());
     }
 
     public static void applySummaryHighlights(LabelAPI label, KmuConditionChooserModel model) {
@@ -96,15 +111,37 @@ public final class KmuConditionPickerContainer {
         Objects.requireNonNull(model, "model");
 
         label.setHighlight(summaryHighlights(model));
-        label.setHighlightColor(Misc.getHighlightColor());
+        label.setHighlightColors(summaryHighlightColors());
     }
 
     static String[] summaryHighlights(KmuConditionChooserModel model) {
         Objects.requireNonNull(model, "model");
+        KmuConditionChooserLocation location = model.getLocation();
 
         return new String[]{
-                String.valueOf(model.getEntryCount()),
-                String.valueOf(model.getPresentCount())
+                location.getMarketName(),
+                location.getStarSystemName(),
+                location.getConstellationName(),
+                model.getEntryCount() + " total",
+                model.getPresentCount() + " present",
+                model.getHiddenCount() + " hidden",
+                model.getSuppressedCount() + " suppressed"
+        };
+    }
+
+    static Color[] summaryHighlightColors() {
+        return summaryHighlightColors(Misc.getHighlightColor(), Misc.getNegativeHighlightColor());
+    }
+
+    static Color[] summaryHighlightColors(Color highlight, Color suppressedHighlight) {
+        return new Color[]{
+                highlight,
+                highlight,
+                highlight,
+                highlight,
+                highlight,
+                highlight,
+                suppressedHighlight
         };
     }
 }

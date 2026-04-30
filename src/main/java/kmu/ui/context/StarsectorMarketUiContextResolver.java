@@ -7,8 +7,10 @@ import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 import kmu.KmuErrorReporter;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -41,7 +43,12 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
             return context;
         }
 
-        return fromPlayerFleetInteractionTarget();
+        context = fromPlayerFleetInteractionTarget();
+        if (context.isPresent()) {
+            return context;
+        }
+
+        return fromTrackedCoreUiMarket();
     }
 
     private Optional<KmuMarketUiContext> fromCurrentlyOpenMarket() {
@@ -92,6 +99,39 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
                     KmuMarketUiContextSource.PLAYER_FLEET_INTERACTION_TARGET);
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to resolve player fleet interaction target market.", exception);
+            return Optional.empty();
+        }
+    }
+
+    private Optional<KmuMarketUiContext> fromTrackedCoreUiMarket() {
+        try {
+            ListenerManagerAPI listenerManager = sector.getListenerManager();
+            if (listenerManager == null) {
+                return Optional.empty();
+            }
+
+            List<StarsectorMarketUiContextTracker> trackers =
+                    listenerManager.getListeners(StarsectorMarketUiContextTracker.class);
+            if (trackers == null) {
+                return Optional.empty();
+            }
+
+            for (StarsectorMarketUiContextTracker tracker : trackers) {
+                if (tracker == null) {
+                    continue;
+                }
+
+                Optional<MarketAPI> market = tracker.getTrackedMarket();
+                if (market.isPresent()) {
+                    return Optional.of(KmuMarketUiContext.withoutPanel(
+                            market.get(),
+                            KmuMarketUiContextSource.TRACKED_CORE_UI_MARKET));
+                }
+            }
+
+            return Optional.empty();
+        } catch (RuntimeException exception) {
+            errorReporter.report("Failed to resolve tracked core UI market.", exception);
             return Optional.empty();
         }
     }

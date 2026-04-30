@@ -9,6 +9,7 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
+import kmu.KmuStrings;
 import kmu.conditions.KmuConditionAddResult;
 import kmu.ui.chooser.action.KmuConditionChooserAction;
 import kmu.ui.chooser.action.KmuConditionChooserActionHandler;
@@ -90,7 +91,7 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
 
     @Override
     public String getConfirmText() {
-        return "Close";
+        return KmuStrings.get(KmuStrings.DIALOG_CLOSE, "Close");
     }
 
     @Override

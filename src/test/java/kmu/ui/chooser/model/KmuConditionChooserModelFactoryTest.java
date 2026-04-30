@@ -3,6 +3,9 @@ package kmu.ui.chooser.model;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionPlugin;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.impl.campaign.procgen.Constellation;
+import com.fs.starfarer.api.impl.campaign.procgen.StarAge;
 import kmu.conditions.KmuConditionRepository;
 import kmu.conditions.KmuConditionService;
 import kmu.conditions.KmuConditionSpec;
@@ -44,6 +47,8 @@ class KmuConditionChooserModelFactoryTest {
         assertThat(model.getEntryCount()).isEqualTo(2);
         assertThat(model.getPresentCount()).isEqualTo(1);
         assertThat(model.getAbsentCount()).isEqualTo(1);
+        assertThat(model.getHiddenCount()).isZero();
+        assertThat(model.getSuppressedCount()).isZero();
     }
 
     @Test
@@ -79,6 +84,30 @@ class KmuConditionChooserModelFactoryTest {
         assertThat(entry.isPresent()).isTrue();
         assertThat(entry.isSuppressed()).isTrue();
         assertThat(entry.isHidden()).isFalse();
+    }
+
+    @Test
+    void extractsLocationNamesFromStarsectorMarket() {
+        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+                spec("hot", "Hot", true)));
+        KmuConditionChooserModelFactory factory = new KmuConditionChooserModelFactory(service);
+        Constellation constellation = new Constellation(
+                Constellation.ConstellationType.NORMAL,
+                StarAge.AVERAGE);
+        constellation.setNameOverride("Corvus");
+        StarSystemAPI system = starSystem("Corvus Star System", constellation);
+
+        KmuConditionChooserModel model = factory.create(new StarsectorEditableMarket(
+                market(
+                        List.of(),
+                        Map.of(),
+                        Set.of(),
+                        "Valis Outpost",
+                        system)));
+
+        assertThat(model.getLocation().getMarketName()).isEqualTo("Valis Outpost");
+        assertThat(model.getLocation().getStarSystemName()).isEqualTo("Corvus Star System");
+        assertThat(model.getLocation().getConstellationName()).isEqualTo("Corvus");
     }
 
     @Test
@@ -189,6 +218,15 @@ class KmuConditionChooserModelFactoryTest {
             List<MarketConditionAPI> conditions,
             Map<String, MarketConditionAPI> conditionsById,
             Set<String> suppressedConditionIds) {
+        return market(conditions, conditionsById, suppressedConditionIds, null, null);
+    }
+
+    private static MarketAPI market(
+            List<MarketConditionAPI> conditions,
+            Map<String, MarketConditionAPI> conditionsById,
+            Set<String> suppressedConditionIds,
+            String marketName,
+            StarSystemAPI starSystem) {
         return proxy(MarketAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getConditions":
@@ -197,6 +235,27 @@ class KmuConditionChooserModelFactoryTest {
                     return conditionsById.get((String) args[0]);
                 case "isConditionSuppressed":
                     return suppressedConditionIds.contains((String) args[0]);
+                case "getName":
+                    return marketName;
+                case "getStarSystem":
+                    return starSystem;
+                case "getContainingLocation":
+                    return starSystem;
+                default:
+                    return handleObjectMethodOrThrow(proxy, method, args);
+            }
+        });
+    }
+
+    private static StarSystemAPI starSystem(String nameWithTypeShort, Constellation constellation) {
+        return proxy(StarSystemAPI.class, (proxy, method, args) -> {
+            switch (method.getName()) {
+                case "getNameWithTypeShort":
+                    return nameWithTypeShort;
+                case "getName":
+                    return nameWithTypeShort;
+                case "getConstellation":
+                    return constellation;
                 default:
                     return handleObjectMethodOrThrow(proxy, method, args);
             }
