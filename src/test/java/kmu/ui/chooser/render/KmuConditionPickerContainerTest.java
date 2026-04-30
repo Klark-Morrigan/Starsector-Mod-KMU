@@ -22,6 +22,16 @@ class KmuConditionPickerContainerTest {
     }
 
     @Test
+    void exposesSummaryNumberHighlights() {
+        KmuConditionChooserModel model = new KmuConditionChooserModel(Arrays.asList(
+                entry("hot", KmuConditionChooserEntryState.PRESENT),
+                entry("cold", KmuConditionChooserEntryState.ABSENT)));
+
+        assertThat(KmuConditionPickerContainer.summaryHighlights(model))
+                .containsExactly("2", "1");
+    }
+
+    @Test
     void reservesRightPaddingForScrollbar() {
         assertThat(KmuConditionPickerContainer.gridWidth(400f))
                 .isEqualTo(352f);

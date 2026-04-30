@@ -151,6 +151,7 @@ public final class KmuConditionChooserDialogDelegate implements CustomDialogDele
         LabelAPI summaryLabel = renderResult.getSummaryLabel();
         if (summaryLabel != null) {
             summaryLabel.setText(KmuConditionPickerContainer.summaryText(actionHandler.getModel()));
+            KmuConditionPickerContainer.applySummaryHighlights(summaryLabel, actionHandler.getModel());
         }
 
         Optional<String> conditionId = result.getConditionId();

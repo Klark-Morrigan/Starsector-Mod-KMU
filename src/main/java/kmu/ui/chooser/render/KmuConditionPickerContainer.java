@@ -42,6 +42,7 @@ public final class KmuConditionPickerContainer {
 
         body.addTitle("Planetary Conditions");
         LabelAPI summaryLabel = body.addPara(summaryText(model), ENTRY_PAD);
+        applySummaryHighlights(summaryLabel, model);
 
         if (model.isEmpty()) {
             body.addPara("No planetary condition specs are available.", ENTRY_PAD, Misc.getGrayColor());
@@ -88,5 +89,22 @@ public final class KmuConditionPickerContainer {
                 + " planetary conditions found; "
                 + model.getPresentCount()
                 + " already present on this market.";
+    }
+
+    public static void applySummaryHighlights(LabelAPI label, KmuConditionChooserModel model) {
+        Objects.requireNonNull(label, "label");
+        Objects.requireNonNull(model, "model");
+
+        label.setHighlight(summaryHighlights(model));
+        label.setHighlightColor(Misc.getHighlightColor());
+    }
+
+    static String[] summaryHighlights(KmuConditionChooserModel model) {
+        Objects.requireNonNull(model, "model");
+
+        return new String[]{
+                String.valueOf(model.getEntryCount()),
+                String.valueOf(model.getPresentCount())
+        };
     }
 }
