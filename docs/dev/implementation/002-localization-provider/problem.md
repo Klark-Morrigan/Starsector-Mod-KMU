@@ -27,6 +27,7 @@ Starsector locale and, later, a KMU-specific LunaLib override.
 
 - Keep English strings in a default KMU locale file.
 - Load and cache the default English locale regardless of the selected locale.
+- We should load localisation data asynchronously because it's only called after loading into a game.
 - Keep player-facing KMU UI text behind the `KmuStrings` helper and
   `data/strings/strings.json`.
 - Detect the active Starsector locale from `Global.getSettings()`, starting with
