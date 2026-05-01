@@ -2,8 +2,14 @@ package kmu.ui.chooser.tooltip;
 
 import com.fs.starfarer.api.ui.Alignment;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
+import com.fs.starfarer.api.util.Misc;
+import kmu.starsector.StarsectorTestSupport;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.awt.Color;
 import java.lang.reflect.InvocationHandler;
@@ -15,8 +21,31 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuTooltipSectionTest {
+    private static final Color BLUE = new Color(170, 222, 255, 255);
+    private static final Color DARK_BLUE = new Color(31, 94, 112, 175);
+    private static final Color GRAY = new Color(155, 155, 155);
+    private static final Color TEXT = new Color(220, 220, 220, 255);
+
+    private MockedStatic<Misc> misc;
+
+    @BeforeEach
+    void mockStarsectorThemeColors() {
+        StarsectorTestSupport.installSettings();
+        misc = Mockito.mockStatic(Misc.class);
+        misc.when(Misc::getBasePlayerColor).thenReturn(BLUE);
+        misc.when(Misc::getDarkPlayerColor).thenReturn(DARK_BLUE);
+        misc.when(Misc::getGrayColor).thenReturn(GRAY);
+        misc.when(Misc::getTextColor).thenReturn(TEXT);
+    }
+
+    @AfterEach
+    void closeStarsectorThemeColors() {
+        misc.close();
+        StarsectorTestSupport.clearSettings();
+    }
+
     @Test
-    void addsMutedSectionWithStandardBlueBannerAndMutedBodyText() {
+    void addsMutedSectionWithStandardBlueBannerAndGrayBodyText() {
         RecordingTooltip tooltip = RecordingTooltip.create();
 
         KmuTooltipSection.add(
@@ -28,14 +57,14 @@ class KmuTooltipSectionTest {
         assertThat(tooltip.headings())
                 .containsExactly(new HeadingCall(
                         "Metadata",
-                        KmuTooltipSectionPalette.FALLBACK_STANDARD_BLUE_TITLE,
-                        KmuTooltipSectionPalette.FALLBACK_STANDARD_SECTION_BACKDROP,
+                        BLUE,
+                        DARK_BLUE,
                         Alignment.MID,
                         10f));
         assertThat(tooltip.paragraphs())
                 .containsExactly(
-                        new ParagraphCall("id: hot", 4f, KmuTooltipSectionPalette.FALLBACK_MUTED_TEXT),
-                        new ParagraphCall("source: Starsector", 4f, KmuTooltipSectionPalette.FALLBACK_MUTED_TEXT));
+                        new ParagraphCall("id: hot", 4f, GRAY),
+                        new ParagraphCall("source: Starsector", 4f, GRAY));
     }
 
     @Test
@@ -51,12 +80,12 @@ class KmuTooltipSectionTest {
         assertThat(tooltip.headings())
                 .containsExactly(new HeadingCall(
                         "Suppressed",
-                        KmuTooltipSectionPalette.FALLBACK_WARNING_TITLE,
-                        KmuTooltipSectionPalette.WARNING_BACKDROP,
+                        new Color(255, 100, 0, 255),
+                        new Color(70, 20, 20),
                         Alignment.MID,
                         10f));
         assertThat(tooltip.paragraphs())
-                .containsExactly(new ParagraphCall("Reason text", 4f, KmuTooltipSectionPalette.FALLBACK_STANDARD_TEXT));
+                .containsExactly(new ParagraphCall("Reason text", 4f, TEXT));
     }
 
     private static final class RecordingTooltip implements InvocationHandler {

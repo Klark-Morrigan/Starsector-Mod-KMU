@@ -8,6 +8,8 @@ import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
+import kmu.starsector.StarsectorUiColor;
+import kmu.starsector.StarsectorUiColorProvider;
 import kmu.ui.chooser.action.KmuConditionChooserAction;
 import kmu.ui.chooser.model.KmuConditionChooserEntry;
 import kmu.ui.chooser.tooltip.KmuTooltipSection;
@@ -47,45 +49,8 @@ public final class KmuConditionIconButton {
 
     private static final class Alpha {
         private static final float ABSENT_ICON = 0.55f;
-        private static final float BUTTON_BACKDROP = 0.28f;
-        private static final float BUTTON_BORDER = 0.18f;
-        private static final float SUPPRESSED_BACKDROP = 0.34f;
-        private static final float SUPPRESSED_BORDER = 0.50f;
-        private static final float VISIBLE_PRESENT_BACKDROP = 0.28f;
-        private static final float VISIBLE_PRESENT_BORDER = 0.42f;
 
         private Alpha() {
-        }
-    }
-
-    private static final class Palette {
-        private static final Color PRESENT_ICON = Color.WHITE;
-        private static final Color ABSENT_ICON = new Color(130, 130, 130);
-        private static final Color DEFAULT_BACKDROP = new Color(31, 94, 112, 175);
-        private static final Color DEFAULT_BORDER = new Color(170, 222, 255, 255);
-        private static final Color SUPPRESSED_BACKDROP = new Color(150, 50, 45);
-        private static final Color SUPPRESSED_BORDER = new Color(255, 90, 80);
-        private static final Color VISIBLE_PRESENT_BACKDROP = new Color(35, 80, 45);
-        private static final Color VISIBLE_PRESENT_BORDER = new Color(90, 220, 95);
-
-        private Palette() {
-        }
-
-        private static Color defaultBackdrop() {
-            return starsectorColor(Misc::getDarkPlayerColor, DEFAULT_BACKDROP);
-        }
-
-        private static Color defaultBorder() {
-            return starsectorColor(Misc::getBasePlayerColor, DEFAULT_BORDER);
-        }
-
-        private static Color starsectorColor(Supplier<Color> colorSupplier, Color fallback) {
-            try {
-                Color color = colorSupplier.get();
-                return color != null ? color : fallback;
-            } catch (Throwable exception) {
-                return fallback;
-            }
         }
     }
 
@@ -151,47 +116,23 @@ public final class KmuConditionIconButton {
     }
 
     static Color backdropColorFor(KmuConditionChooserEntry entry) {
-        Objects.requireNonNull(entry, "entry");
-        if (entry.isSuppressed()) {
-            return Palette.SUPPRESSED_BACKDROP;
-        }
-        if (isVisibleUnsuppressedPresent(entry)) {
-            return Palette.VISIBLE_PRESENT_BACKDROP;
-        }
-        return Palette.defaultBackdrop();
+        return styleFor(entry).backdropColor();
     }
 
     static Color borderColorFor(KmuConditionChooserEntry entry) {
-        Objects.requireNonNull(entry, "entry");
-        if (entry.isSuppressed()) {
-            return Palette.SUPPRESSED_BORDER;
-        }
-        if (isVisibleUnsuppressedPresent(entry)) {
-            return Palette.VISIBLE_PRESENT_BORDER;
-        }
-        return Palette.defaultBorder();
+        return styleFor(entry).borderColor();
     }
 
     static float backdropAlphaFor(KmuConditionChooserEntry entry) {
-        Objects.requireNonNull(entry, "entry");
-        if (entry.isSuppressed()) {
-            return Alpha.SUPPRESSED_BACKDROP;
-        }
-        if (isVisibleUnsuppressedPresent(entry)) {
-            return Alpha.VISIBLE_PRESENT_BACKDROP;
-        }
-        return Alpha.BUTTON_BACKDROP;
+        return styleFor(entry).backdropAlpha();
     }
 
     static float borderAlphaFor(KmuConditionChooserEntry entry) {
-        Objects.requireNonNull(entry, "entry");
-        if (entry.isSuppressed()) {
-            return Alpha.SUPPRESSED_BORDER;
-        }
-        if (isVisibleUnsuppressedPresent(entry)) {
-            return Alpha.VISIBLE_PRESENT_BORDER;
-        }
-        return Alpha.BUTTON_BORDER;
+        return styleFor(entry).borderAlpha();
+    }
+
+    static KmuConditionIconButtonStyle styleFor(KmuConditionChooserEntry entry) {
+        return KmuConditionIconButtonStyle.forEntry(entry);
     }
 
     static boolean isVisibleUnsuppressedPresent(KmuConditionChooserEntry entry) {
@@ -365,7 +306,9 @@ public final class KmuConditionIconButton {
             float alpha = shouldGreyOut(entry) ? Alpha.ABSENT_ICON : 1f;
 
             sprite.setSize(metrics.getIconWidth(), metrics.getIconHeight());
-            sprite.setColor(shouldGreyOut(entry) ? Palette.ABSENT_ICON : Palette.PRESENT_ICON);
+            sprite.setColor(shouldGreyOut(entry)
+                    ? StarsectorUiColorProvider.get(StarsectorUiColor.DIM_GRAY)
+                    : StarsectorUiColorProvider.get(StarsectorUiColor.WHITE));
             sprite.setAlphaMult(alpha * alphaMult);
             sprite.render(
                     position.getX() + metrics.getIconOffsetX(),

@@ -4,8 +4,9 @@ flowchart LR
         ThinPlugin["Thin entry point<br/>wires runtime pieces"]
         TrackerNote["Registers market context<br/>tracker on game load"]
         PackageRules["Feature packages<br/>own behavior"]
+        StarsectorRule["Starsector wrappers<br/>live in kmu.starsector"]
         SharedRule["Shared utilities<br/>avoid package cycles"]
-        Legend["Legend:<br/>blue = entry/orchestration<br/>green = core/domain/model<br/>pink = shared utility<br/>yellow = note"]
+        Legend["Legend:<br/>blue = entry/orchestration<br/>green = core/domain/model<br/>purple = Starsector wrapper<br/>pink = shared utility<br/>yellow = note"]
     end
 
     subgraph Entry["Entry / Wiring"]
@@ -20,6 +21,11 @@ flowchart LR
         Console["kmu.console"]
     end
 
+    subgraph StarsectorBoundary["Starsector Boundary"]
+        direction TB
+        Starsector["kmu.starsector"]
+    end
+
     subgraph Shared["Shared Utilities"]
         direction TB
         Reporter["KmuErrorReporter"]
@@ -30,6 +36,7 @@ flowchart LR
     PackageRules -. describes .-> UI
     PackageRules -. describes .-> Conditions
     PackageRules -. describes .-> Console
+    StarsectorRule -. describes .-> Starsector
     SharedRule -. describes .-> Reporter
     Legend -. explains colors .-> Plugin
 
@@ -37,6 +44,7 @@ flowchart LR
 
     Console -->|opens editor through| UI
     UI -->|uses services| Conditions
+    UI -->|uses Starsector wrappers| Starsector
     UI -->|reports failures| Reporter
 
     Conditions -->|reports failures| Reporter
@@ -52,8 +60,9 @@ flowchart LR
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
     classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
 
-    class ThinPlugin,TrackerNote,PackageRules,SharedRule note
+    class ThinPlugin,TrackerNote,PackageRules,StarsectorRule,SharedRule note
     class Legend legend
     class Plugin orchestration
     class UI,Conditions,Console core
+    class Starsector adapter
     class Reporter shared

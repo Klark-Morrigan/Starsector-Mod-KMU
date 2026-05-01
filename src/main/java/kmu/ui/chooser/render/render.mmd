@@ -8,6 +8,7 @@ flowchart LR
         SuppressedNote["Suppressed entries use<br/>light red backdrop"]
         PresentNote["Visible unsuppressed entries use<br/>positive green backdrop"]
         SummaryNote["Summary highlights location,<br/>counts, and suppressed warnings"]
+        ColorNote["Button and summary styles<br/>resolve raw colors through provider"]
         Legend["Legend:<br/>blue = rendering component<br/>green = model<br/>gray = Starsector UI API"]
     end
 
@@ -18,6 +19,7 @@ flowchart LR
         Grid["KmuConditionIconGrid"]
         GridHandle["KmuConditionIconGrid.GridHandle"]
         Button["KmuConditionIconButton"]
+        ButtonStyle["KmuConditionIconButtonStyle"]
         Metrics["KmuConditionIconButton.ButtonMetrics"]
     end
 
@@ -25,6 +27,8 @@ flowchart LR
         direction TB
         Model["KmuConditionChooserModel"]
         Strings["KmuStrings"]
+        Colors["StarsectorUiColorProvider"]
+        RawColors["StarsectorUiColor"]
         Entry["KmuConditionChooserEntry"]
         Action["KmuConditionChooserAction"]
         CustomPanelAPI["CustomPanelAPI"]
@@ -40,10 +44,12 @@ flowchart LR
     SuppressedNote -. constrains .-> Button
     PresentNote -. constrains .-> Button
     SummaryNote -. constrains .-> Container
+    ColorNote -. describes .-> Colors
     Legend -. explains colors .-> Container
 
     Container -->|renders summary from| Model
     Container -->|localizes text through| Strings
+    Container -->|uses summary colors from| Colors
     Container -->|creates grid with| Grid
     Container -->|returns| RenderResult
     RenderResult -->|updates one entry through| GridHandle
@@ -51,6 +57,9 @@ flowchart LR
     Grid -->|creates| Button
     Grid -->|stores buttons in| GridHandle
     Button -->|renders| Entry
+    Button -->|selects style from state| ButtonStyle
+    ButtonStyle -->|references raw colors| RawColors
+    ButtonStyle -->|gets resolved colors from| Colors
     Button -->|emits| Action
     Button -->|measures icon into| Metrics
     Button -->|draws sprite from| SpriteAPI
@@ -64,8 +73,8 @@ flowchart LR
     classDef core fill:#e9f8ef,stroke:#2b8a4b,color:#10351d
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
 
-    class ScopeNote,StateNote,ShapeNote,WidthNote,SuppressedNote,PresentNote,SummaryNote note
+    class ScopeNote,StateNote,ShapeNote,WidthNote,SuppressedNote,PresentNote,SummaryNote,ColorNote note
     class Legend legend
-    class Container,RenderResult,Grid,GridHandle,Button,Metrics orchestration
-    class Model,Strings,Entry,Action core
+    class Container,RenderResult,Grid,GridHandle,Button,ButtonStyle,Metrics orchestration
+    class Model,Strings,Colors,RawColors,Entry,Action core
     class CustomPanelAPI,TooltipMakerAPI,SpriteAPI,InputEventAPI external

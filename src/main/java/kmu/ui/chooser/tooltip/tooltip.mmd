@@ -5,6 +5,7 @@ flowchart LR
         SectionNote["Section helper renders<br/>metadata/status banners"]
         FallbackNote["Render layer appends<br/>status and metadata sections"]
         SafetyNote["Tooltip failures<br/>must fail closed"]
+        ColorNote["Section styles group<br/>raw UI colors"]
         Legend["Legend:<br/>blue = helper<br/>orange = port/interface<br/>purple = adapter<br/>gray = external API"]
     end
 
@@ -14,6 +15,8 @@ flowchart LR
         StarsectorRenderer["StarsectorConditionTooltipRenderer"]
         TooltipSection["KmuTooltipSection"]
         TooltipSectionStyle["KmuTooltipSectionStyle"]
+        StarsectorUiColorProvider["StarsectorUiColorProvider"]
+        StarsectorUiColor["StarsectorUiColor"]
     end
 
     subgraph External["External Starsector API"]
@@ -27,6 +30,7 @@ flowchart LR
     SectionNote -. describes .-> TooltipSection
     FallbackNote -. constrains .-> TooltipMakerAPI
     SafetyNote -. constrains .-> StarsectorRenderer
+    ColorNote -. describes .-> TooltipSectionStyle
     Legend -. explains colors .-> TooltipPort
 
     StarsectorRenderer -. implements .-> TooltipPort
@@ -34,6 +38,8 @@ flowchart LR
     StarsectorRenderer -->|delegates createTooltip to| MarketConditionPlugin
     StarsectorRenderer -->|writes into| TooltipMakerAPI
     TooltipSection -->|uses colors from| TooltipSectionStyle
+    TooltipSectionStyle -->|references raw colors| StarsectorUiColor
+    StarsectorUiColorProvider -->|resolves| StarsectorUiColor
     TooltipSection -->|writes section heading into| TooltipMakerAPI
 
     classDef note fill:#fff7d6,stroke:#b58b00,color:#242424
@@ -43,9 +49,9 @@ flowchart LR
     classDef adapter fill:#f3ecff,stroke:#7b55b7,color:#2d1c45
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
 
-    class ScopeNote,SectionNote,FallbackNote,SafetyNote note
+    class ScopeNote,SectionNote,FallbackNote,SafetyNote,ColorNote note
     class Legend legend
     class TooltipPort port
-    class TooltipSection,TooltipSectionStyle helper
+    class TooltipSection,TooltipSectionStyle,StarsectorUiColorProvider,StarsectorUiColor helper
     class StarsectorRenderer adapter
     class MarketConditionAPI,MarketConditionPlugin,TooltipMakerAPI external

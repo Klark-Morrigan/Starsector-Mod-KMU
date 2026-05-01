@@ -3,7 +3,8 @@ package kmu.ui.chooser.action;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.util.Misc;
+import kmu.starsector.StarsectorUiColor;
+import kmu.starsector.StarsectorUiColorProvider;
 
 import java.util.Objects;
 
@@ -16,13 +17,19 @@ public final class StarsectorConditionChooserFeedbackSink implements KmuConditio
             if (sector == null) {
                 return;
             }
+            
             CampaignUIAPI campaignUI = sector.getCampaignUI();
             if (campaignUI == null) {
                 return;
             }
+
+            StarsectorUiColor color = feedback.isFailure()
+                ? StarsectorUiColor.RED
+                : StarsectorUiColor.GREEN;
+
             campaignUI.addMessage(
-                    feedback.getMessage(),
-                    feedback.isFailure() ? Misc.getNegativeHighlightColor() : Misc.getPositiveHighlightColor());
+                feedback.getMessage(),
+                StarsectorUiColorProvider.get(color));
         } catch (RuntimeException exception) {
             // Feedback must not break the editor action.
         }

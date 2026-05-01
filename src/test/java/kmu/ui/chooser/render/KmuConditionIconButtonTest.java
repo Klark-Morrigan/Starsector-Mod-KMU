@@ -4,6 +4,9 @@ import kmu.ui.chooser.model.KmuConditionChooserEntry;
 import kmu.ui.chooser.model.KmuConditionChooserEntryState;
 
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
+import com.fs.starfarer.api.util.Misc;
+import kmu.starsector.StarsectorUiColor;
+import kmu.starsector.StarsectorTestSupport;
 
 import java.awt.Color;
 import java.lang.reflect.InvocationHandler;
@@ -12,7 +15,11 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,6 +30,26 @@ class KmuConditionIconButtonTest {
     private static final Color VISIBLE_PRESENT_BORDER = new Color(90, 220, 95);
     private static final Color SUPPRESSED_BACKDROP = new Color(150, 50, 45);
     private static final Color SUPPRESSED_BORDER = new Color(255, 90, 80);
+    private static final Color GRAY = new Color(155, 155, 155);
+    private static final Color TEXT = new Color(220, 220, 220, 255);
+
+    private MockedStatic<Misc> misc;
+
+    @BeforeEach
+    void mockStarsectorThemeColors() {
+        StarsectorTestSupport.installSettings();
+        misc = Mockito.mockStatic(Misc.class);
+        misc.when(Misc::getDarkPlayerColor).thenReturn(DEFAULT_BACKDROP);
+        misc.when(Misc::getBasePlayerColor).thenReturn(DEFAULT_BORDER);
+        misc.when(Misc::getGrayColor).thenReturn(GRAY);
+        misc.when(Misc::getTextColor).thenReturn(TEXT);
+    }
+
+    @AfterEach
+    void closeStarsectorThemeColors() {
+        misc.close();
+        StarsectorTestSupport.clearSettings();
+    }
 
     @Test
     void greysOutAbsentEntriesOnly() {
@@ -41,6 +68,7 @@ class KmuConditionIconButtonTest {
         KmuConditionChooserEntry entry = entry(KmuConditionChooserEntryState.ABSENT);
 
         assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
+        assertButtonStyleRoles(entry, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.BLUE);
         assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isTrue();
         assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
     }
@@ -50,6 +78,7 @@ class KmuConditionIconButtonTest {
         KmuConditionChooserEntry entry = entry(KmuConditionChooserEntryState.PRESENT);
 
         assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
+        assertButtonStyleRoles(entry, StarsectorUiColor.DARK_GREEN, StarsectorUiColor.BRIGHT_GREEN);
         assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isFalse();
         assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isTrue();
     }
@@ -68,6 +97,7 @@ class KmuConditionIconButtonTest {
         KmuConditionChooserEntry entry = suppressedEntry();
 
         assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
+        assertButtonStyleRoles(entry, StarsectorUiColor.MUTED_RED, StarsectorUiColor.BRIGHT_RED);
         assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isFalse();
         assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
     }
@@ -230,6 +260,16 @@ class KmuConditionIconButtonTest {
         assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(borderColor);
         assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(backdropAlpha);
         assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(borderAlpha);
+    }
+
+    private static void assertButtonStyleRoles(
+            KmuConditionChooserEntry entry,
+            StarsectorUiColor backdropColor,
+            StarsectorUiColor borderColor) {
+        KmuConditionIconButtonStyle style = KmuConditionIconButton.styleFor(entry);
+
+        assertThat(style.backdropRawColor()).isEqualTo(backdropColor);
+        assertThat(style.borderRawColor()).isEqualTo(borderColor);
     }
 
     private static final class RecordingTooltip implements InvocationHandler {

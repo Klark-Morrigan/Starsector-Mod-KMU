@@ -1,44 +1,48 @@
 package kmu.ui.chooser.tooltip;
 
+import kmu.starsector.StarsectorUiColor;
+import kmu.starsector.StarsectorUiColorProvider;
+
 import java.awt.Color;
 
 public enum KmuTooltipSectionStyle {
-    MUTED {
-        @Override
-        Color titleColor() {
-            return KmuTooltipSectionPalette.standardBlueTitle();
-        }
+    MUTED(StarsectorUiColor.BLUE, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.GRAY),
+    WARNING(StarsectorUiColor.ORANGE, StarsectorUiColor.DARK_RED, StarsectorUiColor.TEXT_WHITE);
 
-        @Override
-        Color backgroundColor() {
-            return KmuTooltipSectionPalette.standardSectionBackdrop();
-        }
+    private final StarsectorUiColor titleColor;
+    private final StarsectorUiColor backgroundColor;
+    private final StarsectorUiColor bodyColor;
 
-        @Override
-        Color bodyColor() {
-            return KmuTooltipSectionPalette.mutedText();
-        }
-    },
-    WARNING {
-        @Override
-        Color titleColor() {
-            return KmuTooltipSectionPalette.warningTitle();
-        }
+    KmuTooltipSectionStyle(
+            StarsectorUiColor titleColor,
+            StarsectorUiColor backgroundColor,
+            StarsectorUiColor bodyColor) {
+        this.titleColor = titleColor;
+        this.backgroundColor = backgroundColor;
+        this.bodyColor = bodyColor;
+    }
 
-        @Override
-        Color backgroundColor() {
-            return KmuTooltipSectionPalette.WARNING_BACKDROP;
-        }
+    Color titleColor() {
+        return StarsectorUiColorProvider.get(titleColor);
+    }
 
-        @Override
-        Color bodyColor() {
-            return KmuTooltipSectionPalette.standardText();
-        }
-    };
+    Color backgroundColor() {
+        return StarsectorUiColorProvider.get(backgroundColor);
+    }
 
-    abstract Color titleColor();
+    Color bodyColor() {
+        return StarsectorUiColorProvider.get(bodyColor);
+    }
 
-    abstract Color backgroundColor();
+    StarsectorUiColor titleRawColor() {
+        return titleColor;
+    }
 
-    abstract Color bodyColor();
+    StarsectorUiColor backgroundRawColor() {
+        return backgroundColor;
+    }
+
+    StarsectorUiColor bodyRawColor() {
+        return bodyColor;
+    }
 }

@@ -4,8 +4,9 @@ flowchart LR
         EditorNote["Open-editor<br/>contract"]
         ContextNote["Market discovery<br/>and optional panel"]
         ChooserNote["Condition list<br/>model and rendering"]
+        ColorNote["Starsector color provider<br/>centralizes UI color lookup"]
         DirectionNote["conditions must not<br/>depend on UI"]
-        Legend["Legend:<br/>blue = UI orchestration<br/>green = core/domain/model<br/>gray = external API<br/>pink = shared utility"]
+        Legend["Legend:<br/>blue = UI orchestration<br/>green = core/domain/model<br/>purple = Starsector wrapper<br/>gray = external API<br/>pink = shared utility"]
     end
 
     subgraph UI["UI Packages"]
@@ -18,6 +19,11 @@ flowchart LR
     subgraph Core["Core Feature Packages"]
         direction TB
         Conditions["kmu.conditions"]
+    end
+
+    subgraph StarsectorBoundary["Starsector Boundary"]
+        direction TB
+        Colors["kmu.starsector.StarsectorUiColorProvider"]
     end
 
     subgraph Shared["Shared Utilities"]
@@ -33,6 +39,7 @@ flowchart LR
     EditorNote -. describes .-> Editor
     ContextNote -. describes .-> Context
     ChooserNote -. describes .-> Chooser
+    ColorNote -. describes .-> Colors
     DirectionNote -. constrains .-> Conditions
     Legend -. explains colors .-> Editor
 
@@ -42,6 +49,7 @@ flowchart LR
     Chooser -->|implements editor port| Editor
     Chooser -->|uses market context| Context
     Chooser -->|reads condition state| Conditions
+    Chooser -->|uses UI colors| Colors
     Chooser -->|renders dialog| StarsectorUI
 
     Context -->|reports failures| Reporter
@@ -57,9 +65,10 @@ flowchart LR
     classDef external fill:#f3f4f6,stroke:#6b7280,color:#1f2937
     classDef shared fill:#ffeaf4,stroke:#c75186,color:#4a1830
 
-    class EditorNote,ContextNote,ChooserNote,DirectionNote note
+    class EditorNote,ContextNote,ChooserNote,ColorNote,DirectionNote note
     class Legend legend
     class Editor,Context,Chooser orchestration
     class Conditions core
+    class Colors adapter
     class Reporter shared
     class StarsectorUI external

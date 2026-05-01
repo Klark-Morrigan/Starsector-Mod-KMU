@@ -3,8 +3,9 @@ package kmu.ui.chooser.render;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
-import com.fs.starfarer.api.util.Misc;
 import kmu.KmuStrings;
+import kmu.starsector.StarsectorUiColor;
+import kmu.starsector.StarsectorUiColorProvider;
 import kmu.ui.chooser.action.KmuConditionChooserAction;
 import kmu.ui.chooser.model.KmuConditionChooserLocation;
 import kmu.ui.chooser.model.KmuConditionChooserModel;
@@ -43,7 +44,6 @@ public final class KmuConditionPickerContainer {
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
-        body.addTitle(KmuStrings.get(KmuStrings.CONDITION_PICKER_TITLE, "Planetary Conditions"));
         LabelAPI summaryLabel = body.addPara(summaryText(model), ENTRY_PAD);
         applySummaryHighlights(summaryLabel, model);
 
@@ -53,7 +53,7 @@ public final class KmuConditionPickerContainer {
                             KmuStrings.CONDITION_PICKER_EMPTY,
                             "No planetary condition specs are available."),
                     ENTRY_PAD,
-                    Misc.getGrayColor());
+                    StarsectorUiColorProvider.get(StarsectorUiColor.GRAY));
             return new KmuConditionPickerRenderResult(summaryLabel, Collections.emptyList(), null);
         }
 
@@ -130,7 +130,9 @@ public final class KmuConditionPickerContainer {
     }
 
     static Color[] summaryHighlightColors() {
-        return summaryHighlightColors(Misc.getHighlightColor(), Misc.getNegativeHighlightColor());
+        return summaryHighlightColors(
+                StarsectorUiColorProvider.get(StarsectorUiColor.GOLD),
+                StarsectorUiColorProvider.get(StarsectorUiColor.RED));
     }
 
     static Color[] summaryHighlightColors(Color highlight, Color suppressedHighlight) {
