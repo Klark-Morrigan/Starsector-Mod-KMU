@@ -4,6 +4,7 @@
 
 - [Problem](#problem)
 - [Baseline Behavior](#baseline-behavior)
+- [UI Localization Convention](#ui-localization-convention)
 - [Initial Scope](#initial-scope)
 - [Decisions](#decisions)
 - [Tests](#tests)
@@ -25,25 +26,41 @@ Starsector locale and, later, a KMU-specific LunaLib override.
 
 ## Baseline Behavior
 
-- Keep English strings in a default KMU locale file.
-- Load and cache the default English locale regardless of the selected locale.
+- Keep current English strings in the default KMU string file.
+- Load and cache the active KMU locale once per game/session.
 - We should load localisation data asynchronously because it's only called after loading into a game.
 - Keep player-facing KMU UI text behind the `KmuStrings` helper and
   `data/strings/strings.json`.
+- Production UI code should request localized strings by key only. Java should
+  not provide English fallback copy for localized UI output.
+- Missing, blank, throwing, or invalid localized UI strings should render as
+  `[REDACTED]`.
 - Detect the active Starsector locale from `Global.getSettings()`, starting with
   the vanilla `localeOverride` setting.
 - Try to load a locale-specific KMU string file when one exists.
-- Overlay selected-locale strings on top of the cached default English strings.
-- Fall back to cached default English strings when selected-locale entries are
-  missing.
-- Treat missing default English strings as KMU defects, not as normal runtime
-  fallback cases.
+- Do not overlay selected-locale strings on top of cached English text as a
+  runtime fallback mechanism. A missing selected-locale value should be visible
+  as `[REDACTED]`, not silently replaced with English.
 - Treat malformed localization files as startup/load errors that should be
   reported visibly to the player if Starsector exposes a safe game-load popup
   or dialog path; otherwise log the error and report it through the safest
   available in-game notification channel.
 - Keep UI components dependent only on `KmuStrings`, not on JSON loading,
   Starsector settings plumbing, or LunaLib.
+
+## UI Localization Convention
+
+This convention applies only to player-facing UI/localized output. It does not
+apply to internal identifiers, model invariants, action IDs, condition IDs, or
+other required non-UI values.
+
+- UI text is resolved through `KmuStrings` by key.
+- Production UI callers do not pass fallback strings.
+- Missing string keys, blank values, failed lookups, and invalid format strings
+  render as `[REDACTED]`.
+- Java literals are acceptable for localization keys, format arguments, and
+  technical identifiers, but not as fallback UI copy.
+- `KmuStringsTest` is the executable specification for redaction behavior.
 
 ## Initial Scope
 
@@ -52,7 +69,6 @@ owns the localization requirements for that surface and any later KMU UI text.
 
 Initial strings to keep behind localization keys:
 
-- condition picker title;
 - condition picker summary text;
 - condition picker empty-state text;
 - condition picker dialog button text.
@@ -62,9 +78,8 @@ Initial strings to keep behind localization keys:
 - Use Starsector `localeOverride` as the default language selector.
 - Treat runtime language changes as out of scope until evidence shows Starsector
   supports a reliable in-session locale switch event.
-- Cache loaded string maps by locale. Always cache default English first, then
-  cache the selected locale overlay when one exists. Do not read JSON from disk
-  for every displayed string.
+- Cache loaded string maps by locale. Do not read JSON from disk for every
+  displayed string.
 - Reloading can be explicit later if a LunaLib setting changes, but the first
   implementation should assume strings are loaded once per game/session.
 - Add a later LunaLib setting as an override with values like `auto`, `en_US`,
@@ -77,14 +92,15 @@ Initial strings to keep behind localization keys:
 
 ## Tests
 
-- Unit test that selected-locale entries fall back to cached default English
-  entries when missing.
-- Unit test that missing default English entries produce explicit provider
-  errors.
+- Unit test that missing, blank, throwing, and invalid localized values render
+  as `[REDACTED]`.
+- Unit test that selected-locale entries do not silently fall back to cached
+  English entries when missing.
 - Unit test that malformed localization files produce startup/load diagnostics
   instead of silently falling back to Java literals.
 - Unit test locale selection from Starsector `localeOverride`.
-- Unit test locale-specific file fallback to default English.
+- Unit test missing locale-specific entries redacting instead of falling back to
+  default English.
 - Unit test cached lookup behavior so string reads do not repeatedly parse JSON
   during UI rendering.
 
@@ -95,8 +111,9 @@ Initial strings to keep behind localization keys:
 - Should KMU store translations as merged `data/strings/strings.json` entries,
   or use KMU-owned files such as `data/strings/kmu_strings_ru_RU.json` loaded by
   the provider?
-- Should the provider support regional fallback, e.g. `pt_BR` -> `pt` ->
-  default English?
+- Should missing locale-specific files be treated as load diagnostics, or should
+  the provider use the default KMU string file only when the selected locale file
+  itself does not exist?
 - What is the safest Starsector API path for showing a localization load error
   popup during game load?
 
@@ -107,7 +124,7 @@ Initial strings to keep behind localization keys:
 - Loading strings from JSON on every UI render would be unnecessary churn and
   could create avoidable UI stalls. Cache strings instead.
 - If the default English locale is missing or malformed, KMU may be unable to
-  present polished player-facing error text. In that case, prefer a concise
-  technical error identifier over silently using scattered Java fallback copy.
+  present polished player-facing error text. In that case, render `[REDACTED]`
+  instead of silently using scattered Java fallback copy.
 - A LunaLib dependency just for localization is not justified. LunaLib should be
   used only for optional user-facing settings once KMU already needs settings.
