@@ -145,8 +145,8 @@ class KmuConditionPickerModelFactoryTest {
         assertThat(location.getFactionColor()).contains(FACTION_COLOR);
         assertThat(location.getRelationshipDescription()).contains("Vengeful (-100 / 100)");
         assertThat(location.getRelationshipColor()).contains(RELATIONSHIP_COLOR);
-        assertThat(location.getGravityWellName()).contains("yellow star");
-        assertThat(location.getGravityWellEntityName()).contains("Corvus");
+        assertThat(location.getGravityWellTypeName()).contains("yellow star");
+        assertThat(location.getGravityWellName()).contains("Corvus");
     }
 
     @Test
@@ -169,8 +169,8 @@ class KmuConditionPickerModelFactoryTest {
                         moon,
                         null)));
 
+        assertThat(model.getLocation().getGravityWellTypeName()).contains("Kumari barycenter");
         assertThat(model.getLocation().getGravityWellName()).contains("Kumari barycenter");
-        assertThat(model.getLocation().getGravityWellEntityName()).contains("Kumari barycenter");
     }
 
     @Test

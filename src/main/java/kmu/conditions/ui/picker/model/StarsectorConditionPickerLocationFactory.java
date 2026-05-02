@@ -61,13 +61,14 @@ final class StarsectorConditionPickerLocationFactory {
                 relationship.getDescription(),
                 relationship.getColor(),
                 starSystemName(starsectorMarket),
+                gravityWellTypeName(starsectorMarket),
                 gravityWellName(starsectorMarket),
                 constellationName(starsectorMarket));
     }
 
     private KmuConditionPickerLocation unknownLocation() {
         return new KmuConditionPickerLocation(
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
     }
 
     private String marketName(MarketAPI market) {
@@ -156,9 +157,14 @@ final class StarsectorConditionPickerLocationFactory {
         return locationName;
     }
 
-    private String gravityWellName(MarketAPI market) {
+    private String gravityWellTypeName(MarketAPI market) {
         SectorEntityToken gravityWell = gravityWellResolver.resolve(market);
         return gravityWellDisplayName(gravityWell);
+    }
+
+    private String gravityWellName(MarketAPI market) {
+        SectorEntityToken gravityWell = gravityWellResolver.resolve(market);
+        return gravityWell == null ? null : readTextOrNull(gravityWell::getName);
     }
 
     private String entityTypeName(SectorEntityToken entity) {

@@ -171,10 +171,17 @@ public final class KmuConditionPickerContainer {
         }
 
         if (location.getStarSystemName().isPresent()) {
-            optionalWithParenthetical(location.getStarSystemName(), location.getGravityWellName())
+            optionalWithParenthetical(location.getStarSystemName(), systemParenthetical(location))
                     .ifPresent(segments::add);
             highlights.add(location.getStarSystemName().get());
             colors.add(highlightColor);
+            location.getGravityWellName()
+                    .filter(name -> !name.equals(location.getGravityWellTypeName().orElse(null)))
+                    .filter(name -> !location.getStarSystemName().map(s -> s.contains(name)).orElse(false))
+                    .ifPresent(name -> {
+                        highlights.add(name);
+                        colors.add(highlightColor);
+                    });
         }
 
         location.getConstellationName().ifPresent(name -> {
@@ -215,6 +222,21 @@ public final class KmuConditionPickerContainer {
             text += " (" + location.getRelationshipDescription().get() + ")";
         }
         return Optional.of(text);
+    }
+
+    private static Optional<String> systemParenthetical(KmuConditionPickerLocation location) {
+        List<String> parts = new ArrayList<>();
+        // Suppress entity name when:
+        // - it duplicates the type label (e.g. barycenter: both fields resolve to the same string)
+        // - it is already implied by the system name (e.g. "Agreus" in "Agreus System")
+        // Binary-star planets orbit a named individual star ("Kumari A") whose name is NOT
+        // contained in "Kumari System", so it is preserved in that case.
+        location.getGravityWellName()
+                .filter(name -> !name.equals(location.getGravityWellTypeName().orElse(null)))
+                .filter(name -> !location.getStarSystemName().map(s -> s.contains(name)).orElse(false))
+                .ifPresent(parts::add);
+        location.getGravityWellTypeName().ifPresent(parts::add);
+        return parts.isEmpty() ? Optional.empty() : Optional.of(String.join(", ", parts));
     }
 
     private static Optional<String> optionalWithParenthetical(

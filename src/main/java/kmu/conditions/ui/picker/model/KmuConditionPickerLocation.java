@@ -13,6 +13,7 @@ public final class KmuConditionPickerLocation {
     private final Optional<String> relationshipDescription;
     private final Optional<Color> relationshipColor;
     private final Optional<String> starSystemName;
+    private final Optional<String> gravityWellTypeName;
     private final Optional<String> gravityWellName;
     private final Optional<String> constellationName;
 
@@ -24,6 +25,7 @@ public final class KmuConditionPickerLocation {
             String relationshipDescription,
             Color relationshipColor,
             String starSystemName,
+            String gravityWellTypeName,
             String gravityWellName,
             String constellationName) {
         this.planetName = convertToOptionalText(planetName);
@@ -33,6 +35,7 @@ public final class KmuConditionPickerLocation {
         this.relationshipDescription = convertToOptionalText(relationshipDescription);
         this.relationshipColor = Optional.ofNullable(relationshipColor);
         this.starSystemName = convertToOptionalText(starSystemName);
+        this.gravityWellTypeName = convertToOptionalText(gravityWellTypeName);
         this.gravityWellName = convertToOptionalText(gravityWellName);
         this.constellationName = convertToOptionalText(constellationName);
     }
@@ -63,6 +66,10 @@ public final class KmuConditionPickerLocation {
 
     public Optional<String> getStarSystemName() {
         return starSystemName;
+    }
+
+    public Optional<String> getGravityWellTypeName() {
+        return gravityWellTypeName;
     }
 
     public Optional<String> getGravityWellName() {
