@@ -1,0 +1,48 @@
+package kmu.conditions.ui.picker.tooltip;
+
+import kmu.starsector.StarsectorUiColor;
+import kmu.starsector.StarsectorUiColorProvider;
+
+import java.awt.Color;
+
+public enum KmuTooltipSectionStyle {
+    MUTED(StarsectorUiColor.BLUE, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.GRAY),
+    WARNING(StarsectorUiColor.ORANGE, StarsectorUiColor.DARK_RED, StarsectorUiColor.TEXT_WHITE);
+
+    private final StarsectorUiColor titleColor;
+    private final StarsectorUiColor backgroundColor;
+    private final StarsectorUiColor bodyColor;
+
+    KmuTooltipSectionStyle(
+            StarsectorUiColor titleColor,
+            StarsectorUiColor backgroundColor,
+            StarsectorUiColor bodyColor) {
+        this.titleColor = titleColor;
+        this.backgroundColor = backgroundColor;
+        this.bodyColor = bodyColor;
+    }
+
+    Color titleColor() {
+        return StarsectorUiColorProvider.get(titleColor);
+    }
+
+    Color backgroundColor() {
+        return StarsectorUiColorProvider.get(backgroundColor);
+    }
+
+    Color bodyColor() {
+        return StarsectorUiColorProvider.get(bodyColor);
+    }
+
+    StarsectorUiColor titleRawColor() {
+        return titleColor;
+    }
+
+    StarsectorUiColor backgroundRawColor() {
+        return backgroundColor;
+    }
+
+    StarsectorUiColor bodyRawColor() {
+        return bodyColor;
+    }
+}

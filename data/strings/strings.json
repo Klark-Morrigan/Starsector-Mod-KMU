@@ -1,11 +1,8 @@
 {
   "kmu": {
-    "condition_picker_title": "Planetary Conditions",
-    "condition_picker_summary": "%s, %s, %s. Conditions: %d total; %d present; %d hidden; %d suppressed.",
+    "condition_picker_location": "Location:",
+    "condition_picker_summary": "Conditions: %d total; %d present; %d hidden; %d suppressed.",
     "condition_picker_empty": "No planetary condition specs are available.",
-    "unknown_market": "Unknown market",
-    "unknown_star_system": "Unknown star system",
-    "unknown_constellation": "Unknown constellation",
     "dialog_close": "Close"
   }
 }

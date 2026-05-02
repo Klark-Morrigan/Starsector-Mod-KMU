@@ -1,0 +1,124 @@
+# Style conventions: see ../../DIAGRAMS.md
+
+direction: right
+
+classes: {
+  note: {
+    style: {
+      fill: "#fff7d6"
+      stroke: "#b58b00"
+      font-color: "#242424"
+    }
+  }
+  value: {
+    style: {
+      fill: "#eef8ff"
+      stroke: "#3b82a0"
+      font-color: "#113247"
+    }
+  }
+  port: {
+    style: {
+      fill: "#fff0e6"
+      stroke: "#c76a24"
+      font-color: "#4a2108"
+    }
+  }
+  adapter: {
+    style: {
+      fill: "#f3ecff"
+      stroke: "#7b55b7"
+      font-color: "#2d1c45"
+    }
+  }
+  shared: {
+    style: {
+      fill: "#ffeaf4"
+      stroke: "#c75186"
+      font-color: "#4a1830"
+    }
+  }
+  external: {
+    style: {
+      fill: "#f3f4f6"
+      stroke: "#6b7280"
+      font-color: "#1f2937"
+      stroke-dash: 5
+    }
+  }
+}
+
+Legend: {
+  grid-rows: 1
+  L_value: "value / result" {class: value}
+  L_port: "port / interface" {class: port}
+  L_adapter: "adapter" {class: adapter}
+  L_shared: "shared utility" {class: shared}
+  L_external: "external API" {class: external}
+  L_note: "note" {class: note}
+}
+
+Values: "Context Values" {
+  direction: down
+  Context: "KmuMarketUiContext" {class: value}
+  Source: "KmuMarketUiContextSource" {class: value}
+  ContextNote: "resolved market plus\noptional panel" {class: note}
+  OwnershipNote: "no ownership filtering\nin detection" {class: note}
+}
+
+Ports: "Ports / Interfaces" {
+  direction: down
+  ResolverPort: "KmuMarketUiContextResolver" {class: port}
+}
+
+Adapters: "Starsector Adapters" {
+  direction: down
+  StarsectorResolver: "StarsectorMarketUiContextResolver" {class: adapter}
+  ContextTracker: "StarsectorMarketUiContextTracker" {class: adapter}
+  ResolverNote: "tries live public campaign\ncontext sources first" {class: note}
+  TrackerNote: "tracks core UI market\nopen events" {class: note}
+}
+
+Shared: "Shared Utilities" {
+  direction: down
+  Reporter: "KmuErrorReporter" {class: shared}
+  FailureNote: "failures report and\nreturn empty context" {class: note}
+}
+
+External: "External Starsector API" {
+  direction: down
+  SectorAPI: "SectorAPI" {class: external}
+  CampaignUIAPI: "CampaignUIAPI" {class: external}
+  InteractionDialogAPI: "InteractionDialogAPI" {class: external}
+  CampaignFleetAPI: "CampaignFleetAPI" {class: external}
+  ListenerManagerAPI: "ListenerManagerAPI" {class: external}
+  CoreUITabListener: "CoreUITabListener" {class: external}
+  CoreUITabId: "CoreUITabId" {class: external}
+  SectorEntityToken: "SectorEntityToken" {class: external}
+  MarketAPI: "MarketAPI" {class: external}
+  UIPanelAPI: "UIPanelAPI" {class: external}
+}
+
+Adapters.StarsectorResolver -> Ports.ResolverPort: "implements" {
+  style: { stroke-dash: 5 }
+}
+Adapters.StarsectorResolver -> External.SectorAPI: "reads sector state"
+Adapters.StarsectorResolver -> External.CampaignUIAPI: "finds current dialog"
+Adapters.StarsectorResolver -> External.InteractionDialogAPI: "reads target"
+Adapters.StarsectorResolver -> External.CampaignFleetAPI: "reads fallback target"
+Adapters.StarsectorResolver -> External.ListenerManagerAPI: "reads tracked market from"
+Adapters.StarsectorResolver -> External.SectorEntityToken: "extracts market from"
+Adapters.StarsectorResolver -> Shared.Reporter: "reports failures"
+Adapters.StarsectorResolver -> Values.Context: "returns"
+
+Adapters.ContextTracker -> External.CoreUITabListener: "implements" {
+  style: { stroke-dash: 5 }
+}
+Adapters.ContextTracker -> External.CoreUITabId: "observes opening tab"
+Adapters.ContextTracker -> External.MarketAPI: "extracts market from"
+Adapters.ContextTracker -> External.SectorEntityToken: "extracts market from"
+
+Ports.ResolverPort -> Values.Context: "returns optional"
+Values.Context -> Values.Source: "records source"
+Values.Context -> External.MarketAPI: "contains market"
+Values.Context -> External.UIPanelAPI: "optionally contains panel"

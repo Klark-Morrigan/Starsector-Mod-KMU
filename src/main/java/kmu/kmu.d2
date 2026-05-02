@@ -1,0 +1,115 @@
+# Style conventions: see DIAGRAMS.md
+
+direction: right
+
+classes: {
+  note: {
+    style: {
+      fill: "#fff7d6"
+      stroke: "#b58b00"
+      font-color: "#242424"
+    }
+  }
+  orchestration: {
+    style: {
+      fill: "#e8f1ff"
+      stroke: "#2f67b1"
+      font-color: "#0f2747"
+    }
+  }
+  core: {
+    style: {
+      fill: "#e9f8ef"
+      stroke: "#2b8a4b"
+      font-color: "#10351d"
+    }
+  }
+  value: {
+    style: {
+      fill: "#eef8ff"
+      stroke: "#3b82a0"
+      font-color: "#113247"
+    }
+  }
+  adapter: {
+    style: {
+      fill: "#f3ecff"
+      stroke: "#7b55b7"
+      font-color: "#2d1c45"
+    }
+  }
+  shared: {
+    style: {
+      fill: "#ffeaf4"
+      stroke: "#c75186"
+      font-color: "#4a1830"
+    }
+  }
+  external: {
+    style: {
+      fill: "#f3f4f6"
+      stroke: "#6b7280"
+      font-color: "#1f2937"
+      stroke-dash: 5
+    }
+  }
+}
+
+Legend: {
+  grid-rows: 1
+  L_orch: "entry / orchestration" {class: orchestration}
+  L_core: "core / domain" {class: core}
+  L_value: "value / result" {class: value}
+  L_adapter: "adapter" {class: adapter}
+  L_shared: "shared utility" {class: shared}
+  L_note: "note" {class: note}
+}
+
+Entry: "Entry / Wiring" {
+  direction: down
+  Plugin: "KMU_ModPlugin" {class: orchestration}
+  ThinPlugin: "Thin entry point;\nwires runtime pieces" {class: note}
+  TrackerNote: "Registers market context\ntracker on game load" {class: note}
+}
+
+Conditions: "conditions feature" {
+  direction: down
+  Domain: "kmu.conditions.domain" {class: core}
+  UI: "kmu.conditions.ui" {class: orchestration}
+  FeatureNote: "owns domain and its own UI" {class: note}
+}
+
+Console: {
+  direction: down
+  Package: "kmu.console" {class: core}
+  ConsoleNote: "optional; requires\nConsole Commands mod" {class: note}
+}
+
+SharedUI: "Shared UI Infrastructure" {
+  direction: down
+  Context: "kmu.ui.context" {class: value}
+  SharedContextNote: "shared infrastructure;\nnot a feature" {class: note}
+}
+
+StarsectorAdapters: "Starsector Adapters" {
+  direction: down
+  Package: "kmu.starsector" {class: adapter}
+  StarsectorRule: "shared wrappers;\nno feature coupling" {class: note}
+}
+
+Shared: "Shared Utilities" {
+  direction: down
+  Reporter: "KmuErrorReporter" {class: shared}
+}
+
+StarsectorAPI: "Starsector API" {class: external}
+
+Entry.Plugin -> SharedUI.Context: "registers context tracker"
+Console.Package -> Conditions.UI: "opens editor through"
+Conditions.UI -> SharedUI.Context: "resolves market context"
+Conditions.UI -> Conditions.Domain: "reads condition state"
+Conditions.Domain -> StarsectorAdapters.Package: "uses Starsector wrappers"
+Conditions.UI -> Shared.Reporter: "reports failures"
+Conditions.Domain -> Shared.Reporter: "reports failures"
+Console.Package -> Shared.Reporter: "reports command failures"
+StarsectorAdapters.Package -> StarsectorAPI: "wraps"

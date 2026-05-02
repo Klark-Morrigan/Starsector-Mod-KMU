@@ -1,0 +1,90 @@
+# Style conventions: see ../DIAGRAMS.md
+
+direction: right
+
+classes: {
+  note: {
+    style: {
+      fill: "#fff7d6"
+      stroke: "#b58b00"
+      font-color: "#242424"
+    }
+  }
+  orchestration: {
+    style: {
+      fill: "#e8f1ff"
+      stroke: "#2f67b1"
+      font-color: "#0f2747"
+    }
+  }
+  value: {
+    style: {
+      fill: "#eef8ff"
+      stroke: "#3b82a0"
+      font-color: "#113247"
+    }
+  }
+  port: {
+    style: {
+      fill: "#fff0e6"
+      stroke: "#c76a24"
+      font-color: "#4a2108"
+    }
+  }
+  external: {
+    style: {
+      fill: "#f3f4f6"
+      stroke: "#6b7280"
+      font-color: "#1f2937"
+      stroke-dash: 5
+    }
+  }
+}
+
+Legend: {
+  grid-rows: 1
+  L_orch: "entry / orchestration" {class: orchestration}
+  L_value: "value / result" {class: value}
+  L_port: "port / interface" {class: port}
+  L_external: "external API" {class: external}
+  L_note: "note" {class: note}
+}
+
+Registration: "Console Registration" {
+  direction: down
+  CommandsCsv: "data/console/commands.csv" {class: external}
+  NamingNote: "KMU commands use\nkmu_verb_noun names" {class: note}
+}
+
+CommandLayer: "Command Layer" {
+  direction: down
+  OpenCommand: "KmuOpenConditionsCommand" {class: orchestration}
+  CommandNote: "optional integration;\ncalls editor entry point" {class: note}
+}
+
+EditorEntry: "Conditions UI Editor Entry" {
+  direction: down
+  EntryPoint: "KmuConditionEditorEntryPoint" {class: orchestration}
+  OpenResult: "KmuConditionEditorOpenResult" {class: value}
+  OpenStatus: "KmuConditionEditorOpenStatus" {class: value}
+  FailureNote: "maps open results\nto command results" {class: note}
+}
+
+External: "External: Console Commands API" {
+  direction: down
+  BaseCommand: "BaseCommand" {class: port}
+  CommandContext: "CommandContext" {class: external}
+  CommandResult: "CommandResult" {class: external}
+  Console: "Console" {class: external}
+}
+
+Registration.CommandsCsv -> CommandLayer.OpenCommand: "registers command class"
+CommandLayer.OpenCommand -> External.BaseCommand: "implements" {
+  style: { stroke-dash: 5 }
+}
+CommandLayer.OpenCommand -> External.CommandContext: "checks runtime context"
+CommandLayer.OpenCommand -> EditorEntry.EntryPoint: "opens editor through"
+CommandLayer.OpenCommand -> External.Console: "writes feedback with"
+CommandLayer.OpenCommand -> External.CommandResult: "returns"
+EditorEntry.EntryPoint -> EditorEntry.OpenResult: "returns detailed result"
+EditorEntry.OpenResult -> EditorEntry.OpenStatus: "classifies outcome"

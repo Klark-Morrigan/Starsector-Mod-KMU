@@ -2,10 +2,13 @@ package kmu.starsector;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.SettingsAPI;
+import kmu.KmuStrings;
 
 import java.awt.Color;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public final class StarsectorTestSupport {
     private StarsectorTestSupport() {
@@ -20,6 +23,7 @@ public final class StarsectorTestSupport {
     }
 
     private static SettingsAPI settings() {
+        Map<String, String> stringsByKey = stringsByKey();
         return proxy(SettingsAPI.class, (proxy, method, args) -> {
             if ("getFloat".equals(method.getName())) {
                 return 1f;
@@ -28,10 +32,25 @@ public final class StarsectorTestSupport {
                 return Color.WHITE;
             }
             if ("getString".equals(method.getName())) {
+                if (args != null
+                        && args.length == 2
+                        && KmuStrings.CATEGORY.equals(args[0])) {
+                    return stringsByKey.get(args[1]);
+                }
                 return null;
             }
             return defaultValue(method.getReturnType());
         });
+    }
+
+    private static Map<String, String> stringsByKey() {
+        Map<String, String> stringsByKey = new LinkedHashMap<>();
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_LOCATION, "Location:");
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY,
+                "Conditions: %d total; %d present; %d hidden; %d suppressed.");
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_EMPTY, "No planetary condition specs are available.");
+        stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
+        return stringsByKey;
     }
 
     private static Object defaultValue(Class<?> returnType) {

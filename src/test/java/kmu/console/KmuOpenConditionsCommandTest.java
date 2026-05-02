@@ -1,6 +1,6 @@
 package kmu.console;
 
-import kmu.ui.editor.KmuConditionEditorOpenResult;
+import kmu.conditions.ui.editor.KmuConditionEditorOpenResult;
 import org.junit.jupiter.api.Test;
 import org.lazywizard.console.BaseCommand.CommandContext;
 import org.lazywizard.console.BaseCommand.CommandResult;

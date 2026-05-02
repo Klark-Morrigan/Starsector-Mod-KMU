@@ -8,40 +8,36 @@ class KmuStringsTest {
     @Test
     void returnsConfiguredStringFromSource() {
         String value = KmuStrings.get(
-                KmuStrings.CONDITION_PICKER_TITLE,
-                "Fallback",
+                KmuStrings.CONDITION_PICKER_LOCATION,
                 key -> "Configured");
 
         assertThat(value).isEqualTo("Configured");
     }
 
     @Test
-    void fallsBackWhenSourceReturnsBlankValue() {
+    void redactsWhenSourceReturnsBlankValue() {
         String value = KmuStrings.get(
-                KmuStrings.CONDITION_PICKER_TITLE,
-                "Fallback",
+                KmuStrings.CONDITION_PICKER_LOCATION,
                 key -> "  ");
 
-        assertThat(value).isEqualTo("Fallback");
+        assertThat(value).isEqualTo(KmuStrings.REDACTED);
     }
 
     @Test
-    void fallsBackWhenSourceThrows() {
+    void redactsWhenSourceThrows() {
         String value = KmuStrings.get(
-                KmuStrings.CONDITION_PICKER_TITLE,
-                "Fallback",
+                KmuStrings.CONDITION_PICKER_LOCATION,
                 key -> {
                     throw new IllegalStateException("missing settings");
                 });
 
-        assertThat(value).isEqualTo("Fallback");
+        assertThat(value).isEqualTo(KmuStrings.REDACTED);
     }
 
     @Test
     void formatsConfiguredStringUsingRootLocale() {
         String value = KmuStrings.format(
                 KmuStrings.CONDITION_PICKER_SUMMARY,
-                "%d fallback %d",
                 key -> "%d configured %d",
                 3,
                 2);
@@ -50,14 +46,13 @@ class KmuStringsTest {
     }
 
     @Test
-    void fallsBackWhenConfiguredFormatIsInvalid() {
+    void redactsWhenConfiguredFormatIsInvalid() {
         String value = KmuStrings.format(
                 KmuStrings.CONDITION_PICKER_SUMMARY,
-                "%d fallback %d",
                 key -> "%q",
                 3,
                 2);
 
-        assertThat(value).isEqualTo("3 fallback 2");
+        assertThat(value).isEqualTo(KmuStrings.REDACTED);
     }
 }

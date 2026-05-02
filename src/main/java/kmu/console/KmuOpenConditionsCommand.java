@@ -1,19 +1,21 @@
 package kmu.console;
 
-import kmu.conditions.KmuConditionService;
-import kmu.conditions.StarsectorConditionRepository;
-import kmu.ui.chooser.KmuConditionChooserEditor;
-import kmu.ui.chooser.dialog.StarsectorInteractionDialogChooserOpener;
+import kmu.conditions.domain.KmuConditionService;
+import kmu.conditions.domain.StarsectorConditionRepository;
+import kmu.conditions.ui.editor.KmuConditionEditorEntryPoint;
+import kmu.conditions.ui.editor.KmuConditionEditorOpenResult;
+import kmu.conditions.ui.editor.KmuConditionEditorOpenStatus;
+import kmu.conditions.ui.picker.KmuConditionPickerEditor;
+import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
 import kmu.ui.context.StarsectorMarketUiContextResolver;
-import kmu.ui.editor.KmuConditionEditorEntryPoint;
-import kmu.ui.editor.KmuConditionEditorOpenResult;
-import kmu.ui.editor.KmuConditionEditorOpenStatus;
 import org.lazywizard.console.BaseCommand;
 import org.lazywizard.console.Console;
 
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import static kmu.KmuValues.normalizeText;
 
 public final class KmuOpenConditionsCommand implements BaseCommand {
     private final Supplier<KmuConditionEditorOpenResult> openEditor;
@@ -59,15 +61,17 @@ public final class KmuOpenConditionsCommand implements BaseCommand {
     }
 
     private String messageFor(KmuConditionEditorOpenResult result) {
+        String causeMessage = result.getCause()
+                .map(RuntimeException::getMessage)
+                .map(message -> normalizeText(message))
+                .orElse(null);
         if (result.getStatus() == KmuConditionEditorOpenStatus.FAILED
-                && result.getCause().isPresent()
-                && result.getCause().get().getMessage() != null
-                && !result.getCause().get().getMessage().trim().isEmpty()) {
+                && causeMessage != null) {
             String message = result.getMessage();
             if (message.endsWith(".")) {
                 message = message.substring(0, message.length() - 1);
             }
-            return message + ": " + result.getCause().get().getMessage();
+            return message + ": " + causeMessage;
         }
         return result.getMessage();
     }
@@ -76,8 +80,8 @@ public final class KmuOpenConditionsCommand implements BaseCommand {
         KmuConditionService conditionService = new KmuConditionService(new StarsectorConditionRepository());
         return new KmuConditionEditorEntryPoint(
                 new StarsectorMarketUiContextResolver(),
-                new KmuConditionChooserEditor(
+                new KmuConditionPickerEditor(
                         conditionService,
-                        new StarsectorInteractionDialogChooserOpener()));
+                        new StarsectorInteractionDialogPickerOpener()));
     }
 }

@@ -6,54 +6,50 @@ import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Objects;
 
+import static kmu.KmuValues.hasText;
+
 public final class KmuStrings {
     public static final String CATEGORY = "kmu";
+    // Missing or invalid localized UI strings should be visible during playtesting.
+    public static final String REDACTED = "[REDACTED]";
 
-    public static final String CONDITION_PICKER_TITLE = "condition_picker_title";
+    public static final String CONDITION_PICKER_LOCATION = "condition_picker_location";
     public static final String CONDITION_PICKER_SUMMARY = "condition_picker_summary";
     public static final String CONDITION_PICKER_EMPTY = "condition_picker_empty";
-    public static final String UNKNOWN_MARKET = "unknown_market";
-    public static final String UNKNOWN_STAR_SYSTEM = "unknown_star_system";
-    public static final String UNKNOWN_CONSTELLATION = "unknown_constellation";
     public static final String DIALOG_CLOSE = "dialog_close";
 
     private KmuStrings() {
     }
 
-    public static String get(String key, String fallback) {
-        return get(key, fallback, KmuStrings::fromSettings);
+    public static String get(String key) {
+        return get(key, KmuStrings::fromSettings);
     }
 
-    static String get(String key, String fallback, KmuStringSource source) {
+    static String get(String key, KmuStringSource source) {
         Objects.requireNonNull(key, "key");
-        Objects.requireNonNull(fallback, "fallback");
         Objects.requireNonNull(source, "source");
 
         try {
             String value = source.get(key);
-            if (value == null || value.trim().isEmpty()) {
-                return fallback;
+            if (!hasText(value)) {
+                return REDACTED;
             }
             return value;
         } catch (RuntimeException exception) {
-            return fallback;
+            return REDACTED;
         }
     }
 
-    public static String format(String key, String fallback, Object... args) {
-        return format(key, fallback, KmuStrings::fromSettings, args);
+    public static String format(String key, Object... args) {
+        return format(key, KmuStrings::fromSettings, args);
     }
 
-    static String format(String key, String fallback, KmuStringSource source, Object... args) {
-        String template = get(key, fallback, source);
+    static String format(String key, KmuStringSource source, Object... args) {
+        String template = get(key, source);
         try {
             return String.format(Locale.ROOT, template, args);
         } catch (IllegalFormatException exception) {
-            try {
-                return String.format(Locale.ROOT, fallback, args);
-            } catch (IllegalFormatException fallbackException) {
-                return fallback;
-            }
+            return REDACTED;
         }
     }
 

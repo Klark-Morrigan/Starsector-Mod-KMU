@@ -1,0 +1,112 @@
+# Style conventions: see ../../../DIAGRAMS.md
+
+direction: right
+
+classes: {
+  note: {
+    style: {
+      fill: "#fff7d6"
+      stroke: "#b58b00"
+      font-color: "#242424"
+    }
+  }
+  orchestration: {
+    style: {
+      fill: "#e8f1ff"
+      stroke: "#2f67b1"
+      font-color: "#0f2747"
+    }
+  }
+  value: {
+    style: {
+      fill: "#eef8ff"
+      stroke: "#3b82a0"
+      font-color: "#113247"
+    }
+  }
+  port: {
+    style: {
+      fill: "#fff0e6"
+      stroke: "#c76a24"
+      font-color: "#4a2108"
+    }
+  }
+  adapter: {
+    style: {
+      fill: "#f3ecff"
+      stroke: "#7b55b7"
+      font-color: "#2d1c45"
+    }
+  }
+  shared: {
+    style: {
+      fill: "#ffeaf4"
+      stroke: "#c75186"
+      font-color: "#4a1830"
+    }
+  }
+  external: {
+    style: {
+      fill: "#f3f4f6"
+      stroke: "#6b7280"
+      font-color: "#1f2937"
+      stroke-dash: 5
+    }
+  }
+}
+
+Legend: {
+  grid-rows: 1
+  L_orch: "entry / orchestration" {class: orchestration}
+  L_value: "value / result" {class: value}
+  L_port: "port / interface" {class: port}
+  L_adapter: "adapter" {class: adapter}
+  L_shared: "shared utility" {class: shared}
+  L_external: "external API" {class: external}
+  L_note: "note" {class: note}
+}
+
+Orchestration: {
+  direction: down
+  EntryPoint: "KmuConditionEditorEntryPoint" {class: orchestration}
+  OpenResult: "KmuConditionEditorOpenResult" {class: value}
+  OpenStatus: "KmuConditionEditorOpenStatus" {class: value}
+  EntryNote: "orchestrates:\nresolve - validate - open - report" {class: note}
+}
+
+Port: "Editor Port" {
+  direction: down
+  EditorPort: "KmuConditionEditor" {class: port}
+  ValidatorPort: "KmuConditionEditorTargetValidator" {class: port}
+  PortNote: "KmuConditionEditor is the seam\nbetween orchestration and picker UI" {class: note}
+  ValidatorNote: "checks market supports\nplanetary conditions" {class: note}
+}
+
+Adapter: "Starsector Adapter" {
+  direction: down
+  StarsectorValidator: "StarsectorConditionEditorTargetValidator" {class: adapter}
+}
+
+Shared: {
+  direction: down
+  Reporter: "KmuErrorReporter" {class: shared}
+  Context: "KmuMarketUiContext" {class: value}
+  ContextResolver: "KmuMarketUiContextResolver" {class: port}
+}
+
+External: "External Starsector API" {
+  direction: down
+  MarketAPI: "MarketAPI" {class: external}
+}
+
+Orchestration.EntryPoint -> Shared.ContextResolver: "resolves context via"
+Orchestration.EntryPoint -> Port.ValidatorPort: "validates target via"
+Orchestration.EntryPoint -> Port.EditorPort: "opens UI via"
+Orchestration.EntryPoint -> Shared.Reporter: "reports failures"
+Orchestration.EntryPoint -> Orchestration.OpenResult: "returns"
+Orchestration.OpenResult -> Orchestration.OpenStatus: "classifies outcome"
+
+Adapter.StarsectorValidator -> Port.ValidatorPort: "implements" {
+  style: { stroke-dash: 5 }
+}
+Adapter.StarsectorValidator -> External.MarketAPI: "inspects"
