@@ -17,9 +17,11 @@ import kmu.conditions.ui.picker.action.KmuConditionPickerFeedback;
 import kmu.conditions.ui.picker.action.KmuConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.action.StarsectorConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
+import kmu.conditions.ui.picker.render.KmuConditionIconGrid;
 import kmu.conditions.ui.picker.render.KmuConditionPickerContainer;
 import kmu.conditions.ui.picker.render.KmuConditionPickerRenderResult;
-import kmu.conditions.ui.picker.render.KmuLabelSpec;
+import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
+import kmu.conditions.ui.picker.render.spec.KmuConditionPickerSummaryLabelSpecFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class KmuConditionPickerDialogDelegate implements CustomDialogDelegate {
-    private static final float DEFAULT_WIDTH = KmuConditionPickerContainer.defaultContainerWidth();
+    private static final float DEFAULT_WIDTH = KmuConditionIconGrid.computeDefaultTotalWidth();
     private static final float DEFAULT_HEIGHT = 560f;
     private static final float BODY_BG_ALPHA = 0.85f;
 
@@ -138,7 +140,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         }
 
         KmuConditionPickerModel model = actionHandler.getModel();
-        float headerH = KmuConditionPickerContainer.headerHeight(model);
+        float headerH = KmuConditionPickerContainer.computeHeaderHeight(model);
         float gridH = height - headerH;
 
         headerBody = panel.createUIElement(width, headerH, false);
@@ -169,7 +171,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         LabelAPI summaryLabel = renderResult.getSummaryLabel();
         if (summaryLabel != null) {
             KmuLabelSpec spec =
-                    KmuConditionPickerContainer.summaryLabelSpec(actionHandler.getModel());
+                    KmuConditionPickerSummaryLabelSpecFactory.get(actionHandler.getModel());
             summaryLabel.setText(spec.getText());
             spec.applyTo(summaryLabel);
         }

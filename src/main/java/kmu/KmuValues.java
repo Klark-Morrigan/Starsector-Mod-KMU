@@ -1,13 +1,10 @@
 package kmu;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 public final class KmuValues {
     private KmuValues() {
-    }
-
-    public static Optional<String> convertToOptionalText(String value) {
-        return Optional.ofNullable(normalizeText(value));
     }
 
     public static String normalizeText(String value) {
@@ -17,6 +14,10 @@ public final class KmuValues {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    public static Optional<String> convertToOptionalText(String value) {
+        return Optional.ofNullable(normalizeText(value));
     }
 
     public static String getTextOrEmpty(String value) {
@@ -43,8 +44,16 @@ public final class KmuValues {
         }
     }
 
+    public static <T, R> R readValueOrNull(T value, Function<T, R> extractor) {
+        return value == null ? null : readValueOrNull(() -> extractor.apply(value));
+    }
+
     public static String readTextOrNull(SupplierWithRuntimeException<String> supplier) {
         return normalizeText(readValueOrNull(supplier));
+    }
+
+    public static <T> String readTextOrNull(T value, Function<T, String> extractor) {
+        return value == null ? null : normalizeText(readValueOrNull(() -> extractor.apply(value)));
     }
 
     @FunctionalInterface

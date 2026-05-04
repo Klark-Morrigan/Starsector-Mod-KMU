@@ -1,14 +1,15 @@
 package kmu.conditions.ui.picker.render;
 
+import com.fs.starfarer.api.ui.CustomPanelAPI;
+import com.fs.starfarer.api.ui.LabelAPI;
+import com.fs.starfarer.api.ui.PositionAPI;
+import com.fs.starfarer.api.ui.TooltipMakerAPI;
+import com.fs.starfarer.api.util.Misc;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
-
-import com.fs.starfarer.api.ui.CustomPanelAPI;
-import com.fs.starfarer.api.ui.LabelAPI;
-import com.fs.starfarer.api.ui.TooltipMakerAPI;
-import com.fs.starfarer.api.util.Misc;
+import kmu.conditions.ui.picker.model.KmuPickerFaction;
 import kmu.starsector.StarsectorTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +21,7 @@ import java.awt.Color;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +31,6 @@ class KmuConditionPickerContainerTest {
     private static final Color GOLD = new Color(255, 220, 80);
     private static final Color RED = new Color(255, 80, 80);
     private static final Color GREEN = new Color(80, 220, 80);
-    private static final Color LIGHT_BLUE = new Color(100, 180, 255);
     private static final Color FACTION = new Color(90, 150, 240);
     private static final Color RELATIONSHIP = new Color(240, 80, 80);
 
@@ -65,9 +65,12 @@ class KmuConditionPickerContainerTest {
             }
             return defaultValue(method.getReturnType());
         });
-        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> defaultValue(method.getReturnType()));
+        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return rowPanel();
+            return defaultValue(method.getReturnType());
+        });
         KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
+                Collections.emptyList(),
                 location());
 
         new KmuConditionPickerContainer(panel).render(body, body, model, action -> { }, 400f);
@@ -78,12 +81,17 @@ class KmuConditionPickerContainerTest {
     @Test
     void renderRoutesLabelsToHeaderBodyAndGridToGridBody() {
         List<String> headerParas = new ArrayList<>();
+        List<Object> headerCustoms = new ArrayList<>();
         List<String> gridParas = new ArrayList<>();
 
         TooltipMakerAPI headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
             if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
                 headerParas.add(String.valueOf(args[0]));
                 return label();
+            }
+            if ("addCustom".equals(method.getName())) {
+                headerCustoms.add(args[0]);
+                return null;
             }
             return defaultValue(method.getReturnType());
         });
@@ -94,293 +102,232 @@ class KmuConditionPickerContainerTest {
             }
             return defaultValue(method.getReturnType());
         });
-        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> defaultValue(method.getReturnType()));
+        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return rowPanel();
+            return defaultValue(method.getReturnType());
+        });
 
-        // Empty model: location + summary go to headerBody, empty-state message goes to gridBody.
+        // Empty model: summary row (containing location + conditions) goes via addCustom,
+        // empty-state message to gridBody. No separate addPara for location.
         KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
+                Collections.emptyList(),
                 location());
 
         new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
 
-        assertThat(headerParas).hasSize(2); // location + summary
-        assertThat(gridParas).hasSize(1);   // empty-state message
+        assertThat(headerParas).isEmpty();    // location is inside the summary panel
+        assertThat(headerCustoms).hasSize(1); // summary row panel
+        assertThat(gridParas).hasSize(1);     // empty-state message
+    }
+
+    @Test
+    void renderUsesCustomPanelForSummaryRowWhenFactionHasCrestSprite() {
+        List<String> headerParas = new ArrayList<>();
+        List<Object> headerCustoms = new ArrayList<>();
+
+        // Proxy chain for the icon+text row panel created inside the container.
+        PositionAPI position = proxy(PositionAPI.class,
+                (proxy, method, args) -> defaultValue(method.getReturnType()));
+        TooltipMakerAPI rowElement = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            if ("addPara".equals(method.getName())) return label();
+            return defaultValue(method.getReturnType());
+        });
+        CustomPanelAPI summaryRow = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            if ("createUIElement".equals(method.getName())) return rowElement;
+            if ("addUIElement".equals(method.getName())) return position;
+            return defaultValue(method.getReturnType());
+        });
+        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return summaryRow;
+            return defaultValue(method.getReturnType());
+        });
+        TooltipMakerAPI headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                headerParas.add(String.valueOf(args[0]));
+                return label();
+            }
+            if ("addCustom".equals(method.getName())) {
+                headerCustoms.add(args[0]);
+                return null;
+            }
+            return defaultValue(method.getReturnType());
+        });
+        TooltipMakerAPI gridBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            if ("addPara".equals(method.getName())) return label();
+            return defaultValue(method.getReturnType());
+        });
+
+        KmuPickerFaction faction = new KmuPickerFaction(
+                "Hegemony", FACTION, "graphics/factions/hegemony_crest.png", null, null);
+        KmuConditionPickerModel model = new KmuConditionPickerModel(
+                Collections.emptyList(),
+                new KmuConditionPickerLocation("Valis", "terran world", faction, null, null, null, null));
+
+        new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+        // Location and conditions are both inside the summary panel; only addCustom is called.
+        assertThat(headerParas).isEmpty();
+        assertThat(headerCustoms).hasSize(1);
+    }
+
+    @Test
+    void renderSkipsLocationLabelWhenLocationHasNoDisplayableFields() {
+        List<String> headerParas = new ArrayList<>();
+        List<Object> headerCustoms = new ArrayList<>();
+
+        TooltipMakerAPI headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                headerParas.add(String.valueOf(args[0]));
+                return label();
+            }
+            if ("addCustom".equals(method.getName())) {
+                headerCustoms.add(args[0]);
+                return null;
+            }
+            return defaultValue(method.getReturnType());
+        });
+        TooltipMakerAPI gridBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            if ("addPara".equals(method.getName())) return label();
+            return defaultValue(method.getReturnType());
+        });
+        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return rowPanel();
+            return defaultValue(method.getReturnType());
+        });
+        KmuConditionPickerModel model = new KmuConditionPickerModel(
+                Collections.emptyList(),
+                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+
+        new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+        assertThat(headerParas).isEmpty();    // no location label
+        assertThat(headerCustoms).hasSize(1); // summary row only
+    }
+
+    @Test
+    void renderSkipsEmptyStateAndInvokesGridForNonEmptyModel() {
+        List<String> gridParas = new ArrayList<>();
+        List<Object> gridCustoms = new ArrayList<>();
+
+        TooltipMakerAPI gridBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                gridParas.add(String.valueOf(args[0]));
+                return label();
+            }
+            if ("addCustom".equals(method.getName())) {
+                gridCustoms.add(args[0]);
+                return null;
+            }
+            return defaultValue(method.getReturnType());
+        });
+        TooltipMakerAPI headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            if ("addPara".equals(method.getName())) return label();
+            return defaultValue(method.getReturnType());
+        });
+
+        PositionAPI gridPosition = proxy(PositionAPI.class,
+                (p, method, args) -> defaultValue(method.getReturnType()));
+        CustomPanelAPI buttonPanelStub = proxy(CustomPanelAPI.class,
+                (p, method, args) -> defaultValue(method.getReturnType()));
+        CustomPanelAPI gridPanel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return buttonPanelStub;
+            if ("addComponent".equals(method.getName())) return gridPosition;
+            return defaultValue(method.getReturnType());
+        });
+        int[] createCustomPanelCount = {0};
+        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) {
+                return (createCustomPanelCount[0]++ == 0) ? rowPanel() : gridPanel;
+            }
+            return defaultValue(method.getReturnType());
+        });
+
+        KmuConditionPickerModel model = new KmuConditionPickerModel(
+                Collections.singletonList(entry("hot", KmuConditionPickerEntryState.PRESENT)),
+                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+
+        new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+        assertThat(gridParas).isEmpty();      // no empty-state message
+        assertThat(gridCustoms).hasSize(1);   // grid panel added to gridBody
+    }
+
+    @Test
+    void renderResultReturnsFalseFromUpdateEntryWhenModelIsEmpty() {
+        TooltipMakerAPI body = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            if ("addPara".equals(method.getName())) return label();
+            return defaultValue(method.getReturnType());
+        });
+        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return rowPanel();
+            return defaultValue(method.getReturnType());
+        });
+        KmuConditionPickerModel model = new KmuConditionPickerModel(
+                Collections.emptyList(),
+                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+
+        KmuConditionPickerRenderResult result =
+                new KmuConditionPickerContainer(panel).render(body, body, model, action -> { }, 400f);
+
+        assertThat(result.updateEntry(entry("hot", KmuConditionPickerEntryState.PRESENT))).isFalse();
+    }
+
+    @Test
+    void renderResultDelegatesToGridHandleForUpdateEntry() {
+        TooltipMakerAPI headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            if ("addPara".equals(method.getName())) return label();
+            return defaultValue(method.getReturnType());
+        });
+        TooltipMakerAPI gridBody = proxy(TooltipMakerAPI.class,
+                (p, method, args) -> defaultValue(method.getReturnType()));
+
+        PositionAPI gridPosition = proxy(PositionAPI.class,
+                (p, method, args) -> defaultValue(method.getReturnType()));
+        CustomPanelAPI buttonPanelStub = proxy(CustomPanelAPI.class,
+                (p, method, args) -> defaultValue(method.getReturnType()));
+        CustomPanelAPI gridPanel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return buttonPanelStub;
+            if ("addComponent".equals(method.getName())) return gridPosition;
+            return defaultValue(method.getReturnType());
+        });
+        int[] count = {0};
+        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return (count[0]++ == 0) ? rowPanel() : gridPanel;
+            return defaultValue(method.getReturnType());
+        });
+
+        KmuConditionPickerModel model = new KmuConditionPickerModel(
+                Collections.singletonList(entry("hot", KmuConditionPickerEntryState.PRESENT)),
+                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+
+        KmuConditionPickerRenderResult result =
+                new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+        assertThat(result.updateEntry(entry("hot", KmuConditionPickerEntryState.ABSENT))).isTrue();
+        assertThat(result.updateEntry(entry("cold", KmuConditionPickerEntryState.ABSENT))).isFalse();
     }
 
     @Test
     void headerHeightIsTwoLinesWhenLocationIsPresent() {
         KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
+                Collections.emptyList(),
                 location());
 
-        assertThat(KmuConditionPickerContainer.headerHeight(model))
-                .isEqualTo(2 * (8f + 20f));
+        assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
+                .isEqualTo(8f + 2 * 20f);
     }
 
     @Test
     void headerHeightIsOneLineWhenLocationIsAbsent() {
         KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null, null, null, null));
+                Collections.emptyList(),
+                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
 
-        assertThat(KmuConditionPickerContainer.headerHeight(model))
+        assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
                 .isEqualTo(1 * (8f + 20f));
     }
 
-    @Test
-    void summarizesTotalAndPresentConditions() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
-                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
-                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
-                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
-                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-                location());
-
-        assertThat(KmuConditionPickerContainer.summaryText(model))
-                .isEqualTo("Conditions: 2 visible - 1 suppressed, 3 present, 1 hidden - 1 available, 4 total.");
-    }
-
-    @Test
-    void summarizesLocationSeparatelyFromConditionCounts() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                location());
-
-        assertThat(KmuConditionPickerContainer.locationText(model))
-                .isEqualTo("Location: Valis (terran world) - owned by Hegemony "
-                        + "(Vengeful (-100 / 100)) - Corvus Star System (yellow star) - Corvus.");
-    }
-
-    @Test
-    void showsGravityWellEntityNameWhenNotImpliedBySystemName() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null, null, null, null, null, null,
-                        "Kumari System",
-                        "Yellow Dwarf",
-                        "Kumari A",
-                        null));
-
-        KmuLabelSpec spec = KmuConditionPickerContainer.locationLabelSpec(model);
-        assertThat(spec.getText())
-                .isEqualTo("Location: Kumari System (Kumari A, Yellow Dwarf).");
-        assertThat(spec.getHighlights()).containsExactly("Kumari System", "Kumari A");
-    }
-
-    @Test
-    void suppressesGravityWellEntityNameWhenImpliedBySystemName() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null, null, null, null, null, null,
-                        "Agreus System",
-                        "Black Hole",
-                        "Agreus",
-                        null));
-
-        KmuLabelSpec spec = KmuConditionPickerContainer.locationLabelSpec(model);
-        assertThat(spec.getText()).isEqualTo("Location: Agreus System (Black Hole).");
-        assertThat(spec.getHighlights()).containsExactly("Agreus System");
-    }
-
-    @Test
-    void deduplicatesGravityWellNameAndEntityNameForNonPlanetGravityWells() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null, null, null, null, null, null,
-                        "Kumari Star System",
-                        "Kumari Barycenter",
-                        "Kumari Barycenter",
-                        null));
-
-        KmuLabelSpec spec = KmuConditionPickerContainer.locationLabelSpec(model);
-        assertThat(spec.getText())
-                .isEqualTo("Location: Kumari Star System (Kumari Barycenter).");
-        assertThat(spec.getHighlights()).containsExactly("Kumari Star System");
-    }
-
-    @Test
-    void omitsMissingLocationFields() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        "Valis",
-                        " ",
-                        null,
-                        null,
-                        null,
-                        null,
-                        "Corvus Star System",
-                        null,
-                        null,
-                        null));
-
-        KmuLabelSpec spec = KmuConditionPickerContainer.locationLabelSpec(model);
-        assertThat(spec.getText()).isEqualTo("Location: Valis - Corvus Star System.");
-        assertThat(spec.getHighlights()).containsExactly("Valis", "Corvus Star System");
-    }
-
-    @Test
-    void returnsEmptyLocationTextWhenLocationHasNoDisplayableFields() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null));
-
-        KmuLabelSpec spec = KmuConditionPickerContainer.locationLabelSpec(model);
-        assertThat(spec.getText()).isEmpty();
-        assertThat(spec.getHighlights()).isEmpty();
-        assertThat(spec.getHighlightColors()).isEmpty();
-    }
-
-    @Test
-    void exposesLocationHighlights() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                location());
-
-        assertThat(KmuConditionPickerContainer.locationLabelSpec(model).getHighlights())
-                .containsExactly(
-                        "Valis",
-                        "Hegemony",
-                        "Vengeful (-100 / 100)",
-                        "Corvus Star System",
-                        "Corvus");
-    }
-
-    @Test
-    void exposesLocationHighlightColors() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                location());
-
-        assertThat(KmuConditionPickerContainer.locationLabelSpec(model).getHighlightColors())
-                .containsExactly(GOLD, FACTION, RELATIONSHIP, GOLD, GOLD);
-    }
-
-    @Test
-    void defaultsMissingFactionAndRelationshipColorsToWhiteInRenderer() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                java.util.Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null,
-                        null,
-                        "Hegemony",
-                        null,
-                        "Vengeful (-100 / 100)",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null));
-
-        assertThat(KmuConditionPickerContainer.locationLabelSpec(model).getHighlightColors())
-                .containsExactly(Color.WHITE, Color.WHITE);
-    }
-
-    @Test
-    void exposesSummaryCountHighlights() {
-        // hot=visible, cold=available, hidden=present+hidden, suppressed=present+suppressed
-        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
-                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
-                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
-                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
-                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-                location());
-
-        // hot+hidden are both PRESENT and not suppressed → visible=2; cold is absent+not-hidden → available=1
-        assertThat(KmuConditionPickerContainer.summaryLabelSpec(model).getHighlights())
-                .containsExactly(
-                        "Conditions:", "2 visible", "1 suppressed", "3 present", "1 hidden",
-                        " - 1 available", ", 4 total.");
-    }
-
-    @Test
-    void exposesSummaryHighlightColors() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
-                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
-                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
-                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
-                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-                location());
-
-        Color[] colors = KmuConditionPickerContainer.summaryLabelSpec(model).getHighlightColors();
-
-        assertThat(colors).containsExactly(Color.WHITE, GREEN, RED, Color.WHITE, LIGHT_BLUE, GRAY, GRAY);
-    }
-
-    @Test
-    void omitsSuppressedSegmentWhenNonePresent() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
-                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false)),
-                location());
-
-        assertThat(KmuConditionPickerContainer.summaryLabelSpec(model).getHighlights())
-                .doesNotContain("0 suppressed");
-    }
-
-    @Test
-    void exposesRedHighlightForSuppressedSegment() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
-                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-                location());
-
-        String[] highlights = KmuConditionPickerContainer.summaryLabelSpec(model).getHighlights();
-        Color[] colors = KmuConditionPickerContainer.summaryLabelSpec(model).getHighlightColors();
-
-        int suppIdx = Arrays.asList(highlights).indexOf("1 suppressed");
-        assertThat(suppIdx).isNotEqualTo(-1);
-        assertThat(colors[suppIdx]).isEqualTo(RED);
-    }
-
-    @Test
-    void reservesRightPaddingForScrollbar() {
-        assertThat(KmuConditionPickerContainer.gridWidth(400f))
-                .isEqualTo(352f);
-    }
-
-    @Test
-    void snapsGridWidthToFullRowsOfSquareVanillaCells() {
-        assertThat(KmuConditionPickerContainer.DEFAULT_SQUARE_ICON_COLUMNS)
-                .isEqualTo(12);
-        assertThat(KmuConditionPickerContainer.defaultContainerWidth())
-                .isEqualTo(744f);
-        assertThat(KmuConditionPickerContainer.gridWidth(KmuConditionPickerContainer.defaultContainerWidth()))
-                .isEqualTo(712f);
-    }
-
-    @Test
-    void derivesContainerWidthFromSquareVanillaCellCount() {
-        assertThat(KmuConditionPickerContainer.containerWidthForSquareIconColumns(1))
-                .isEqualTo(84f);
-    }
-
-    @Test
-    void keepsGridWidthPositiveForNarrowContainers() {
-        assertThat(KmuConditionPickerContainer.gridWidth(12f))
-                .isEqualTo(1f);
-    }
-
     private static KmuConditionPickerEntry entry(String id, KmuConditionPickerEntryState state) {
-        return entry(id, state, false, false);
-    }
-
-    private static KmuConditionPickerEntry entry(
-            String id,
-            KmuConditionPickerEntryState state,
-            boolean suppressed,
-            boolean hidden) {
         return new KmuConditionPickerEntry(
                 id,
                 id,
@@ -388,22 +335,33 @@ class KmuConditionPickerContainerTest {
                 state,
                 "Test tooltip",
                 null,
-                suppressed,
-                hidden);
+                false,
+                false);
     }
 
     private static KmuConditionPickerLocation location() {
         return new KmuConditionPickerLocation(
                 "Valis",
                 "terran world",
-                "Hegemony",
-                FACTION,
-                "Vengeful (-100 / 100)",
-                RELATIONSHIP,
+                new KmuPickerFaction("Hegemony", FACTION, null, "Vengeful (-100 / 100)", RELATIONSHIP),
                 "Corvus Star System",
                 "yellow star",
                 "Corvus",
                 "Corvus");
+    }
+
+    private static CustomPanelAPI rowPanel() {
+        PositionAPI position = proxy(PositionAPI.class,
+                (proxy, method, args) -> defaultValue(method.getReturnType()));
+        TooltipMakerAPI rowElement = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            if ("addPara".equals(method.getName())) return label();
+            return defaultValue(method.getReturnType());
+        });
+        return proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            if ("createUIElement".equals(method.getName())) return rowElement;
+            if ("addUIElement".equals(method.getName())) return position;
+            return defaultValue(method.getReturnType());
+        });
     }
 
     private static LabelAPI label() {

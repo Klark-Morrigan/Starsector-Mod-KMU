@@ -1,4 +1,4 @@
-package kmu.conditions.ui.picker.render;
+package kmu.conditions.ui.picker.render.spec;
 
 import com.fs.starfarer.api.ui.LabelAPI;
 
@@ -13,7 +13,7 @@ public final class KmuLabelSpec {
     private final String[] highlights;
     private final Color[] highlightColors;
 
-    KmuLabelSpec(String text, String[] highlights, Color[] highlightColors) {
+    public KmuLabelSpec(String text, String[] highlights, Color[] highlightColors) {
         this.text = text;
         this.highlights = highlights;
         this.highlightColors = highlightColors;
@@ -29,11 +29,11 @@ public final class KmuLabelSpec {
         label.setHighlightColors(highlightColors);
     }
 
-    String[] getHighlights() {
+    public String[] getHighlights() {
         return highlights;
     }
 
-    Color[] getHighlightColors() {
+    public Color[] getHighlightColors() {
         return highlightColors;
     }
 }

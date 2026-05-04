@@ -1,6 +1,5 @@
 package kmu.conditions.ui.picker.model;
 
-import java.awt.Color;
 import java.util.Optional;
 
 import static kmu.KmuValues.convertToOptionalText;
@@ -8,10 +7,7 @@ import static kmu.KmuValues.convertToOptionalText;
 public final class KmuConditionPickerLocation {
     private final Optional<String> planetName;
     private final Optional<String> planetType;
-    private final Optional<String> factionName;
-    private final Optional<Color> factionColor;
-    private final Optional<String> relationshipDescription;
-    private final Optional<Color> relationshipColor;
+    private final Optional<KmuPickerFaction> faction;
     private final Optional<String> starSystemName;
     private final Optional<String> gravityWellTypeName;
     private final Optional<String> gravityWellName;
@@ -20,20 +16,14 @@ public final class KmuConditionPickerLocation {
     public KmuConditionPickerLocation(
             String planetName,
             String planetType,
-            String factionName,
-            Color factionColor,
-            String relationshipDescription,
-            Color relationshipColor,
+            KmuPickerFaction faction,
             String starSystemName,
             String gravityWellTypeName,
             String gravityWellName,
             String constellationName) {
         this.planetName = convertToOptionalText(planetName);
         this.planetType = convertToOptionalText(planetType);
-        this.factionName = convertToOptionalText(factionName);
-        this.factionColor = Optional.ofNullable(factionColor);
-        this.relationshipDescription = convertToOptionalText(relationshipDescription);
-        this.relationshipColor = Optional.ofNullable(relationshipColor);
+        this.faction = Optional.ofNullable(faction);
         this.starSystemName = convertToOptionalText(starSystemName);
         this.gravityWellTypeName = convertToOptionalText(gravityWellTypeName);
         this.gravityWellName = convertToOptionalText(gravityWellName);
@@ -48,20 +38,8 @@ public final class KmuConditionPickerLocation {
         return planetType;
     }
 
-    public Optional<String> getFactionName() {
-        return factionName;
-    }
-
-    public Optional<Color> getFactionColor() {
-        return factionColor;
-    }
-
-    public Optional<String> getRelationshipDescription() {
-        return relationshipDescription;
-    }
-
-    public Optional<Color> getRelationshipColor() {
-        return relationshipColor;
+    public Optional<KmuPickerFaction> getFaction() {
+        return faction;
     }
 
     public Optional<String> getStarSystemName() {

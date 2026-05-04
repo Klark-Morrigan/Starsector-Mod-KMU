@@ -118,6 +118,22 @@ class KmuConditionIconButtonTest {
     }
 
     @Test
+    void iconBoundsReturnsFallbackSizeForZeroDimensions() {
+        KmuConditionIconButton.IconBounds bounds = KmuConditionIconButton.iconBounds(0f, 0f);
+
+        assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButton.Sizing.FALLBACK_ICON_SIZE);
+        assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButton.Sizing.FALLBACK_ICON_SIZE);
+    }
+
+    @Test
+    void iconBoundsReturnsFallbackSizeForNegativeDimensions() {
+        KmuConditionIconButton.IconBounds bounds = KmuConditionIconButton.iconBounds(-1f, -1f);
+
+        assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButton.Sizing.FALLBACK_ICON_SIZE);
+        assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButton.Sizing.FALLBACK_ICON_SIZE);
+    }
+
+    @Test
     void rendersIconsAtVanillaHeightWhenSourceAlreadyMatches() {
         KmuConditionIconButton.ButtonMetrics wide = KmuConditionIconButton.metricsForSource(120f, 40f);
 

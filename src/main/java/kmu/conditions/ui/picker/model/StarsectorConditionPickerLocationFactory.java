@@ -52,14 +52,10 @@ final class StarsectorConditionPickerLocationFactory {
         }
 
         FactionAPI faction = factionFor(starsectorMarket);
-        RelationshipSummary relationship = relationshipFormatter.formatPlayerRelationship(faction);
         return new KmuConditionPickerLocation(
                 planetName(starsectorMarket),
                 planetType(starsectorMarket),
-                factionName(faction),
-                factionColor(faction),
-                relationship.getDescription(),
-                relationship.getColor(),
+                pickerFaction(faction),
                 starSystemName(starsectorMarket),
                 gravityWellTypeName(starsectorMarket),
                 gravityWellName(starsectorMarket),
@@ -68,7 +64,7 @@ final class StarsectorConditionPickerLocationFactory {
 
     private KmuConditionPickerLocation unknownLocation() {
         return new KmuConditionPickerLocation(
-                null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
     }
 
     private String marketName(MarketAPI market) {
@@ -77,13 +73,13 @@ final class StarsectorConditionPickerLocationFactory {
 
     private String planetName(MarketAPI market) {
         PlanetAPI planet = readValueOrNull(market::getPlanetEntity);
-        String planetName = planet == null ? null : readTextOrNull(planet::getName);
+        String planetName = readTextOrNull(planet, PlanetAPI::getName);
         if (planetName != null) {
             return planetName;
         }
 
         SectorEntityToken primaryEntity = readValueOrNull(market::getPrimaryEntity);
-        String entityName = primaryEntity == null ? null : readTextOrNull(primaryEntity::getName);
+        String entityName = readTextOrNull(primaryEntity, SectorEntityToken::getName);
         return entityName == null ? marketName(market) : entityName;
     }
 
@@ -96,7 +92,7 @@ final class StarsectorConditionPickerLocationFactory {
             }
         }
 
-        String planetType = planet == null ? null : planetTypeName(planet);
+        String planetType = readValueOrNull(planet, this::planetTypeName);
         if (planetType != null) {
             return planetType;
         }
@@ -112,10 +108,10 @@ final class StarsectorConditionPickerLocationFactory {
         }
 
         SectorEntityToken primaryEntity = readValueOrNull(market::getPrimaryEntity);
-        return primaryEntity == null ? null : readValueOrNull(primaryEntity::getFaction);
+        return readValueOrNull(primaryEntity, SectorEntityToken::getFaction);
     }
 
-    private String factionName(FactionAPI faction) {
+    private KmuPickerFaction pickerFaction(FactionAPI faction) {
         if (faction == null) {
             return null;
         }
@@ -124,11 +120,7 @@ final class StarsectorConditionPickerLocationFactory {
         if (name == null) {
             name = readTextOrNull(faction::getDisplayName);
         }
-        return name;
-    }
-
-    private Color factionColor(FactionAPI faction) {
-        if (faction == null) {
+        if (name == null) {
             return null;
         }
 
@@ -136,12 +128,16 @@ final class StarsectorConditionPickerLocationFactory {
         if (color == null) {
             color = readValueOrNull(faction::getColor);
         }
-        return color;
+
+        String crestSprite = readTextOrNull(faction::getCrest);
+        RelationshipSummary relationship = relationshipFormatter.formatPlayerRelationship(faction);
+        return new KmuPickerFaction(name, color, crestSprite,
+                relationship.getDescription(), relationship.getColor());
     }
 
     private String starSystemName(MarketAPI market) {
         StarSystemAPI system = readValueOrNull(market::getStarSystem);
-        String systemName = system == null ? null : readTextOrNull(system::getNameWithTypeShort);
+        String systemName = readTextOrNull(system, StarSystemAPI::getNameWithTypeShort);
         if (systemName == null && system != null) {
             systemName = readTextOrNull(system::getName);
         }
@@ -150,7 +146,7 @@ final class StarsectorConditionPickerLocationFactory {
         }
 
         LocationAPI location = readValueOrNull(market::getContainingLocation);
-        String locationName = location == null ? null : readTextOrNull(location::getNameWithTypeShort);
+        String locationName = readTextOrNull(location, LocationAPI::getNameWithTypeShort);
         if (locationName == null && location != null) {
             locationName = readTextOrNull(location::getName);
         }
@@ -164,7 +160,7 @@ final class StarsectorConditionPickerLocationFactory {
 
     private String gravityWellName(MarketAPI market) {
         SectorEntityToken gravityWell = gravityWellResolver.resolve(market);
-        return gravityWell == null ? null : readTextOrNull(gravityWell::getName);
+        return readTextOrNull(gravityWell, SectorEntityToken::getName);
     }
 
     private String entityTypeName(SectorEntityToken entity) {
@@ -234,13 +230,13 @@ final class StarsectorConditionPickerLocationFactory {
 
     private String constellationName(MarketAPI market) {
         StarSystemAPI system = readValueOrNull(market::getStarSystem);
-        Constellation constellation = system == null ? null : readValueOrNull(system::getConstellation);
+        Constellation constellation = readValueOrNull(system, StarSystemAPI::getConstellation);
         if (constellation == null) {
             LocationAPI location = readValueOrNull(market::getContainingLocation);
-            constellation = location == null ? null : readValueOrNull(location::getConstellation);
+            constellation = readValueOrNull(location, LocationAPI::getConstellation);
         }
 
-        String constellationName = constellation == null ? null : readTextOrNull(constellation::getNameWithType);
+        String constellationName = readTextOrNull(constellation, Constellation::getNameWithType);
         if (constellationName == null && constellation != null) {
             constellationName = readTextOrNull(constellation::getName);
         }
