@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class KmuConditionPickerContainer {
-    // Top padding applied before each element added to the header or grid body.
+    /** Top padding applied before each element added to the header or grid body. */
     private static final float ITEM_TOP_PAD = 8f;
     private final CustomPanelAPI panel;
     private final KmuConditionIconGrid grid;
@@ -54,12 +54,12 @@ public final class KmuConditionPickerContainer {
 
         KmuLabelSpec locationSpec = KmuConditionPickerLocationLabelSpecFactory.get(model);
         KmuLabelSpec summarySpec = KmuConditionPickerSummaryLabelSpecFactory.get(model);
-        KmuConditionPickerInfoRow summaryRow = KmuConditionPickerInfoRow.render(
+        KmuConditionPickerInfoRow infoRow = KmuConditionPickerInfoRow.render(
                 panel, locationSpec, summarySpec, model.getLocation().getFaction(), width);
-        LabelAPI summaryLabel = summaryRow.getConditionsLabel();
-        headerBody.addCustom(summaryRow.getPanel(), ITEM_TOP_PAD);
+        LabelAPI summaryLabel = infoRow.getConditionsLabel();
+        headerBody.addCustom(infoRow.getPanel(), ITEM_TOP_PAD);
         List<UIComponentAPI> summaryComponents = new ArrayList<>();
-        summaryComponents.add(summaryRow.getPanel());
+        summaryComponents.add(infoRow.getPanel());
 
         // Defensive empty state: the opener should usually avoid empty pickers,
         // but if no entries are renderable, show localized UI copy and skip the grid.
