@@ -366,8 +366,9 @@ public final class KmuConditionIconButton {
 
             tooltip.addTitle(entry.getName());
             if (hasText(entry.getTooltipText())) {
-                tooltip.addPara(entry.getTooltipText(), TooltipLayout.METADATA_PAD,
-                        StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE));
+                tooltip.addPara(entry.getTooltipText(),
+                        StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE),
+                        TooltipLayout.METADATA_PAD);
             }
             addStatusSections(tooltip, entry);
             addMetadataFooter(tooltip, entry);

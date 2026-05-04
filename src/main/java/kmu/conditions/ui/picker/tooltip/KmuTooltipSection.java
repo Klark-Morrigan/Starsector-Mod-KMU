@@ -42,7 +42,7 @@ public final class KmuTooltipSection {
                 HEADING_PAD);
         for (String line : lines) {
             if (hasText(line)) {
-                tooltip.addPara(line, LINE_PAD, style.bodyColor());
+                tooltip.addPara(line, style.bodyColor(), LINE_PAD);
             }
         }
     }

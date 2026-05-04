@@ -132,10 +132,10 @@ class KmuTooltipSectionTest {
             }
             if ("addPara".equals(method.getName())
                     && args != null
-                    && args.length == 4
-                    && args[1] instanceof Float
-                    && args[2] instanceof Color) {
-                paragraphs.add(new ParagraphCall((String) args[0], (Float) args[1], (Color) args[2]));
+                    && args.length == 3
+                    && args[1] instanceof Color
+                    && args[2] instanceof Float) {
+                paragraphs.add(new ParagraphCall((String) args[0], (Float) args[2], (Color) args[1]));
                 return null;
             }
             if ("toString".equals(method.getName())) {
