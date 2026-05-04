@@ -70,9 +70,61 @@ class KmuConditionPickerContainerTest {
                 java.util.Collections.emptyList(),
                 location());
 
-        new KmuConditionPickerContainer(panel).render(body, model, action -> { }, 400f);
+        new KmuConditionPickerContainer(panel).render(body, body, model, action -> { }, 400f);
 
         assertThat(titles).isEmpty();
+    }
+
+    @Test
+    void renderRoutesLabelsToHeaderBodyAndGridToGridBody() {
+        List<String> headerParas = new ArrayList<>();
+        List<String> gridParas = new ArrayList<>();
+
+        TooltipMakerAPI headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                headerParas.add(String.valueOf(args[0]));
+                return label();
+            }
+            return defaultValue(method.getReturnType());
+        });
+        TooltipMakerAPI gridBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                gridParas.add(String.valueOf(args[0]));
+                return label();
+            }
+            return defaultValue(method.getReturnType());
+        });
+        CustomPanelAPI panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> defaultValue(method.getReturnType()));
+
+        // Empty model: location + summary go to headerBody, empty-state message goes to gridBody.
+        KmuConditionPickerModel model = new KmuConditionPickerModel(
+                java.util.Collections.emptyList(),
+                location());
+
+        new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+        assertThat(headerParas).hasSize(2); // location + summary
+        assertThat(gridParas).hasSize(1);   // empty-state message
+    }
+
+    @Test
+    void headerHeightIsTwoLinesWhenLocationIsPresent() {
+        KmuConditionPickerModel model = new KmuConditionPickerModel(
+                java.util.Collections.emptyList(),
+                location());
+
+        assertThat(KmuConditionPickerContainer.headerHeight(model))
+                .isEqualTo(2 * (8f + 20f));
+    }
+
+    @Test
+    void headerHeightIsOneLineWhenLocationIsAbsent() {
+        KmuConditionPickerModel model = new KmuConditionPickerModel(
+                java.util.Collections.emptyList(),
+                new KmuConditionPickerLocation(null, null, null, null, null, null, null, null, null, null));
+
+        assertThat(KmuConditionPickerContainer.headerHeight(model))
+                .isEqualTo(1 * (8f + 20f));
     }
 
     @Test
@@ -249,7 +301,9 @@ class KmuConditionPickerContainerTest {
 
         // hot+hidden are both PRESENT and not suppressed → visible=2; cold is absent+not-hidden → available=1
         assertThat(KmuConditionPickerContainer.summaryLabelSpec(model).getHighlights())
-                .containsExactly("Conditions:", "2 visible", "1 suppressed", "3 present", "1 hidden");
+                .containsExactly(
+                        "Conditions:", "2 visible", "1 suppressed", "3 present", "1 hidden",
+                        " - 1 available", ", 4 total.");
     }
 
     @Test
@@ -263,7 +317,7 @@ class KmuConditionPickerContainerTest {
 
         Color[] colors = KmuConditionPickerContainer.summaryLabelSpec(model).getHighlightColors();
 
-        assertThat(colors).containsExactly(Color.WHITE, GREEN, RED, Color.WHITE, LIGHT_BLUE);
+        assertThat(colors).containsExactly(Color.WHITE, GREEN, RED, Color.WHITE, LIGHT_BLUE, GRAY, GRAY);
     }
 
     @Test

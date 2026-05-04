@@ -38,7 +38,10 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
     private final CustomUIPanelPlugin panelPlugin = new ActionPanelPlugin();
     private final List<UIComponentAPI> renderedCustomComponents = new ArrayList<>();
     private CustomPanelAPI panel;
-    private TooltipMakerAPI body;
+    // Labels (location, summary) live in a non-scrollable element so they stay
+    // pinned while the user scrolls through the condition grid below.
+    private TooltipMakerAPI headerBody;
+    private TooltipMakerAPI gridBody;
     private KmuConditionPickerRenderResult renderResult;
 
     public KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler actionHandler) {
@@ -127,22 +130,35 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
             return;
         }
         removeRenderedCustomComponents();
-        if (body != null) {
-            panel.removeComponent(body);
+        if (headerBody != null) {
+            panel.removeComponent(headerBody);
+        }
+        if (gridBody != null) {
+            panel.removeComponent(gridBody);
         }
 
-        body = panel.createUIElement(width, height, true);
-        body.setBgAlpha(BODY_BG_ALPHA);
-        body.setActionListenerDelegate((buttonId, data) -> {
+        KmuConditionPickerModel model = actionHandler.getModel();
+        float headerH = KmuConditionPickerContainer.headerHeight(model);
+        float gridH = height - headerH;
+
+        headerBody = panel.createUIElement(width, headerH, false);
+        headerBody.setBgAlpha(BODY_BG_ALPHA);
+
+        gridBody = panel.createUIElement(width, gridH, true);
+        gridBody.setBgAlpha(BODY_BG_ALPHA);
+        gridBody.setActionListenerDelegate((buttonId, data) -> {
             resolveActionFromUiEvent(buttonId, data).ifPresent(this::handleAction);
         });
+
         renderResult = new KmuConditionPickerContainer(panel).render(
-                body,
-                actionHandler.getModel(),
+                headerBody,
+                gridBody,
+                model,
                 this::handleAction,
                 width);
         renderedCustomComponents.addAll(renderResult.getCustomComponents());
-        panel.addUIElement(body).inTL(0f, 0f);
+        panel.addUIElement(headerBody).inTL(0f, 0f);
+        panel.addUIElement(gridBody).inTL(0f, headerH);
     }
 
     private void updateRenderedState(KmuConditionAddResult result) {

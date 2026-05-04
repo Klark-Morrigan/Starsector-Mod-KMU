@@ -23,6 +23,8 @@ public final class KmuConditionPickerContainer {
 
     private static final float ENTRY_PAD = 8f;
     static final float GRID_SCROLLBAR_RIGHT_PAD = 32f;
+    // Approximate height of one rendered label line (top pad + font height).
+    private static final float LABEL_LINE_HEIGHT = ENTRY_PAD + 20f;
     private static final float SQUARE_ICON_ROW_UNIT =
             KmuConditionIconButton.Sizing.squareButtonWidth() + KmuConditionIconGrid.CELL_GAP;
 
@@ -38,18 +40,26 @@ public final class KmuConditionPickerContainer {
         this.grid = Objects.requireNonNull(grid, "grid");
     }
 
+    /**
+     * Renders location and summary labels into {@code headerBody} (non-scrollable),
+     * and the condition grid into {@code gridBody} (scrollable). Keeping them in
+     * separate elements pins the labels above the scroll area so they remain
+     * visible while the user scrolls through conditions.
+     */
     public KmuConditionPickerRenderResult render(
-            TooltipMakerAPI body,
+            TooltipMakerAPI headerBody,
+            TooltipMakerAPI gridBody,
             KmuConditionPickerModel model,
             Consumer<KmuConditionPickerAction> actionConsumer,
             float width) {
-        Objects.requireNonNull(body, "body");
+        Objects.requireNonNull(headerBody, "headerBody");
+        Objects.requireNonNull(gridBody, "gridBody");
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
         KmuLabelSpec locationSpec = locationLabelSpec(model);
         if (!locationSpec.getText().isEmpty()) {
-            LabelAPI locationLabel = body.addPara(
+            LabelAPI locationLabel = headerBody.addPara(
                     locationSpec.getText(),
                     StarsectorUiColorProvider.get(StarsectorUiColor.WHITE),
                     ENTRY_PAD);
@@ -57,7 +67,7 @@ public final class KmuConditionPickerContainer {
         }
 
         KmuLabelSpec summarySpec = summaryLabelSpec(model);
-        LabelAPI summaryLabel = body.addPara(
+        LabelAPI summaryLabel = headerBody.addPara(
                 summarySpec.getText(),
                 StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
                 ENTRY_PAD);
@@ -66,7 +76,7 @@ public final class KmuConditionPickerContainer {
         // Defensive empty state: the opener should usually avoid empty pickers,
         // but if no entries are renderable, show localized UI copy and skip the grid.
         if (model.isEmpty()) {
-            body.addPara(
+            gridBody.addPara(
                     KmuStrings.get(KmuStrings.CONDITION_PICKER_EMPTY),
                     ENTRY_PAD,
                     StarsectorUiColorProvider.get(StarsectorUiColor.GRAY));
@@ -75,12 +85,22 @@ public final class KmuConditionPickerContainer {
 
         KmuConditionIconGrid.GridHandle gridHandle = grid.addTo(
                 panel,
-                body,
+                gridBody,
                 model,
                 gridWidth(width),
                 ENTRY_PAD,
                 actionConsumer);
         return new KmuConditionPickerRenderResult(summaryLabel, gridHandle.getComponents(), gridHandle);
+    }
+
+    /**
+     * Height the non-scrollable header element must be to fit the rendered labels.
+     * Includes the location line when the model has displayable location data.
+     */
+    public static float headerHeight(KmuConditionPickerModel model) {
+        Objects.requireNonNull(model, "model");
+        boolean hasLocation = !locationLabelSpec(model).getText().isEmpty();
+        return (hasLocation ? 2 : 1) * LABEL_LINE_HEIGHT;
     }
 
     static float gridWidth(float containerWidth) {
