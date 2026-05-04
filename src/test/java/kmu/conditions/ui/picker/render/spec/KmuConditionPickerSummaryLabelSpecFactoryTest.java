@@ -97,7 +97,7 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
         assertThat(KmuConditionPickerSummaryLabelSpecFactory.get(model).getHighlights())
                 .containsExactly(
                         "Conditions:", "2 visible", "1 suppressed", "3 present", "1 hidden",
-                        " - 1 available", ", 4 total.");
+                        " - 1 available, 4 total.");
     }
 
     @Test
@@ -111,7 +111,7 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
 
         Color[] colors = KmuConditionPickerSummaryLabelSpecFactory.get(model).getHighlightColors();
 
-        assertThat(colors).containsExactly(TEXT, GREEN, RED, TEXT, LIGHT_BLUE, GRAY, GRAY);
+        assertThat(colors).containsExactly(TEXT, GREEN, RED, TEXT, LIGHT_BLUE, GRAY);
     }
 
     @Test

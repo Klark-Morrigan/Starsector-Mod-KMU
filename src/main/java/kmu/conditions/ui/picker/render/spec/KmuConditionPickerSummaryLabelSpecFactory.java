@@ -69,14 +69,14 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         if (hidden > 0)
             hasSegment = appendToken(sb, highlightList, colorList, hasSegment, ", ", hiddenToken, lightBlue);
 
-        // The grey tail includes the category divider so the hyphen is grey too.
+        // The entire tail (divider + available + total) is a single highlight token so
+        // that the leading " - " or space is matched reliably as part of the same token.
         Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
-        String greyAvailableToken = (hasSegment ? " - " : "") + availableToken;
+        String greyTail = (hasSegment ? " - " : " ") + availableToken + ", " + totalToken;
 
-        sb.append(hasSegment ? " - " : " ").append(availableToken).append(", ").append(totalToken);
+        sb.append(greyTail);
 
-        addHighlight(highlightList, colorList, greyAvailableToken, grey);
-        addHighlight(highlightList, colorList, ", " + totalToken, grey);
+        addHighlight(highlightList, colorList, greyTail, grey);
 
         return new KmuLabelSpec(
                 sb.toString(),
