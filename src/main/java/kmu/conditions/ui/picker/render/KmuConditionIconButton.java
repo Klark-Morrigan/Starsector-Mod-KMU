@@ -8,6 +8,7 @@ import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
+import kmu.KmuStrings;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.tooltip.KmuConditionTooltipRenderer;
@@ -389,19 +390,15 @@ public final class KmuConditionIconButton {
                 KmuTooltipSection.add(
                         tooltip,
                         KmuTooltipSectionStyle.WARNING,
-                        "Suppressed",
-                        "This condition is present on the market, but it's suppressed. "
-                                + "KMU has not detected the exact reason yet. Report this case to the KMU mod "
-                                + "developer.");
+                        KmuStrings.get(KmuStrings.CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE),
+                        KmuStrings.get(KmuStrings.CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY));
             }
             if (entry.isHidden()) {
                 KmuTooltipSection.add(
                         tooltip,
                         KmuTooltipSectionStyle.WARNING,
-                        "Hidden",
-                        "This condition is present on the market, but it's hidden. "
-                                + "KMU has not detected the exact reason yet. Report this case to "
-                                + "the KMU mod developer.");
+                        KmuStrings.get(KmuStrings.CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE),
+                        KmuStrings.get(KmuStrings.CONDITION_PICKER_TOOLTIP_HIDDEN_BODY));
             }
         }
 

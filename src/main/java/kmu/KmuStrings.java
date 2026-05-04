@@ -22,6 +22,10 @@ public final class KmuStrings {
     public static final String CONDITION_PICKER_SUMMARY_AVAILABLE = "condition_picker_summary_available";
     public static final String CONDITION_PICKER_SUMMARY_TOTAL = "condition_picker_summary_total";
     public static final String CONDITION_PICKER_EMPTY = "condition_picker_empty";
+    public static final String CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE = "condition_picker_tooltip_suppressed_title";
+    public static final String CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY = "condition_picker_tooltip_suppressed_body";
+    public static final String CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE = "condition_picker_tooltip_hidden_title";
+    public static final String CONDITION_PICKER_TOOLTIP_HIDDEN_BODY = "condition_picker_tooltip_hidden_body";
     public static final String DIALOG_CLOSE = "dialog_close";
 
     private KmuStrings() {

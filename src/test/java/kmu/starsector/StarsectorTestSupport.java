@@ -54,6 +54,10 @@ public final class StarsectorTestSupport {
         stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_AVAILABLE, "%d available");
         stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_TOTAL, "%d total.");
         stringsByKey.put(KmuStrings.CONDITION_PICKER_EMPTY, "No planetary condition specs are available.");
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE, "Suppressed");
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY, "This condition is present on the market, but it's suppressed and has no effect.");
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE, "Hidden");
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
         stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
         return stringsByKey;
     }

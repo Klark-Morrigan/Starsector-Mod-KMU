@@ -9,6 +9,10 @@
     "condition_picker_summary_available": "%d available",
     "condition_picker_summary_total": "%d total.",
     "condition_picker_empty": "No planetary condition specs are available.",
+    "condition_picker_tooltip_suppressed_title": "Suppressed",
+    "condition_picker_tooltip_suppressed_body": "This condition is present on the market, but it's suppressed and has no effect.",
+    "condition_picker_tooltip_hidden_title": "Hidden",
+    "condition_picker_tooltip_hidden_body": "This condition is present on the market, but it's hidden and still applies its effects.",
     "dialog_close": "Close"
   }
 }
