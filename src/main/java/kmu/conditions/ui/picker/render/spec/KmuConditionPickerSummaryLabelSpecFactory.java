@@ -39,7 +39,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         int available = model.getAvailableCount();
         int total = model.getEntryCount();
 
-        Color white = StarsectorUiColorProvider.get(StarsectorUiColor.WHITE);
+        Color white = StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE);
         Color green = StarsectorUiColorProvider.get(StarsectorUiColor.GREEN);
         Color red = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
         Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.LIGHT_BLUE);

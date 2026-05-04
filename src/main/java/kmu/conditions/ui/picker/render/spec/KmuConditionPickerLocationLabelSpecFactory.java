@@ -29,7 +29,7 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
 
         KmuConditionPickerLocation location = model.getLocation();
         Color highlightColor = StarsectorUiColorProvider.get(StarsectorUiColor.GOLD);
-        Color defaultTextColor = StarsectorUiColorProvider.get(StarsectorUiColor.WHITE);
+        Color defaultTextColor = StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE);
 
         List<String> segments = new ArrayList<>();
         List<String> highlights = new ArrayList<>();

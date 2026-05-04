@@ -21,6 +21,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     private static final Color GOLD = new Color(255, 220, 80);
     private static final Color RED = new Color(255, 80, 80);
     private static final Color GREEN = new Color(80, 220, 80);
+    private static final Color TEXT = new Color(220, 220, 220, 255);
     private static final Color FACTION = new Color(90, 150, 240);
     private static final Color RELATIONSHIP = new Color(240, 80, 80);
 
@@ -32,6 +33,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
         misc = Mockito.mockStatic(Misc.class);
         misc.when(Misc::getGrayColor).thenReturn(GRAY);
         misc.when(Misc::getHighlightColor).thenReturn(GOLD);
+        misc.when(Misc::getTextColor).thenReturn(TEXT);
         misc.when(Misc::getNegativeHighlightColor).thenReturn(RED);
         misc.when(Misc::getPositiveHighlightColor).thenReturn(GREEN);
     }
@@ -172,7 +174,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
                         null));
 
         assertThat(KmuConditionPickerLocationLabelSpecFactory.get(model).getHighlightColors())
-                .containsExactly(Color.WHITE, Color.WHITE);
+                .containsExactly(TEXT, TEXT);
     }
 
     private static KmuConditionPickerLocation location() {

@@ -310,7 +310,7 @@ public final class KmuConditionIconButton {
             sprite.setSize(metrics.getIconWidth(), metrics.getIconHeight());
             sprite.setColor(shouldGreyOut(entry)
                     ? StarsectorUiColorProvider.get(StarsectorUiColor.DIM_GRAY)
-                    : StarsectorUiColorProvider.get(StarsectorUiColor.WHITE));
+                    : StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE));
             sprite.setAlphaMult(alpha * alphaMult);
             sprite.render(
                     position.getX() + metrics.getIconOffsetX(),
@@ -365,7 +365,8 @@ public final class KmuConditionIconButton {
 
             tooltip.addTitle(entry.getName());
             if (hasText(entry.getTooltipText())) {
-                tooltip.addPara(entry.getTooltipText(), TooltipLayout.METADATA_PAD);
+                tooltip.addPara(entry.getTooltipText(), TooltipLayout.METADATA_PAD,
+                        StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE));
             }
             addStatusSections(tooltip, entry);
             addMetadataFooter(tooltip, entry);

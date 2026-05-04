@@ -25,6 +25,7 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
     private static final Color RED = new Color(255, 80, 80);
     private static final Color GREEN = new Color(80, 220, 80);
     private static final Color LIGHT_BLUE = new Color(100, 180, 255);
+    private static final Color TEXT = new Color(220, 220, 220, 255);
     private static final Color FACTION = new Color(90, 150, 240);
     private static final Color RELATIONSHIP = new Color(240, 80, 80);
 
@@ -38,6 +39,7 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
         misc.when(Misc::getHighlightColor).thenReturn(GOLD);
         misc.when(Misc::getNegativeHighlightColor).thenReturn(RED);
         misc.when(Misc::getPositiveHighlightColor).thenReturn(GREEN);
+        misc.when(Misc::getTextColor).thenReturn(TEXT);
     }
 
     @AfterEach
@@ -109,7 +111,7 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
 
         Color[] colors = KmuConditionPickerSummaryLabelSpecFactory.get(model).getHighlightColors();
 
-        assertThat(colors).containsExactly(Color.WHITE, GREEN, RED, Color.WHITE, LIGHT_BLUE, GRAY, GRAY);
+        assertThat(colors).containsExactly(TEXT, GREEN, RED, TEXT, LIGHT_BLUE, GRAY, GRAY);
     }
 
     @Test

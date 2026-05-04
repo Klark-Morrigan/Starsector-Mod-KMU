@@ -77,7 +77,7 @@ final class KmuConditionPickerInfoRow {
         TooltipMakerAPI textEl = row.createUIElement(width, ICON_SIZE, false);
         LabelAPI label = textEl.addPara(
                 spec.getText(),
-                StarsectorUiColorProvider.get(StarsectorUiColor.WHITE),
+                StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE),
                 0f);
         spec.applyTo(label);
         row.addUIElement(textEl).inTL(0f, 0f);
@@ -95,7 +95,7 @@ final class KmuConditionPickerInfoRow {
         TooltipMakerAPI textEl = row.createUIElement(width - textX, ICON_SIZE, false);
         LabelAPI label = textEl.addPara(
                 spec.getText(),
-                StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
+                StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE),
                 0f);
         spec.applyTo(label);
         row.addUIElement(textEl).inTL(textX, y);
