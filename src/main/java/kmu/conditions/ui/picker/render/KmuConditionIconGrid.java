@@ -21,7 +21,7 @@ public final class KmuConditionIconGrid {
     public static final int DEFAULT_COLUMNS = 12;
     static final float CELL_GAP = 8f;
     /** Space reserved on the right so the scroll bar does not overlap grid content. */
-    static final float SCROLLBAR_RIGHT_PAD = 32f;
+    static final float SCROLLBAR_RIGHT_PAD = 16f;
 
     /** Width of one column slot: button width plus the gap that follows it. */
     static float computeColumnUnit() {
