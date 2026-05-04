@@ -20,17 +20,17 @@ import java.util.function.Consumer;
 public final class KmuConditionIconGrid {
     public static final int DEFAULT_COLUMNS = 12;
     static final float CELL_GAP = 8f;
-    // Space reserved on the right so the scroll bar does not overlap grid content.
+    /** Space reserved on the right so the scroll bar does not overlap grid content. */
     static final float SCROLLBAR_RIGHT_PAD = 32f;
 
-    // Width of one column slot: button width plus the gap that follows it.
+    /** Width of one column slot: button width plus the gap that follows it. */
     static float computeColumnUnit() {
         return KmuConditionIconButton.Sizing.squareButtonWidth() + CELL_GAP;
     }
 
-    // Largest grid width that fits within the scrollable area of a panel of
-    // containerWidth, snapped down to a whole number of square-icon columns so
-    // no column is partially visible. Always returns at least 1.
+    /** Largest grid width that fits within the scrollable area of a panel of
+     *  {@code containerWidth}, snapped down to a whole number of square-icon columns
+     *  so no column is partially visible. Always returns at least 1. */
     static float computeGridWidth(float containerWidth) {
         float availableWidth = Math.max(1f, containerWidth - SCROLLBAR_RIGHT_PAD);
         float squareButtonWidth = KmuConditionIconButton.Sizing.squareButtonWidth();
@@ -41,28 +41,28 @@ public final class KmuConditionIconGrid {
         return Math.max(squareButtonWidth, units * computeColumnUnit() - CELL_GAP);
     }
 
-    // N buttons wide with a gap between each pair, but no trailing gap.
-    // Clamps to 1 so callers can pass zero without getting a zero-width grid.
+    /** N buttons wide with a gap between each pair, but no trailing gap.
+     *  Clamps to 1 so callers can pass zero without getting a zero-width grid. */
     static float computeWidthForSquareColumns(int columns) {
         int safeColumns = Math.max(1, columns);
         return safeColumns * KmuConditionIconButton.Sizing.squareButtonWidth()
                 + (safeColumns - 1) * CELL_GAP;
     }
 
-    // Total width a surrounding panel must be to show exactly the given number
-    // of square-icon columns, including the scroll bar clearance on the right.
+    /** Total width a surrounding panel must be to show exactly the given number
+     *  of square-icon columns, including the scroll bar clearance on the right. */
     public static float computeTotalWidthForSquareColumns(int columns) {
         return computeWidthForSquareColumns(columns) + SCROLLBAR_RIGHT_PAD;
     }
 
-    // Total panel width for the default column count.
+    /** Total panel width for the default column count. */
     public static float computeDefaultTotalWidth() {
         return computeTotalWidthForSquareColumns(DEFAULT_COLUMNS);
     }
 
-    // Measures each entry, lays out buttons in rows, creates the grid panel,
-    // places all buttons into it, and adds the panel to the tooltip body.
-    // Returns a GridHandle for post-render entry updates.
+    /** Measures each entry, lays out buttons in rows, creates the grid panel,
+     *  places all buttons into it, and adds the panel to the tooltip body.
+     *  Returns a {@link GridHandle} for post-render entry updates. */
     public GridHandle addTo(
             CustomPanelAPI parentPanel,
             TooltipMakerAPI tooltip,
@@ -98,9 +98,9 @@ public final class KmuConditionIconGrid {
         return new GridHandle(Collections.singletonList(gridPanel), buttonsByConditionId);
     }
 
-    // Left-to-right, top-to-bottom row-wrapping layout. A button that would
-    // overflow the current row starts a new one. The first button in a row is
-    // never wrapped even if it is wider than the available width.
+    /** Left-to-right, top-to-bottom row-wrapping layout. A button that would
+     *  overflow the current row starts a new one. The first button in a row is
+     *  never wrapped even if it is wider than the available width. */
     static List<KmuUiPlacement> computeLayout(List<KmuConditionIconButton.ButtonMetrics> metrics, float width) {
         Objects.requireNonNull(metrics, "metrics");
 
@@ -126,7 +126,7 @@ public final class KmuConditionIconGrid {
         return Collections.unmodifiableList(placements);
     }
 
-    // Bottom edge of the last placement, which equals the total grid height.
+    /** Bottom edge of the last placement, which equals the total grid height. */
     static float computeHeightForPlacements(List<KmuUiPlacement> placements) {
         Objects.requireNonNull(placements, "placements");
         if (placements.isEmpty()) {
@@ -144,8 +144,8 @@ public final class KmuConditionIconGrid {
         return metrics;
     }
 
-    // Returned by addTo; holds live button references so the caller can push
-    // updated entry state into the grid after the initial render.
+    /** Holds live button references so the caller can push updated entry state
+     *  into the grid after the initial render. */
     static final class GridHandle {
         private final List<UIComponentAPI> components;
         private final Map<String, KmuConditionIconButton> buttonsByConditionId;
@@ -161,8 +161,8 @@ public final class KmuConditionIconGrid {
             return components;
         }
 
-        // Pushes updated entry state to the button with a matching condition ID.
-        // Returns false if no such button exists in this grid.
+        /** Pushes updated entry state to the button with a matching condition ID.
+         *  Returns false if no such button exists in this grid. */
         boolean updateEntry(KmuConditionPickerEntry entry) {
             Objects.requireNonNull(entry, "entry");
             KmuConditionIconButton button = buttonsByConditionId.get(entry.getConditionId());

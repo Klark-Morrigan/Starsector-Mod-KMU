@@ -19,10 +19,10 @@ import java.util.Optional;
  * stable regardless of which elements are present.
  */
 final class KmuConditionPickerInfoRow {
-    // Height of one text line, matching the approximate rendered font height
-    // so the icon and text sit at the same visual baseline.
+    /** Height of one text line, matching the approximate rendered font height
+     *  so the icon and text sit at the same visual baseline. */
     static final float ICON_SIZE = 20f;
-    // Gap between the faction icon and the conditions text label to its right.
+    /** Gap between the faction icon and the conditions text label to its right. */
     private static final float ICON_PAD = 4f;
 
     private final CustomPanelAPI rowPanel;
@@ -33,8 +33,8 @@ final class KmuConditionPickerInfoRow {
         this.conditionsLabel = conditionsLabel;
     }
 
-    // Total height of the summary panel as added to the header tooltip body.
-    // One line when there is no location, two lines when there is.
+    /** Total height of the info panel as added to the header tooltip body.
+     *  One line when there is no location, two lines when there is. */
     static float computeHeight(float topPad, boolean hasLocation) {
         return topPad + (hasLocation ? 2 : 1) * ICON_SIZE;
     }
