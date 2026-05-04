@@ -15,7 +15,7 @@ explicit campaign edits from in-game screens.
 
 ## Features
 
-### 1. Planetary Condition Editor
+### 1. Planetary Condition Editor (PCE)
 
 Problem doc:
 [problem.md](docs/dev/implementation/001-add-planetary-condition/problem.md)
