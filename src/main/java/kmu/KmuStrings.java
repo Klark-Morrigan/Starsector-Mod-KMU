@@ -15,6 +15,12 @@ public final class KmuStrings {
 
     public static final String CONDITION_PICKER_LOCATION = "condition_picker_location";
     public static final String CONDITION_PICKER_SUMMARY = "condition_picker_summary";
+    public static final String CONDITION_PICKER_SUMMARY_VISIBLE = "condition_picker_summary_visible";
+    public static final String CONDITION_PICKER_SUMMARY_SUPPRESSED = "condition_picker_summary_suppressed";
+    public static final String CONDITION_PICKER_SUMMARY_PRESENT = "condition_picker_summary_present";
+    public static final String CONDITION_PICKER_SUMMARY_HIDDEN = "condition_picker_summary_hidden";
+    public static final String CONDITION_PICKER_SUMMARY_AVAILABLE = "condition_picker_summary_available";
+    public static final String CONDITION_PICKER_SUMMARY_TOTAL = "condition_picker_summary_total";
     public static final String CONDITION_PICKER_EMPTY = "condition_picker_empty";
     public static final String DIALOG_CLOSE = "dialog_close";
 

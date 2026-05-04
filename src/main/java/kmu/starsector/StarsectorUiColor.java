@@ -21,7 +21,8 @@ public enum StarsectorUiColor {
     MUTED_RED(new Color(150, 50, 45)),
     BRIGHT_RED(new Color(255, 90, 80)),
     DARK_GREEN(new Color(35, 80, 45)),
-    BRIGHT_GREEN(new Color(90, 220, 95));
+    BRIGHT_GREEN(new Color(90, 220, 95)),
+    LIGHT_BLUE(new Color(100, 180, 255));
 
     private final Supplier<Color> starsectorColor;
     private final Color customColor;

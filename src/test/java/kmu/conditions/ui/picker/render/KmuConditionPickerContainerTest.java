@@ -29,6 +29,8 @@ class KmuConditionPickerContainerTest {
     private static final Color GRAY = new Color(155, 155, 155);
     private static final Color GOLD = new Color(255, 220, 80);
     private static final Color RED = new Color(255, 80, 80);
+    private static final Color GREEN = new Color(80, 220, 80);
+    private static final Color LIGHT_BLUE = new Color(100, 180, 255);
     private static final Color FACTION = new Color(90, 150, 240);
     private static final Color RELATIONSHIP = new Color(240, 80, 80);
 
@@ -41,6 +43,7 @@ class KmuConditionPickerContainerTest {
         misc.when(Misc::getGrayColor).thenReturn(GRAY);
         misc.when(Misc::getHighlightColor).thenReturn(GOLD);
         misc.when(Misc::getNegativeHighlightColor).thenReturn(RED);
+        misc.when(Misc::getPositiveHighlightColor).thenReturn(GREEN);
     }
 
     @AfterEach
@@ -82,7 +85,7 @@ class KmuConditionPickerContainerTest {
                 location());
 
         assertThat(KmuConditionPickerContainer.summaryText(model))
-                .isEqualTo("Conditions: 4 total; 3 present; 1 hidden; 1 suppressed.");
+                .isEqualTo("Conditions: 2 visible - 1 suppressed, 3 present, 1 hidden - 1 available, 4 total.");
     }
 
     @Test
@@ -236,6 +239,7 @@ class KmuConditionPickerContainerTest {
 
     @Test
     void exposesSummaryCountHighlights() {
+        // hot=visible, cold=available, hidden=present+hidden, suppressed=present+suppressed
         KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
                 entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
                 entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
@@ -243,22 +247,47 @@ class KmuConditionPickerContainerTest {
                 entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
                 location());
 
+        // hot+hidden are both PRESENT and not suppressed → visible=2; cold is absent+not-hidden → available=1
         assertThat(KmuConditionPickerContainer.summaryLabelSpec(model).getHighlights())
-                .containsExactly("4", "3", "1", "1");
+                .containsExactly("Conditions:", "2 visible", "1 suppressed", "3 present", "1 hidden");
     }
 
     @Test
-    void exposesRedSummaryHighlightForSuppressedCount() {
+    void exposesSummaryHighlightColors() {
         KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
+                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
+                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
+                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
                 entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
                 location());
 
         Color[] colors = KmuConditionPickerContainer.summaryLabelSpec(model).getHighlightColors();
 
-        assertThat(colors).hasSize(4);
-        assertThat(colors[0]).isEqualTo(GOLD);
-        assertThat(colors[2]).isEqualTo(GOLD);
-        assertThat(colors[3]).isEqualTo(RED);
+        assertThat(colors).containsExactly(Color.WHITE, GREEN, RED, Color.WHITE, LIGHT_BLUE);
+    }
+
+    @Test
+    void omitsSuppressedSegmentWhenNonePresent() {
+        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
+                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false)),
+                location());
+
+        assertThat(KmuConditionPickerContainer.summaryLabelSpec(model).getHighlights())
+                .doesNotContain("0 suppressed");
+    }
+
+    @Test
+    void exposesRedHighlightForSuppressedSegment() {
+        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
+                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
+                location());
+
+        String[] highlights = KmuConditionPickerContainer.summaryLabelSpec(model).getHighlights();
+        Color[] colors = KmuConditionPickerContainer.summaryLabelSpec(model).getHighlightColors();
+
+        int suppIdx = Arrays.asList(highlights).indexOf("1 suppressed");
+        assertThat(suppIdx).isNotEqualTo(-1);
+        assertThat(colors[suppIdx]).isEqualTo(RED);
     }
 
     @Test

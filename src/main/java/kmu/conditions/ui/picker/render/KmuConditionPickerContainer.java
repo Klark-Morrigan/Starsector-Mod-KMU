@@ -57,7 +57,10 @@ public final class KmuConditionPickerContainer {
         }
 
         KmuLabelSpec summarySpec = summaryLabelSpec(model);
-        LabelAPI summaryLabel = body.addPara(summarySpec.getText(), ENTRY_PAD);
+        LabelAPI summaryLabel = body.addPara(
+                summarySpec.getText(),
+                StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
+                ENTRY_PAD);
         summarySpec.applyTo(summaryLabel);
 
         // Defensive empty state: the opener should usually avoid empty pickers,
@@ -106,34 +109,73 @@ public final class KmuConditionPickerContainer {
     }
 
     /**
-     * Builds the summary label spec: the formatted count line together with highlights
-     * for each individual count value. Only the number tokens are highlighted so that
-     * the spec stays valid even if the surrounding words in the format string change.
+     * Builds the summary label spec.
+     *
+     * The base label color is white; grey items must be highlighted explicitly:
+     * - "Conditions:" in white
+     * - "N visible"   in green      (omitted when zero)
+     * - "N suppressed" in red       (omitted when zero)
+     * - "N present"   in white      (omitted when zero)
+     * - "N hidden"    in light blue (omitted when zero)
+     * - "N available, N total." in grey (overrides white base)
+     *
+     * Separator rules:
+     * - " - " separates categories; ", " separates items within the same section.
+     * - The grey tail (" - N available, N total.") is always appended last.
      */
     public static KmuLabelSpec summaryLabelSpec(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
-        String text = KmuStrings.format(
-                KmuStrings.CONDITION_PICKER_SUMMARY,
-                model.getEntryCount(),
-                model.getPresentCount(),
-                model.getHiddenCount(),
-                model.getSuppressedCount());
+        int visible = model.getVisibleCount();
+        int suppressed = model.getSuppressedCount();
+        int present = model.getPresentCount();
+        int hidden = model.getHiddenCount();
+        int available = model.getAvailableCount();
+        int total = model.getEntryCount();
 
-        Color highlight = StarsectorUiColorProvider.get(StarsectorUiColor.GOLD);
-        Color suppressedHighlight = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
+        Color white = StarsectorUiColorProvider.get(StarsectorUiColor.WHITE);
+        Color green = StarsectorUiColorProvider.get(StarsectorUiColor.GREEN);
+        Color red = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
+        Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.LIGHT_BLUE);
 
-        String[] highlights = new String[]{
-                String.valueOf(model.getEntryCount()),
-                String.valueOf(model.getPresentCount()),
-                String.valueOf(model.getHiddenCount()),
-                String.valueOf(model.getSuppressedCount())
-        };
-        Color[] highlightColors = new Color[]{
-                highlight, highlight, highlight, suppressedHighlight
-        };
+        String prefix = KmuStrings.get(KmuStrings.CONDITION_PICKER_SUMMARY);
+        StringBuilder sb = new StringBuilder(prefix);
+        List<String> highlightList = new ArrayList<>();
+        List<Color> colorList = new ArrayList<>();
 
-        return new KmuLabelSpec(text, highlights, highlightColors);
+        addHighlight(highlightList, colorList, prefix, white);
+
+        String visibleToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_VISIBLE, visible);
+        String suppressedToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_SUPPRESSED, suppressed);
+        String presentToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_PRESENT, present);
+        String hiddenToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_HIDDEN, hidden);
+        String availableToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_AVAILABLE, available);
+        String totalToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_TOTAL, total);
+
+        boolean hasSegment = false;
+
+        if (visible > 0)
+            hasSegment = appendSummaryToken(sb, highlightList, colorList, hasSegment, " ", visibleToken, green);
+        if (suppressed > 0)
+            hasSegment = appendSummaryToken(sb, highlightList, colorList, hasSegment, " - ", suppressedToken, red);
+        if (present > 0)
+            hasSegment = appendSummaryToken(sb, highlightList, colorList, hasSegment, ", ", presentToken, white);
+        if (hidden > 0)
+            hasSegment = appendSummaryToken(sb, highlightList, colorList, hasSegment, ", ", hiddenToken, lightBlue);
+
+        // The grey tail includes the category divider so the hyphen is grey too.
+        Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
+        String greyAvailableToken = (hasSegment ? " - " : "") + availableToken;
+
+        sb.append(hasSegment ? " - " : " ").append(availableToken).append(", ").append(totalToken);
+
+        addHighlight(highlightList, colorList, greyAvailableToken, grey);
+        addHighlight(highlightList, colorList, ", " + totalToken, grey);
+
+        return new KmuLabelSpec(
+                sb.toString(),
+                highlightList.toArray(new String[0]),
+                colorList.toArray(new Color[0]));
     }
 
     /**
@@ -156,38 +198,32 @@ public final class KmuConditionPickerContainer {
         if (location.getPlanetName().isPresent()) {
             optionalWithParenthetical(location.getPlanetName(), location.getPlanetType())
                     .ifPresent(segments::add);
-            highlights.add(location.getPlanetName().get());
-            colors.add(highlightColor);
+            addHighlight(highlights, colors, location.getPlanetName().get(), highlightColor);
         }
 
         if (location.getFactionName().isPresent()) {
             ownershipSegment(location).ifPresent(segments::add);
-            highlights.add(location.getFactionName().get());
-            colors.add(location.getFactionColor().orElse(defaultTextColor));
+            addHighlight(highlights, colors, location.getFactionName().get(),
+                    location.getFactionColor().orElse(defaultTextColor));
             if (location.getRelationshipDescription().isPresent()) {
-                highlights.add(location.getRelationshipDescription().get());
-                colors.add(location.getRelationshipColor().orElse(defaultTextColor));
+                addHighlight(highlights, colors, location.getRelationshipDescription().get(),
+                        location.getRelationshipColor().orElse(defaultTextColor));
             }
         }
 
         if (location.getStarSystemName().isPresent()) {
             optionalWithParenthetical(location.getStarSystemName(), systemParenthetical(location))
                     .ifPresent(segments::add);
-            highlights.add(location.getStarSystemName().get());
-            colors.add(highlightColor);
+            addHighlight(highlights, colors, location.getStarSystemName().get(), highlightColor);
             location.getGravityWellName()
                     .filter(name -> !name.equals(location.getGravityWellTypeName().orElse(null)))
                     .filter(name -> !location.getStarSystemName().map(s -> s.contains(name)).orElse(false))
-                    .ifPresent(name -> {
-                        highlights.add(name);
-                        colors.add(highlightColor);
-                    });
+                    .ifPresent(name -> addHighlight(highlights, colors, name, highlightColor));
         }
 
         location.getConstellationName().ifPresent(name -> {
             segments.add(name);
-            highlights.add(name);
-            colors.add(highlightColor);
+            addHighlight(highlights, colors, name, highlightColor);
         });
 
         if (segments.isEmpty()) {
@@ -210,6 +246,24 @@ public final class KmuConditionPickerContainer {
     /** Convenience accessor for callers that only need the location text string. */
     public static String locationText(KmuConditionPickerModel model) {
         return locationLabelSpec(model).getText();
+    }
+
+    private static void addHighlight(List<String> highlights, List<Color> colors, String token, Color color) {
+        highlights.add(token);
+        colors.add(color);
+    }
+
+    private static boolean appendSummaryToken(
+            StringBuilder sb,
+            List<String> highlights,
+            List<Color> colors,
+            boolean hasSegment,
+            String separator,
+            String token,
+            Color color) {
+        sb.append(hasSegment ? separator : " ").append(token);
+        addHighlight(highlights, colors, token, color);
+        return true;
     }
 
     private static Optional<String> ownershipSegment(KmuConditionPickerLocation location) {

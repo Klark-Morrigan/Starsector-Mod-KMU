@@ -46,8 +46,7 @@ public final class StarsectorTestSupport {
     private static Map<String, String> stringsByKey() {
         Map<String, String> stringsByKey = new LinkedHashMap<>();
         stringsByKey.put(KmuStrings.CONDITION_PICKER_LOCATION, "Location:");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY,
-                "Conditions: %d total; %d present; %d hidden; %d suppressed.");
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY, "Conditions:");
         stringsByKey.put(KmuStrings.CONDITION_PICKER_EMPTY, "No planetary condition specs are available.");
         stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
         return stringsByKey;

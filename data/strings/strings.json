@@ -1,7 +1,13 @@
 {
   "kmu": {
     "condition_picker_location": "Location:",
-    "condition_picker_summary": "Conditions: %d total; %d present; %d hidden; %d suppressed.",
+    "condition_picker_summary": "Conditions:",
+    "condition_picker_summary_visible": "%d visible",
+    "condition_picker_summary_suppressed": "%d suppressed",
+    "condition_picker_summary_present": "%d present",
+    "condition_picker_summary_hidden": "%d hidden",
+    "condition_picker_summary_available": "%d available",
+    "condition_picker_summary_total": "%d total.",
     "condition_picker_empty": "No planetary condition specs are available.",
     "dialog_close": "Close"
   }

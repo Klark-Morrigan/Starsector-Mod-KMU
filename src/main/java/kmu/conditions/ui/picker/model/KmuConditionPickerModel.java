@@ -57,6 +57,18 @@ public final class KmuConditionPickerModel {
                 .count();
     }
 
+    public int getVisibleCount() {
+        return (int) entries.stream()
+                .filter(e -> e.isPresent() && !e.isHidden())
+                .count();
+    }
+
+    public int getAvailableCount() {
+        return (int) entries.stream()
+                .filter(e -> !e.isPresent())
+                .count();
+    }
+
     public Optional<KmuConditionPickerEntry> findEntry(String conditionId) {
         String normalizedId = normalizeText(conditionId);
         if (normalizedId == null) {
