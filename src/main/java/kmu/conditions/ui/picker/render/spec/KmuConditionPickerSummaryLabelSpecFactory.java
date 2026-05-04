@@ -42,7 +42,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         Color white = StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE);
         Color green = StarsectorUiColorProvider.get(StarsectorUiColor.GREEN);
         Color red = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
-        Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.LIGHT_BLUE);
+        Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.BLUE);
 
         String prefix = KmuStrings.get(KmuStrings.CONDITION_PICKER_SUMMARY);
         StringBuilder sb = new StringBuilder(prefix);
