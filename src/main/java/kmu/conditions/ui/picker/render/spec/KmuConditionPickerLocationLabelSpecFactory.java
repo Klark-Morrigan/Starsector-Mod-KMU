@@ -1,12 +1,13 @@
 package kmu.conditions.ui.picker.render.spec;
 
-import kmu.util.KmuLocalisation;
-import static kmu.util.KmuTextFormats.joinWithParenthetical;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
 import kmu.starsector.StarsectorUiColor;
 import kmu.starsector.StarsectorUiColorProvider;
+import kmu.ui.utils.KmuHighlights;
+import kmu.util.KmuLocalisation;
+import static kmu.util.KmuTextFormats.joinWithParenthetical;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -79,15 +80,15 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
         if (location.getPlanetName().isPresent()) {
             joinWithParenthetical(location.getPlanetName(), location.getPlanetType())
                     .ifPresent(segments::add);
-            addHighlight(highlights, colors, location.getPlanetName().get(), highlightColor);
+            KmuHighlights.add(highlights, colors, location.getPlanetName().get(), highlightColor);
         }
 
         location.getFaction().ifPresent(faction -> {
             buildOwnershipSegment(faction).ifPresent(segments::add);
-            addHighlight(highlights, colors, faction.getName(),
+            KmuHighlights.add(highlights, colors, faction.getName(),
                     faction.getColor().orElse(defaultTextColor));
             faction.getRelationshipDescription().ifPresent(rel ->
-                    addHighlight(highlights, colors, rel,
+                    KmuHighlights.add(highlights, colors, rel,
                             faction.getRelationshipColor().orElse(defaultTextColor)));
         });
 
@@ -112,8 +113,8 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
 
         Optional<String> text = joinWithParenthetical(
                 location.getStarSystemName(), buildSystemParenthetical(location, gravityWellName));
-        addHighlight(highlights, colors, location.getStarSystemName().get(), highlightColor);
-        gravityWellName.ifPresent(name -> addHighlight(highlights, colors, name, highlightColor));
+        KmuHighlights.add(highlights, colors, location.getStarSystemName().get(), highlightColor);
+        gravityWellName.ifPresent(name -> KmuHighlights.add(highlights, colors, name, highlightColor));
 
         return text.map(t -> new KmuLabelSpec(
                 t,
@@ -153,9 +154,4 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
                 .filter(name -> !location.getStarSystemName().map(s -> s.contains(name)).orElse(false));
     }
 
-    private static void addHighlight(
-            List<String> highlights, List<Color> colors, String token, Color color) {
-        highlights.add(token);
-        colors.add(color);
-    }
 }

@@ -1,9 +1,10 @@
 package kmu.conditions.ui.picker.render.spec;
 
-import kmu.util.KmuLocalisation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.starsector.StarsectorUiColor;
 import kmu.starsector.StarsectorUiColorProvider;
+import kmu.ui.utils.KmuHighlights;
+import kmu.util.KmuLocalisation;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
         String greyTail = (hasSegment ? " - " : "") + availableToken + ", " + totalToken;
         sb.append(greyTail);
-        addHighlight(highlightList, colorList, greyTail, grey);
+        KmuHighlights.add(highlightList, colorList, greyTail, grey);
 
         KmuLabelSpec headerSpec = new KmuLabelSpec(
                 KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_SUMMARY),
@@ -98,12 +99,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
             sb.append(separator);
         }
         sb.append(token);
-        addHighlight(highlights, colors, token, color);
+        KmuHighlights.add(highlights, colors, token, color);
         return true;
-    }
-
-    private static void addHighlight(List<String> highlights, List<Color> colors, String token, Color color) {
-        highlights.add(token);
-        colors.add(color);
     }
 }
