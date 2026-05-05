@@ -1,6 +1,7 @@
 package kmu.conditions.ui.picker.render.spec;
 
 import kmu.util.KmuLocalisation;
+import static kmu.util.KmuTextFormats.joinWithParenthetical;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
@@ -150,21 +151,6 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
         return location.getGravityWellName()
                 .filter(name -> !name.equals(location.getGravityWellTypeName().orElse(null)))
                 .filter(name -> !location.getStarSystemName().map(s -> s.contains(name)).orElse(false));
-    }
-
-    private static Optional<String> joinWithParenthetical(
-            Optional<String> main,
-            Optional<String> parenthetical) {
-        if (!main.isPresent() && !parenthetical.isPresent()) {
-            return Optional.empty();
-        }
-        if (!main.isPresent()) {
-            return parenthetical;
-        }
-        if (!parenthetical.isPresent()) {
-            return main;
-        }
-        return Optional.of(main.get() + " (" + parenthetical.get() + ")");
     }
 
     private static void addHighlight(
