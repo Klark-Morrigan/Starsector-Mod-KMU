@@ -51,6 +51,30 @@ class KmuConditionPickerInfoRowTest {
     }
 
     @Test
+    void computeHeightIncludesSectionGapWhenBothSectionsPresent() {
+        float height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 2);
+
+        float expected = 4 * KmuConditionPickerInfoRow.LINE_HEIGHT + 6f; // 6f = SECTION_PAD
+        assertThat(height).isEqualTo(expected);
+    }
+
+    @Test
+    void computeHeightExcludesSectionGapWhenOnlyLocationPresent() {
+        float height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 0);
+
+        float expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
+        assertThat(height).isEqualTo(expected);
+    }
+
+    @Test
+    void computeHeightExcludesSectionGapWhenOnlySummaryPresent() {
+        float height = KmuConditionPickerInfoRow.computeHeight(0f, 0, 2);
+
+        float expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
+        assertThat(height).isEqualTo(expected);
+    }
+
+    @Test
     void rendersAllTextsWithWhiteBaseColor() {
         List<Color> paraColors = new ArrayList<>();
         CustomPanelAPI row = rowPanel(paraColors);

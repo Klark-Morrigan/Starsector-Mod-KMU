@@ -26,6 +26,8 @@ final class KmuConditionPickerInfoRow {
     static final float ICON_SIZE = 80f;
     /** Gap between the faction icon and the text column to its right. */
     private static final float ICON_PAD = 16f;
+    /** Vertical gap inserted between the location and summary sections. */
+    private static final float SECTION_PAD = 6f;
 
     private final CustomPanelAPI rowPanel;
     /** The label for the conditions count line - updated live when entries change. */
@@ -43,7 +45,8 @@ final class KmuConditionPickerInfoRow {
      */
     static float computeHeight(float topPad, int locationLineCount, int summaryLineCount) {
         int totalLines = locationLineCount + summaryLineCount;
-        float height = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT);
+        float sectionGap = (locationLineCount > 0 && summaryLineCount > 0) ? SECTION_PAD : 0f;
+        float height = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
         return topPad + height;
     }
 
@@ -59,7 +62,8 @@ final class KmuConditionPickerInfoRow {
         Objects.requireNonNull(faction, "faction");
 
         int totalLines = locationSpecs.size() + summarySpecs.size();
-        float panelHeight = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT);
+        float sectionGap = (!locationSpecs.isEmpty() && !summarySpecs.isEmpty()) ? SECTION_PAD : 0f;
+        float panelHeight = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
         CustomPanelAPI row = panel.createCustomPanel(width, panelHeight, new BaseCustomUIPanelPlugin());
 
         Optional<String> crestSprite = faction.flatMap(KmuPickerFaction::getCrestSprite);
@@ -70,6 +74,10 @@ final class KmuConditionPickerInfoRow {
         for (KmuLabelSpec spec : locationSpecs) {
             renderText(row, spec, textX, y, textWidth);
             y += LINE_HEIGHT;
+        }
+
+        if (!locationSpecs.isEmpty() && !summarySpecs.isEmpty()) {
+            y += SECTION_PAD;
         }
 
         // Render all summary lines; the last one is the live counts label.
