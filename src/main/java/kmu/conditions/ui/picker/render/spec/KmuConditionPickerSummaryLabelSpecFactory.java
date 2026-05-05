@@ -39,7 +39,6 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         int available = model.getAvailableCount();
         int total = model.getEntryCount();
 
-        Color white = StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE);
         Color green = StarsectorUiColorProvider.get(StarsectorUiColor.GREEN);
         Color red = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
         Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.BLUE);
@@ -62,7 +61,8 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         if (suppressed > 0)
             hasSegment = appendToken(sb, highlightList, colorList, hasSegment, " - ", suppressedToken, red);
         if (present > 0)
-            hasSegment = appendToken(sb, highlightList, colorList, hasSegment, ", ", presentToken, white);
+            // present is white - same as the label base color, so no highlight slot needed.
+            hasSegment = appendSegment(sb, hasSegment, ", ", presentToken);
         if (hidden > 0)
             hasSegment = appendToken(sb, highlightList, colorList, hasSegment, ", ", hiddenToken, lightBlue);
 
@@ -100,6 +100,14 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         }
         sb.append(token);
         KmuHighlights.add(highlights, colors, token, color);
+        return true;
+    }
+
+    /** Appends a token with no highlight - used when the token color matches the base. */
+    private static boolean appendSegment(
+            StringBuilder sb, boolean hasSegment, String separator, String token) {
+        if (hasSegment) sb.append(separator);
+        sb.append(token);
         return true;
     }
 }
