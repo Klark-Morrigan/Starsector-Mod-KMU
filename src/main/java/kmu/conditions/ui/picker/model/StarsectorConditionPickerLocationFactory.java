@@ -16,8 +16,8 @@ import kmu.starsector.StarsectorPlayerRelationshipFormatter.RelationshipSummary;
 import java.awt.Color;
 import java.util.Objects;
 
-import static kmu.KmuValues.readTextOrNull;
-import static kmu.KmuValues.readValueOrNull;
+import static kmu.util.KmuValues.readTextOrNull;
+import static kmu.util.KmuValues.readValueOrNull;
 
 final class StarsectorConditionPickerLocationFactory {
     private final StarsectorGravityWellResolver gravityWellResolver;

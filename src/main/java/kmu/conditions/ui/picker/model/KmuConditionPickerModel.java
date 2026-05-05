@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normalizeText;
 
 public final class KmuConditionPickerModel {
     private final List<KmuConditionPickerEntry> entries;

@@ -5,9 +5,9 @@ import kmu.conditions.ui.picker.tooltip.KmuConditionTooltipRenderer;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.KmuValues.getTextOrEmpty;
-import static kmu.KmuValues.normalizeText;
-import static kmu.KmuValues.requireNonBlankText;
+import static kmu.util.KmuValues.getTextOrEmpty;
+import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.requireNonBlankText;
 
 public final class KmuConditionPickerEntry {
     private final String conditionId;

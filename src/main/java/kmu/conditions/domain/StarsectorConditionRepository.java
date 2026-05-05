@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static kmu.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normalizeText;
 
 public final class StarsectorConditionRepository implements KmuConditionRepository {
     static final String VANILLA_SOURCE_NAME = "Starsector";

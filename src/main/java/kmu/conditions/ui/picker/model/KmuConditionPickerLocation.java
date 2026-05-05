@@ -2,7 +2,7 @@ package kmu.conditions.ui.picker.model;
 
 import java.util.Optional;
 
-import static kmu.KmuValues.convertToOptionalText;
+import static kmu.util.KmuValues.convertToOptionalText;
 
 public final class KmuConditionPickerLocation {
     private final Optional<String> planetName;

@@ -3,7 +3,7 @@ package kmu.conditions.ui.editor;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normalizeText;
 
 public final class KmuConditionEditorOpenResult {
     private final KmuConditionEditorOpenStatus status;

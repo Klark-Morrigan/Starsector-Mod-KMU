@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static kmu.KmuValues.hasText;
+import static kmu.util.KmuValues.hasText;
 
 public final class KmuConditionIconButton {
     static final class Sizing {

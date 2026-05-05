@@ -2,9 +2,9 @@ package kmu.conditions.domain;
 
 import java.util.Objects;
 
-import static kmu.KmuValues.hasText;
-import static kmu.KmuValues.normalizeText;
-import static kmu.KmuValues.requireNonBlankText;
+import static kmu.util.KmuValues.hasText;
+import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.requireNonBlankText;
 
 public final class KmuConditionSpec {
     private final String id;

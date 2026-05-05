@@ -9,8 +9,8 @@ import com.fs.starfarer.api.util.Misc;
 import java.awt.Color;
 import java.util.Locale;
 
-import static kmu.KmuValues.readTextOrNull;
-import static kmu.KmuValues.readValueOrNull;
+import static kmu.util.KmuValues.readTextOrNull;
+import static kmu.util.KmuValues.readValueOrNull;
 
 public final class StarsectorPlayerRelationshipFormatter {
     private static final int MAX_RELATIONSHIP_REPUTATION = 100;

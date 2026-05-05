@@ -15,8 +15,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static kmu.KmuValues.getTextOrEmpty;
-import static kmu.KmuValues.hasText;
+import static kmu.util.KmuValues.getTextOrEmpty;
+import static kmu.util.KmuValues.hasText;
 
 public final class KmuConditionPickerModelFactory {
     private final KmuConditionService conditionService;

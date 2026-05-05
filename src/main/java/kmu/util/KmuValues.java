@@ -1,4 +1,4 @@
-package kmu;
+package kmu.util;
 
 import java.util.Optional;
 import java.util.function.Function;

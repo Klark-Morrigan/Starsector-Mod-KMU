@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static kmu.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normalizeText;
 
 public final class KmuConditionService {
     private final KmuConditionRepository repository;

@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.KmuValues.convertToOptionalText;
+import static kmu.util.KmuValues.convertToOptionalText;
 
 /**
  * Display-only snapshot of how a controlling faction appears to the player

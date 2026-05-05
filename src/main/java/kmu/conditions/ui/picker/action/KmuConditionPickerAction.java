@@ -4,7 +4,7 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 
 import java.util.Objects;
 
-import static kmu.KmuValues.requireNonBlankText;
+import static kmu.util.KmuValues.requireNonBlankText;
 
 public final class KmuConditionPickerAction {
     private final String conditionId;

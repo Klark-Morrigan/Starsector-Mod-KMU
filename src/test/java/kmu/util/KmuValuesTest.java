@@ -1,14 +1,14 @@
-package kmu;
+package kmu.util;
 
 import org.junit.jupiter.api.Test;
 
-import static kmu.KmuValues.convertToOptionalText;
-import static kmu.KmuValues.getTextOrEmpty;
-import static kmu.KmuValues.hasText;
-import static kmu.KmuValues.normalizeText;
-import static kmu.KmuValues.readTextOrNull;
-import static kmu.KmuValues.readValueOrNull;
-import static kmu.KmuValues.requireNonBlankText;
+import static kmu.util.KmuValues.convertToOptionalText;
+import static kmu.util.KmuValues.getTextOrEmpty;
+import static kmu.util.KmuValues.hasText;
+import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.readTextOrNull;
+import static kmu.util.KmuValues.readValueOrNull;
+import static kmu.util.KmuValues.requireNonBlankText;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

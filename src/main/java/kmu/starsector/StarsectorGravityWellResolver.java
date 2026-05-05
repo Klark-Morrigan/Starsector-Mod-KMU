@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
-import static kmu.KmuValues.readValueOrNull;
+import static kmu.util.KmuValues.readValueOrNull;
 
 public final class StarsectorGravityWellResolver {
     private static final int MAX_ORBIT_FOCUS_CHAIN_DEPTH = 32;
