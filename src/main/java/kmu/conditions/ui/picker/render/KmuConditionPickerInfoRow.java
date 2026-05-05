@@ -27,7 +27,7 @@ final class KmuConditionPickerInfoRow {
     /** Gap between the faction icon and the text column to its right. */
     private static final float ICON_PAD = 16f;
     /** Vertical gap inserted between the location and summary sections. */
-    private static final float SECTION_PAD = 6f;
+    private static final float SECTION_PAD = 8f;
 
     private final CustomPanelAPI rowPanel;
     /** The label for the conditions count line - updated live when entries change. */
