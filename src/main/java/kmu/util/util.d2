@@ -1,0 +1,59 @@
+# Style conventions: see ../DIAGRAMS.md
+
+direction: right
+
+classes: {
+  note: {
+    style: {
+      fill: "#fff7d6"
+      stroke: "#b58b00"
+      font-color: "#242424"
+    }
+  }
+  adapter: {
+    style: {
+      fill: "#f3ecff"
+      stroke: "#7b55b7"
+      font-color: "#2d1c45"
+    }
+  }
+  shared: {
+    style: {
+      fill: "#ffeaf4"
+      stroke: "#c75186"
+      font-color: "#4a1830"
+    }
+  }
+  external: {
+    style: {
+      fill: "#f3f4f6"
+      stroke: "#6b7280"
+      font-color: "#1f2937"
+      stroke-dash: 5
+    }
+  }
+}
+
+Legend: {
+  grid-rows: 1
+  L_adapter: "adapter" {class: adapter}
+  L_shared: "shared utility" {class: shared}
+  L_external: "external API" {class: external}
+  L_note: "note" {class: note}
+}
+
+Utilities: "Shared Utilities" {
+  direction: down
+  Localisation: "KmuLocalisation" {class: adapter}
+  TextFormats: "KmuTextFormats" {class: shared}
+  Values: "KmuValues" {class: shared}
+  ScopeNote: "cross-cutting utilities;\nno feature coupling" {class: note}
+  LocalisationNote: "bridges SettingsAPI\nto localized UI strings" {class: note}
+}
+
+External: "External Starsector API" {
+  direction: down
+  SettingsAPI: "SettingsAPI" {class: external}
+}
+
+Utilities.Localisation -> External.SettingsAPI: "reads string data from"

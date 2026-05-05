@@ -3,13 +3,6 @@
 direction: right
 
 classes: {
-  note: {
-    style: {
-      fill: "#fff7d6"
-      stroke: "#b58b00"
-      font-color: "#242424"
-    }
-  }
   orchestration: {
     style: {
       fill: "#e8f1ff"
@@ -63,23 +56,19 @@ Legend: {
   L_port: "port / interface" {class: port}
   L_adapter: "adapter" {class: adapter}
   L_external: "external API" {class: external}
-  L_note: "note" {class: note}
 }
 
 Entry: "Editor Implementation" {
   direction: down
   PickerEditor: "KmuConditionPickerEditor" {class: orchestration}
-  EditorImplNote: "implements KmuConditionEditor port" {class: note}
 }
 
 ActionLayer: "action" {
   direction: down
   ActionHandler: "KmuConditionPickerActionHandler" {class: orchestration}
   Action: "KmuConditionPickerAction" {class: core}
-  Feedback: "KmuConditionPickerFeedback" {class: value}
   FeedbackSink: "KmuConditionPickerFeedbackSink" {class: port}
   StarsectorFeedbackSink: "StarsectorConditionPickerFeedbackSink" {class: adapter}
-  ActionNote: "handles user interactions\nand routes feedback" {class: note}
 }
 
 DialogLayer: "dialog" {
@@ -92,31 +81,24 @@ DialogLayer: "dialog" {
 ModelLayer: "model" {
   direction: down
   PickerModel: "KmuConditionPickerModel" {class: value}
-  PickerModelFactory: "KmuConditionPickerModelFactory" {class: value}
-  PickerEntry: "KmuConditionPickerEntry" {class: value}
-  PickerEntryState: "KmuConditionPickerEntryState" {class: value}
-  PickerLocation: "KmuConditionPickerLocation" {class: value}
-  StarsectorLocationFactory: "StarsectorConditionPickerLocationFactory" {class: adapter}
-  ModelNote: "builds picker state\nfrom live market data" {class: note}
 }
 
 RenderLayer: "render" {
   direction: down
   PickerContainer: "KmuConditionPickerContainer" {class: orchestration}
+  PickerInfoRow: "KmuConditionPickerInfoRow" {class: adapter}
   IconGrid: "KmuConditionIconGrid" {class: value}
   IconButton: "KmuConditionIconButton" {class: value}
-  RenderResult: "KmuConditionPickerRenderResult" {class: value}
-  LabelSpec: "KmuLabelSpec" {class: value}
-  RenderNote: "draws the icon grid\nand labels" {class: note}
+  IconButtonStyle: "KmuConditionIconButtonStyle" {class: core}
+  LocationLabelSpecFactory: "KmuConditionPickerLocationLabelSpecFactory" {class: orchestration}
+  SummaryLabelSpecFactory: "KmuConditionPickerSummaryLabelSpecFactory" {class: orchestration}
 }
 
 TooltipLayer: "tooltip" {
   direction: down
+  EntryTooltipCreator: "KmuConditionEntryTooltipCreator" {class: adapter}
   TooltipRenderer: "KmuConditionTooltipRenderer" {class: port}
   StarsectorTooltipRenderer: "StarsectorConditionTooltipRenderer" {class: adapter}
-  TooltipSection: "KmuTooltipSection" {class: value}
-  TooltipSectionStyle: "KmuTooltipSectionStyle" {class: value}
-  TooltipNote: "renders condition tooltips" {class: note}
 }
 
 External: "External Starsector API" {
@@ -124,6 +106,8 @@ External: "External Starsector API" {
   InteractionDialogAPI: "InteractionDialogAPI" {class: external}
   CampaignUIAPI: "CampaignUIAPI" {class: external}
   MarketConditionAPI: "MarketConditionAPI" {class: external}
+  CustomPanelAPI: "CustomPanelAPI" {class: external}
+  TooltipCreator: "TooltipMakerAPI.TooltipCreator" {class: external}
 }
 
 Entry.PickerEditor -> ActionLayer.ActionHandler: "creates"
@@ -131,30 +115,37 @@ Entry.PickerEditor -> DialogLayer.DialogOpener: "opens dialog via"
 
 ActionLayer.ActionHandler -> ActionLayer.Action: "dispatches"
 ActionLayer.ActionHandler -> ModelLayer.PickerModel: "refreshes"
-ActionLayer.ActionHandler -> ActionLayer.Feedback: "produces"
+
+ActionLayer.StarsectorFeedbackSink -> ActionLayer.FeedbackSink: "implements" {
+  style: { stroke-dash: 5 }
+}
 
 DialogLayer.DialogDelegate -> ActionLayer.ActionHandler: "drives"
 DialogLayer.DialogDelegate -> RenderLayer.PickerContainer: "renders via"
 DialogLayer.DialogDelegate -> ActionLayer.FeedbackSink: "routes feedback to"
 
-ActionLayer.StarsectorFeedbackSink -> ActionLayer.FeedbackSink: "implements" {
-  style: { stroke-dash: 5 }
-}
 DialogLayer.StarsectorDialogOpener -> DialogLayer.DialogOpener: "implements" {
   style: { stroke-dash: 5 }
 }
 DialogLayer.StarsectorDialogOpener -> External.InteractionDialogAPI: "shows dialog"
 DialogLayer.StarsectorDialogOpener -> External.CampaignUIAPI: "reads campaign UI"
 
-ModelLayer.PickerModelFactory -> ModelLayer.PickerModel: "creates"
-ModelLayer.PickerModelFactory -> ModelLayer.PickerEntry: "creates"
-ModelLayer.PickerModelFactory -> ModelLayer.PickerLocation: "creates"
-
+RenderLayer.PickerContainer -> RenderLayer.LocationLabelSpecFactory: "queries location specs from"
+RenderLayer.PickerContainer -> RenderLayer.SummaryLabelSpecFactory: "queries summary specs from"
+RenderLayer.PickerContainer -> RenderLayer.PickerInfoRow: "renders info via"
 RenderLayer.PickerContainer -> RenderLayer.IconGrid: "lays out"
-RenderLayer.PickerContainer -> RenderLayer.LabelSpec: "builds"
+
+RenderLayer.PickerInfoRow -> External.CustomPanelAPI: "creates sub-panels via"
+
 RenderLayer.IconGrid -> RenderLayer.IconButton: "creates"
+RenderLayer.IconButton -> RenderLayer.IconButtonStyle: "determines render style via"
 RenderLayer.IconButton -> ActionLayer.Action: "dispatches"
-RenderLayer.IconButton -> TooltipLayer.TooltipRenderer: "uses tooltip"
+RenderLayer.IconButton -> TooltipLayer.EntryTooltipCreator: "creates"
+
+TooltipLayer.EntryTooltipCreator -> External.TooltipCreator: "implements" {
+  style: { stroke-dash: 5 }
+}
+TooltipLayer.EntryTooltipCreator -> TooltipLayer.TooltipRenderer: "delegates to when present"
 
 TooltipLayer.StarsectorTooltipRenderer -> TooltipLayer.TooltipRenderer: "implements" {
   style: { stroke-dash: 5 }

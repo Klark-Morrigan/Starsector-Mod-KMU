@@ -24,20 +24,32 @@ classes: {
       font-color: "#113247"
     }
   }
+  shared: {
+    style: {
+      fill: "#ffeaf4"
+      stroke: "#c75186"
+      font-color: "#4a1830"
+    }
+  }
 }
 
 Legend: {
   grid-rows: 1
   L_core: "core / domain" {class: core}
   L_value: "value / result" {class: value}
+  L_shared: "shared utility" {class: shared}
   L_note: "note" {class: note}
 }
 
 SharedUI: "Shared UI Infrastructure" {
   direction: down
   Context: "kmu.ui.context" {class: value}
+  Geometry: "kmu.ui.geometry" {class: value}
+  Utils: "kmu.ui.utils" {class: shared}
   ScopeNote: "shared infrastructure only;\nno feature code" {class: note}
   ContextNote: "market discovery and\noptional panel reference" {class: note}
+  GeometryNote: "placement and size\nvalue types" {class: note}
+  UtilsNote: "highlight color\nutility" {class: note}
 }
 
 Consumers: "Feature consumers (not part of kmu.ui)" {
