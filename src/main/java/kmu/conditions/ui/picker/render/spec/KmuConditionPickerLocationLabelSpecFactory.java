@@ -1,6 +1,6 @@
 package kmu.conditions.ui.picker.render.spec;
 
-import kmu.KmuLocalization;
+import kmu.util.KmuLocalisation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
@@ -59,13 +59,13 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
 
     private static KmuLabelSpec buildHeaderLine() {
         return new KmuLabelSpec(
-                KmuLocalization.get(KmuLocalization.CONDITION_PICKER_LOCATION),
+                KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_LOCATION),
                 new String[0],
                 new Color[0]);
     }
 
     private static KmuLabelSpec buildUnknownLine(Color highlightColor) {
-        String unknown = KmuLocalization.get(KmuLocalization.CONDITION_PICKER_LOCATION_UNKNOWN);
+        String unknown = KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_LOCATION_UNKNOWN);
         return new KmuLabelSpec(unknown, new String[]{unknown}, new Color[]{highlightColor});
     }
 

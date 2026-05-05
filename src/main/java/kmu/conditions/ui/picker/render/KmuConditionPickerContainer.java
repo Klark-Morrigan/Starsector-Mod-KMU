@@ -4,7 +4,7 @@ import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
-import kmu.KmuLocalization;
+import kmu.util.KmuLocalisation;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.render.spec.KmuConditionPickerLocationLabelSpecFactory;
@@ -64,7 +64,7 @@ public final class KmuConditionPickerContainer {
         // but if no entries are renderable, show localized UI copy and skip the grid.
         if (model.isEmpty()) {
             gridBody.addPara(
-                    KmuLocalization.get(KmuLocalization.CONDITION_PICKER_EMPTY),
+                    KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_EMPTY),
                     StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
                     ITEM_TOP_PAD);
             return new KmuConditionPickerRenderResult(summaryLabel, summaryComponents, null);

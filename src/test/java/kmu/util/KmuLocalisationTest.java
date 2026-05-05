@@ -1,14 +1,14 @@
-package kmu;
+package kmu.util;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class KmuLocalizationTest {
+class KmuLocalisationTest {
     @Test
     void returnsConfiguredStringFromSource() {
-        String value = KmuLocalization.get(
-                KmuLocalization.CONDITION_PICKER_LOCATION,
+        String value = KmuLocalisation.get(
+                KmuLocalisation.CONDITION_PICKER_LOCATION,
                 key -> "Configured");
 
         assertThat(value).isEqualTo("Configured");
@@ -16,28 +16,28 @@ class KmuLocalizationTest {
 
     @Test
     void redactsWhenSourceReturnsBlankValue() {
-        String value = KmuLocalization.get(
-                KmuLocalization.CONDITION_PICKER_LOCATION,
+        String value = KmuLocalisation.get(
+                KmuLocalisation.CONDITION_PICKER_LOCATION,
                 key -> "  ");
 
-        assertThat(value).isEqualTo(KmuLocalization.REDACTED);
+        assertThat(value).isEqualTo(KmuLocalisation.REDACTED);
     }
 
     @Test
     void redactsWhenSourceThrows() {
-        String value = KmuLocalization.get(
-                KmuLocalization.CONDITION_PICKER_LOCATION,
+        String value = KmuLocalisation.get(
+                KmuLocalisation.CONDITION_PICKER_LOCATION,
                 key -> {
                     throw new IllegalStateException("missing settings");
                 });
 
-        assertThat(value).isEqualTo(KmuLocalization.REDACTED);
+        assertThat(value).isEqualTo(KmuLocalisation.REDACTED);
     }
 
     @Test
     void formatsConfiguredStringUsingRootLocale() {
-        String value = KmuLocalization.format(
-                KmuLocalization.CONDITION_PICKER_SUMMARY,
+        String value = KmuLocalisation.format(
+                KmuLocalisation.CONDITION_PICKER_SUMMARY,
                 key -> "%d configured %d",
                 3,
                 2);
@@ -47,12 +47,12 @@ class KmuLocalizationTest {
 
     @Test
     void redactsWhenConfiguredFormatIsInvalid() {
-        String value = KmuLocalization.format(
-                KmuLocalization.CONDITION_PICKER_SUMMARY,
+        String value = KmuLocalisation.format(
+                KmuLocalisation.CONDITION_PICKER_SUMMARY,
                 key -> "%q",
                 3,
                 2);
 
-        assertThat(value).isEqualTo(KmuLocalization.REDACTED);
+        assertThat(value).isEqualTo(KmuLocalisation.REDACTED);
     }
 }

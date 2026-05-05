@@ -1,4 +1,4 @@
-package kmu;
+package kmu.util;
 
 import com.fs.starfarer.api.Global;
 
@@ -6,7 +6,7 @@ import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Objects;
 
-import static kmu.KmuValues.hasText;
+import static kmu.util.KmuValues.hasText;
 
 public final class KmuLocalization {
     public static final String CATEGORY = "kmu";
