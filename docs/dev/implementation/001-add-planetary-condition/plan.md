@@ -10,9 +10,9 @@
 - [Step 5 - Condition Add Action](#step-5---condition-add-action)
 - [Step 6 - Console Command Entry Point](#step-6---console-command-entry-point)
 - [Step 7 - Console Entry Verification](#step-7---console-entry-verification)
-- [Step 8 - Injected Market UI Button](#step-8---injected-market-ui-button)
-- [Step 9 - Injected UI Verification](#step-9---injected-ui-verification)
-- [Step 10 - Release Automation](#step-10---release-automation)
+- [Step 8 - Release Automation](#step-8---release-automation)
+- [Step 9 - Injected Market UI Button](#step-9---injected-market-ui-button)
+- [Step 10 - Injected UI Verification](#step-10---injected-ui-verification)
 
 ## Research Baseline
 
@@ -386,7 +386,28 @@ Tests:
 - save and reload;
 - confirm the condition persists.
 
-## Step 8 - Injected Market UI Button
+## Step 8 - Release Automation
+
+Add a GitHub Actions workflow that produces the packaged release zip.
+
+Reason: releases should be repeatable and should not depend on manually mixing
+source files, tests, generated classes, and runtime assets. The workflow should
+build `jars/KMU.jar`, run tests, assemble `dist/KMU`, create
+`KMU-<version>.zip`, and upload it as a workflow artifact. On version tags, it
+should also attach the zip to a GitHub release.
+
+Tests:
+
+- trigger the workflow manually once and from a version tag;
+- confirm the zip has `KMU/` as its top-level folder;
+- confirm the zip includes `mod_info.json` and `jars/KMU.jar`;
+- confirm the zip excludes `src/`, `docs/dev/`, tests, `.git`, and build caches.
+
+Constraints: do not commit Starsector game jars or third-party mod jars solely
+for CI. Any compile-only API inputs needed by the workflow must be supplied in a
+documented private or permitted way.
+
+## Step 9 - Injected Market UI Button
 
 Add the intended in-game button on the relevant market/colony UI surface.
 
@@ -413,7 +434,7 @@ Tests:
   command;
 - unit test fail-closed behavior when panel lookup fails.
 
-## Step 9 - Injected UI Verification
+## Step 10 - Injected UI Verification
 
 Smoke test the injected UI path in game.
 
@@ -434,24 +455,3 @@ Tests:
 - repeat on a non-player-owned colony;
 - save and reload;
 - confirm the condition persists.
-
-## Step 10 - Release Automation
-
-Add a GitHub Actions workflow that produces the packaged release zip.
-
-Reason: releases should be repeatable and should not depend on manually mixing
-source files, tests, generated classes, and runtime assets. The workflow should
-build `jars/KMU.jar`, run tests, assemble `dist/KMU`, create
-`KMU-<version>.zip`, and upload it as a workflow artifact. On version tags, it
-should also attach the zip to a GitHub release.
-
-Tests:
-
-- trigger the workflow manually once and from a version tag;
-- confirm the zip has `KMU/` as its top-level folder;
-- confirm the zip includes `mod_info.json` and `jars/KMU.jar`;
-- confirm the zip excludes `src/`, `docs/dev/`, tests, `.git`, and build caches.
-
-Constraints: do not commit Starsector game jars or third-party mod jars solely
-for CI. Any compile-only API inputs needed by the workflow must be supplied in a
-documented private or permitted way.
