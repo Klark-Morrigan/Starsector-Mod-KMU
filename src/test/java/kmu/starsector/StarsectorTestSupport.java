@@ -2,7 +2,7 @@ package kmu.starsector;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.SettingsAPI;
-import kmu.KmuStrings;
+import kmu.KmuLocalization;
 
 import java.awt.Color;
 import java.lang.reflect.InvocationHandler;
@@ -34,7 +34,7 @@ public final class StarsectorTestSupport {
             if ("getString".equals(method.getName())) {
                 if (args != null
                         && args.length == 2
-                        && KmuStrings.CATEGORY.equals(args[0])) {
+                        && KmuLocalization.CATEGORY.equals(args[0])) {
                     return stringsByKey.get(args[1]);
                 }
                 return null;
@@ -45,21 +45,21 @@ public final class StarsectorTestSupport {
 
     private static Map<String, String> stringsByKey() {
         Map<String, String> stringsByKey = new LinkedHashMap<>();
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_LOCATION, "Location:");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_LOCATION_UNKNOWN, "Unknown");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY, "Conditions:");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_VISIBLE, "%d visible");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_SUPPRESSED, "%d suppressed");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_PRESENT, "%d present");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_HIDDEN, "%d hidden");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_AVAILABLE, "%d available");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_TOTAL, "%d total.");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_EMPTY, "No planetary condition specs are available.");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE, "Suppressed");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY, "This condition is present on the market, but it's suppressed and has no effect.");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE, "Hidden");
-        stringsByKey.put(KmuStrings.CONDITION_PICKER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
-        stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_LOCATION, "Location:");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_LOCATION_UNKNOWN, "Unknown");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_SUMMARY, "Conditions:");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_SUMMARY_VISIBLE, "%d visible");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_SUMMARY_SUPPRESSED, "%d suppressed");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_SUMMARY_PRESENT, "%d present");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_SUMMARY_HIDDEN, "%d hidden");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_SUMMARY_AVAILABLE, "%d available");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_SUMMARY_TOTAL, "%d total.");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_EMPTY, "No planetary condition specs are available.");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE, "Suppressed");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY, "This condition is present on the market, but it's suppressed and has no effect.");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE, "Hidden");
+        stringsByKey.put(KmuLocalization.CONDITION_PICKER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
+        stringsByKey.put(KmuLocalization.DIALOG_CLOSE, "Close");
         return stringsByKey;
     }
 

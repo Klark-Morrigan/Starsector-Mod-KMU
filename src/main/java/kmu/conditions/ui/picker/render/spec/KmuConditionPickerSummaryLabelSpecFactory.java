@@ -1,6 +1,6 @@
 package kmu.conditions.ui.picker.render.spec;
 
-import kmu.KmuStrings;
+import kmu.KmuLocalization;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.starsector.StarsectorUiColor;
 import kmu.starsector.StarsectorUiColorProvider;
@@ -43,12 +43,12 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         Color red = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
         Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.BLUE);
 
-        String visibleToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_VISIBLE, visible);
-        String suppressedToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_SUPPRESSED, suppressed);
-        String presentToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_PRESENT, present);
-        String hiddenToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_HIDDEN, hidden);
-        String availableToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_AVAILABLE, available);
-        String totalToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_TOTAL, total);
+        String visibleToken = KmuLocalization.format(KmuLocalization.CONDITION_PICKER_SUMMARY_VISIBLE, visible);
+        String suppressedToken = KmuLocalization.format(KmuLocalization.CONDITION_PICKER_SUMMARY_SUPPRESSED, suppressed);
+        String presentToken = KmuLocalization.format(KmuLocalization.CONDITION_PICKER_SUMMARY_PRESENT, present);
+        String hiddenToken = KmuLocalization.format(KmuLocalization.CONDITION_PICKER_SUMMARY_HIDDEN, hidden);
+        String availableToken = KmuLocalization.format(KmuLocalization.CONDITION_PICKER_SUMMARY_AVAILABLE, available);
+        String totalToken = KmuLocalization.format(KmuLocalization.CONDITION_PICKER_SUMMARY_TOTAL, total);
 
         StringBuilder sb = new StringBuilder();
         List<String> highlightList = new ArrayList<>();
@@ -72,7 +72,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         addHighlight(highlightList, colorList, greyTail, grey);
 
         KmuLabelSpec headerSpec = new KmuLabelSpec(
-                KmuStrings.get(KmuStrings.CONDITION_PICKER_SUMMARY),
+                KmuLocalization.get(KmuLocalization.CONDITION_PICKER_SUMMARY),
                 new String[0],
                 new Color[0]);
         KmuLabelSpec countsSpec = new KmuLabelSpec(

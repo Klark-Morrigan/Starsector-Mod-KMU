@@ -8,7 +8,7 @@ import java.util.Objects;
 
 import static kmu.KmuValues.hasText;
 
-public final class KmuStrings {
+public final class KmuLocalization {
     public static final String CATEGORY = "kmu";
     // Missing or invalid localized UI strings should be visible during playtesting.
     public static final String REDACTED = "[REDACTED]";
@@ -29,11 +29,11 @@ public final class KmuStrings {
     public static final String CONDITION_PICKER_TOOLTIP_HIDDEN_BODY = "condition_picker_tooltip_hidden_body";
     public static final String DIALOG_CLOSE = "dialog_close";
 
-    private KmuStrings() {
+    private KmuLocalization() {
     }
 
     public static String get(String key) {
-        return get(key, KmuStrings::fromSettings);
+        return get(key, KmuLocalization::fromSettings);
     }
 
     static String get(String key, KmuStringSource source) {
@@ -52,7 +52,7 @@ public final class KmuStrings {
     }
 
     public static String format(String key, Object... args) {
-        return format(key, KmuStrings::fromSettings, args);
+        return format(key, KmuLocalization::fromSettings, args);
     }
 
     static String format(String key, KmuStringSource source, Object... args) {

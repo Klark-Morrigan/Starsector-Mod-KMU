@@ -8,7 +8,7 @@ import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
-import kmu.KmuStrings;
+import kmu.KmuLocalization;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.tooltip.KmuConditionTooltipRenderer;
@@ -391,15 +391,15 @@ public final class KmuConditionIconButton {
                 KmuTooltipSection.add(
                         tooltip,
                         KmuTooltipSectionStyle.WARNING,
-                        KmuStrings.get(KmuStrings.CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE),
-                        KmuStrings.get(KmuStrings.CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY));
+                        KmuLocalization.get(KmuLocalization.CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE),
+                        KmuLocalization.get(KmuLocalization.CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY));
             }
             if (entry.isHidden()) {
                 KmuTooltipSection.add(
                         tooltip,
                         KmuTooltipSectionStyle.WARNING,
-                        KmuStrings.get(KmuStrings.CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE),
-                        KmuStrings.get(KmuStrings.CONDITION_PICKER_TOOLTIP_HIDDEN_BODY));
+                        KmuLocalization.get(KmuLocalization.CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE),
+                        KmuLocalization.get(KmuLocalization.CONDITION_PICKER_TOOLTIP_HIDDEN_BODY));
             }
         }
 
