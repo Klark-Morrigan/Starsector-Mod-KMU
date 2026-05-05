@@ -31,6 +31,8 @@ class KmuConditionPickerContainerTest {
     private static final Color GOLD = new Color(255, 220, 80);
     private static final Color RED = new Color(255, 80, 80);
     private static final Color GREEN = new Color(80, 220, 80);
+    private static final Color BLUE = new Color(170, 222, 255, 255);
+    private static final Color TEXT = new Color(220, 220, 220, 255);
     private static final Color FACTION = new Color(90, 150, 240);
     private static final Color RELATIONSHIP = new Color(240, 80, 80);
 
@@ -44,6 +46,8 @@ class KmuConditionPickerContainerTest {
         misc.when(Misc::getHighlightColor).thenReturn(GOLD);
         misc.when(Misc::getNegativeHighlightColor).thenReturn(RED);
         misc.when(Misc::getPositiveHighlightColor).thenReturn(GREEN);
+        misc.when(Misc::getTextColor).thenReturn(TEXT);
+        misc.when(Misc::getBasePlayerColor).thenReturn(BLUE);
     }
 
     @AfterEach
@@ -308,23 +312,26 @@ class KmuConditionPickerContainerTest {
     }
 
     @Test
-    void headerHeightIsTwoLinesWhenLocationIsPresent() {
+    void headerHeightScalesWithLocationAndSummaryLineCount() {
+        // location() has 4 specs (header + planet + system + constellation)
+        // summary has 2 specs (header + counts) = 6 total lines * 20f = 120f > ICON_SIZE 80f
         KmuConditionPickerModel model = new KmuConditionPickerModel(
                 Collections.emptyList(),
                 location());
 
         assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
-                .isEqualTo(8f + 2 * 20f);
+                .isEqualTo(8f + 120f);
     }
 
     @Test
-    void headerHeightIsOneLineWhenLocationIsAbsent() {
+    void headerHeightShowsUnknownAndSummaryWhenLocationIsAbsent() {
+        // Empty location → 2 specs (header + Unknown); summary → 2 specs = 4 total * 20f = 80f
         KmuConditionPickerModel model = new KmuConditionPickerModel(
                 Collections.emptyList(),
                 new KmuConditionPickerLocation(null, null, null, null, null, null, null));
 
         assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
-                .isEqualTo(1 * (8f + 20f));
+                .isEqualTo(8f + 80f);
     }
 
     private static KmuConditionPickerEntry entry(String id, KmuConditionPickerEntryState state) {

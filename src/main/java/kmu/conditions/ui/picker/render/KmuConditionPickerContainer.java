@@ -6,7 +6,6 @@ import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import kmu.KmuStrings;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
-import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.render.spec.KmuConditionPickerLocationLabelSpecFactory;
 import kmu.conditions.ui.picker.render.spec.KmuConditionPickerSummaryLabelSpecFactory;
@@ -52,10 +51,10 @@ public final class KmuConditionPickerContainer {
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
-        KmuLabelSpec locationSpec = KmuConditionPickerLocationLabelSpecFactory.get(model);
-        KmuLabelSpec summarySpec = KmuConditionPickerSummaryLabelSpecFactory.get(model);
+        List<KmuLabelSpec> locationSpecs = KmuConditionPickerLocationLabelSpecFactory.get(model);
+        List<KmuLabelSpec> summarySpecs = KmuConditionPickerSummaryLabelSpecFactory.get(model);
         KmuConditionPickerInfoRow infoRow = KmuConditionPickerInfoRow.render(
-                panel, locationSpec, summarySpec, model.getLocation().getFaction(), width);
+                panel, locationSpecs, summarySpecs, model.getLocation().getFaction(), width);
         LabelAPI summaryLabel = infoRow.getConditionsLabel();
         headerBody.addCustom(infoRow.getPanel(), ITEM_TOP_PAD);
         List<UIComponentAPI> summaryComponents = new ArrayList<>();
@@ -89,14 +88,8 @@ public final class KmuConditionPickerContainer {
      */
     public static float computeHeaderHeight(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
-        return KmuConditionPickerInfoRow.computeHeight(ITEM_TOP_PAD, hasDisplayableLocationFields(model));
-    }
-
-    private static boolean hasDisplayableLocationFields(KmuConditionPickerModel model) {
-        KmuConditionPickerLocation loc = model.getLocation();
-        return loc.getPlanetName().isPresent()
-                || loc.getFaction().isPresent()
-                || loc.getStarSystemName().isPresent()
-                || loc.getConstellationName().isPresent();
+        int locationLines = KmuConditionPickerLocationLabelSpecFactory.get(model).size();
+        int summaryLines = KmuConditionPickerSummaryLabelSpecFactory.get(model).size();
+        return KmuConditionPickerInfoRow.computeHeight(ITEM_TOP_PAD, locationLines, summaryLines);
     }
 }

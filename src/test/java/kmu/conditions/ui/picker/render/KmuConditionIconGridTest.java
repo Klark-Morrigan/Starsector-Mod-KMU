@@ -71,14 +71,14 @@ class KmuConditionIconGridTest {
     @Test
     void snapsGridWidthToFullRowsOfSquareVanillaCells() {
         assertThat(KmuConditionIconGrid.DEFAULT_COLUMNS).isEqualTo(12);
-        assertThat(KmuConditionIconGrid.computeDefaultTotalWidth()).isEqualTo(744f);
+        assertThat(KmuConditionIconGrid.computeDefaultTotalWidth()).isEqualTo(728f);
         assertThat(KmuConditionIconGrid.computeGridWidth(KmuConditionIconGrid.computeDefaultTotalWidth()))
                 .isEqualTo(712f);
     }
 
     @Test
     void derivesContainerWidthFromSquareVanillaCellCount() {
-        assertThat(KmuConditionIconGrid.computeTotalWidthForSquareColumns(1)).isEqualTo(84f);
+        assertThat(KmuConditionIconGrid.computeTotalWidthForSquareColumns(1)).isEqualTo(68f);
     }
 
     @Test

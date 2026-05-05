@@ -17,6 +17,8 @@ import java.awt.Color;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,55 +51,43 @@ class KmuConditionPickerInfoRowTest {
     }
 
     @Test
-    void rendersLocationTextWithWhiteBaseColor() {
-        List<Color> locationParaColors = new ArrayList<>();
-
-        CustomPanelAPI row = rowPanel(locationParaColors, new ArrayList<>());
-        KmuLabelSpec locationSpec = new KmuLabelSpec("Location: Valis.", new String[0], new Color[0]);
-        KmuLabelSpec summarySpec = new KmuLabelSpec("Conditions: 0 available, 0 total.", new String[0], new Color[0]);
-
-        KmuConditionPickerInfoRow.render(row, locationSpec, summarySpec, Optional.empty(), 400f);
-
-        assertThat(locationParaColors).containsExactly(TEXT, TEXT);
-    }
-
-    @Test
-    void rendersSummaryTextWithWhiteBaseColor() {
-        List<Color> summaryParaColors = new ArrayList<>();
-
-        // First panel is for location text, second is for summary text.
-        // We capture para colors per panel by tracking which panel is being built.
-        List<Color> locationParaColors = new ArrayList<>();
-        CustomPanelAPI row = rowPanelWithTwoElements(locationParaColors, summaryParaColors);
-
-        KmuLabelSpec locationSpec = new KmuLabelSpec("Location: Valis.", new String[0], new Color[0]);
-        KmuLabelSpec summarySpec = new KmuLabelSpec("Conditions: 0 available, 0 total.", new String[0], new Color[0]);
-
-        KmuConditionPickerInfoRow.render(row, locationSpec, summarySpec, Optional.empty(), 400f);
-
-        assertThat(summaryParaColors).containsExactly(TEXT);
-    }
-
-    @Test
-    void rendersOnlyOneParagraphWhenLocationIsAbsent() {
+    void rendersAllTextsWithWhiteBaseColor() {
         List<Color> paraColors = new ArrayList<>();
+        CustomPanelAPI row = rowPanel(paraColors);
 
-        CustomPanelAPI row = rowPanel(new ArrayList<>(), paraColors);
-        KmuLabelSpec emptyLocation = new KmuLabelSpec("", new String[0], new Color[0]);
-        KmuLabelSpec summarySpec = new KmuLabelSpec("Conditions: 0 available, 0 total.", new String[0], new Color[0]);
+        List<KmuLabelSpec> locationSpecs = Arrays.asList(
+                new KmuLabelSpec("Location:", new String[0], new Color[0]),
+                new KmuLabelSpec("Valis (terran world)", new String[0], new Color[0]));
+        List<KmuLabelSpec> summarySpecs = Arrays.asList(
+                new KmuLabelSpec("Conditions:", new String[0], new Color[0]),
+                new KmuLabelSpec("0 available, 0 total.", new String[0], new Color[0]));
 
-        KmuConditionPickerInfoRow.render(row, emptyLocation, summarySpec, Optional.empty(), 400f);
+        KmuConditionPickerInfoRow.render(row, locationSpecs, summarySpecs, Optional.empty(), 400f);
 
-        assertThat(paraColors).hasSize(1);
-        assertThat(paraColors).containsExactly(TEXT);
+        // 2 location + 2 summary lines, all TEXT base color
+        assertThat(paraColors).hasSize(4).containsOnly(TEXT);
+    }
+
+    @Test
+    void rendersOnlySummaryWhenLocationListIsEmpty() {
+        List<Color> paraColors = new ArrayList<>();
+        CustomPanelAPI row = rowPanel(paraColors);
+
+        List<KmuLabelSpec> summarySpecs = Arrays.asList(
+                new KmuLabelSpec("Conditions:", new String[0], new Color[0]),
+                new KmuLabelSpec("0 available, 0 total.", new String[0], new Color[0]));
+
+        KmuConditionPickerInfoRow.render(
+                row, Collections.emptyList(), summarySpecs, Optional.empty(), 400f);
+
+        assertThat(paraColors).hasSize(2).containsOnly(TEXT);
     }
 
     /**
-     * Builds a row panel whose single UI element captures addPara base colors
-     * into {@code paraColors}. Both location and summary elements share the
-     * same list — use this when only one paragraph is expected.
+     * Builds a row panel whose every UI element captures addPara base colors
+     * into {@code paraColors}.
      */
-    private static CustomPanelAPI rowPanel(List<Color> ignored, List<Color> paraColors) {
+    private static CustomPanelAPI rowPanel(List<Color> paraColors) {
         PositionAPI position = proxy(PositionAPI.class,
                 (p, method, args) -> defaultValue(method.getReturnType()));
         TooltipMakerAPI element = proxy(TooltipMakerAPI.class, (p, method, args) -> {
@@ -108,35 +98,11 @@ class KmuConditionPickerInfoRowTest {
             }
             return defaultValue(method.getReturnType());
         });
+        // createCustomPanel returns self so the inner row proxy is this same panel proxy,
+        // allowing createUIElement and addUIElement calls on it to be intercepted.
         return proxy(CustomPanelAPI.class, (p, method, args) -> {
+            if ("createCustomPanel".equals(method.getName())) return p;
             if ("createUIElement".equals(method.getName())) return element;
-            if ("addUIElement".equals(method.getName())) return position;
-            return defaultValue(method.getReturnType());
-        });
-    }
-
-    /**
-     * Builds a row panel whose first UI element captures base colors into
-     * {@code firstColors} and second into {@code secondColors}. Used when
-     * both a location and a summary paragraph are expected.
-     */
-    private static CustomPanelAPI rowPanelWithTwoElements(
-            List<Color> firstColors, List<Color> secondColors) {
-        PositionAPI position = proxy(PositionAPI.class,
-                (p, method, args) -> defaultValue(method.getReturnType()));
-        int[] elementCount = {0};
-        return proxy(CustomPanelAPI.class, (p, method, args) -> {
-            if ("createUIElement".equals(method.getName())) {
-                List<Color> target = (elementCount[0]++ == 0) ? firstColors : secondColors;
-                return proxy(TooltipMakerAPI.class, (pp, m, a) -> {
-                    if ("addPara".equals(m.getName()) && a != null && a.length >= 2
-                            && a[1] instanceof Color) {
-                        target.add((Color) a[1]);
-                        return label();
-                    }
-                    return defaultValue(m.getReturnType());
-                });
-            }
             if ("addUIElement".equals(method.getName())) return position;
             return defaultValue(method.getReturnType());
         });

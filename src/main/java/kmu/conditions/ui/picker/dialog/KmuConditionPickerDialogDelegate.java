@@ -170,10 +170,11 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
 
         LabelAPI summaryLabel = renderResult.getSummaryLabel();
         if (summaryLabel != null) {
-            KmuLabelSpec spec =
-                    KmuConditionPickerSummaryLabelSpecFactory.get(actionHandler.getModel());
-            summaryLabel.setText(spec.getText());
-            spec.applyTo(summaryLabel);
+            // Item 1 is the counts line; item 0 is the static "Conditions:" header.
+            KmuLabelSpec countsSpec =
+                    KmuConditionPickerSummaryLabelSpecFactory.get(actionHandler.getModel()).get(1);
+            summaryLabel.setText(countsSpec.getText());
+            countsSpec.applyTo(summaryLabel);
         }
 
         Optional<String> conditionId = result.getConditionId();

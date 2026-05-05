@@ -46,6 +46,7 @@ public final class StarsectorTestSupport {
     private static Map<String, String> stringsByKey() {
         Map<String, String> stringsByKey = new LinkedHashMap<>();
         stringsByKey.put(KmuStrings.CONDITION_PICKER_LOCATION, "Location:");
+        stringsByKey.put(KmuStrings.CONDITION_PICKER_LOCATION_UNKNOWN, "Unknown");
         stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY, "Conditions:");
         stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_VISIBLE, "%d visible");
         stringsByKey.put(KmuStrings.CONDITION_PICKER_SUMMARY_SUPPRESSED, "%d suppressed");

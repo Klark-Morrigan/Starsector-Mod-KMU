@@ -13,6 +13,7 @@ import org.mockito.Mockito;
 
 import java.awt.Color;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,136 +46,191 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     }
 
     @Test
-    void summarizesLocationFields() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                location());
+    void returnsHeaderAndUnknownWhenLocationHasNoDisplayableFields() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(new KmuConditionPickerLocation(null, null, null, null, null, null, null)));
 
-        assertThat(KmuConditionPickerLocationLabelSpecFactory.getText(model))
-                .isEqualTo("Location: Valis (terran world) - owned by Hegemony "
-                        + "(Vengeful (-100 / 100)) - Corvus Star System (yellow star) - Corvus.");
+        assertThat(specs).hasSize(2);
+        assertThat(specs.get(0).getText()).isEqualTo("Location:");
+        assertThat(specs.get(1).getText()).isEqualTo("Unknown");
+        assertThat(specs.get(1).getHighlights()).containsExactly("Unknown");
+        assertThat(specs.get(1).getHighlightColors()).containsExactly(GOLD);
     }
 
     @Test
-    void showsGravityWellEntityNameWhenNotImpliedBySystemName() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null, null, null,
-                        "Kumari System",
-                        "Yellow Dwarf",
-                        "Kumari A",
-                        null));
+    void returnsLocationHeaderAsFirstLine() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
 
-        KmuLabelSpec spec = KmuConditionPickerLocationLabelSpecFactory.get(model);
-        assertThat(spec.getText())
-                .isEqualTo("Location: Kumari System (Kumari A, Yellow Dwarf).");
-        assertThat(spec.getHighlights()).containsExactly("Kumari System", "Kumari A");
+        assertThat(specs.get(0).getText()).isEqualTo("Location:");
+        assertThat(specs.get(0).getHighlights()).isEmpty();
     }
 
     @Test
-    void suppressesGravityWellEntityNameWhenImpliedBySystemName() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null, null, null,
-                        "Agreus System",
-                        "Black Hole",
-                        "Agreus",
-                        null));
+    void returnsPlanetLineWithTypeAndOwnershipAsSecondLine() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
 
-        KmuLabelSpec spec = KmuConditionPickerLocationLabelSpecFactory.get(model);
-        assertThat(spec.getText()).isEqualTo("Location: Agreus System (Black Hole).");
-        assertThat(spec.getHighlights()).containsExactly("Agreus System");
+        assertThat(specs.get(1).getText())
+                .isEqualTo("Valis (terran world) - owned by Hegemony (Vengeful (-100 / 100))");
     }
 
     @Test
-    void deduplicatesGravityWellNameAndEntityNameForNonPlanetGravityWells() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null, null, null,
-                        "Kumari Star System",
-                        "Kumari Barycenter",
-                        "Kumari Barycenter",
-                        null));
+    void returnsSystemLineAsThirdLine() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
 
-        KmuLabelSpec spec = KmuConditionPickerLocationLabelSpecFactory.get(model);
-        assertThat(spec.getText())
-                .isEqualTo("Location: Kumari Star System (Kumari Barycenter).");
-        assertThat(spec.getHighlights()).containsExactly("Kumari Star System");
+        assertThat(specs.get(2).getText()).isEqualTo("Corvus Star System (yellow star)");
+    }
+
+    @Test
+    void returnsConstellationLineAsFourthLine() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
+
+        assertThat(specs.get(3).getText()).isEqualTo("Corvus");
+    }
+
+    @Test
+    void returnsFourLinesForFullLocation() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
+
+        // header + planet + system + constellation
+        assertThat(specs).hasSize(4);
+    }
+
+    @Test
+    void omitsSystemLineWhenSystemIsAbsent() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(new KmuConditionPickerLocation(
+                        "Valis", "terran world", null, null, null, null, null)));
+
+        // header + planet only
+        assertThat(specs).hasSize(2);
+        assertThat(specs.get(1).getText()).isEqualTo("Valis (terran world)");
+    }
+
+    @Test
+    void omitsConstellationLineWhenConstellationIsAbsent() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(new KmuConditionPickerLocation(
+                        "Valis", null, null, "Corvus System", null, null, null)));
+
+        // header + planet + system; no constellation
+        assertThat(specs).hasSize(3);
     }
 
     @Test
     void omitsMissingLocationFields() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        "Valis",
-                        " ",
-                        null,
-                        "Corvus Star System",
-                        null,
-                        null,
-                        null));
+        // Planet type whitespace is normalized to absent, no faction, no constellation
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(new KmuConditionPickerLocation(
+                        "Valis", " ", null, "Corvus Star System", null, null, null)));
 
-        KmuLabelSpec spec = KmuConditionPickerLocationLabelSpecFactory.get(model);
-        assertThat(spec.getText()).isEqualTo("Location: Valis - Corvus Star System.");
-        assertThat(spec.getHighlights()).containsExactly("Valis", "Corvus Star System");
+        assertThat(specs).hasSize(3); // header + planet + system
+        assertThat(specs.get(1).getText()).isEqualTo("Valis");
+        assertThat(specs.get(2).getText()).isEqualTo("Corvus Star System");
     }
 
     @Test
-    void returnsEmptySpecWhenLocationHasNoDisplayableFields() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+    void showsGravityWellEntityNameInSystemLineWhenNotImpliedBySystemName() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(new KmuConditionPickerLocation(
+                        null, null, null, "Kumari System", "Yellow Dwarf", "Kumari A", null)));
 
-        KmuLabelSpec spec = KmuConditionPickerLocationLabelSpecFactory.get(model);
-        assertThat(spec.getText()).isEmpty();
-        assertThat(spec.getHighlights()).isEmpty();
-        assertThat(spec.getHighlightColors()).isEmpty();
+        // header + system only
+        KmuLabelSpec systemSpec = specs.get(1);
+        assertThat(systemSpec.getText()).isEqualTo("Kumari System (Kumari A, Yellow Dwarf)");
+        assertThat(systemSpec.getHighlights()).containsExactly("Kumari System", "Kumari A");
     }
 
     @Test
-    void exposesHighlights() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                location());
+    void suppressesGravityWellEntityNameInSystemLineWhenImpliedBySystemName() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(new KmuConditionPickerLocation(
+                        null, null, null, "Agreus System", "Black Hole", "Agreus", null)));
 
-        assertThat(KmuConditionPickerLocationLabelSpecFactory.get(model).getHighlights())
-                .containsExactly(
-                        "Valis",
-                        "Hegemony",
-                        "Vengeful (-100 / 100)",
-                        "Corvus Star System",
-                        "Corvus");
+        KmuLabelSpec systemSpec = specs.get(1);
+        assertThat(systemSpec.getText()).isEqualTo("Agreus System (Black Hole)");
+        assertThat(systemSpec.getHighlights()).containsExactly("Agreus System");
     }
 
     @Test
-    void exposesHighlightColors() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                location());
+    void deduplicatesGravityWellNameAndEntityNameForNonPlanetGravityWells() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(new KmuConditionPickerLocation(
+                        null, null, null, "Kumari Star System", "Kumari Barycenter",
+                        "Kumari Barycenter", null)));
 
-        assertThat(KmuConditionPickerLocationLabelSpecFactory.get(model).getHighlightColors())
-                .containsExactly(GOLD, FACTION, RELATIONSHIP, GOLD, GOLD);
+        KmuLabelSpec systemSpec = specs.get(1);
+        assertThat(systemSpec.getText()).isEqualTo("Kumari Star System (Kumari Barycenter)");
+        assertThat(systemSpec.getHighlights()).containsExactly("Kumari Star System");
     }
 
     @Test
-    void defaultsMissingFactionAndRelationshipColorsToWhite() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(
-                        null,
-                        null,
+    void exposesPlanetLineHighlights() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
+
+        assertThat(specs.get(1).getHighlights())
+                .containsExactly("Valis", "Hegemony", "Vengeful (-100 / 100)");
+    }
+
+    @Test
+    void exposesSystemLineHighlights() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
+
+        assertThat(specs.get(2).getHighlights()).containsExactly("Corvus Star System");
+    }
+
+    @Test
+    void exposesConstellationLineHighlights() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
+
+        assertThat(specs.get(3).getHighlights()).containsExactly("Corvus");
+    }
+
+    @Test
+    void exposesPlanetLineHighlightColors() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
+
+        assertThat(specs.get(1).getHighlightColors())
+                .containsExactly(GOLD, FACTION, RELATIONSHIP);
+    }
+
+    @Test
+    void exposesSystemLineHighlightColors() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
+
+        assertThat(specs.get(2).getHighlightColors()).containsExactly(GOLD);
+    }
+
+    @Test
+    void exposesConstellationLineHighlightColors() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(location()));
+
+        assertThat(specs.get(3).getHighlightColors()).containsExactly(GOLD);
+    }
+
+    @Test
+    void defaultsMissingFactionAndRelationshipColorsToTextWhite() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(new KmuConditionPickerLocation(
+                        null, null,
                         new KmuPickerFaction("Hegemony", null, null, "Vengeful (-100 / 100)", null),
-                        null,
-                        null,
-                        null,
-                        null));
+                        null, null, null, null)));
 
-        assertThat(KmuConditionPickerLocationLabelSpecFactory.get(model).getHighlightColors())
-                .containsExactly(TEXT, TEXT);
+        assertThat(specs.get(1).getHighlightColors()).containsExactly(TEXT, TEXT);
+    }
+
+    private static KmuConditionPickerModel model(KmuConditionPickerLocation location) {
+        return new KmuConditionPickerModel(Collections.emptyList(), location);
     }
 
     private static KmuConditionPickerLocation location() {

@@ -14,6 +14,7 @@ public final class KmuStrings {
     public static final String REDACTED = "[REDACTED]";
 
     public static final String CONDITION_PICKER_LOCATION = "condition_picker_location";
+    public static final String CONDITION_PICKER_LOCATION_UNKNOWN = "condition_picker_location_unknown";
     public static final String CONDITION_PICKER_SUMMARY = "condition_picker_summary";
     public static final String CONDITION_PICKER_SUMMARY_VISIBLE = "condition_picker_summary_visible";
     public static final String CONDITION_PICKER_SUMMARY_SUPPRESSED = "condition_picker_summary_suppressed";

@@ -5,7 +5,6 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
-import kmu.conditions.ui.picker.model.KmuPickerFaction;
 import kmu.starsector.StarsectorTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +15,7 @@ import org.mockito.Mockito;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,9 +26,6 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
     private static final Color GREEN = new Color(80, 220, 80);
     private static final Color BLUE = new Color(170, 222, 255, 255);
     private static final Color TEXT = new Color(220, 220, 220, 255);
-    private static final Color FACTION = new Color(90, 150, 240);
-    private static final Color RELATIONSHIP = new Color(240, 80, 80);
-
     private MockedStatic<Misc> misc;
 
     @BeforeEach
@@ -50,95 +47,98 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
     }
 
     @Test
-    void summarizesTotalAndPresentConditions() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
-                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
-                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
-                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
-                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-                location());
+    void returnsTwoLines() {
+        assertThat(KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()))).hasSize(2);
+    }
 
-        assertThat(KmuConditionPickerSummaryLabelSpecFactory.getText(model))
-                .isEqualTo("Conditions: 2 visible - 1 suppressed, 3 present, 1 hidden - 1 available, 4 total.");
+    @Test
+    void returnsConditionsHeaderAsFirstLine() {
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()));
+
+        assertThat(specs.get(0).getText()).isEqualTo("Conditions:");
+        assertThat(specs.get(0).getHighlights()).isEmpty();
+    }
+
+    @Test
+    void summarizesTotalAndPresentConditionsInCountsLine() {
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()));
+
+        assertThat(specs.get(1).getText())
+                .isEqualTo("2 visible - 1 suppressed, 3 present, 1 hidden - 1 available, 4 total.");
     }
 
     @Test
     void showsOnlyTailWhenAllCountsAreZero() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(
+                model(Collections.emptyList()));
 
-        assertThat(KmuConditionPickerSummaryLabelSpecFactory.getText(model))
-                .isEqualTo("Conditions: 0 available, 0 total.");
+        assertThat(specs.get(1).getText()).isEqualTo("0 available, 0 total.");
     }
 
     @Test
-    void usesSingleSpaceBeforeSuppressedWhenItIsFirstSegment() {
-        // An entry that is both suppressed and hidden has visible=0 (hidden) but suppressed=1.
-        // appendToken ignores the " - " separator for the first token, using " " instead.
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.singletonList(
-                        entry("hot", KmuConditionPickerEntryState.PRESENT, true, true)),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+    void startsDirectlyWithFirstCountTokenWhenVisibleIsZero() {
+        // Entry that is both suppressed and hidden: visible=0 (hidden), suppressed=1
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(
+                model(Collections.singletonList(
+                        entry("hot", KmuConditionPickerEntryState.PRESENT, true, true))));
 
-        assertThat(KmuConditionPickerSummaryLabelSpecFactory.getText(model))
-                .isEqualTo("Conditions: 1 suppressed, 1 present, 1 hidden - 0 available, 1 total.");
+        assertThat(specs.get(1).getText())
+                .isEqualTo("1 suppressed, 1 present, 1 hidden - 0 available, 1 total.");
+        assertThat(specs.get(1).getText()).doesNotStartWith(" ");
     }
 
     @Test
-    void exposesCountHighlights() {
-        // hot=visible, cold=available, hidden=present+hidden, suppressed=present+suppressed
-        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
-                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
-                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
-                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
-                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-                location());
+    void exposesCountHighlightsOnCountsLine() {
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()));
 
-        assertThat(KmuConditionPickerSummaryLabelSpecFactory.get(model).getHighlights())
+        assertThat(specs.get(1).getHighlights())
                 .containsExactly(
-                        "Conditions:", "2 visible", "1 suppressed", "3 present", "1 hidden",
+                        "2 visible", "1 suppressed", "3 present", "1 hidden",
                         " - 1 available, 4 total.");
     }
 
     @Test
-    void exposesHighlightColors() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(Arrays.asList(
-                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
-                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
-                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
-                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-                location());
+    void exposesHighlightColorsOnCountsLine() {
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()));
 
-        Color[] colors = KmuConditionPickerSummaryLabelSpecFactory.get(model).getHighlightColors();
-
-        assertThat(colors).containsExactly(TEXT, GREEN, RED, TEXT, BLUE, GRAY);
+        assertThat(specs.get(1).getHighlightColors())
+                .containsExactly(GREEN, RED, TEXT, BLUE, GRAY);
     }
 
     @Test
     void omitsZeroSuppressedSegment() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.singletonList(
-                        entry("hot", KmuConditionPickerEntryState.PRESENT, false, false)),
-                location());
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(
+                model(Collections.singletonList(
+                        entry("hot", KmuConditionPickerEntryState.PRESENT, false, false))));
 
-        assertThat(KmuConditionPickerSummaryLabelSpecFactory.get(model).getHighlights())
-                .doesNotContain("0 suppressed");
+        assertThat(specs.get(1).getHighlights()).doesNotContain("0 suppressed");
     }
 
     @Test
     void exposesRedHighlightForSuppressedSegment() {
-        KmuConditionPickerModel model = new KmuConditionPickerModel(
-                Collections.singletonList(
-                        entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-                location());
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(
+                model(Collections.singletonList(
+                        entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false))));
 
-        String[] highlights = KmuConditionPickerSummaryLabelSpecFactory.get(model).getHighlights();
-        Color[] colors = KmuConditionPickerSummaryLabelSpecFactory.get(model).getHighlightColors();
+        String[] highlights = specs.get(1).getHighlights();
+        Color[] colors = specs.get(1).getHighlightColors();
 
         int suppIdx = Arrays.asList(highlights).indexOf("1 suppressed");
         assertThat(suppIdx).isNotEqualTo(-1);
         assertThat(colors[suppIdx]).isEqualTo(RED);
+    }
+
+    private static KmuConditionPickerModel model(List<KmuConditionPickerEntry> entryList) {
+        return new KmuConditionPickerModel(entryList,
+                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+    }
+
+    private static List<KmuConditionPickerEntry> entries() {
+        return Arrays.asList(
+                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
+                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
+                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
+                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false));
     }
 
     private static KmuConditionPickerEntry entry(
@@ -155,16 +155,5 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
                 null,
                 suppressed,
                 hidden);
-    }
-
-    private static KmuConditionPickerLocation location() {
-        return new KmuConditionPickerLocation(
-                "Valis",
-                "terran world",
-                new KmuPickerFaction("Hegemony", FACTION, null, "Vengeful (-100 / 100)", RELATIONSHIP),
-                "Corvus Star System",
-                "yellow star",
-                "Corvus",
-                "Corvus");
     }
 }

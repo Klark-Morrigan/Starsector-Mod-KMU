@@ -9,23 +9,26 @@ import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
 import kmu.starsector.StarsectorUiColor;
 import kmu.starsector.StarsectorUiColorProvider;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Renders the picker's info panel: an optional location line at the top,
- * followed by an optional faction crest icon flush left of the conditions
- * summary text. Always uses a fixed-height panel per line so positions stay
- * stable regardless of which elements are present.
+ * Renders the picker's info panel: an optional faction crest icon flush left,
+ * with location lines and the conditions summary stacked to its right.
+ * Always uses a fixed-height panel so positions stay stable regardless of
+ * which elements are present.
  */
 final class KmuConditionPickerInfoRow {
-    /** Height of one text line, matching the approximate rendered font height
-     *  so the icon and text sit at the same visual baseline. */
-    static final float ICON_SIZE = 20f;
-    /** Gap between the faction icon and the conditions text label to its right. */
+    /** Height of one text line, matching the approximate rendered font height. */
+    static final float LINE_HEIGHT = 20f;
+    /** Side length of the faction crest icon. 4x LINE_HEIGHT for visual prominence. */
+    static final float ICON_SIZE = 80f;
+    /** Gap between the faction icon and the text column to its right. */
     private static final float ICON_PAD = 4f;
 
     private final CustomPanelAPI rowPanel;
+    /** The label for the conditions count line - updated live when entries change. */
     private final LabelAPI conditionsLabel;
 
     private KmuConditionPickerInfoRow(CustomPanelAPI rowPanel, LabelAPI conditionsLabel) {
@@ -33,35 +36,49 @@ final class KmuConditionPickerInfoRow {
         this.conditionsLabel = conditionsLabel;
     }
 
-    /** Total height of the info panel as added to the header tooltip body.
-     *  One line when there is no location, two lines when there is. */
-    static float computeHeight(float topPad, boolean hasLocation) {
-        return topPad + (hasLocation ? 2 : 1) * ICON_SIZE;
+    /**
+     * Total height of the info panel as added to the header tooltip body.
+     * The icon column sets a minimum height of {@link #ICON_SIZE} to avoid
+     * the crest being clipped when line count is small.
+     */
+    static float computeHeight(float topPad, int locationLineCount, int summaryLineCount) {
+        int totalLines = locationLineCount + summaryLineCount;
+        float height = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT);
+        return topPad + height;
     }
 
     static KmuConditionPickerInfoRow render(
             CustomPanelAPI panel,
-            KmuLabelSpec locationSpec,
-            KmuLabelSpec summarySpec,
+            List<KmuLabelSpec> locationSpecs,
+            List<KmuLabelSpec> summarySpecs,
             Optional<KmuPickerFaction> faction,
             float width) {
         Objects.requireNonNull(panel, "panel");
-        Objects.requireNonNull(locationSpec, "locationSpec");
-        Objects.requireNonNull(summarySpec, "summarySpec");
+        Objects.requireNonNull(locationSpecs, "locationSpecs");
+        Objects.requireNonNull(summarySpecs, "summarySpecs");
         Objects.requireNonNull(faction, "faction");
 
-        boolean hasLocation = !locationSpec.getText().isEmpty();
-        float panelHeight = (hasLocation ? 2 : 1) * ICON_SIZE;
+        int totalLines = locationSpecs.size() + summarySpecs.size();
+        float panelHeight = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT);
         CustomPanelAPI row = panel.createCustomPanel(width, panelHeight, new BaseCustomUIPanelPlugin());
 
-        if (hasLocation) {
-            renderLocationText(row, locationSpec, width);
+        Optional<String> crestSprite = faction.flatMap(KmuPickerFaction::getCrestSprite);
+        float textX = crestSprite.isPresent() ? renderIcon(row, crestSprite.get()) : 0f;
+        float textWidth = width - textX;
+
+        float y = 0f;
+        for (KmuLabelSpec spec : locationSpecs) {
+            renderText(row, spec, textX, y, textWidth);
+            y += LINE_HEIGHT;
         }
 
-        float conditionsY = hasLocation ? ICON_SIZE : 0f;
-        Optional<String> crestSprite = faction.flatMap(KmuPickerFaction::getCrestSprite);
-        float textX = crestSprite.isPresent() ? renderIcon(row, crestSprite.get(), conditionsY) : 0f;
-        LabelAPI conditionsLabel = renderConditionsText(row, summarySpec, textX, conditionsY, width);
+        // Render all summary lines; the last one is the live counts label.
+        LabelAPI conditionsLabel = null;
+        for (KmuLabelSpec spec : summarySpecs) {
+            conditionsLabel = renderText(row, spec, textX, y, textWidth);
+            y += LINE_HEIGHT;
+        }
+
         return new KmuConditionPickerInfoRow(row, conditionsLabel);
     }
 
@@ -73,32 +90,22 @@ final class KmuConditionPickerInfoRow {
         return conditionsLabel;
     }
 
-    private static void renderLocationText(CustomPanelAPI row, KmuLabelSpec spec, float width) {
-        TooltipMakerAPI textEl = row.createUIElement(width, ICON_SIZE, false);
-        LabelAPI label = textEl.addPara(
-                spec.getText(),
-                StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE),
-                0f);
-        spec.applyTo(label);
-        row.addUIElement(textEl).inTL(0f, 0f);
-    }
-
-    private static float renderIcon(CustomPanelAPI row, String sprite, float y) {
+    private static float renderIcon(CustomPanelAPI row, String sprite) {
         TooltipMakerAPI iconEl = row.createUIElement(ICON_SIZE, ICON_SIZE, false);
         iconEl.addImage(sprite, ICON_SIZE, ICON_SIZE, 0f);
-        row.addUIElement(iconEl).inTL(0f, y);
+        row.addUIElement(iconEl).inTL(0f, 0f);
         return ICON_SIZE + ICON_PAD;
     }
 
-    private static LabelAPI renderConditionsText(
-            CustomPanelAPI row, KmuLabelSpec spec, float textX, float y, float width) {
-        TooltipMakerAPI textEl = row.createUIElement(width - textX, ICON_SIZE, false);
+    private static LabelAPI renderText(
+            CustomPanelAPI row, KmuLabelSpec spec, float x, float y, float width) {
+        TooltipMakerAPI textEl = row.createUIElement(width, LINE_HEIGHT, false);
         LabelAPI label = textEl.addPara(
                 spec.getText(),
                 StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE),
                 0f);
         spec.applyTo(label);
-        row.addUIElement(textEl).inTL(textX, y);
+        row.addUIElement(textEl).inTL(x, y);
         return label;
     }
 }

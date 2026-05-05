@@ -11,25 +11,24 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Produces the conditions summary label spec.
+ * Produces the conditions summary label specs as two stacked lines:
+ * <ol>
+ *   <li>"Conditions:" header - no highlights, TEXT_WHITE base color</li>
+ *   <li>Count line - highlights for visible (green), suppressed (red),
+ *       present (white), hidden (blue); available/total tail in grey</li>
+ * </ol>
  *
- * The base label color is white; grey items must be highlighted explicitly:
- * - "Conditions:" in white
- * - "N visible"    in green      (omitted when zero)
- * - "N suppressed" in red        (omitted when zero)
- * - "N present"    in white      (omitted when zero)
- * - "N hidden"     in light blue (omitted when zero)
- * - "N available, N total." in grey (always appended last)
- *
- * Separator rules:
- * - " - " separates categories; ", " separates items within the same section.
- * - The grey tail (" - N available, N total.") is always appended last.
+ * Separator rules for the count line:
+ * - First token starts immediately (no leading character).
+ * - " - " separates category groups; ", " separates items within a group.
+ * - The grey tail (" - N available, N total.") is always last.
+ * - Zero-value tokens are omitted except available and total.
  */
 public final class KmuConditionPickerSummaryLabelSpecFactory {
     private KmuConditionPickerSummaryLabelSpecFactory() {
     }
 
-    public static KmuLabelSpec get(KmuConditionPickerModel model) {
+    public static List<KmuLabelSpec> get(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
         int visible = model.getVisibleCount();
@@ -44,19 +43,16 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         Color red = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
         Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.BLUE);
 
-        String prefix = KmuStrings.get(KmuStrings.CONDITION_PICKER_SUMMARY);
-        StringBuilder sb = new StringBuilder(prefix);
-        List<String> highlightList = new ArrayList<>();
-        List<Color> colorList = new ArrayList<>();
-
-        addHighlight(highlightList, colorList, prefix, white);
-
         String visibleToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_VISIBLE, visible);
         String suppressedToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_SUPPRESSED, suppressed);
         String presentToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_PRESENT, present);
         String hiddenToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_HIDDEN, hidden);
         String availableToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_AVAILABLE, available);
         String totalToken = KmuStrings.format(KmuStrings.CONDITION_PICKER_SUMMARY_TOTAL, total);
+
+        StringBuilder sb = new StringBuilder();
+        List<String> highlightList = new ArrayList<>();
+        List<Color> colorList = new ArrayList<>();
 
         boolean hasSegment = false;
 
@@ -69,23 +65,25 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         if (hidden > 0)
             hasSegment = appendToken(sb, highlightList, colorList, hasSegment, ", ", hiddenToken, lightBlue);
 
-        // The entire tail (divider + available + total) is a single highlight token so
-        // that the leading " - " or space is matched reliably as part of the same token.
+        // The entire tail is a single highlight token so the leading " - " is matched reliably.
         Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
-        String greyTail = (hasSegment ? " - " : " ") + availableToken + ", " + totalToken;
-
+        String greyTail = (hasSegment ? " - " : "") + availableToken + ", " + totalToken;
         sb.append(greyTail);
-
         addHighlight(highlightList, colorList, greyTail, grey);
 
-        return new KmuLabelSpec(
+        KmuLabelSpec headerSpec = new KmuLabelSpec(
+                KmuStrings.get(KmuStrings.CONDITION_PICKER_SUMMARY),
+                new String[0],
+                new Color[0]);
+        KmuLabelSpec countsSpec = new KmuLabelSpec(
                 sb.toString(),
                 highlightList.toArray(new String[0]),
                 colorList.toArray(new Color[0]));
-    }
 
-    public static String getText(KmuConditionPickerModel model) {
-        return get(model).getText();
+        List<KmuLabelSpec> result = new ArrayList<>();
+        result.add(headerSpec);
+        result.add(countsSpec);
+        return result;
     }
 
     private static boolean appendToken(
@@ -96,7 +94,10 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
             String separator,
             String token,
             Color color) {
-        sb.append(hasSegment ? separator : " ").append(token);
+        if (hasSegment) {
+            sb.append(separator);
+        }
+        sb.append(token);
         addHighlight(highlights, colors, token, color);
         return true;
     }

@@ -1,6 +1,7 @@
 {
   "kmu": {
     "condition_picker_location": "Location:",
+    "condition_picker_location_unknown": "Unknown",
     "condition_picker_summary": "Conditions:",
     "condition_picker_summary_visible": "%d visible",
     "condition_picker_summary_suppressed": "%d suppressed",
