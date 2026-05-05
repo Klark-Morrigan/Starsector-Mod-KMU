@@ -10,10 +10,9 @@
 - [Step 5 - Condition Add Action](#step-5---condition-add-action)
 - [Step 6 - Console Command Entry Point](#step-6---console-command-entry-point)
 - [Step 7 - Console Entry Verification](#step-7---console-entry-verification)
-- [Step 8 - Suppression Reason Providers](#step-8---suppression-reason-providers)
-- [Step 9 - Injected Market UI Button](#step-9---injected-market-ui-button)
-- [Step 10 - Injected UI Verification](#step-10---injected-ui-verification)
-- [Step 11 - Release Automation](#step-11---release-automation)
+- [Step 8 - Injected Market UI Button](#step-8---injected-market-ui-button)
+- [Step 9 - Injected UI Verification](#step-9---injected-ui-verification)
+- [Step 10 - Release Automation](#step-10---release-automation)
 
 ## Research Baseline
 
@@ -387,48 +386,7 @@ Tests:
 - save and reload;
 - confirm the condition persists.
 
-## Step 8 - Suppression Reason Providers
-
-Add heuristic reason providers for suppressed condition states.
-
-Reason: Starsector exposes reliable condition-state facts, but not a standard
-runtime contract for why a condition is suppressed. The chooser UI needs
-best-effort explanations early because suppressed conditions can appear present
-while their effects are disabled.
-
-Implementation:
-
-- create a small suppression-reason provider abstraction that accepts the
-  market, condition id, and detected facts (`present`, `suppressed`);
-- return structured reason text with a confidence/source label, or an explicit
-  "reason unavailable" result;
-- keep all suppression reason providers optional and fail-closed;
-- add a provider registry that can combine multiple low-risk providers;
-- add a Starsector/public-API provider that can inspect current market
-  industries, conditions, tags, and memory for obvious signals without mutating
-  the market;
-- add a mod-config provider for known public data files where available, starting
-  with TASC-style suppressed-condition CSVs such as
-  `data/campaign/terraforming/domed_cities_suppressed_conditions.csv`;
-- do not hard-code a reason unless the provider can cite the source file,
-  industry id, or market fact it used;
-- show provider output under the `Suppressed` tooltip banner when a reason is
-  available;
-- retain fallback suppression banner text asking the player to report the case
-  to the KMU mod developer when no provider can explain the state.
-
-Tests:
-
-- unit test suppression provider aggregation order and fail-closed behavior;
-- unit test unavailable suppression reasons remain explicit and generic;
-- unit test a TASC-style config file can map a suppressed condition id to a
-  best-effort reason;
-- unit test suppression reason text is attached to the `Suppressed` tooltip
-  section without changing condition mutation behavior;
-- in-game smoke test a TASC domed-city/station case where `no_atmosphere` is
-  present but suppressed.
-
-## Step 9 - Injected Market UI Button
+## Step 8 - Injected Market UI Button
 
 Add the intended in-game button on the relevant market/colony UI surface.
 
@@ -455,7 +413,7 @@ Tests:
   command;
 - unit test fail-closed behavior when panel lookup fails.
 
-## Step 10 - Injected UI Verification
+## Step 9 - Injected UI Verification
 
 Smoke test the injected UI path in game.
 
@@ -477,7 +435,7 @@ Tests:
 - save and reload;
 - confirm the condition persists.
 
-## Step 11 - Release Automation
+## Step 10 - Release Automation
 
 Add a GitHub Actions workflow that produces the packaged release zip.
 
