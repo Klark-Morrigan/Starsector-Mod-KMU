@@ -1,4 +1,4 @@
-package kmu.ui;
+package kmu.ui.geometry;
 
 // Position and size of one UI element within a parent panel.
 public final class KmuUiPlacement {

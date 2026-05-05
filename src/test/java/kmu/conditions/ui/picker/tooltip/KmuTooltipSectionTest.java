@@ -49,19 +49,19 @@ class KmuTooltipSectionTest {
         RecordingTooltip tooltip = RecordingTooltip.create();
 
         KmuTooltipSection.add(
-                tooltip.api(),
+                tooltip.getApi(),
                 KmuTooltipSectionStyle.MUTED,
                 "Metadata",
                 Arrays.asList("id: hot", "", null, "source: Starsector"));
 
-        assertThat(tooltip.headings())
+        assertThat(tooltip.getHeadings())
                 .containsExactly(new HeadingCall(
                         "Metadata",
                         BLUE,
                         DARK_BLUE,
                         Alignment.MID,
                         10f));
-        assertThat(tooltip.paragraphs())
+        assertThat(tooltip.getParagraphs())
                 .containsExactly(
                         new ParagraphCall("id: hot", 4f, GRAY),
                         new ParagraphCall("source: Starsector", 4f, GRAY));
@@ -72,19 +72,19 @@ class KmuTooltipSectionTest {
         RecordingTooltip tooltip = RecordingTooltip.create();
 
         KmuTooltipSection.add(
-                tooltip.api(),
+                tooltip.getApi(),
                 KmuTooltipSectionStyle.WARNING,
                 "Suppressed",
                 "Reason text");
 
-        assertThat(tooltip.headings())
+        assertThat(tooltip.getHeadings())
                 .containsExactly(new HeadingCall(
                         "Suppressed",
                         new Color(255, 100, 0, 255),
                         new Color(70, 20, 20),
                         Alignment.MID,
                         10f));
-        assertThat(tooltip.paragraphs())
+        assertThat(tooltip.getParagraphs())
                 .containsExactly(new ParagraphCall("Reason text", 4f, TEXT));
     }
 
@@ -104,15 +104,15 @@ class KmuTooltipSectionTest {
             return new RecordingTooltip();
         }
 
-        TooltipMakerAPI api() {
+        TooltipMakerAPI getApi() {
             return api;
         }
 
-        List<HeadingCall> headings() {
+        List<HeadingCall> getHeadings() {
             return headings;
         }
 
-        List<ParagraphCall> paragraphs() {
+        List<ParagraphCall> getParagraphs() {
             return paragraphs;
         }
 

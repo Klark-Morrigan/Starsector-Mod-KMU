@@ -506,14 +506,14 @@ class KmuConditionPickerModelFactoryTest {
                 case "getBaseUIColor":
                     return FACTION_COLOR;
                 case "getRelToPlayer":
-                    return relationship();
+                    return createRelationship();
                 default:
                     return handleObjectMethodOrThrow(proxy, method, args);
             }
         });
     }
 
-    private static RelationshipAPI relationship() {
+    private static RelationshipAPI createRelationship() {
         return proxy(RelationshipAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getLevel":

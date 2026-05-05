@@ -1,7 +1,9 @@
 package kmu.conditions.ui.picker.render;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
+import kmu.ui.geometry.KmuUiSize;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
+import kmu.conditions.ui.picker.tooltip.KmuConditionEntryTooltipCreator;
 
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
@@ -53,14 +55,10 @@ class KmuConditionIconButtonTest {
 
     @Test
     void greysOutAbsentEntriesOnly() {
-        assertThat(KmuConditionIconButton.shouldGreyOut(entry(KmuConditionPickerEntryState.ABSENT)))
-                .isTrue();
-        assertThat(KmuConditionIconButton.shouldGreyOut(entry(KmuConditionPickerEntryState.PRESENT)))
-                .isFalse();
-        assertThat(KmuConditionIconButton.shouldGreyOut(suppressedEntry()))
-                .isFalse();
-        assertThat(KmuConditionIconButton.shouldGreyOut(hiddenEntry()))
-                .isFalse();
+        assertThat(entry(KmuConditionPickerEntryState.ABSENT).isPresent()).isFalse();
+        assertThat(entry(KmuConditionPickerEntryState.PRESENT).isPresent()).isTrue();
+        assertThat(suppressedEntry().isPresent()).isTrue();
+        assertThat(hiddenEntry().isPresent()).isTrue();
     }
 
     @Test
@@ -69,8 +67,8 @@ class KmuConditionIconButtonTest {
 
         assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
         assertButtonStyleRoles(entry, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.BLUE);
-        assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isTrue();
-        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
+        assertThat(entry.isPresent()).isFalse();
+        assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
     }
 
     @Test
@@ -79,8 +77,8 @@ class KmuConditionIconButtonTest {
 
         assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
         assertButtonStyleRoles(entry, StarsectorUiColor.DARK_GREEN, StarsectorUiColor.BRIGHT_GREEN);
-        assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isFalse();
-        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isTrue();
+        assertThat(entry.isPresent()).isTrue();
+        assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isTrue();
     }
 
     @Test
@@ -88,8 +86,8 @@ class KmuConditionIconButtonTest {
         KmuConditionPickerEntry entry = hiddenEntry();
 
         assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
-        assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isFalse();
-        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
+        assertThat(entry.isPresent()).isTrue();
+        assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
     }
 
     @Test
@@ -98,8 +96,8 @@ class KmuConditionIconButtonTest {
 
         assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
         assertButtonStyleRoles(entry, StarsectorUiColor.MUTED_RED, StarsectorUiColor.BRIGHT_RED);
-        assertThat(KmuConditionIconButton.shouldGreyOut(entry)).isFalse();
-        assertThat(KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)).isFalse();
+        assertThat(entry.isPresent()).isTrue();
+        assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
     }
 
     @Test
@@ -118,58 +116,68 @@ class KmuConditionIconButtonTest {
     }
 
     @Test
-    void iconBoundsReturnsFallbackSizeForZeroDimensions() {
-        KmuConditionIconButton.IconBounds bounds = KmuConditionIconButton.iconBounds(0f, 0f);
+    void iconSizeReturnsFallbackSizeForZeroDimensions() {
+        KmuUiSize bounds =
+                KmuConditionIconButtonFactory.computeIconSize(0f, 0f);
 
-        assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButton.Sizing.FALLBACK_ICON_SIZE);
-        assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButton.Sizing.FALLBACK_ICON_SIZE);
+        assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
+        assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
     }
 
     @Test
-    void iconBoundsReturnsFallbackSizeForNegativeDimensions() {
-        KmuConditionIconButton.IconBounds bounds = KmuConditionIconButton.iconBounds(-1f, -1f);
+    void iconSizeReturnsFallbackSizeForNegativeDimensions() {
+        KmuUiSize bounds =
+                KmuConditionIconButtonFactory.computeIconSize(-1f, -1f);
 
-        assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButton.Sizing.FALLBACK_ICON_SIZE);
-        assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButton.Sizing.FALLBACK_ICON_SIZE);
+        assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
+        assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
     }
 
     @Test
     void rendersIconsAtVanillaHeightWhenSourceAlreadyMatches() {
-        KmuConditionIconButton.ButtonMetrics wide = KmuConditionIconButton.metricsForSource(120f, 40f);
+        KmuConditionIconButtonLayout wide =
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(120f, 40f);
 
         assertThat(wide.getIconWidth()).isEqualTo(120f);
         assertThat(wide.getIconHeight()).isEqualTo(40f);
-        assertThat(wide.getButtonWidth()).isEqualTo(120f + KmuConditionIconButton.Sizing.ICON_MARGIN * 2f);
-        assertThat(wide.getButtonHeight()).isEqualTo(40f + KmuConditionIconButton.Sizing.ICON_MARGIN * 2f);
+        assertThat(wide.getButtonWidth())
+                .isEqualTo(120f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+        assertThat(wide.getButtonHeight())
+                .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
     }
 
     @Test
     void upscalesSmallerIconsToVanillaHeightWithoutChangingAspectRatio() {
-        KmuConditionIconButton.ButtonMetrics small = KmuConditionIconButton.metricsForSource(20f, 20f);
+        KmuConditionIconButtonLayout small =
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(20f, 20f);
 
         assertThat(small.getIconWidth()).isEqualTo(40f);
         assertThat(small.getIconHeight())
-                .isEqualTo(KmuConditionIconButton.Sizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
-        assertThat(small.getButtonWidth()).isEqualTo(40f + KmuConditionIconButton.Sizing.ICON_MARGIN * 2f);
-        assertThat(small.getButtonHeight()).isEqualTo(40f + KmuConditionIconButton.Sizing.ICON_MARGIN * 2f);
+                .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+        assertThat(small.getButtonWidth())
+                .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+        assertThat(small.getButtonHeight())
+                .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
     }
 
     @Test
     void preservesWideIconWidthWhenHeightMatchesVanillaTarget() {
-        KmuConditionIconButton.ButtonMetrics wide = KmuConditionIconButton.metricsForSource(180f, 40f);
+        KmuConditionIconButtonLayout wide =
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(180f, 40f);
 
         assertThat(wide.getIconWidth()).isEqualTo(180f);
         assertThat(wide.getIconHeight())
-                .isEqualTo(KmuConditionIconButton.Sizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+                .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
     }
 
     @Test
     void downscalesOversizedIconsToVanillaHeightWithoutChangingAspectRatio() {
-        KmuConditionIconButton.ButtonMetrics tall = KmuConditionIconButton.metricsForSource(64f, 192f);
+        KmuConditionIconButtonLayout tall =
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 192f);
 
         assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
         assertThat(tall.getIconHeight())
-                .isEqualTo(KmuConditionIconButton.Sizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+                .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
     }
 
     @Test
@@ -182,7 +190,7 @@ class KmuConditionIconButtonTest {
         button.updateEntry(entry(KmuConditionPickerEntryState.PRESENT));
 
         assertThat(button.getEntry().getState()).isEqualTo(KmuConditionPickerEntryState.PRESENT);
-        assertThat(KmuConditionIconButton.shouldGreyOut(button.getEntry())).isFalse();
+        assertThat(button.getEntry().isPresent()).isTrue();
     }
 
     @Test
@@ -198,11 +206,11 @@ class KmuConditionIconButtonTest {
                 true,
                 false);
 
-        new KmuConditionIconButton.EntryTooltipCreator(() -> entry)
-                .createTooltip(tooltip.api(), false, null);
+        new KmuConditionEntryTooltipCreator(() -> entry)
+                .createTooltip(tooltip.getApi(), false, null);
 
-        assertThat(tooltip.headings()).contains("Metadata");
-        assertThat(tooltip.paragraphs()).containsSequence(
+        assertThat(tooltip.getHeadings()).contains("Metadata");
+        assertThat(tooltip.getParagraphs()).containsSequence(
                 "source: Starsector",
                 "id: hot",
                 "icon: graphics/icons/markets/hot.png",
@@ -223,14 +231,14 @@ class KmuConditionIconButtonTest {
                 true,
                 true);
 
-        new KmuConditionIconButton.EntryTooltipCreator(() -> entry)
-                .createTooltip(tooltip.api(), false, null);
+        new KmuConditionEntryTooltipCreator(() -> entry)
+                .createTooltip(tooltip.getApi(), false, null);
 
-        assertThat(tooltip.paragraphs()).containsSequence(
+        assertThat(tooltip.getParagraphs()).containsSequence(
                 "source: Starsector",
                 "id: hot",
                 "icon: graphics/icons/markets/hot.png");
-        assertThat(tooltip.paragraphs()).doesNotContain("hidden: true", "suppressed: true");
+        assertThat(tooltip.getParagraphs()).doesNotContain("hidden: true", "suppressed: true");
     }
 
     private static KmuConditionPickerEntry entry(KmuConditionPickerEntryState state) {
@@ -272,20 +280,21 @@ class KmuConditionIconButtonTest {
             Color borderColor,
             float backdropAlpha,
             float borderAlpha) {
-        assertThat(KmuConditionIconButton.backdropColorFor(entry)).isEqualTo(backdropColor);
-        assertThat(KmuConditionIconButton.borderColorFor(entry)).isEqualTo(borderColor);
-        assertThat(KmuConditionIconButton.backdropAlphaFor(entry)).isEqualTo(backdropAlpha);
-        assertThat(KmuConditionIconButton.borderAlphaFor(entry)).isEqualTo(borderAlpha);
+        KmuConditionIconButtonStyle style = KmuConditionIconButtonStyle.forEntry(entry);
+        assertThat(style.getBackdropColor()).isEqualTo(backdropColor);
+        assertThat(style.getBorderColor()).isEqualTo(borderColor);
+        assertThat(style.getBackdropAlpha()).isEqualTo(backdropAlpha);
+        assertThat(style.getBorderAlpha()).isEqualTo(borderAlpha);
     }
 
     private static void assertButtonStyleRoles(
             KmuConditionPickerEntry entry,
             StarsectorUiColor backdropColor,
             StarsectorUiColor borderColor) {
-        KmuConditionIconButtonStyle style = KmuConditionIconButton.styleFor(entry);
+        KmuConditionIconButtonStyle style = KmuConditionIconButtonStyle.forEntry(entry);
 
-        assertThat(style.backdropRawColor()).isEqualTo(backdropColor);
-        assertThat(style.borderRawColor()).isEqualTo(borderColor);
+        assertThat(style.getBackdropRawColor()).isEqualTo(backdropColor);
+        assertThat(style.getBorderRawColor()).isEqualTo(borderColor);
     }
 
     private static final class RecordingTooltip implements InvocationHandler {
@@ -304,15 +313,15 @@ class KmuConditionIconButtonTest {
             return new RecordingTooltip();
         }
 
-        TooltipMakerAPI api() {
+        TooltipMakerAPI getApi() {
             return api;
         }
 
-        List<String> headings() {
+        List<String> getHeadings() {
             return headings;
         }
 
-        List<String> paragraphs() {
+        List<String> getParagraphs() {
             return paragraphs;
         }
 

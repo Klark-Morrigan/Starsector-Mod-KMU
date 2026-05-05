@@ -45,33 +45,33 @@ enum KmuConditionIconButtonStyle {
         if (entry.isSuppressed()) {
             return SUPPRESSED;
         }
-        if (KmuConditionIconButton.isVisibleUnsuppressedPresent(entry)) {
+        if (entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()) {
             return VISIBLE_PRESENT;
         }
         return DEFAULT;
     }
 
-    Color backdropColor() {
+    Color getBackdropColor() {
         return StarsectorUiColorProvider.get(backdropColor);
     }
 
-    Color borderColor() {
+    Color getBorderColor() {
         return StarsectorUiColorProvider.get(borderColor);
     }
 
-    float backdropAlpha() {
+    float getBackdropAlpha() {
         return backdropAlpha;
     }
 
-    float borderAlpha() {
+    float getBorderAlpha() {
         return borderAlpha;
     }
 
-    StarsectorUiColor backdropRawColor() {
+    StarsectorUiColor getBackdropRawColor() {
         return backdropColor;
     }
 
-    StarsectorUiColor borderRawColor() {
+    StarsectorUiColor getBorderRawColor() {
         return borderColor;
     }
 }

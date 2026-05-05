@@ -1,6 +1,6 @@
 package kmu.conditions.ui.picker.render;
 
-import kmu.ui.KmuUiPlacement;
+import kmu.ui.geometry.KmuUiPlacement;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -22,7 +22,7 @@ class KmuConditionIconGridTest {
 
     @Test
     void placesAllButtonsOnOneRowWhenTheyFitWithinWidth() {
-        KmuConditionIconButton.ButtonMetrics m = KmuConditionIconButton.metricsForSource(40f, 40f);
+        KmuConditionIconButtonLayout m = KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(40f, 40f);
         float rowWidth = 3 * m.getButtonWidth() + 2 * KmuConditionIconGrid.CELL_GAP;
 
         List<KmuUiPlacement> placements =
@@ -37,10 +37,10 @@ class KmuConditionIconGridTest {
 
     @Test
     void packsVariableWidthButtonsIntoRows() {
-        List<KmuConditionIconButton.ButtonMetrics> metrics = Arrays.asList(
-                KmuConditionIconButton.metricsForSource(64f, 64f),
-                KmuConditionIconButton.metricsForSource(128f, 64f),
-                KmuConditionIconButton.metricsForSource(64f, 64f));
+        List<KmuConditionIconButtonLayout> metrics = Arrays.asList(
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f),
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(128f, 64f),
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f));
 
         List<KmuUiPlacement> placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
 
@@ -53,10 +53,10 @@ class KmuConditionIconGridTest {
 
     @Test
     void computesHeightFromLastPackedRow() {
-        List<KmuConditionIconButton.ButtonMetrics> metrics = Arrays.asList(
-                KmuConditionIconButton.metricsForSource(64f, 64f),
-                KmuConditionIconButton.metricsForSource(128f, 64f),
-                KmuConditionIconButton.metricsForSource(64f, 64f));
+        List<KmuConditionIconButtonLayout> metrics = Arrays.asList(
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f),
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(128f, 64f),
+                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f));
         List<KmuUiPlacement> placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
 
         assertThat(KmuConditionIconGrid.computeHeightForPlacements(placements))

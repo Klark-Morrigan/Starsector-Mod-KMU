@@ -7,7 +7,7 @@ import com.fs.starfarer.api.ui.UIComponentAPI;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
-import kmu.ui.KmuUiPlacement;
+import kmu.ui.geometry.KmuUiPlacement;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +25,7 @@ public final class KmuConditionIconGrid {
 
     /** Width of one column slot: button width plus the gap that follows it. */
     static float computeColumnUnit() {
-        return KmuConditionIconButton.Sizing.squareButtonWidth() + CELL_GAP;
+        return KmuConditionIconButtonSizing.computeSquareButtonWidth() + CELL_GAP;
     }
 
     /** Largest grid width that fits within the scrollable area of a panel of
@@ -33,7 +33,7 @@ public final class KmuConditionIconGrid {
      *  so no column is partially visible. Always returns at least 1. */
     static float computeGridWidth(float containerWidth) {
         float availableWidth = Math.max(1f, containerWidth - SCROLLBAR_RIGHT_PAD);
-        float squareButtonWidth = KmuConditionIconButton.Sizing.squareButtonWidth();
+        float squareButtonWidth = KmuConditionIconButtonSizing.computeSquareButtonWidth();
         if (availableWidth < squareButtonWidth) {
             return availableWidth;
         }
@@ -45,7 +45,7 @@ public final class KmuConditionIconGrid {
      *  Clamps to 1 so callers can pass zero without getting a zero-width grid. */
     static float computeWidthForSquareColumns(int columns) {
         int safeColumns = Math.max(1, columns);
-        return safeColumns * KmuConditionIconButton.Sizing.squareButtonWidth()
+        return safeColumns * KmuConditionIconButtonSizing.computeSquareButtonWidth()
                 + (safeColumns - 1) * CELL_GAP;
     }
 
@@ -76,7 +76,7 @@ public final class KmuConditionIconGrid {
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
         List<KmuConditionPickerEntry> entries = model.getEntries();
-        List<KmuConditionIconButton.ButtonMetrics> metrics = measure(entries);
+        List<KmuConditionIconButtonLayout> metrics = computeKmuConditionIconButtonLayouts(entries);
         List<KmuUiPlacement> placements = computeLayout(metrics, width);
         float height = computeHeightForPlacements(placements);
         CustomPanelAPI gridPanel = parentPanel.createCustomPanel(
@@ -101,7 +101,7 @@ public final class KmuConditionIconGrid {
     /** Left-to-right, top-to-bottom row-wrapping layout. A button that would
      *  overflow the current row starts a new one. The first button in a row is
      *  never wrapped even if it is wider than the available width. */
-    static List<KmuUiPlacement> computeLayout(List<KmuConditionIconButton.ButtonMetrics> metrics, float width) {
+    static List<KmuUiPlacement> computeLayout(List<KmuConditionIconButtonLayout> metrics, float width) {
         Objects.requireNonNull(metrics, "metrics");
 
         List<KmuUiPlacement> placements = new ArrayList<>();
@@ -110,7 +110,7 @@ public final class KmuConditionIconGrid {
         float y = 0f;
         float rowHeight = 0f;
 
-        for (KmuConditionIconButton.ButtonMetrics metric : metrics) {
+        for (KmuConditionIconButtonLayout metric : metrics) {
             Objects.requireNonNull(metric, "metric");
             if (x > 0f && x + metric.getButtonWidth() > safeWidth) {
                 x = 0f;
@@ -136,10 +136,10 @@ public final class KmuConditionIconGrid {
         return last.getY() + last.getHeight();
     }
 
-    private static List<KmuConditionIconButton.ButtonMetrics> measure(List<KmuConditionPickerEntry> entries) {
-        List<KmuConditionIconButton.ButtonMetrics> metrics = new ArrayList<>();
+    private static List<KmuConditionIconButtonLayout> computeKmuConditionIconButtonLayouts(List<KmuConditionPickerEntry> entries) {
+        List<KmuConditionIconButtonLayout> metrics = new ArrayList<>();
         for (KmuConditionPickerEntry entry : entries) {
-            metrics.add(KmuConditionIconButton.measure(entry));
+            metrics.add(KmuConditionIconButton.computeKmuConditionIconButtonLayout(entry));
         }
         return metrics;
     }

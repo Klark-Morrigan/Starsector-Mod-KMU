@@ -161,13 +161,13 @@ class StarsectorConditionPickerLocationFactoryTest {
                 case "getDisplayNameLong":
                 case "getDisplayName": return name;
                 case "getBaseUIColor": return FACTION_COLOR;
-                case "getRelToPlayer": return relationship();
+                case "getRelToPlayer": return createRelationship();
                 default: return handleObjectMethodOrThrow(p, method, args);
             }
         });
     }
 
-    private static RelationshipAPI relationship() {
+    private static RelationshipAPI createRelationship() {
         return proxy(RelationshipAPI.class, (p, method, args) -> {
             switch (method.getName()) {
                 case "getLevel": return RepLevel.VENGEFUL;

@@ -94,7 +94,7 @@ class KmuConditionPickerInfoRowTest {
             if ("addPara".equals(method.getName()) && args != null && args.length >= 2
                     && args[1] instanceof Color) {
                 paraColors.add((Color) args[1]);
-                return label();
+                return createLabel();
             }
             return defaultValue(method.getReturnType());
         });
@@ -108,7 +108,7 @@ class KmuConditionPickerInfoRowTest {
         });
     }
 
-    private static LabelAPI label() {
+    private static LabelAPI createLabel() {
         return proxy(LabelAPI.class, (p, method, args) -> defaultValue(method.getReturnType()));
     }
 

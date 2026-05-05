@@ -60,7 +60,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void returnsLocationHeaderAsFirstLine() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(0).getText()).isEqualTo("Location:");
         assertThat(specs.get(0).getHighlights()).isEmpty();
@@ -69,7 +69,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void returnsPlanetLineWithTypeAndOwnershipAsSecondLine() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(1).getText())
                 .isEqualTo("Valis (terran world) - owned by Hegemony (Vengeful (-100 / 100))");
@@ -78,7 +78,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void returnsSystemLineAsThirdLine() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(2).getText()).isEqualTo("Corvus Star System (yellow star)");
     }
@@ -86,7 +86,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void returnsConstellationLineAsFourthLine() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(3).getText()).isEqualTo("Corvus");
     }
@@ -94,7 +94,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void returnsFourLinesForFullLocation() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         // header + planet + system + constellation
         assertThat(specs).hasSize(4);
@@ -171,7 +171,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void exposesPlanetLineHighlights() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(1).getHighlights())
                 .containsExactly("Valis", "Hegemony", "Vengeful (-100 / 100)");
@@ -180,7 +180,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void exposesSystemLineHighlights() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(2).getHighlights()).containsExactly("Corvus Star System");
     }
@@ -188,7 +188,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void exposesConstellationLineHighlights() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(3).getHighlights()).containsExactly("Corvus");
     }
@@ -196,7 +196,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void exposesPlanetLineHighlightColors() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(1).getHighlightColors())
                 .containsExactly(GOLD, FACTION, RELATIONSHIP);
@@ -205,7 +205,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void exposesSystemLineHighlightColors() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(2).getHighlightColors()).containsExactly(GOLD);
     }
@@ -213,7 +213,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     @Test
     void exposesConstellationLineHighlightColors() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
-                model(location()));
+                model(createLocation()));
 
         assertThat(specs.get(3).getHighlightColors()).containsExactly(GOLD);
     }
@@ -233,7 +233,7 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
         return new KmuConditionPickerModel(Collections.emptyList(), location);
     }
 
-    private static KmuConditionPickerLocation location() {
+    private static KmuConditionPickerLocation createLocation() {
         return new KmuConditionPickerLocation(
                 "Valis",
                 "terran world",
