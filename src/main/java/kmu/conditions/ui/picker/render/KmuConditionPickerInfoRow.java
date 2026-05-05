@@ -25,7 +25,7 @@ final class KmuConditionPickerInfoRow {
     /** Side length of the faction crest icon. 4x LINE_HEIGHT for visual prominence. */
     static final float ICON_SIZE = 80f;
     /** Gap between the faction icon and the text column to its right. */
-    private static final float ICON_PAD = 4f;
+    private static final float ICON_PAD = 16f;
 
     private final CustomPanelAPI rowPanel;
     /** The label for the conditions count line - updated live when entries change. */
