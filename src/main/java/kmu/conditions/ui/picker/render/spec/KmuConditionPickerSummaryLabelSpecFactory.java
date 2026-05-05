@@ -16,13 +16,13 @@ import java.util.Objects;
  * <ol>
  *   <li>"Conditions:" header - no highlights, TEXT_WHITE base color</li>
  *   <li>Count line - highlights for visible (green), suppressed (red),
- *       present (white), hidden (blue); available/total tail in grey</li>
+ *       present (white), hidden (blue); available and total each in grey</li>
  * </ol>
  *
  * Separator rules for the count line:
  * - First token starts immediately (no leading character).
  * - " - " separates category groups; ", " separates items within a group.
- * - The grey tail (" - N available, N total.") is always last.
+ * - available and total are always last, each a separate grey highlight.
  * - Zero-value tokens are omitted except available and total.
  */
 public final class KmuConditionPickerSummaryLabelSpecFactory {
@@ -66,11 +66,9 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         if (hidden > 0)
             hasSegment = appendToken(sb, highlightList, colorList, hasSegment, ", ", hiddenToken, lightBlue);
 
-        // The entire tail is a single highlight token so the leading " - " is matched reliably.
         Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
-        String greyTail = (hasSegment ? " - " : "") + availableToken + ", " + totalToken;
-        sb.append(greyTail);
-        KmuHighlights.add(highlightList, colorList, greyTail, grey);
+        hasSegment = appendToken(sb, highlightList, colorList, hasSegment, " - ", availableToken, grey);
+        appendToken(sb, highlightList, colorList, true, ", ", totalToken, grey);
 
         KmuLabelSpec headerSpec = new KmuLabelSpec(
                 KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_SUMMARY),
