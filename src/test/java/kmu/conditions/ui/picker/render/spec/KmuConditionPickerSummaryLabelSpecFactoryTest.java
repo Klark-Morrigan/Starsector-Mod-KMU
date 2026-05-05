@@ -60,6 +60,13 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
     }
 
     @Test
+    void conditionsHeaderHasGrayBaseColor() {
+        List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()));
+
+        assertThat(specs.get(0).getBaseColor()).isEqualTo(GRAY);
+    }
+
+    @Test
     void summarizesTotalAndPresentConditionsInCountsLine() {
         List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()));
 

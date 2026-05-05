@@ -95,6 +95,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
 
         KmuLabelSpec headerSpec = new KmuLabelSpec(
                 KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_SUMMARY),
+                StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
                 new String[0],
                 new Color[0]);
         KmuLabelSpec countsSpec = new KmuLabelSpec(

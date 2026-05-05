@@ -108,10 +108,10 @@ final class KmuConditionPickerInfoRow {
     private static LabelAPI renderText(
             CustomPanelAPI row, KmuLabelSpec spec, float x, float y, float width) {
         TooltipMakerAPI textEl = row.createUIElement(width, LINE_HEIGHT, false);
-        LabelAPI label = textEl.addPara(
-                spec.getText(),
-                StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE),
-                0f);
+        java.awt.Color baseColor = spec.getBaseColor() != null
+                ? spec.getBaseColor()
+                : StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE);
+        LabelAPI label = textEl.addPara(spec.getText(), baseColor, 0f);
         spec.applyTo(label);
         row.addUIElement(textEl).inTL(x, y);
         return label;

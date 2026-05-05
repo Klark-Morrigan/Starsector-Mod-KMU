@@ -67,6 +67,14 @@ class KmuConditionPickerLocationLabelSpecFactoryTest {
     }
 
     @Test
+    void locationHeaderHasGrayBaseColor() {
+        List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
+                model(createLocation()));
+
+        assertThat(specs.get(0).getBaseColor()).isEqualTo(GRAY);
+    }
+
+    @Test
     void returnsPlanetLineWithTypeAndOwnershipAsSecondLine() {
         List<KmuLabelSpec> specs = KmuConditionPickerLocationLabelSpecFactory.get(
                 model(createLocation()));
