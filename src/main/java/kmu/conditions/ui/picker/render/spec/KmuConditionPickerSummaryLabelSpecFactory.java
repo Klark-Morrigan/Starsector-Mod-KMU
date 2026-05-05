@@ -29,6 +29,33 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
     private KmuConditionPickerSummaryLabelSpecFactory() {
     }
 
+    /** Accumulates the text, highlight strings, and colors for the count line. */
+    private static final class AppendContext {
+        final StringBuilder sb = new StringBuilder();
+        final List<String> highlights = new ArrayList<>();
+        final List<Color> colors = new ArrayList<>();
+        boolean hasSegment = false;
+    }
+
+    /** Pairs a separator with the token text, its highlight color, and whether the separator is also highlighted. */
+    private static final class TokenSpec {
+        final String separator;
+        final String token;
+        final Color color;
+        final boolean highlightSeparator;
+
+        TokenSpec(String separator, String token, Color color, boolean highlightSeparator) {
+            this.separator = separator;
+            this.token = token;
+            this.color = color;
+            this.highlightSeparator = highlightSeparator;
+        }
+
+        TokenSpec(String separator, String token, Color color) {
+            this(separator, token, color, false);
+        }
+    }
+
     public static List<KmuLabelSpec> get(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
@@ -42,6 +69,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         Color green = StarsectorUiColorProvider.get(StarsectorUiColor.GREEN);
         Color red = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
         Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.BLUE);
+        Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
 
         String visibleToken = KmuLocalisation.format(KmuLocalisation.CONDITION_PICKER_SUMMARY_VISIBLE, visible);
         String suppressedToken = KmuLocalisation.format(KmuLocalisation.CONDITION_PICKER_SUMMARY_SUPPRESSED, suppressed);
@@ -50,34 +78,29 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         String availableToken = KmuLocalisation.format(KmuLocalisation.CONDITION_PICKER_SUMMARY_AVAILABLE, available);
         String totalToken = KmuLocalisation.format(KmuLocalisation.CONDITION_PICKER_SUMMARY_TOTAL, total);
 
-        StringBuilder sb = new StringBuilder();
-        List<String> highlightList = new ArrayList<>();
-        List<Color> colorList = new ArrayList<>();
-
-        boolean hasSegment = false;
+        AppendContext ctx = new AppendContext();
 
         if (visible > 0)
-            hasSegment = appendToken(sb, highlightList, colorList, hasSegment, " ", visibleToken, green);
+            appendToken(ctx, new TokenSpec(" ", visibleToken, green));
         if (suppressed > 0)
-            hasSegment = appendToken(sb, highlightList, colorList, hasSegment, " - ", suppressedToken, red);
+            appendToken(ctx, new TokenSpec(" - ", suppressedToken, red));
         if (present > 0)
             // present is white - same as the label base color, so no highlight slot needed.
-            hasSegment = appendSegment(sb, hasSegment, ", ", presentToken);
+            appendSegment(ctx, new TokenSpec(", ", presentToken, null));
         if (hidden > 0)
-            hasSegment = appendToken(sb, highlightList, colorList, hasSegment, ", ", hiddenToken, lightBlue);
+            appendToken(ctx, new TokenSpec(", ", hiddenToken, lightBlue));
 
-        Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
-        hasSegment = appendToken(sb, highlightList, colorList, hasSegment, " - ", availableToken, grey);
-        appendToken(sb, highlightList, colorList, true, ", ", totalToken, grey);
+        appendToken(ctx, new TokenSpec(" - ", availableToken, grey, true));
+        appendToken(ctx, new TokenSpec(", ", totalToken, grey, true));
 
         KmuLabelSpec headerSpec = new KmuLabelSpec(
                 KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_SUMMARY),
                 new String[0],
                 new Color[0]);
         KmuLabelSpec countsSpec = new KmuLabelSpec(
-                sb.toString(),
-                highlightList.toArray(new String[0]),
-                colorList.toArray(new Color[0]));
+                ctx.sb.toString(),
+                ctx.highlights.toArray(new String[0]),
+                ctx.colors.toArray(new Color[0]));
 
         List<KmuLabelSpec> result = new ArrayList<>();
         result.add(headerSpec);
@@ -85,27 +108,22 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         return result;
     }
 
-    private static boolean appendToken(
-            StringBuilder sb,
-            List<String> highlights,
-            List<Color> colors,
-            boolean hasSegment,
-            String separator,
-            String token,
-            Color color) {
-        if (hasSegment) {
-            sb.append(separator);
+    /** Appends a token and highlights it. Highlights the separator too if {@link TokenSpec#highlightSeparator}. */
+    private static void appendToken(AppendContext ctx, TokenSpec spec) {
+        if (ctx.hasSegment) {
+            ctx.sb.append(spec.separator);
+            if (spec.highlightSeparator)
+                KmuHighlights.add(ctx.highlights, ctx.colors, spec.separator, spec.color);
         }
-        sb.append(token);
-        KmuHighlights.add(highlights, colors, token, color);
-        return true;
+        ctx.sb.append(spec.token);
+        KmuHighlights.add(ctx.highlights, ctx.colors, spec.token, spec.color);
+        ctx.hasSegment = true;
     }
 
     /** Appends a token with no highlight - used when the token color matches the base. */
-    private static boolean appendSegment(
-            StringBuilder sb, boolean hasSegment, String separator, String token) {
-        if (hasSegment) sb.append(separator);
-        sb.append(token);
-        return true;
+    private static void appendSegment(AppendContext ctx, TokenSpec spec) {
+        if (ctx.hasSegment) ctx.sb.append(spec.separator);
+        ctx.sb.append(spec.token);
+        ctx.hasSegment = true;
     }
 }
