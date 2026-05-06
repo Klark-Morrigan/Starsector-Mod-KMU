@@ -13,20 +13,20 @@ public final class KmuLocalisation {
     // Missing or invalid localized UI strings should be visible during playtesting.
     public static final String REDACTED = "[REDACTED]";
 
-    public static final String CONDITION_PICKER_LOCATION = "condition_picker_location";
-    public static final String CONDITION_PICKER_LOCATION_UNKNOWN = "condition_picker_location_unknown";
-    public static final String CONDITION_PICKER_SUMMARY = "condition_picker_summary";
-    public static final String CONDITION_PICKER_SUMMARY_VISIBLE = "condition_picker_summary_visible";
-    public static final String CONDITION_PICKER_SUMMARY_SUPPRESSED = "condition_picker_summary_suppressed";
-    public static final String CONDITION_PICKER_SUMMARY_PRESENT = "condition_picker_summary_present";
-    public static final String CONDITION_PICKER_SUMMARY_HIDDEN = "condition_picker_summary_hidden";
-    public static final String CONDITION_PICKER_SUMMARY_AVAILABLE = "condition_picker_summary_available";
-    public static final String CONDITION_PICKER_SUMMARY_TOTAL = "condition_picker_summary_total";
-    public static final String CONDITION_PICKER_EMPTY = "condition_picker_empty";
-    public static final String CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE = "condition_picker_tooltip_suppressed_title";
-    public static final String CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY = "condition_picker_tooltip_suppressed_body";
-    public static final String CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE = "condition_picker_tooltip_hidden_title";
-    public static final String CONDITION_PICKER_TOOLTIP_HIDDEN_BODY = "condition_picker_tooltip_hidden_body";
+    public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
+    public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
+    public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";
+    public static final String CONDITION_MANAGER_SUMMARY_VISIBLE = "condition_manager_summary_visible";
+    public static final String CONDITION_MANAGER_SUMMARY_SUPPRESSED = "condition_manager_summary_suppressed";
+    public static final String CONDITION_MANAGER_SUMMARY_PRESENT = "condition_manager_summary_present";
+    public static final String CONDITION_MANAGER_SUMMARY_HIDDEN = "condition_manager_summary_hidden";
+    public static final String CONDITION_MANAGER_SUMMARY_AVAILABLE = "condition_manager_summary_available";
+    public static final String CONDITION_MANAGER_SUMMARY_TOTAL = "condition_manager_summary_total";
+    public static final String CONDITION_MANAGER_EMPTY = "condition_manager_empty";
+    public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE = "condition_manager_tooltip_suppressed_title";
+    public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY = "condition_manager_tooltip_suppressed_body";
+    public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE = "condition_manager_tooltip_hidden_title";
+    public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY = "condition_manager_tooltip_hidden_body";
     public static final String DIALOG_CLOSE = "dialog_close";
 
     private KmuLocalisation() {

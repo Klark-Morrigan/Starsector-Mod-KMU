@@ -45,20 +45,20 @@ public final class StarsectorTestSupport {
 
     private static Map<String, String> stringsByKey() {
         Map<String, String> stringsByKey = new LinkedHashMap<>();
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_LOCATION, "Location:");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_LOCATION_UNKNOWN, "Unknown");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_SUMMARY, "Conditions:");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_SUMMARY_VISIBLE, "%d visible");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_SUMMARY_SUPPRESSED, "%d suppressed");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_SUMMARY_PRESENT, "%d present");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_SUMMARY_HIDDEN, "%d hidden");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_SUMMARY_AVAILABLE, "%d available");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_SUMMARY_TOTAL, "%d total.");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_EMPTY, "No planetary condition specs are available.");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE, "Suppressed");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY, "This condition is present on the market, but it's suppressed and has no effect.");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE, "Hidden");
-        stringsByKey.put(KmuLocalisation.CONDITION_PICKER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_LOCATION, "Location:");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_LOCATION_UNKNOWN, "Unknown");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_SUMMARY, "Conditions:");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_SUMMARY_VISIBLE, "%d visible");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_SUMMARY_SUPPRESSED, "%d suppressed");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_SUMMARY_PRESENT, "%d present");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_SUMMARY_HIDDEN, "%d hidden");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_SUMMARY_AVAILABLE, "%d available");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_SUMMARY_TOTAL, "%d total.");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_EMPTY, "No market condition specs are available.");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE, "Suppressed");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY, "This condition is present on the market, but it's suppressed and has no effect.");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE, "Hidden");
+        stringsByKey.put(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
         stringsByKey.put(KmuLocalisation.DIALOG_CLOSE, "Close");
         return stringsByKey;
     }

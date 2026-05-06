@@ -16,7 +16,7 @@ class KmuConditionPickerFeedbackTest {
         assertThat(KmuConditionPickerFeedback.from(KmuConditionAddResult.conditionNotFound("hot")).getMessage())
                 .isEqualTo("Condition not found: hot");
         assertThat(KmuConditionPickerFeedback.from(KmuConditionAddResult.notPlanetary("hot")).getMessage())
-                .isEqualTo("Not a planetary condition: hot");
+                .isEqualTo("Not a market condition: hot");
         assertThat(KmuConditionPickerFeedback.from(
                         KmuConditionAddResult.failed("hot", "failed", new IllegalStateException("failed")))
                 .getMessage())

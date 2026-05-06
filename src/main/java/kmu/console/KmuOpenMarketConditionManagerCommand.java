@@ -17,15 +17,15 @@ import java.util.function.Supplier;
 
 import static kmu.util.KmuValues.normalizeText;
 
-public final class KmuOpenConditionsCommand implements BaseCommand {
+public final class KmuOpenMarketConditionManagerCommand implements BaseCommand {
     private final Supplier<KmuConditionEditorOpenResult> openEditor;
     private final Consumer<String> output;
 
-    public KmuOpenConditionsCommand() {
+    public KmuOpenMarketConditionManagerCommand() {
         this(() -> createDefaultEntryPoint().openForCurrentMarketDetailed(), message -> Console.showMessage(message));
     }
 
-    KmuOpenConditionsCommand(
+    KmuOpenMarketConditionManagerCommand(
             Supplier<KmuConditionEditorOpenResult> openEditor,
             Consumer<String> output) {
         this.openEditor = Objects.requireNonNull(openEditor, "openEditor");
@@ -37,7 +37,7 @@ public final class KmuOpenConditionsCommand implements BaseCommand {
         Objects.requireNonNull(context, "context");
 
         if (!context.isInCampaign()) {
-            output.accept("kmu_pcp_open can only run from campaign or market context.");
+            output.accept("kmu_mcm_open can only run from campaign or market context.");
             return CommandResult.WRONG_CONTEXT;
         }
 
@@ -45,7 +45,7 @@ public final class KmuOpenConditionsCommand implements BaseCommand {
         try {
             result = openEditor.get();
         } catch (RuntimeException exception) {
-            output.accept("Failed to open planetary condition picker: " + exception.getMessage());
+            output.accept("Failed to open Market Condition Manager: " + exception.getMessage());
             return CommandResult.ERROR;
         }
 

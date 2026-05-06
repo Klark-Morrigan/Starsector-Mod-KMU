@@ -61,9 +61,9 @@ public final class KmuConditionEditorEntryPoint {
         try {
             unsupportedReason = targetValidator.getUnsupportedReason(marketContext);
         } catch (RuntimeException exception) {
-            errorReporter.report("Failed to validate planetary condition picker target.", exception);
+            errorReporter.report("Failed to validate MCM target.", exception);
             return KmuConditionEditorOpenResult.failed(
-                    "Failed to validate planetary condition picker target.",
+                    "Failed to validate MCM target.",
                     exception);
         }
 
@@ -75,9 +75,9 @@ public final class KmuConditionEditorEntryPoint {
             editor.open(marketContext);
             return KmuConditionEditorOpenResult.opened();
         } catch (RuntimeException exception) {
-            errorReporter.report("Failed to open planetary condition picker.", exception);
+            errorReporter.report("Failed to open Market Condition Manager.", exception);
             return KmuConditionEditorOpenResult.failed(
-                    "Failed to open planetary condition picker.",
+                    "Failed to open Market Condition Manager.",
                     exception);
         }
     }

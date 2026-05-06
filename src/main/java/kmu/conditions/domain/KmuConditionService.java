@@ -31,7 +31,7 @@ public final class KmuConditionService {
                     .filter(KmuConditionSpec::isPlanetary)
                     .collect(Collectors.toUnmodifiableList());
         } catch (RuntimeException exception) {
-            errorReporter.report("Failed to list planetary condition specs.", exception);
+            errorReporter.report("Failed to list market condition specs.", exception);
             return Collections.emptyList();
         }
     }
@@ -94,7 +94,7 @@ public final class KmuConditionService {
             market.reapplyConditions();
             return KmuConditionAddResult.added(normalizedId);
         } catch (RuntimeException exception) {
-            return failed(normalizedId, "Failed to add planetary condition.", exception);
+            return failed(normalizedId, "Failed to add market condition.", exception);
         }
     }
 

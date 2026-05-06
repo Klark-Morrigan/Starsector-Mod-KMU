@@ -116,7 +116,7 @@ class KmuConditionServiceTest {
         List<KmuConditionSpec> specs = service.listPlanetaryConditionSpecs();
 
         assertThat(specs).isEmpty();
-        assertThat(reports).containsExactly("Failed to list planetary condition specs.");
+        assertThat(reports).containsExactly("Failed to list market condition specs.");
     }
 
     @Test
@@ -249,7 +249,7 @@ class KmuConditionServiceTest {
         assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
         assertThat(result.getCause()).contains(exception);
         assertThat(market.calls).isEmpty();
-        assertThat(reports).containsExactly("Failed to add planetary condition. conditionId=hot / market unavailable");
+        assertThat(reports).containsExactly("Failed to add market condition. conditionId=hot / market unavailable");
     }
 
     @Test
@@ -286,7 +286,7 @@ class KmuConditionServiceTest {
         assertThat(result.getCause()).contains(exception);
         assertThat(market.getConditionIds()).isEmpty();
         assertThat(market.calls).isEmpty();
-        assertThat(reports).containsExactly("Failed to add planetary condition. conditionId=hot / add failed");
+        assertThat(reports).containsExactly("Failed to add market condition. conditionId=hot / add failed");
     }
 
     @Test

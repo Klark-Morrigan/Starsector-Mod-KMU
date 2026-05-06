@@ -21,6 +21,6 @@ public final class StarsectorConditionEditorTargetValidator implements KmuCondit
             return Optional.empty();
         }
 
-        return Optional.of("Current market does not support planetary condition editing.");
+        return Optional.of("Current market does not support market condition editing.");
     }
 }

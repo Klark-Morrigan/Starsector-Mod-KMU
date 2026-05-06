@@ -25,7 +25,7 @@ public final class KmuConditionPickerFeedback {
             case CONDITION_NOT_FOUND:
                 return new KmuConditionPickerFeedback(result.getStatus(), "Condition not found: " + conditionId);
             case NOT_PLANETARY:
-                return new KmuConditionPickerFeedback(result.getStatus(), "Not a planetary condition: " + conditionId);
+                return new KmuConditionPickerFeedback(result.getStatus(), "Not a market condition: " + conditionId);
             case FAILED:
                 return new KmuConditionPickerFeedback(result.getStatus(), "Failed to add condition: " + conditionId);
             default:

@@ -8,7 +8,7 @@ class KmuLocalisationTest {
     @Test
     void returnsConfiguredStringFromSource() {
         String value = KmuLocalisation.get(
-                KmuLocalisation.CONDITION_PICKER_LOCATION,
+                KmuLocalisation.CONDITION_MANAGER_LOCATION,
                 key -> "Configured");
 
         assertThat(value).isEqualTo("Configured");
@@ -17,7 +17,7 @@ class KmuLocalisationTest {
     @Test
     void redactsWhenSourceReturnsBlankValue() {
         String value = KmuLocalisation.get(
-                KmuLocalisation.CONDITION_PICKER_LOCATION,
+                KmuLocalisation.CONDITION_MANAGER_LOCATION,
                 key -> "  ");
 
         assertThat(value).isEqualTo(KmuLocalisation.REDACTED);
@@ -26,7 +26,7 @@ class KmuLocalisationTest {
     @Test
     void redactsWhenSourceThrows() {
         String value = KmuLocalisation.get(
-                KmuLocalisation.CONDITION_PICKER_LOCATION,
+                KmuLocalisation.CONDITION_MANAGER_LOCATION,
                 key -> {
                     throw new IllegalStateException("missing settings");
                 });
@@ -37,7 +37,7 @@ class KmuLocalisationTest {
     @Test
     void formatsConfiguredStringUsingRootLocale() {
         String value = KmuLocalisation.format(
-                KmuLocalisation.CONDITION_PICKER_SUMMARY,
+                KmuLocalisation.CONDITION_MANAGER_SUMMARY,
                 key -> "%d configured %d",
                 3,
                 2);
@@ -48,7 +48,7 @@ class KmuLocalisationTest {
     @Test
     void redactsWhenConfiguredFormatIsInvalid() {
         String value = KmuLocalisation.format(
-                KmuLocalisation.CONDITION_PICKER_SUMMARY,
+                KmuLocalisation.CONDITION_MANAGER_SUMMARY,
                 key -> "%q",
                 3,
                 2);

@@ -64,7 +64,7 @@ public final class KmuConditionPickerContainer {
         // but if no entries are renderable, show localized UI copy and skip the grid.
         if (model.isEmpty()) {
             gridBody.addPara(
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_EMPTY),
+                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_EMPTY),
                     StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
                     ITEM_TOP_PAD);
             return new KmuConditionPickerRenderResult(summaryLabel, summaryComponents, null);

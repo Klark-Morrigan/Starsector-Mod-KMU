@@ -79,15 +79,15 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
             KmuTooltipSection.add(
                     tooltip,
                     KmuTooltipSectionStyle.WARNING,
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_TOOLTIP_SUPPRESSED_TITLE),
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_TOOLTIP_SUPPRESSED_BODY));
+                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE),
+                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY));
         }
         if (entry.isHidden()) {
             KmuTooltipSection.add(
                     tooltip,
                     KmuTooltipSectionStyle.WARNING,
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_TOOLTIP_HIDDEN_TITLE),
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_TOOLTIP_HIDDEN_BODY));
+                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE),
+                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY));
         }
     }
 

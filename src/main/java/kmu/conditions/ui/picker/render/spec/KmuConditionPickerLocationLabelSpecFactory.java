@@ -61,14 +61,14 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
 
     private static KmuLabelSpec buildHeaderLine() {
         return new KmuLabelSpec(
-                KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_LOCATION),
+                KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_LOCATION),
                 StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
                 new String[0],
                 new Color[0]);
     }
 
     private static KmuLabelSpec buildUnknownLine(Color highlightColor) {
-        String unknown = KmuLocalisation.get(KmuLocalisation.CONDITION_PICKER_LOCATION_UNKNOWN);
+        String unknown = KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_LOCATION_UNKNOWN);
         return new KmuLabelSpec(unknown, new String[]{unknown}, new Color[]{highlightColor});
     }
 

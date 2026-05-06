@@ -44,7 +44,7 @@ class KmuConditionEditorEntryPointTest {
         KmuConditionEditorOpenResult result = entryPoint.openForCurrentMarketDetailed();
 
         assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.OPENED);
-        assertThat(result.getMessage()).isEqualTo("Opened planetary condition picker.");
+        assertThat(result.getMessage()).isEqualTo("Opened Market Condition Manager.");
     }
 
     @Test
@@ -71,7 +71,7 @@ class KmuConditionEditorEntryPointTest {
         KmuConditionEditorOpenResult result = entryPoint.openForCurrentMarketDetailed();
 
         assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET);
-        assertThat(result.getMessage()).isEqualTo("Current market does not support planetary condition editing.");
+        assertThat(result.getMessage()).isEqualTo("Current market does not support market condition editing.");
         assertThat(opened).hasValue(null);
     }
 
@@ -120,8 +120,8 @@ class KmuConditionEditorEntryPointTest {
         KmuConditionEditorOpenResult result = entryPoint.openForCurrentMarketDetailed();
 
         assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.FAILED);
-        assertThat(result.getMessage()).isEqualTo("Failed to validate planetary condition picker target.");
-        assertThat(reports).containsExactly("Failed to validate planetary condition picker target. / target check failed");
+        assertThat(result.getMessage()).isEqualTo("Failed to validate MCM target.");
+        assertThat(reports).containsExactly("Failed to validate MCM target. / target check failed");
     }
 
     @Test
@@ -156,7 +156,7 @@ class KmuConditionEditorEntryPointTest {
                 (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
         assertThat(entryPoint.openForCurrentMarket()).isFalse();
-        assertThat(reports).containsExactly("Failed to open planetary condition picker. / editor failed");
+        assertThat(reports).containsExactly("Failed to open Market Condition Manager. / editor failed");
     }
 
     private static MarketAPI market() {

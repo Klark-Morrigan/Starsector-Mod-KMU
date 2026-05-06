@@ -1,19 +1,28 @@
 {
   "kmu": {
-    "condition_picker_location": "Location:",
-    "condition_picker_location_unknown": "Unknown",
-    "condition_picker_summary": "Conditions:",
-    "condition_picker_summary_visible": "%d visible",
-    "condition_picker_summary_suppressed": "%d suppressed",
-    "condition_picker_summary_present": "%d present",
-    "condition_picker_summary_hidden": "%d hidden",
-    "condition_picker_summary_available": "%d available",
-    "condition_picker_summary_total": "%d total.",
-    "condition_picker_empty": "No planetary condition specs are available.",
-    "condition_picker_tooltip_suppressed_title": "Suppressed",
-    "condition_picker_tooltip_suppressed_body": "This condition is present on the market, but it's suppressed and has no effect.",
-    "condition_picker_tooltip_hidden_title": "Hidden",
-    "condition_picker_tooltip_hidden_body": "This condition is present on the market, but it's hidden and still applies its effects.",
+    // Location info row
+    "condition_manager_location": "Location:",
+    "condition_manager_location_unknown": "Unknown",
+
+    // Conditions summary row
+    "condition_manager_summary": "Conditions:",
+    "condition_manager_summary_visible": "%d visible",
+    "condition_manager_summary_suppressed": "%d suppressed",
+    "condition_manager_summary_present": "%d present",
+    "condition_manager_summary_hidden": "%d hidden",
+    "condition_manager_summary_available": "%d available",
+    "condition_manager_summary_total": "%d total.",
+
+    // Empty state
+    "condition_manager_empty": "No market condition specs are available.",
+
+    // Tooltips
+    "condition_manager_tooltip_suppressed_title": "Suppressed",
+    "condition_manager_tooltip_suppressed_body": "This condition is present on the market, but it's suppressed and has no effect.",
+    "condition_manager_tooltip_hidden_title": "Hidden",
+    "condition_manager_tooltip_hidden_body": "This condition is present on the market, but it's hidden and still applies its effects.",
+
+    // Shared dialog
     "dialog_close": "Close"
   }
 }

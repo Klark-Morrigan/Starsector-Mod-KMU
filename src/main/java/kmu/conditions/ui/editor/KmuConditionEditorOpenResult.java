@@ -22,21 +22,21 @@ public final class KmuConditionEditorOpenResult {
     public static KmuConditionEditorOpenResult opened() {
         return new KmuConditionEditorOpenResult(
                 KmuConditionEditorOpenStatus.OPENED,
-                "Opened planetary condition picker.",
+                "Opened Market Condition Manager.",
                 null);
     }
 
     public static KmuConditionEditorOpenResult noMarketContext() {
         return new KmuConditionEditorOpenResult(
                 KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT,
-                "No active market context supports planetary condition editing.",
+                "No active context supports market condition editing.",
                 null);
     }
 
     public static KmuConditionEditorOpenResult unsupportedTarget(String reason) {
         String normalizedReason = normalizeText(reason);
         String message = normalizedReason == null
-                ? "Current market does not support planetary condition editing."
+                ? "Current market does not support market condition editing."
                 : normalizedReason;
         return new KmuConditionEditorOpenResult(
                 KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET,

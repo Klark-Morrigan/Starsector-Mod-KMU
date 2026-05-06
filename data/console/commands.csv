@@ -1,2 +1,2 @@
 command,class,tags,syntax,help
-kmu_pcp_open,kmu.console.KmuOpenConditionsCommand,"kmu,campaign,market",kmu_pcp_open,Opens Klark Morrigan's Utilities planetary condition picker for the current supported market context.
+kmu_mcm_open,kmu.console.KmuOpenMarketConditionManagerCommand,"kmu,campaign,market",kmu_mcm_open,Opens Klark Morrigan's Utilities Market Condition Manager for the current supported market context.
