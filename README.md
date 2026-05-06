@@ -4,7 +4,7 @@
 
 - [Purpose](#purpose)
 - [Features](#features)
-- [Library Policy](#library-policy)
+- [Dependencies](#dependencies)
 - [Build And Release](#build-and-release)
 - [Documentation Status](#documentation-status)
 
@@ -35,19 +35,16 @@ When Console Commands is enabled, KMU registers `kmu_pcp_open` as an
 optional developer entry point for the same picker. KMU console commands use the
 `kmu_` prefix and verb-noun names.
 
-## Library Policy
+## Dependencies
 
-KMU should use helper libraries when they make UI work safer, smaller, or easier
-to maintain. Starsector UI code often depends on reflection and custom panels,
-so libraries such as LunaLib, LazyLib, or MagicLib are acceptable dependencies
-when they clearly reduce implementation risk.
+| Mod | Author | Required | Notes |
+|-----|--------|----------|-------|
+| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | LazyWizard | Optional | Enables `kmu_` developer commands (e.g. `kmu_pcp_open`) |
 
 ## Build And Release
 
-KMU is developed in-place under Starsector's `mods/KMU` folder, but source,
-tests, and generated release output should stay separate. Production Java source
-belongs in `src/main/java`, tests belong in `src/test/java`, and the game should
-load compiled code from `jars/KMU.jar`.
+KMU is built with Gradle using the local Starsector install as a compile-only
+API source. Production code targets Java 17 to match the bundled runtime.
 
 Local build commands:
 
@@ -56,13 +53,8 @@ Local build commands:
 .\gradlew.bat -PstarsectorRoot=C:\a_Games\Starsector jar
 ```
 
-The Gradle wrapper is the supported local and CI build path. It uses the local
-Starsector install as a compile-only API source via `STARSECTOR_HOME` or
-`-PstarsectorRoot=<path>`. Production code targets Java 17 to match the bundled
-Starsector runtime used by the current game install.
-
-Release shape doc:
-[release.md](docs/dev/release.md)
+The Gradle wrapper is the supported local and CI build path. Pass the install
+root via `STARSECTOR_HOME` or `-PstarsectorRoot=<path>`.
 
 ## Documentation Status
 
