@@ -388,24 +388,122 @@ Tests:
 
 ## Step 8 - Release Automation
 
-Add a GitHub Actions workflow that produces the packaged release zip.
+Add two GitHub Actions workflow files and a `CHANGELOG.md`.
 
-Reason: releases should be repeatable and should not depend on manually mixing
-source files, tests, generated classes, and runtime assets. The workflow should
-build `jars/KMU.jar`, run tests, assemble `dist/KMU`, create
-`KMU-<version>.zip`, and upload it as a workflow artifact. On version tags, it
-should also attach the zip to a GitHub release.
+Reason: releases should be repeatable and not depend on manually mixing source
+files, tests, generated classes, and runtime assets. CI is separated from
+release packaging so pull requests get the same build gate as releases without
+duplicating the build logic. The release pipeline detects version bumps
+automatically and produces a player-facing GitHub release with a curated
+changelog section as its body.
 
-Tests:
+Both workflows run on a self-hosted VM registered with the `kmu-runner` label.
+Game jars live on the VM's filesystem and are never committed or uploaded to any
+external service. `build.gradle` resolves them via `STARSECTOR_HOME`, set once
+in the runner environment.
 
-- trigger the workflow manually once and from a version tag;
+One-time runner VM setup:
+
+1. Provision a Ubuntu VM using the Hyper-V provisioner.
+2. Install the GitHub Actions runner and register it with the KMU repository,
+   adding the `kmu-runner` label.
+3. Place a Starsector installation (or at minimum its required jars) on the VM
+   at any path, then set `STARSECTOR_HOME` to that path in the runner's
+   environment so it persists across jobs.
+4. Confirm `$STARSECTOR_HOME/starsector-core/starfarer.api.jar` and
+   `$STARSECTOR_HOME/mods/lw_Console/jars/lw_Console.jar` exist.
+
+When Starsector or Console Commands updates, copy the new jars to the VM - no
+workflow changes needed.
+
+Implementation:
+
+- add `.github/workflows/ci.yml`:
+  - triggers on pull requests and via `workflow_call` (called by the release
+    workflow; not triggered independently on pushes to master);
+  - single job: set up Java 17, make `gradlew` executable, run
+    `./gradlew test jar`;
+
+- add `.github/workflows/release.yml`:
+  - triggers on push to master;
+  - five jobs chained with `needs:`, all running on `[self-hosted, kmu-runner]`:
+    1. `version-check` - reads `mod_info.json` version, compares it to the
+       latest git tag; sets a `version_updated` output; all downstream jobs
+       gate on `version_updated == 'true'`;
+    2. `ci` - calls `ci.yml` via `workflow_call`; needs `version-check`;
+    3. `prepare-artifact` - needs `ci`; assembles `dist/KMU/` from runtime
+       payload only, zips as `KMU-<version>.zip`, uploads as workflow artifact;
+    4. `create-tag` - needs `prepare-artifact`; pushes a `v<version>` git tag
+       to origin;
+    5. `create-release` - needs `create-tag`; extracts the current version's
+       section from `CHANGELOG.md` using `awk` (reads from the matching
+       `## [<version>]` header to the line before the next `## [` header);
+       creates a GitHub release on the new tag with that text as the body and
+       the zip attached;
+
+- version numbers in `mod_info.json` follow `major.minor.revision`:
+  - `major` - declared arbitrarily for significant milestones;
+  - `minor` - incremented for each new feature;
+  - `revision` - incremented for bug fixes and minor changes;
+  - git tags match the version exactly (e.g. `0.1.0`), no prefix;
+
+- add `CHANGELOG.md` in [Keep a Changelog](https://keepachangelog.com) format:
+  - top-level `## [Unreleased]` section for ongoing work;
+  - one `## [<version>] - <date>` section per release;
+  - subsections: `Added`, `Changed`, `Fixed`, `Removed` as needed;
+  - the `prepare-artifact` step copies `CHANGELOG.md` into `dist/KMU/` so it
+    ships with the mod.
+
+```mermaid
+sequenceDiagram
+    participant Dev
+    participant GitHub
+    participant CI as ci.yml
+    participant Release as release.yml
+
+    Dev->>GitHub: open pull request
+    GitHub->>CI: trigger (pull_request)
+    CI-->>GitHub: build + test result
+
+    Dev->>GitHub: merge to master
+    GitHub->>Release: trigger (push to master)
+    Release->>Release: version-check<br/>(compare mod_info.json vs latest tag)
+    alt version unchanged
+        Release-->>GitHub: stop
+    else version changed
+        Release->>CI: workflow_call
+        CI-->>Release: build + test passed
+        Release->>Release: prepare-artifact<br/>(assemble dist/KMU, zip)
+        Release->>GitHub: create-tag
+        Release->>GitHub: create-release<br/>(changelog section + zip)
+    end
+```
+
+Acceptance checks:
+
+- merge a pull request and confirm `ci.yml` runs and passes;
+- merge a master commit with no version change and confirm `release.yml` stops
+  after `version-check` without tagging or releasing;
+- bump the version in `mod_info.json`, merge to master, and confirm all five
+  jobs run in sequence;
 - confirm the zip has `KMU/` as its top-level folder;
-- confirm the zip includes `mod_info.json` and `jars/KMU.jar`;
-- confirm the zip excludes `src/`, `docs/dev/`, tests, `.git`, and build caches.
+- confirm the zip includes `mod_info.json`, `jars/KMU.jar`, and `CHANGELOG.md`;
+- confirm the zip excludes `src/`, `docs/dev/`, tests, `.git`, and build caches;
+- confirm the GitHub release body contains only the current version's changelog
+  section and not adjacent version sections.
 
-Constraints: do not commit Starsector game jars or third-party mod jars solely
-for CI. Any compile-only API inputs needed by the workflow must be supplied in a
-documented private or permitted way.
+Release process (each version):
+
+1. Add release notes under `## [Unreleased]` in `CHANGELOG.md` as work
+   progresses.
+2. Smoke test the mod in Starsector locally.
+3. Update `mod_info.json` version and dependency metadata.
+4. Move `CHANGELOG.md` entries from `## [Unreleased]` to a new
+   `## [<version>] - <date>` header.
+5. Merge to master - the release workflow detects the version bump and handles
+   artifact assembly, tagging, and GitHub release creation automatically.
+6. Install-test the zip from the GitHub release by extracting it into a clean
+   Starsector `mods` directory.
 
 ## Step 9 - Injected Market UI Button
 
