@@ -1,0 +1,136 @@
+# Detects version bumps on master and drives the full release pipeline.
+#
+# Triggered by: push to master.
+#
+# Jobs run only when the version in mod_info.json differs from the latest
+# git tag. All jobs run on the self-hosted kmu-runner VM. See
+# docs/dev/release.md for runner setup.
+#
+# Job chain:
+#   version-check -> ci -> prepare-artifact -> create-tag -> create-release
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  version-check:
+    runs-on: [self-hosted, kmu-runner]
+    outputs:
+      version_updated: ${{ steps.check.outputs.version_updated }}
+      version: ${{ steps.check.outputs.version }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+
+      - name: Compare mod_info.json version to latest tag
+        id: check
+        run: bash .github/scripts/check_version.sh
+
+  ci:
+    needs: version-check
+    if: needs.version-check.outputs.version_updated == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  prepare-artifact:
+    needs: [version-check, ci]
+    runs-on: [self-hosted, kmu-runner]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      # Tests already passed in the ci job; rebuild the jar only.
+      - name: Build jar
+        run: ./gradlew jar
+
+      # Assemble only the runtime payload - no source, tests, docs/dev,
+      # build caches, or Gradle wrapper files.
+      - name: Assemble dist/KMU
+        run: |
+          DIST=dist/KMU
+          mkdir -p "$DIST/jars"
+          cp mod_info.json "$DIST/"
+          [ -f README.md ]    && cp README.md    "$DIST/" || true
+          [ -f CHANGELOG.md ] && cp CHANGELOG.md "$DIST/" || true
+          [ -f LICENSE ]      && cp LICENSE       "$DIST/" || true
+          [ -d data ]         && cp -r data       "$DIST/" || true
+          [ -d graphics ]     && cp -r graphics   "$DIST/" || true
+          [ -d sounds ]       && cp -r sounds     "$DIST/" || true
+          cp jars/KMU.jar "$DIST/jars/"
+
+      - name: Create release zip
+        id: zip
+        run: |
+          VERSION="${{ needs.version-check.outputs.version }}"
+          cd dist
+          zip -r "../KMU-${VERSION}.zip" KMU/
+          echo "zip_name=KMU-${VERSION}.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.zip.outputs.zip_name }}
+          path: ${{ steps.zip.outputs.zip_name }}
+          if-no-files-found: error
+
+  create-tag:
+    needs: [version-check, prepare-artifact]
+    runs-on: [self-hosted, kmu-runner]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Push version tag
+        run: |
+          VERSION="${{ needs.version-check.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+  create-release:
+    needs: [version-check, prepare-artifact, create-tag]
+    runs-on: [self-hosted, kmu-runner]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Download release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: KMU-${{ needs.version-check.outputs.version }}.zip
+
+      # Extract the section for the current version from CHANGELOG.md.
+      # Fails if the section is missing so the release body is never empty.
+      - name: Extract changelog section
+        run: bash .github/scripts/extract_changelog.sh "${{ needs.version-check.outputs.version }}"
+
+      - name: Create GitHub release
+        run: |
+          VERSION="${{ needs.version-check.outputs.version }}"
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes-file release-notes.md \
+            "KMU-${VERSION}.zip"
+        env:
+          GH_TOKEN: ${{ github.token }}
