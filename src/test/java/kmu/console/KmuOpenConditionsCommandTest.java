@@ -27,7 +27,7 @@ class KmuOpenConditionsCommandTest {
 
         assertThat(result).isEqualTo(CommandResult.WRONG_CONTEXT);
         assertThat(opened).isFalse();
-        assertThat(output).containsExactly("kmu_open_conditions can only run from campaign or market context.");
+        assertThat(output).containsExactly("kmu_pcp_open can only run from campaign or market context.");
     }
 
     @Test
@@ -45,7 +45,7 @@ class KmuOpenConditionsCommandTest {
 
         assertThat(result).isEqualTo(CommandResult.SUCCESS);
         assertThat(opened).isTrue();
-        assertThat(output).containsExactly("Opened planetary condition editor.");
+        assertThat(output).containsExactly("Opened planetary condition picker.");
     }
 
     @Test
@@ -79,14 +79,14 @@ class KmuOpenConditionsCommandTest {
         List<String> output = new ArrayList<>();
         KmuOpenConditionsCommand command = new KmuOpenConditionsCommand(
                 () -> KmuConditionEditorOpenResult.failed(
-                        "Failed to open planetary condition editor.",
+                        "Failed to open planetary condition picker.",
                         new IllegalStateException("dialog unavailable")),
                 output::add);
 
         CommandResult result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
 
         assertThat(result).isEqualTo(CommandResult.ERROR);
-        assertThat(output).containsExactly("Failed to open planetary condition editor: dialog unavailable");
+        assertThat(output).containsExactly("Failed to open planetary condition picker: dialog unavailable");
     }
 
     @Test
@@ -101,6 +101,6 @@ class KmuOpenConditionsCommandTest {
         CommandResult result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
 
         assertThat(result).isEqualTo(CommandResult.ERROR);
-        assertThat(output).containsExactly("Failed to open planetary condition editor: unexpected failure");
+        assertThat(output).containsExactly("Failed to open planetary condition picker: unexpected failure");
     }
 }

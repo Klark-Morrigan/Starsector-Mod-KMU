@@ -1,10 +1,10 @@
-# Planetary Condition Editor Reference
+# Planetary Condition Picker Reference
 
 Research date: 2026-04-27
 
 Scope: local Starsector install under `mods`, excluding `mods/KMU`. The goal was
 to find usable public APIs, library dependencies, and prior mod patterns for a
-planetary condition editor.
+planetary condition picker.
 
 ## Method
 
@@ -79,7 +79,7 @@ Relevant source references:
 - `mods/lunalib/src/lunalib/lunaRefit/BaseRefitButton.java`
 
 Assessment: useful for settings and refit UI, but not directly for a colony or
-survey condition editor. Its reflection/UI code is a good reference, but most of
+survey condition picker. Its reflection/UI code is a good reference, but most of
 it is internal Kotlin implementation.
 
 ### MagicLib
@@ -113,7 +113,7 @@ Useful public API found:
 `org.lazywizard.lazylib.campaign.MarketUtils` has no public methods in the jar
 installed here.
 
-Assessment: not needed for the condition editor.
+Assessment: not needed for the condition picker.
 
 ### AshLib
 

@@ -44,7 +44,7 @@ class KmuConditionEditorEntryPointTest {
         KmuConditionEditorOpenResult result = entryPoint.openForCurrentMarketDetailed();
 
         assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.OPENED);
-        assertThat(result.getMessage()).isEqualTo("Opened planetary condition editor.");
+        assertThat(result.getMessage()).isEqualTo("Opened planetary condition picker.");
     }
 
     @Test
@@ -120,8 +120,8 @@ class KmuConditionEditorEntryPointTest {
         KmuConditionEditorOpenResult result = entryPoint.openForCurrentMarketDetailed();
 
         assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.FAILED);
-        assertThat(result.getMessage()).isEqualTo("Failed to validate planetary condition editor target.");
-        assertThat(reports).containsExactly("Failed to validate planetary condition editor target. / target check failed");
+        assertThat(result.getMessage()).isEqualTo("Failed to validate planetary condition picker target.");
+        assertThat(reports).containsExactly("Failed to validate planetary condition picker target. / target check failed");
     }
 
     @Test
@@ -156,7 +156,7 @@ class KmuConditionEditorEntryPointTest {
                 (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
         assertThat(entryPoint.openForCurrentMarket()).isFalse();
-        assertThat(reports).containsExactly("Failed to open planetary condition editor. / editor failed");
+        assertThat(reports).containsExactly("Failed to open planetary condition picker. / editor failed");
     }
 
     private static MarketAPI market() {

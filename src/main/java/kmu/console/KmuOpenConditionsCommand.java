@@ -37,7 +37,7 @@ public final class KmuOpenConditionsCommand implements BaseCommand {
         Objects.requireNonNull(context, "context");
 
         if (!context.isInCampaign()) {
-            output.accept("kmu_open_conditions can only run from campaign or market context.");
+            output.accept("kmu_pcp_open can only run from campaign or market context.");
             return CommandResult.WRONG_CONTEXT;
         }
 
@@ -45,7 +45,7 @@ public final class KmuOpenConditionsCommand implements BaseCommand {
         try {
             result = openEditor.get();
         } catch (RuntimeException exception) {
-            output.accept("Failed to open planetary condition editor: " + exception.getMessage());
+            output.accept("Failed to open planetary condition picker: " + exception.getMessage());
             return CommandResult.ERROR;
         }
 

@@ -8,7 +8,7 @@ import static kmu.util.KmuValues.convertToOptionalText;
 
 /**
  * Display-only snapshot of how a controlling faction appears to the player
- * when they open the PCE. All fields come from one {@code FactionAPI} +
+ * when they open the PCP. All fields come from one {@code FactionAPI} +
  * relationship formatter call and are always either all-present or all-absent,
  * so they are represented as a unit rather than parallel Optionals on the
  * location model.

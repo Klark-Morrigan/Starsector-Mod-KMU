@@ -15,7 +15,7 @@ explicit campaign edits from in-game screens.
 
 ## Features
 
-### 1. Planetary Condition Editor (PCE)
+### 1. Planetary Condition Picker (PCP)
 
 Problem doc:
 [problem.md](docs/dev/implementation/001-add-planetary-condition/problem.md)
@@ -23,8 +23,8 @@ Problem doc:
 Plan doc:
 [plan.md](docs/dev/implementation/001-add-planetary-condition/plan.md)
 
-The planned first feature is a `Planetary Conditions` editor for an active
-colony market. The editor opens every planetary market condition as a clickable
+The planned first feature is a `Planetary Conditions` picker for an active
+colony market. The picker opens every planetary market condition as a clickable
 entry with a tooltip. Entries already on the planet use the player's normal UI
 color; entries not present are darkened. Clicking an absent entry adds that
 condition to the market without removing mutually exclusive or same-group

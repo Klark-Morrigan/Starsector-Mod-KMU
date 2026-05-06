@@ -22,7 +22,7 @@ public final class KmuConditionEditorOpenResult {
     public static KmuConditionEditorOpenResult opened() {
         return new KmuConditionEditorOpenResult(
                 KmuConditionEditorOpenStatus.OPENED,
-                "Opened planetary condition editor.",
+                "Opened planetary condition picker.",
                 null);
     }
 

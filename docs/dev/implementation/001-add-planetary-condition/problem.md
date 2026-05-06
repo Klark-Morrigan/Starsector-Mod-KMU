@@ -1,4 +1,4 @@
-# Planetary Condition Editor
+# Planetary Condition Picker
 
 ## Index
 
@@ -18,7 +18,7 @@ text-driven, easy to mistype, and usually include extra cleanup such as removing
 mutually exclusive conditions.
 
 The first feature in Klark Morrigan's Utilities is a colony-screen planetary
-condition editor. It starts from the practical problem of wanting a fast,
+condition picker. It starts from the practical problem of wanting a fast,
 visual, in-context way to add any planetary condition to the colony currently
 being inspected.
 
