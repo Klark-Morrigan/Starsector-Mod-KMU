@@ -16,4 +16,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - All loaded market conditions *(vanilla and modded)* can be added. **No checks or guardrails**.
   - Present market conditions render vanilla tooltips.
   - Not present market conditions render Codex tooltips.
-  - All market condition tooltips are appended by contdition metadata.
+  - All market condition tooltips are appended by condition metadata.
