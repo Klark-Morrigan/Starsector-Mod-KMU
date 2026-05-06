@@ -4,6 +4,7 @@
 .gradle/
 .idea/
 .vscode/
+bin/
 build/
 dist/
 jars/*.jar
