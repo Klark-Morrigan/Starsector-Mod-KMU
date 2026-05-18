@@ -5,6 +5,7 @@
 - [Purpose](#purpose)
 - [Features](#features)
 - [Dependencies](#dependencies)
+- [Versioning](#versioning)
 - [Build And Release](#build-and-release)
 - [Documentation Status](#documentation-status)
 
@@ -40,6 +41,14 @@ optional developer entry point for the same picker. KMU console commands use the
 | Mod | Author | Required | Notes |
 |-----|--------|----------|-------|
 | [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | LazyWizard | Optional | Enables `kmu_` developer commands (e.g. `kmu_pcp_open`) |
+
+## Versioning
+
+KMU follows the consumer-mod rules in
+[KMLib's versioning policy](https://github.com/<owner>/KMLib/blob/main/docs/dev/versioning.md).
+In short: MAJOR for save-breaking changes, MINOR for save-safe new features,
+PATCH for fixes and tweaks. The same policy defines how KMU pins the KMLib
+dependency in both `mod_info.json` and `.github/workflows/*.yml`.
 
 ## Build And Release
 
