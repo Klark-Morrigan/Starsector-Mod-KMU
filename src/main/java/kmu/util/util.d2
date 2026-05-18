@@ -44,11 +44,11 @@ Legend: {
 
 Utilities: "Shared Utilities" {
   direction: down
-  Localisation: "KmuLocalisation" {class: adapter}
+  Strings: "KmuStrings" {class: shared}
   TextFormats: "KmuTextFormats" {class: shared}
   Values: "KmuValues" {class: shared}
   ScopeNote: "cross-cutting utilities;\nno feature coupling" {class: note}
-  LocalisationNote: "bridges SettingsAPI\nto localized UI strings" {class: note}
+  StringsNote: "constants holder for the\nKMU localisation category +\nstring ids; lookups go through\nKMLib's StarsectorStrings" {class: note}
 }
 
 External: "External Starsector API" {
@@ -56,4 +56,4 @@ External: "External Starsector API" {
   SettingsAPI: "SettingsAPI" {class: external}
 }
 
-Utilities.Localisation -> External.SettingsAPI: "reads string data from"
+Utilities.Strings -> External.SettingsAPI: "string lookups resolve through\nStarsectorStrings, which calls"

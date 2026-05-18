@@ -6,7 +6,7 @@ import kmu.conditions.ui.picker.model.KmuPickerFaction;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 import kmu.ui.utils.KmuHighlights;
-import kmu.util.KmuLocalisation;
+import kmu.util.KmuStrings;
 import static kmu.util.KmuTextFormats.joinWithParenthetical;
 
 import java.awt.Color;
@@ -61,14 +61,14 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
 
     private static KmuLabelSpec buildHeaderLine() {
         return new KmuLabelSpec(
-                KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_LOCATION),
+                KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION),
                 StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
                 new String[0],
                 new Color[0]);
     }
 
     private static KmuLabelSpec buildUnknownLine(Color highlightColor) {
-        String unknown = KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_LOCATION_UNKNOWN);
+        String unknown = KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION_UNKNOWN);
         return new KmuLabelSpec(unknown, new String[]{unknown}, new Color[]{highlightColor});
     }
 

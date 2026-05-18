@@ -4,7 +4,7 @@ import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.color.StarsectorUiColorProvider;
-import kmu.util.KmuLocalisation;
+import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,15 +79,15 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
             KmuTooltipSection.add(
                     tooltip,
                     KmuTooltipSectionStyle.WARNING,
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE),
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY));
+                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE),
+                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY));
         }
         if (entry.isHidden()) {
             KmuTooltipSection.add(
                     tooltip,
                     KmuTooltipSectionStyle.WARNING,
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE),
-                    KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY));
+                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE),
+                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY));
         }
     }
 

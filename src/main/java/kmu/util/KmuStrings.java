@@ -1,17 +1,20 @@
 package kmu.util;
 
-import com.fs.starfarer.api.Global;
+import kmlib.starsector.strings.StarsectorStrings;
 
-import java.util.IllegalFormatException;
-import java.util.Locale;
-import java.util.Objects;
-
-import static kmu.util.KmuValues.hasText;
-
-public final class KmuLocalisation {
+/**
+ * KMU's localisation entry point. Holds the KMU settings category
+ * and the string ids registered in {@code data/strings/strings.json},
+ * and exposes thin {@link #get(String)} / {@link #format(String, Object...)}
+ * accessors that bind the KMU category so call sites do not have to
+ * repeat it.
+ *
+ * <p>The lookup and fallback behaviour live in KMLib's
+ * {@link StarsectorStrings}; this class is a category-bound shortcut,
+ * not a parallel implementation.
+ */
+public final class KmuStrings {
     public static final String CATEGORY = "kmu";
-    // Missing or invalid localized UI strings should be visible during playtesting.
-    public static final String REDACTED = "[REDACTED]";
 
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
@@ -29,47 +32,20 @@ public final class KmuLocalisation {
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY = "condition_manager_tooltip_hidden_body";
     public static final String DIALOG_CLOSE = "dialog_close";
 
-    private KmuLocalisation() {
+    private KmuStrings() {
     }
 
+    /** Looks up {@code key} under the KMU category. See
+     *  {@link StarsectorStrings#get(String, String)} for fallback
+     *  semantics. */
     public static String get(String key) {
-        return get(key, KmuLocalisation::fromSettings);
+        return StarsectorStrings.get(CATEGORY, key);
     }
 
-    static String get(String key, KmuStringSource source) {
-        Objects.requireNonNull(key, "key");
-        Objects.requireNonNull(source, "source");
-
-        try {
-            String value = source.get(key);
-            if (!hasText(value)) {
-                return REDACTED;
-            }
-            return value;
-        } catch (RuntimeException exception) {
-            return REDACTED;
-        }
-    }
-
+    /** Formats {@code key}'s template against {@code args}. See
+     *  {@link StarsectorStrings#format(String, String, Object...)} for
+     *  fallback semantics. */
     public static String format(String key, Object... args) {
-        return format(key, KmuLocalisation::fromSettings, args);
-    }
-
-    static String format(String key, KmuStringSource source, Object... args) {
-        String template = get(key, source);
-        try {
-            return String.format(Locale.ROOT, template, args);
-        } catch (IllegalFormatException exception) {
-            return REDACTED;
-        }
-    }
-
-    private static String fromSettings(String key) {
-        return Global.getSettings().getString(CATEGORY, key);
-    }
-
-    @FunctionalInterface
-    interface KmuStringSource {
-        String get(String key);
+        return StarsectorStrings.format(CATEGORY, key, args);
     }
 }

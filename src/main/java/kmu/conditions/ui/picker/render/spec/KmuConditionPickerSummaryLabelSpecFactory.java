@@ -4,7 +4,7 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 import kmu.ui.utils.KmuHighlights;
-import kmu.util.KmuLocalisation;
+import kmu.util.KmuStrings;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -71,12 +71,12 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.BLUE);
         Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
 
-        String visibleToken = KmuLocalisation.format(KmuLocalisation.CONDITION_MANAGER_SUMMARY_VISIBLE, visible);
-        String suppressedToken = KmuLocalisation.format(KmuLocalisation.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed);
-        String presentToken = KmuLocalisation.format(KmuLocalisation.CONDITION_MANAGER_SUMMARY_PRESENT, present);
-        String hiddenToken = KmuLocalisation.format(KmuLocalisation.CONDITION_MANAGER_SUMMARY_HIDDEN, hidden);
-        String availableToken = KmuLocalisation.format(KmuLocalisation.CONDITION_MANAGER_SUMMARY_AVAILABLE, available);
-        String totalToken = KmuLocalisation.format(KmuLocalisation.CONDITION_MANAGER_SUMMARY_TOTAL, total);
+        String visibleToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_VISIBLE, visible);
+        String suppressedToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed);
+        String presentToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_PRESENT, present);
+        String hiddenToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_HIDDEN, hidden);
+        String availableToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_AVAILABLE, available);
+        String totalToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_TOTAL, total);
 
         AppendContext ctx = new AppendContext();
 
@@ -94,7 +94,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         appendToken(ctx, new TokenSpec(", ", totalToken, grey, true));
 
         KmuLabelSpec headerSpec = new KmuLabelSpec(
-                KmuLocalisation.get(KmuLocalisation.CONDITION_MANAGER_SUMMARY),
+                KmuStrings.get(KmuStrings.CONDITION_MANAGER_SUMMARY),
                 StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
                 new String[0],
                 new Color[0]);

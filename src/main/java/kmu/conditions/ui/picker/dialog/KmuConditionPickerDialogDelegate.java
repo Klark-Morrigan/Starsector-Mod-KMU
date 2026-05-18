@@ -9,7 +9,7 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
-import kmu.util.KmuLocalisation;
+import kmu.util.KmuStrings;
 import kmu.conditions.domain.KmuConditionAddResult;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.action.KmuConditionPickerActionHandler;
@@ -97,7 +97,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
 
     @Override
     public String getConfirmText() {
-        return KmuLocalisation.get(KmuLocalisation.DIALOG_CLOSE);
+        return KmuStrings.get(KmuStrings.DIALOG_CLOSE);
     }
 
     @Override
