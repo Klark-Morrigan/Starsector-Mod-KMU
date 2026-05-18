@@ -10,7 +10,7 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
-import kmu.starsector.StarsectorTestSupport;
+import kmu.starsector.StarsectorSettingsFake;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class KmuConditionPickerContainerTest {
 
     @BeforeEach
     void mockStarsectorThemeColors() {
-        StarsectorTestSupport.installSettings();
+        StarsectorSettingsFake.installSettings();
         misc = Mockito.mockStatic(Misc.class);
         misc.when(Misc::getGrayColor).thenReturn(GRAY);
         misc.when(Misc::getHighlightColor).thenReturn(GOLD);
@@ -53,7 +53,7 @@ class KmuConditionPickerContainerTest {
     @AfterEach
     void closeStarsectorThemeColors() {
         misc.close();
-        StarsectorTestSupport.clearSettings();
+        StarsectorSettingsFake.clearSettings();
     }
 
     @Test

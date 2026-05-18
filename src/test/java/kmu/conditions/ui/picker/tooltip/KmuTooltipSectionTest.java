@@ -3,7 +3,7 @@ package kmu.conditions.ui.picker.tooltip;
 import com.fs.starfarer.api.ui.Alignment;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
-import kmu.starsector.StarsectorTestSupport;
+import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +30,7 @@ class KmuTooltipSectionTest {
 
     @BeforeEach
     void mockStarsectorThemeColors() {
-        StarsectorTestSupport.installSettings();
+        StarsectorSettingsFake.installSettings();
         misc = Mockito.mockStatic(Misc.class);
         misc.when(Misc::getBasePlayerColor).thenReturn(BLUE);
         misc.when(Misc::getDarkPlayerColor).thenReturn(DARK_BLUE);
@@ -41,7 +41,7 @@ class KmuTooltipSectionTest {
     @AfterEach
     void closeStarsectorThemeColors() {
         misc.close();
-        StarsectorTestSupport.clearSettings();
+        StarsectorSettingsFake.clearSettings();
     }
 
     @Test

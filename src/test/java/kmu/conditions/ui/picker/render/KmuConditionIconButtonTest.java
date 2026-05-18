@@ -7,8 +7,8 @@ import kmu.conditions.ui.picker.tooltip.KmuConditionEntryTooltipCreator;
 
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
-import kmu.starsector.StarsectorUiColor;
-import kmu.starsector.StarsectorTestSupport;
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmu.starsector.StarsectorSettingsFake;
 
 import java.awt.Color;
 import java.lang.reflect.InvocationHandler;
@@ -39,7 +39,7 @@ class KmuConditionIconButtonTest {
 
     @BeforeEach
     void mockStarsectorThemeColors() {
-        StarsectorTestSupport.installSettings();
+        StarsectorSettingsFake.installSettings();
         misc = Mockito.mockStatic(Misc.class);
         misc.when(Misc::getDarkPlayerColor).thenReturn(DEFAULT_BACKDROP);
         misc.when(Misc::getBasePlayerColor).thenReturn(DEFAULT_BORDER);
@@ -50,7 +50,7 @@ class KmuConditionIconButtonTest {
     @AfterEach
     void closeStarsectorThemeColors() {
         misc.close();
-        StarsectorTestSupport.clearSettings();
+        StarsectorSettingsFake.clearSettings();
     }
 
     @Test

@@ -1,6 +1,6 @@
 package kmu.conditions.ui.picker.tooltip;
 
-import kmu.starsector.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColor;
 
 import org.junit.jupiter.api.Test;
 

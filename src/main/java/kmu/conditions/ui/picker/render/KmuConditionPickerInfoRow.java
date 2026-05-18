@@ -6,8 +6,8 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
 import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
-import kmu.starsector.StarsectorUiColor;
-import kmu.starsector.StarsectorUiColorProvider;
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import java.util.List;
 import java.util.Objects;

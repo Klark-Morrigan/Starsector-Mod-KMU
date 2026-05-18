@@ -11,8 +11,8 @@ import com.fs.starfarer.api.util.Misc;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.tooltip.KmuConditionEntryTooltipCreator;
-import kmu.starsector.StarsectorUiColor;
-import kmu.starsector.StarsectorUiColorProvider;
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import java.awt.Color;
 import java.util.List;

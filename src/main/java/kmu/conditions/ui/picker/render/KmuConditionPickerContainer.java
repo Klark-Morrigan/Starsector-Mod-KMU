@@ -10,8 +10,8 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.render.spec.KmuConditionPickerLocationLabelSpecFactory;
 import kmu.conditions.ui.picker.render.spec.KmuConditionPickerSummaryLabelSpecFactory;
 import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
-import kmu.starsector.StarsectorUiColor;
-import kmu.starsector.StarsectorUiColorProvider;
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import java.util.ArrayList;
 import java.util.List;

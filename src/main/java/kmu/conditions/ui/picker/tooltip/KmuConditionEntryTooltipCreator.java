@@ -2,8 +2,8 @@ package kmu.conditions.ui.picker.tooltip;
 
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
-import kmu.starsector.StarsectorUiColor;
-import kmu.starsector.StarsectorUiColorProvider;
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 import kmu.util.KmuLocalisation;
 
 import java.util.ArrayList;

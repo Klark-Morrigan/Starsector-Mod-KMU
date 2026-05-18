@@ -22,6 +22,10 @@ def configuredStarsectorRoot = findProperty('starsectorRoot') ?:
 def apiJarFile = file("${configuredStarsectorRoot}/starsector-core/starfarer.api.jar")
 def starsectorCoreJars = fileTree(dir: "${configuredStarsectorRoot}/starsector-core", include: ['*.jar'])
 def consoleCommandsJars = fileTree(dir: "${configuredStarsectorRoot}/mods", include: ['**/jars/lw_Console.jar'])
+// KMLib hosts shared helpers (palette, future localisation lookups).
+// Resolved via the same Starsector root because the mod always lives at
+// <starsector>/mods/KMLib, the same directory layout the launcher expects.
+def kmlibJarFile = file("${configuredStarsectorRoot}/mods/KMLib/jars/KMLib.jar")
 
 repositories {
     mavenCentral()
@@ -30,6 +34,9 @@ repositories {
 dependencies {
     compileOnly files(apiJarFile)
     compileOnly consoleCommandsJars
+    // KMLib is a hard dependency in mod_info.json; Starsector's mod
+    // classloader provides the jar at runtime so compileOnly is enough.
+    compileOnly files(kmlibJarFile)
 
     testImplementation platform('org.junit:junit-bom:5.13.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -39,8 +46,10 @@ dependencies {
 
     testCompileOnly files(apiJarFile)
     testCompileOnly consoleCommandsJars
+    testCompileOnly files(kmlibJarFile)
     testRuntimeOnly files(apiJarFile)
     testRuntimeOnly consoleCommandsJars
+    testRuntimeOnly files(kmlibJarFile)
     testRuntimeOnly starsectorCoreJars
 }
 
@@ -59,6 +68,12 @@ tasks.withType(JavaCompile).configureEach {
                     "Could not find Console Commands jar under " +
                     "${configuredStarsectorRoot}/mods/**/jars/lw_Console.jar. " +
                     "Install Console Commands for compiling KMU console command integration.")
+        }
+        if (!kmlibJarFile.exists()) {
+            throw new GradleException(
+                    "Could not find KMLib jar at ${kmlibJarFile}. " +
+                    "Build KMLib first (run `./gradlew jar` in mods/KMLib) " +
+                    "or install it under mods/KMLib/jars/KMLib.jar.")
         }
     }
 }

@@ -1,8 +1,8 @@
 package kmu.conditions.ui.picker.render.spec;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
-import kmu.starsector.StarsectorUiColor;
-import kmu.starsector.StarsectorUiColorProvider;
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 import kmu.ui.utils.KmuHighlights;
 import kmu.util.KmuLocalisation;
 

@@ -1,7 +1,7 @@
 package kmu.conditions.ui.picker.tooltip;
 
-import kmu.starsector.StarsectorUiColor;
-import kmu.starsector.StarsectorUiColorProvider;
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import java.awt.Color;
 

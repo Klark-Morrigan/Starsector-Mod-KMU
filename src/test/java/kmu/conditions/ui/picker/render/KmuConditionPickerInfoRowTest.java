@@ -6,7 +6,7 @@ import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
 import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
-import kmu.starsector.StarsectorTestSupport;
+import kmu.starsector.StarsectorSettingsFake;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class KmuConditionPickerInfoRowTest {
 
     @BeforeEach
     void mockStarsectorThemeColors() {
-        StarsectorTestSupport.installSettings();
+        StarsectorSettingsFake.installSettings();
         misc = Mockito.mockStatic(Misc.class);
         misc.when(Misc::getGrayColor).thenReturn(GRAY);
         misc.when(Misc::getHighlightColor).thenReturn(GOLD);
@@ -47,7 +47,7 @@ class KmuConditionPickerInfoRowTest {
     @AfterEach
     void closeStarsectorThemeColors() {
         misc.close();
-        StarsectorTestSupport.clearSettings();
+        StarsectorSettingsFake.clearSettings();
     }
 
     @Test
