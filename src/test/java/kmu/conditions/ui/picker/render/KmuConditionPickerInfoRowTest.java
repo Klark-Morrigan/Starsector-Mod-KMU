@@ -54,7 +54,7 @@ class KmuConditionPickerInfoRowTest {
     void computeHeightIncludesSectionGapWhenBothSectionsPresent() {
         float height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 2);
 
-        float expected = 4 * KmuConditionPickerInfoRow.LINE_HEIGHT + 6f; // 6f = SECTION_PAD
+        float expected = 4 * KmuConditionPickerInfoRow.LINE_HEIGHT + 8f; // 8f = SECTION_PAD
         assertThat(height).isEqualTo(expected);
     }
 

@@ -96,20 +96,25 @@ class KmuConditionPickerSummaryLabelSpecFactoryTest {
 
     @Test
     void exposesCountHighlightsOnCountsLine() {
+        // "3 present" has no highlight slot because its color matches the label base
+        // (white). The " - " before "1 available" and the ", " before "4 total." are
+        // each highlighted in grey so the trailing tail renders fully grey.
         List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()));
 
         assertThat(specs.get(1).getHighlights())
                 .containsExactly(
-                        "2 visible", "1 suppressed", "3 present", "1 hidden",
-                        " - 1 available, 4 total.");
+                        "2 visible", "1 suppressed", "1 hidden",
+                        " - ", "1 available", ", ", "4 total.");
     }
 
     @Test
     void exposesHighlightColorsOnCountsLine() {
+        // Colors align one-to-one with highlights above. The four trailing segments
+        // (" - ", "1 available", ", ", "4 total.") are all grey.
         List<KmuLabelSpec> specs = KmuConditionPickerSummaryLabelSpecFactory.get(model(entries()));
 
         assertThat(specs.get(1).getHighlightColors())
-                .containsExactly(GREEN, RED, TEXT, BLUE, GRAY);
+                .containsExactly(GREEN, RED, BLUE, GRAY, GRAY, GRAY, GRAY);
     }
 
     @Test

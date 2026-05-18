@@ -314,24 +314,26 @@ class KmuConditionPickerContainerTest {
     @Test
     void headerHeightScalesWithLocationAndSummaryLineCount() {
         // createLocation() has 4 specs (header + planet + system + constellation)
-        // summary has 2 specs (header + counts) = 6 total lines * 20f = 120f > ICON_SIZE 80f
+        // summary has 2 specs (header + counts) = 6 total lines * 20f = 120f, plus
+        // SECTION_PAD (8f) between location and summary = 128f > ICON_SIZE 80f.
         KmuConditionPickerModel model = new KmuConditionPickerModel(
                 Collections.emptyList(),
                 createLocation());
 
         assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
-                .isEqualTo(8f + 120f);
+                .isEqualTo(8f + 128f);
     }
 
     @Test
     void headerHeightShowsUnknownAndSummaryWhenLocationIsAbsent() {
-        // Empty location → 2 specs (header + Unknown); summary → 2 specs = 4 total * 20f = 80f
+        // Empty location -> 2 specs (header + Unknown); summary -> 2 specs = 4 lines * 20f = 80f,
+        // plus SECTION_PAD (8f) between the two sections = 88f.
         KmuConditionPickerModel model = new KmuConditionPickerModel(
                 Collections.emptyList(),
                 new KmuConditionPickerLocation(null, null, null, null, null, null, null));
 
         assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
-                .isEqualTo(8f + 80f);
+                .isEqualTo(8f + 88f);
     }
 
     private static KmuConditionPickerEntry entry(String id, KmuConditionPickerEntryState state) {
