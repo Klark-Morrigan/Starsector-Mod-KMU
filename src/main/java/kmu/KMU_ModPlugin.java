@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 public class KMU_ModPlugin extends BaseModPlugin {
-    public static final String MOD_ID = "klark_morrigans_utilities";
+    public static final String MOD_ID = "kmu";
     public static final String MOD_NAME = "Klark Morrigan's Utilities";
 
     @Override

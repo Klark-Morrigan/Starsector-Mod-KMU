@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KMU_ModPluginTest {
     @Test
     void exposesStableModIdentityConstants() {
-        assertThat(KMU_ModPlugin.MOD_ID).isEqualTo("klark_morrigans_utilities");
+        assertThat(KMU_ModPlugin.MOD_ID).isEqualTo("kmu");
         assertThat(KMU_ModPlugin.MOD_NAME).isEqualTo("Klark Morrigan's Utilities");
     }
 
