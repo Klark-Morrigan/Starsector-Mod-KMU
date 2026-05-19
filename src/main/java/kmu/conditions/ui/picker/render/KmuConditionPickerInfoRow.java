@@ -6,8 +6,6 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
-import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
 
@@ -110,11 +108,7 @@ final class KmuConditionPickerInfoRow {
     private static LabelAPI renderText(
             CustomPanelAPI row, HighlightedParagraph paragraph, float x, float y, float width) {
         TooltipMakerAPI textEl = row.createUIElement(width, LINE_HEIGHT, false);
-        java.awt.Color baseColor = paragraph.getBaseColor() != null
-                ? paragraph.getBaseColor()
-                : StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE);
-        LabelAPI label = textEl.addPara(paragraph.getText(), baseColor, 0f);
-        paragraph.applyTo(label);
+        LabelAPI label = paragraph.addTo(textEl);
         row.addUIElement(textEl).inTL(x, y);
         return label;
     }
