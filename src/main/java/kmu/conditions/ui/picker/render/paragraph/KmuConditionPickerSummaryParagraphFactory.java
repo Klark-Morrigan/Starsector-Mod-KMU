@@ -1,9 +1,11 @@
-package kmu.conditions.ui.picker.render.spec;
+package kmu.conditions.ui.picker.render.paragraph;
 
-import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.color.StarsectorUiColorProvider;
-import kmu.ui.utils.KmuHighlights;
+import kmlib.starsector.ui.highlight.Highlight;
+import kmlib.starsector.ui.highlight.HighlightedParagraph;
+
+import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.util.KmuStrings;
 
 import java.awt.Color;
@@ -12,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Produces the conditions summary label specs as two stacked lines:
+ * Produces the conditions summary paragraphs as two stacked lines:
  * <ol>
  *   <li>"Conditions:" header - no highlights, TEXT_WHITE base color</li>
  *   <li>Count line - highlights for visible (green), suppressed (red),
@@ -25,15 +27,14 @@ import java.util.Objects;
  * - available and total are always last, each a separate grey highlight.
  * - Zero-value tokens are omitted except available and total.
  */
-public final class KmuConditionPickerSummaryLabelSpecFactory {
-    private KmuConditionPickerSummaryLabelSpecFactory() {
+public final class KmuConditionPickerSummaryParagraphFactory {
+    private KmuConditionPickerSummaryParagraphFactory() {
     }
 
-    /** Accumulates the text, highlight strings, and colors for the count line. */
+    /** Accumulates the text and highlight pairs for the count line. */
     private static final class AppendContext {
         final StringBuilder sb = new StringBuilder();
-        final List<String> highlights = new ArrayList<>();
-        final List<Color> colors = new ArrayList<>();
+        final List<Highlight> highlights = new ArrayList<>();
         boolean hasSegment = false;
     }
 
@@ -56,7 +57,7 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         }
     }
 
-    public static List<KmuLabelSpec> get(KmuConditionPickerModel model) {
+    public static List<HighlightedParagraph> get(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
         int visible = model.getVisibleCount();
@@ -93,19 +94,16 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         appendToken(ctx, new TokenSpec(" - ", availableToken, grey, true));
         appendToken(ctx, new TokenSpec(", ", totalToken, grey, true));
 
-        KmuLabelSpec headerSpec = new KmuLabelSpec(
+        HighlightedParagraph headerParagraph = new HighlightedParagraph(
                 KmuStrings.get(KmuStrings.CONDITION_MANAGER_SUMMARY),
-                StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
-                new String[0],
-                new Color[0]);
-        KmuLabelSpec countsSpec = new KmuLabelSpec(
+                StarsectorUiColorProvider.get(StarsectorUiColor.GRAY));
+        HighlightedParagraph countsParagraph = new HighlightedParagraph(
                 ctx.sb.toString(),
-                ctx.highlights.toArray(new String[0]),
-                ctx.colors.toArray(new Color[0]));
+                ctx.highlights.toArray(new Highlight[0]));
 
-        List<KmuLabelSpec> result = new ArrayList<>();
-        result.add(headerSpec);
-        result.add(countsSpec);
+        List<HighlightedParagraph> result = new ArrayList<>();
+        result.add(headerParagraph);
+        result.add(countsParagraph);
         return result;
     }
 
@@ -114,10 +112,10 @@ public final class KmuConditionPickerSummaryLabelSpecFactory {
         if (ctx.hasSegment) {
             ctx.sb.append(spec.separator);
             if (spec.highlightSeparator)
-                KmuHighlights.add(ctx.highlights, ctx.colors, spec.separator, spec.color);
+                ctx.highlights.add(new Highlight(spec.separator, spec.color));
         }
         ctx.sb.append(spec.token);
-        KmuHighlights.add(ctx.highlights, ctx.colors, spec.token, spec.color);
+        ctx.highlights.add(new Highlight(spec.token, spec.color));
         ctx.hasSegment = true;
     }
 

@@ -1,13 +1,14 @@
-package kmu.conditions.ui.picker.render.spec;
+package kmu.conditions.ui.picker.render.paragraph;
+
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColorProvider;
+import kmlib.starsector.ui.highlight.Highlight;
+import kmlib.starsector.ui.highlight.HighlightedParagraph;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
-import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
-import kmu.ui.utils.KmuHighlights;
 import kmu.util.KmuStrings;
-import static kmu.util.KmuTextFormats.joinWithParenthetical;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -15,9 +16,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static kmu.util.KmuTextFormats.joinWithParenthetical;
+
 /**
- * Produces the location label specs: one {@link KmuLabelSpec} per displayable
- * location segment, returned as an ordered list for stacked rendering.
+ * Produces the location paragraphs: one {@link HighlightedParagraph} per
+ * displayable location segment, returned as an ordered list for stacked
+ * rendering.
  *
  * <p>Line order when location data is present:
  * <ol>
@@ -29,22 +33,22 @@ import java.util.Optional;
  *
  * <p>Returns an empty list when the location has no displayable fields.
  */
-public final class KmuConditionPickerLocationLabelSpecFactory {
-    private KmuConditionPickerLocationLabelSpecFactory() {
+public final class KmuConditionPickerLocationParagraphFactory {
+    private KmuConditionPickerLocationParagraphFactory() {
     }
 
-    public static List<KmuLabelSpec> get(KmuConditionPickerModel model) {
+    public static List<HighlightedParagraph> get(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
         KmuConditionPickerLocation location = model.getLocation();
         Color highlightColor = StarsectorUiColorProvider.get(StarsectorUiColor.GOLD);
         Color defaultTextColor = StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE);
 
-        Optional<KmuLabelSpec> planetLine = buildPlanetLine(location, highlightColor, defaultTextColor);
-        Optional<KmuLabelSpec> systemLine = buildSystemLine(location, highlightColor);
-        Optional<KmuLabelSpec> constellationLine = buildConstellationLine(location, highlightColor);
+        Optional<HighlightedParagraph> planetLine = buildPlanetLine(location, highlightColor, defaultTextColor);
+        Optional<HighlightedParagraph> systemLine = buildSystemLine(location, highlightColor);
+        Optional<HighlightedParagraph> constellationLine = buildConstellationLine(location, highlightColor);
 
-        List<KmuLabelSpec> result = new ArrayList<>();
+        List<HighlightedParagraph> result = new ArrayList<>();
         result.add(buildHeaderLine());
 
         if (!planetLine.isPresent() && !systemLine.isPresent() && !constellationLine.isPresent()) {
@@ -59,74 +63,70 @@ public final class KmuConditionPickerLocationLabelSpecFactory {
         return result;
     }
 
-    private static KmuLabelSpec buildHeaderLine() {
-        return new KmuLabelSpec(
+    private static HighlightedParagraph buildHeaderLine() {
+        return new HighlightedParagraph(
                 KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION),
-                StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
-                new String[0],
-                new Color[0]);
+                StarsectorUiColorProvider.get(StarsectorUiColor.GRAY));
     }
 
-    private static KmuLabelSpec buildUnknownLine(Color highlightColor) {
+    private static HighlightedParagraph buildUnknownLine(Color highlightColor) {
         String unknown = KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION_UNKNOWN);
-        return new KmuLabelSpec(unknown, new String[]{unknown}, new Color[]{highlightColor});
+        return new HighlightedParagraph(unknown, new Highlight(unknown, highlightColor));
     }
 
-    private static Optional<KmuLabelSpec> buildPlanetLine(
+    private static Optional<HighlightedParagraph> buildPlanetLine(
             KmuConditionPickerLocation location, Color highlightColor, Color defaultTextColor) {
         List<String> segments = new ArrayList<>();
-        List<String> highlights = new ArrayList<>();
-        List<Color> colors = new ArrayList<>();
+        List<Highlight> highlights = new ArrayList<>();
 
         if (location.getPlanetName().isPresent()) {
             joinWithParenthetical(location.getPlanetName(), location.getPlanetType())
                     .ifPresent(segments::add);
-            KmuHighlights.add(highlights, colors, location.getPlanetName().get(), highlightColor);
+            highlights.add(new Highlight(location.getPlanetName().get(), highlightColor));
         }
 
         location.getFaction().ifPresent(faction -> {
             buildOwnershipSegment(faction).ifPresent(segments::add);
-            KmuHighlights.add(highlights, colors, faction.getName(),
-                    faction.getColor().orElse(defaultTextColor));
+            highlights.add(new Highlight(
+                    faction.getName(),
+                    faction.getColor().orElse(defaultTextColor)));
             faction.getRelationshipDescription().ifPresent(rel ->
-                    KmuHighlights.add(highlights, colors, rel,
-                            faction.getRelationshipColor().orElse(defaultTextColor)));
+                    highlights.add(new Highlight(
+                            rel,
+                            faction.getRelationshipColor().orElse(defaultTextColor))));
         });
 
         if (segments.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(new KmuLabelSpec(
+        return Optional.of(new HighlightedParagraph(
                 String.join(" - ", segments),
-                highlights.toArray(new String[0]),
-                colors.toArray(new Color[0])));
+                highlights.toArray(new Highlight[0])));
     }
 
-    private static Optional<KmuLabelSpec> buildSystemLine(
+    private static Optional<HighlightedParagraph> buildSystemLine(
             KmuConditionPickerLocation location, Color highlightColor) {
         if (!location.getStarSystemName().isPresent()) {
             return Optional.empty();
         }
 
         Optional<String> gravityWellName = getDisplayableGravityWellName(location);
-        List<String> highlights = new ArrayList<>();
-        List<Color> colors = new ArrayList<>();
+        List<Highlight> highlights = new ArrayList<>();
 
         Optional<String> text = joinWithParenthetical(
                 location.getStarSystemName(), buildSystemParenthetical(location, gravityWellName));
-        KmuHighlights.add(highlights, colors, location.getStarSystemName().get(), highlightColor);
-        gravityWellName.ifPresent(name -> KmuHighlights.add(highlights, colors, name, highlightColor));
+        highlights.add(new Highlight(location.getStarSystemName().get(), highlightColor));
+        gravityWellName.ifPresent(name -> highlights.add(new Highlight(name, highlightColor)));
 
-        return text.map(t -> new KmuLabelSpec(
+        return text.map(t -> new HighlightedParagraph(
                 t,
-                highlights.toArray(new String[0]),
-                colors.toArray(new Color[0])));
+                highlights.toArray(new Highlight[0])));
     }
 
-    private static Optional<KmuLabelSpec> buildConstellationLine(
+    private static Optional<HighlightedParagraph> buildConstellationLine(
             KmuConditionPickerLocation location, Color highlightColor) {
         return location.getConstellationName().map(name ->
-                new KmuLabelSpec(name, new String[]{name}, new Color[]{highlightColor}));
+                new HighlightedParagraph(name, new Highlight(name, highlightColor)));
     }
 
     private static Optional<String> buildOwnershipSegment(KmuPickerFaction faction) {

@@ -5,7 +5,7 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
-import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
+import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmu.starsector.StarsectorSettingsFake;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,14 +79,14 @@ class KmuConditionPickerInfoRowTest {
         List<Color> paraColors = new ArrayList<>();
         CustomPanelAPI row = rowPanel(paraColors);
 
-        List<KmuLabelSpec> locationSpecs = Arrays.asList(
-                new KmuLabelSpec("Location:", new String[0], new Color[0]),
-                new KmuLabelSpec("Valis (terran world)", new String[0], new Color[0]));
-        List<KmuLabelSpec> summarySpecs = Arrays.asList(
-                new KmuLabelSpec("Conditions:", new String[0], new Color[0]),
-                new KmuLabelSpec("0 available, 0 total.", new String[0], new Color[0]));
+        List<HighlightedParagraph> locationParagraphs = Arrays.asList(
+                new HighlightedParagraph("Location:"),
+                new HighlightedParagraph("Valis (terran world)"));
+        List<HighlightedParagraph> summaryParagraphs = Arrays.asList(
+                new HighlightedParagraph("Conditions:"),
+                new HighlightedParagraph("0 available, 0 total."));
 
-        KmuConditionPickerInfoRow.render(row, locationSpecs, summarySpecs, Optional.empty(), 400f);
+        KmuConditionPickerInfoRow.render(row, locationParagraphs, summaryParagraphs, Optional.empty(), 400f);
 
         // 2 location + 2 summary lines, all TEXT base color
         assertThat(paraColors).hasSize(4).containsOnly(TEXT);
@@ -97,12 +97,12 @@ class KmuConditionPickerInfoRowTest {
         List<Color> paraColors = new ArrayList<>();
         CustomPanelAPI row = rowPanel(paraColors);
 
-        List<KmuLabelSpec> summarySpecs = Arrays.asList(
-                new KmuLabelSpec("Conditions:", new String[0], new Color[0]),
-                new KmuLabelSpec("0 available, 0 total.", new String[0], new Color[0]));
+        List<HighlightedParagraph> summaryParagraphs = Arrays.asList(
+                new HighlightedParagraph("Conditions:"),
+                new HighlightedParagraph("0 available, 0 total."));
 
         KmuConditionPickerInfoRow.render(
-                row, Collections.emptyList(), summarySpecs, Optional.empty(), 400f);
+                row, Collections.emptyList(), summaryParagraphs, Optional.empty(), 400f);
 
         assertThat(paraColors).hasSize(2).containsOnly(TEXT);
     }

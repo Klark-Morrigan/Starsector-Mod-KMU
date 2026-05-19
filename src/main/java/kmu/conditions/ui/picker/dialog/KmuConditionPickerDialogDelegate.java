@@ -9,6 +9,9 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
+
+import kmlib.starsector.ui.highlight.HighlightedParagraph;
+
 import kmu.util.KmuStrings;
 import kmu.conditions.domain.KmuConditionAddResult;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
@@ -20,8 +23,7 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.render.KmuConditionIconGrid;
 import kmu.conditions.ui.picker.render.KmuConditionPickerContainer;
 import kmu.conditions.ui.picker.render.KmuConditionPickerRenderResult;
-import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
-import kmu.conditions.ui.picker.render.spec.KmuConditionPickerSummaryLabelSpecFactory;
+import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerSummaryParagraphFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -171,10 +173,10 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         LabelAPI summaryLabel = renderResult.getSummaryLabel();
         if (summaryLabel != null) {
             // Item 1 is the counts line; item 0 is the static "Conditions:" header.
-            KmuLabelSpec countsSpec =
-                    KmuConditionPickerSummaryLabelSpecFactory.get(actionHandler.getModel()).get(1);
-            summaryLabel.setText(countsSpec.getText());
-            countsSpec.applyTo(summaryLabel);
+            HighlightedParagraph countsParagraph =
+                    KmuConditionPickerSummaryParagraphFactory.get(actionHandler.getModel()).get(1);
+            summaryLabel.setText(countsParagraph.getText());
+            countsParagraph.applyTo(summaryLabel);
         }
 
         Optional<String> conditionId = result.getConditionId();

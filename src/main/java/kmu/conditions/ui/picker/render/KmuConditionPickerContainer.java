@@ -4,14 +4,16 @@ import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
+
+import kmlib.starsector.ui.highlight.HighlightedParagraph;
+import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.color.StarsectorUiColorProvider;
+
 import kmu.util.KmuStrings;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
-import kmu.conditions.ui.picker.render.spec.KmuConditionPickerLocationLabelSpecFactory;
-import kmu.conditions.ui.picker.render.spec.KmuConditionPickerSummaryLabelSpecFactory;
-import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
-import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
+import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerLocationParagraphFactory;
+import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerSummaryParagraphFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,10 +53,10 @@ public final class KmuConditionPickerContainer {
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
-        List<KmuLabelSpec> locationSpecs = KmuConditionPickerLocationLabelSpecFactory.get(model);
-        List<KmuLabelSpec> summarySpecs = KmuConditionPickerSummaryLabelSpecFactory.get(model);
+        List<HighlightedParagraph> locationParagraphs = KmuConditionPickerLocationParagraphFactory.get(model);
+        List<HighlightedParagraph> summaryParagraphs = KmuConditionPickerSummaryParagraphFactory.get(model);
         KmuConditionPickerInfoRow infoRow = KmuConditionPickerInfoRow.render(
-                panel, locationSpecs, summarySpecs, model.getLocation().getFaction(), width);
+                panel, locationParagraphs, summaryParagraphs, model.getLocation().getFaction(), width);
         LabelAPI summaryLabel = infoRow.getConditionsLabel();
         headerBody.addCustom(infoRow.getPanel(), ITEM_TOP_PAD);
         List<UIComponentAPI> summaryComponents = new ArrayList<>();
@@ -88,8 +90,8 @@ public final class KmuConditionPickerContainer {
      */
     public static float computeHeaderHeight(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
-        int locationLines = KmuConditionPickerLocationLabelSpecFactory.get(model).size();
-        int summaryLines = KmuConditionPickerSummaryLabelSpecFactory.get(model).size();
+        int locationLines = KmuConditionPickerLocationParagraphFactory.get(model).size();
+        int summaryLines = KmuConditionPickerSummaryParagraphFactory.get(model).size();
         return KmuConditionPickerInfoRow.computeHeight(ITEM_TOP_PAD, locationLines, summaryLines);
     }
 }

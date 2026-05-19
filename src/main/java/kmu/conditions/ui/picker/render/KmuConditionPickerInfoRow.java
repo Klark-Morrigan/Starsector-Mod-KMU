@@ -4,10 +4,12 @@ import com.fs.starfarer.api.campaign.BaseCustomUIPanelPlugin;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
-import kmu.conditions.ui.picker.model.KmuPickerFaction;
-import kmu.conditions.ui.picker.render.spec.KmuLabelSpec;
+
+import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.color.StarsectorUiColorProvider;
+
+import kmu.conditions.ui.picker.model.KmuPickerFaction;
 
 import java.util.List;
 import java.util.Objects;
@@ -52,17 +54,17 @@ final class KmuConditionPickerInfoRow {
 
     static KmuConditionPickerInfoRow render(
             CustomPanelAPI panel,
-            List<KmuLabelSpec> locationSpecs,
-            List<KmuLabelSpec> summarySpecs,
+            List<HighlightedParagraph> locationParagraphs,
+            List<HighlightedParagraph> summaryParagraphs,
             Optional<KmuPickerFaction> faction,
             float width) {
         Objects.requireNonNull(panel, "panel");
-        Objects.requireNonNull(locationSpecs, "locationSpecs");
-        Objects.requireNonNull(summarySpecs, "summarySpecs");
+        Objects.requireNonNull(locationParagraphs, "locationParagraphs");
+        Objects.requireNonNull(summaryParagraphs, "summaryParagraphs");
         Objects.requireNonNull(faction, "faction");
 
-        int totalLines = locationSpecs.size() + summarySpecs.size();
-        float sectionGap = (!locationSpecs.isEmpty() && !summarySpecs.isEmpty()) ? SECTION_PAD : 0f;
+        int totalLines = locationParagraphs.size() + summaryParagraphs.size();
+        float sectionGap = (!locationParagraphs.isEmpty() && !summaryParagraphs.isEmpty()) ? SECTION_PAD : 0f;
         float panelHeight = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
         CustomPanelAPI row = panel.createCustomPanel(width, panelHeight, new BaseCustomUIPanelPlugin());
 
@@ -71,19 +73,19 @@ final class KmuConditionPickerInfoRow {
         float textWidth = width - textX;
 
         float y = 0f;
-        for (KmuLabelSpec spec : locationSpecs) {
-            renderText(row, spec, textX, y, textWidth);
+        for (HighlightedParagraph paragraph : locationParagraphs) {
+            renderText(row, paragraph, textX, y, textWidth);
             y += LINE_HEIGHT;
         }
 
-        if (!locationSpecs.isEmpty() && !summarySpecs.isEmpty()) {
+        if (!locationParagraphs.isEmpty() && !summaryParagraphs.isEmpty()) {
             y += SECTION_PAD;
         }
 
         // Render all summary lines; the last one is the live counts label.
         LabelAPI conditionsLabel = null;
-        for (KmuLabelSpec spec : summarySpecs) {
-            conditionsLabel = renderText(row, spec, textX, y, textWidth);
+        for (HighlightedParagraph paragraph : summaryParagraphs) {
+            conditionsLabel = renderText(row, paragraph, textX, y, textWidth);
             y += LINE_HEIGHT;
         }
 
@@ -106,13 +108,13 @@ final class KmuConditionPickerInfoRow {
     }
 
     private static LabelAPI renderText(
-            CustomPanelAPI row, KmuLabelSpec spec, float x, float y, float width) {
+            CustomPanelAPI row, HighlightedParagraph paragraph, float x, float y, float width) {
         TooltipMakerAPI textEl = row.createUIElement(width, LINE_HEIGHT, false);
-        java.awt.Color baseColor = spec.getBaseColor() != null
-                ? spec.getBaseColor()
+        java.awt.Color baseColor = paragraph.getBaseColor() != null
+                ? paragraph.getBaseColor()
                 : StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE);
-        LabelAPI label = textEl.addPara(spec.getText(), baseColor, 0f);
-        spec.applyTo(label);
+        LabelAPI label = textEl.addPara(paragraph.getText(), baseColor, 0f);
+        paragraph.applyTo(label);
         row.addUIElement(textEl).inTL(x, y);
         return label;
     }

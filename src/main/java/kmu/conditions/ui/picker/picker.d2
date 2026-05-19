@@ -90,8 +90,8 @@ RenderLayer: "render" {
   IconGrid: "KmuConditionIconGrid" {class: value}
   IconButton: "KmuConditionIconButton" {class: value}
   IconButtonStyle: "KmuConditionIconButtonStyle" {class: core}
-  LocationLabelSpecFactory: "KmuConditionPickerLocationLabelSpecFactory" {class: orchestration}
-  SummaryLabelSpecFactory: "KmuConditionPickerSummaryLabelSpecFactory" {class: orchestration}
+  LocationParagraphFactory: "KmuConditionPickerLocationParagraphFactory" {class: orchestration}
+  SummaryParagraphFactory: "KmuConditionPickerSummaryParagraphFactory" {class: orchestration}
 }
 
 TooltipLayer: "tooltip" {
@@ -130,8 +130,8 @@ DialogLayer.StarsectorDialogOpener -> DialogLayer.DialogOpener: "implements" {
 DialogLayer.StarsectorDialogOpener -> External.InteractionDialogAPI: "shows dialog"
 DialogLayer.StarsectorDialogOpener -> External.CampaignUIAPI: "reads campaign UI"
 
-RenderLayer.PickerContainer -> RenderLayer.LocationLabelSpecFactory: "queries location specs from"
-RenderLayer.PickerContainer -> RenderLayer.SummaryLabelSpecFactory: "queries summary specs from"
+RenderLayer.PickerContainer -> RenderLayer.LocationParagraphFactory: "queries location paragraphs from"
+RenderLayer.PickerContainer -> RenderLayer.SummaryParagraphFactory: "queries summary paragraphs from"
 RenderLayer.PickerContainer -> RenderLayer.PickerInfoRow: "renders info via"
 RenderLayer.PickerContainer -> RenderLayer.IconGrid: "lays out"
 
