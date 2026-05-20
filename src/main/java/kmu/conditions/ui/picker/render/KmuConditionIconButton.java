@@ -12,7 +12,6 @@ import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.tooltip.KmuConditionEntryTooltipCreator;
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import java.awt.Color;
 import java.util.List;
@@ -160,8 +159,8 @@ public final class KmuConditionIconButton {
 
             sprite.setSize(layout.getIconWidth(), layout.getIconHeight());
             sprite.setColor(greyOut
-                    ? StarsectorUiColorProvider.get(StarsectorUiColor.DIM_GRAY)
-                    : StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_TEXT));
+                    ? StarsectorUiColor.DIM_GRAY.resolve()
+                    : StarsectorUiColor.VANILLA_TEXT.resolve());
             sprite.setAlphaMult(alpha * alphaMult);
             sprite.render(
                     position.getX() + layout.getIconOffsetX(),

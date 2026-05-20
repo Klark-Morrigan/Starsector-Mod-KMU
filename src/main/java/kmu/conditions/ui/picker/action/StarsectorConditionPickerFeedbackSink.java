@@ -4,7 +4,6 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import java.util.Objects;
 
@@ -29,7 +28,7 @@ public final class StarsectorConditionPickerFeedbackSink implements KmuCondition
 
             campaignUI.addMessage(
                 feedback.getMessage(),
-                StarsectorUiColorProvider.get(color));
+                color.resolve());
         } catch (RuntimeException exception) {
             // Feedback must not break the editor action.
         }

@@ -2,7 +2,6 @@ package kmu.conditions.ui.picker.render;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import java.awt.Color;
 import java.util.Objects;
@@ -52,11 +51,11 @@ enum KmuConditionIconButtonStyle {
     }
 
     Color getBackdropColor() {
-        return StarsectorUiColorProvider.get(backdropColor);
+        return backdropColor.resolve();
     }
 
     Color getBorderColor() {
-        return StarsectorUiColorProvider.get(borderColor);
+        return borderColor.resolve();
     }
 
     float getBackdropAlpha() {

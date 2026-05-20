@@ -36,12 +36,10 @@ Legend: {
 
 WrapperLayer: "Starsector Wrapper Layer" {
   direction: down
-  UiColors: "StarsectorUiColorProvider" {class: adapter}
   UiColor: "StarsectorUiColor" {class: adapter}
   GravityWell: "StarsectorGravityWellResolver" {class: adapter}
   Relationship: "StarsectorPlayerRelationshipFormatter" {class: adapter}
   ScopeNote: "shared wrappers for runtime-only APIs;\nfeature code may depend on these;\ncore domain should not" {class: note}
-  NamingNote: "use provider names:\nStarsectorUiColorProvider" {class: note}
 }
 
 External: "External Starsector API" {
@@ -51,9 +49,8 @@ External: "External Starsector API" {
   Faction: "FactionAPI / RelationshipAPI" {class: external}
 }
 
-WrapperLayer.UiColors -> WrapperLayer.UiColor: "gets requested raw color"
-WrapperLayer.UiColor -> External.Misc: "may declare Starsector source"
-WrapperLayer.UiColor -> WrapperLayer.UiColor: "may declare custom color"
+WrapperLayer.UiColor -> External.Misc: "vanilla entries resolve via Misc"
+WrapperLayer.UiColor -> WrapperLayer.UiColor: "custom entries hold a literal Color"
 WrapperLayer.GravityWell -> External.Market: "walks orbit focuses"
 WrapperLayer.Relationship -> External.Faction: "formats player relation"
 WrapperLayer.Relationship -> External.Misc: "falls back to relation color"

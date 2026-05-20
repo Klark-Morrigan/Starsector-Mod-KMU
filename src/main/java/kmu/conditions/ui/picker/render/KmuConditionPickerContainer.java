@@ -7,7 +7,6 @@ import com.fs.starfarer.api.ui.UIComponentAPI;
 
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import kmu.util.KmuStrings;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
@@ -67,7 +66,7 @@ public final class KmuConditionPickerContainer {
         if (model.isEmpty()) {
             gridBody.addPara(
                     KmuStrings.get(KmuStrings.CONDITION_MANAGER_EMPTY),
-                    StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_GRAY),
+                    StarsectorUiColor.VANILLA_GRAY.resolve(),
                     ITEM_TOP_PAD);
             return new KmuConditionPickerRenderResult(summaryLabel, summaryComponents, null);
         }

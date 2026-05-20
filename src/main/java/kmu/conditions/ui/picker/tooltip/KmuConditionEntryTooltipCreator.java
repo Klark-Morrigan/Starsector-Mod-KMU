@@ -3,7 +3,6 @@ package kmu.conditions.ui.picker.tooltip;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -55,7 +54,7 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
         if (hasText(entry.getTooltipText())) {
             tooltip.addPara(
                     entry.getTooltipText(),
-                    StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_TEXT),
+                    StarsectorUiColor.VANILLA_TEXT.resolve(),
                     METADATA_PAD);
         }
         addStatusSections(tooltip, entry);

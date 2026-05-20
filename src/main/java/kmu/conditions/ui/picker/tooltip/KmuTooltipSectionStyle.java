@@ -1,7 +1,6 @@
 package kmu.conditions.ui.picker.tooltip;
 
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 
 import java.awt.Color;
 
@@ -23,15 +22,15 @@ public enum KmuTooltipSectionStyle {
     }
 
     Color titleColor() {
-        return StarsectorUiColorProvider.get(titleColor);
+        return titleColor.resolve();
     }
 
     Color backgroundColor() {
-        return StarsectorUiColorProvider.get(backgroundColor);
+        return backgroundColor.resolve();
     }
 
     Color bodyColor() {
-        return StarsectorUiColorProvider.get(bodyColor);
+        return bodyColor.resolve();
     }
 
     StarsectorUiColor titleRawColor() {

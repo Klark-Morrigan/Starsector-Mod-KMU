@@ -1,7 +1,6 @@
 package kmu.conditions.ui.picker.render.paragraph;
 
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 
@@ -41,8 +40,8 @@ public final class KmuConditionPickerLocationParagraphFactory {
         Objects.requireNonNull(model, "model");
 
         KmuConditionPickerLocation location = model.getLocation();
-        Color highlightColor = StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD);
-        Color defaultTextColor = StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_TEXT);
+        Color highlightColor = StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve();
+        Color defaultTextColor = StarsectorUiColor.VANILLA_TEXT.resolve();
 
         Optional<HighlightedParagraph> planetLine = buildPlanetLine(location, highlightColor, defaultTextColor);
         Optional<HighlightedParagraph> systemLine = buildSystemLine(location, highlightColor);
@@ -66,7 +65,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
     private static HighlightedParagraph buildHeaderLine() {
         return new HighlightedParagraph(
                 KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION),
-                StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_GRAY));
+                StarsectorUiColor.VANILLA_GRAY.resolve());
     }
 
     private static HighlightedParagraph buildUnknownLine(Color highlightColor) {
