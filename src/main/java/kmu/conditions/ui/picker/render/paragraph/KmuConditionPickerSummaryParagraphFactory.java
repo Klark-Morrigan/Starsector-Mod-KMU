@@ -67,10 +67,10 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         int available = model.getAvailableCount();
         int total = model.getEntryCount();
 
-        Color green = StarsectorUiColorProvider.get(StarsectorUiColor.GREEN);
-        Color red = StarsectorUiColorProvider.get(StarsectorUiColor.RED);
-        Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.BLUE);
-        Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.GRAY);
+        Color green = StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_HIGHLIGHT_GREEN);
+        Color red = StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_HIGHLIGHT_RED);
+        Color lightBlue = StarsectorUiColorProvider.get(StarsectorUiColor.LIGHT_BLUE);
+        Color grey = StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_GRAY);
 
         String visibleToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_VISIBLE, visible);
         String suppressedToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed);
@@ -96,7 +96,7 @@ public final class KmuConditionPickerSummaryParagraphFactory {
 
         HighlightedParagraph headerParagraph = new HighlightedParagraph(
                 KmuStrings.get(KmuStrings.CONDITION_MANAGER_SUMMARY),
-                StarsectorUiColorProvider.get(StarsectorUiColor.GRAY));
+                StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_GRAY));
         HighlightedParagraph countsParagraph = new HighlightedParagraph(
                 ctx.sb.toString(),
                 ctx.highlights.toArray(new Highlight[0]));

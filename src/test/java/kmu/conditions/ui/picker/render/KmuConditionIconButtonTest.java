@@ -66,7 +66,7 @@ class KmuConditionIconButtonTest {
         KmuConditionPickerEntry entry = entry(KmuConditionPickerEntryState.ABSENT);
 
         assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
-        assertButtonStyleRoles(entry, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.BLUE);
+        assertButtonStyleRoles(entry, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.LIGHT_BLUE);
         assertThat(entry.isPresent()).isFalse();
         assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
     }

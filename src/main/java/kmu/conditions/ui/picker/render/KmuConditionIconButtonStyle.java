@@ -10,7 +10,7 @@ import java.util.Objects;
 enum KmuConditionIconButtonStyle {
     DEFAULT(
             StarsectorUiColor.DARK_BLUE,
-            StarsectorUiColor.BLUE,
+            StarsectorUiColor.LIGHT_BLUE,
             0.28f,
             0.18f),
     VISIBLE_PRESENT(

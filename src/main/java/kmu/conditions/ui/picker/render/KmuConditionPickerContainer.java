@@ -67,7 +67,7 @@ public final class KmuConditionPickerContainer {
         if (model.isEmpty()) {
             gridBody.addPara(
                     KmuStrings.get(KmuStrings.CONDITION_MANAGER_EMPTY),
-                    StarsectorUiColorProvider.get(StarsectorUiColor.GRAY),
+                    StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_GRAY),
                     ITEM_TOP_PAD);
             return new KmuConditionPickerRenderResult(summaryLabel, summaryComponents, null);
         }

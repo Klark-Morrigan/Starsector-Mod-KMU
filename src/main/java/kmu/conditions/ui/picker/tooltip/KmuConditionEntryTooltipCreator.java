@@ -55,7 +55,7 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
         if (hasText(entry.getTooltipText())) {
             tooltip.addPara(
                     entry.getTooltipText(),
-                    StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE),
+                    StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_TEXT),
                     METADATA_PAD);
         }
         addStatusSections(tooltip, entry);

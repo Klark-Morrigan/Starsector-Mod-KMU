@@ -161,7 +161,7 @@ public final class KmuConditionIconButton {
             sprite.setSize(layout.getIconWidth(), layout.getIconHeight());
             sprite.setColor(greyOut
                     ? StarsectorUiColorProvider.get(StarsectorUiColor.DIM_GRAY)
-                    : StarsectorUiColorProvider.get(StarsectorUiColor.TEXT_WHITE));
+                    : StarsectorUiColorProvider.get(StarsectorUiColor.VANILLA_TEXT));
             sprite.setAlphaMult(alpha * alphaMult);
             sprite.render(
                     position.getX() + layout.getIconOffsetX(),

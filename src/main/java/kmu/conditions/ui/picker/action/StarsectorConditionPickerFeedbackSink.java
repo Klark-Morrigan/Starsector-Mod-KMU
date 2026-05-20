@@ -24,8 +24,8 @@ public final class StarsectorConditionPickerFeedbackSink implements KmuCondition
             }
 
             StarsectorUiColor color = feedback.isFailure()
-                ? StarsectorUiColor.RED
-                : StarsectorUiColor.GREEN;
+                ? StarsectorUiColor.VANILLA_HIGHLIGHT_RED
+                : StarsectorUiColor.VANILLA_HIGHLIGHT_GREEN;
 
             campaignUI.addMessage(
                 feedback.getMessage(),

@@ -6,8 +6,8 @@ import kmlib.starsector.ui.color.StarsectorUiColorProvider;
 import java.awt.Color;
 
 public enum KmuTooltipSectionStyle {
-    MUTED(StarsectorUiColor.BLUE, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.GRAY),
-    WARNING(StarsectorUiColor.ORANGE, StarsectorUiColor.DARK_RED, StarsectorUiColor.TEXT_WHITE);
+    MUTED(StarsectorUiColor.LIGHT_BLUE, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.VANILLA_GRAY),
+    WARNING(StarsectorUiColor.ORANGE, StarsectorUiColor.DARK_RED, StarsectorUiColor.VANILLA_TEXT);
 
     private final StarsectorUiColor titleColor;
     private final StarsectorUiColor backgroundColor;

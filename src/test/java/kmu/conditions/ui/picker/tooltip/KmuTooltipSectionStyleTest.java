@@ -8,13 +8,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuTooltipSectionStyleTest {
     @Test
-    void mutedStyleUsesBasePlayerBannerAndGrayBodyText() {
+    void mutedStyleUsesFrozenPlayerBlueBannerAndGrayBodyText() {
         assertThat(KmuTooltipSectionStyle.MUTED.titleRawColor())
-                .isEqualTo(StarsectorUiColor.BLUE);
+                .isEqualTo(StarsectorUiColor.LIGHT_BLUE);
         assertThat(KmuTooltipSectionStyle.MUTED.backgroundRawColor())
                 .isEqualTo(StarsectorUiColor.DARK_BLUE);
         assertThat(KmuTooltipSectionStyle.MUTED.bodyRawColor())
-                .isEqualTo(StarsectorUiColor.GRAY);
+                .isEqualTo(StarsectorUiColor.VANILLA_GRAY);
     }
 
     @Test
@@ -24,6 +24,6 @@ class KmuTooltipSectionStyleTest {
         assertThat(KmuTooltipSectionStyle.WARNING.backgroundRawColor())
                 .isEqualTo(StarsectorUiColor.DARK_RED);
         assertThat(KmuTooltipSectionStyle.WARNING.bodyRawColor())
-                .isEqualTo(StarsectorUiColor.TEXT_WHITE);
+                .isEqualTo(StarsectorUiColor.VANILLA_TEXT);
     }
 }
