@@ -19,10 +19,10 @@ explicit campaign edits from in-game screens.
 ### 1. Planetary Condition Picker (PCP)
 
 Problem doc:
-[problem.md](docs/dev/implementation/001-add-planetary-condition/problem.md)
+[problem.md](docs/dev/implementation/010-add-planetary-condition/problem.md)
 
 Plan doc:
-[plan.md](docs/dev/implementation/001-add-planetary-condition/plan.md)
+[plan.md](docs/dev/implementation/010-add-planetary-condition/plan.md)
 
 The planned first feature is a `Planetary Conditions` picker for an active
 colony market. The picker opens every planetary market condition as a clickable
