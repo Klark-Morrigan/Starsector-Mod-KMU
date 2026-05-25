@@ -1,7 +1,6 @@
 package kmu.util;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 public final class KmuValues {
     private KmuValues() {
@@ -47,50 +46,5 @@ public final class KmuValues {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return value;
-    }
-
-    /**
-     * Calls {@code supplier} and returns its result, or {@code null} if it throws a
-     * {@link RuntimeException}. Defensive wrapper for Starsector API reads that can
-     * fail unpredictably at runtime.
-     */
-    public static <T> T readValueOrNull(SupplierWithRuntimeException<T> supplier) {
-        try {
-            return supplier.get();
-        } catch (RuntimeException exception) {
-            return null;
-        }
-    }
-
-    /**
-     * Null-safe variant: returns {@code null} immediately when {@code value} is null,
-     * otherwise delegates to {@link #readValueOrNull(SupplierWithRuntimeException)}.
-     * Eliminates the recurring {@code value == null ? null : readValueOrNull(value::method)}
-     * pattern at Starsector API call sites.
-     */
-    public static <T, R> R readValueOrNull(T value, Function<T, R> extractor) {
-        return value == null ? null : readValueOrNull(() -> extractor.apply(value));
-    }
-
-    /**
-     * Like {@link #readValueOrNull(SupplierWithRuntimeException)} but also normalizes
-     * the string result via {@link #normalizeText}, so blank API responses are treated
-     * as absent.
-     */
-    public static String readTextOrNull(SupplierWithRuntimeException<String> supplier) {
-        return normalizeText(readValueOrNull(supplier));
-    }
-
-    /**
-     * Null-safe variant of {@link #readTextOrNull(SupplierWithRuntimeException)}: returns
-     * {@code null} immediately when {@code value} is null, otherwise reads and normalizes.
-     */
-    public static <T> String readTextOrNull(T value, Function<T, String> extractor) {
-        return value == null ? null : normalizeText(readValueOrNull(() -> extractor.apply(value)));
-    }
-
-    @FunctionalInterface
-    public interface SupplierWithRuntimeException<T> {
-        T get();
     }
 }

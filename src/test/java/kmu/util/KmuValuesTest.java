@@ -6,8 +6,6 @@ import static kmu.util.KmuValues.convertToOptionalText;
 import static kmu.util.KmuValues.getTextOrEmpty;
 import static kmu.util.KmuValues.hasText;
 import static kmu.util.KmuValues.normalizeText;
-import static kmu.util.KmuValues.readTextOrNull;
-import static kmu.util.KmuValues.readValueOrNull;
 import static kmu.util.KmuValues.requireNonBlankText;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -94,73 +92,5 @@ class KmuValuesTest {
     @Test
     void requireNonBlankTextReturnsValueWhenPresent() {
         assertThat(requireNonBlankText("hello", "field")).isEqualTo("hello");
-    }
-
-    // --- readValueOrNull(supplier) ---
-
-    @Test
-    void readValueOrNullReturnsSupplierResult() {
-        assertThat(readValueOrNull(() -> "hello")).isEqualTo("hello");
-    }
-
-    @Test
-    void readValueOrNullReturnsNullOnRuntimeException() {
-        assertThat((Object) readValueOrNull(() -> { throw new RuntimeException("boom"); })).isNull();
-    }
-
-    // --- readValueOrNull(value, extractor) ---
-
-    @Test
-    void readValueOrNullWithExtractorReturnsNullForNullValue() {
-        assertThat(readValueOrNull((String) null, String::length)).isNull();
-    }
-
-    @Test
-    void readValueOrNullWithExtractorAppliesExtractor() {
-        assertThat(readValueOrNull("hello", String::length)).isEqualTo(5);
-    }
-
-    @Test
-    void readValueOrNullWithExtractorReturnsNullWhenExtractorThrows() {
-        assertThat((Object) readValueOrNull("hello", v -> { throw new RuntimeException("boom"); })).isNull();
-    }
-
-    // --- readTextOrNull(supplier) ---
-
-    @Test
-    void readTextOrNullReturnsNullOnRuntimeException() {
-        assertThat(readTextOrNull(() -> { throw new RuntimeException("boom"); })).isNull();
-    }
-
-    @Test
-    void readTextOrNullNormalizesBlankToNull() {
-        assertThat(readTextOrNull(() -> "  ")).isNull();
-    }
-
-    @Test
-    void readTextOrNullReturnsTrimmedText() {
-        assertThat(readTextOrNull(() -> "  hello  ")).isEqualTo("hello");
-    }
-
-    // --- readTextOrNull(value, extractor) ---
-
-    @Test
-    void readTextOrNullWithExtractorReturnsNullForNullValue() {
-        assertThat(readTextOrNull((Object) null, Object::toString)).isNull();
-    }
-
-    @Test
-    void readTextOrNullWithExtractorNormalizesBlankToNull() {
-        assertThat(readTextOrNull("anything", v -> "  ")).isNull();
-    }
-
-    @Test
-    void readTextOrNullWithExtractorReturnsTrimmedText() {
-        assertThat(readTextOrNull("hello", v -> "  " + v + "  ")).isEqualTo("hello");
-    }
-
-    @Test
-    void readTextOrNullWithExtractorReturnsNullWhenExtractorThrows() {
-        assertThat(readTextOrNull("hello", v -> { throw new RuntimeException("boom"); })).isNull();
     }
 }

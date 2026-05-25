@@ -567,7 +567,21 @@ class KmuConditionPickerModelFactoryTest {
                     break;
             }
         }
-        throw new UnsupportedOperationException(method.toString());
+        // Default to Mockito-style defaults (null for objects, 0/false for
+        // primitives) for unstubbed Starsector API methods so the now-bare
+        // production reads do not crash. Tests that need a specific method
+        // to throw still stub it explicitly in their switch case.
+        return defaultForReturnType(method.getReturnType());
+    }
+
+    private static Object defaultForReturnType(Class<?> returnType) {
+        if (!returnType.isPrimitive()) return null;
+        if (returnType == boolean.class) return false;
+        if (returnType == void.class) return null;
+        if (returnType == long.class) return 0L;
+        if (returnType == float.class) return 0f;
+        if (returnType == double.class) return 0.0;
+        return 0;
     }
 
     @SuppressWarnings("unchecked")

@@ -9,8 +9,6 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
-import static kmu.util.KmuValues.readValueOrNull;
-
 public final class StarsectorGravityWellResolver {
     private static final int MAX_ORBIT_FOCUS_CHAIN_DEPTH = 32;
 
@@ -23,9 +21,9 @@ public final class StarsectorGravityWellResolver {
      * star system center or star.</p>
      */
     public SectorEntityToken resolve(MarketAPI market) {
-        SectorEntityToken entity = readValueOrNull(market::getPlanetEntity);
+        SectorEntityToken entity = market.getPlanetEntity();
         if (entity == null) {
-            entity = readValueOrNull(market::getPrimaryEntity);
+            entity = market.getPrimaryEntity();
         }
         if (entity == null) {
             return resolveSystemCenterOrStar(market);
@@ -61,25 +59,25 @@ public final class StarsectorGravityWellResolver {
     }
 
     private SectorEntityToken resolveOrbitFocus(SectorEntityToken entity) {
-        SectorEntityToken focus = readValueOrNull(entity::getOrbitFocus);
+        SectorEntityToken focus = entity.getOrbitFocus();
         if (focus != null) {
             return focus;
         }
 
-        OrbitAPI orbit = readValueOrNull(entity::getOrbit);
-        return orbit == null ? null : readValueOrNull(orbit::getFocus);
+        OrbitAPI orbit = entity.getOrbit();
+        return orbit == null ? null : orbit.getFocus();
     }
 
     private SectorEntityToken resolveSystemCenterOrStar(MarketAPI market) {
-        StarSystemAPI system = readValueOrNull(market::getStarSystem);
+        StarSystemAPI system = market.getStarSystem();
         if (system == null) {
             return null;
         }
 
-        SectorEntityToken center = readValueOrNull(system::getCenter);
+        SectorEntityToken center = system.getCenter();
         if (center != null) {
             return center;
         }
-        return readValueOrNull(system::getStar);
+        return system.getStar();
     }
 }

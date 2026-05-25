@@ -7,17 +7,18 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.procgen.Constellation;
+
+import kmlib.starsector.relation.StarsectorPlayerRelationshipFormatter;
+import kmlib.starsector.relation.StarsectorPlayerRelationshipFormatter.RelationshipSummary;
+
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.domain.StarsectorEditableMarket;
 import kmu.starsector.StarsectorGravityWellResolver;
-import kmu.starsector.StarsectorPlayerRelationshipFormatter;
-import kmu.starsector.StarsectorPlayerRelationshipFormatter.RelationshipSummary;
 
 import java.awt.Color;
 import java.util.Objects;
 
-import static kmu.util.KmuValues.readTextOrNull;
-import static kmu.util.KmuValues.readValueOrNull;
+import static kmu.util.KmuValues.normalizeText;
 
 final class StarsectorConditionPickerLocationFactory {
     private final StarsectorGravityWellResolver gravityWellResolver;
@@ -37,16 +38,17 @@ final class StarsectorConditionPickerLocationFactory {
     /**
      * Builds the picker's display-only location metadata from a Starsector market.
      *
-     * <p>Missing or failing Starsector API reads are converted to absent fields. The
+     * <p>Missing API reads (null returns) are converted to absent fields. The
      * picker renderer decides which absent fields to omit; this factory does not
-     * decide whether the picker should open.</p>
+     * decide whether the picker should open. Any {@link RuntimeException} from a
+     * modded API implementation propagates to the caller.</p>
      */
     KmuConditionPickerLocation create(KmuEditableMarket market) {
         if (!(market instanceof StarsectorEditableMarket)) {
             return unknownLocation();
         }
 
-        MarketAPI starsectorMarket = readValueOrNull(() -> ((StarsectorEditableMarket) market).getMarket());
+        MarketAPI starsectorMarket = ((StarsectorEditableMarket) market).getMarket();
         if (starsectorMarket == null) {
             return unknownLocation();
         }
@@ -68,47 +70,46 @@ final class StarsectorConditionPickerLocationFactory {
     }
 
     private String marketName(MarketAPI market) {
-        return readTextOrNull(market::getName);
+        return normalizeText(market.getName());
     }
 
     private String planetName(MarketAPI market) {
-        PlanetAPI planet = readValueOrNull(market::getPlanetEntity);
-        String planetName = readTextOrNull(planet, PlanetAPI::getName);
+        PlanetAPI planet = market.getPlanetEntity();
+        String planetName = planet == null ? null : normalizeText(planet.getName());
         if (planetName != null) {
             return planetName;
         }
 
-        SectorEntityToken primaryEntity = readValueOrNull(market::getPrimaryEntity);
-        String entityName = readTextOrNull(primaryEntity, SectorEntityToken::getName);
+        SectorEntityToken primaryEntity = market.getPrimaryEntity();
+        String entityName = primaryEntity == null ? null : normalizeText(primaryEntity.getName());
         return entityName == null ? marketName(market) : entityName;
     }
 
     private String planetType(MarketAPI market) {
-        PlanetAPI planet = readValueOrNull(market::getPlanetEntity);
+        PlanetAPI planet = market.getPlanetEntity();
         if (planet == null) {
-            SectorEntityToken primaryEntity = readValueOrNull(market::getPrimaryEntity);
+            SectorEntityToken primaryEntity = market.getPrimaryEntity();
             if (primaryEntity instanceof PlanetAPI) {
                 planet = (PlanetAPI) primaryEntity;
             }
         }
 
-        String planetType = readValueOrNull(planet, this::planetTypeName);
+        String planetType = planet == null ? null : planetTypeName(planet);
         if (planetType != null) {
             return planetType;
         }
 
-        SectorEntityToken primaryEntity = readValueOrNull(market::getPrimaryEntity);
-        return entityTypeName(primaryEntity);
+        return entityTypeName(market.getPrimaryEntity());
     }
 
     private FactionAPI factionFor(MarketAPI market) {
-        FactionAPI faction = readValueOrNull(market::getFaction);
+        FactionAPI faction = market.getFaction();
         if (faction != null) {
             return faction;
         }
 
-        SectorEntityToken primaryEntity = readValueOrNull(market::getPrimaryEntity);
-        return readValueOrNull(primaryEntity, SectorEntityToken::getFaction);
+        SectorEntityToken primaryEntity = market.getPrimaryEntity();
+        return primaryEntity == null ? null : primaryEntity.getFaction();
     }
 
     private KmuPickerFaction pickerFaction(FactionAPI faction) {
@@ -116,39 +117,39 @@ final class StarsectorConditionPickerLocationFactory {
             return null;
         }
 
-        String name = readTextOrNull(faction::getDisplayNameLong);
+        String name = normalizeText(faction.getDisplayNameLong());
         if (name == null) {
-            name = readTextOrNull(faction::getDisplayName);
+            name = normalizeText(faction.getDisplayName());
         }
         if (name == null) {
             return null;
         }
 
-        Color color = readValueOrNull(faction::getBaseUIColor);
+        Color color = faction.getBaseUIColor();
         if (color == null) {
-            color = readValueOrNull(faction::getColor);
+            color = faction.getColor();
         }
 
-        String crestSprite = readTextOrNull(faction::getCrest);
+        String crestSprite = normalizeText(faction.getCrest());
         RelationshipSummary relationship = relationshipFormatter.formatPlayerRelationship(faction);
         return new KmuPickerFaction(name, color, crestSprite,
                 relationship.getDescription(), relationship.getColor());
     }
 
     private String starSystemName(MarketAPI market) {
-        StarSystemAPI system = readValueOrNull(market::getStarSystem);
-        String systemName = readTextOrNull(system, StarSystemAPI::getNameWithTypeShort);
+        StarSystemAPI system = market.getStarSystem();
+        String systemName = system == null ? null : normalizeText(system.getNameWithTypeShort());
         if (systemName == null && system != null) {
-            systemName = readTextOrNull(system::getName);
+            systemName = normalizeText(system.getName());
         }
         if (systemName != null) {
             return systemName;
         }
 
-        LocationAPI location = readValueOrNull(market::getContainingLocation);
-        String locationName = readTextOrNull(location, LocationAPI::getNameWithTypeShort);
+        LocationAPI location = market.getContainingLocation();
+        String locationName = location == null ? null : normalizeText(location.getNameWithTypeShort());
         if (locationName == null && location != null) {
-            locationName = readTextOrNull(location::getName);
+            locationName = normalizeText(location.getName());
         }
         return locationName;
     }
@@ -160,7 +161,7 @@ final class StarsectorConditionPickerLocationFactory {
 
     private String gravityWellName(MarketAPI market) {
         SectorEntityToken gravityWell = gravityWellResolver.resolve(market);
-        return readTextOrNull(gravityWell, SectorEntityToken::getName);
+        return gravityWell == null ? null : normalizeText(gravityWell.getName());
     }
 
     private String entityTypeName(SectorEntityToken entity) {
@@ -174,25 +175,24 @@ final class StarsectorConditionPickerLocationFactory {
             }
         }
 
-        String customSpecName = readValueOrNull(entity::getCustomEntitySpec) == null
+        String customSpecName = entity.getCustomEntitySpec() == null
                 ? null
-                : readTextOrNull(() -> entity.getCustomEntitySpec().getNameInText());
+                : normalizeText(entity.getCustomEntitySpec().getNameInText());
         if (customSpecName != null) {
             return customSpecName;
         }
 
-        String customType = readTextOrNull(entity::getCustomEntityType);
+        String customType = normalizeText(entity.getCustomEntityType());
         if (customType != null) {
             return customType;
         }
 
-        String entityName = readTextOrNull(entity::getName);
+        String entityName = normalizeText(entity.getName());
         if (entityName != null) {
             return entityName;
         }
 
-        Boolean systemCenter = readValueOrNull(entity::isSystemCenter);
-        return Boolean.TRUE.equals(systemCenter) ? "center of gravity" : null;
+        return entity.isSystemCenter() ? "center of gravity" : null;
     }
 
     private String gravityWellDisplayName(SectorEntityToken entity) {
@@ -206,7 +206,7 @@ final class StarsectorConditionPickerLocationFactory {
             }
         }
 
-        String entityName = readTextOrNull(entity::getName);
+        String entityName = normalizeText(entity.getName());
         if (entityName != null) {
             return entityName;
         }
@@ -215,30 +215,32 @@ final class StarsectorConditionPickerLocationFactory {
     }
 
     private String planetTypeName(PlanetAPI planet) {
-        String typeName = readTextOrNull(planet::getTypeNameWithWorld);
+        String typeName = normalizeText(planet.getTypeNameWithWorld());
         if (typeName != null) {
             return typeName;
         }
-        typeName = readTextOrNull(planet::getTypeNameWithWorldLowerCase);
+        typeName = normalizeText(planet.getTypeNameWithWorldLowerCase());
         if (typeName != null) {
             return typeName;
         }
-        return readValueOrNull(planet::getSpec) == null
+        return planet.getSpec() == null
                 ? null
-                : readTextOrNull(() -> planet.getSpec().getName());
+                : normalizeText(planet.getSpec().getName());
     }
 
     private String constellationName(MarketAPI market) {
-        StarSystemAPI system = readValueOrNull(market::getStarSystem);
-        Constellation constellation = readValueOrNull(system, StarSystemAPI::getConstellation);
+        StarSystemAPI system = market.getStarSystem();
+        Constellation constellation = system == null ? null : system.getConstellation();
         if (constellation == null) {
-            LocationAPI location = readValueOrNull(market::getContainingLocation);
-            constellation = readValueOrNull(location, LocationAPI::getConstellation);
+            LocationAPI location = market.getContainingLocation();
+            constellation = location == null ? null : location.getConstellation();
         }
 
-        String constellationName = readTextOrNull(constellation, Constellation::getNameWithType);
+        String constellationName = constellation == null
+                ? null
+                : normalizeText(constellation.getNameWithType());
         if (constellationName == null && constellation != null) {
-            constellationName = readTextOrNull(constellation::getName);
+            constellationName = normalizeText(constellation.getName());
         }
         return constellationName;
     }
