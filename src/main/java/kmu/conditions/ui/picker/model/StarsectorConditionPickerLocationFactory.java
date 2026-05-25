@@ -22,17 +22,13 @@ import static kmu.util.KmuValues.normalizeText;
 
 final class StarsectorConditionPickerLocationFactory {
     private final StarsectorGravityWellResolver gravityWellResolver;
-    private final StarsectorPlayerRelationshipFormatter relationshipFormatter;
 
     StarsectorConditionPickerLocationFactory() {
-        this(new StarsectorGravityWellResolver(), new StarsectorPlayerRelationshipFormatter());
+        this(new StarsectorGravityWellResolver());
     }
 
-    StarsectorConditionPickerLocationFactory(
-            StarsectorGravityWellResolver gravityWellResolver,
-            StarsectorPlayerRelationshipFormatter relationshipFormatter) {
+    StarsectorConditionPickerLocationFactory(StarsectorGravityWellResolver gravityWellResolver) {
         this.gravityWellResolver = Objects.requireNonNull(gravityWellResolver, "gravityWellResolver");
-        this.relationshipFormatter = Objects.requireNonNull(relationshipFormatter, "relationshipFormatter");
     }
 
     /**
@@ -131,7 +127,8 @@ final class StarsectorConditionPickerLocationFactory {
         }
 
         String crestSprite = normalizeText(faction.getCrest());
-        RelationshipSummary relationship = relationshipFormatter.formatPlayerRelationship(faction);
+        RelationshipSummary relationship =
+                StarsectorPlayerRelationshipFormatter.formatPlayerRelationship(faction);
         return new KmuPickerFaction(name, color, crestSprite,
                 relationship.getDescription(), relationship.getColor());
     }

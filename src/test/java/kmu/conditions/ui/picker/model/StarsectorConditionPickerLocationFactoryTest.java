@@ -12,7 +12,6 @@ import com.fs.starfarer.api.impl.campaign.procgen.Constellation;
 import com.fs.starfarer.api.impl.campaign.procgen.StarAge;
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.domain.StarsectorEditableMarket;
-import kmlib.starsector.relation.StarsectorPlayerRelationshipFormatter;
 import kmu.starsector.StarsectorGravityWellResolver;
 import org.junit.jupiter.api.Test;
 
@@ -28,9 +27,7 @@ class StarsectorConditionPickerLocationFactoryTest {
     private static final Color RELATIONSHIP_COLOR = new Color(200, 50, 50);
 
     private final StarsectorConditionPickerLocationFactory factory =
-            new StarsectorConditionPickerLocationFactory(
-                    new StarsectorGravityWellResolver(),
-                    new StarsectorPlayerRelationshipFormatter());
+            new StarsectorConditionPickerLocationFactory(new StarsectorGravityWellResolver());
 
     @Test
     void returnsUnknownLocationForNonStarsectorMarket() {
