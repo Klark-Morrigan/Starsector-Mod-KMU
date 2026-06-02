@@ -50,7 +50,8 @@ Relevant types:
   vanilla pattern for sector-wide "fog" things. Overkill here — terrain ties
   into sensor/fog/interdiction logic that we do not want.
 - `CampaignUIRenderingListener` ([CampaignUIRenderingListener.java]) gives
-  `renderInUICoordsBelow/Above...` callbacks. UI coords only — you would have to
+  `renderInUICoordsBelowUI`, `renderInUICoordsAboveUIBelowTooltips`, and
+  `renderInUICoordsAboveUIAndTooltips` callbacks. UI coords only — you would have to
   re-project hyperspace world → screen yourself and re-implement clipping under
   the map chrome. Not recommended for world-space tinting; useful for adding a
   legend or HUD bar over the map.
@@ -142,9 +143,11 @@ What each lib actually provides for this feature:
   - `opengl/DrawUtils.drawCircle(cx, cy, r, segments, filled)` — exactly the
     primitive needed for the per-system disc. Removes the need to hand-roll
     the trig + `glBegin(GL_TRIANGLE_FAN)` loop.
-  - `opengl/ColorUtils.glColor(Color, alphaMult, premultiplyAlpha)` — sets
-    `glColor4f` from an AWT `Color`. Removes the byte-cast boilerplate seen
-    in `ExampleCustomUIPanel`.
+  - `opengl/ColorUtils.glColor(Color, alphaMult, overrideOriginalAlpha)` —
+    sets `glColor4ub` from an AWT `Color`. When the third arg is `true` the
+    final alpha is `alphaMult * 255` directly; when `false` it multiplies the
+    source color's alpha by `alphaMult`. Removes the byte-cast boilerplate
+    seen in `ExampleCustomUIPanel`.
   - `MathUtils` — distance/point-along helpers; **no convex-hull or Voronoi
     primitive**. If we go with per-constellation hulls in a later version,
     that algorithm is still ours to write.
@@ -187,7 +190,7 @@ behind a console command — defer libs to v2.
 - Faction color: `FactionAPI.getBaseUIColor()` (full saturation),
   `getDarkUIColor()` (panel chrome). The "highlight" view uses base for the
   selected faction and a heavily desaturated/multiplied tint for the rest.
-- Optional grouping: `LocationAPI.getConstellation()` ([LocationAPI.java:244])
+- Optional grouping: `LocationAPI.getConstellation()` ([LocationAPI.java:130])
   to draw per-constellation hulls instead of per-system discs.
 
 ## State, persistence, lifecycle
@@ -199,9 +202,26 @@ behind a console command — defer libs to v2.
   - Ensure exactly one anchor entity exists per inhabited system in
     hyperspace (idempotent — match by id `kmu_pm_<systemId>`).
   - Re-create or repair the intel item if missing.
-  - Add a `MarketsChangedListener` (vanilla, `listeners/`) so that when
-    colonisation/decivilisation changes the political picture, the anchor
-    set and dominant-faction caches refresh.
+  - Refresh the anchor set and dominant-faction caches when the political
+    picture changes. No vanilla listener fires on `MarketAPI.setFactionId`,
+    so listeners alone cannot cover Nex transfers, raid takeovers, or
+    mod-driven faction flips. Use a hybrid:
+    - **Fingerprint poll (correctness backstop).** An `EveryFrameScript`
+      hashes `systemId -> dominantFactionId` over
+      `Sector.getEconomy().getMarketsCopy()` once every **1.0s** of in-game
+      time. If the hash changes, rebuild the per-system color/center cache.
+      Cheap (a few hundred string hashes + XOR fold) and catches everything,
+      including events we have no listener for.
+    - **Listener prods (snappy response).** Wire
+      `PlayerColonizationListener` (founding/abandoning),
+      `ColonyDecivListener.reportColonyAboutToBeDecivilized`
+      (decivilisation), and `ColonySizeChangeListener` (size flips that
+      change dominance) to call `invalidate()` so common player actions
+      refresh next frame instead of waiting up to a second.
+    - For Nex-aware refresh, optionally listen for the
+      `Nex_OnMarketTransferred` rules-based event (soft dep). The
+      fingerprint poll catches Nex transfers anyway; the listener just
+      shortens latency.
 - Selected-faction state: `MemoryAPI` key `$kmu_political_highlight_faction`,
   scope = sector memory (`Sector.getMemoryWithoutUpdate()`). No XStream
   changes needed.
