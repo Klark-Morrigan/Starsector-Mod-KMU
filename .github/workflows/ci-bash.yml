@@ -8,7 +8,7 @@
 #
 # workflow_call is exposed so release.yml can re-run this bash gate on
 # the release path (the pull_request trigger only covers PRs).
-name: ci-bash
+name: Common-Automation
 
 on:
   pull_request:

@@ -3,7 +3,7 @@
 # actionlint, action-validator, yamllint, ansible-lint. Each job
 # auto-skips when its target surface is absent, so a PowerShell repo
 # with no Ansible content gets workflow/YAML linting at no extra cost.
-name: ci-yaml
+name: Common-Automation
 
 on:
   pull_request:
