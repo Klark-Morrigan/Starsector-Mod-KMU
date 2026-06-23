@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Auto-fix the executable bit on staged files that must carry +x: *.sh, the
+# gradlew wrappers, and the .githooks/ scripts. Files authored on Windows
+# land in git as mode 0644, which breaks direct execution on Linux (CI bats
+# / gradlew / the hook itself fail with EACCES). This re-stages any such
+# staged file with +x so the commit carries the correct mode.
+#
+# Activated by running scripts/setup-hooks.sh once after cloning.
+#
+# Reuses Common-Automation's shared fix engine (sibling checkout) so the hook
+# and the manual fix-permissions runner apply an identical fix; it only
+# widens the staged set beyond *.sh to match this repo's fix-permissions.sh.
+
+set -euo pipefail
+
+hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "${hook_dir}/.." && pwd)"
+common_automation_root="$(cd "${repo_root}/../Common-Automation" && pwd)"
+
+# Sourced (not executed) to get fix_sh_executable without it running over the
+# whole repo - the hook scopes the fix to just the staged paths it passes.
+# shellcheck source=/dev/null
+source "${common_automation_root}/.github/lib/fix-sh-executable.sh"
+
+# --diff-filter=AM picks up Added and Modified files. Renames keep their
+# previous mode, so a `git mv` from a +x dir does not need fixing. The set
+# mirrors fix-permissions.sh: .sh anywhere, gradlew (root or nested), and
+# anything under .githooks/.
+staged=$(git diff --cached --name-only --diff-filter=AM \
+    | grep -E '(\.sh$|(^|/)gradlew$|^\.githooks/)' || true)
+
+if [[ -z "${staged}" ]]; then
+    exit 0
+fi
+
+# Pass the staged paths as args so only what is being committed is touched.
+# fix_sh_executable checks exactly these paths for the missing-+x mode,
+# regardless of extension, so gradlew and the hooks are handled like .sh.
+readarray -t staged_arr <<< "${staged}"
+fix_sh_executable "${staged_arr[@]}"
