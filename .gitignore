@@ -9,5 +9,4 @@ build/
 dist/
 jars/*.jar
 out/
-*.bat
 *.class
