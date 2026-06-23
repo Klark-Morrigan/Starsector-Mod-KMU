@@ -10,3 +10,7 @@ dist/
 jars/*.jar
 out/
 *.class
+
+# graphify knowledge graph artifacts (local; rebuilt by graphify)
+graphify-out/
+supersets-out/
