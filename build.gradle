@@ -1,72 +1,39 @@
-plugins {
-    id 'java'
-    id 'jacoco'
-}
-
-import groovy.json.JsonSlurper
-
-def modInfoFile = file('mod_info.json')
-def modInfo = new JsonSlurper().parse(modInfoFile)
-
-if (!modInfo.version) {
-    throw new GradleException("Missing version in ${modInfoFile}")
-}
+// KMU's build. The shared Starsector mod conventions live in KMLib's
+// gradle/starsector-mod.gradle (java target, test stack, coverage, the
+// Starsector API classpath, mod_info.json versioning, jar output) and are
+// applied below; this file keeps only what is specific to KMU - its group
+// and the extra dependencies it pulls beyond the API.
+apply from: "${rootDir}/../Starsector-Mod-KMLib/gradle/starsector-mod.gradle"
 
 group = 'kmu'
-version = modInfo.version
 
-def configuredStarsectorRoot = findProperty('starsectorRoot') ?:
-        System.getenv('STARSECTOR_HOME') ?:
-        new File(projectDir, '../..').canonicalPath
-
-def apiJarFile = file("${configuredStarsectorRoot}/starsector-core/starfarer.api.jar")
-def starsectorCoreJars = fileTree(dir: "${configuredStarsectorRoot}/starsector-core", include: ['*.jar'])
-def consoleCommandsJars = fileTree(dir: "${configuredStarsectorRoot}/mods", include: ['**/jars/lw_Console.jar'])
-// KMLib hosts shared helpers (palette, future localisation lookups).
-// Resolved via the same Starsector root because the mod always lives at
-// <starsector>/mods/KMLib, the same directory layout the launcher expects.
-def kmlibJarFile = file("${configuredStarsectorRoot}/mods/KMLib/jars/KMLib.jar")
-
-repositories {
-    mavenCentral()
-}
+// The shared conventions expose the resolved install root so KMU can locate
+// its own extra dependencies without re-deriving the path.
+def starsectorRoot = project.ext.starsectorRoot
+def consoleCommandsJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/lw_Console.jar'])
+// KMLib hosts shared helpers (palette, localisation lookups). Resolved via
+// the install root because the mod always lives at <starsector>/mods/KMLib,
+// the directory layout the launcher expects.
+def kmlibJarFile = file("${starsectorRoot}/mods/KMLib/jars/KMLib.jar")
 
 dependencies {
-    compileOnly files(apiJarFile)
     compileOnly consoleCommandsJars
     // KMLib is a hard dependency in mod_info.json; Starsector's mod
     // classloader provides the jar at runtime so compileOnly is enough.
     compileOnly files(kmlibJarFile)
 
-    testImplementation platform('org.junit:junit-bom:5.13.1')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'org.assertj:assertj-core:3.27.7'
-    testImplementation 'org.mockito:mockito-core:5.18.0'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    testCompileOnly files(apiJarFile)
     testCompileOnly consoleCommandsJars
     testCompileOnly files(kmlibJarFile)
-    testRuntimeOnly files(apiJarFile)
     testRuntimeOnly consoleCommandsJars
     testRuntimeOnly files(kmlibJarFile)
-    testRuntimeOnly starsectorCoreJars
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    options.release = 17
-
     doFirst {
-        if (!apiJarFile.exists()) {
-            throw new GradleException(
-                    "Could not find starfarer.api.jar at ${apiJarFile}. " +
-                    "Set STARSECTOR_HOME or pass -PstarsectorRoot=<path>.")
-        }
         if (consoleCommandsJars.files.isEmpty()) {
             throw new GradleException(
                     "Could not find Console Commands jar under " +
-                    "${configuredStarsectorRoot}/mods/**/jars/lw_Console.jar. " +
+                    "${starsectorRoot}/mods/**/jars/lw_Console.jar. " +
                     "Install Console Commands for compiling KMU console command integration.")
         }
         if (!kmlibJarFile.exists()) {
@@ -76,37 +43,4 @@ tasks.withType(JavaCompile).configureEach {
                     "or install it under mods/KMLib/jars/KMLib.jar.")
         }
     }
-}
-
-test {
-    useJUnitPlatform()
-    testLogging {
-        events 'passed', 'skipped', 'failed'
-    }
-    finalizedBy jacocoTestReport
-}
-
-jacoco {
-    toolVersion = '0.8.13'
-}
-
-jacocoTestReport {
-    dependsOn test
-
-    reports {
-        html.required = true
-        xml.required = true
-        csv.required = true
-    }
-}
-
-tasks.register('coverage') {
-    group = 'verification'
-    description = 'Runs tests and generates JaCoCo coverage reports.'
-    dependsOn test, jacocoTestReport
-}
-
-jar {
-    archiveFileName = "${project.name}.jar"
-    destinationDirectory = file("$projectDir/jars")
 }
