@@ -7,7 +7,7 @@
 # docs/dev/release.md for runner setup.
 #
 # Job chain:
-#   version-check -> ci -> prepare-artifact -> create-tag -> create-release
+#   version-check -> {ci-bash, ci-gradle} -> prepare-artifact -> create-tag -> create-release
 name: Release
 
 on:
@@ -35,13 +35,22 @@ jobs:
         id: check
         run: bash .github/scripts/check_version.sh
 
-  ci:
+  # Re-run the same per-domain gates the PR ran, before publishing. The
+  # bash gate and the Gradle build are separate workflows now (no bundled
+  # ci.yml), so the release path calls each.
+  ci-bash:
     needs: version-check
     if: needs.version-check.outputs.version_updated == 'true'
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/ci-bash.yml
+
+  ci-gradle:
+    needs: version-check
+    if: needs.version-check.outputs.version_updated == 'true'
+    uses: ./.github/workflows/ci-gradle.yml
+    secrets: inherit
 
   prepare-artifact:
-    needs: [version-check, ci]
+    needs: [version-check, ci-bash, ci-gradle]
     runs-on: [self-hosted, kmu-runner]
 
     steps:
