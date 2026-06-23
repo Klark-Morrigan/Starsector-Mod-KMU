@@ -1,0 +1,37 @@
+# KMU's Gradle build/test gate - a thin caller into Common-Java's reusable
+# _ci-gradle engine, the JVM counterpart to ci-bash.yml / ci-yaml.yml. It
+# triggers on PRs and is workflow_call-able so release.yml can re-run the
+# build before publishing. Shell/bats tests are handled by ci-bash.yml; this
+# file is purely the Gradle build.
+#
+# Runs on the self-hosted kmu-runner: JDK 17 is installed system-wide
+# (Infrastructure-Vm-Provisioner's javaDevKit step), so setup-java is left
+# off, and the runner exports STARSECTOR_HOME, from which the build resolves
+# starfarer.api.jar, lw_Console.jar, and the deployed KMLib.jar.
+#
+# KMU's build applies shared Gradle scripts by relative path - KMLib's
+# gradle/starsector-mod.gradle, which in turn applies Common-Java's
+# gradle/java-conventions.gradle - so both repos must sit beside KMU's
+# checkout. checkout-path puts KMU in a named subdirectory and
+# sibling-checkouts clones the two neighbours next to it so the
+# ${rootDir}/../<repo> paths resolve on a clean runner. secrets:inherit
+# forwards a sibling_checkout_token if the repos are private (the clone
+# falls back to github.token for public ones).
+name: Common-Java
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  gradle:
+    uses: Klark-Morrigan/Common-Java/.github/workflows/_ci-gradle.yml@master
+    with:
+      runner: '["self-hosted", "kmu-runner"]'
+      gradle-tasks: test jar
+      checkout-path: Starsector-Mod-KMU
+      working-directory: Starsector-Mod-KMU
+      sibling-checkouts: >-
+        [{"repo": "Klark-Morrigan/Common-Java", "path": "Common-Java"},
+         {"repo": "Klark-Morrigan/Starsector-Mod-KMLib", "path": "Starsector-Mod-KMLib"}]
+    secrets: inherit
