@@ -7,6 +7,7 @@
 - [Dependencies](#dependencies)
 - [Versioning](#versioning)
 - [Build And Release](#build-and-release)
+- [Local linting](#local-linting)
 - [Documentation Status](#documentation-status)
 
 ## Purpose
@@ -64,6 +65,50 @@ Local build commands:
 
 The Gradle wrapper is the supported local and CI build path. Pass the install
 root via `STARSECTOR_HOME` or `-PstarsectorRoot=<path>`.
+
+## Local linting
+
+Two delegating CI workflows lint the repo's non-Gradle surface on every pull
+request: [ci-yaml.yml](.github/workflows/ci-yaml.yml) calls Common-Automation's
+reusable `ci-yaml.yml` (actionlint, action-validator, yamllint, ansible-lint)
+and [ci-bash.yml](.github/workflows/ci-bash.yml) calls its reusable `ci-bash.yml`
+(shellcheck, check-sh-executable, bats). Each step auto-skips when its surface is
+absent. The Gradle build and tests are NOT part of these workflows - they run
+through Gradle (see [Build And Release](#build-and-release)); these gates cover
+only YAML / Actions / Bash.
+
+KMU's workflows run on its self-hosted runner, labelled `kmu-runner` (provisioned
+with `STARSECTOR_HOME` + JDK). [.github/actionlint.yaml](.github/actionlint.yaml)
+declares that label so actionlint stops flagging `runs-on` as an unknown runner.
+
+Three sibling shims reproduce that CI surface locally through Git Bash +
+Docker, each delegating to Common-Automation's orchestrator:
+
+- [scripts/run-ci-yaml-and-bash.sh](scripts/run-ci-yaml-and-bash.sh) (with the
+  [run-ci-yaml-and-bash.bat](scripts/run-ci-yaml-and-bash.bat) launcher for
+  `cmd` / PowerShell) is the MAIN entry - it runs BOTH the lint suite AND the
+  bats tests in one go, the full local equivalent of ci-yaml.yml + ci-bash.yml.
+  This is what most contributors run.
+- [scripts/run-lint-yaml-and-bash.sh](scripts/run-lint-yaml-and-bash.sh) (with
+  its [.bat](scripts/run-lint-yaml-and-bash.bat) launcher) runs the lint half
+  only (shellcheck, actionlint, action-validator, yamllint, ansible-lint); no
+  bats.
+- [scripts/run-tests-bash.sh](scripts/run-tests-bash.sh) (with its
+  [.bat](scripts/run-tests-bash.bat) launcher) runs the bats tests only.
+
+All three are thin shims over Common-Automation's engine, so they require a
+Common-Automation checkout as a SIBLING directory (`..\Common-Automation`). The
+Gradle build and tests stay separate - they live in Gradle (see
+[Build And Release](#build-and-release)); these shims cover only the YAML /
+Actions / Bash surface.
+
+[scripts/fix-permissions.sh](scripts/fix-permissions.sh) (and its
+[.bat](scripts/fix-permissions.bat)) re-stages the executable bit on tracked
+`*.sh` files, which Windows checkouts drop; run it after adding a shell script so
+the `check-sh-executable` gate stays green.
+[.gitattributes](.gitattributes) pins line endings surgically - `*.sh` and
+`gradlew` to LF, `*.bat` and `gradlew.bat` to CRLF - and leaves binary / data
+assets to git's own detection.
 
 ## Documentation Status
 
