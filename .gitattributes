@@ -1,0 +1,14 @@
+# Surgical line-ending pins for a game mod: only the executable text
+# surfaces are normalised, leaving data and binary assets to git's own
+# detection. bash and shellcheck reject CRLF, so every shell surface
+# must be LF on disk - the run-lint / fix-permissions shims under
+# scripts/, Gradle's gradlew launcher, and any composite-action scripts
+# under .github/. A stray CR on a shebang line otherwise yields
+#   env: 'bash\r': No such file or directory
+# on a Linux CI runner.
+*.sh    text eol=lf
+gradlew text eol=lf
+
+# cmd.exe requires CRLF in batch files.
+*.bat       text eol=crlf
+gradlew.bat text eol=crlf
