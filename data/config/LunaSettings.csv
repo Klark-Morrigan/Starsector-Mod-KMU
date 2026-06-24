@@ -1,0 +1,2 @@
+fieldID,,,,fieldName,,fieldType,defaultValue,secondaryValue,,,fieldDescription,,,minValue,maxValue,tab
+kmu_logLevel,,,,KMU log verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,"Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics.",,,,,Logging

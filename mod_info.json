@@ -12,6 +12,10 @@
     {
       "id": "kmlib",
       "name": "Klark Morrigan's Library"
+    },
+    {
+      "id": "lunalib",
+      "name": "LunaLib"
     }
   ]
 }
