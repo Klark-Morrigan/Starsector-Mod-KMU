@@ -1,0 +1,10 @@
+{
+	# Feature 022 prototype: a purely-visual terrain whose renderOnMapAbove
+	# paints the sector-wide Voronoi outline overlay on the M map. Terrain is
+	# the only surface the sector map invokes for custom world-space drawing
+	# (the nebulae use the same hook). The type id is serialised into saves;
+	# do not rename it.
+	"kmu_political_terrain":{
+		"plugin":"kmu.politicalmap.render.PoliticalMapTerrainPlugin",
+	},
+}
