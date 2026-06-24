@@ -16,15 +16,8 @@ def consoleCommandsJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/
 // the directory layout the launcher expects.
 def kmlibJarFile = file("${starsectorRoot}/mods/KMLib/jars/KMLib.jar")
 
-// lwjgl.jar carries org.lwjgl.opengl.GL11, the raw OpenGL surface the
-// political-map overlay draws its cell outlines with. The shared convention
-// only puts lwjgl_util.jar (Vector2f) on the classpath, so the GL jar is
-// added here. compileOnly: the game classloader provides LWJGL at runtime.
-def lwjglJarFile = file("${starsectorRoot}/starsector-core/lwjgl.jar")
-
 dependencies {
     compileOnly consoleCommandsJars
-    compileOnly files(lwjglJarFile)
     // KMLib is a hard dependency in mod_info.json; Starsector's mod
     // classloader provides the jar at runtime so compileOnly is enough.
     // KMU drives its logging through KMLib's KmLogging, so the LunaLib
