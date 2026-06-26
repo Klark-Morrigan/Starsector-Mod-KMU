@@ -27,7 +27,7 @@ class KmuConditionPickerFeedbackTest {
     void marksOnlyFailedResultsAsFailure() {
         assertThat(KmuConditionPickerFeedback.from(KmuConditionAddResult.added("hot")).isFailure())
                 .isFalse();
-        KmuConditionPickerFeedback failed = KmuConditionPickerFeedback.from(
+        var failed = KmuConditionPickerFeedback.from(
                 KmuConditionAddResult.failed("hot", "failed", new IllegalStateException("failed")));
 
         assertThat(failed.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);

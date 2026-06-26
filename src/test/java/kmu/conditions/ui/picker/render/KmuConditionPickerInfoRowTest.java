@@ -52,37 +52,37 @@ class KmuConditionPickerInfoRowTest {
 
     @Test
     void computeHeightIncludesSectionGapWhenBothSectionsPresent() {
-        float height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 2);
+        var height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 2);
 
-        float expected = 4 * KmuConditionPickerInfoRow.LINE_HEIGHT + 8f; // 8f = SECTION_PAD
+        var expected = 4 * KmuConditionPickerInfoRow.LINE_HEIGHT + 8f; // 8f = SECTION_PAD
         assertThat(height).isEqualTo(expected);
     }
 
     @Test
     void computeHeightExcludesSectionGapWhenOnlyLocationPresent() {
-        float height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 0);
+        var height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 0);
 
-        float expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
+        var expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
         assertThat(height).isEqualTo(expected);
     }
 
     @Test
     void computeHeightExcludesSectionGapWhenOnlySummaryPresent() {
-        float height = KmuConditionPickerInfoRow.computeHeight(0f, 0, 2);
+        var height = KmuConditionPickerInfoRow.computeHeight(0f, 0, 2);
 
-        float expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
+        var expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
         assertThat(height).isEqualTo(expected);
     }
 
     @Test
     void rendersAllTextsWithWhiteBaseColor() {
-        List<Color> paraColors = new ArrayList<>();
-        CustomPanelAPI row = rowPanel(paraColors);
+        var paraColors = new ArrayList<Color>();
+        var row = rowPanel(paraColors);
 
-        List<HighlightedParagraph> locationParagraphs = Arrays.asList(
+        var locationParagraphs = Arrays.asList(
                 new HighlightedParagraph("Location:"),
                 new HighlightedParagraph("Valis (terran world)"));
-        List<HighlightedParagraph> summaryParagraphs = Arrays.asList(
+        var summaryParagraphs = Arrays.asList(
                 new HighlightedParagraph("Conditions:"),
                 new HighlightedParagraph("0 available, 0 total."));
 
@@ -94,10 +94,10 @@ class KmuConditionPickerInfoRowTest {
 
     @Test
     void rendersOnlySummaryWhenLocationListIsEmpty() {
-        List<Color> paraColors = new ArrayList<>();
-        CustomPanelAPI row = rowPanel(paraColors);
+        var paraColors = new ArrayList<Color>();
+        var row = rowPanel(paraColors);
 
-        List<HighlightedParagraph> summaryParagraphs = Arrays.asList(
+        var summaryParagraphs = Arrays.asList(
                 new HighlightedParagraph("Conditions:"),
                 new HighlightedParagraph("0 available, 0 total."));
 
@@ -112,9 +112,9 @@ class KmuConditionPickerInfoRowTest {
      * into {@code paraColors}.
      */
     private static CustomPanelAPI rowPanel(List<Color> paraColors) {
-        PositionAPI position = proxy(PositionAPI.class,
+        var position = proxy(PositionAPI.class,
                 (p, method, args) -> defaultValue(method.getReturnType()));
-        TooltipMakerAPI element = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+        var element = proxy(TooltipMakerAPI.class, (p, method, args) -> {
             if ("addPara".equals(method.getName()) && args != null && args.length >= 2
                     && args[1] instanceof Color) {
                 paraColors.add((Color) args[1]);

@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KmuConditionAddResultTest {
     @Test
     void exposesAddedResultState() {
-        KmuConditionAddResult result = KmuConditionAddResult.added("hot");
+        var result = KmuConditionAddResult.added("hot");
 
         assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
         assertThat(result.getConditionId()).contains("hot");
@@ -19,9 +19,9 @@ class KmuConditionAddResultTest {
 
     @Test
     void exposesFailedResultState() {
-        RuntimeException exception = new IllegalStateException("failed");
+        var exception = new IllegalStateException("failed");
 
-        KmuConditionAddResult result = KmuConditionAddResult.failed("hot", "Failed to add.", exception);
+        var result = KmuConditionAddResult.failed("hot", "Failed to add.", exception);
 
         assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
         assertThat(result.getConditionId()).contains("hot");

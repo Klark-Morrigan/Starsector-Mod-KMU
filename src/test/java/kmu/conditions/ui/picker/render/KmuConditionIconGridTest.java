@@ -22,10 +22,10 @@ class KmuConditionIconGridTest {
 
     @Test
     void placesAllButtonsOnOneRowWhenTheyFitWithinWidth() {
-        KmuConditionIconButtonLayout m = KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(40f, 40f);
-        float rowWidth = 3 * m.getButtonWidth() + 2 * KmuConditionIconGrid.CELL_GAP;
+        var m = KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(40f, 40f);
+        var rowWidth = 3 * m.getButtonWidth() + 2 * KmuConditionIconGrid.CELL_GAP;
 
-        List<KmuUiPlacement> placements =
+        var placements =
                 KmuConditionIconGrid.computeLayout(Arrays.asList(m, m, m), rowWidth);
 
         assertThat(placements.get(0).getY()).isZero();
@@ -37,12 +37,12 @@ class KmuConditionIconGridTest {
 
     @Test
     void packsVariableWidthButtonsIntoRows() {
-        List<KmuConditionIconButtonLayout> metrics = Arrays.asList(
+        var metrics = Arrays.asList(
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f),
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(128f, 64f),
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f));
 
-        List<KmuUiPlacement> placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
+        var placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
 
         assertThat(placements).hasSize(3);
         assertThat(placements.get(0).getX()).isZero();
@@ -53,11 +53,11 @@ class KmuConditionIconGridTest {
 
     @Test
     void computesHeightFromLastPackedRow() {
-        List<KmuConditionIconButtonLayout> metrics = Arrays.asList(
+        var metrics = Arrays.asList(
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f),
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(128f, 64f),
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f));
-        List<KmuUiPlacement> placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
+        var placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
 
         assertThat(KmuConditionIconGrid.computeHeightForPlacements(placements))
                 .isEqualTo(placements.get(2).getY() + metrics.get(2).getButtonHeight());

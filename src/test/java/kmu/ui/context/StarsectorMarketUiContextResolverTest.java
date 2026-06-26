@@ -22,11 +22,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class StarsectorMarketUiContextResolverTest {
     @Test
     void resolvesCurrentlyOpenMarketFirst() {
-        MarketAPI currentMarket = market();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var currentMarket = market();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(currentMarket, throwingCampaignUi(), throwingPlayerFleet()));
 
-        Optional<KmuMarketUiContext> context = resolver.findCurrentMarketContext();
+        var context = resolver.findCurrentMarketContext();
 
         assertThat(context).hasValueSatisfying(value -> {
             assertThat(value.getMarket()).isSameAs(currentMarket);
@@ -37,14 +37,14 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void resolvesInteractionDialogTargetMarket() {
-        MarketAPI dialogMarket = market();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var dialogMarket = market();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         (MarketAPI) null,
                         campaignUi(dialog(entity(dialogMarket))),
                         throwingPlayerFleet()));
 
-        Optional<KmuMarketUiContext> context = resolver.findCurrentMarketContext();
+        var context = resolver.findCurrentMarketContext();
 
         assertThat(context).hasValueSatisfying(value -> {
             assertThat(value.getMarket()).isSameAs(dialogMarket);
@@ -55,14 +55,14 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void resolvesPlayerFleetInteractionTargetMarket() {
-        MarketAPI targetMarket = market();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var targetMarket = market();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         (MarketAPI) null,
                         campaignUi(null),
                         playerFleet(entity(targetMarket))));
 
-        Optional<KmuMarketUiContext> context = resolver.findCurrentMarketContext();
+        var context = resolver.findCurrentMarketContext();
 
         assertThat(context).hasValueSatisfying(value -> {
             assertThat(value.getMarket()).isSameAs(targetMarket);
@@ -73,17 +73,17 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void resolvesTrackedCoreUiMarketAfterDirectContextSources() {
-        MarketAPI trackedMarket = market();
-        StarsectorMarketUiContextTracker tracker = new StarsectorMarketUiContextTracker();
+        var trackedMarket = market();
+        var tracker = new StarsectorMarketUiContextTracker();
         tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, trackedMarket);
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         (MarketAPI) null,
                         campaignUi(null),
                         playerFleet(entity(null)),
                         listenerManager(tracker)));
 
-        Optional<KmuMarketUiContext> context = resolver.findCurrentMarketContext();
+        var context = resolver.findCurrentMarketContext();
 
         assertThat(context).hasValueSatisfying(value -> {
             assertThat(value.getMarket()).isSameAs(trackedMarket);
@@ -94,17 +94,17 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void continuesAfterCurrentlyOpenMarketFailure() {
-        RuntimeException exception = new IllegalStateException("open market failed");
-        List<String> reports = new ArrayList<>();
-        MarketAPI dialogMarket = market();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var exception = new IllegalStateException("open market failed");
+        var reports = new ArrayList<String>();
+        var dialogMarket = market();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         exception,
                         campaignUi(dialog(entity(dialogMarket))),
                         throwingPlayerFleet()),
                 (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
-        Optional<KmuMarketUiContext> context = resolver.findCurrentMarketContext();
+        var context = resolver.findCurrentMarketContext();
 
         assertThat(context).hasValueSatisfying(value -> {
             assertThat(value.getMarket()).isSameAs(dialogMarket);
@@ -115,17 +115,17 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void continuesAfterInteractionDialogFailure() {
-        RuntimeException exception = new IllegalStateException("dialog failed");
-        List<String> reports = new ArrayList<>();
-        MarketAPI targetMarket = market();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var exception = new IllegalStateException("dialog failed");
+        var reports = new ArrayList<String>();
+        var targetMarket = market();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         (MarketAPI) null,
                         throwingCampaignUi(exception),
                         playerFleet(entity(targetMarket))),
                 (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
-        Optional<KmuMarketUiContext> context = resolver.findCurrentMarketContext();
+        var context = resolver.findCurrentMarketContext();
 
         assertThat(context).hasValueSatisfying(value -> {
             assertThat(value.getMarket()).isSameAs(targetMarket);
@@ -136,9 +136,9 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void returnsEmptyAndReportsWhenPlayerFleetLookupFails() {
-        RuntimeException exception = new IllegalStateException("player fleet failed");
-        List<String> reports = new ArrayList<>();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var exception = new IllegalStateException("player fleet failed");
+        var reports = new ArrayList<String>();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         (MarketAPI) null,
                         campaignUi(null),
@@ -152,9 +152,9 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void returnsEmptyAndReportsWhenTrackedCoreUiLookupFails() {
-        RuntimeException exception = new IllegalStateException("listener manager failed");
-        List<String> reports = new ArrayList<>();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var exception = new IllegalStateException("listener manager failed");
+        var reports = new ArrayList<String>();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         (MarketAPI) null,
                         campaignUi(null),
@@ -169,9 +169,9 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void returnsEmptyAndReportsWhenDialogEntityMarketLookupFails() {
-        RuntimeException exception = new IllegalStateException("dialog entity market failed");
-        List<String> reports = new ArrayList<>();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var exception = new IllegalStateException("dialog entity market failed");
+        var reports = new ArrayList<String>();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         (MarketAPI) null,
                         campaignUi(dialog(throwingEntity(exception))),
@@ -185,9 +185,9 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void returnsEmptyAndReportsWhenPlayerFleetEntityMarketLookupFails() {
-        RuntimeException exception = new IllegalStateException("player target market failed");
-        List<String> reports = new ArrayList<>();
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var exception = new IllegalStateException("player target market failed");
+        var reports = new ArrayList<String>();
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector(
                         (MarketAPI) null,
                         campaignUi(null),
@@ -202,7 +202,7 @@ class StarsectorMarketUiContextResolverTest {
 
     @Test
     void returnsEmptyWhenNoMarketContextExists() {
-        StarsectorMarketUiContextResolver resolver = new StarsectorMarketUiContextResolver(
+        var resolver = new StarsectorMarketUiContextResolver(
                 sector((MarketAPI) null, campaignUi(dialog(entity(null))), playerFleet(entity(null))));
 
         assertThat(resolver.findCurrentMarketContext()).isEmpty();

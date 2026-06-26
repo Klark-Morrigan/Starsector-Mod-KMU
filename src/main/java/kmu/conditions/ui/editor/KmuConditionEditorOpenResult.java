@@ -34,8 +34,8 @@ public final class KmuConditionEditorOpenResult {
     }
 
     public static KmuConditionEditorOpenResult unsupportedTarget(String reason) {
-        String normalizedReason = normalizeText(reason);
-        String message = normalizedReason == null
+        var normalizedReason = normalizeText(reason);
+        var message = normalizedReason == null
                 ? "Current market does not support market condition editing."
                 : normalizedReason;
         return new KmuConditionEditorOpenResult(

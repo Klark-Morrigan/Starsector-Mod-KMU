@@ -54,7 +54,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
 
     @Test
     void returnsConditionsHeaderAsFirstLine() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
 
         assertThat(paragraphs.get(0).getText()).isEqualTo("Conditions:");
         assertThat(paragraphs.get(0).getHighlightTexts()).isEmpty();
@@ -62,14 +62,14 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
 
     @Test
     void conditionsHeaderHasGrayBaseColor() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
 
         assertThat(paragraphs.get(0).getBaseColor()).isEqualTo(GRAY);
     }
 
     @Test
     void summarizesTotalAndPresentConditionsInCountsLine() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
 
         assertThat(paragraphs.get(1).getText())
                 .isEqualTo("2 visible - 1 suppressed, 3 present, 1 hidden - 1 available, 4 total.");
@@ -77,7 +77,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
 
     @Test
     void showsOnlyTailWhenAllCountsAreZero() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
                 model(Collections.emptyList()));
 
         assertThat(paragraphs.get(1).getText()).isEqualTo("0 available, 0 total.");
@@ -86,7 +86,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
     @Test
     void startsDirectlyWithFirstCountTokenWhenVisibleIsZero() {
         // Entry that is both suppressed and hidden: visible=0 (hidden), suppressed=1
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
                 model(Collections.singletonList(
                         entry("hot", KmuConditionPickerEntryState.PRESENT, true, true))));
 
@@ -100,7 +100,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         // "3 present" has no highlight slot because its color matches the label base
         // (white). The " - " before "1 available" and the ", " before "4 total." are
         // each highlighted in grey so the trailing tail renders fully grey.
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
 
         assertThat(paragraphs.get(1).getHighlightTexts())
                 .containsExactly(
@@ -112,7 +112,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
     void exposesHighlightColorsOnCountsLine() {
         // Colors align one-to-one with highlights above. The four trailing segments
         // (" - ", "1 available", ", ", "4 total.") are all grey.
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
 
         assertThat(paragraphs.get(1).getHighlightColors())
                 .containsExactly(GREEN, RED, BLUE, GRAY, GRAY, GRAY, GRAY);
@@ -120,7 +120,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
 
     @Test
     void omitsZeroSuppressedSegment() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
                 model(Collections.singletonList(
                         entry("hot", KmuConditionPickerEntryState.PRESENT, false, false))));
 
@@ -129,14 +129,14 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
 
     @Test
     void exposesRedHighlightForSuppressedSegment() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+        var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
                 model(Collections.singletonList(
                         entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false))));
 
-        String[] highlights = paragraphs.get(1).getHighlightTexts();
-        Color[] colors = paragraphs.get(1).getHighlightColors();
+        var highlights = paragraphs.get(1).getHighlightTexts();
+        var colors = paragraphs.get(1).getHighlightColors();
 
-        int suppIdx = Arrays.asList(highlights).indexOf("1 suppressed");
+        var suppIdx = Arrays.asList(highlights).indexOf("1 suppressed");
         assertThat(suppIdx).isNotEqualTo(-1);
         assertThat(colors[suppIdx]).isEqualTo(RED);
     }

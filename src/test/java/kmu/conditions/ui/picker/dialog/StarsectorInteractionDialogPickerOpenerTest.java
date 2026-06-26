@@ -21,13 +21,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class StarsectorInteractionDialogPickerOpenerTest {
     @Test
     void opensDelegateWithConfiguredDimensions() {
-        AtomicReference<KmuConditionPickerDialogDelegate> openedDelegate = new AtomicReference<>();
-        AtomicReference<Float> openedWidth = new AtomicReference<>();
-        AtomicReference<Float> openedHeight = new AtomicReference<>();
-        InteractionDialogAPI dialog = dialog(openedDelegate, openedWidth, openedHeight);
-        StarsectorInteractionDialogPickerOpener opener = new StarsectorInteractionDialogPickerOpener(
+        var openedDelegate = new AtomicReference<KmuConditionPickerDialogDelegate>();
+        var openedWidth = new AtomicReference<Float>();
+        var openedHeight = new AtomicReference<Float>();
+        var dialog = dialog(openedDelegate, openedWidth, openedHeight);
+        var opener = new StarsectorInteractionDialogPickerOpener(
                 sector(campaignUI(dialog)));
-        KmuConditionPickerDialogDelegate delegate = delegate(640f, 480f);
+        var delegate = delegate(640f, 480f);
 
         opener.open(delegate);
 
@@ -38,7 +38,7 @@ class StarsectorInteractionDialogPickerOpenerTest {
 
     @Test
     void failsWhenCampaignUiIsMissing() {
-        StarsectorInteractionDialogPickerOpener opener = new StarsectorInteractionDialogPickerOpener(
+        var opener = new StarsectorInteractionDialogPickerOpener(
                 sector(null));
 
         assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
@@ -48,7 +48,7 @@ class StarsectorInteractionDialogPickerOpenerTest {
 
     @Test
     void failsWhenInteractionDialogIsMissing() {
-        StarsectorInteractionDialogPickerOpener opener = new StarsectorInteractionDialogPickerOpener(
+        var opener = new StarsectorInteractionDialogPickerOpener(
                 sector(campaignUI(null)));
 
         assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))

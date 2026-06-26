@@ -17,7 +17,7 @@ public final class StarsectorConditionTooltipRenderer implements KmuConditionToo
 
     @Override
     public boolean isTooltipExpandable() {
-        MarketConditionPlugin plugin = getPlugin();
+        var plugin = getPlugin();
         if (plugin == null) {
             return false;
         }
@@ -30,12 +30,12 @@ public final class StarsectorConditionTooltipRenderer implements KmuConditionToo
 
     @Override
     public float getTooltipWidth() {
-        MarketConditionPlugin plugin = getPlugin();
+        var plugin = getPlugin();
         if (plugin == null) {
             return FALLBACK_WIDTH;
         }
         try {
-            float width = plugin.getTooltipWidth();
+            var width = plugin.getTooltipWidth();
             return width > 0f ? width : FALLBACK_WIDTH;
         } catch (RuntimeException exception) {
             return FALLBACK_WIDTH;
@@ -44,7 +44,7 @@ public final class StarsectorConditionTooltipRenderer implements KmuConditionToo
 
     @Override
     public void createTooltip(TooltipMakerAPI tooltip, boolean expanded) {
-        MarketConditionPlugin plugin = getPlugin();
+        var plugin = getPlugin();
         if (plugin == null) {
             tooltip.addTitle(condition.getName());
             return;

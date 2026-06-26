@@ -42,7 +42,7 @@ public final class KmuConditionIconButton {
         Objects.requireNonNull(tooltipOwner, "tooltipOwner");
         Objects.requireNonNull(metrics, "metrics");
 
-        CustomPanelAPI buttonPanel = gridPanel.createCustomPanel(
+        var buttonPanel = gridPanel.createCustomPanel(
                 metrics.getButtonWidth(),
                 metrics.getButtonHeight(),
                 new IconButtonPanelPlugin(metrics));
@@ -63,14 +63,14 @@ public final class KmuConditionIconButton {
 
     static KmuConditionIconButtonLayout computeKmuConditionIconButtonLayout(KmuConditionPickerEntry entry) {
         Objects.requireNonNull(entry, "entry");
-        float fallback = KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE;
-        Optional<String> icon = entry.getIcon();
+        var fallback = KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE;
+        var icon = entry.getIcon();
         if (!icon.isPresent()) {
             return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(fallback, fallback);
         }
 
         try {
-            SpriteAPI sprite = Global.getSettings().getSprite(icon.get());
+            var sprite = Global.getSettings().getSprite(icon.get());
             if (sprite == null) {
                 return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(fallback, fallback);
             }
@@ -99,15 +99,15 @@ public final class KmuConditionIconButton {
                 return;
             }
 
-            float x = position.getX();
-            float y = position.getY();
-            float width = position.getWidth();
-            float height = position.getHeight();
-            KmuConditionIconButtonStyle style = KmuConditionIconButtonStyle.forEntry(entry);
-            Color backdropColor = style.getBackdropColor();
-            Color borderColor = style.getBorderColor();
-            float backdropAlpha = style.getBackdropAlpha();
-            float borderAlpha = style.getBorderAlpha();
+            var x = position.getX();
+            var y = position.getY();
+            var width = position.getWidth();
+            var height = position.getHeight();
+            var style = KmuConditionIconButtonStyle.forEntry(entry);
+            var backdropColor = style.getBackdropColor();
+            var borderColor = style.getBorderColor();
+            var backdropAlpha = style.getBackdropAlpha();
+            var borderAlpha = style.getBorderAlpha();
 
             Misc.renderQuadAlpha(x, y, width, height, backdropColor, backdropAlpha * alphaMult);
             Misc.renderQuadAlpha(x, y, width, 1f, borderColor, borderAlpha * alphaMult);
@@ -140,21 +140,21 @@ public final class KmuConditionIconButton {
                 return;
             }
 
-            Optional<String> icon = entry.getIcon();
+            var icon = entry.getIcon();
             if (!icon.isPresent()) {
                 return;
             }
 
-            SpriteAPI sprite = getSprite(icon.get());
+            var sprite = getSprite(icon.get());
             if (sprite == null) {
                 return;
             }
 
-            Color previousColor = sprite.getColor();
-            float previousAlpha = sprite.getAlphaMult();
-            float previousWidth = sprite.getWidth();
-            float previousHeight = sprite.getHeight();
-            boolean greyOut = !entry.isPresent();
+            var previousColor = sprite.getColor();
+            var previousAlpha = sprite.getAlphaMult();
+            var previousWidth = sprite.getWidth();
+            var previousHeight = sprite.getHeight();
+            var greyOut = !entry.isPresent();
             float alpha = greyOut ? ABSENT_ICON_ALPHA : 1f;
 
             sprite.setSize(layout.getIconWidth(), layout.getIconHeight());

@@ -22,12 +22,12 @@ public final class StarsectorInteractionDialogPickerOpener implements KmuConditi
     public void open(KmuConditionPickerDialogDelegate dialogDelegate) {
         Objects.requireNonNull(dialogDelegate, "dialogDelegate");
 
-        CampaignUIAPI campaignUI = sector.getCampaignUI();
+        var campaignUI = sector.getCampaignUI();
         if (campaignUI == null) {
             throw new IllegalStateException("No campaign UI is active.");
         }
 
-        InteractionDialogAPI dialog = campaignUI.getCurrentInteractionDialog();
+        var dialog = campaignUI.getCurrentInteractionDialog();
         if (dialog == null) {
             throw new IllegalStateException("No interaction dialog is active.");
         }

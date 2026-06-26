@@ -44,12 +44,12 @@ final class StarsectorConditionPickerLocationFactory {
             return unknownLocation();
         }
 
-        MarketAPI starsectorMarket = ((StarsectorEditableMarket) market).getMarket();
+        var starsectorMarket = ((StarsectorEditableMarket) market).getMarket();
         if (starsectorMarket == null) {
             return unknownLocation();
         }
 
-        FactionAPI faction = factionFor(starsectorMarket);
+        var faction = factionFor(starsectorMarket);
         return new KmuConditionPickerLocation(
                 planetName(starsectorMarket),
                 planetType(starsectorMarket),
@@ -70,27 +70,27 @@ final class StarsectorConditionPickerLocationFactory {
     }
 
     private String planetName(MarketAPI market) {
-        PlanetAPI planet = market.getPlanetEntity();
-        String planetName = planet == null ? null : normalizeText(planet.getName());
+        var planet = market.getPlanetEntity();
+        var planetName = planet == null ? null : normalizeText(planet.getName());
         if (planetName != null) {
             return planetName;
         }
 
-        SectorEntityToken primaryEntity = market.getPrimaryEntity();
-        String entityName = primaryEntity == null ? null : normalizeText(primaryEntity.getName());
+        var primaryEntity = market.getPrimaryEntity();
+        var entityName = primaryEntity == null ? null : normalizeText(primaryEntity.getName());
         return entityName == null ? marketName(market) : entityName;
     }
 
     private String planetType(MarketAPI market) {
-        PlanetAPI planet = market.getPlanetEntity();
+        var planet = market.getPlanetEntity();
         if (planet == null) {
-            SectorEntityToken primaryEntity = market.getPrimaryEntity();
+            var primaryEntity = market.getPrimaryEntity();
             if (primaryEntity instanceof PlanetAPI) {
                 planet = (PlanetAPI) primaryEntity;
             }
         }
 
-        String planetType = planet == null ? null : planetTypeName(planet);
+        var planetType = planet == null ? null : planetTypeName(planet);
         if (planetType != null) {
             return planetType;
         }
@@ -99,12 +99,12 @@ final class StarsectorConditionPickerLocationFactory {
     }
 
     private FactionAPI factionFor(MarketAPI market) {
-        FactionAPI faction = market.getFaction();
+        var faction = market.getFaction();
         if (faction != null) {
             return faction;
         }
 
-        SectorEntityToken primaryEntity = market.getPrimaryEntity();
+        var primaryEntity = market.getPrimaryEntity();
         return primaryEntity == null ? null : primaryEntity.getFaction();
     }
 
@@ -113,7 +113,7 @@ final class StarsectorConditionPickerLocationFactory {
             return null;
         }
 
-        String name = normalizeText(faction.getDisplayNameLong());
+        var name = normalizeText(faction.getDisplayNameLong());
         if (name == null) {
             name = normalizeText(faction.getDisplayName());
         }
@@ -121,21 +121,21 @@ final class StarsectorConditionPickerLocationFactory {
             return null;
         }
 
-        Color color = faction.getBaseUIColor();
+        var color = faction.getBaseUIColor();
         if (color == null) {
             color = faction.getColor();
         }
 
-        String crestSprite = normalizeText(faction.getCrest());
-        RelationshipSummary relationship =
+        var crestSprite = normalizeText(faction.getCrest());
+        var relationship =
                 StarsectorPlayerRelationshipFormatter.formatPlayerRelationship(faction);
         return new KmuPickerFaction(name, color, crestSprite,
                 relationship.getDescription(), relationship.getColor());
     }
 
     private String starSystemName(MarketAPI market) {
-        StarSystemAPI system = market.getStarSystem();
-        String systemName = system == null ? null : normalizeText(system.getNameWithTypeShort());
+        var system = market.getStarSystem();
+        var systemName = system == null ? null : normalizeText(system.getNameWithTypeShort());
         if (systemName == null && system != null) {
             systemName = normalizeText(system.getName());
         }
@@ -143,8 +143,8 @@ final class StarsectorConditionPickerLocationFactory {
             return systemName;
         }
 
-        LocationAPI location = market.getContainingLocation();
-        String locationName = location == null ? null : normalizeText(location.getNameWithTypeShort());
+        var location = market.getContainingLocation();
+        var locationName = location == null ? null : normalizeText(location.getNameWithTypeShort());
         if (locationName == null && location != null) {
             locationName = normalizeText(location.getName());
         }
@@ -152,12 +152,12 @@ final class StarsectorConditionPickerLocationFactory {
     }
 
     private String gravityWellTypeName(MarketAPI market) {
-        SectorEntityToken gravityWell = gravityWellResolver.resolve(market);
+        var gravityWell = gravityWellResolver.resolve(market);
         return gravityWellDisplayName(gravityWell);
     }
 
     private String gravityWellName(MarketAPI market) {
-        SectorEntityToken gravityWell = gravityWellResolver.resolve(market);
+        var gravityWell = gravityWellResolver.resolve(market);
         return gravityWell == null ? null : normalizeText(gravityWell.getName());
     }
 
@@ -166,25 +166,25 @@ final class StarsectorConditionPickerLocationFactory {
             return null;
         }
         if (entity instanceof PlanetAPI) {
-            String planetTypeName = planetTypeName((PlanetAPI) entity);
+            var planetTypeName = planetTypeName((PlanetAPI) entity);
             if (planetTypeName != null) {
                 return planetTypeName;
             }
         }
 
-        String customSpecName = entity.getCustomEntitySpec() == null
+        var customSpecName = entity.getCustomEntitySpec() == null
                 ? null
                 : normalizeText(entity.getCustomEntitySpec().getNameInText());
         if (customSpecName != null) {
             return customSpecName;
         }
 
-        String customType = normalizeText(entity.getCustomEntityType());
+        var customType = normalizeText(entity.getCustomEntityType());
         if (customType != null) {
             return customType;
         }
 
-        String entityName = normalizeText(entity.getName());
+        var entityName = normalizeText(entity.getName());
         if (entityName != null) {
             return entityName;
         }
@@ -197,13 +197,13 @@ final class StarsectorConditionPickerLocationFactory {
             return null;
         }
         if (entity instanceof PlanetAPI) {
-            String planetTypeName = planetTypeName((PlanetAPI) entity);
+            var planetTypeName = planetTypeName((PlanetAPI) entity);
             if (planetTypeName != null) {
                 return planetTypeName;
             }
         }
 
-        String entityName = normalizeText(entity.getName());
+        var entityName = normalizeText(entity.getName());
         if (entityName != null) {
             return entityName;
         }
@@ -212,7 +212,7 @@ final class StarsectorConditionPickerLocationFactory {
     }
 
     private String planetTypeName(PlanetAPI planet) {
-        String typeName = normalizeText(planet.getTypeNameWithWorld());
+        var typeName = normalizeText(planet.getTypeNameWithWorld());
         if (typeName != null) {
             return typeName;
         }
@@ -226,14 +226,14 @@ final class StarsectorConditionPickerLocationFactory {
     }
 
     private String constellationName(MarketAPI market) {
-        StarSystemAPI system = market.getStarSystem();
-        Constellation constellation = system == null ? null : system.getConstellation();
+        var system = market.getStarSystem();
+        var constellation = system == null ? null : system.getConstellation();
         if (constellation == null) {
-            LocationAPI location = market.getContainingLocation();
+            var location = market.getContainingLocation();
             constellation = location == null ? null : location.getConstellation();
         }
 
-        String constellationName = constellation == null
+        var constellationName = constellation == null
                 ? null
                 : normalizeText(constellation.getNameWithType());
         if (constellationName == null && constellation != null) {

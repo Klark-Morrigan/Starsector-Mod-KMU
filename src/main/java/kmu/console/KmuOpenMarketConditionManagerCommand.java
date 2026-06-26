@@ -61,13 +61,13 @@ public final class KmuOpenMarketConditionManagerCommand implements BaseCommand {
     }
 
     private String messageFor(KmuConditionEditorOpenResult result) {
-        String causeMessage = result.getCause()
+        var causeMessage = result.getCause()
                 .map(RuntimeException::getMessage)
                 .map(message -> normalizeText(message))
                 .orElse(null);
         if (result.getStatus() == KmuConditionEditorOpenStatus.FAILED
                 && causeMessage != null) {
-            String message = result.getMessage();
+            var message = result.getMessage();
             if (message.endsWith(".")) {
                 message = message.substring(0, message.length() - 1);
             }
@@ -77,7 +77,7 @@ public final class KmuOpenMarketConditionManagerCommand implements BaseCommand {
     }
 
     private static KmuConditionEditorEntryPoint createDefaultEntryPoint() {
-        KmuConditionService conditionService = new KmuConditionService(new StarsectorConditionRepository());
+        var conditionService = new KmuConditionService(new StarsectorConditionRepository());
         return new KmuConditionEditorEntryPoint(
                 new StarsectorMarketUiContextResolver(),
                 new KmuConditionPickerEditor(

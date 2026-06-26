@@ -52,13 +52,13 @@ public final class KmuConditionPickerContainer {
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
-        List<HighlightedParagraph> locationParagraphs = KmuConditionPickerLocationParagraphFactory.get(model);
-        List<HighlightedParagraph> summaryParagraphs = KmuConditionPickerSummaryParagraphFactory.get(model);
-        KmuConditionPickerInfoRow infoRow = KmuConditionPickerInfoRow.render(
+        var locationParagraphs = KmuConditionPickerLocationParagraphFactory.get(model);
+        var summaryParagraphs = KmuConditionPickerSummaryParagraphFactory.get(model);
+        var infoRow = KmuConditionPickerInfoRow.render(
                 panel, locationParagraphs, summaryParagraphs, model.getLocation().getFaction(), width);
-        LabelAPI summaryLabel = infoRow.getConditionsLabel();
+        var summaryLabel = infoRow.getConditionsLabel();
         headerBody.addCustom(infoRow.getPanel(), ITEM_TOP_PAD);
-        List<UIComponentAPI> summaryComponents = new ArrayList<>();
+        var summaryComponents = new ArrayList<UIComponentAPI>();
         summaryComponents.add(infoRow.getPanel());
 
         // Defensive empty state: the opener should usually avoid empty pickers,
@@ -71,14 +71,14 @@ public final class KmuConditionPickerContainer {
             return new KmuConditionPickerRenderResult(summaryLabel, summaryComponents, null);
         }
 
-        KmuConditionIconGrid.GridHandle gridHandle = grid.addTo(
+        var gridHandle = grid.addTo(
                 panel,
                 gridBody,
                 model,
                 KmuConditionIconGrid.computeGridWidth(width),
                 ITEM_TOP_PAD,
                 actionConsumer);
-        List<UIComponentAPI> allComponents = new ArrayList<>(summaryComponents);
+        var allComponents = new ArrayList<UIComponentAPI>(summaryComponents);
         allComponents.addAll(gridHandle.getComponents());
         return new KmuConditionPickerRenderResult(summaryLabel, allComponents, gridHandle);
     }
@@ -89,8 +89,8 @@ public final class KmuConditionPickerContainer {
      */
     public static float computeHeaderHeight(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
-        int locationLines = KmuConditionPickerLocationParagraphFactory.get(model).size();
-        int summaryLines = KmuConditionPickerSummaryParagraphFactory.get(model).size();
+        var locationLines = KmuConditionPickerLocationParagraphFactory.get(model).size();
+        var summaryLines = KmuConditionPickerSummaryParagraphFactory.get(model).size();
         return KmuConditionPickerInfoRow.computeHeight(ITEM_TOP_PAD, locationLines, summaryLines);
     }
 }

@@ -19,16 +19,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class StarsectorConditionRepositoryTest {
     @Test
     void mapsAllConditionSpecsAndSkipsNullSpecs() {
-        SettingsAPI settings = settings(
+        var settings = settings(
                 Arrays.asList(
                         spec("hot", "Hot", "graphics/icons/hot.png", true),
                         null,
                         spec("population_3", "Population 3", "graphics/icons/population.png", false)),
                 Map.of(),
                 new ArrayList<>());
-        StarsectorConditionRepository repository = new StarsectorConditionRepository(settings);
+        var repository = new StarsectorConditionRepository(settings);
 
-        List<KmuConditionSpec> specs = repository.getAllConditionSpecs();
+        var specs = repository.getAllConditionSpecs();
 
         assertThat(specs)
                 .extracting(KmuConditionSpec::getId)
@@ -41,7 +41,7 @@ class StarsectorConditionRepositoryTest {
 
     @Test
     void returnsEmptyListWhenSettingsReturnsNullSpecs() {
-        StarsectorConditionRepository repository = new StarsectorConditionRepository(
+        var repository = new StarsectorConditionRepository(
                 settings(null, Map.of(), new ArrayList<>()));
 
         assertThat(repository.getAllConditionSpecs()).isEmpty();
@@ -49,8 +49,8 @@ class StarsectorConditionRepositoryTest {
 
     @Test
     void propagatesSettingsListFailuresForServiceBoundaryToHandle() {
-        RuntimeException exception = new IllegalStateException("settings list failed");
-        StarsectorConditionRepository repository = new StarsectorConditionRepository(
+        var exception = new IllegalStateException("settings list failed");
+        var repository = new StarsectorConditionRepository(
                 throwingSettings("getAllMarketConditionSpecs", exception));
 
         assertThatThrownBy(repository::getAllConditionSpecs)
@@ -59,13 +59,13 @@ class StarsectorConditionRepositoryTest {
 
     @Test
     void skipsInvalidSpecsInsteadOfCrashing() {
-        SettingsAPI settings = settings(
+        var settings = settings(
                 List.of(
                         spec("hot", "Hot", "graphics/icons/hot.png", true),
                         spec("   ", "Blank", "graphics/icons/blank.png", true)),
                 Map.of(),
                 new ArrayList<>());
-        StarsectorConditionRepository repository = new StarsectorConditionRepository(settings);
+        var repository = new StarsectorConditionRepository(settings);
 
         assertThat(repository.getAllConditionSpecs())
                 .extracting(KmuConditionSpec::getId)
@@ -74,9 +74,9 @@ class StarsectorConditionRepositoryTest {
 
     @Test
     void findsConditionSpecByTrimmedId() {
-        List<String> lookups = new ArrayList<>();
-        MarketConditionSpecAPI hot = spec("hot", "Hot", "graphics/icons/hot.png", true);
-        StarsectorConditionRepository repository = new StarsectorConditionRepository(
+        var lookups = new ArrayList<String>();
+        var hot = spec("hot", "Hot", "graphics/icons/hot.png", true);
+        var repository = new StarsectorConditionRepository(
                 settings(List.of(), Map.of("hot", hot), lookups));
 
         assertThat(repository.findConditionSpec("  hot  "))
@@ -90,13 +90,13 @@ class StarsectorConditionRepositoryTest {
 
     @Test
     void mapsSourceModNameWhenSpecDeclaresOne() {
-        MarketConditionSpecAPI hot = spec(
+        var hot = spec(
                 "hot",
                 "Hot",
                 "graphics/icons/hot.png",
                 true,
                 sourceMod("Utility Pack"));
-        StarsectorConditionRepository repository = new StarsectorConditionRepository(
+        var repository = new StarsectorConditionRepository(
                 settings(List.of(hot), Map.of(), new ArrayList<>()));
 
         assertThat(repository.getAllConditionSpecs())
@@ -107,7 +107,7 @@ class StarsectorConditionRepositoryTest {
 
     @Test
     void returnsEmptyForBlankOrMissingLookup() {
-        StarsectorConditionRepository repository = new StarsectorConditionRepository(
+        var repository = new StarsectorConditionRepository(
                 settings(List.of(), Map.of(), new ArrayList<>()));
 
         assertThat(repository.findConditionSpec("   ")).isEmpty();
@@ -117,8 +117,8 @@ class StarsectorConditionRepositoryTest {
 
     @Test
     void propagatesSettingsLookupFailuresForServiceBoundaryToHandle() {
-        RuntimeException exception = new IllegalStateException("settings lookup failed");
-        StarsectorConditionRepository repository = new StarsectorConditionRepository(
+        var exception = new IllegalStateException("settings lookup failed");
+        var repository = new StarsectorConditionRepository(
                 throwingSettings("getMarketConditionSpec", exception));
 
         assertThatThrownBy(() -> repository.findConditionSpec("hot"))
@@ -134,7 +134,7 @@ class StarsectorConditionRepositoryTest {
                 case "getAllMarketConditionSpecs":
                     return allSpecs;
                 case "getMarketConditionSpec":
-                    String id = (String) args[0];
+                    var id = (String) args[0];
                     lookupCalls.add(id);
                     return lookupSpecs.get(id);
                 default:

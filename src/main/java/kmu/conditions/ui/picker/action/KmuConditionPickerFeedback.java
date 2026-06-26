@@ -16,7 +16,7 @@ public final class KmuConditionPickerFeedback {
 
     public static KmuConditionPickerFeedback from(KmuConditionAddResult result) {
         Objects.requireNonNull(result, "result");
-        String conditionId = result.getConditionId().orElse("unknown condition");
+        var conditionId = result.getConditionId().orElse("unknown condition");
         switch (result.getStatus()) {
             case ADDED:
                 return new KmuConditionPickerFeedback(result.getStatus(), "Added condition: " + conditionId);

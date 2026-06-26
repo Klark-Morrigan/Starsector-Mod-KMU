@@ -70,7 +70,7 @@ public final class KmuConditionPickerModel {
     }
 
     public Optional<KmuConditionPickerEntry> findEntry(String conditionId) {
-        String normalizedId = normalizeText(conditionId);
+        var normalizedId = normalizeText(conditionId);
         if (normalizedId == null) {
             return Optional.empty();
         }

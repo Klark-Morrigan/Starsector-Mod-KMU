@@ -12,17 +12,17 @@ public final class StarsectorConditionPickerFeedbackSink implements KmuCondition
     public void report(KmuConditionPickerFeedback feedback) {
         Objects.requireNonNull(feedback, "feedback");
         try {
-            SectorAPI sector = Global.getSector();
+            var sector = Global.getSector();
             if (sector == null) {
                 return;
             }
 
-            CampaignUIAPI campaignUI = sector.getCampaignUI();
+            var campaignUI = sector.getCampaignUI();
             if (campaignUI == null) {
                 return;
             }
 
-            StarsectorUiColor color = feedback.isFailure()
+            var color = feedback.isFailure()
                 ? StarsectorUiColor.VANILLA_HIGHLIGHT_RED
                 : StarsectorUiColor.VANILLA_HIGHLIGHT_GREEN;
 

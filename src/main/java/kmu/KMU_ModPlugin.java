@@ -55,7 +55,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
             return;
         }
 
-        ListenerManagerAPI listenerManager = sector.getListenerManager();
+        var listenerManager = sector.getListenerManager();
         if (listenerManager == null || listenerManager.hasListenerOfClass(StarsectorMarketUiContextTracker.class)) {
             return;
         }
@@ -68,14 +68,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
             return;
         }
 
-        LocationAPI hyperspace = sector.getHyperspace();
+        var hyperspace = sector.getHyperspace();
         if (hyperspace == null) {
             return;
         }
 
         // One terrain instance per save: a reloaded save already carries it
         // (terrain persists), so skip if a copy is present to avoid stacking.
-        for (CampaignTerrainAPI terrain : hyperspace.getTerrainCopy()) {
+        for (var terrain : hyperspace.getTerrainCopy()) {
             if (POLITICAL_MAP_TERRAIN_TYPE.equals(terrain.getType())) {
                 return;
             }

@@ -25,15 +25,15 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
 
     @Override
     public boolean isTooltipExpandable(Object tooltipParam) {
-        KmuConditionPickerEntry entry = entrySupplier.get();
-        Optional<KmuConditionTooltipRenderer> renderer = entry.getTooltipRenderer();
+        var entry = entrySupplier.get();
+        var renderer = entry.getTooltipRenderer();
         return renderer.isPresent() && renderer.get().isTooltipExpandable();
     }
 
     @Override
     public float getTooltipWidth(Object tooltipParam) {
-        KmuConditionPickerEntry entry = entrySupplier.get();
-        Optional<KmuConditionTooltipRenderer> renderer = entry.getTooltipRenderer();
+        var entry = entrySupplier.get();
+        var renderer = entry.getTooltipRenderer();
         if (renderer.isPresent()) {
             return renderer.get().getTooltipWidth();
         }
@@ -42,8 +42,8 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
 
     @Override
     public void createTooltip(TooltipMakerAPI tooltip, boolean expanded, Object tooltipParam) {
-        KmuConditionPickerEntry entry = entrySupplier.get();
-        Optional<KmuConditionTooltipRenderer> renderer = entry.getTooltipRenderer();
+        var entry = entrySupplier.get();
+        var renderer = entry.getTooltipRenderer();
         if (renderer.isPresent() && renderLiveTooltip(tooltip, expanded, renderer.get())) {
             addStatusSections(tooltip, entry);
             addMetadataFooter(tooltip, entry);
@@ -91,7 +91,7 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
     }
 
     private void addMetadataFooter(TooltipMakerAPI tooltip, KmuConditionPickerEntry entry) {
-        List<String> metadataLines = new ArrayList<>();
+        var metadataLines = new ArrayList<String>();
         metadataLines.add(metadataText("source", entry.getSourceModName().orElse("Starsector")));
         metadataLines.add(metadataText("id", entry.getConditionId()));
         entry.getIcon().ifPresent(icon -> metadataLines.add(metadataText("icon", icon)));

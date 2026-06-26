@@ -39,15 +39,15 @@ public final class KmuConditionPickerLocationParagraphFactory {
     public static List<HighlightedParagraph> get(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
-        KmuConditionPickerLocation location = model.getLocation();
-        Color highlightColor = StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve();
-        Color defaultTextColor = StarsectorUiColor.VANILLA_TEXT.resolve();
+        var location = model.getLocation();
+        var highlightColor = StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve();
+        var defaultTextColor = StarsectorUiColor.VANILLA_TEXT.resolve();
 
-        Optional<HighlightedParagraph> planetLine = buildPlanetLine(location, highlightColor, defaultTextColor);
-        Optional<HighlightedParagraph> systemLine = buildSystemLine(location, highlightColor);
-        Optional<HighlightedParagraph> constellationLine = buildConstellationLine(location, highlightColor);
+        var planetLine = buildPlanetLine(location, highlightColor, defaultTextColor);
+        var systemLine = buildSystemLine(location, highlightColor);
+        var constellationLine = buildConstellationLine(location, highlightColor);
 
-        List<HighlightedParagraph> result = new ArrayList<>();
+        var result = new ArrayList<HighlightedParagraph>();
         result.add(buildHeaderLine());
 
         if (!planetLine.isPresent() && !systemLine.isPresent() && !constellationLine.isPresent()) {
@@ -69,14 +69,14 @@ public final class KmuConditionPickerLocationParagraphFactory {
     }
 
     private static HighlightedParagraph buildUnknownLine(Color highlightColor) {
-        String unknown = KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION_UNKNOWN);
+        var unknown = KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION_UNKNOWN);
         return new HighlightedParagraph(unknown, new Highlight(unknown, highlightColor));
     }
 
     private static Optional<HighlightedParagraph> buildPlanetLine(
             KmuConditionPickerLocation location, Color highlightColor, Color defaultTextColor) {
-        List<String> segments = new ArrayList<>();
-        List<Highlight> highlights = new ArrayList<>();
+        var segments = new ArrayList<String>();
+        var highlights = new ArrayList<Highlight>();
 
         if (location.getPlanetName().isPresent()) {
             joinWithParenthetical(location.getPlanetName(), location.getPlanetType())
@@ -109,10 +109,10 @@ public final class KmuConditionPickerLocationParagraphFactory {
             return Optional.empty();
         }
 
-        Optional<String> gravityWellName = getDisplayableGravityWellName(location);
-        List<Highlight> highlights = new ArrayList<>();
+        var gravityWellName = getDisplayableGravityWellName(location);
+        var highlights = new ArrayList<Highlight>();
 
-        Optional<String> text = joinWithParenthetical(
+        var text = joinWithParenthetical(
                 location.getStarSystemName(), buildSystemParenthetical(location, gravityWellName));
         highlights.add(new Highlight(location.getStarSystemName().get(), highlightColor));
         gravityWellName.ifPresent(name -> highlights.add(new Highlight(name, highlightColor)));
@@ -129,7 +129,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
     }
 
     private static Optional<String> buildOwnershipSegment(KmuPickerFaction faction) {
-        String text = "owned by " + faction.getName();
+        var text = "owned by " + faction.getName();
         return Optional.of(faction.getRelationshipDescription()
                 .map(rel -> text + " (" + rel + ")")
                 .orElse(text));
@@ -137,7 +137,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
     private static Optional<String> buildSystemParenthetical(
             KmuConditionPickerLocation location, Optional<String> gravityWellName) {
-        List<String> parts = new ArrayList<>();
+        var parts = new ArrayList<String>();
         gravityWellName.ifPresent(parts::add);
         location.getGravityWellTypeName().ifPresent(parts::add);
         return parts.isEmpty() ? Optional.empty() : Optional.of(String.join(", ", parts));

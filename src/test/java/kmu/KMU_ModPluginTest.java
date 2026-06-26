@@ -27,7 +27,7 @@ class KMU_ModPluginTest {
 
     @Test
     void installsMarketUiContextTrackerWhenMissing() {
-        RecordingListenerManager listenerManager = new RecordingListenerManager(false);
+        var listenerManager = new RecordingListenerManager(false);
 
         KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
 
@@ -37,7 +37,7 @@ class KMU_ModPluginTest {
 
     @Test
     void doesNotInstallDuplicateMarketUiContextTracker() {
-        RecordingListenerManager listenerManager = new RecordingListenerManager(true);
+        var listenerManager = new RecordingListenerManager(true);
 
         KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
 

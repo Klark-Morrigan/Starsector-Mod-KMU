@@ -35,8 +35,8 @@ public final class KmuConditionPickerModelFactory {
 
     public KmuConditionPickerModel create(KmuEditableMarket market) {
         Objects.requireNonNull(market, "market");
-        Set<String> currentConditionIds = conditionService.getCurrentConditionIds(market);
-        List<KmuConditionSpec> specs = conditionService.listConditionSpecsVisibleForMarket(market);
+        var currentConditionIds = conditionService.getCurrentConditionIds(market);
+        var specs = conditionService.listConditionSpecsVisibleForMarket(market);
 
         return new KmuConditionPickerModel(
                 specs.stream()
@@ -49,10 +49,10 @@ public final class KmuConditionPickerModelFactory {
             KmuConditionSpec spec,
             Set<String> currentConditionIds,
             KmuEditableMarket market) {
-        KmuConditionPickerEntryState state = currentConditionIds.contains(spec.getId())
+        var state = currentConditionIds.contains(spec.getId())
                 ? KmuConditionPickerEntryState.PRESENT
                 : KmuConditionPickerEntryState.ABSENT;
-        Optional<MarketConditionAPI> liveCondition = liveConditionFor(spec, state, market);
+        var liveCondition = liveConditionFor(spec, state, market);
         return new KmuConditionPickerEntry(
                 spec.getId(),
                 spec.getName(),
@@ -112,7 +112,7 @@ public final class KmuConditionPickerModelFactory {
 
     private String liveIconName(MarketConditionAPI condition) {
         try {
-            MarketConditionPlugin plugin = condition.getPlugin();
+            var plugin = condition.getPlugin();
             if (plugin == null) {
                 return null;
             }
@@ -124,7 +124,7 @@ public final class KmuConditionPickerModelFactory {
 
     private boolean isHidden(MarketConditionAPI condition) {
         try {
-            MarketConditionPlugin plugin = condition.getPlugin();
+            var plugin = condition.getPlugin();
             return plugin != null && !plugin.showIcon();
         } catch (RuntimeException exception) {
             return false;

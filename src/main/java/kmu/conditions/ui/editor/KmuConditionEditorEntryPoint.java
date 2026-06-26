@@ -56,7 +56,7 @@ public final class KmuConditionEditorEntryPoint {
             return KmuConditionEditorOpenResult.noMarketContext();
         }
 
-        KmuMarketUiContext marketContext = context.get();
+        var marketContext = context.get();
         Optional<String> unsupportedReason;
         try {
             unsupportedReason = targetValidator.getUnsupportedReason(marketContext);

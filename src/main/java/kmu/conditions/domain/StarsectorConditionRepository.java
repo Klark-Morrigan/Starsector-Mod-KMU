@@ -28,7 +28,7 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
 
     @Override
     public List<KmuConditionSpec> getAllConditionSpecs() {
-        List<MarketConditionSpecAPI> specs = settings.getAllMarketConditionSpecs();
+        var specs = settings.getAllMarketConditionSpecs();
         if (specs == null) {
             return Collections.emptyList();
         }
@@ -41,12 +41,12 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
 
     @Override
     public Optional<KmuConditionSpec> findConditionSpec(String conditionId) {
-        String normalizedId = normalizeText(conditionId);
+        var normalizedId = normalizeText(conditionId);
         if (normalizedId == null) {
             return Optional.empty();
         }
 
-        MarketConditionSpecAPI spec = settings.getMarketConditionSpec(normalizedId);
+        var spec = settings.getMarketConditionSpec(normalizedId);
         if (spec == null) {
             return Optional.empty();
         }
@@ -68,11 +68,11 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
     }
 
     private String sourceModName(MarketConditionSpecAPI spec) {
-        ModSpecAPI sourceMod = spec.getSourceMod();
+        var sourceMod = spec.getSourceMod();
         if (sourceMod == null) {
             return VANILLA_SOURCE_NAME;
         }
-        String sourceModName = normalizeText(sourceMod.getName());
+        var sourceModName = normalizeText(sourceMod.getName());
         return sourceModName == null ? VANILLA_SOURCE_NAME : sourceModName;
     }
 }

@@ -32,19 +32,19 @@ public final class KmuConditionIconGrid {
      *  {@code containerWidth}, snapped down to a whole number of square-icon columns
      *  so no column is partially visible. Always returns at least 1. */
     static float computeGridWidth(float containerWidth) {
-        float availableWidth = Math.max(1f, containerWidth - SCROLLBAR_RIGHT_PAD);
-        float squareButtonWidth = KmuConditionIconButtonSizing.computeSquareButtonWidth();
+        var availableWidth = Math.max(1f, containerWidth - SCROLLBAR_RIGHT_PAD);
+        var squareButtonWidth = KmuConditionIconButtonSizing.computeSquareButtonWidth();
         if (availableWidth < squareButtonWidth) {
             return availableWidth;
         }
-        float units = (float) Math.floor((availableWidth + CELL_GAP) / computeColumnUnit());
+        var units = (float) Math.floor((availableWidth + CELL_GAP) / computeColumnUnit());
         return Math.max(squareButtonWidth, units * computeColumnUnit() - CELL_GAP);
     }
 
     /** N buttons wide with a gap between each pair, but no trailing gap.
      *  Clamps to 1 so callers can pass zero without getting a zero-width grid. */
     static float computeWidthForSquareColumns(int columns) {
-        int safeColumns = Math.max(1, columns);
+        var safeColumns = Math.max(1, columns);
         return safeColumns * KmuConditionIconButtonSizing.computeSquareButtonWidth()
                 + (safeColumns - 1) * CELL_GAP;
     }
@@ -75,20 +75,20 @@ public final class KmuConditionIconGrid {
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
-        List<KmuConditionPickerEntry> entries = model.getEntries();
-        List<KmuConditionIconButtonLayout> metrics = computeKmuConditionIconButtonLayouts(entries);
-        List<KmuUiPlacement> placements = computeLayout(metrics, width);
-        float height = computeHeightForPlacements(placements);
-        CustomPanelAPI gridPanel = parentPanel.createCustomPanel(
+        var entries = model.getEntries();
+        var metrics = computeKmuConditionIconButtonLayouts(entries);
+        var placements = computeLayout(metrics, width);
+        var height = computeHeightForPlacements(placements);
+        var gridPanel = parentPanel.createCustomPanel(
                 width,
                 height,
                 new BaseCustomUIPanelPlugin());
-        Map<String, KmuConditionIconButton> buttonsByConditionId = new LinkedHashMap<>();
+        var buttonsByConditionId = new LinkedHashMap<String, KmuConditionIconButton>();
 
-        for (int index = 0; index < entries.size(); index++) {
-            KmuConditionPickerEntry entry = entries.get(index);
-            KmuUiPlacement placement = placements.get(index);
-            KmuConditionIconButton button = new KmuConditionIconButton(entry, actionConsumer);
+        for (var index = 0; index < entries.size(); index++) {
+            var entry = entries.get(index);
+            var placement = placements.get(index);
+            var button = new KmuConditionIconButton(entry, actionConsumer);
 
             button.addTo(gridPanel, tooltip, placement.getX(), placement.getY(), metrics.get(index));
             buttonsByConditionId.put(entry.getConditionId(), button);
@@ -104,13 +104,13 @@ public final class KmuConditionIconGrid {
     static List<KmuUiPlacement> computeLayout(List<KmuConditionIconButtonLayout> metrics, float width) {
         Objects.requireNonNull(metrics, "metrics");
 
-        List<KmuUiPlacement> placements = new ArrayList<>();
-        float safeWidth = Math.max(1f, width);
-        float x = 0f;
-        float y = 0f;
-        float rowHeight = 0f;
+        var placements = new ArrayList<KmuUiPlacement>();
+        var safeWidth = Math.max(1f, width);
+        var x = 0f;
+        var y = 0f;
+        var rowHeight = 0f;
 
-        for (KmuConditionIconButtonLayout metric : metrics) {
+        for (var metric : metrics) {
             Objects.requireNonNull(metric, "metric");
             if (x > 0f && x + metric.getButtonWidth() > safeWidth) {
                 x = 0f;
@@ -132,13 +132,13 @@ public final class KmuConditionIconGrid {
         if (placements.isEmpty()) {
             return 0f;
         }
-        KmuUiPlacement last = placements.get(placements.size() - 1);
+        var last = placements.get(placements.size() - 1);
         return last.getY() + last.getHeight();
     }
 
     private static List<KmuConditionIconButtonLayout> computeKmuConditionIconButtonLayouts(List<KmuConditionPickerEntry> entries) {
-        List<KmuConditionIconButtonLayout> metrics = new ArrayList<>();
-        for (KmuConditionPickerEntry entry : entries) {
+        var metrics = new ArrayList<KmuConditionIconButtonLayout>();
+        for (var entry : entries) {
             metrics.add(KmuConditionIconButton.computeKmuConditionIconButtonLayout(entry));
         }
         return metrics;
@@ -165,7 +165,7 @@ public final class KmuConditionIconGrid {
          *  Returns false if no such button exists in this grid. */
         boolean updateEntry(KmuConditionPickerEntry entry) {
             Objects.requireNonNull(entry, "entry");
-            KmuConditionIconButton button = buttonsByConditionId.get(entry.getConditionId());
+            var button = buttonsByConditionId.get(entry.getConditionId());
             if (button == null) {
                 return false;
             }

@@ -20,7 +20,7 @@ class StarsectorConditionEditorTargetValidatorTest {
     void allowsCurrentlyOpenMarketRegardlessOfPlanet() {
         // CURRENTLY_OPEN_MARKET bypasses all planet checks — the market screen
         // is already open so no further validation is needed.
-        KmuMarketUiContext context = context(market(null, false),
+        var context = context(market(null, false),
                 KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
 
         assertThat(validator.getUnsupportedReason(context)).isEmpty();
@@ -28,7 +28,7 @@ class StarsectorConditionEditorTargetValidatorTest {
 
     @Test
     void allowsMarketWithPlanetEntity() {
-        KmuMarketUiContext context = context(market(planetProxy(), false),
+        var context = context(market(planetProxy(), false),
                 KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
 
         assertThat(validator.getUnsupportedReason(context)).isEmpty();
@@ -36,7 +36,7 @@ class StarsectorConditionEditorTargetValidatorTest {
 
     @Test
     void allowsMarketThatIsPlanetConditionMarketOnly() {
-        KmuMarketUiContext context = context(market(null, true),
+        var context = context(market(null, true),
                 KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
 
         assertThat(validator.getUnsupportedReason(context)).isEmpty();
@@ -44,7 +44,7 @@ class StarsectorConditionEditorTargetValidatorTest {
 
     @Test
     void rejectsMarketWithNeitherPlanetNorConditionOnlyFlag() {
-        KmuMarketUiContext context = context(market(null, false),
+        var context = context(market(null, false),
                 KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
 
         assertThat(validator.getUnsupportedReason(context)).isPresent();

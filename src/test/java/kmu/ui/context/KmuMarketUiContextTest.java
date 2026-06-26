@@ -14,9 +14,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class KmuMarketUiContextTest {
     @Test
     void createsContextWithoutPanel() {
-        MarketAPI market = market();
+        var market = market();
 
-        KmuMarketUiContext context = KmuMarketUiContext.withoutPanel(
+        var context = KmuMarketUiContext.withoutPanel(
                 market,
                 KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
 
@@ -27,10 +27,10 @@ class KmuMarketUiContextTest {
 
     @Test
     void createsContextWithPanel() {
-        MarketAPI market = market();
-        UIPanelAPI panel = panel();
+        var market = market();
+        var panel = panel();
 
-        KmuMarketUiContext context = KmuMarketUiContext.withPanel(
+        var context = KmuMarketUiContext.withPanel(
                 market,
                 panel,
                 KmuMarketUiContextSource.REFLECTED_CORE_PANEL);
@@ -42,8 +42,8 @@ class KmuMarketUiContextTest {
 
     @Test
     void rejectsMissingRequiredValues() {
-        MarketAPI market = market();
-        UIPanelAPI panel = panel();
+        var market = market();
+        var panel = panel();
 
         assertThatThrownBy(() -> KmuMarketUiContext.withoutPanel(
                 null,

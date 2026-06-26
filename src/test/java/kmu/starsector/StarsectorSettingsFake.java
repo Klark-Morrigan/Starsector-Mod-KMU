@@ -42,7 +42,7 @@ public final class StarsectorSettingsFake {
     };
 
     private static Map<String, String> buildStringsByKey() {
-        Map<String, String> stringsByKey = new LinkedHashMap<>();
+        var stringsByKey = new LinkedHashMap<String, String>();
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_LOCATION, "Location:");
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_LOCATION_UNKNOWN, "Unknown");
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_SUMMARY, "Conditions:");

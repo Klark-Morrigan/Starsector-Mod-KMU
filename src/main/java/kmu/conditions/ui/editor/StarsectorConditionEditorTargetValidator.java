@@ -16,7 +16,7 @@ public final class StarsectorConditionEditorTargetValidator implements KmuCondit
             return Optional.empty();
         }
 
-        MarketAPI market = context.getMarket();
+        var market = context.getMarket();
         if (market.getPlanetEntity() != null || market.isPlanetConditionMarketOnly()) {
             return Optional.empty();
         }

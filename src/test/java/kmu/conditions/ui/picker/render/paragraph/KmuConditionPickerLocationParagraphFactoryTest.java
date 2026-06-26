@@ -48,7 +48,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void returnsHeaderAndUnknownWhenLocationHasNoDisplayableFields() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(new KmuConditionPickerLocation(null, null, null, null, null, null, null)));
 
         assertThat(paragraphs).hasSize(2);
@@ -60,7 +60,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void returnsLocationHeaderAsFirstLine() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(0).getText()).isEqualTo("Location:");
@@ -69,7 +69,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void locationHeaderHasGrayBaseColor() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(0).getBaseColor()).isEqualTo(GRAY);
@@ -77,7 +77,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void returnsPlanetLineWithTypeAndOwnershipAsSecondLine() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(1).getText())
@@ -86,7 +86,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void returnsSystemLineAsThirdLine() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(2).getText()).isEqualTo("Corvus Star System (yellow star)");
@@ -94,7 +94,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void returnsConstellationLineAsFourthLine() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(3).getText()).isEqualTo("Corvus");
@@ -102,7 +102,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void returnsFourLinesForFullLocation() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         // header + planet + system + constellation
@@ -111,7 +111,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void omitsSystemLineWhenSystemIsAbsent() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(new KmuConditionPickerLocation(
                         "Valis", "terran world", null, null, null, null, null)));
 
@@ -122,7 +122,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void omitsConstellationLineWhenConstellationIsAbsent() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(new KmuConditionPickerLocation(
                         "Valis", null, null, "Corvus System", null, null, null)));
 
@@ -133,7 +133,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
     @Test
     void omitsMissingLocationFields() {
         // Planet type whitespace is normalized to absent, no faction, no constellation
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(new KmuConditionPickerLocation(
                         "Valis", " ", null, "Corvus Star System", null, null, null)));
 
@@ -144,42 +144,42 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void showsGravityWellEntityNameInSystemLineWhenNotImpliedBySystemName() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(new KmuConditionPickerLocation(
                         null, null, null, "Kumari System", "Yellow Dwarf", "Kumari A", null)));
 
         // header + system only
-        HighlightedParagraph systemParagraph = paragraphs.get(1);
+        var systemParagraph = paragraphs.get(1);
         assertThat(systemParagraph.getText()).isEqualTo("Kumari System (Kumari A, Yellow Dwarf)");
         assertThat(systemParagraph.getHighlightTexts()).containsExactly("Kumari System", "Kumari A");
     }
 
     @Test
     void suppressesGravityWellEntityNameInSystemLineWhenImpliedBySystemName() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(new KmuConditionPickerLocation(
                         null, null, null, "Agreus System", "Black Hole", "Agreus", null)));
 
-        HighlightedParagraph systemParagraph = paragraphs.get(1);
+        var systemParagraph = paragraphs.get(1);
         assertThat(systemParagraph.getText()).isEqualTo("Agreus System (Black Hole)");
         assertThat(systemParagraph.getHighlightTexts()).containsExactly("Agreus System");
     }
 
     @Test
     void deduplicatesGravityWellNameAndEntityNameForNonPlanetGravityWells() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(new KmuConditionPickerLocation(
                         null, null, null, "Kumari Star System", "Kumari Barycenter",
                         "Kumari Barycenter", null)));
 
-        HighlightedParagraph systemParagraph = paragraphs.get(1);
+        var systemParagraph = paragraphs.get(1);
         assertThat(systemParagraph.getText()).isEqualTo("Kumari Star System (Kumari Barycenter)");
         assertThat(systemParagraph.getHighlightTexts()).containsExactly("Kumari Star System");
     }
 
     @Test
     void exposesPlanetLineHighlights() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(1).getHighlightTexts())
@@ -188,7 +188,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void exposesSystemLineHighlights() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(2).getHighlightTexts()).containsExactly("Corvus Star System");
@@ -196,7 +196,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void exposesConstellationLineHighlights() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(3).getHighlightTexts()).containsExactly("Corvus");
@@ -204,7 +204,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void exposesPlanetLineHighlightColors() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(1).getHighlightColors())
@@ -213,7 +213,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void exposesSystemLineHighlightColors() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(2).getHighlightColors()).containsExactly(GOLD);
@@ -221,7 +221,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void exposesConstellationLineHighlightColors() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(createLocation()));
 
         assertThat(paragraphs.get(3).getHighlightColors()).containsExactly(GOLD);
@@ -229,7 +229,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
     @Test
     void defaultsMissingFactionAndRelationshipColorsToTextWhite() {
-        List<HighlightedParagraph> paragraphs = KmuConditionPickerLocationParagraphFactory.get(
+        var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                 model(new KmuConditionPickerLocation(
                         null, null,
                         new KmuPickerFaction("Hegemony", null, null, "Vengeful (-100 / 100)", null),

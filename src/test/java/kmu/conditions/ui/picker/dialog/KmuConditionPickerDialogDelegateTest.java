@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KmuConditionPickerDialogDelegateTest {
     @Test
     void resolvesActionPassedAsButtonId() {
-        KmuConditionPickerAction action = action();
+        var action = action();
 
         assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent(action, null))
                 .contains(action);
@@ -35,7 +35,7 @@ class KmuConditionPickerDialogDelegateTest {
 
     @Test
     void resolvesActionPassedAsData() {
-        KmuConditionPickerAction action = action();
+        var action = action();
 
         assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent("button-id", action))
                 .contains(action);
@@ -43,8 +43,8 @@ class KmuConditionPickerDialogDelegateTest {
 
     @Test
     void resolvesActionStoredOnButtonCustomData() {
-        KmuConditionPickerAction action = action();
-        ButtonAPI button = buttonWithCustomData(action);
+        var action = action();
+        var button = buttonWithCustomData(action);
 
         assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent(button, null))
                 .contains(action);
@@ -58,20 +58,20 @@ class KmuConditionPickerDialogDelegateTest {
 
     @Test
     void panelPluginHandlesButtonPressedActions() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
-        FakeEditableMarket market = new FakeEditableMarket();
-        KmuConditionPickerActionHandler actionHandler = new KmuConditionPickerActionHandler(
+        var market = new FakeEditableMarket();
+        var actionHandler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
                 market);
-        RecordingFeedbackSink feedbackSink = new RecordingFeedbackSink();
-        KmuConditionPickerDialogDelegate delegate = new KmuConditionPickerDialogDelegate(
+        var feedbackSink = new RecordingFeedbackSink();
+        var delegate = new KmuConditionPickerDialogDelegate(
                 actionHandler,
                 feedbackSink,
                 720f,
                 560f);
-        KmuConditionPickerAction action = KmuConditionPickerAction.fromEntry(
+        var action = KmuConditionPickerAction.fromEntry(
                 actionHandler.getModel().getEntries().get(0));
 
         delegate.getCustomPanelPlugin().buttonPressed(action);
@@ -85,20 +85,20 @@ class KmuConditionPickerDialogDelegateTest {
 
     @Test
     void panelPluginIgnoresPresentConditionActionsWithoutFeedback() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
-        FakeEditableMarket market = new FakeEditableMarket("hot");
-        KmuConditionPickerActionHandler actionHandler = new KmuConditionPickerActionHandler(
+        var market = new FakeEditableMarket("hot");
+        var actionHandler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
                 market);
-        RecordingFeedbackSink feedbackSink = new RecordingFeedbackSink();
-        KmuConditionPickerDialogDelegate delegate = new KmuConditionPickerDialogDelegate(
+        var feedbackSink = new RecordingFeedbackSink();
+        var delegate = new KmuConditionPickerDialogDelegate(
                 actionHandler,
                 feedbackSink,
                 720f,
                 560f);
-        KmuConditionPickerAction action = KmuConditionPickerAction.fromEntry(
+        var action = KmuConditionPickerAction.fromEntry(
                 actionHandler.getModel().getEntries().get(0));
 
         delegate.getCustomPanelPlugin().buttonPressed(action);
@@ -192,7 +192,7 @@ class KmuConditionPickerDialogDelegateTest {
         private final Set<String> conditionIds = new LinkedHashSet<>();
 
         private FakeEditableMarket(String... conditionIds) {
-            for (String conditionId : conditionIds) {
+            for (var conditionId : conditionIds) {
                 this.conditionIds.add(conditionId);
             }
         }

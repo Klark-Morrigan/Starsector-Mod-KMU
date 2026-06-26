@@ -29,25 +29,26 @@ public final class StarsectorGravityWellResolver {
             return resolveSystemCenterOrStar(market);
         }
 
-        SectorEntityToken orbitRoot = resolveTerminalOrbitFocus(entity);
+        var orbitRoot = resolveTerminalOrbitFocus(entity);
         if (orbitRoot != null) {
             return orbitRoot;
         }
 
-        SectorEntityToken systemRoot = resolveSystemCenterOrStar(market);
+        var systemRoot = resolveSystemCenterOrStar(market);
         return systemRoot == null ? entity : systemRoot;
     }
 
     private SectorEntityToken resolveTerminalOrbitFocus(SectorEntityToken entity) {
-        Set<SectorEntityToken> visited = Collections.newSetFromMap(new IdentityHashMap<>());
-        SectorEntityToken current = entity;
+        var visited =
+                Collections.newSetFromMap(new IdentityHashMap<SectorEntityToken, Boolean>());
+        var current = entity;
         SectorEntityToken lastFocus = null;
 
-        for (int depth = 0;
+        for (var depth = 0;
                 depth < MAX_ORBIT_FOCUS_CHAIN_DEPTH && current != null && !visited.contains(current);
                 depth++) {
             visited.add(current);
-            SectorEntityToken focus = resolveOrbitFocus(current);
+            var focus = resolveOrbitFocus(current);
             if (focus == null || focus == current || visited.contains(focus)) {
                 break;
             }
@@ -59,22 +60,22 @@ public final class StarsectorGravityWellResolver {
     }
 
     private SectorEntityToken resolveOrbitFocus(SectorEntityToken entity) {
-        SectorEntityToken focus = entity.getOrbitFocus();
+        var focus = entity.getOrbitFocus();
         if (focus != null) {
             return focus;
         }
 
-        OrbitAPI orbit = entity.getOrbit();
+        var orbit = entity.getOrbit();
         return orbit == null ? null : orbit.getFocus();
     }
 
     private SectorEntityToken resolveSystemCenterOrStar(MarketAPI market) {
-        StarSystemAPI system = market.getStarSystem();
+        var system = market.getStarSystem();
         if (system == null) {
             return null;
         }
 
-        SectorEntityToken center = system.getCenter();
+        var center = system.getCenter();
         if (center != null) {
             return center;
         }

@@ -59,26 +59,26 @@ public final class KmuConditionPickerSummaryParagraphFactory {
     public static List<HighlightedParagraph> get(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
-        int visible = model.getVisibleCount();
-        int suppressed = model.getSuppressedCount();
-        int present = model.getPresentCount();
-        int hidden = model.getHiddenCount();
-        int available = model.getAvailableCount();
-        int total = model.getEntryCount();
+        var visible = model.getVisibleCount();
+        var suppressed = model.getSuppressedCount();
+        var present = model.getPresentCount();
+        var hidden = model.getHiddenCount();
+        var available = model.getAvailableCount();
+        var total = model.getEntryCount();
 
-        Color green = StarsectorUiColor.VANILLA_HIGHLIGHT_GREEN.resolve();
-        Color red = StarsectorUiColor.VANILLA_HIGHLIGHT_RED.resolve();
-        Color lightBlue = StarsectorUiColor.LIGHT_BLUE.resolve();
-        Color grey = StarsectorUiColor.VANILLA_GRAY.resolve();
+        var green = StarsectorUiColor.VANILLA_HIGHLIGHT_GREEN.resolve();
+        var red = StarsectorUiColor.VANILLA_HIGHLIGHT_RED.resolve();
+        var lightBlue = StarsectorUiColor.LIGHT_BLUE.resolve();
+        var grey = StarsectorUiColor.VANILLA_GRAY.resolve();
 
-        String visibleToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_VISIBLE, visible);
-        String suppressedToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed);
-        String presentToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_PRESENT, present);
-        String hiddenToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_HIDDEN, hidden);
-        String availableToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_AVAILABLE, available);
-        String totalToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_TOTAL, total);
+        var visibleToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_VISIBLE, visible);
+        var suppressedToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed);
+        var presentToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_PRESENT, present);
+        var hiddenToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_HIDDEN, hidden);
+        var availableToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_AVAILABLE, available);
+        var totalToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_TOTAL, total);
 
-        AppendContext ctx = new AppendContext();
+        var ctx = new AppendContext();
 
         if (visible > 0)
             appendToken(ctx, new TokenSpec(" ", visibleToken, green));
@@ -93,14 +93,14 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         appendToken(ctx, new TokenSpec(" - ", availableToken, grey, true));
         appendToken(ctx, new TokenSpec(", ", totalToken, grey, true));
 
-        HighlightedParagraph headerParagraph = new HighlightedParagraph(
+        var headerParagraph = new HighlightedParagraph(
                 KmuStrings.get(KmuStrings.CONDITION_MANAGER_SUMMARY),
                 StarsectorUiColor.VANILLA_GRAY.resolve());
-        HighlightedParagraph countsParagraph = new HighlightedParagraph(
+        var countsParagraph = new HighlightedParagraph(
                 ctx.sb.toString(),
                 ctx.highlights.toArray(new Highlight[0]));
 
-        List<HighlightedParagraph> result = new ArrayList<>();
+        var result = new ArrayList<HighlightedParagraph>();
         result.add(headerParagraph);
         result.add(countsParagraph);
         return result;

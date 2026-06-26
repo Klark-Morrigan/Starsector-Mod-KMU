@@ -34,8 +34,8 @@ public final class KmuConditionPickerEditor implements KmuConditionEditor {
     @Override
     public void open(KmuMarketUiContext context) {
         Objects.requireNonNull(context, "context");
-        StarsectorEditableMarket market = new StarsectorEditableMarket(context.getMarket());
-        KmuConditionPickerActionHandler actionHandler = new KmuConditionPickerActionHandler(
+        var market = new StarsectorEditableMarket(context.getMarket());
+        var actionHandler = new KmuConditionPickerActionHandler(
                 conditionService,
                 modelFactory,
                 market);

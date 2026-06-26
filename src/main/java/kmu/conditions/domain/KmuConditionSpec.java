@@ -65,7 +65,7 @@ public final class KmuConditionSpec {
         if (!(other instanceof KmuConditionSpec)) {
             return false;
         }
-        KmuConditionSpec that = (KmuConditionSpec) other;
+        var that = (KmuConditionSpec) other;
         return planetary == that.planetary
                 && id.equals(that.id)
                 && name.equals(that.name)

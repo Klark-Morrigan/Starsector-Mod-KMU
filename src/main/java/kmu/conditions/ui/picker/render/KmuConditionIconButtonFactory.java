@@ -13,15 +13,15 @@ final class KmuConditionIconButtonFactory {
     }
 
     static KmuConditionIconButtonLayout computeKmuConditionIconButtonLayout(float sourceWidth, float sourceHeight) {
-        KmuUiSize bounds = computeIconSize(sourceWidth, sourceHeight);
-        float buttonWidth = Math.max(
+        var bounds = computeIconSize(sourceWidth, sourceHeight);
+        var buttonWidth = Math.max(
                 KmuConditionIconButtonSizing.MIN_BUTTON_SIZE,
                 bounds.getWidth() + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
-        float buttonHeight = Math.max(
+        var buttonHeight = Math.max(
                 KmuConditionIconButtonSizing.MIN_BUTTON_SIZE,
                 bounds.getHeight() + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
-        float iconOffsetX = (buttonWidth - bounds.getWidth()) / 2f;
-        float iconOffsetY = (buttonHeight - bounds.getHeight()) / 2f;
+        var iconOffsetX = (buttonWidth - bounds.getWidth()) / 2f;
+        var iconOffsetY = (buttonHeight - bounds.getHeight()) / 2f;
         return new KmuConditionIconButtonLayout(
                 buttonWidth,
                 buttonHeight,
@@ -33,10 +33,10 @@ final class KmuConditionIconButtonFactory {
 
     static KmuUiSize computeIconSize(float sourceWidth, float sourceHeight) {
         if (sourceWidth <= 0f || sourceHeight <= 0f) {
-            float fallback = KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE;
+            var fallback = KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE;
             return new KmuUiSize(fallback, fallback);
         }
-        float scale = KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT / sourceHeight;
+        var scale = KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT / sourceHeight;
         return new KmuUiSize(sourceWidth * scale, sourceHeight * scale);
     }
 

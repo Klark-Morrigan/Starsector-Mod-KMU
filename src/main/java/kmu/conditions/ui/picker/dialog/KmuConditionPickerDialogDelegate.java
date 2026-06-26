@@ -124,7 +124,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         if (action.isPresentAtRender()) {
             return;
         }
-        KmuConditionAddResult result = actionHandler.handle(action);
+        var result = actionHandler.handle(action);
         actionHandler.getFeedback().ifPresent(feedbackSink::report);
         updateRenderedState(result);
     }
@@ -141,9 +141,9 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
             panel.removeComponent(gridBody);
         }
 
-        KmuConditionPickerModel model = actionHandler.getModel();
-        float headerH = KmuConditionPickerContainer.computeHeaderHeight(model);
-        float gridH = height - headerH;
+        var model = actionHandler.getModel();
+        var headerH = KmuConditionPickerContainer.computeHeaderHeight(model);
+        var gridH = height - headerH;
 
         headerBody = panel.createUIElement(width, headerH, false);
         headerBody.setBgAlpha(BODY_BG_ALPHA);
@@ -170,16 +170,16 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
             return;
         }
 
-        LabelAPI summaryLabel = renderResult.getSummaryLabel();
+        var summaryLabel = renderResult.getSummaryLabel();
         if (summaryLabel != null) {
             // Item 1 is the counts line; item 0 is the static "Conditions:" header.
-            HighlightedParagraph countsParagraph =
+            var countsParagraph =
                     KmuConditionPickerSummaryParagraphFactory.get(actionHandler.getModel()).get(1);
             summaryLabel.setText(countsParagraph.getText());
             countsParagraph.applyTo(summaryLabel);
         }
 
-        Optional<String> conditionId = result.getConditionId();
+        var conditionId = result.getConditionId();
         if (!conditionId.isPresent()) {
             return;
         }
@@ -189,7 +189,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
     }
 
     private void removeRenderedCustomComponents() {
-        for (UIComponentAPI component : renderedCustomComponents) {
+        for (var component : renderedCustomComponents) {
             try {
                 panel.removeComponent(component);
             } catch (RuntimeException exception) {
@@ -201,12 +201,12 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
     }
 
     static Optional<KmuConditionPickerAction> resolveActionFromUiEvent(Object buttonId, Object data) {
-        Optional<KmuConditionPickerAction> directAction = asAction(buttonId);
+        var directAction = asAction(buttonId);
         if (directAction.isPresent()) {
             return directAction;
         }
 
-        Optional<KmuConditionPickerAction> dataAction = asAction(data);
+        var dataAction = asAction(data);
         if (dataAction.isPresent()) {
             return dataAction;
         }

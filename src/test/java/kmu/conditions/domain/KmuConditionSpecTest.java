@@ -26,7 +26,7 @@ class KmuConditionSpecTest {
 
     @Test
     void exposesConstructorValues() {
-        KmuConditionSpec spec = new KmuConditionSpec("hot", "Hot", "graphics/icons/hot.png", true);
+        var spec = new KmuConditionSpec("hot", "Hot", "graphics/icons/hot.png", true);
 
         assertThat(spec.getId()).isEqualTo("hot");
         assertThat(spec.getName()).isEqualTo("Hot");
@@ -36,9 +36,9 @@ class KmuConditionSpecTest {
 
     @Test
     void comparesByValue() {
-        KmuConditionSpec left = new KmuConditionSpec("hot", "Hot", "graphics/icons/hot.png", true);
-        KmuConditionSpec right = new KmuConditionSpec("hot", "Hot", "graphics/icons/hot.png", true);
-        KmuConditionSpec different = new KmuConditionSpec("cold", "Cold", "graphics/icons/cold.png", true);
+        var left = new KmuConditionSpec("hot", "Hot", "graphics/icons/hot.png", true);
+        var right = new KmuConditionSpec("hot", "Hot", "graphics/icons/hot.png", true);
+        var different = new KmuConditionSpec("cold", "Cold", "graphics/icons/cold.png", true);
 
         assertThat(left).isEqualTo(right);
         assertThat(left).hasSameHashCodeAs(right);

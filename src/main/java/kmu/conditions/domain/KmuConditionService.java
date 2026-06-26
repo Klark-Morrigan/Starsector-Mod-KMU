@@ -38,7 +38,7 @@ public final class KmuConditionService {
 
     public List<KmuConditionSpec> listConditionSpecsVisibleForMarket(KmuEditableMarket market) {
         Objects.requireNonNull(market, "market");
-        Set<String> currentConditionIds = getCurrentConditionIds(market);
+        var currentConditionIds = getCurrentConditionIds(market);
         try {
             return repository.getAllConditionSpecs().stream()
                     .filter(Objects::nonNull)
@@ -65,7 +65,7 @@ public final class KmuConditionService {
             String conditionId) {
         Objects.requireNonNull(market, "market");
 
-        String normalizedId = normalizeText(conditionId);
+        var normalizedId = normalizeText(conditionId);
         if (normalizedId == null) {
             return KmuConditionAddResult.conditionNotFound(conditionId);
         }

@@ -39,13 +39,13 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void buildsEntriesForPlanetarySpecsInServiceOrder() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true),
                 spec("population_3", "Population 3", false),
                 spec("farmland_rich", "Farmland: Rich", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
+        var factory = new KmuConditionPickerModelFactory(service);
 
-        KmuConditionPickerModel model = factory.create(new FakeEditableMarket("hot"));
+        var model = factory.create(new FakeEditableMarket("hot"));
 
         assertThat(model.getEntries())
                 .extracting(KmuConditionPickerEntry::getConditionId)
@@ -62,11 +62,11 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void includesSpecDataAndSpecDescriptionTooltipText() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 new KmuConditionSpec("cold", "Cold", null, "Cold condition description.", "Vanilla", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
+        var factory = new KmuConditionPickerModelFactory(service);
 
-        KmuConditionPickerEntry entry = factory.create(new FakeEditableMarket())
+        var entry = factory.create(new FakeEditableMarket())
                 .getEntries()
                 .get(0);
 
@@ -80,11 +80,11 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void marksPresentSuppressedEntries() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("no_atmosphere", "No Atmosphere", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
+        var factory = new KmuConditionPickerModelFactory(service);
 
-        KmuConditionPickerEntry entry = factory.create(new FakeEditableMarket(
+        var entry = factory.create(new FakeEditableMarket(
                 Set.of("no_atmosphere"),
                 Set.of("no_atmosphere")))
                 .getEntries()
@@ -97,16 +97,16 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void extractsLocationNamesFromStarsectorMarket() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        Constellation constellation = new Constellation(
+        var factory = new KmuConditionPickerModelFactory(service);
+        var constellation = new Constellation(
                 Constellation.ConstellationType.NORMAL,
                 StarAge.AVERAGE);
         constellation.setNameOverride("Corvus");
-        StarSystemAPI system = starSystem("Corvus Star System", constellation);
+        var system = starSystem("Corvus Star System", constellation);
 
-        KmuConditionPickerModel model = factory.create(new StarsectorEditableMarket(
+        var model = factory.create(new StarsectorEditableMarket(
                 market(
                         List.of(),
                         Map.of(),
@@ -121,13 +121,13 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void extractsPlanetOwnerRelationshipAndGravityWellDetailsFromStarsectorMarket() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        PlanetAPI star = planet("Corvus", "yellow star", null);
-        PlanetAPI planet = planet("Valis", "terran world", star);
+        var factory = new KmuConditionPickerModelFactory(service);
+        var star = planet("Corvus", "yellow star", null);
+        var planet = planet("Valis", "terran world", star);
 
-        KmuConditionPickerModel model = factory.create(new StarsectorEditableMarket(
+        var model = factory.create(new StarsectorEditableMarket(
                 market(
                         List.of(),
                         Map.of(),
@@ -138,7 +138,7 @@ class KmuConditionPickerModelFactoryTest {
                         planet,
                         faction("Hegemony"))));
 
-        KmuConditionPickerLocation location = model.getLocation();
+        var location = model.getLocation();
         assertThat(location.getPlanetName()).contains("Valis");
         assertThat(location.getPlanetType()).contains("terran world");
         assertThat(location.getFaction()).isPresent();
@@ -152,12 +152,12 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void omitsFactionWhenFactionNameIsUnreadable() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        PlanetAPI planet = planet("Valis", "terran world", null);
+        var factory = new KmuConditionPickerModelFactory(service);
+        var planet = planet("Valis", "terran world", null);
 
-        KmuConditionPickerModel model = factory.create(new StarsectorEditableMarket(
+        var model = factory.create(new StarsectorEditableMarket(
                 market(
                         List.of(),
                         Map.of(),
@@ -173,14 +173,14 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void tracesGravityWellThroughNestedOrbitFocusChain() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        SectorEntityToken barycenter = entity("Kumari barycenter");
-        PlanetAPI gasGiant = planet("Kumari", "gas giant", barycenter);
-        PlanetAPI moon = planet("Valis", "barren moon", gasGiant);
+        var factory = new KmuConditionPickerModelFactory(service);
+        var barycenter = entity("Kumari barycenter");
+        var gasGiant = planet("Kumari", "gas giant", barycenter);
+        var moon = planet("Valis", "barren moon", gasGiant);
 
-        KmuConditionPickerModel model = factory.create(new StarsectorEditableMarket(
+        var model = factory.create(new StarsectorEditableMarket(
                 market(
                         List.of(),
                         Map.of(),
@@ -197,12 +197,12 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void marksPresentHiddenEntriesFromLiveConditionPlugin() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("no_atmosphere", "No Atmosphere", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        MarketConditionAPI condition = condition("no_atmosphere", plugin(false, "graphics/icons/live.png"));
+        var factory = new KmuConditionPickerModelFactory(service);
+        var condition = condition("no_atmosphere", plugin(false, "graphics/icons/live.png"));
 
-        KmuConditionPickerEntry entry = factory.create(new StarsectorEditableMarket(
+        var entry = factory.create(new StarsectorEditableMarket(
                 market(List.of(condition), Map.of("no_atmosphere", condition), Set.of())))
                 .getEntries()
                 .get(0);
@@ -216,10 +216,10 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void defaultsToNotSuppressedWhenSuppressedCheckThrows() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        KmuEditableMarket market = new KmuEditableMarket() {
+        var factory = new KmuConditionPickerModelFactory(service);
+        var market = new KmuEditableMarket() {
             @Override public Set<String> getConditionIds() { return Set.of("hot"); }
             @Override public boolean hasCondition(String id) { return "hot".equals(id); }
             @Override public boolean isConditionSuppressed(String id) {
@@ -230,7 +230,7 @@ class KmuConditionPickerModelFactoryTest {
             @Override public void reapplyConditions() {}
         };
 
-        KmuConditionPickerEntry entry = factory.create(market).getEntries().get(0);
+        var entry = factory.create(market).getEntries().get(0);
 
         assertThat(entry.isPresent()).isTrue();
         assertThat(entry.isSuppressed()).isFalse();
@@ -238,11 +238,11 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void treatsLiveConditionAsAbsentWhenConditionLookupThrows() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        MarketConditionAPI hotCondition = condition("hot", null);
-        MarketAPI throwingMarket = proxy(MarketAPI.class, (p, method, args) -> {
+        var factory = new KmuConditionPickerModelFactory(service);
+        var hotCondition = condition("hot", null);
+        var throwingMarket = proxy(MarketAPI.class, (p, method, args) -> {
             switch (method.getName()) {
                 case "getConditions": return List.of(hotCondition);
                 case "getFirstCondition": throw new RuntimeException("lookup failed");
@@ -251,7 +251,7 @@ class KmuConditionPickerModelFactoryTest {
             }
         });
 
-        KmuConditionPickerEntry entry = factory.create(new StarsectorEditableMarket(throwingMarket))
+        var entry = factory.create(new StarsectorEditableMarket(throwingMarket))
                 .getEntries().get(0);
 
         assertThat(entry.isPresent()).isTrue();
@@ -262,12 +262,12 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void usesSpecIconWhenLiveConditionHasNullPlugin() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        MarketConditionAPI conditionWithNullPlugin = condition("hot", null);
+        var factory = new KmuConditionPickerModelFactory(service);
+        var conditionWithNullPlugin = condition("hot", null);
 
-        KmuConditionPickerEntry entry = factory.create(new StarsectorEditableMarket(
+        var entry = factory.create(new StarsectorEditableMarket(
                 market(List.of(conditionWithNullPlugin),
                         Map.of("hot", conditionWithNullPlugin), Set.of())))
                 .getEntries().get(0);
@@ -279,12 +279,12 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void usesSpecIconWhenLiveIconNameIsBlank() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        MarketConditionAPI conditionWithBlankIcon = condition("hot", plugin(true, "  "));
+        var factory = new KmuConditionPickerModelFactory(service);
+        var conditionWithBlankIcon = condition("hot", plugin(true, "  "));
 
-        KmuConditionPickerEntry entry = factory.create(new StarsectorEditableMarket(
+        var entry = factory.create(new StarsectorEditableMarket(
                 market(List.of(conditionWithBlankIcon),
                         Map.of("hot", conditionWithBlankIcon), Set.of())))
                 .getEntries().get(0);
@@ -294,10 +294,10 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void defaultsToNotHiddenAndUsesSpecIconWhenPluginThrows() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
-        MarketConditionAPI throwingPluginCondition = proxy(MarketConditionAPI.class, (p, method, args) -> {
+        var factory = new KmuConditionPickerModelFactory(service);
+        var throwingPluginCondition = proxy(MarketConditionAPI.class, (p, method, args) -> {
             switch (method.getName()) {
                 case "getId": return "hot";
                 case "getPlugin": throw new RuntimeException("plugin unavailable");
@@ -305,7 +305,7 @@ class KmuConditionPickerModelFactoryTest {
             }
         });
 
-        KmuConditionPickerEntry entry = factory.create(new StarsectorEditableMarket(
+        var entry = factory.create(new StarsectorEditableMarket(
                 market(List.of(throwingPluginCondition),
                         Map.of("hot", throwingPluginCondition), Set.of())))
                 .getEntries().get(0);
@@ -317,11 +317,11 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void returnsImmutableEntryList() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        KmuConditionPickerModelFactory factory = new KmuConditionPickerModelFactory(service);
+        var factory = new KmuConditionPickerModelFactory(service);
 
-        KmuConditionPickerModel model = factory.create(new FakeEditableMarket());
+        var model = factory.create(new FakeEditableMarket());
 
         assertThatThrownBy(() -> model.getEntries().add(new KmuConditionPickerEntry(
                 "cold",
@@ -340,7 +340,7 @@ class KmuConditionPickerModelFactoryTest {
         private final LinkedHashMap<String, KmuConditionSpec> specsById = new LinkedHashMap<>();
 
         private FakeConditionRepository(KmuConditionSpec... specs) {
-            for (KmuConditionSpec spec : specs) {
+            for (var spec : specs) {
                 specsById.put(spec.getId(), spec);
             }
         }
@@ -361,7 +361,7 @@ class KmuConditionPickerModelFactoryTest {
         private final LinkedHashSet<String> suppressedConditionIds = new LinkedHashSet<>();
 
         private FakeEditableMarket(String... conditionIds) {
-            for (String conditionId : conditionIds) {
+            for (var conditionId : conditionIds) {
                 this.conditionIds.add(conditionId);
             }
         }

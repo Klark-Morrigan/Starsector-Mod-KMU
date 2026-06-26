@@ -17,7 +17,7 @@ public final class KmuValues {
             return null;
         }
 
-        String trimmed = value.trim();
+        var trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
 
@@ -28,7 +28,7 @@ public final class KmuValues {
 
     /** Returns the normalized text, or {@code ""} when absent - useful in string-building contexts. */
     public static String getTextOrEmpty(String value) {
-        String normalized = normalizeText(value);
+        var normalized = normalizeText(value);
         return normalized == null ? "" : normalized;
     }
 

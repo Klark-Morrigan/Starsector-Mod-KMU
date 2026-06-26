@@ -25,7 +25,7 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
 
     @Override
     public Set<String> getConditionIds() {
-        List<MarketConditionAPI> conditions = market.getConditions();
+        var conditions = market.getConditions();
         if (conditions == null) {
             return new LinkedHashSet<>();
         }
@@ -61,7 +61,7 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
 
     @Override
     public void markConditionSurveyed(String conditionId) {
-        MarketConditionAPI condition = market.getFirstCondition(conditionId);
+        var condition = market.getFirstCondition(conditionId);
         if (condition != null) {
             condition.setSurveyed(true);
         }

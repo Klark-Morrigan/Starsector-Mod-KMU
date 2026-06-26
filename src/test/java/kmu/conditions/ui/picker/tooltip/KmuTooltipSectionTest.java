@@ -46,7 +46,7 @@ class KmuTooltipSectionTest {
 
     @Test
     void addsMutedSectionWithStandardBlueBannerAndGrayBodyText() {
-        RecordingTooltip tooltip = RecordingTooltip.create();
+        var tooltip = RecordingTooltip.create();
 
         KmuTooltipSection.add(
                 tooltip.getApi(),
@@ -69,7 +69,7 @@ class KmuTooltipSectionTest {
 
     @Test
     void addsWarningSectionWithWarningBannerAndNormalBodyText() {
-        RecordingTooltip tooltip = RecordingTooltip.create();
+        var tooltip = RecordingTooltip.create();
 
         KmuTooltipSection.add(
                 tooltip.getApi(),
@@ -210,7 +210,7 @@ class KmuTooltipSectionTest {
             if (!(other instanceof HeadingCall)) {
                 return false;
             }
-            HeadingCall that = (HeadingCall) other;
+            var that = (HeadingCall) other;
             return Float.compare(that.pad, pad) == 0
                     && java.util.Objects.equals(title, that.title)
                     && java.util.Objects.equals(titleColor, that.titleColor)
@@ -254,7 +254,7 @@ class KmuTooltipSectionTest {
             if (!(other instanceof ParagraphCall)) {
                 return false;
             }
-            ParagraphCall that = (ParagraphCall) other;
+            var that = (ParagraphCall) other;
             return Float.compare(that.pad, pad) == 0
                     && java.util.Objects.equals(text, that.text)
                     && java.util.Objects.equals(color, that.color);

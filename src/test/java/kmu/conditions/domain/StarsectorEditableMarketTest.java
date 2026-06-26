@@ -20,28 +20,28 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class StarsectorEditableMarketTest {
     @Test
     void extractsConditionIdsInMarketOrderAndSkipsNulls() {
-        StarsectorEditableMarket market = new StarsectorEditableMarket(market(
+        var market = new StarsectorEditableMarket(market(
                 Arrays.asList(condition("hot", new ArrayList<>()), null, condition(null, new ArrayList<>()),
                         condition("ore_sparse", new ArrayList<>())),
                 Map.of(),
                 new ArrayList<>()));
 
-        Set<String> ids = market.getConditionIds();
+        var ids = market.getConditionIds();
 
         assertThat(ids).containsExactly("hot", "ore_sparse");
     }
 
     @Test
     void exposesWrappedStarsectorMarketForUiMetadata() {
-        MarketAPI starsectorMarket = market(List.of(), Map.of(), new ArrayList<>());
-        StarsectorEditableMarket market = new StarsectorEditableMarket(starsectorMarket);
+        var starsectorMarket = market(List.of(), Map.of(), new ArrayList<>());
+        var market = new StarsectorEditableMarket(starsectorMarket);
 
         assertThat(market.getMarket()).isSameAs(starsectorMarket);
     }
 
     @Test
     void returnsEmptyConditionIdsWhenMarketConditionsAreNull() {
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var market = new StarsectorEditableMarket(
                 market(null, Map.of(), new ArrayList<>()));
 
         assertThat(market.getConditionIds()).isEmpty();
@@ -49,8 +49,8 @@ class StarsectorEditableMarketTest {
 
     @Test
     void propagatesGetConditionsFailuresForServiceBoundaryToHandle() {
-        RuntimeException exception = new IllegalStateException("get conditions failed");
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var exception = new IllegalStateException("get conditions failed");
+        var market = new StarsectorEditableMarket(
                 throwingMarket("getConditions", exception));
 
         assertThatThrownBy(market::getConditionIds)
@@ -59,10 +59,10 @@ class StarsectorEditableMarketTest {
 
     @Test
     void delegatesHasConditionAndAddCondition() {
-        List<String> calls = new ArrayList<>();
-        Map<String, MarketConditionAPI> conditionsById = new LinkedHashMap<>();
+        var calls = new ArrayList<String>();
+        var conditionsById = new LinkedHashMap<String, MarketConditionAPI>();
         conditionsById.put("hot", condition("hot", calls));
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var market = new StarsectorEditableMarket(
                 market(List.of(), conditionsById, calls));
 
         assertThat(market.hasCondition("hot")).isTrue();
@@ -75,7 +75,7 @@ class StarsectorEditableMarketTest {
 
     @Test
     void delegatesConditionSuppressionLookup() {
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var market = new StarsectorEditableMarket(
                 market(List.of(), Map.of(), new ArrayList<>(), Set.of("hot")));
 
         assertThat(market.isConditionSuppressed("hot")).isTrue();
@@ -84,8 +84,8 @@ class StarsectorEditableMarketTest {
 
     @Test
     void propagatesAddConditionFailuresForServiceBoundaryToHandle() {
-        RuntimeException exception = new IllegalStateException("add condition failed");
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var exception = new IllegalStateException("add condition failed");
+        var market = new StarsectorEditableMarket(
                 throwingMarket("addCondition", exception));
 
         assertThatThrownBy(() -> market.addCondition("hot"))
@@ -94,10 +94,10 @@ class StarsectorEditableMarketTest {
 
     @Test
     void marksExistingConditionSurveyed() {
-        List<String> calls = new ArrayList<>();
-        Map<String, MarketConditionAPI> conditionsById = new LinkedHashMap<>();
+        var calls = new ArrayList<String>();
+        var conditionsById = new LinkedHashMap<String, MarketConditionAPI>();
         conditionsById.put("hot", condition("hot", calls));
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var market = new StarsectorEditableMarket(
                 market(List.of(), conditionsById, calls));
 
         market.markConditionSurveyed("hot");
@@ -107,8 +107,8 @@ class StarsectorEditableMarketTest {
 
     @Test
     void propagatesConditionLookupFailuresForServiceBoundaryToHandle() {
-        RuntimeException exception = new IllegalStateException("condition lookup failed");
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var exception = new IllegalStateException("condition lookup failed");
+        var market = new StarsectorEditableMarket(
                 throwingMarket("getFirstCondition", exception));
 
         assertThatThrownBy(() -> market.markConditionSurveyed("hot"))
@@ -117,9 +117,9 @@ class StarsectorEditableMarketTest {
 
     @Test
     void propagatesSurveyMarkerFailuresForServiceBoundaryToHandle() {
-        RuntimeException exception = new IllegalStateException("survey marker failed");
-        MarketConditionAPI condition = throwingCondition("setSurveyed", exception);
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var exception = new IllegalStateException("survey marker failed");
+        var condition = throwingCondition("setSurveyed", exception);
+        var market = new StarsectorEditableMarket(
                 market(List.of(), Map.of("hot", condition), new ArrayList<>()));
 
         assertThatThrownBy(() -> market.markConditionSurveyed("hot"))
@@ -128,8 +128,8 @@ class StarsectorEditableMarketTest {
 
     @Test
     void ignoresSurveyedMarkerWhenConditionIsMissing() {
-        List<String> calls = new ArrayList<>();
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var calls = new ArrayList<String>();
+        var market = new StarsectorEditableMarket(
                 market(List.of(), Map.of(), calls));
 
         market.markConditionSurveyed("missing");
@@ -139,8 +139,8 @@ class StarsectorEditableMarketTest {
 
     @Test
     void delegatesReapplyConditions() {
-        List<String> calls = new ArrayList<>();
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var calls = new ArrayList<String>();
+        var market = new StarsectorEditableMarket(
                 market(List.of(), Map.of(), calls));
 
         market.reapplyConditions();
@@ -150,8 +150,8 @@ class StarsectorEditableMarketTest {
 
     @Test
     void propagatesReapplyFailuresForServiceBoundaryToHandle() {
-        RuntimeException exception = new IllegalStateException("reapply failed");
-        StarsectorEditableMarket market = new StarsectorEditableMarket(
+        var exception = new IllegalStateException("reapply failed");
+        var market = new StarsectorEditableMarket(
                 throwingMarket("reapplyConditions", exception));
 
         assertThatThrownBy(market::reapplyConditions)

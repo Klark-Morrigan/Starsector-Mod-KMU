@@ -63,7 +63,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void stylesAbsentEntriesWithDefaultButtonColorsAndGreyedOutIcon() {
-        KmuConditionPickerEntry entry = entry(KmuConditionPickerEntryState.ABSENT);
+        var entry = entry(KmuConditionPickerEntryState.ABSENT);
 
         assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
         assertButtonStyleRoles(entry, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.LIGHT_BLUE);
@@ -73,7 +73,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenButtonColors() {
-        KmuConditionPickerEntry entry = entry(KmuConditionPickerEntryState.PRESENT);
+        var entry = entry(KmuConditionPickerEntryState.PRESENT);
 
         assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
         assertButtonStyleRoles(entry, StarsectorUiColor.DARK_GREEN, StarsectorUiColor.BRIGHT_GREEN);
@@ -83,7 +83,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void stylesHiddenPresentEntriesWithDefaultButtonColorsAndFullIcon() {
-        KmuConditionPickerEntry entry = hiddenEntry();
+        var entry = hiddenEntry();
 
         assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
         assertThat(entry.isPresent()).isTrue();
@@ -92,7 +92,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void stylesSuppressedPresentEntriesWithWarningButtonColorsAndFullIcon() {
-        KmuConditionPickerEntry entry = suppressedEntry();
+        var entry = suppressedEntry();
 
         assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
         assertButtonStyleRoles(entry, StarsectorUiColor.MUTED_RED, StarsectorUiColor.BRIGHT_RED);
@@ -102,7 +102,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void prioritizesSuppressedStyleWhenEntryIsBothSuppressedAndHidden() {
-        KmuConditionPickerEntry entry = new KmuConditionPickerEntry(
+        var entry = new KmuConditionPickerEntry(
                 "hot",
                 "Hot",
                 "graphics/icons/markets/hot.png",
@@ -117,7 +117,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void iconSizeReturnsFallbackSizeForZeroDimensions() {
-        KmuUiSize bounds =
+        var bounds =
                 KmuConditionIconButtonFactory.computeIconSize(0f, 0f);
 
         assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
@@ -126,7 +126,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void iconSizeReturnsFallbackSizeForNegativeDimensions() {
-        KmuUiSize bounds =
+        var bounds =
                 KmuConditionIconButtonFactory.computeIconSize(-1f, -1f);
 
         assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
@@ -135,7 +135,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void rendersIconsAtVanillaHeightWhenSourceAlreadyMatches() {
-        KmuConditionIconButtonLayout wide =
+        var wide =
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(120f, 40f);
 
         assertThat(wide.getIconWidth()).isEqualTo(120f);
@@ -148,7 +148,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void upscalesSmallerIconsToVanillaHeightWithoutChangingAspectRatio() {
-        KmuConditionIconButtonLayout small =
+        var small =
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(20f, 20f);
 
         assertThat(small.getIconWidth()).isEqualTo(40f);
@@ -162,7 +162,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void preservesWideIconWidthWhenHeightMatchesVanillaTarget() {
-        KmuConditionIconButtonLayout wide =
+        var wide =
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(180f, 40f);
 
         assertThat(wide.getIconWidth()).isEqualTo(180f);
@@ -172,7 +172,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void downscalesOversizedIconsToVanillaHeightWithoutChangingAspectRatio() {
-        KmuConditionIconButtonLayout tall =
+        var tall =
                 KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 192f);
 
         assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
@@ -182,7 +182,7 @@ class KmuConditionIconButtonTest {
 
     @Test
     void updatesEntryStateInPlace() {
-        KmuConditionIconButton button = new KmuConditionIconButton(
+        var button = new KmuConditionIconButton(
                 entry(KmuConditionPickerEntryState.ABSENT),
                 action -> {
                 });
@@ -195,8 +195,8 @@ class KmuConditionIconButtonTest {
 
     @Test
     void appendsMetadataFooterInExpectedOrder() {
-        RecordingTooltip tooltip = RecordingTooltip.create();
-        KmuConditionPickerEntry entry = new KmuConditionPickerEntry(
+        var tooltip = RecordingTooltip.create();
+        var entry = new KmuConditionPickerEntry(
                 "hot",
                 "Hot",
                 "graphics/icons/markets/hot.png",
@@ -220,8 +220,8 @@ class KmuConditionIconButtonTest {
 
     @Test
     void omitsHiddenAndSuppressedMetadataForAbsentEntries() {
-        RecordingTooltip tooltip = RecordingTooltip.create();
-        KmuConditionPickerEntry entry = new KmuConditionPickerEntry(
+        var tooltip = RecordingTooltip.create();
+        var entry = new KmuConditionPickerEntry(
                 "hot",
                 "Hot",
                 "graphics/icons/markets/hot.png",
@@ -280,7 +280,7 @@ class KmuConditionIconButtonTest {
             Color borderColor,
             float backdropAlpha,
             float borderAlpha) {
-        KmuConditionIconButtonStyle style = KmuConditionIconButtonStyle.forEntry(entry);
+        var style = KmuConditionIconButtonStyle.forEntry(entry);
         assertThat(style.getBackdropColor()).isEqualTo(backdropColor);
         assertThat(style.getBorderColor()).isEqualTo(borderColor);
         assertThat(style.getBackdropAlpha()).isEqualTo(backdropAlpha);
@@ -291,7 +291,7 @@ class KmuConditionIconButtonTest {
             KmuConditionPickerEntry entry,
             StarsectorUiColor backdropColor,
             StarsectorUiColor borderColor) {
-        KmuConditionIconButtonStyle style = KmuConditionIconButtonStyle.forEntry(entry);
+        var style = KmuConditionIconButtonStyle.forEntry(entry);
 
         assertThat(style.getBackdropRawColor()).isEqualTo(backdropColor);
         assertThat(style.getBorderRawColor()).isEqualTo(borderColor);

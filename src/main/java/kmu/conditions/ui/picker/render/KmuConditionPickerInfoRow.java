@@ -44,9 +44,9 @@ final class KmuConditionPickerInfoRow {
      * the crest being clipped when line count is small.
      */
     static float computeHeight(float topPad, int locationLineCount, int summaryLineCount) {
-        int totalLines = locationLineCount + summaryLineCount;
-        float sectionGap = (locationLineCount > 0 && summaryLineCount > 0) ? SECTION_PAD : 0f;
-        float height = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
+        var totalLines = locationLineCount + summaryLineCount;
+        var sectionGap = (locationLineCount > 0 && summaryLineCount > 0) ? SECTION_PAD : 0f;
+        var height = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
         return topPad + height;
     }
 
@@ -61,17 +61,17 @@ final class KmuConditionPickerInfoRow {
         Objects.requireNonNull(summaryParagraphs, "summaryParagraphs");
         Objects.requireNonNull(faction, "faction");
 
-        int totalLines = locationParagraphs.size() + summaryParagraphs.size();
-        float sectionGap = (!locationParagraphs.isEmpty() && !summaryParagraphs.isEmpty()) ? SECTION_PAD : 0f;
-        float panelHeight = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
-        CustomPanelAPI row = panel.createCustomPanel(width, panelHeight, new BaseCustomUIPanelPlugin());
+        var totalLines = locationParagraphs.size() + summaryParagraphs.size();
+        var sectionGap = (!locationParagraphs.isEmpty() && !summaryParagraphs.isEmpty()) ? SECTION_PAD : 0f;
+        var panelHeight = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
+        var row = panel.createCustomPanel(width, panelHeight, new BaseCustomUIPanelPlugin());
 
-        Optional<String> crestSprite = faction.flatMap(KmuPickerFaction::getCrestSprite);
-        float textX = crestSprite.isPresent() ? renderIcon(row, crestSprite.get()) : 0f;
-        float textWidth = width - textX;
+        var crestSprite = faction.flatMap(KmuPickerFaction::getCrestSprite);
+        var textX = crestSprite.isPresent() ? renderIcon(row, crestSprite.get()) : 0f;
+        var textWidth = width - textX;
 
-        float y = 0f;
-        for (HighlightedParagraph paragraph : locationParagraphs) {
+        var y = 0f;
+        for (var paragraph : locationParagraphs) {
             renderText(row, paragraph, textX, y, textWidth);
             y += LINE_HEIGHT;
         }
@@ -82,7 +82,7 @@ final class KmuConditionPickerInfoRow {
 
         // Render all summary lines; the last one is the live counts label.
         LabelAPI conditionsLabel = null;
-        for (HighlightedParagraph paragraph : summaryParagraphs) {
+        for (var paragraph : summaryParagraphs) {
             conditionsLabel = renderText(row, paragraph, textX, y, textWidth);
             y += LINE_HEIGHT;
         }
@@ -99,7 +99,7 @@ final class KmuConditionPickerInfoRow {
     }
 
     private static float renderIcon(CustomPanelAPI row, String sprite) {
-        TooltipMakerAPI iconEl = row.createUIElement(ICON_SIZE, ICON_SIZE, false);
+        var iconEl = row.createUIElement(ICON_SIZE, ICON_SIZE, false);
         iconEl.addImage(sprite, ICON_SIZE, ICON_SIZE, 0f);
         row.addUIElement(iconEl).inTL(0f, 0f);
         return ICON_SIZE + ICON_PAD;
@@ -107,8 +107,8 @@ final class KmuConditionPickerInfoRow {
 
     private static LabelAPI renderText(
             CustomPanelAPI row, HighlightedParagraph paragraph, float x, float y, float width) {
-        TooltipMakerAPI textEl = row.createUIElement(width, LINE_HEIGHT, false);
-        LabelAPI label = paragraph.addTo(textEl);
+        var textEl = row.createUIElement(width, LINE_HEIGHT, false);
+        var label = paragraph.addTo(textEl);
         row.addUIElement(textEl).inTL(x, y);
         return label;
     }

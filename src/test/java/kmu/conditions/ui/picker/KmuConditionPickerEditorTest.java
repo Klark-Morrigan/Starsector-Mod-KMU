@@ -27,16 +27,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KmuConditionPickerEditorTest {
     @Test
     void opensDialogBuiltFromResolvedMarketContext() {
-        KmuConditionService service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true),
                 spec("cold", "Cold", true)));
-        AtomicReference<KmuConditionPickerDialogDelegate> openedDialog = new AtomicReference<>();
-        KmuConditionPickerEditor editor = new KmuConditionPickerEditor(
+        var openedDialog = new AtomicReference<KmuConditionPickerDialogDelegate>();
+        var editor = new KmuConditionPickerEditor(
                 service,
                 new KmuConditionPickerModelFactory(service),
                 openedDialog::set);
-        MarketAPI market = marketWithConditions("hot");
-        KmuMarketUiContext context = KmuMarketUiContext.withoutPanel(
+        var market = marketWithConditions("hot");
+        var context = KmuMarketUiContext.withoutPanel(
                 market,
                 KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
 
@@ -56,8 +56,8 @@ class KmuConditionPickerEditorTest {
     }
 
     private static MarketAPI marketWithConditions(String... conditionIds) {
-        List<MarketConditionAPI> conditions = new ArrayList<>();
-        for (String conditionId : conditionIds) {
+        var conditions = new ArrayList<MarketConditionAPI>();
+        for (var conditionId : conditionIds) {
             conditions.add(condition(conditionId));
         }
 
@@ -117,7 +117,7 @@ class KmuConditionPickerEditorTest {
         private final LinkedHashMap<String, KmuConditionSpec> specsById = new LinkedHashMap<>();
 
         private FakeConditionRepository(KmuConditionSpec... specs) {
-            for (KmuConditionSpec spec : specs) {
+            for (var spec : specs) {
                 specsById.put(spec.getId(), spec);
             }
         }

@@ -31,7 +31,7 @@ class StarsectorConditionPickerLocationFactoryTest {
 
     @Test
     void returnsUnknownLocationForNonStarsectorMarket() {
-        KmuEditableMarket fakeMarket = new KmuEditableMarket() {
+        var fakeMarket = new KmuEditableMarket() {
             @Override public Set<String> getConditionIds() { return Set.of(); }
             @Override public boolean hasCondition(String id) { return false; }
             @Override public boolean isConditionSuppressed(String id) { return false; }
@@ -40,7 +40,7 @@ class StarsectorConditionPickerLocationFactoryTest {
             @Override public void reapplyConditions() {}
         };
 
-        KmuConditionPickerLocation location = factory.create(fakeMarket);
+        var location = factory.create(fakeMarket);
 
         assertThat(location.getPlanetName()).isEmpty();
         assertThat(location.getFaction()).isEmpty();
@@ -50,22 +50,22 @@ class StarsectorConditionPickerLocationFactoryTest {
     @Test
     void fallsBackToPrimaryEntityNameWhenPlanetNameIsBlank() {
         // planet.getName() is blank; primaryEntity.getName() provides the display name
-        PlanetAPI blankNamePlanet = planet("  ", "terran world");
-        SectorEntityToken primary = entity("Station Alpha");
-        MarketAPI market = market(null, blankNamePlanet, primary, null, null, null);
+        var blankNamePlanet = planet("  ", "terran world");
+        var primary = entity("Station Alpha");
+        var market = market(null, blankNamePlanet, primary, null, null, null);
 
-        KmuConditionPickerLocation location = factory.create(new StarsectorEditableMarket(market));
+        var location = factory.create(new StarsectorEditableMarket(market));
 
         assertThat(location.getPlanetName()).contains("Station Alpha");
     }
 
     @Test
     void fallsBackToMarketNameWhenBothPlanetAndEntityNamesAreBlank() {
-        PlanetAPI blankNamePlanet = planet("  ", "terran world");
-        SectorEntityToken blankNameEntity = entity("  ");
-        MarketAPI market = market("Relay Station", blankNamePlanet, blankNameEntity, null, null, null);
+        var blankNamePlanet = planet("  ", "terran world");
+        var blankNameEntity = entity("  ");
+        var market = market("Relay Station", blankNamePlanet, blankNameEntity, null, null, null);
 
-        KmuConditionPickerLocation location = factory.create(new StarsectorEditableMarket(market));
+        var location = factory.create(new StarsectorEditableMarket(market));
 
         assertThat(location.getPlanetName()).contains("Relay Station");
     }
@@ -73,10 +73,10 @@ class StarsectorConditionPickerLocationFactoryTest {
     @Test
     void readsPlanetTypeFromPrimaryEntityWhenItIsAPlanetAndPlanetEntityIsNull() {
         // No planet entity; primaryEntity is a PlanetAPI so its type name is used
-        PlanetAPI primaryPlanet = planet("Valis", "barren world");
-        MarketAPI market = market(null, null, primaryPlanet, null, null, null);
+        var primaryPlanet = planet("Valis", "barren world");
+        var market = market(null, null, primaryPlanet, null, null, null);
 
-        KmuConditionPickerLocation location = factory.create(new StarsectorEditableMarket(market));
+        var location = factory.create(new StarsectorEditableMarket(market));
 
         assertThat(location.getPlanetType()).contains("barren world");
     }
@@ -84,13 +84,13 @@ class StarsectorConditionPickerLocationFactoryTest {
     @Test
     void readsFactionFromPrimaryEntityWhenMarketFactionIsNull() {
         // market.getFaction() returns null; primaryEntity.getFaction() provides the faction
-        FactionAPI hegemony = faction("Hegemony");
-        SectorEntityToken primary = mock(SectorEntityToken.class);
+        var hegemony = faction("Hegemony");
+        var primary = mock(SectorEntityToken.class);
         when(primary.getName()).thenReturn("Primary Entity");
         when(primary.getFaction()).thenReturn(hegemony);
-        MarketAPI market = market(null, null, primary, null, null, null);
+        var market = market(null, null, primary, null, null, null);
 
-        KmuConditionPickerLocation location = factory.create(new StarsectorEditableMarket(market));
+        var location = factory.create(new StarsectorEditableMarket(market));
 
         assertThat(location.getFaction()).isPresent();
         assertThat(location.getFaction().get().getName()).isEqualTo("Hegemony");
@@ -99,10 +99,10 @@ class StarsectorConditionPickerLocationFactoryTest {
     @Test
     void readsLocationNameFromContainingLocationWhenStarSystemIsNull() {
         // getStarSystem() returns null; getContainingLocation() provides the name
-        LocationAPI containingLocation = location("Hyperspace");
-        MarketAPI market = market(null, null, null, null, null, containingLocation);
+        var containingLocation = location("Hyperspace");
+        var market = market(null, null, null, null, null, containingLocation);
 
-        KmuConditionPickerLocation result = factory.create(new StarsectorEditableMarket(market));
+        var result = factory.create(new StarsectorEditableMarket(market));
 
         assertThat(result.getStarSystemName()).contains("Hyperspace");
     }
@@ -110,15 +110,15 @@ class StarsectorConditionPickerLocationFactoryTest {
     @Test
     void readsConstellationFromContainingLocationWhenStarSystemHasNone() {
         // Star system has no constellation; containingLocation provides it
-        Constellation constellation = new Constellation(
+        var constellation = new Constellation(
                 Constellation.ConstellationType.NORMAL, StarAge.AVERAGE);
         constellation.setNameOverride("Serpens");
-        LocationAPI containingLocation = locationWithConstellation("Outer Rim", constellation);
-        StarSystemAPI emptySystem = mock(StarSystemAPI.class);
+        var containingLocation = locationWithConstellation("Outer Rim", constellation);
+        var emptySystem = mock(StarSystemAPI.class);
         // getConstellation, getCenter, getStar all default to null on Mockito mocks.
-        MarketAPI market = market(null, null, null, emptySystem, null, containingLocation);
+        var market = market(null, null, null, emptySystem, null, containingLocation);
 
-        KmuConditionPickerLocation result = factory.create(new StarsectorEditableMarket(market));
+        var result = factory.create(new StarsectorEditableMarket(market));
 
         assertThat(result.getConstellationName()).isPresent().get().asString().contains("Serpens");
     }
@@ -126,7 +126,7 @@ class StarsectorConditionPickerLocationFactoryTest {
     // --- mock helpers ---
 
     private static PlanetAPI planet(String name, String type) {
-        PlanetAPI planet = mock(PlanetAPI.class);
+        var planet = mock(PlanetAPI.class);
         when(planet.getName()).thenReturn(name);
         when(planet.getTypeNameWithWorld()).thenReturn(type);
         when(planet.getTypeNameWithWorldLowerCase()).thenReturn(type);
@@ -134,14 +134,14 @@ class StarsectorConditionPickerLocationFactoryTest {
     }
 
     private static SectorEntityToken entity(String name) {
-        SectorEntityToken entity = mock(SectorEntityToken.class);
+        var entity = mock(SectorEntityToken.class);
         when(entity.getName()).thenReturn(name);
         return entity;
     }
 
     private static FactionAPI faction(String name) {
-        RelationshipAPI relationship = createRelationship();
-        FactionAPI faction = mock(FactionAPI.class);
+        var relationship = createRelationship();
+        var faction = mock(FactionAPI.class);
         when(faction.getDisplayNameLong()).thenReturn(name);
         when(faction.getDisplayName()).thenReturn(name);
         when(faction.getBaseUIColor()).thenReturn(FACTION_COLOR);
@@ -150,7 +150,7 @@ class StarsectorConditionPickerLocationFactoryTest {
     }
 
     private static RelationshipAPI createRelationship() {
-        RelationshipAPI relationship = mock(RelationshipAPI.class);
+        var relationship = mock(RelationshipAPI.class);
         when(relationship.getLevel()).thenReturn(RepLevel.VENGEFUL);
         when(relationship.getRepInt()).thenReturn(-100);
         when(relationship.getRelColor()).thenReturn(RELATIONSHIP_COLOR);
@@ -158,14 +158,14 @@ class StarsectorConditionPickerLocationFactoryTest {
     }
 
     private static LocationAPI location(String name) {
-        LocationAPI location = mock(LocationAPI.class);
+        var location = mock(LocationAPI.class);
         when(location.getNameWithTypeShort()).thenReturn(name);
         when(location.getName()).thenReturn(name);
         return location;
     }
 
     private static LocationAPI locationWithConstellation(String name, Constellation constellation) {
-        LocationAPI location = mock(LocationAPI.class);
+        var location = mock(LocationAPI.class);
         when(location.getNameWithTypeShort()).thenReturn(name);
         when(location.getName()).thenReturn(name);
         when(location.getConstellation()).thenReturn(constellation);
@@ -179,7 +179,7 @@ class StarsectorConditionPickerLocationFactoryTest {
             StarSystemAPI system,
             FactionAPI faction,
             LocationAPI containingLocation) {
-        MarketAPI market = mock(MarketAPI.class);
+        var market = mock(MarketAPI.class);
         when(market.getName()).thenReturn(name);
         when(market.getPlanetEntity()).thenReturn(planet);
         when(market.getPrimaryEntity()).thenReturn(primaryEntity);
