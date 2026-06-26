@@ -62,11 +62,11 @@ class KmuConditionPickerDialogDelegateTest {
     void panelPluginHandlesButtonPressedActions() {
         var service = new KmuConditionService(new FakeConditionRepository(
                 new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
-        var market = new FakeEditableMarket();
+        var marketFake = new FakeEditableMarket();
         var actionHandler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
-                market);
+                marketFake);
         var feedbackSink = new RecordingFeedbackSink();
         var delegate = new KmuConditionPickerDialogDelegate(
                 actionHandler,
@@ -81,7 +81,7 @@ class KmuConditionPickerDialogDelegateTest {
         assertThat(actionHandler.getModel().getEntries())
                 .extracting(KmuConditionPickerEntry::getState)
                 .containsExactly(KmuConditionPickerEntryState.PRESENT);
-        assertThat(market.conditionIds).containsExactly("hot");
+        assertThat(marketFake.conditionIds).containsExactly("hot");
         assertThat(feedbackSink.messages).containsExactly("Added condition: hot");
     }
 
@@ -89,11 +89,11 @@ class KmuConditionPickerDialogDelegateTest {
     void panelPluginIgnoresPresentConditionActionsWithoutFeedback() {
         var service = new KmuConditionService(new FakeConditionRepository(
                 new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
-        var market = new FakeEditableMarket("hot");
+        var marketFake = new FakeEditableMarket("hot");
         var actionHandler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
-                market);
+                marketFake);
         var feedbackSink = new RecordingFeedbackSink();
         var delegate = new KmuConditionPickerDialogDelegate(
                 actionHandler,
@@ -105,7 +105,7 @@ class KmuConditionPickerDialogDelegateTest {
 
         delegate.getCustomPanelPlugin().buttonPressed(action);
 
-        assertThat(market.conditionIds).containsExactly("hot");
+        assertThat(marketFake.conditionIds).containsExactly("hot");
         assertThat(feedbackSink.messages).isEmpty();
     }
 

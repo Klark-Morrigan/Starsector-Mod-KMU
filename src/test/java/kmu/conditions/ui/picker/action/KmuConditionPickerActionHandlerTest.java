@@ -25,11 +25,11 @@ class KmuConditionPickerActionHandlerTest {
     void addsAbsentConditionRefreshesModelAndShowsFeedback() {
         var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        var market = new FakeEditableMarket();
+        var marketFake = new FakeEditableMarket();
         var handler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
-                market);
+                marketFake);
         var entry = handler.getModel().getEntries().get(0);
 
         var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
@@ -44,19 +44,19 @@ class KmuConditionPickerActionHandlerTest {
                     assertThat(feedback.getMessage()).isEqualTo("Added condition: hot");
                     assertThat(feedback.isFailure()).isFalse();
                 });
-        assertThat(market.conditionIds).containsExactly("hot");
-        assertThat(market.calls).containsExactly("add:hot", "surveyed:hot", "reapply");
+        assertThat(marketFake.conditionIds).containsExactly("hot");
+        assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot", "reapply");
     }
 
     @Test
     void presentConditionActionDoesNotMutateMarket() {
         var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        var market = new FakeEditableMarket("hot");
+        var marketFake = new FakeEditableMarket("hot");
         var handler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
-                market);
+                marketFake);
         var originalModel = handler.getModel();
         var entry = handler.getModel().getEntries().get(0);
 
@@ -65,8 +65,8 @@ class KmuConditionPickerActionHandlerTest {
         assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
         assertThat(handler.getModel()).isSameAs(originalModel);
         assertThat(handler.getFeedback()).isEmpty();
-        assertThat(market.conditionIds).containsExactly("hot");
-        assertThat(market.calls).isEmpty();
+        assertThat(marketFake.conditionIds).containsExactly("hot");
+        assertThat(marketFake.calls).isEmpty();
     }
 
     @Test
@@ -74,12 +74,12 @@ class KmuConditionPickerActionHandlerTest {
         var exception = new IllegalStateException("add failed");
         var service = new KmuConditionService(new FakeConditionRepository(
                 spec("hot", "Hot", true)));
-        var market = new FakeEditableMarket()
+        var marketFake = new FakeEditableMarket()
                 .failAddCondition(exception);
         var handler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
-                market);
+                marketFake);
         var entry = handler.getModel().getEntries().get(0);
 
         var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
@@ -94,8 +94,8 @@ class KmuConditionPickerActionHandlerTest {
                     assertThat(feedback.getMessage()).isEqualTo("Failed to add condition: hot");
                     assertThat(feedback.isFailure()).isTrue();
                 });
-        assertThat(market.conditionIds).isEmpty();
-        assertThat(market.calls).isEmpty();
+        assertThat(marketFake.conditionIds).isEmpty();
+        assertThat(marketFake.calls).isEmpty();
     }
 
     private static KmuConditionSpec spec(String id, String name, boolean planetary) {
