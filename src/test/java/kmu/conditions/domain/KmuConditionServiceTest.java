@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class KmuConditionServiceTest {
     @Test
     void listsOnlyPlanetaryConditionSpecsInRepositoryOrder() {
-        var repositoryFake = new FakeConditionRepository(
+        var repositoryFake = new ConditionRepositoryFake(
                 spec("hot", "Hot", true),
                 spec("population_3", "Population 3", false),
                 spec("farmland_rich", "Farmland: Rich", true));
@@ -47,7 +47,7 @@ class KmuConditionServiceTest {
     @Test
     void returnsImmutablePlanetaryConditionSpecList() {
         var service = new KmuConditionService(
-                new FakeConditionRepository(spec("hot", "Hot", true)));
+                new ConditionRepositoryFake(spec("hot", "Hot", true)));
 
         var specs = service.listPlanetaryConditionSpecs();
 
@@ -57,12 +57,12 @@ class KmuConditionServiceTest {
 
     @Test
     void visibleSpecsIncludePlanetarySpecsAndCurrentNonPlanetaryConditions() {
-        var repositoryFake = new FakeConditionRepository(
+        var repositoryFake = new ConditionRepositoryFake(
                 spec("hot", "Hot", true),
                 spec("abandoned_station", "Abandoned Station", false),
                 spec("population_3", "Population 3", false));
         var service = new KmuConditionService(repositoryFake);
-        var marketFake = new FakeEditableMarket("abandoned_station");
+        var marketFake = new EditableMarketFake("abandoned_station");
 
         var specs = service.listConditionSpecsVisibleForMarket(marketFake);
 
@@ -73,8 +73,8 @@ class KmuConditionServiceTest {
 
     @Test
     void returnsCurrentConditionIdsFromMarket() {
-        var service = new KmuConditionService(new FakeConditionRepository());
-        var marketFake = new FakeEditableMarket("hot", "ore_sparse");
+        var service = new KmuConditionService(new ConditionRepositoryFake());
+        var marketFake = new EditableMarketFake("hot", "ore_sparse");
 
         assertThat(service.getCurrentConditionIds(marketFake))
                 .containsExactly("hot", "ore_sparse");
@@ -82,8 +82,8 @@ class KmuConditionServiceTest {
 
     @Test
     void returnsImmutableCurrentConditionIds() {
-        var service = new KmuConditionService(new FakeConditionRepository());
-        var marketFake = new FakeEditableMarket("hot");
+        var service = new KmuConditionService(new ConditionRepositoryFake());
+        var marketFake = new EditableMarketFake("hot");
 
         var conditionIds = service.getCurrentConditionIds(marketFake);
 
@@ -95,9 +95,9 @@ class KmuConditionServiceTest {
     void returnsEmptyConditionIdsWhenMarketReadFails() {
         var reports = new ArrayList<String>();
         var service = new KmuConditionService(
-                new FakeConditionRepository(),
+                new ConditionRepositoryFake(),
                 (message, cause) -> reports.add(message));
-        var marketFake = new FakeEditableMarket("hot")
+        var marketFake = new EditableMarketFake("hot")
                 .failGetConditionIds(new IllegalStateException("market read failed"));
 
         var conditionIds = service.getCurrentConditionIds(marketFake);
@@ -121,9 +121,9 @@ class KmuConditionServiceTest {
 
     @Test
     void addsValidAbsentPlanetaryConditionAndReappliesMarket() {
-        var repositoryFake = new FakeConditionRepository(spec("habitable", "Habitable", true));
+        var repositoryFake = new ConditionRepositoryFake(spec("habitable", "Habitable", true));
         var service = new KmuConditionService(repositoryFake);
-        var marketFake = new FakeEditableMarket();
+        var marketFake = new EditableMarketFake();
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "habitable");
 
@@ -139,9 +139,9 @@ class KmuConditionServiceTest {
 
     @Test
     void trimsConditionIdBeforeLookupAndMutation() {
-        var repositoryFake = new FakeConditionRepository(spec("hot", "Hot", true));
+        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
         var service = new KmuConditionService(repositoryFake);
-        var marketFake = new FakeEditableMarket();
+        var marketFake = new EditableMarketFake();
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "  hot  ");
 
@@ -151,9 +151,9 @@ class KmuConditionServiceTest {
 
     @Test
     void doesNotAddDuplicateCondition() {
-        var repositoryFake = new FakeConditionRepository(spec("hot", "Hot", true));
+        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
         var service = new KmuConditionService(repositoryFake);
-        var marketFake = new FakeEditableMarket("hot");
+        var marketFake = new EditableMarketFake("hot");
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
 
@@ -165,8 +165,8 @@ class KmuConditionServiceTest {
 
     @Test
     void rejectsMissingConditionSpec() {
-        var service = new KmuConditionService(new FakeConditionRepository());
-        var marketFake = new FakeEditableMarket();
+        var service = new KmuConditionService(new ConditionRepositoryFake());
+        var marketFake = new EditableMarketFake();
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "missing_condition");
 
@@ -177,8 +177,8 @@ class KmuConditionServiceTest {
 
     @Test
     void rejectsBlankConditionId() {
-        var service = new KmuConditionService(new FakeConditionRepository());
-        var marketFake = new FakeEditableMarket();
+        var service = new KmuConditionService(new ConditionRepositoryFake());
+        var marketFake = new EditableMarketFake();
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "   ");
 
@@ -189,8 +189,8 @@ class KmuConditionServiceTest {
 
     @Test
     void rejectsNullConditionId() {
-        var service = new KmuConditionService(new FakeConditionRepository());
-        var marketFake = new FakeEditableMarket();
+        var service = new KmuConditionService(new ConditionRepositoryFake());
+        var marketFake = new EditableMarketFake();
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, null);
 
@@ -201,9 +201,9 @@ class KmuConditionServiceTest {
 
     @Test
     void rejectsNonPlanetaryConditionSpec() {
-        var repositoryFake = new FakeConditionRepository(spec("population_3", "Population 3", false));
+        var repositoryFake = new ConditionRepositoryFake(spec("population_3", "Population 3", false));
         var service = new KmuConditionService(repositoryFake);
-        var marketFake = new FakeEditableMarket();
+        var marketFake = new EditableMarketFake();
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "population_3");
 
@@ -219,7 +219,7 @@ class KmuConditionServiceTest {
         var service = new KmuConditionService(
                 new ThrowingConditionRepository(exception),
                 (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-        var marketFake = new FakeEditableMarket();
+        var marketFake = new EditableMarketFake();
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
 
@@ -236,12 +236,12 @@ class KmuConditionServiceTest {
     @Test
     void returnsFailedResultWhenMarketHasConditionThrows() {
         var exception = new IllegalStateException("market unavailable");
-        var repositoryFake = new FakeConditionRepository(spec("hot", "Hot", true));
+        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
         var reports = new ArrayList<String>();
         var service = new KmuConditionService(
                 repositoryFake,
                 (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-        var marketFake = new FakeEditableMarket()
+        var marketFake = new EditableMarketFake()
                 .failHasCondition(exception);
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
@@ -255,9 +255,9 @@ class KmuConditionServiceTest {
     @Test
     void returnsFailedResultWhenMutationThrowsAfterAdd() {
         var exception = new IllegalStateException("survey failed");
-        var repositoryFake = new FakeConditionRepository(spec("hot", "Hot", true));
+        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
         var service = new KmuConditionService(repositoryFake);
-        var marketFake = new FakeEditableMarket()
+        var marketFake = new EditableMarketFake()
                 .failMarkConditionSurveyed(exception);
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
@@ -271,12 +271,12 @@ class KmuConditionServiceTest {
     @Test
     void returnsFailedResultWhenAddConditionThrows() {
         var exception = new IllegalStateException("add failed");
-        var repositoryFake = new FakeConditionRepository(spec("hot", "Hot", true));
+        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
         var reports = new ArrayList<String>();
         var service = new KmuConditionService(
                 repositoryFake,
                 (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-        var marketFake = new FakeEditableMarket()
+        var marketFake = new EditableMarketFake()
                 .failAddCondition(exception);
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
@@ -292,9 +292,9 @@ class KmuConditionServiceTest {
     @Test
     void returnsFailedResultWhenReapplyThrowsAfterMutation() {
         var exception = new IllegalStateException("reapply failed");
-        var repositoryFake = new FakeConditionRepository(spec("hot", "Hot", true));
+        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
         var service = new KmuConditionService(repositoryFake);
-        var marketFake = new FakeEditableMarket()
+        var marketFake = new EditableMarketFake()
                 .failReapplyConditions(exception);
 
         var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
@@ -330,10 +330,10 @@ class KmuConditionServiceTest {
         }
     }
 
-    private static final class FakeConditionRepository implements KmuConditionRepository {
+    private static final class ConditionRepositoryFake implements KmuConditionRepository {
         private final LinkedHashMap<String, KmuConditionSpec> specsById = new LinkedHashMap<>();
 
-        private FakeConditionRepository(KmuConditionSpec... specs) {
+        private ConditionRepositoryFake(KmuConditionSpec... specs) {
             for (var spec : specs) {
                 specsById.put(spec.getId(), spec);
             }
@@ -368,7 +368,7 @@ class KmuConditionServiceTest {
         }
     }
 
-    private static final class FakeEditableMarket implements KmuEditableMarket {
+    private static final class EditableMarketFake implements KmuEditableMarket {
         private final LinkedHashSet<String> conditionIds = new LinkedHashSet<>();
         private final List<String> calls = new ArrayList<>();
         private RuntimeException getConditionIdsException;
@@ -377,33 +377,33 @@ class KmuConditionServiceTest {
         private RuntimeException markConditionSurveyedException;
         private RuntimeException reapplyConditionsException;
 
-        private FakeEditableMarket(String... conditionIds) {
+        private EditableMarketFake(String... conditionIds) {
             for (String conditionId : conditionIds) {
                 this.conditionIds.add(conditionId);
             }
         }
 
-        private FakeEditableMarket failGetConditionIds(RuntimeException exception) {
+        private EditableMarketFake failGetConditionIds(RuntimeException exception) {
             this.getConditionIdsException = exception;
             return this;
         }
 
-        private FakeEditableMarket failHasCondition(RuntimeException exception) {
+        private EditableMarketFake failHasCondition(RuntimeException exception) {
             this.hasConditionException = exception;
             return this;
         }
 
-        private FakeEditableMarket failAddCondition(RuntimeException exception) {
+        private EditableMarketFake failAddCondition(RuntimeException exception) {
             this.addConditionException = exception;
             return this;
         }
 
-        private FakeEditableMarket failMarkConditionSurveyed(RuntimeException exception) {
+        private EditableMarketFake failMarkConditionSurveyed(RuntimeException exception) {
             this.markConditionSurveyedException = exception;
             return this;
         }
 
-        private FakeEditableMarket failReapplyConditions(RuntimeException exception) {
+        private EditableMarketFake failReapplyConditions(RuntimeException exception) {
             this.reapplyConditionsException = exception;
             return this;
         }

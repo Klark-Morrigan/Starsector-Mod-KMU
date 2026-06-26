@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KmuConditionPickerEditorTest {
     @Test
     void opensDialogBuiltFromResolvedMarketContext() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true),
                 spec("cold", "Cold", true)));
         var openedDialog = new AtomicReference<KmuConditionPickerDialogDelegate>();
@@ -115,10 +115,10 @@ class KmuConditionPickerEditorTest {
                 handler);
     }
 
-    private static final class FakeConditionRepository implements KmuConditionRepository {
+    private static final class ConditionRepositoryFake implements KmuConditionRepository {
         private final LinkedHashMap<String, KmuConditionSpec> specsById = new LinkedHashMap<>();
 
-        private FakeConditionRepository(KmuConditionSpec... specs) {
+        private ConditionRepositoryFake(KmuConditionSpec... specs) {
             for (var spec : specs) {
                 specsById.put(spec.getId(), spec);
             }

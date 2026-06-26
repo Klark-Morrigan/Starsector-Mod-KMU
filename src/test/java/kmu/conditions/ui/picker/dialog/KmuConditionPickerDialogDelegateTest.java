@@ -60,9 +60,9 @@ class KmuConditionPickerDialogDelegateTest {
 
     @Test
     void panelPluginHandlesButtonPressedActions() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
-        var marketFake = new FakeEditableMarket();
+        var marketFake = new EditableMarketFake();
         var actionHandler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
@@ -87,9 +87,9 @@ class KmuConditionPickerDialogDelegateTest {
 
     @Test
     void panelPluginIgnoresPresentConditionActionsWithoutFeedback() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
-        var marketFake = new FakeEditableMarket("hot");
+        var marketFake = new EditableMarketFake("hot");
         var actionHandler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
@@ -170,10 +170,10 @@ class KmuConditionPickerDialogDelegateTest {
         return null;
     }
 
-    private static final class FakeConditionRepository implements KmuConditionRepository {
+    private static final class ConditionRepositoryFake implements KmuConditionRepository {
         private final List<KmuConditionSpec> specs;
 
-        private FakeConditionRepository(KmuConditionSpec... specs) {
+        private ConditionRepositoryFake(KmuConditionSpec... specs) {
             this.specs = Arrays.asList(specs);
         }
 
@@ -190,10 +190,10 @@ class KmuConditionPickerDialogDelegateTest {
         }
     }
 
-    private static final class FakeEditableMarket implements KmuEditableMarket {
+    private static final class EditableMarketFake implements KmuEditableMarket {
         private final Set<String> conditionIds = new LinkedHashSet<>();
 
-        private FakeEditableMarket(String... conditionIds) {
+        private EditableMarketFake(String... conditionIds) {
             for (var conditionId : conditionIds) {
                 this.conditionIds.add(conditionId);
             }

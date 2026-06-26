@@ -41,13 +41,13 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void buildsEntriesForPlanetarySpecsInServiceOrder() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true),
                 spec("population_3", "Population 3", false),
                 spec("farmland_rich", "Farmland: Rich", true)));
         var factory = new KmuConditionPickerModelFactory(service);
 
-        var model = factory.create(new FakeEditableMarket("hot"));
+        var model = factory.create(new EditableMarketFake("hot"));
 
         assertThat(model.getEntries())
                 .extracting(KmuConditionPickerEntry::getConditionId)
@@ -64,11 +64,11 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void includesSpecDataAndSpecDescriptionTooltipText() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 new KmuConditionSpec("cold", "Cold", null, "Cold condition description.", "Vanilla", true)));
         var factory = new KmuConditionPickerModelFactory(service);
 
-        var entry = factory.create(new FakeEditableMarket())
+        var entry = factory.create(new EditableMarketFake())
                 .getEntries()
                 .get(0);
 
@@ -82,11 +82,11 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void marksPresentSuppressedEntries() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("no_atmosphere", "No Atmosphere", true)));
         var factory = new KmuConditionPickerModelFactory(service);
 
-        var entry = factory.create(new FakeEditableMarket(
+        var entry = factory.create(new EditableMarketFake(
                 Set.of("no_atmosphere"),
                 Set.of("no_atmosphere")))
                 .getEntries()
@@ -99,7 +99,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void extractsLocationNamesFromStarsectorMarket() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var constellation = new Constellation(
@@ -123,7 +123,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void extractsPlanetOwnerRelationshipAndGravityWellDetailsFromStarsectorMarket() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var star = planet("Corvus", "yellow star", null);
@@ -154,7 +154,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void omitsFactionWhenFactionNameIsUnreadable() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var planet = planet("Valis", "terran world", null);
@@ -175,7 +175,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void tracesGravityWellThroughNestedOrbitFocusChain() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var barycenter = entity("Kumari barycenter");
@@ -199,7 +199,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void marksPresentHiddenEntriesFromLiveConditionPlugin() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("no_atmosphere", "No Atmosphere", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var condition = condition("no_atmosphere", plugin(false, "graphics/icons/live.png"));
@@ -218,7 +218,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void defaultsToNotSuppressedWhenSuppressedCheckThrows() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var market = new KmuEditableMarket() {
@@ -240,7 +240,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void treatsLiveConditionAsAbsentWhenConditionLookupThrows() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var hotCondition = condition("hot", null);
@@ -264,7 +264,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void usesSpecIconWhenLiveConditionHasNullPlugin() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var conditionWithNullPlugin = condition("hot", null);
@@ -281,7 +281,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void usesSpecIconWhenLiveIconNameIsBlank() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var conditionWithBlankIcon = condition("hot", plugin(true, "  "));
@@ -296,7 +296,7 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void defaultsToNotHiddenAndUsesSpecIconWhenPluginThrows() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
         var throwingPluginCondition = proxy(MarketConditionAPI.class, (p, method, args) -> {
@@ -319,11 +319,11 @@ class KmuConditionPickerModelFactoryTest {
 
     @Test
     void returnsImmutableEntryList() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
         var factory = new KmuConditionPickerModelFactory(service);
 
-        var model = factory.create(new FakeEditableMarket());
+        var model = factory.create(new EditableMarketFake());
 
         assertThatThrownBy(() -> model.getEntries().add(new KmuConditionPickerEntry(
                 "cold",
@@ -338,10 +338,10 @@ class KmuConditionPickerModelFactoryTest {
         return new KmuConditionSpec(id, name, "graphics/icons/" + id + ".png", planetary);
     }
 
-    private static final class FakeConditionRepository implements KmuConditionRepository {
+    private static final class ConditionRepositoryFake implements KmuConditionRepository {
         private final LinkedHashMap<String, KmuConditionSpec> specsById = new LinkedHashMap<>();
 
-        private FakeConditionRepository(KmuConditionSpec... specs) {
+        private ConditionRepositoryFake(KmuConditionSpec... specs) {
             for (var spec : specs) {
                 specsById.put(spec.getId(), spec);
             }
@@ -358,17 +358,17 @@ class KmuConditionPickerModelFactoryTest {
         }
     }
 
-    private static final class FakeEditableMarket implements KmuEditableMarket {
+    private static final class EditableMarketFake implements KmuEditableMarket {
         private final LinkedHashSet<String> conditionIds = new LinkedHashSet<>();
         private final LinkedHashSet<String> suppressedConditionIds = new LinkedHashSet<>();
 
-        private FakeEditableMarket(String... conditionIds) {
+        private EditableMarketFake(String... conditionIds) {
             for (var conditionId : conditionIds) {
                 this.conditionIds.add(conditionId);
             }
         }
 
-        private FakeEditableMarket(Set<String> conditionIds, Set<String> suppressedConditionIds) {
+        private EditableMarketFake(Set<String> conditionIds, Set<String> suppressedConditionIds) {
             this.conditionIds.addAll(conditionIds);
             this.suppressedConditionIds.addAll(suppressedConditionIds);
         }

@@ -23,9 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KmuConditionPickerActionHandlerTest {
     @Test
     void addsAbsentConditionRefreshesModelAndShowsFeedback() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
-        var marketFake = new FakeEditableMarket();
+        var marketFake = new EditableMarketFake();
         var handler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
@@ -50,9 +50,9 @@ class KmuConditionPickerActionHandlerTest {
 
     @Test
     void presentConditionActionDoesNotMutateMarket() {
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
-        var marketFake = new FakeEditableMarket("hot");
+        var marketFake = new EditableMarketFake("hot");
         var handler = new KmuConditionPickerActionHandler(
                 service,
                 new KmuConditionPickerModelFactory(service),
@@ -72,9 +72,9 @@ class KmuConditionPickerActionHandlerTest {
     @Test
     void failedAddRefreshesModelAndShowsFailureFeedback() {
         var exception = new IllegalStateException("add failed");
-        var service = new KmuConditionService(new FakeConditionRepository(
+        var service = new KmuConditionService(new ConditionRepositoryFake(
                 spec("hot", "Hot", true)));
-        var marketFake = new FakeEditableMarket()
+        var marketFake = new EditableMarketFake()
                 .failAddCondition(exception);
         var handler = new KmuConditionPickerActionHandler(
                 service,
@@ -102,10 +102,10 @@ class KmuConditionPickerActionHandlerTest {
         return new KmuConditionSpec(id, name, "graphics/icons/" + id + ".png", planetary);
     }
 
-    private static final class FakeConditionRepository implements KmuConditionRepository {
+    private static final class ConditionRepositoryFake implements KmuConditionRepository {
         private final LinkedHashMap<String, KmuConditionSpec> specsById = new LinkedHashMap<>();
 
-        private FakeConditionRepository(KmuConditionSpec... specs) {
+        private ConditionRepositoryFake(KmuConditionSpec... specs) {
             for (var spec : specs) {
                 specsById.put(spec.getId(), spec);
             }
@@ -122,18 +122,18 @@ class KmuConditionPickerActionHandlerTest {
         }
     }
 
-    private static final class FakeEditableMarket implements KmuEditableMarket {
+    private static final class EditableMarketFake implements KmuEditableMarket {
         private final LinkedHashSet<String> conditionIds = new LinkedHashSet<>();
         private final List<String> calls = new ArrayList<>();
         private RuntimeException addConditionException;
 
-        private FakeEditableMarket(String... conditionIds) {
+        private EditableMarketFake(String... conditionIds) {
             for (var conditionId : conditionIds) {
                 this.conditionIds.add(conditionId);
             }
         }
 
-        private FakeEditableMarket failAddCondition(RuntimeException exception) {
+        private EditableMarketFake failAddCondition(RuntimeException exception) {
             this.addConditionException = exception;
             return this;
         }
