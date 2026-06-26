@@ -1,6 +1,5 @@
 package kmu.conditions.ui.editor;
 
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmu.ui.context.KmuMarketUiContext;
 import kmu.ui.context.KmuMarketUiContextSource;
 

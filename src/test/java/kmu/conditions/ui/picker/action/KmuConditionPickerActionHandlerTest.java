@@ -1,6 +1,5 @@
 package kmu.conditions.ui.picker.action;
 
-import kmu.conditions.domain.KmuConditionAddResult;
 import kmu.conditions.domain.KmuConditionAddStatus;
 import kmu.conditions.domain.KmuConditionRepository;
 import kmu.conditions.domain.KmuConditionService;
@@ -8,8 +7,8 @@ import kmu.conditions.domain.KmuConditionSpec;
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
-import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

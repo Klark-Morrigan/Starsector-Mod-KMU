@@ -1,7 +1,7 @@
 package kmu.conditions.ui.picker.model;
 
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
-import com.fs.starfarer.api.campaign.econ.MarketConditionPlugin;
+
 import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.KmuConditionSpec;
 import kmu.conditions.domain.KmuEditableMarket;
@@ -9,7 +9,6 @@ import kmu.conditions.domain.StarsectorEditableMarket;
 import kmu.conditions.ui.picker.tooltip.KmuConditionTooltipRenderer;
 import kmu.conditions.ui.picker.tooltip.StarsectorConditionTooltipRenderer;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;

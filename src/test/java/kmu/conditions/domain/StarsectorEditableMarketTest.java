@@ -2,6 +2,7 @@ package kmu.conditions.domain;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
+
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;

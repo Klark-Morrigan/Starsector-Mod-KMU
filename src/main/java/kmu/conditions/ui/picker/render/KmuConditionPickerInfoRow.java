@@ -3,7 +3,6 @@ package kmu.conditions.ui.picker.render;
 import com.fs.starfarer.api.campaign.BaseCustomUIPanelPlugin;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
-import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 

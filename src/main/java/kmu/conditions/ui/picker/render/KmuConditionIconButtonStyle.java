@@ -1,7 +1,8 @@
 package kmu.conditions.ui.picker.render;
 
-import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmlib.starsector.ui.color.StarsectorUiColor;
+
+import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 
 import java.awt.Color;
 import java.util.Objects;

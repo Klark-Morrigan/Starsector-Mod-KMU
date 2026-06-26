@@ -1,14 +1,20 @@
 package kmu.conditions.ui.picker.render;
 
-import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
-import kmu.ui.geometry.KmuUiSize;
-import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
-import kmu.conditions.ui.picker.tooltip.KmuConditionEntryTooltipCreator;
-
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
+
 import kmlib.starsector.ui.color.StarsectorUiColor;
+
+import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
+import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
+import kmu.conditions.ui.picker.tooltip.KmuConditionEntryTooltipCreator;
 import kmu.starsector.StarsectorSettingsFake;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.awt.Color;
 import java.lang.reflect.InvocationHandler;
@@ -16,12 +22,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

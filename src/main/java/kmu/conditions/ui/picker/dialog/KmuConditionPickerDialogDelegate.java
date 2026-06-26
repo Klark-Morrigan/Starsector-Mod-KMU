@@ -5,14 +5,10 @@ import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
-import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
-import kmlib.starsector.ui.highlight.HighlightedParagraph;
-
-import kmu.util.KmuStrings;
 import kmu.conditions.domain.KmuConditionAddResult;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.action.KmuConditionPickerActionHandler;
@@ -24,6 +20,7 @@ import kmu.conditions.ui.picker.render.KmuConditionIconGrid;
 import kmu.conditions.ui.picker.render.KmuConditionPickerContainer;
 import kmu.conditions.ui.picker.render.KmuConditionPickerRenderResult;
 import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerSummaryParagraphFactory;
+import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,8 +1,6 @@
 package kmu.conditions.ui.picker.dialog;
 
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.CampaignUIAPI;
-import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import java.util.Objects;

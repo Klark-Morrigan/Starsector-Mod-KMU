@@ -1,8 +1,9 @@
 package kmu.conditions.domain;
 
-import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.ModSpecAPI;
+import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.characters.MarketConditionSpecAPI;
+
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;

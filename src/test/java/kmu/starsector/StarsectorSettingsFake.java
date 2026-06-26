@@ -1,6 +1,7 @@
 package kmu.starsector;
 
 import kmlib.starsector.testing.StarsectorSettingsFake.SettingsStringSource;
+
 import kmu.util.KmuStrings;
 
 import java.util.LinkedHashMap;

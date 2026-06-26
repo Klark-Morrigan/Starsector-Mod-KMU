@@ -3,7 +3,9 @@ package kmu;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
+
 import kmu.ui.context.StarsectorMarketUiContextTracker;
+
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;

@@ -8,6 +8,7 @@ import kmu.conditions.ui.editor.KmuConditionEditorOpenStatus;
 import kmu.conditions.ui.picker.KmuConditionPickerEditor;
 import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
 import kmu.ui.context.StarsectorMarketUiContextResolver;
+
 import org.lazywizard.console.BaseCommand;
 import org.lazywizard.console.Console;
 

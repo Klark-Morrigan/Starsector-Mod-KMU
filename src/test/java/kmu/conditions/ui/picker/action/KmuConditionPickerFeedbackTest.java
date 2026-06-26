@@ -2,6 +2,7 @@ package kmu.conditions.ui.picker.action;
 
 import kmu.conditions.domain.KmuConditionAddResult;
 import kmu.conditions.domain.KmuConditionAddStatus;
+
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

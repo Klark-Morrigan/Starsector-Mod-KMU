@@ -1,21 +1,18 @@
 package kmu.conditions.ui.picker.render;
 
 import com.fs.starfarer.api.ui.CustomPanelAPI;
-import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
-import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 
-import kmu.util.KmuStrings;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerLocationParagraphFactory;
 import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerSummaryParagraphFactory;
+import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 

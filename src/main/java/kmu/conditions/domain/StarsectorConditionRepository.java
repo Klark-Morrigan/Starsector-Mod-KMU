@@ -1,7 +1,6 @@
 package kmu.conditions.domain;
 
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.ModSpecAPI;
 import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.characters.MarketConditionSpecAPI;
 

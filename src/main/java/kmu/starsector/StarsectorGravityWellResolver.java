@@ -1,13 +1,10 @@
 package kmu.starsector;
 
-import com.fs.starfarer.api.campaign.OrbitAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
-import java.util.Set;
 
 public final class StarsectorGravityWellResolver {
     private static final int MAX_ORBIT_FOCUS_CHAIN_DEPTH = 32;

@@ -2,6 +2,7 @@ package kmu.ui.context;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
+
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;

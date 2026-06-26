@@ -1,21 +1,16 @@
 package kmu.conditions.ui.picker.model;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
-import com.fs.starfarer.api.impl.campaign.procgen.Constellation;
 
 import kmlib.starsector.relation.StarsectorPlayerRelationshipFormatter;
-import kmlib.starsector.relation.StarsectorPlayerRelationshipFormatter.RelationshipSummary;
 
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.domain.StarsectorEditableMarket;
 import kmu.starsector.StarsectorGravityWellResolver;
 
-import java.awt.Color;
 import java.util.Objects;
 
 import static kmu.util.KmuValues.normalizeText;

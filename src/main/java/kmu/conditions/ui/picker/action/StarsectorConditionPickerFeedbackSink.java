@@ -1,8 +1,7 @@
 package kmu.conditions.ui.picker.action;
 
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.CampaignUIAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.starsector.ui.color.StarsectorUiColor;
 
 import java.util.Objects;
