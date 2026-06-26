@@ -1,7 +1,11 @@
 .claude/
 .codex/
 .compile-check/
+
 .gradle/
+# Machine-local values.
+gradle.properties
+
 .idea/
 .vscode/
 bin/
