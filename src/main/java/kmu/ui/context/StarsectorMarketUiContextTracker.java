@@ -21,7 +21,7 @@ public final class StarsectorMarketUiContextTracker extends BaseCampaignEventLis
 
     @Override
     public void reportAboutToOpenCoreTab(CoreUITabId id, Object param) {
-        Optional<MarketAPI> market = resolveMarket(param);
+        var market = resolveMarket(param);
         if (id == CoreUITabId.OUTPOSTS && market.isPresent()) {
             trackMarket(market.get());
             return;
@@ -67,7 +67,7 @@ public final class StarsectorMarketUiContextTracker extends BaseCampaignEventLis
         }
 
         try {
-            String marketId = market.getId();
+            var marketId = market.getId();
             return marketId != null && marketId.equals(trackedMarket.getId());
         } catch (RuntimeException exception) {
             return false;
@@ -81,7 +81,7 @@ public final class StarsectorMarketUiContextTracker extends BaseCampaignEventLis
 
         if (param instanceof SectorEntityToken) {
             try {
-                MarketAPI market = ((SectorEntityToken) param).getMarket();
+                var market = ((SectorEntityToken) param).getMarket();
                 return Optional.ofNullable(market);
             } catch (RuntimeException exception) {
                 return Optional.empty();

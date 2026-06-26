@@ -33,7 +33,7 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
 
     @Override
     public Optional<KmuMarketUiContext> findCurrentMarketContext() {
-        Optional<KmuMarketUiContext> context = fromCurrentlyOpenMarket();
+        var context = fromCurrentlyOpenMarket();
         if (context.isPresent()) {
             return context;
         }
@@ -53,7 +53,7 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
 
     private Optional<KmuMarketUiContext> fromCurrentlyOpenMarket() {
         try {
-            MarketAPI market = sector.getCurrentlyOpenMarket();
+            var market = sector.getCurrentlyOpenMarket();
             if (market == null) {
                 return Optional.empty();
             }
@@ -68,12 +68,12 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
 
     private Optional<KmuMarketUiContext> fromInteractionDialogTarget() {
         try {
-            CampaignUIAPI campaignUI = sector.getCampaignUI();
+            var campaignUI = sector.getCampaignUI();
             if (campaignUI == null) {
                 return Optional.empty();
             }
 
-            InteractionDialogAPI dialog = campaignUI.getCurrentInteractionDialog();
+            var dialog = campaignUI.getCurrentInteractionDialog();
             if (dialog == null) {
                 return Optional.empty();
             }
@@ -89,7 +89,7 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
 
     private Optional<KmuMarketUiContext> fromPlayerFleetInteractionTarget() {
         try {
-            CampaignFleetAPI playerFleet = sector.getPlayerFleet();
+            var playerFleet = sector.getPlayerFleet();
             if (playerFleet == null) {
                 return Optional.empty();
             }
@@ -105,23 +105,23 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
 
     private Optional<KmuMarketUiContext> fromTrackedCoreUiMarket() {
         try {
-            ListenerManagerAPI listenerManager = sector.getListenerManager();
+            var listenerManager = sector.getListenerManager();
             if (listenerManager == null) {
                 return Optional.empty();
             }
 
-            List<StarsectorMarketUiContextTracker> trackers =
+            var trackers =
                     listenerManager.getListeners(StarsectorMarketUiContextTracker.class);
             if (trackers == null) {
                 return Optional.empty();
             }
 
-            for (StarsectorMarketUiContextTracker tracker : trackers) {
+            for (var tracker : trackers) {
                 if (tracker == null) {
                     continue;
                 }
 
-                Optional<MarketAPI> market = tracker.getTrackedMarket();
+                var market = tracker.getTrackedMarket();
                 if (market.isPresent()) {
                     return Optional.of(KmuMarketUiContext.withoutPanel(
                             market.get(),
@@ -143,7 +143,7 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
             return Optional.empty();
         }
 
-        MarketAPI market = entity.getMarket();
+        var market = entity.getMarket();
         if (market == null) {
             return Optional.empty();
         }
