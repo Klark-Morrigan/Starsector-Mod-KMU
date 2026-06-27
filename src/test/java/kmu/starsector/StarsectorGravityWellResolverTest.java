@@ -38,24 +38,24 @@ class StarsectorGravityWellResolverTest {
     void returnsStarWhenSystemHasNoCenterButHasStar() {
         var planet = entity("Valis");
         // getStar() returns PlanetAPI, so the mock must implement PlanetAPI.
-        var star = mock(PlanetAPI.class);
-        when(star.getName()).thenReturn("Corvus");
-        var market = market(null, planet, system(null, star));
+        var starMock = mock(PlanetAPI.class);
+        when(starMock.getName()).thenReturn("Corvus");
+        var market = market(null, planet, system(null, starMock));
 
-        assertThat(resolver.resolve(market)).isSameAs(star);
+        assertThat(resolver.resolve(market)).isSameAs(starMock);
     }
 
     @Test
     void resolvesViaOrbitApiWhenDirectOrbitFocusIsUnavailable() {
         // getOrbitFocus() returns null; getOrbit().getFocus() provides the focus.
         var star = entity("Corvus");
-        var orbit = mock(OrbitAPI.class);
-        when(orbit.getFocus()).thenReturn(star);
-        var moon = mock(SectorEntityToken.class);
-        when(moon.getName()).thenReturn("Valis");
-        when(moon.getOrbit()).thenReturn(orbit);
+        var orbitMock = mock(OrbitAPI.class);
+        when(orbitMock.getFocus()).thenReturn(star);
+        var moonMock = mock(SectorEntityToken.class);
+        when(moonMock.getName()).thenReturn("Valis");
+        when(moonMock.getOrbit()).thenReturn(orbitMock);
         // getOrbitFocus defaults to null on a Mockito mock.
-        var market = market(null, moon, null);
+        var market = market(null, moonMock, null);
 
         assertThat(resolver.resolve(market)).isSameAs(star);
     }
@@ -64,13 +64,13 @@ class StarsectorGravityWellResolverTest {
     void detectsOrbitCycleAndReturnsLastValidFocus() {
         // A->B->A: the cycle is caught when B's focus (A) is already in visited set.
         // The resolver returns B, the last focus reached before the cycle.
-        var node0 = mock(SectorEntityToken.class);
-        var node1 = mock(SectorEntityToken.class);
-        when(node0.getOrbitFocus()).thenReturn(node1);
-        when(node1.getOrbitFocus()).thenReturn(node0);
-        var market = market(null, node0, null);
+        var node0Mock = mock(SectorEntityToken.class);
+        var node1Mock = mock(SectorEntityToken.class);
+        when(node0Mock.getOrbitFocus()).thenReturn(node1Mock);
+        when(node1Mock.getOrbitFocus()).thenReturn(node0Mock);
+        var market = market(null, node0Mock, null);
 
-        assertThat(resolver.resolve(market)).isSameAs(node1);
+        assertThat(resolver.resolve(market)).isSameAs(node1Mock);
     }
 
     @Test
@@ -93,24 +93,24 @@ class StarsectorGravityWellResolverTest {
     // --- mock helpers ---
 
     private static SectorEntityToken entity(String name) {
-        var entity = mock(SectorEntityToken.class);
-        when(entity.getName()).thenReturn(name);
-        return entity;
+        var entityMock = mock(SectorEntityToken.class);
+        when(entityMock.getName()).thenReturn(name);
+        return entityMock;
     }
 
     private static StarSystemAPI system(SectorEntityToken center, PlanetAPI star) {
-        var system = mock(StarSystemAPI.class);
-        when(system.getCenter()).thenReturn(center);
-        when(system.getStar()).thenReturn(star);
-        return system;
+        var systemMock = mock(StarSystemAPI.class);
+        when(systemMock.getCenter()).thenReturn(center);
+        when(systemMock.getStar()).thenReturn(star);
+        return systemMock;
     }
 
     private static MarketAPI market(
             PlanetAPI planet, SectorEntityToken primaryEntity, StarSystemAPI system) {
-        var market = mock(MarketAPI.class);
-        when(market.getPlanetEntity()).thenReturn(planet);
-        when(market.getPrimaryEntity()).thenReturn(primaryEntity);
-        when(market.getStarSystem()).thenReturn(system);
-        return market;
+        var marketMock = mock(MarketAPI.class);
+        when(marketMock.getPlanetEntity()).thenReturn(planet);
+        when(marketMock.getPrimaryEntity()).thenReturn(primaryEntity);
+        when(marketMock.getStarSystem()).thenReturn(system);
+        return marketMock;
     }
 }

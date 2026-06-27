@@ -27,21 +27,21 @@ class KmuTooltipSectionTest {
     private static final Color GRAY = new Color(155, 155, 155);
     private static final Color TEXT = new Color(220, 220, 220, 255);
 
-    private MockedStatic<Misc> misc;
+    private MockedStatic<Misc> miscMock;
 
     @BeforeEach
     void mockStarsectorThemeColors() {
         StarsectorSettingsFake.installSettings();
-        misc = Mockito.mockStatic(Misc.class);
-        misc.when(Misc::getBasePlayerColor).thenReturn(BLUE);
-        misc.when(Misc::getDarkPlayerColor).thenReturn(DARK_BLUE);
-        misc.when(Misc::getGrayColor).thenReturn(GRAY);
-        misc.when(Misc::getTextColor).thenReturn(TEXT);
+        miscMock = Mockito.mockStatic(Misc.class);
+        miscMock.when(Misc::getBasePlayerColor).thenReturn(BLUE);
+        miscMock.when(Misc::getDarkPlayerColor).thenReturn(DARK_BLUE);
+        miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
+        miscMock.when(Misc::getTextColor).thenReturn(TEXT);
     }
 
     @AfterEach
     void closeStarsectorThemeColors() {
-        misc.close();
+        miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
 

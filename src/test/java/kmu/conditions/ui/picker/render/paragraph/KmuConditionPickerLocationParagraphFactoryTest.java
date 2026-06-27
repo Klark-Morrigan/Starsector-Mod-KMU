@@ -27,22 +27,22 @@ class KmuConditionPickerLocationParagraphFactoryTest {
     private static final Color FACTION = new Color(90, 150, 240);
     private static final Color RELATIONSHIP = new Color(240, 80, 80);
 
-    private MockedStatic<Misc> misc;
+    private MockedStatic<Misc> miscMock;
 
     @BeforeEach
     void mockStarsectorThemeColors() {
         StarsectorSettingsFake.installSettings();
-        misc = Mockito.mockStatic(Misc.class);
-        misc.when(Misc::getGrayColor).thenReturn(GRAY);
-        misc.when(Misc::getHighlightColor).thenReturn(GOLD);
-        misc.when(Misc::getTextColor).thenReturn(TEXT);
-        misc.when(Misc::getNegativeHighlightColor).thenReturn(RED);
-        misc.when(Misc::getPositiveHighlightColor).thenReturn(GREEN);
+        miscMock = Mockito.mockStatic(Misc.class);
+        miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
+        miscMock.when(Misc::getHighlightColor).thenReturn(GOLD);
+        miscMock.when(Misc::getTextColor).thenReturn(TEXT);
+        miscMock.when(Misc::getNegativeHighlightColor).thenReturn(RED);
+        miscMock.when(Misc::getPositiveHighlightColor).thenReturn(GREEN);
     }
 
     @AfterEach
     void closeStarsectorThemeColors() {
-        misc.close();
+        miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
 

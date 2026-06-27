@@ -28,23 +28,23 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
     private static final Color GREEN = new Color(80, 220, 80);
     private static final Color BLUE = new Color(170, 222, 255, 255);
     private static final Color TEXT = new Color(220, 220, 220, 255);
-    private MockedStatic<Misc> misc;
+    private MockedStatic<Misc> miscMock;
 
     @BeforeEach
     void mockStarsectorThemeColors() {
         StarsectorSettingsFake.installSettings();
-        misc = Mockito.mockStatic(Misc.class);
-        misc.when(Misc::getGrayColor).thenReturn(GRAY);
-        misc.when(Misc::getHighlightColor).thenReturn(GOLD);
-        misc.when(Misc::getNegativeHighlightColor).thenReturn(RED);
-        misc.when(Misc::getPositiveHighlightColor).thenReturn(GREEN);
-        misc.when(Misc::getTextColor).thenReturn(TEXT);
-        misc.when(Misc::getBasePlayerColor).thenReturn(BLUE);
+        miscMock = Mockito.mockStatic(Misc.class);
+        miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
+        miscMock.when(Misc::getHighlightColor).thenReturn(GOLD);
+        miscMock.when(Misc::getNegativeHighlightColor).thenReturn(RED);
+        miscMock.when(Misc::getPositiveHighlightColor).thenReturn(GREEN);
+        miscMock.when(Misc::getTextColor).thenReturn(TEXT);
+        miscMock.when(Misc::getBasePlayerColor).thenReturn(BLUE);
     }
 
     @AfterEach
     void closeStarsectorThemeColors() {
-        misc.close();
+        miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
 

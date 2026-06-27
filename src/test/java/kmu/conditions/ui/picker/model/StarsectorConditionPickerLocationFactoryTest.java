@@ -87,10 +87,10 @@ class StarsectorConditionPickerLocationFactoryTest {
     void readsFactionFromPrimaryEntityWhenMarketFactionIsNull() {
         // market.getFaction() returns null; primaryEntity.getFaction() provides the faction
         var hegemony = faction("Hegemony");
-        var primary = mock(SectorEntityToken.class);
-        when(primary.getName()).thenReturn("Primary Entity");
-        when(primary.getFaction()).thenReturn(hegemony);
-        var market = market(null, null, primary, null, null, null);
+        var primaryMock = mock(SectorEntityToken.class);
+        when(primaryMock.getName()).thenReturn("Primary Entity");
+        when(primaryMock.getFaction()).thenReturn(hegemony);
+        var market = market(null, null, primaryMock, null, null, null);
 
         var location = factory.create(new StarsectorEditableMarket(market));
 
@@ -116,9 +116,9 @@ class StarsectorConditionPickerLocationFactoryTest {
                 Constellation.ConstellationType.NORMAL, StarAge.AVERAGE);
         constellation.setNameOverride("Serpens");
         var containingLocation = locationWithConstellation("Outer Rim", constellation);
-        var emptySystem = mock(StarSystemAPI.class);
+        var emptySystemMock = mock(StarSystemAPI.class);
         // getConstellation, getCenter, getStar all default to null on Mockito mocks.
-        var market = market(null, null, null, emptySystem, null, containingLocation);
+        var market = market(null, null, null, emptySystemMock, null, containingLocation);
 
         var result = factory.create(new StarsectorEditableMarket(market));
 
@@ -128,50 +128,50 @@ class StarsectorConditionPickerLocationFactoryTest {
     // --- mock helpers ---
 
     private static PlanetAPI planet(String name, String type) {
-        var planet = mock(PlanetAPI.class);
-        when(planet.getName()).thenReturn(name);
-        when(planet.getTypeNameWithWorld()).thenReturn(type);
-        when(planet.getTypeNameWithWorldLowerCase()).thenReturn(type);
-        return planet;
+        var planetMock = mock(PlanetAPI.class);
+        when(planetMock.getName()).thenReturn(name);
+        when(planetMock.getTypeNameWithWorld()).thenReturn(type);
+        when(planetMock.getTypeNameWithWorldLowerCase()).thenReturn(type);
+        return planetMock;
     }
 
     private static SectorEntityToken entity(String name) {
-        var entity = mock(SectorEntityToken.class);
-        when(entity.getName()).thenReturn(name);
-        return entity;
+        var entityMock = mock(SectorEntityToken.class);
+        when(entityMock.getName()).thenReturn(name);
+        return entityMock;
     }
 
     private static FactionAPI faction(String name) {
         var relationship = createRelationship();
-        var faction = mock(FactionAPI.class);
-        when(faction.getDisplayNameLong()).thenReturn(name);
-        when(faction.getDisplayName()).thenReturn(name);
-        when(faction.getBaseUIColor()).thenReturn(FACTION_COLOR);
-        when(faction.getRelToPlayer()).thenReturn(relationship);
-        return faction;
+        var factionMock = mock(FactionAPI.class);
+        when(factionMock.getDisplayNameLong()).thenReturn(name);
+        when(factionMock.getDisplayName()).thenReturn(name);
+        when(factionMock.getBaseUIColor()).thenReturn(FACTION_COLOR);
+        when(factionMock.getRelToPlayer()).thenReturn(relationship);
+        return factionMock;
     }
 
     private static RelationshipAPI createRelationship() {
-        var relationship = mock(RelationshipAPI.class);
-        when(relationship.getLevel()).thenReturn(RepLevel.VENGEFUL);
-        when(relationship.getRepInt()).thenReturn(-100);
-        when(relationship.getRelColor()).thenReturn(RELATIONSHIP_COLOR);
-        return relationship;
+        var relationshipMock = mock(RelationshipAPI.class);
+        when(relationshipMock.getLevel()).thenReturn(RepLevel.VENGEFUL);
+        when(relationshipMock.getRepInt()).thenReturn(-100);
+        when(relationshipMock.getRelColor()).thenReturn(RELATIONSHIP_COLOR);
+        return relationshipMock;
     }
 
     private static LocationAPI location(String name) {
-        var location = mock(LocationAPI.class);
-        when(location.getNameWithTypeShort()).thenReturn(name);
-        when(location.getName()).thenReturn(name);
-        return location;
+        var locationMock = mock(LocationAPI.class);
+        when(locationMock.getNameWithTypeShort()).thenReturn(name);
+        when(locationMock.getName()).thenReturn(name);
+        return locationMock;
     }
 
     private static LocationAPI locationWithConstellation(String name, Constellation constellation) {
-        var location = mock(LocationAPI.class);
-        when(location.getNameWithTypeShort()).thenReturn(name);
-        when(location.getName()).thenReturn(name);
-        when(location.getConstellation()).thenReturn(constellation);
-        return location;
+        var locationMock = mock(LocationAPI.class);
+        when(locationMock.getNameWithTypeShort()).thenReturn(name);
+        when(locationMock.getName()).thenReturn(name);
+        when(locationMock.getConstellation()).thenReturn(constellation);
+        return locationMock;
     }
 
     private static MarketAPI market(
@@ -181,14 +181,14 @@ class StarsectorConditionPickerLocationFactoryTest {
             StarSystemAPI system,
             FactionAPI faction,
             LocationAPI containingLocation) {
-        var market = mock(MarketAPI.class);
-        when(market.getName()).thenReturn(name);
-        when(market.getPlanetEntity()).thenReturn(planet);
-        when(market.getPrimaryEntity()).thenReturn(primaryEntity);
-        when(market.getStarSystem()).thenReturn(system);
-        when(market.getFaction()).thenReturn(faction);
-        when(market.getContainingLocation()).thenReturn(
+        var marketMock = mock(MarketAPI.class);
+        when(marketMock.getName()).thenReturn(name);
+        when(marketMock.getPlanetEntity()).thenReturn(planet);
+        when(marketMock.getPrimaryEntity()).thenReturn(primaryEntity);
+        when(marketMock.getStarSystem()).thenReturn(system);
+        when(marketMock.getFaction()).thenReturn(faction);
+        when(marketMock.getContainingLocation()).thenReturn(
                 containingLocation != null ? containingLocation : system);
-        return market;
+        return marketMock;
     }
 }
