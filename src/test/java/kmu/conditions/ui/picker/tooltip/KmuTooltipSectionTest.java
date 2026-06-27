@@ -8,6 +8,7 @@ import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -45,48 +46,52 @@ class KmuTooltipSectionTest {
         StarsectorSettingsFake.clearSettings();
     }
 
-    @Test
-    void addsMutedSectionWithStandardBlueBannerAndGrayBodyText() {
-        var tooltip = RecordingTooltip.create();
+    @Nested
+    class Add {
 
-        KmuTooltipSection.add(
-                tooltip.getApi(),
-                KmuTooltipSectionStyle.MUTED,
-                "Metadata",
-                Arrays.asList("id: hot", "", null, "source: Starsector"));
+        @Test
+        void addsMutedSectionWithStandardBlueBannerAndGrayBodyText() {
+            var tooltip = RecordingTooltip.create();
 
-        assertThat(tooltip.getHeadings())
-                .containsExactly(new HeadingCall(
-                        "Metadata",
-                        BLUE,
-                        DARK_BLUE,
-                        Alignment.MID,
-                        10f));
-        assertThat(tooltip.getParagraphs())
-                .containsExactly(
-                        new ParagraphCall("id: hot", 4f, GRAY),
-                        new ParagraphCall("source: Starsector", 4f, GRAY));
-    }
+            KmuTooltipSection.add(
+                    tooltip.getApi(),
+                    KmuTooltipSectionStyle.MUTED,
+                    "Metadata",
+                    Arrays.asList("id: hot", "", null, "source: Starsector"));
 
-    @Test
-    void addsWarningSectionWithWarningBannerAndNormalBodyText() {
-        var tooltip = RecordingTooltip.create();
+            assertThat(tooltip.getHeadings())
+                    .containsExactly(new HeadingCall(
+                            "Metadata",
+                            BLUE,
+                            DARK_BLUE,
+                            Alignment.MID,
+                            10f));
+            assertThat(tooltip.getParagraphs())
+                    .containsExactly(
+                            new ParagraphCall("id: hot", 4f, GRAY),
+                            new ParagraphCall("source: Starsector", 4f, GRAY));
+        }
 
-        KmuTooltipSection.add(
-                tooltip.getApi(),
-                KmuTooltipSectionStyle.WARNING,
-                "Suppressed",
-                "Reason text");
+        @Test
+        void addsWarningSectionWithWarningBannerAndNormalBodyText() {
+            var tooltip = RecordingTooltip.create();
 
-        assertThat(tooltip.getHeadings())
-                .containsExactly(new HeadingCall(
-                        "Suppressed",
-                        new Color(255, 100, 0, 255),
-                        new Color(70, 20, 20),
-                        Alignment.MID,
-                        10f));
-        assertThat(tooltip.getParagraphs())
-                .containsExactly(new ParagraphCall("Reason text", 4f, TEXT));
+            KmuTooltipSection.add(
+                    tooltip.getApi(),
+                    KmuTooltipSectionStyle.WARNING,
+                    "Suppressed",
+                    "Reason text");
+
+            assertThat(tooltip.getHeadings())
+                    .containsExactly(new HeadingCall(
+                            "Suppressed",
+                            new Color(255, 100, 0, 255),
+                            new Color(70, 20, 20),
+                            Alignment.MID,
+                            10f));
+            assertThat(tooltip.getParagraphs())
+                    .containsExactly(new ParagraphCall("Reason text", 4f, TEXT));
+        }
     }
 
     private static final class RecordingTooltip implements InvocationHandler {

@@ -12,6 +12,7 @@ import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -53,61 +54,69 @@ class KmuConditionPickerInfoRowTest {
         StarsectorSettingsFake.clearSettings();
     }
 
-    @Test
-    void computeHeightIncludesSectionGapWhenBothSectionsPresent() {
-        var height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 2);
+    @Nested
+    class ComputeHeight {
 
-        var expected = 4 * KmuConditionPickerInfoRow.LINE_HEIGHT + 8f; // 8f = SECTION_PAD
-        assertThat(height).isEqualTo(expected);
+        @Test
+        void computeHeightIncludesSectionGapWhenBothSectionsPresent() {
+            var height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 2);
+
+            var expected = 4 * KmuConditionPickerInfoRow.LINE_HEIGHT + 8f; // 8f = SECTION_PAD
+            assertThat(height).isEqualTo(expected);
+        }
+
+        @Test
+        void computeHeightExcludesSectionGapWhenOnlyLocationPresent() {
+            var height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 0);
+
+            var expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
+            assertThat(height).isEqualTo(expected);
+        }
+
+        @Test
+        void computeHeightExcludesSectionGapWhenOnlySummaryPresent() {
+            var height = KmuConditionPickerInfoRow.computeHeight(0f, 0, 2);
+
+            var expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
+            assertThat(height).isEqualTo(expected);
+        }
     }
 
-    @Test
-    void computeHeightExcludesSectionGapWhenOnlyLocationPresent() {
-        var height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 0);
+    @Nested
+    class Render {
 
-        var expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
-        assertThat(height).isEqualTo(expected);
-    }
+        @Test
+        void rendersAllTextsWithWhiteBaseColor() {
+            var paraColors = new ArrayList<Color>();
+            var row = rowPanel(paraColors);
 
-    @Test
-    void computeHeightExcludesSectionGapWhenOnlySummaryPresent() {
-        var height = KmuConditionPickerInfoRow.computeHeight(0f, 0, 2);
+            var locationParagraphs = Arrays.asList(
+                    new HighlightedParagraph("Location:"),
+                    new HighlightedParagraph("Valis (terran world)"));
+            var summaryParagraphs = Arrays.asList(
+                    new HighlightedParagraph("Conditions:"),
+                    new HighlightedParagraph("0 available, 0 total."));
 
-        var expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
-        assertThat(height).isEqualTo(expected);
-    }
+            KmuConditionPickerInfoRow.render(row, locationParagraphs, summaryParagraphs, Optional.empty(), 400f);
 
-    @Test
-    void rendersAllTextsWithWhiteBaseColor() {
-        var paraColors = new ArrayList<Color>();
-        var row = rowPanel(paraColors);
+            // 2 location + 2 summary lines, all TEXT base color
+            assertThat(paraColors).hasSize(4).containsOnly(TEXT);
+        }
 
-        var locationParagraphs = Arrays.asList(
-                new HighlightedParagraph("Location:"),
-                new HighlightedParagraph("Valis (terran world)"));
-        var summaryParagraphs = Arrays.asList(
-                new HighlightedParagraph("Conditions:"),
-                new HighlightedParagraph("0 available, 0 total."));
+        @Test
+        void rendersOnlySummaryWhenLocationListIsEmpty() {
+            var paraColors = new ArrayList<Color>();
+            var row = rowPanel(paraColors);
 
-        KmuConditionPickerInfoRow.render(row, locationParagraphs, summaryParagraphs, Optional.empty(), 400f);
+            var summaryParagraphs = Arrays.asList(
+                    new HighlightedParagraph("Conditions:"),
+                    new HighlightedParagraph("0 available, 0 total."));
 
-        // 2 location + 2 summary lines, all TEXT base color
-        assertThat(paraColors).hasSize(4).containsOnly(TEXT);
-    }
+            KmuConditionPickerInfoRow.render(
+                    row, Collections.emptyList(), summaryParagraphs, Optional.empty(), 400f);
 
-    @Test
-    void rendersOnlySummaryWhenLocationListIsEmpty() {
-        var paraColors = new ArrayList<Color>();
-        var row = rowPanel(paraColors);
-
-        var summaryParagraphs = Arrays.asList(
-                new HighlightedParagraph("Conditions:"),
-                new HighlightedParagraph("0 available, 0 total."));
-
-        KmuConditionPickerInfoRow.render(
-                row, Collections.emptyList(), summaryParagraphs, Optional.empty(), 400f);
-
-        assertThat(paraColors).hasSize(2).containsOnly(TEXT);
+            assertThat(paraColors).hasSize(2).containsOnly(TEXT);
+        }
     }
 
     /**

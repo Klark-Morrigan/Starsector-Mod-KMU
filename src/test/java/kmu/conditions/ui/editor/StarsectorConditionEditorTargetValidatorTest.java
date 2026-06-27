@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmu.ui.context.KmuMarketUiContext;
 import kmu.ui.context.KmuMarketUiContextSource;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -18,38 +19,42 @@ class StarsectorConditionEditorTargetValidatorTest {
     private final StarsectorConditionEditorTargetValidator validator =
             new StarsectorConditionEditorTargetValidator();
 
-    @Test
-    void allowsCurrentlyOpenMarketRegardlessOfPlanet() {
-        // CURRENTLY_OPEN_MARKET bypasses all planet checks — the market screen
-        // is already open so no further validation is needed.
-        var context = context(market(null, false),
-                KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
+    @Nested
+    class GetUnsupportedReason {
 
-        assertThat(validator.getUnsupportedReason(context)).isEmpty();
-    }
+        @Test
+        void allowsCurrentlyOpenMarketRegardlessOfPlanet() {
+            // CURRENTLY_OPEN_MARKET bypasses all planet checks — the market screen
+            // is already open so no further validation is needed.
+            var context = context(market(null, false),
+                    KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
 
-    @Test
-    void allowsMarketWithPlanetEntity() {
-        var context = context(market(planetProxy(), false),
-                KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+            assertThat(validator.getUnsupportedReason(context)).isEmpty();
+        }
 
-        assertThat(validator.getUnsupportedReason(context)).isEmpty();
-    }
+        @Test
+        void allowsMarketWithPlanetEntity() {
+            var context = context(market(planetProxy(), false),
+                    KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
 
-    @Test
-    void allowsMarketThatIsPlanetConditionMarketOnly() {
-        var context = context(market(null, true),
-                KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+            assertThat(validator.getUnsupportedReason(context)).isEmpty();
+        }
 
-        assertThat(validator.getUnsupportedReason(context)).isEmpty();
-    }
+        @Test
+        void allowsMarketThatIsPlanetConditionMarketOnly() {
+            var context = context(market(null, true),
+                    KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
 
-    @Test
-    void rejectsMarketWithNeitherPlanetNorConditionOnlyFlag() {
-        var context = context(market(null, false),
-                KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+            assertThat(validator.getUnsupportedReason(context)).isEmpty();
+        }
 
-        assertThat(validator.getUnsupportedReason(context)).isPresent();
+        @Test
+        void rejectsMarketWithNeitherPlanetNorConditionOnlyFlag() {
+            var context = context(market(null, false),
+                    KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+
+            assertThat(validator.getUnsupportedReason(context)).isPresent();
+        }
     }
 
     private static KmuMarketUiContext context(MarketAPI market, KmuMarketUiContextSource source) {

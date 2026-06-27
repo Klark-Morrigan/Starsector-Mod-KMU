@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.CoreUITabId;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -13,102 +14,115 @@ import java.lang.reflect.Proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class StarsectorMarketUiContextTrackerTest {
-    @Test
-    void tracksOutpostsTabMarketParam() {
-        var market = market();
-        var tracker = new StarsectorMarketUiContextTracker();
 
-        tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
+    @Nested
+    class ReportAboutToOpenCoreTab {
 
-        assertThat(tracker.getTrackedMarket()).containsSame(market);
+        @Test
+        void tracksOutpostsTabMarketParam() {
+            var market = market();
+            var tracker = new StarsectorMarketUiContextTracker();
+
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
+
+            assertThat(tracker.getTrackedMarket()).containsSame(market);
+        }
+
+        @Test
+        void tracksOutpostsTabEntityMarketParam() {
+            var market = market();
+            var tracker = new StarsectorMarketUiContextTracker();
+
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, entity(market));
+
+            assertThat(tracker.getTrackedMarket()).containsSame(market);
+        }
+
+        @Test
+        void ignoresNonOutpostsTabParams() {
+            var market = market();
+            var tracker = new StarsectorMarketUiContextTracker();
+
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.INTEL, market);
+
+            assertThat(tracker.getTrackedMarket()).isEmpty();
+        }
+
+        @Test
+        void clearsTrackedMarketWhenCoreUiOpensWithoutMarketContext() {
+            var market = market();
+            var tracker = new StarsectorMarketUiContextTracker();
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
+
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, null);
+
+            assertThat(tracker.getTrackedMarket()).isEmpty();
+        }
+
+        @Test
+        void clearsTrackedMarketWhenNonOutpostsCoreTabOpens() {
+            var market = market();
+            var tracker = new StarsectorMarketUiContextTracker();
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
+
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.INTEL, null);
+
+            assertThat(tracker.getTrackedMarket()).isEmpty();
+        }
     }
 
-    @Test
-    void tracksOutpostsTabEntityMarketParam() {
-        var market = market();
-        var tracker = new StarsectorMarketUiContextTracker();
+    @Nested
+    class ReportPlayerOpenedMarketAndCargoUpdated {
 
-        tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, entity(market));
+        @Test
+        void tracksMarketAndCargoUpdatedEvent() {
+            var market = market();
+            var tracker = new StarsectorMarketUiContextTracker();
 
-        assertThat(tracker.getTrackedMarket()).containsSame(market);
+            tracker.reportPlayerOpenedMarketAndCargoUpdated(market);
+
+            assertThat(tracker.getTrackedMarket()).containsSame(market);
+        }
     }
 
-    @Test
-    void ignoresNonOutpostsTabParams() {
-        var market = market();
-        var tracker = new StarsectorMarketUiContextTracker();
+    @Nested
+    class ReportPlayerClosedMarket {
 
-        tracker.reportAboutToOpenCoreTab(CoreUITabId.INTEL, market);
+        @Test
+        void tracksAndClearsPlayerMarketEvents() {
+            var market = market();
+            var tracker = new StarsectorMarketUiContextTracker();
 
-        assertThat(tracker.getTrackedMarket()).isEmpty();
-    }
+            tracker.reportPlayerOpenedMarket(market);
+            assertThat(tracker.getTrackedMarket()).containsSame(market);
 
-    @Test
-    void clearsTrackedMarketWhenCoreUiOpensWithoutMarketContext() {
-        var market = market();
-        var tracker = new StarsectorMarketUiContextTracker();
-        tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
+            tracker.reportPlayerClosedMarket(market);
+            assertThat(tracker.getTrackedMarket()).isEmpty();
+        }
 
-        tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, null);
+        @Test
+        void doesNotClearDifferentTrackedMarket() {
+            var tracked = market();
+            var closed = market();
+            var tracker = new StarsectorMarketUiContextTracker();
+            tracker.reportPlayerOpenedMarket(tracked);
 
-        assertThat(tracker.getTrackedMarket()).isEmpty();
-    }
+            tracker.reportPlayerClosedMarket(closed);
 
-    @Test
-    void clearsTrackedMarketWhenNonOutpostsCoreTabOpens() {
-        var market = market();
-        var tracker = new StarsectorMarketUiContextTracker();
-        tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
+            assertThat(tracker.getTrackedMarket()).containsSame(tracked);
+        }
 
-        tracker.reportAboutToOpenCoreTab(CoreUITabId.INTEL, null);
+        @Test
+        void clearsClosedMarketWithSameId() {
+            var tracked = market("same_market");
+            var closed = market("same_market");
+            var tracker = new StarsectorMarketUiContextTracker();
+            tracker.reportPlayerOpenedMarket(tracked);
 
-        assertThat(tracker.getTrackedMarket()).isEmpty();
-    }
+            tracker.reportPlayerClosedMarket(closed);
 
-    @Test
-    void tracksAndClearsPlayerMarketEvents() {
-        var market = market();
-        var tracker = new StarsectorMarketUiContextTracker();
-
-        tracker.reportPlayerOpenedMarket(market);
-        assertThat(tracker.getTrackedMarket()).containsSame(market);
-
-        tracker.reportPlayerClosedMarket(market);
-        assertThat(tracker.getTrackedMarket()).isEmpty();
-    }
-
-    @Test
-    void tracksMarketAndCargoUpdatedEvent() {
-        var market = market();
-        var tracker = new StarsectorMarketUiContextTracker();
-
-        tracker.reportPlayerOpenedMarketAndCargoUpdated(market);
-
-        assertThat(tracker.getTrackedMarket()).containsSame(market);
-    }
-
-    @Test
-    void doesNotClearDifferentTrackedMarket() {
-        var tracked = market();
-        var closed = market();
-        var tracker = new StarsectorMarketUiContextTracker();
-        tracker.reportPlayerOpenedMarket(tracked);
-
-        tracker.reportPlayerClosedMarket(closed);
-
-        assertThat(tracker.getTrackedMarket()).containsSame(tracked);
-    }
-
-    @Test
-    void clearsClosedMarketWithSameId() {
-        var tracked = market("same_market");
-        var closed = market("same_market");
-        var tracker = new StarsectorMarketUiContextTracker();
-        tracker.reportPlayerOpenedMarket(tracked);
-
-        tracker.reportPlayerClosedMarket(closed);
-
-        assertThat(tracker.getTrackedMarket()).isEmpty();
+            assertThat(tracker.getTrackedMarket()).isEmpty();
+        }
     }
 
     private static SectorEntityToken entity(MarketAPI market) {

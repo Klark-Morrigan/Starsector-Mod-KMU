@@ -1,5 +1,6 @@
 package kmu.conditions.domain;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -15,294 +16,311 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class KmuConditionServiceTest {
-    @Test
-    void listsOnlyPlanetaryConditionSpecsInRepositoryOrder() {
-        var repositoryFake = new ConditionRepositoryFake(
-                spec("hot", "Hot", true),
-                spec("population_3", "Population 3", false),
-                spec("farmland_rich", "Farmland: Rich", true));
-        var service = new KmuConditionService(repositoryFake);
 
-        var specs = service.listPlanetaryConditionSpecs();
+    @Nested
+    class ListPlanetaryConditionSpecs {
 
-        assertThat(specs)
-                .extracting(KmuConditionSpec::getId)
-                .containsExactly("hot", "farmland_rich");
+        @Test
+        void listsOnlyPlanetaryConditionSpecsInRepositoryOrder() {
+            var repositoryFake = new ConditionRepositoryFake(
+                    spec("hot", "Hot", true),
+                    spec("population_3", "Population 3", false),
+                    spec("farmland_rich", "Farmland: Rich", true));
+            var service = new KmuConditionService(repositoryFake);
+
+            var specs = service.listPlanetaryConditionSpecs();
+
+            assertThat(specs)
+                    .extracting(KmuConditionSpec::getId)
+                    .containsExactly("hot", "farmland_rich");
+        }
+
+        @Test
+        void skipsNullSpecsWhenListingPlanetaryConditionSpecs() {
+            var service = new KmuConditionService(new ListBackedConditionRepository(Arrays.asList(
+                    spec("hot", "Hot", true),
+                    null,
+                    spec("farmland_rich", "Farmland: Rich", true))));
+
+            var specs = service.listPlanetaryConditionSpecs();
+
+            assertThat(specs)
+                    .extracting(KmuConditionSpec::getId)
+                    .containsExactly("hot", "farmland_rich");
+        }
+
+        @Test
+        void returnsImmutablePlanetaryConditionSpecList() {
+            var service = new KmuConditionService(
+                    new ConditionRepositoryFake(spec("hot", "Hot", true)));
+
+            var specs = service.listPlanetaryConditionSpecs();
+
+            assertThatThrownBy(() -> specs.add(spec("cold", "Cold", true)))
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        void returnsEmptySpecListWhenRepositoryListFails() {
+            var reports = new ArrayList<String>();
+            var service = new KmuConditionService(
+                    new ThrowingConditionRepository(new IllegalStateException("settings failed")),
+                    (message, cause) -> reports.add(message));
+
+            var specs = service.listPlanetaryConditionSpecs();
+
+            assertThat(specs).isEmpty();
+            assertThat(reports).containsExactly("Failed to list market condition specs.");
+        }
     }
 
-    @Test
-    void skipsNullSpecsWhenListingPlanetaryConditionSpecs() {
-        var service = new KmuConditionService(new ListBackedConditionRepository(Arrays.asList(
-                spec("hot", "Hot", true),
-                null,
-                spec("farmland_rich", "Farmland: Rich", true))));
+    @Nested
+    class ListConditionSpecsVisibleForMarket {
 
-        var specs = service.listPlanetaryConditionSpecs();
+        @Test
+        void visibleSpecsIncludePlanetarySpecsAndCurrentNonPlanetaryConditions() {
+            var repositoryFake = new ConditionRepositoryFake(
+                    spec("hot", "Hot", true),
+                    spec("abandoned_station", "Abandoned Station", false),
+                    spec("population_3", "Population 3", false));
+            var service = new KmuConditionService(repositoryFake);
+            var marketFake = new EditableMarketFake("abandoned_station");
 
-        assertThat(specs)
-                .extracting(KmuConditionSpec::getId)
-                .containsExactly("hot", "farmland_rich");
+            var specs = service.listConditionSpecsVisibleForMarket(marketFake);
+
+            assertThat(specs)
+                    .extracting(KmuConditionSpec::getId)
+                    .containsExactly("hot", "abandoned_station");
+        }
     }
 
-    @Test
-    void returnsImmutablePlanetaryConditionSpecList() {
-        var service = new KmuConditionService(
-                new ConditionRepositoryFake(spec("hot", "Hot", true)));
+    @Nested
+    class GetCurrentConditionIds {
 
-        var specs = service.listPlanetaryConditionSpecs();
+        @Test
+        void returnsCurrentConditionIdsFromMarket() {
+            var service = new KmuConditionService(new ConditionRepositoryFake());
+            var marketFake = new EditableMarketFake("hot", "ore_sparse");
 
-        assertThatThrownBy(() -> specs.add(spec("cold", "Cold", true)))
-                .isInstanceOf(UnsupportedOperationException.class);
+            assertThat(service.getCurrentConditionIds(marketFake))
+                    .containsExactly("hot", "ore_sparse");
+        }
+
+        @Test
+        void returnsImmutableCurrentConditionIds() {
+            var service = new KmuConditionService(new ConditionRepositoryFake());
+            var marketFake = new EditableMarketFake("hot");
+
+            var conditionIds = service.getCurrentConditionIds(marketFake);
+
+            assertThatThrownBy(() -> conditionIds.add("cold"))
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        void returnsEmptyConditionIdsWhenMarketReadFails() {
+            var reports = new ArrayList<String>();
+            var service = new KmuConditionService(
+                    new ConditionRepositoryFake(),
+                    (message, cause) -> reports.add(message));
+            var marketFake = new EditableMarketFake("hot")
+                    .failGetConditionIds(new IllegalStateException("market read failed"));
+
+            var conditionIds = service.getCurrentConditionIds(marketFake);
+
+            assertThat(conditionIds).isEmpty();
+            assertThat(reports).containsExactly("Failed to read market condition ids.");
+        }
     }
 
-    @Test
-    void visibleSpecsIncludePlanetarySpecsAndCurrentNonPlanetaryConditions() {
-        var repositoryFake = new ConditionRepositoryFake(
-                spec("hot", "Hot", true),
-                spec("abandoned_station", "Abandoned Station", false),
-                spec("population_3", "Population 3", false));
-        var service = new KmuConditionService(repositoryFake);
-        var marketFake = new EditableMarketFake("abandoned_station");
+    @Nested
+    class AddPlanetaryConditionIfAbsent {
 
-        var specs = service.listConditionSpecsVisibleForMarket(marketFake);
+        @Test
+        void addsValidAbsentPlanetaryConditionAndReappliesMarket() {
+            var repositoryFake = new ConditionRepositoryFake(spec("habitable", "Habitable", true));
+            var service = new KmuConditionService(repositoryFake);
+            var marketFake = new EditableMarketFake();
 
-        assertThat(specs)
-                .extracting(KmuConditionSpec::getId)
-                .containsExactly("hot", "abandoned_station");
-    }
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "habitable");
 
-    @Test
-    void returnsCurrentConditionIdsFromMarket() {
-        var service = new KmuConditionService(new ConditionRepositoryFake());
-        var marketFake = new EditableMarketFake("hot", "ore_sparse");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
+            assertThat(result.getStatus().isMutationApplied()).isTrue();
+            assertThat(result.getConditionId()).contains("habitable");
+            assertThat(marketFake.getConditionIds()).containsExactly("habitable");
+            assertThat(marketFake.calls).containsExactly(
+                    "add:habitable",
+                    "surveyed:habitable",
+                    "reapply");
+        }
 
-        assertThat(service.getCurrentConditionIds(marketFake))
-                .containsExactly("hot", "ore_sparse");
-    }
+        @Test
+        void trimsConditionIdBeforeLookupAndMutation() {
+            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var service = new KmuConditionService(repositoryFake);
+            var marketFake = new EditableMarketFake();
 
-    @Test
-    void returnsImmutableCurrentConditionIds() {
-        var service = new KmuConditionService(new ConditionRepositoryFake());
-        var marketFake = new EditableMarketFake("hot");
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "  hot  ");
 
-        var conditionIds = service.getCurrentConditionIds(marketFake);
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
+            assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot", "reapply");
+        }
 
-        assertThatThrownBy(() -> conditionIds.add("cold"))
-                .isInstanceOf(UnsupportedOperationException.class);
-    }
+        @Test
+        void doesNotAddDuplicateCondition() {
+            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var service = new KmuConditionService(repositoryFake);
+            var marketFake = new EditableMarketFake("hot");
 
-    @Test
-    void returnsEmptyConditionIdsWhenMarketReadFails() {
-        var reports = new ArrayList<String>();
-        var service = new KmuConditionService(
-                new ConditionRepositoryFake(),
-                (message, cause) -> reports.add(message));
-        var marketFake = new EditableMarketFake("hot")
-                .failGetConditionIds(new IllegalStateException("market read failed"));
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
 
-        var conditionIds = service.getCurrentConditionIds(marketFake);
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
+            assertThat(result.getStatus().isMutationApplied()).isFalse();
+            assertThat(marketFake.calls).isEmpty();
+            assertThat(marketFake.getConditionIds()).containsExactly("hot");
+        }
 
-        assertThat(conditionIds).isEmpty();
-        assertThat(reports).containsExactly("Failed to read market condition ids.");
-    }
+        @Test
+        void rejectsMissingConditionSpec() {
+            var service = new KmuConditionService(new ConditionRepositoryFake());
+            var marketFake = new EditableMarketFake();
 
-    @Test
-    void returnsEmptySpecListWhenRepositoryListFails() {
-        var reports = new ArrayList<String>();
-        var service = new KmuConditionService(
-                new ThrowingConditionRepository(new IllegalStateException("settings failed")),
-                (message, cause) -> reports.add(message));
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "missing_condition");
 
-        var specs = service.listPlanetaryConditionSpecs();
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
+            assertThat(result.getStatus().isMutationApplied()).isFalse();
+            assertThat(marketFake.calls).isEmpty();
+        }
 
-        assertThat(specs).isEmpty();
-        assertThat(reports).containsExactly("Failed to list market condition specs.");
-    }
+        @Test
+        void rejectsBlankConditionId() {
+            var service = new KmuConditionService(new ConditionRepositoryFake());
+            var marketFake = new EditableMarketFake();
 
-    @Test
-    void addsValidAbsentPlanetaryConditionAndReappliesMarket() {
-        var repositoryFake = new ConditionRepositoryFake(spec("habitable", "Habitable", true));
-        var service = new KmuConditionService(repositoryFake);
-        var marketFake = new EditableMarketFake();
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "   ");
 
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "habitable");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
+            assertThat(result.getConditionId()).contains("   ");
+            assertThat(marketFake.calls).isEmpty();
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
-        assertThat(result.getStatus().isMutationApplied()).isTrue();
-        assertThat(result.getConditionId()).contains("habitable");
-        assertThat(marketFake.getConditionIds()).containsExactly("habitable");
-        assertThat(marketFake.calls).containsExactly(
-                "add:habitable",
-                "surveyed:habitable",
-                "reapply");
-    }
+        @Test
+        void rejectsNullConditionId() {
+            var service = new KmuConditionService(new ConditionRepositoryFake());
+            var marketFake = new EditableMarketFake();
 
-    @Test
-    void trimsConditionIdBeforeLookupAndMutation() {
-        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
-        var service = new KmuConditionService(repositoryFake);
-        var marketFake = new EditableMarketFake();
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, null);
 
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "  hot  ");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
+            assertThat(result.getConditionId()).isEmpty();
+            assertThat(marketFake.calls).isEmpty();
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
-        assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot", "reapply");
-    }
+        @Test
+        void rejectsNonPlanetaryConditionSpec() {
+            var repositoryFake = new ConditionRepositoryFake(spec("population_3", "Population 3", false));
+            var service = new KmuConditionService(repositoryFake);
+            var marketFake = new EditableMarketFake();
 
-    @Test
-    void doesNotAddDuplicateCondition() {
-        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
-        var service = new KmuConditionService(repositoryFake);
-        var marketFake = new EditableMarketFake("hot");
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "population_3");
 
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.NOT_PLANETARY);
+            assertThat(result.getStatus().isMutationApplied()).isFalse();
+            assertThat(marketFake.calls).isEmpty();
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
-        assertThat(result.getStatus().isMutationApplied()).isFalse();
-        assertThat(marketFake.calls).isEmpty();
-        assertThat(marketFake.getConditionIds()).containsExactly("hot");
-    }
+        @Test
+        void returnsFailedResultWhenConditionLookupThrows() {
+            var exception = new IllegalStateException("settings unavailable");
+            var reports = new ArrayList<String>();
+            var service = new KmuConditionService(
+                    new ThrowingConditionRepository(exception),
+                    (message, cause) -> reports.add(message + " / " + cause.getMessage()));
+            var marketFake = new EditableMarketFake();
 
-    @Test
-    void rejectsMissingConditionSpec() {
-        var service = new KmuConditionService(new ConditionRepositoryFake());
-        var marketFake = new EditableMarketFake();
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
 
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "missing_condition");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(result.getStatus().isMutationApplied()).isFalse();
+            assertThat(result.getConditionId()).contains("hot");
+            assertThat(result.getMessage()).contains("Failed to look up condition spec.");
+            assertThat(result.getCause()).contains(exception);
+            assertThat(marketFake.calls).isEmpty();
+            assertThat(reports).containsExactly("Failed to look up condition spec. conditionId=hot / settings unavailable");
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
-        assertThat(result.getStatus().isMutationApplied()).isFalse();
-        assertThat(marketFake.calls).isEmpty();
-    }
+        @Test
+        void returnsFailedResultWhenMarketHasConditionThrows() {
+            var exception = new IllegalStateException("market unavailable");
+            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var reports = new ArrayList<String>();
+            var service = new KmuConditionService(
+                    repositoryFake,
+                    (message, cause) -> reports.add(message + " / " + cause.getMessage()));
+            var marketFake = new EditableMarketFake()
+                    .failHasCondition(exception);
 
-    @Test
-    void rejectsBlankConditionId() {
-        var service = new KmuConditionService(new ConditionRepositoryFake());
-        var marketFake = new EditableMarketFake();
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
 
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "   ");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(result.getCause()).contains(exception);
+            assertThat(marketFake.calls).isEmpty();
+            assertThat(reports).containsExactly("Failed to add market condition. conditionId=hot / market unavailable");
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
-        assertThat(result.getConditionId()).contains("   ");
-        assertThat(marketFake.calls).isEmpty();
-    }
+        @Test
+        void returnsFailedResultWhenMutationThrowsAfterAdd() {
+            var exception = new IllegalStateException("survey failed");
+            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var service = new KmuConditionService(repositoryFake);
+            var marketFake = new EditableMarketFake()
+                    .failMarkConditionSurveyed(exception);
 
-    @Test
-    void rejectsNullConditionId() {
-        var service = new KmuConditionService(new ConditionRepositoryFake());
-        var marketFake = new EditableMarketFake();
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
 
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, null);
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(result.getCause()).contains(exception);
+            assertThat(marketFake.getConditionIds()).containsExactly("hot");
+            assertThat(marketFake.calls).containsExactly("add:hot");
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
-        assertThat(result.getConditionId()).isEmpty();
-        assertThat(marketFake.calls).isEmpty();
-    }
+        @Test
+        void returnsFailedResultWhenAddConditionThrows() {
+            var exception = new IllegalStateException("add failed");
+            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var reports = new ArrayList<String>();
+            var service = new KmuConditionService(
+                    repositoryFake,
+                    (message, cause) -> reports.add(message + " / " + cause.getMessage()));
+            var marketFake = new EditableMarketFake()
+                    .failAddCondition(exception);
 
-    @Test
-    void rejectsNonPlanetaryConditionSpec() {
-        var repositoryFake = new ConditionRepositoryFake(spec("population_3", "Population 3", false));
-        var service = new KmuConditionService(repositoryFake);
-        var marketFake = new EditableMarketFake();
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
 
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "population_3");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(result.getCause()).contains(exception);
+            assertThat(marketFake.getConditionIds()).isEmpty();
+            assertThat(marketFake.calls).isEmpty();
+            assertThat(reports).containsExactly("Failed to add market condition. conditionId=hot / add failed");
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.NOT_PLANETARY);
-        assertThat(result.getStatus().isMutationApplied()).isFalse();
-        assertThat(marketFake.calls).isEmpty();
-    }
+        @Test
+        void returnsFailedResultWhenReapplyThrowsAfterMutation() {
+            var exception = new IllegalStateException("reapply failed");
+            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var service = new KmuConditionService(repositoryFake);
+            var marketFake = new EditableMarketFake()
+                    .failReapplyConditions(exception);
 
-    @Test
-    void returnsFailedResultWhenConditionLookupThrows() {
-        var exception = new IllegalStateException("settings unavailable");
-        var reports = new ArrayList<String>();
-        var service = new KmuConditionService(
-                new ThrowingConditionRepository(exception),
-                (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-        var marketFake = new EditableMarketFake();
+            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
 
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
-
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-        assertThat(result.getStatus().isMutationApplied()).isFalse();
-        assertThat(result.getConditionId()).contains("hot");
-        assertThat(result.getMessage()).contains("Failed to look up condition spec.");
-        assertThat(result.getCause()).contains(exception);
-        assertThat(marketFake.calls).isEmpty();
-        assertThat(reports).containsExactly("Failed to look up condition spec. conditionId=hot / settings unavailable");
-    }
-
-    @Test
-    void returnsFailedResultWhenMarketHasConditionThrows() {
-        var exception = new IllegalStateException("market unavailable");
-        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
-        var reports = new ArrayList<String>();
-        var service = new KmuConditionService(
-                repositoryFake,
-                (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-        var marketFake = new EditableMarketFake()
-                .failHasCondition(exception);
-
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
-
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-        assertThat(result.getCause()).contains(exception);
-        assertThat(marketFake.calls).isEmpty();
-        assertThat(reports).containsExactly("Failed to add market condition. conditionId=hot / market unavailable");
-    }
-
-    @Test
-    void returnsFailedResultWhenMutationThrowsAfterAdd() {
-        var exception = new IllegalStateException("survey failed");
-        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
-        var service = new KmuConditionService(repositoryFake);
-        var marketFake = new EditableMarketFake()
-                .failMarkConditionSurveyed(exception);
-
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
-
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-        assertThat(result.getCause()).contains(exception);
-        assertThat(marketFake.getConditionIds()).containsExactly("hot");
-        assertThat(marketFake.calls).containsExactly("add:hot");
-    }
-
-    @Test
-    void returnsFailedResultWhenAddConditionThrows() {
-        var exception = new IllegalStateException("add failed");
-        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
-        var reports = new ArrayList<String>();
-        var service = new KmuConditionService(
-                repositoryFake,
-                (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-        var marketFake = new EditableMarketFake()
-                .failAddCondition(exception);
-
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
-
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-        assertThat(result.getCause()).contains(exception);
-        assertThat(marketFake.getConditionIds()).isEmpty();
-        assertThat(marketFake.calls).isEmpty();
-        assertThat(reports).containsExactly("Failed to add market condition. conditionId=hot / add failed");
-    }
-
-    @Test
-    void returnsFailedResultWhenReapplyThrowsAfterMutation() {
-        var exception = new IllegalStateException("reapply failed");
-        var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
-        var service = new KmuConditionService(repositoryFake);
-        var marketFake = new EditableMarketFake()
-                .failReapplyConditions(exception);
-
-        var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
-
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-        assertThat(result.getCause()).contains(exception);
-        assertThat(marketFake.getConditionIds()).containsExactly("hot");
-        assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(result.getCause()).contains(exception);
+            assertThat(marketFake.getConditionIds()).containsExactly("hot");
+            assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot");
+        }
     }
 
     private static KmuConditionSpec spec(String id, String name, boolean planetary) {

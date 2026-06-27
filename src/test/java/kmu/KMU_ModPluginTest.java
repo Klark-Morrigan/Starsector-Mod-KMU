@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -16,34 +17,43 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KMU_ModPluginTest {
-    @Test
-    void exposesStableModIdentityConstants() {
-        assertThat(KMU_ModPlugin.MOD_ID).isEqualTo("kmu");
-        assertThat(KMU_ModPlugin.MOD_NAME).isEqualTo("Klark Morrigan's Utilities");
+
+    @Nested
+    class ModIdentity {
+
+        @Test
+        void exposesStableModIdentityConstants() {
+            assertThat(KMU_ModPlugin.MOD_ID).isEqualTo("kmu");
+            assertThat(KMU_ModPlugin.MOD_NAME).isEqualTo("Klark Morrigan's Utilities");
+        }
+
+        @Test
+        void extendsStarsectorBaseModPlugin() {
+            assertThat(new KMU_ModPlugin()).isInstanceOf(BaseModPlugin.class);
+        }
     }
 
-    @Test
-    void extendsStarsectorBaseModPlugin() {
-        assertThat(new KMU_ModPlugin()).isInstanceOf(BaseModPlugin.class);
-    }
+    @Nested
+    class InstallMarketUiContextTracker {
 
-    @Test
-    void installsMarketUiContextTrackerWhenMissing() {
-        var listenerManager = new RecordingListenerManager(false);
+        @Test
+        void installsMarketUiContextTrackerWhenMissing() {
+            var listenerManager = new RecordingListenerManager(false);
 
-        KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
+            KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
 
-        assertThat(listenerManager.addedListener).isInstanceOf(StarsectorMarketUiContextTracker.class);
-        assertThat(listenerManager.addedAsPermanent).isTrue();
-    }
+            assertThat(listenerManager.addedListener).isInstanceOf(StarsectorMarketUiContextTracker.class);
+            assertThat(listenerManager.addedAsPermanent).isTrue();
+        }
 
-    @Test
-    void doesNotInstallDuplicateMarketUiContextTracker() {
-        var listenerManager = new RecordingListenerManager(true);
+        @Test
+        void doesNotInstallDuplicateMarketUiContextTracker() {
+            var listenerManager = new RecordingListenerManager(true);
 
-        KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
+            KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
 
-        assertThat(listenerManager.addedListener).isNull();
+            assertThat(listenerManager.addedListener).isNull();
+        }
     }
 
     private static SectorAPI sector(ListenerManagerAPI listenerManager) {

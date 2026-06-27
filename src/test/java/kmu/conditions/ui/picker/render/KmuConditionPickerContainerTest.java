@@ -15,6 +15,7 @@ import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -57,284 +58,292 @@ class KmuConditionPickerContainerTest {
         StarsectorSettingsFake.clearSettings();
     }
 
-    @Test
-    void renderDoesNotPrintTitleInsidePicker() {
-        var titles = new ArrayList<String>();
-        var body = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
-            if ("addTitle".equals(method.getName()) && args != null && args.length >= 1) {
-                titles.add(String.valueOf(args[0]));
-                return createLabel();
-            }
-            if ("addPara".equals(method.getName())) {
-                return createLabel();
-            }
-            return defaultValue(method.getReturnType());
-        });
-        var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) return createRowPanel();
-            return defaultValue(method.getReturnType());
-        });
-        var model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                createLocation());
+    @Nested
+    class Render {
 
-        new KmuConditionPickerContainer(panel).render(body, body, model, action -> { }, 400f);
+        @Test
+        void renderDoesNotPrintTitleInsidePicker() {
+            var titles = new ArrayList<String>();
+            var body = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+                if ("addTitle".equals(method.getName()) && args != null && args.length >= 1) {
+                    titles.add(String.valueOf(args[0]));
+                    return createLabel();
+                }
+                if ("addPara".equals(method.getName())) {
+                    return createLabel();
+                }
+                return defaultValue(method.getReturnType());
+            });
+            var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) return createRowPanel();
+                return defaultValue(method.getReturnType());
+            });
+            var model = new KmuConditionPickerModel(
+                    Collections.emptyList(),
+                    createLocation());
 
-        assertThat(titles).isEmpty();
+            new KmuConditionPickerContainer(panel).render(body, body, model, action -> { }, 400f);
+
+            assertThat(titles).isEmpty();
+        }
+
+        @Test
+        void renderRoutesLabelsToHeaderBodyAndGridToGridBody() {
+            var headerParas = new ArrayList<String>();
+            var headerCustoms = new ArrayList<Object>();
+            var gridParas = new ArrayList<String>();
+
+            var headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+                if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                    headerParas.add(String.valueOf(args[0]));
+                    return createLabel();
+                }
+                if ("addCustom".equals(method.getName())) {
+                    headerCustoms.add(args[0]);
+                    return null;
+                }
+                return defaultValue(method.getReturnType());
+            });
+            var gridBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+                if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                    gridParas.add(String.valueOf(args[0]));
+                    return createLabel();
+                }
+                return defaultValue(method.getReturnType());
+            });
+            var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) return createRowPanel();
+                return defaultValue(method.getReturnType());
+            });
+
+            // Empty model: summary row (containing location + conditions) goes via addCustom,
+            // empty-state message to gridBody. No separate addPara for location.
+            var model = new KmuConditionPickerModel(
+                    Collections.emptyList(),
+                    createLocation());
+
+            new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+            assertThat(headerParas).isEmpty();    // location is inside the summary panel
+            assertThat(headerCustoms).hasSize(1); // summary row panel
+            assertThat(gridParas).hasSize(1);     // empty-state message
+        }
+
+        @Test
+        void renderUsesCustomPanelForSummaryRowWhenFactionHasCrestSprite() {
+            var headerParas = new ArrayList<String>();
+            var headerCustoms = new ArrayList<Object>();
+
+            // Proxy chain for the icon+text row panel created inside the container.
+            var position = proxy(PositionAPI.class,
+                    (proxy, method, args) -> defaultValue(method.getReturnType()));
+            var rowElement = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+                if ("addPara".equals(method.getName())) return createLabel();
+                return defaultValue(method.getReturnType());
+            });
+            var summaryRow = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+                if ("createUIElement".equals(method.getName())) return rowElement;
+                if ("addUIElement".equals(method.getName())) return position;
+                return defaultValue(method.getReturnType());
+            });
+            var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) return summaryRow;
+                return defaultValue(method.getReturnType());
+            });
+            var headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+                if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                    headerParas.add(String.valueOf(args[0]));
+                    return createLabel();
+                }
+                if ("addCustom".equals(method.getName())) {
+                    headerCustoms.add(args[0]);
+                    return null;
+                }
+                return defaultValue(method.getReturnType());
+            });
+            var gridBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+                if ("addPara".equals(method.getName())) return createLabel();
+                return defaultValue(method.getReturnType());
+            });
+
+            var faction = new KmuPickerFaction(
+                    "Hegemony", FACTION, "graphics/factions/hegemony_crest.png", null, null);
+            var model = new KmuConditionPickerModel(
+                    Collections.emptyList(),
+                    new KmuConditionPickerLocation("Valis", "terran world", faction, null, null, null, null));
+
+            new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+            // Location and conditions are both inside the summary panel; only addCustom is called.
+            assertThat(headerParas).isEmpty();
+            assertThat(headerCustoms).hasSize(1);
+        }
+
+        @Test
+        void renderSkipsLocationLabelWhenLocationHasNoDisplayableFields() {
+            var headerParas = new ArrayList<String>();
+            var headerCustoms = new ArrayList<Object>();
+
+            var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+                if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                    headerParas.add(String.valueOf(args[0]));
+                    return createLabel();
+                }
+                if ("addCustom".equals(method.getName())) {
+                    headerCustoms.add(args[0]);
+                    return null;
+                }
+                return defaultValue(method.getReturnType());
+            });
+            var gridBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+                if ("addPara".equals(method.getName())) return createLabel();
+                return defaultValue(method.getReturnType());
+            });
+            var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) return createRowPanel();
+                return defaultValue(method.getReturnType());
+            });
+            var model = new KmuConditionPickerModel(
+                    Collections.emptyList(),
+                    new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+
+            new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+            assertThat(headerParas).isEmpty();    // no location label
+            assertThat(headerCustoms).hasSize(1); // summary row only
+        }
+
+        @Test
+        void renderSkipsEmptyStateAndInvokesGridForNonEmptyModel() {
+            var gridParas = new ArrayList<String>();
+            var gridCustoms = new ArrayList<Object>();
+
+            var gridBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+                if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+                    gridParas.add(String.valueOf(args[0]));
+                    return createLabel();
+                }
+                if ("addCustom".equals(method.getName())) {
+                    gridCustoms.add(args[0]);
+                    return null;
+                }
+                return defaultValue(method.getReturnType());
+            });
+            var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+                if ("addPara".equals(method.getName())) return createLabel();
+                return defaultValue(method.getReturnType());
+            });
+
+            var gridPosition = proxy(PositionAPI.class,
+                    (p, method, args) -> defaultValue(method.getReturnType()));
+            var buttonPanelStub = proxy(CustomPanelAPI.class,
+                    (p, method, args) -> defaultValue(method.getReturnType()));
+            var gridPanel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) return buttonPanelStub;
+                if ("addComponent".equals(method.getName())) return gridPosition;
+                return defaultValue(method.getReturnType());
+            });
+            int[] createCustomPanelCount = {0};
+            var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) {
+                    return (createCustomPanelCount[0]++ == 0) ? createRowPanel() : gridPanel;
+                }
+                return defaultValue(method.getReturnType());
+            });
+
+            var model = new KmuConditionPickerModel(
+                    Collections.singletonList(entry("hot", KmuConditionPickerEntryState.PRESENT)),
+                    new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+
+            new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+            assertThat(gridParas).isEmpty();      // no empty-state message
+            assertThat(gridCustoms).hasSize(1);   // grid panel added to gridBody
+        }
+
+        @Test
+        void renderResultReturnsFalseFromUpdateEntryWhenModelIsEmpty() {
+            var body = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+                if ("addPara".equals(method.getName())) return createLabel();
+                return defaultValue(method.getReturnType());
+            });
+            var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) return createRowPanel();
+                return defaultValue(method.getReturnType());
+            });
+            var model = new KmuConditionPickerModel(
+                    Collections.emptyList(),
+                    new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+
+            var result =
+                    new KmuConditionPickerContainer(panel).render(body, body, model, action -> { }, 400f);
+
+            assertThat(result.updateEntry(entry("hot", KmuConditionPickerEntryState.PRESENT))).isFalse();
+        }
+
+        @Test
+        void renderResultDelegatesToGridHandleForUpdateEntry() {
+            var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+                if ("addPara".equals(method.getName())) return createLabel();
+                return defaultValue(method.getReturnType());
+            });
+            var gridBody = proxy(TooltipMakerAPI.class,
+                    (p, method, args) -> defaultValue(method.getReturnType()));
+
+            var gridPosition = proxy(PositionAPI.class,
+                    (p, method, args) -> defaultValue(method.getReturnType()));
+            var buttonPanelStub = proxy(CustomPanelAPI.class,
+                    (p, method, args) -> defaultValue(method.getReturnType()));
+            var gridPanel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) return buttonPanelStub;
+                if ("addComponent".equals(method.getName())) return gridPosition;
+                return defaultValue(method.getReturnType());
+            });
+            int[] count = {0};
+            var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+                if ("createCustomPanel".equals(method.getName())) return (count[0]++ == 0) ? createRowPanel() : gridPanel;
+                return defaultValue(method.getReturnType());
+            });
+
+            var model = new KmuConditionPickerModel(
+                    Collections.singletonList(entry("hot", KmuConditionPickerEntryState.PRESENT)),
+                    new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+
+            var result =
+                    new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+
+            assertThat(result.updateEntry(entry("hot", KmuConditionPickerEntryState.ABSENT))).isTrue();
+            assertThat(result.updateEntry(entry("cold", KmuConditionPickerEntryState.ABSENT))).isFalse();
+        }
     }
 
-    @Test
-    void renderRoutesLabelsToHeaderBodyAndGridToGridBody() {
-        var headerParas = new ArrayList<String>();
-        var headerCustoms = new ArrayList<Object>();
-        var gridParas = new ArrayList<String>();
+    @Nested
+    class ComputeHeaderHeight {
 
-        var headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
-            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
-                headerParas.add(String.valueOf(args[0]));
-                return createLabel();
-            }
-            if ("addCustom".equals(method.getName())) {
-                headerCustoms.add(args[0]);
-                return null;
-            }
-            return defaultValue(method.getReturnType());
-        });
-        var gridBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
-            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
-                gridParas.add(String.valueOf(args[0]));
-                return createLabel();
-            }
-            return defaultValue(method.getReturnType());
-        });
-        var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) return createRowPanel();
-            return defaultValue(method.getReturnType());
-        });
+        @Test
+        void headerHeightScalesWithLocationAndSummaryLineCount() {
+            // createLocation() has 4 specs (header + planet + system + constellation)
+            // summary has 2 specs (header + counts) = 6 total lines * 20f = 120f, plus
+            // SECTION_PAD (8f) between location and summary = 128f > ICON_SIZE 80f.
+            var model = new KmuConditionPickerModel(
+                    Collections.emptyList(),
+                    createLocation());
 
-        // Empty model: summary row (containing location + conditions) goes via addCustom,
-        // empty-state message to gridBody. No separate addPara for location.
-        var model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                createLocation());
+            assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
+                    .isEqualTo(8f + 128f);
+        }
 
-        new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
+        @Test
+        void headerHeightShowsUnknownAndSummaryWhenLocationIsAbsent() {
+            // Empty location -> 2 specs (header + Unknown); summary -> 2 specs = 4 lines * 20f = 80f,
+            // plus SECTION_PAD (8f) between the two sections = 88f.
+            var model = new KmuConditionPickerModel(
+                    Collections.emptyList(),
+                    new KmuConditionPickerLocation(null, null, null, null, null, null, null));
 
-        assertThat(headerParas).isEmpty();    // location is inside the summary panel
-        assertThat(headerCustoms).hasSize(1); // summary row panel
-        assertThat(gridParas).hasSize(1);     // empty-state message
-    }
-
-    @Test
-    void renderUsesCustomPanelForSummaryRowWhenFactionHasCrestSprite() {
-        var headerParas = new ArrayList<String>();
-        var headerCustoms = new ArrayList<Object>();
-
-        // Proxy chain for the icon+text row panel created inside the container.
-        var position = proxy(PositionAPI.class,
-                (proxy, method, args) -> defaultValue(method.getReturnType()));
-        var rowElement = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
-            if ("addPara".equals(method.getName())) return createLabel();
-            return defaultValue(method.getReturnType());
-        });
-        var summaryRow = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
-            if ("createUIElement".equals(method.getName())) return rowElement;
-            if ("addUIElement".equals(method.getName())) return position;
-            return defaultValue(method.getReturnType());
-        });
-        var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) return summaryRow;
-            return defaultValue(method.getReturnType());
-        });
-        var headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
-            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
-                headerParas.add(String.valueOf(args[0]));
-                return createLabel();
-            }
-            if ("addCustom".equals(method.getName())) {
-                headerCustoms.add(args[0]);
-                return null;
-            }
-            return defaultValue(method.getReturnType());
-        });
-        var gridBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
-            if ("addPara".equals(method.getName())) return createLabel();
-            return defaultValue(method.getReturnType());
-        });
-
-        var faction = new KmuPickerFaction(
-                "Hegemony", FACTION, "graphics/factions/hegemony_crest.png", null, null);
-        var model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation("Valis", "terran world", faction, null, null, null, null));
-
-        new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
-
-        // Location and conditions are both inside the summary panel; only addCustom is called.
-        assertThat(headerParas).isEmpty();
-        assertThat(headerCustoms).hasSize(1);
-    }
-
-    @Test
-    void renderSkipsLocationLabelWhenLocationHasNoDisplayableFields() {
-        var headerParas = new ArrayList<String>();
-        var headerCustoms = new ArrayList<Object>();
-
-        var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
-            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
-                headerParas.add(String.valueOf(args[0]));
-                return createLabel();
-            }
-            if ("addCustom".equals(method.getName())) {
-                headerCustoms.add(args[0]);
-                return null;
-            }
-            return defaultValue(method.getReturnType());
-        });
-        var gridBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
-            if ("addPara".equals(method.getName())) return createLabel();
-            return defaultValue(method.getReturnType());
-        });
-        var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) return createRowPanel();
-            return defaultValue(method.getReturnType());
-        });
-        var model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
-
-        new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
-
-        assertThat(headerParas).isEmpty();    // no location label
-        assertThat(headerCustoms).hasSize(1); // summary row only
-    }
-
-    @Test
-    void renderSkipsEmptyStateAndInvokesGridForNonEmptyModel() {
-        var gridParas = new ArrayList<String>();
-        var gridCustoms = new ArrayList<Object>();
-
-        var gridBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
-            if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
-                gridParas.add(String.valueOf(args[0]));
-                return createLabel();
-            }
-            if ("addCustom".equals(method.getName())) {
-                gridCustoms.add(args[0]);
-                return null;
-            }
-            return defaultValue(method.getReturnType());
-        });
-        var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
-            if ("addPara".equals(method.getName())) return createLabel();
-            return defaultValue(method.getReturnType());
-        });
-
-        var gridPosition = proxy(PositionAPI.class,
-                (p, method, args) -> defaultValue(method.getReturnType()));
-        var buttonPanelStub = proxy(CustomPanelAPI.class,
-                (p, method, args) -> defaultValue(method.getReturnType()));
-        var gridPanel = proxy(CustomPanelAPI.class, (p, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) return buttonPanelStub;
-            if ("addComponent".equals(method.getName())) return gridPosition;
-            return defaultValue(method.getReturnType());
-        });
-        int[] createCustomPanelCount = {0};
-        var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) {
-                return (createCustomPanelCount[0]++ == 0) ? createRowPanel() : gridPanel;
-            }
-            return defaultValue(method.getReturnType());
-        });
-
-        var model = new KmuConditionPickerModel(
-                Collections.singletonList(entry("hot", KmuConditionPickerEntryState.PRESENT)),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
-
-        new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
-
-        assertThat(gridParas).isEmpty();      // no empty-state message
-        assertThat(gridCustoms).hasSize(1);   // grid panel added to gridBody
-    }
-
-    @Test
-    void renderResultReturnsFalseFromUpdateEntryWhenModelIsEmpty() {
-        var body = proxy(TooltipMakerAPI.class, (p, method, args) -> {
-            if ("addPara".equals(method.getName())) return createLabel();
-            return defaultValue(method.getReturnType());
-        });
-        var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) return createRowPanel();
-            return defaultValue(method.getReturnType());
-        });
-        var model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
-
-        var result =
-                new KmuConditionPickerContainer(panel).render(body, body, model, action -> { }, 400f);
-
-        assertThat(result.updateEntry(entry("hot", KmuConditionPickerEntryState.PRESENT))).isFalse();
-    }
-
-    @Test
-    void renderResultDelegatesToGridHandleForUpdateEntry() {
-        var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
-            if ("addPara".equals(method.getName())) return createLabel();
-            return defaultValue(method.getReturnType());
-        });
-        var gridBody = proxy(TooltipMakerAPI.class,
-                (p, method, args) -> defaultValue(method.getReturnType()));
-
-        var gridPosition = proxy(PositionAPI.class,
-                (p, method, args) -> defaultValue(method.getReturnType()));
-        var buttonPanelStub = proxy(CustomPanelAPI.class,
-                (p, method, args) -> defaultValue(method.getReturnType()));
-        var gridPanel = proxy(CustomPanelAPI.class, (p, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) return buttonPanelStub;
-            if ("addComponent".equals(method.getName())) return gridPosition;
-            return defaultValue(method.getReturnType());
-        });
-        int[] count = {0};
-        var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
-            if ("createCustomPanel".equals(method.getName())) return (count[0]++ == 0) ? createRowPanel() : gridPanel;
-            return defaultValue(method.getReturnType());
-        });
-
-        var model = new KmuConditionPickerModel(
-                Collections.singletonList(entry("hot", KmuConditionPickerEntryState.PRESENT)),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
-
-        var result =
-                new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
-
-        assertThat(result.updateEntry(entry("hot", KmuConditionPickerEntryState.ABSENT))).isTrue();
-        assertThat(result.updateEntry(entry("cold", KmuConditionPickerEntryState.ABSENT))).isFalse();
-    }
-
-    @Test
-    void headerHeightScalesWithLocationAndSummaryLineCount() {
-        // createLocation() has 4 specs (header + planet + system + constellation)
-        // summary has 2 specs (header + counts) = 6 total lines * 20f = 120f, plus
-        // SECTION_PAD (8f) between location and summary = 128f > ICON_SIZE 80f.
-        var model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                createLocation());
-
-        assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
-                .isEqualTo(8f + 128f);
-    }
-
-    @Test
-    void headerHeightShowsUnknownAndSummaryWhenLocationIsAbsent() {
-        // Empty location -> 2 specs (header + Unknown); summary -> 2 specs = 4 lines * 20f = 80f,
-        // plus SECTION_PAD (8f) between the two sections = 88f.
-        var model = new KmuConditionPickerModel(
-                Collections.emptyList(),
-                new KmuConditionPickerLocation(null, null, null, null, null, null, null));
-
-        assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
-                .isEqualTo(8f + 88f);
+            assertThat(KmuConditionPickerContainer.computeHeaderHeight(model))
+                    .isEqualTo(8f + 88f);
+        }
     }
 
     private static KmuConditionPickerEntry entry(String id, KmuConditionPickerEntryState state) {

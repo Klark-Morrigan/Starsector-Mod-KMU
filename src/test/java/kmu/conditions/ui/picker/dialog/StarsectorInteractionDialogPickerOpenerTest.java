@@ -10,6 +10,7 @@ import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.ui.picker.action.KmuConditionPickerActionHandler;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -21,41 +22,46 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StarsectorInteractionDialogPickerOpenerTest {
-    @Test
-    void opensDelegateWithConfiguredDimensions() {
-        var openedDelegate = new AtomicReference<KmuConditionPickerDialogDelegate>();
-        var openedWidth = new AtomicReference<Float>();
-        var openedHeight = new AtomicReference<Float>();
-        var dialog = dialog(openedDelegate, openedWidth, openedHeight);
-        var opener = new StarsectorInteractionDialogPickerOpener(
-                sector(campaignUI(dialog)));
-        var delegate = delegate(640f, 480f);
 
-        opener.open(delegate);
+    @Nested
+    class Open {
 
-        assertThat(openedDelegate).hasValue(delegate);
-        assertThat(openedWidth).hasValue(640f);
-        assertThat(openedHeight).hasValue(480f);
-    }
+        @Test
+        void opensDelegateWithConfiguredDimensions() {
+            var openedDelegate = new AtomicReference<KmuConditionPickerDialogDelegate>();
+            var openedWidth = new AtomicReference<Float>();
+            var openedHeight = new AtomicReference<Float>();
+            var dialog = dialog(openedDelegate, openedWidth, openedHeight);
+            var opener = new StarsectorInteractionDialogPickerOpener(
+                    sector(campaignUI(dialog)));
+            var delegate = delegate(640f, 480f);
 
-    @Test
-    void failsWhenCampaignUiIsMissing() {
-        var opener = new StarsectorInteractionDialogPickerOpener(
-                sector(null));
+            opener.open(delegate);
 
-        assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("No campaign UI is active.");
-    }
+            assertThat(openedDelegate).hasValue(delegate);
+            assertThat(openedWidth).hasValue(640f);
+            assertThat(openedHeight).hasValue(480f);
+        }
 
-    @Test
-    void failsWhenInteractionDialogIsMissing() {
-        var opener = new StarsectorInteractionDialogPickerOpener(
-                sector(campaignUI(null)));
+        @Test
+        void failsWhenCampaignUiIsMissing() {
+            var opener = new StarsectorInteractionDialogPickerOpener(
+                    sector(null));
 
-        assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("No interaction dialog is active.");
+            assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("No campaign UI is active.");
+        }
+
+        @Test
+        void failsWhenInteractionDialogIsMissing() {
+            var opener = new StarsectorInteractionDialogPickerOpener(
+                    sector(campaignUI(null)));
+
+            assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("No interaction dialog is active.");
+        }
     }
 
     private static KmuConditionPickerDialogDelegate delegate(float width, float height) {

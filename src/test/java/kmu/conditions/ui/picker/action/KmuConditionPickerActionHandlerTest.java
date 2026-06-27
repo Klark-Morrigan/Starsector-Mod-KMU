@@ -9,6 +9,7 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -21,81 +22,86 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionPickerActionHandlerTest {
-    @Test
-    void addsAbsentConditionRefreshesModelAndShowsFeedback() {
-        var service = new KmuConditionService(new ConditionRepositoryFake(
-                spec("hot", "Hot", true)));
-        var marketFake = new EditableMarketFake();
-        var handler = new KmuConditionPickerActionHandler(
-                service,
-                new KmuConditionPickerModelFactory(service),
-                marketFake);
-        var entry = handler.getModel().getEntries().get(0);
 
-        var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
+    @Nested
+    class Handle {
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
-        assertThat(handler.getModel().getEntries())
-                .extracting(KmuConditionPickerEntry::getState)
-                .containsExactly(KmuConditionPickerEntryState.PRESENT);
-        assertThat(handler.getFeedback())
-                .hasValueSatisfying(feedback -> {
-                    assertThat(feedback.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
-                    assertThat(feedback.getMessage()).isEqualTo("Added condition: hot");
-                    assertThat(feedback.isFailure()).isFalse();
-                });
-        assertThat(marketFake.conditionIds).containsExactly("hot");
-        assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot", "reapply");
-    }
+        @Test
+        void addsAbsentConditionRefreshesModelAndShowsFeedback() {
+            var service = new KmuConditionService(new ConditionRepositoryFake(
+                    spec("hot", "Hot", true)));
+            var marketFake = new EditableMarketFake();
+            var handler = new KmuConditionPickerActionHandler(
+                    service,
+                    new KmuConditionPickerModelFactory(service),
+                    marketFake);
+            var entry = handler.getModel().getEntries().get(0);
 
-    @Test
-    void presentConditionActionDoesNotMutateMarket() {
-        var service = new KmuConditionService(new ConditionRepositoryFake(
-                spec("hot", "Hot", true)));
-        var marketFake = new EditableMarketFake("hot");
-        var handler = new KmuConditionPickerActionHandler(
-                service,
-                new KmuConditionPickerModelFactory(service),
-                marketFake);
-        var originalModel = handler.getModel();
-        var entry = handler.getModel().getEntries().get(0);
+            var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
 
-        var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
+            assertThat(handler.getModel().getEntries())
+                    .extracting(KmuConditionPickerEntry::getState)
+                    .containsExactly(KmuConditionPickerEntryState.PRESENT);
+            assertThat(handler.getFeedback())
+                    .hasValueSatisfying(feedback -> {
+                        assertThat(feedback.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
+                        assertThat(feedback.getMessage()).isEqualTo("Added condition: hot");
+                        assertThat(feedback.isFailure()).isFalse();
+                    });
+            assertThat(marketFake.conditionIds).containsExactly("hot");
+            assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot", "reapply");
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
-        assertThat(handler.getModel()).isSameAs(originalModel);
-        assertThat(handler.getFeedback()).isEmpty();
-        assertThat(marketFake.conditionIds).containsExactly("hot");
-        assertThat(marketFake.calls).isEmpty();
-    }
+        @Test
+        void presentConditionActionDoesNotMutateMarket() {
+            var service = new KmuConditionService(new ConditionRepositoryFake(
+                    spec("hot", "Hot", true)));
+            var marketFake = new EditableMarketFake("hot");
+            var handler = new KmuConditionPickerActionHandler(
+                    service,
+                    new KmuConditionPickerModelFactory(service),
+                    marketFake);
+            var originalModel = handler.getModel();
+            var entry = handler.getModel().getEntries().get(0);
 
-    @Test
-    void failedAddRefreshesModelAndShowsFailureFeedback() {
-        var exception = new IllegalStateException("add failed");
-        var service = new KmuConditionService(new ConditionRepositoryFake(
-                spec("hot", "Hot", true)));
-        var marketFake = new EditableMarketFake()
-                .failAddCondition(exception);
-        var handler = new KmuConditionPickerActionHandler(
-                service,
-                new KmuConditionPickerModelFactory(service),
-                marketFake);
-        var entry = handler.getModel().getEntries().get(0);
+            var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
 
-        var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
+            assertThat(handler.getModel()).isSameAs(originalModel);
+            assertThat(handler.getFeedback()).isEmpty();
+            assertThat(marketFake.conditionIds).containsExactly("hot");
+            assertThat(marketFake.calls).isEmpty();
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-        assertThat(handler.getModel().getEntries())
-                .extracting(KmuConditionPickerEntry::getState)
-                .containsExactly(KmuConditionPickerEntryState.ABSENT);
-        assertThat(handler.getFeedback())
-                .hasValueSatisfying(feedback -> {
-                    assertThat(feedback.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-                    assertThat(feedback.getMessage()).isEqualTo("Failed to add condition: hot");
-                    assertThat(feedback.isFailure()).isTrue();
-                });
-        assertThat(marketFake.conditionIds).isEmpty();
-        assertThat(marketFake.calls).isEmpty();
+        @Test
+        void failedAddRefreshesModelAndShowsFailureFeedback() {
+            var exception = new IllegalStateException("add failed");
+            var service = new KmuConditionService(new ConditionRepositoryFake(
+                    spec("hot", "Hot", true)));
+            var marketFake = new EditableMarketFake()
+                    .failAddCondition(exception);
+            var handler = new KmuConditionPickerActionHandler(
+                    service,
+                    new KmuConditionPickerModelFactory(service),
+                    marketFake);
+            var entry = handler.getModel().getEntries().get(0);
+
+            var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
+
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(handler.getModel().getEntries())
+                    .extracting(KmuConditionPickerEntry::getState)
+                    .containsExactly(KmuConditionPickerEntryState.ABSENT);
+            assertThat(handler.getFeedback())
+                    .hasValueSatisfying(feedback -> {
+                        assertThat(feedback.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+                        assertThat(feedback.getMessage()).isEqualTo("Failed to add condition: hot");
+                        assertThat(feedback.isFailure()).isTrue();
+                    });
+            assertThat(marketFake.conditionIds).isEmpty();
+            assertThat(marketFake.calls).isEmpty();
+        }
     }
 
     private static KmuConditionSpec spec(String id, String name, boolean planetary) {

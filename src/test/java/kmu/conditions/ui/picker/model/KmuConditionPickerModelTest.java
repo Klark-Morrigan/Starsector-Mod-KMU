@@ -1,5 +1,6 @@
 package kmu.conditions.ui.picker.model;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,43 +11,51 @@ class KmuConditionPickerModelTest {
     private static final KmuConditionPickerLocation EMPTY_LOCATION =
             new KmuConditionPickerLocation(null, null, null, null, null, null, null);
 
-    // --- findEntry ---
+    @Nested
+    class FindEntry {
 
-    @Test
-    void findEntryReturnsPresentForMatchingId() {
-        var hotEntry = entry("hot", KmuConditionPickerEntryState.PRESENT);
-        var model = model(hotEntry);
+        @Test
+        void findEntryReturnsPresentForMatchingId() {
+            var hotEntry = entry("hot", KmuConditionPickerEntryState.PRESENT);
+            var model = model(hotEntry);
 
-        assertThat(model.findEntry("hot")).contains(hotEntry);
+            assertThat(model.findEntry("hot")).contains(hotEntry);
+        }
+
+        @Test
+        void findEntryReturnsEmptyForNonMatchingId() {
+            var model = model(entry("hot", KmuConditionPickerEntryState.PRESENT));
+
+            assertThat(model.findEntry("cold")).isEmpty();
+        }
     }
 
-    @Test
-    void findEntryReturnsEmptyForNonMatchingId() {
-        var model = model(entry("hot", KmuConditionPickerEntryState.PRESENT));
+    @Nested
+    class GetVisibleCount {
 
-        assertThat(model.findEntry("cold")).isEmpty();
+        @Test
+        void getVisibleCountCountsPresentNonHiddenEntries() {
+            var model = model(
+                    entry("hot", KmuConditionPickerEntryState.PRESENT),
+                    hiddenEntry("no_atmosphere"),
+                    entry("cold", KmuConditionPickerEntryState.ABSENT));
+
+            assertThat(model.getVisibleCount()).isEqualTo(1);
+        }
     }
 
-    // --- getVisibleCount / getAvailableCount ---
+    @Nested
+    class GetAvailableCount {
 
-    @Test
-    void getVisibleCountCountsPresentNonHiddenEntries() {
-        var model = model(
-                entry("hot", KmuConditionPickerEntryState.PRESENT),
-                hiddenEntry("no_atmosphere"),
-                entry("cold", KmuConditionPickerEntryState.ABSENT));
+        @Test
+        void getAvailableCountCountsAbsentEntries() {
+            var model = model(
+                    entry("hot", KmuConditionPickerEntryState.PRESENT),
+                    entry("cold", KmuConditionPickerEntryState.ABSENT),
+                    entry("arid", KmuConditionPickerEntryState.ABSENT));
 
-        assertThat(model.getVisibleCount()).isEqualTo(1);
-    }
-
-    @Test
-    void getAvailableCountCountsAbsentEntries() {
-        var model = model(
-                entry("hot", KmuConditionPickerEntryState.PRESENT),
-                entry("cold", KmuConditionPickerEntryState.ABSENT),
-                entry("arid", KmuConditionPickerEntryState.ABSENT));
-
-        assertThat(model.getAvailableCount()).isEqualTo(2);
+            assertThat(model.getAvailableCount()).isEqualTo(2);
+        }
     }
 
     // --- helpers ---

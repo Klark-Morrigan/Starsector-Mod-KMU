@@ -13,6 +13,7 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
 import kmu.ui.context.KmuMarketUiContext;
 import kmu.ui.context.KmuMarketUiContextSource;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -27,30 +28,35 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionPickerEditorTest {
-    @Test
-    void opensDialogBuiltFromResolvedMarketContext() {
-        var service = new KmuConditionService(new ConditionRepositoryFake(
-                spec("hot", "Hot", true),
-                spec("cold", "Cold", true)));
-        var openedDialog = new AtomicReference<KmuConditionPickerDialogDelegate>();
-        var editor = new KmuConditionPickerEditor(
-                service,
-                new KmuConditionPickerModelFactory(service),
-                openedDialog::set);
-        var market = marketWithConditions("hot");
-        var context = KmuMarketUiContext.withoutPanel(
-                market,
-                KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
 
-        editor.open(context);
+    @Nested
+    class Open {
 
-        assertThat(openedDialog.get()).isNotNull();
-        assertThat(openedDialog.get().getModel().getEntries())
-                .extracting(KmuConditionPickerEntry::getConditionId)
-                .containsExactly("hot", "cold");
-        assertThat(openedDialog.get().getModel().getEntries())
-                .extracting(KmuConditionPickerEntry::getState)
-                .containsExactly(KmuConditionPickerEntryState.PRESENT, KmuConditionPickerEntryState.ABSENT);
+        @Test
+        void opensDialogBuiltFromResolvedMarketContext() {
+            var service = new KmuConditionService(new ConditionRepositoryFake(
+                    spec("hot", "Hot", true),
+                    spec("cold", "Cold", true)));
+            var openedDialog = new AtomicReference<KmuConditionPickerDialogDelegate>();
+            var editor = new KmuConditionPickerEditor(
+                    service,
+                    new KmuConditionPickerModelFactory(service),
+                    openedDialog::set);
+            var market = marketWithConditions("hot");
+            var context = KmuMarketUiContext.withoutPanel(
+                    market,
+                    KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
+
+            editor.open(context);
+
+            assertThat(openedDialog.get()).isNotNull();
+            assertThat(openedDialog.get().getModel().getEntries())
+                    .extracting(KmuConditionPickerEntry::getConditionId)
+                    .containsExactly("hot", "cold");
+            assertThat(openedDialog.get().getModel().getEntries())
+                    .extracting(KmuConditionPickerEntry::getState)
+                    .containsExactly(KmuConditionPickerEntryState.PRESENT, KmuConditionPickerEntryState.ABSENT);
+        }
     }
 
     private static KmuConditionSpec spec(String id, String name, boolean planetary) {

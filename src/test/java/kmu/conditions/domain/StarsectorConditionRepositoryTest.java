@@ -4,6 +4,7 @@ import com.fs.starfarer.api.ModSpecAPI;
 import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.characters.MarketConditionSpecAPI;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -18,112 +19,121 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StarsectorConditionRepositoryTest {
-    @Test
-    void mapsAllConditionSpecsAndSkipsNullSpecs() {
-        var settings = settings(
-                Arrays.asList(
-                        spec("hot", "Hot", "graphics/icons/hot.png", true),
-                        null,
-                        spec("population_3", "Population 3", "graphics/icons/population.png", false)),
-                Map.of(),
-                new ArrayList<>());
-        var repository = new StarsectorConditionRepository(settings);
 
-        var specs = repository.getAllConditionSpecs();
+    @Nested
+    class GetAllConditionSpecs {
 
-        assertThat(specs)
-                .extracting(KmuConditionSpec::getId)
-                .containsExactly("hot", "population_3");
-        assertThat(specs.get(0).getName()).isEqualTo("Hot");
-        assertThat(specs.get(0).getIcon()).isEqualTo("graphics/icons/hot.png");
-        assertThat(specs.get(0).getSourceModName()).isEqualTo("Starsector");
-        assertThat(specs.get(0).isPlanetary()).isTrue();
+        @Test
+        void mapsAllConditionSpecsAndSkipsNullSpecs() {
+            var settings = settings(
+                    Arrays.asList(
+                            spec("hot", "Hot", "graphics/icons/hot.png", true),
+                            null,
+                            spec("population_3", "Population 3", "graphics/icons/population.png", false)),
+                    Map.of(),
+                    new ArrayList<>());
+            var repository = new StarsectorConditionRepository(settings);
+
+            var specs = repository.getAllConditionSpecs();
+
+            assertThat(specs)
+                    .extracting(KmuConditionSpec::getId)
+                    .containsExactly("hot", "population_3");
+            assertThat(specs.get(0).getName()).isEqualTo("Hot");
+            assertThat(specs.get(0).getIcon()).isEqualTo("graphics/icons/hot.png");
+            assertThat(specs.get(0).getSourceModName()).isEqualTo("Starsector");
+            assertThat(specs.get(0).isPlanetary()).isTrue();
+        }
+
+        @Test
+        void returnsEmptyListWhenSettingsReturnsNullSpecs() {
+            var repository = new StarsectorConditionRepository(
+                    settings(null, Map.of(), new ArrayList<>()));
+
+            assertThat(repository.getAllConditionSpecs()).isEmpty();
+        }
+
+        @Test
+        void propagatesSettingsListFailuresForServiceBoundaryToHandle() {
+            var exception = new IllegalStateException("settings list failed");
+            var repository = new StarsectorConditionRepository(
+                    throwingSettings("getAllMarketConditionSpecs", exception));
+
+            assertThatThrownBy(repository::getAllConditionSpecs)
+                    .isSameAs(exception);
+        }
+
+        @Test
+        void skipsInvalidSpecsInsteadOfCrashing() {
+            var settings = settings(
+                    List.of(
+                            spec("hot", "Hot", "graphics/icons/hot.png", true),
+                            spec("   ", "Blank", "graphics/icons/blank.png", true)),
+                    Map.of(),
+                    new ArrayList<>());
+            var repository = new StarsectorConditionRepository(settings);
+
+            assertThat(repository.getAllConditionSpecs())
+                    .extracting(KmuConditionSpec::getId)
+                    .containsExactly("hot");
+        }
+
+        @Test
+        void mapsSourceModNameWhenSpecDeclaresOne() {
+            var hot = spec(
+                    "hot",
+                    "Hot",
+                    "graphics/icons/hot.png",
+                    true,
+                    sourceMod("Utility Pack"));
+            var repository = new StarsectorConditionRepository(
+                    settings(List.of(hot), Map.of(), new ArrayList<>()));
+
+            assertThat(repository.getAllConditionSpecs())
+                    .singleElement()
+                    .extracting(KmuConditionSpec::getSourceModName)
+                    .isEqualTo("Utility Pack");
+        }
     }
 
-    @Test
-    void returnsEmptyListWhenSettingsReturnsNullSpecs() {
-        var repository = new StarsectorConditionRepository(
-                settings(null, Map.of(), new ArrayList<>()));
+    @Nested
+    class FindConditionSpec {
 
-        assertThat(repository.getAllConditionSpecs()).isEmpty();
-    }
+        @Test
+        void findsConditionSpecByTrimmedId() {
+            var lookups = new ArrayList<String>();
+            var hot = spec("hot", "Hot", "graphics/icons/hot.png", true);
+            var repository = new StarsectorConditionRepository(
+                    settings(List.of(), Map.of("hot", hot), lookups));
 
-    @Test
-    void propagatesSettingsListFailuresForServiceBoundaryToHandle() {
-        var exception = new IllegalStateException("settings list failed");
-        var repository = new StarsectorConditionRepository(
-                throwingSettings("getAllMarketConditionSpecs", exception));
+            assertThat(repository.findConditionSpec("  hot  "))
+                    .hasValueSatisfying(spec -> {
+                        assertThat(spec.getId()).isEqualTo("hot");
+                        assertThat(spec.getName()).isEqualTo("Hot");
+                        assertThat(spec.isPlanetary()).isTrue();
+                    });
+            assertThat(lookups).containsExactly("hot");
+        }
 
-        assertThatThrownBy(repository::getAllConditionSpecs)
-                .isSameAs(exception);
-    }
+        @Test
+        void returnsEmptyForBlankOrMissingLookup() {
+            var repository = new StarsectorConditionRepository(
+                    settings(List.of(), Map.of(), new ArrayList<>()));
 
-    @Test
-    void skipsInvalidSpecsInsteadOfCrashing() {
-        var settings = settings(
-                List.of(
-                        spec("hot", "Hot", "graphics/icons/hot.png", true),
-                        spec("   ", "Blank", "graphics/icons/blank.png", true)),
-                Map.of(),
-                new ArrayList<>());
-        var repository = new StarsectorConditionRepository(settings);
+            assertThat(repository.findConditionSpec("   ")).isEmpty();
+            assertThat(repository.findConditionSpec(null)).isEmpty();
+            assertThat(repository.findConditionSpec("missing")).isEmpty();
+        }
 
-        assertThat(repository.getAllConditionSpecs())
-                .extracting(KmuConditionSpec::getId)
-                .containsExactly("hot");
-    }
+        @Test
+        void propagatesSettingsLookupFailuresForServiceBoundaryToHandle() {
+            var exception = new IllegalStateException("settings lookup failed");
+            var repository = new StarsectorConditionRepository(
+                    throwingSettings("getMarketConditionSpec", exception));
 
-    @Test
-    void findsConditionSpecByTrimmedId() {
-        var lookups = new ArrayList<String>();
-        var hot = spec("hot", "Hot", "graphics/icons/hot.png", true);
-        var repository = new StarsectorConditionRepository(
-                settings(List.of(), Map.of("hot", hot), lookups));
-
-        assertThat(repository.findConditionSpec("  hot  "))
-                .hasValueSatisfying(spec -> {
-                    assertThat(spec.getId()).isEqualTo("hot");
-                    assertThat(spec.getName()).isEqualTo("Hot");
-                    assertThat(spec.isPlanetary()).isTrue();
-                });
-        assertThat(lookups).containsExactly("hot");
-    }
-
-    @Test
-    void mapsSourceModNameWhenSpecDeclaresOne() {
-        var hot = spec(
-                "hot",
-                "Hot",
-                "graphics/icons/hot.png",
-                true,
-                sourceMod("Utility Pack"));
-        var repository = new StarsectorConditionRepository(
-                settings(List.of(hot), Map.of(), new ArrayList<>()));
-
-        assertThat(repository.getAllConditionSpecs())
-                .singleElement()
-                .extracting(KmuConditionSpec::getSourceModName)
-                .isEqualTo("Utility Pack");
-    }
-
-    @Test
-    void returnsEmptyForBlankOrMissingLookup() {
-        var repository = new StarsectorConditionRepository(
-                settings(List.of(), Map.of(), new ArrayList<>()));
-
-        assertThat(repository.findConditionSpec("   ")).isEmpty();
-        assertThat(repository.findConditionSpec(null)).isEmpty();
-        assertThat(repository.findConditionSpec("missing")).isEmpty();
-    }
-
-    @Test
-    void propagatesSettingsLookupFailuresForServiceBoundaryToHandle() {
-        var exception = new IllegalStateException("settings lookup failed");
-        var repository = new StarsectorConditionRepository(
-                throwingSettings("getMarketConditionSpec", exception));
-
-        assertThatThrownBy(() -> repository.findConditionSpec("hot"))
-                .isSameAs(exception);
+            assertThatThrownBy(() -> repository.findConditionSpec("hot"))
+                    .isSameAs(exception);
+        }
     }
 
     private static SettingsAPI settings(

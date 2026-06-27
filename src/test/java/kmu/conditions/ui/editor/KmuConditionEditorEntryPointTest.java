@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmu.ui.context.KmuMarketUiContext;
 import kmu.ui.context.KmuMarketUiContextSource;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -18,146 +19,155 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionEditorEntryPointTest {
-    @Test
-    void opensResolvedMarketContext() {
-        var context = KmuMarketUiContext.withoutPanel(
-                market(),
-                KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
-        var opened = new AtomicReference<KmuMarketUiContext>();
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                () -> Optional.of(context),
-                opened::set);
 
-        assertThat(entryPoint.openForCurrentMarket()).isTrue();
-        assertThat(opened).hasValue(context);
+    @Nested
+    class OpenForCurrentMarket {
+
+        @Test
+        void opensResolvedMarketContext() {
+            var context = KmuMarketUiContext.withoutPanel(
+                    market(),
+                    KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
+            var opened = new AtomicReference<KmuMarketUiContext>();
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    () -> Optional.of(context),
+                    opened::set);
+
+            assertThat(entryPoint.openForCurrentMarket()).isTrue();
+            assertThat(opened).hasValue(context);
+        }
+
+        @Test
+        void returnsFalseWhenNoMarketContextExists() {
+            var opened = new AtomicReference<KmuMarketUiContext>();
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    Optional::empty,
+                    opened::set);
+
+            assertThat(entryPoint.openForCurrentMarket()).isFalse();
+            assertThat(opened).hasValue(null);
+        }
+
+        @Test
+        void allowsPlanetMarketTarget() {
+            var context = KmuMarketUiContext.withoutPanel(
+                    planetMarket(),
+                    KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+            var opened = new AtomicReference<KmuMarketUiContext>();
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    () -> Optional.of(context),
+                    opened::set);
+
+            assertThat(entryPoint.openForCurrentMarket()).isTrue();
+            assertThat(opened).hasValue(context);
+        }
+
+        @Test
+        void allowsPlanetConditionOnlyMarketTarget() {
+            var context = KmuMarketUiContext.withoutPanel(
+                    planetConditionOnlyMarket(),
+                    KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+            var opened = new AtomicReference<KmuMarketUiContext>();
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    () -> Optional.of(context),
+                    opened::set);
+
+            assertThat(entryPoint.openForCurrentMarket()).isTrue();
+            assertThat(opened).hasValue(context);
+        }
+
+        @Test
+        void returnsFalseAndReportsWhenResolverFails() {
+            var exception = new IllegalStateException("resolver failed");
+            var reports = new ArrayList<String>();
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    () -> {
+                        throw exception;
+                    },
+                    context -> {
+                        throw new AssertionError("editor should not open");
+                    },
+                    (message, cause) -> reports.add(message + " / " + cause.getMessage()));
+
+            assertThat(entryPoint.openForCurrentMarket()).isFalse();
+            assertThat(reports).containsExactly("Failed to resolve current market context. / resolver failed");
+        }
+
+        @Test
+        void returnsFalseAndReportsWhenEditorFails() {
+            var exception = new IllegalStateException("editor failed");
+            var reports = new ArrayList<String>();
+            var context = KmuMarketUiContext.withoutPanel(
+                    market(),
+                    KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    () -> Optional.of(context),
+                    ignored -> {
+                        throw exception;
+                    },
+                    (message, cause) -> reports.add(message + " / " + cause.getMessage()));
+
+            assertThat(entryPoint.openForCurrentMarket()).isFalse();
+            assertThat(reports).containsExactly("Failed to open Market Condition Manager. / editor failed");
+        }
     }
 
-    @Test
-    void returnsDetailedOpenedResult() {
-        var context = KmuMarketUiContext.withoutPanel(
-                market(),
-                KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                () -> Optional.of(context),
-                ignored -> {
-                });
+    @Nested
+    class OpenForCurrentMarketDetailed {
 
-        var result = entryPoint.openForCurrentMarketDetailed();
+        @Test
+        void returnsDetailedOpenedResult() {
+            var context = KmuMarketUiContext.withoutPanel(
+                    market(),
+                    KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    () -> Optional.of(context),
+                    ignored -> {
+                    });
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.OPENED);
-        assertThat(result.getMessage()).isEqualTo("Opened Market Condition Manager.");
-    }
+            var result = entryPoint.openForCurrentMarketDetailed();
 
-    @Test
-    void returnsFalseWhenNoMarketContextExists() {
-        var opened = new AtomicReference<KmuMarketUiContext>();
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                Optional::empty,
-                opened::set);
+            assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.OPENED);
+            assertThat(result.getMessage()).isEqualTo("Opened Market Condition Manager.");
+        }
 
-        assertThat(entryPoint.openForCurrentMarket()).isFalse();
-        assertThat(opened).hasValue(null);
-    }
+        @Test
+        void rejectsUnsupportedMarketTarget() {
+            var context = KmuMarketUiContext.withoutPanel(
+                    marketWithoutPlanetSupport(),
+                    KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+            var opened = new AtomicReference<KmuMarketUiContext>();
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    () -> Optional.of(context),
+                    opened::set);
 
-    @Test
-    void rejectsUnsupportedMarketTarget() {
-        var context = KmuMarketUiContext.withoutPanel(
-                marketWithoutPlanetSupport(),
-                KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
-        var opened = new AtomicReference<KmuMarketUiContext>();
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                () -> Optional.of(context),
-                opened::set);
+            var result = entryPoint.openForCurrentMarketDetailed();
 
-        var result = entryPoint.openForCurrentMarketDetailed();
+            assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET);
+            assertThat(result.getMessage()).isEqualTo("Current market does not support market condition editing.");
+            assertThat(opened).hasValue(null);
+        }
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET);
-        assertThat(result.getMessage()).isEqualTo("Current market does not support market condition editing.");
-        assertThat(opened).hasValue(null);
-    }
+        @Test
+        void returnsFalseAndReportsWhenTargetValidationFails() {
+            var exception = new IllegalStateException("target check failed");
+            var reports = new ArrayList<String>();
+            var context = KmuMarketUiContext.withoutPanel(
+                    marketThrowingOnPlanetLookup(exception),
+                    KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                    () -> Optional.of(context),
+                    ignored -> {
+                        throw new AssertionError("editor should not open");
+                    },
+                    (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
-    @Test
-    void allowsPlanetMarketTarget() {
-        var context = KmuMarketUiContext.withoutPanel(
-                planetMarket(),
-                KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
-        var opened = new AtomicReference<KmuMarketUiContext>();
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                () -> Optional.of(context),
-                opened::set);
+            var result = entryPoint.openForCurrentMarketDetailed();
 
-        assertThat(entryPoint.openForCurrentMarket()).isTrue();
-        assertThat(opened).hasValue(context);
-    }
-
-    @Test
-    void allowsPlanetConditionOnlyMarketTarget() {
-        var context = KmuMarketUiContext.withoutPanel(
-                planetConditionOnlyMarket(),
-                KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
-        var opened = new AtomicReference<KmuMarketUiContext>();
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                () -> Optional.of(context),
-                opened::set);
-
-        assertThat(entryPoint.openForCurrentMarket()).isTrue();
-        assertThat(opened).hasValue(context);
-    }
-
-    @Test
-    void returnsFalseAndReportsWhenTargetValidationFails() {
-        var exception = new IllegalStateException("target check failed");
-        var reports = new ArrayList<String>();
-        var context = KmuMarketUiContext.withoutPanel(
-                marketThrowingOnPlanetLookup(exception),
-                KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                () -> Optional.of(context),
-                ignored -> {
-                    throw new AssertionError("editor should not open");
-                },
-                (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-
-        var result = entryPoint.openForCurrentMarketDetailed();
-
-        assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.FAILED);
-        assertThat(result.getMessage()).isEqualTo("Failed to validate MCM target.");
-        assertThat(reports).containsExactly("Failed to validate MCM target. / target check failed");
-    }
-
-    @Test
-    void returnsFalseAndReportsWhenResolverFails() {
-        var exception = new IllegalStateException("resolver failed");
-        var reports = new ArrayList<String>();
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                () -> {
-                    throw exception;
-                },
-                context -> {
-                    throw new AssertionError("editor should not open");
-                },
-                (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-
-        assertThat(entryPoint.openForCurrentMarket()).isFalse();
-        assertThat(reports).containsExactly("Failed to resolve current market context. / resolver failed");
-    }
-
-    @Test
-    void returnsFalseAndReportsWhenEditorFails() {
-        var exception = new IllegalStateException("editor failed");
-        var reports = new ArrayList<String>();
-        var context = KmuMarketUiContext.withoutPanel(
-                market(),
-                KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
-        var entryPoint = new KmuConditionEditorEntryPoint(
-                () -> Optional.of(context),
-                ignored -> {
-                    throw exception;
-                },
-                (message, cause) -> reports.add(message + " / " + cause.getMessage()));
-
-        assertThat(entryPoint.openForCurrentMarket()).isFalse();
-        assertThat(reports).containsExactly("Failed to open Market Condition Manager. / editor failed");
+            assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.FAILED);
+            assertThat(result.getMessage()).isEqualTo("Failed to validate MCM target.");
+            assertThat(reports).containsExactly("Failed to validate MCM target. / target check failed");
+        }
     }
 
     private static MarketAPI market() {

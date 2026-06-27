@@ -1,48 +1,66 @@
 package kmu.conditions.ui.editor;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionEditorOpenResultTest {
-    @Test
-    void openedResultIsOpenedWithNoMessage() {
-        var result = KmuConditionEditorOpenResult.opened();
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.OPENED);
-        assertThat(result.isOpened()).isTrue();
-        assertThat(result.getCause()).isEmpty();
+    @Nested
+    class Opened {
+
+        @Test
+        void openedResultIsOpenedWithNoMessage() {
+            var result = KmuConditionEditorOpenResult.opened();
+
+            assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.OPENED);
+            assertThat(result.isOpened()).isTrue();
+            assertThat(result.getCause()).isEmpty();
+        }
     }
 
-    @Test
-    void noMarketContextResultIsNotOpened() {
-        var result = KmuConditionEditorOpenResult.noMarketContext();
+    @Nested
+    class NoMarketContext {
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT);
-        assertThat(result.isOpened()).isFalse();
-        assertThat(result.getMessage()).isNotBlank();
+        @Test
+        void noMarketContextResultIsNotOpened() {
+            var result = KmuConditionEditorOpenResult.noMarketContext();
+
+            assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT);
+            assertThat(result.isOpened()).isFalse();
+            assertThat(result.getMessage()).isNotBlank();
+        }
     }
 
-    @Test
-    void unsupportedTargetUsesProvidedReason() {
-        var result =
-                KmuConditionEditorOpenResult.unsupportedTarget("Station markets are not supported.");
+    @Nested
+    class UnsupportedTarget {
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET);
-        assertThat(result.isOpened()).isFalse();
-        assertThat(result.getMessage()).isEqualTo("Station markets are not supported.");
+        @Test
+        void unsupportedTargetUsesProvidedReason() {
+            var result =
+                    KmuConditionEditorOpenResult.unsupportedTarget("Station markets are not supported.");
+
+            assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET);
+            assertThat(result.isOpened()).isFalse();
+            assertThat(result.getMessage()).isEqualTo("Station markets are not supported.");
+        }
     }
 
-    @Test
-    void failedResultExposesCauseAndIsNotOpened() {
-        var cause = new RuntimeException("something went wrong");
+    @Nested
+    class Failed {
 
-        var result =
-                KmuConditionEditorOpenResult.failed("Editor failed to open.", cause);
+        @Test
+        void failedResultExposesCauseAndIsNotOpened() {
+            var cause = new RuntimeException("something went wrong");
 
-        assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.FAILED);
-        assertThat(result.isOpened()).isFalse();
-        assertThat(result.getMessage()).isEqualTo("Editor failed to open.");
-        assertThat(result.getCause()).contains(cause);
+            var result =
+                    KmuConditionEditorOpenResult.failed("Editor failed to open.", cause);
+
+            assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.FAILED);
+            assertThat(result.isOpened()).isFalse();
+            assertThat(result.getMessage()).isEqualTo("Editor failed to open.");
+            assertThat(result.getCause()).contains(cause);
+        }
     }
 }

@@ -12,6 +12,7 @@ import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -53,192 +54,216 @@ class KmuConditionIconButtonTest {
         StarsectorSettingsFake.clearSettings();
     }
 
-    @Test
-    void greysOutAbsentEntriesOnly() {
-        assertThat(entry(KmuConditionPickerEntryState.ABSENT).isPresent()).isFalse();
-        assertThat(entry(KmuConditionPickerEntryState.PRESENT).isPresent()).isTrue();
-        assertThat(suppressedEntry().isPresent()).isTrue();
-        assertThat(hiddenEntry().isPresent()).isTrue();
+    @Nested
+    class IsPresent {
+
+        @Test
+        void greysOutAbsentEntriesOnly() {
+            assertThat(entry(KmuConditionPickerEntryState.ABSENT).isPresent()).isFalse();
+            assertThat(entry(KmuConditionPickerEntryState.PRESENT).isPresent()).isTrue();
+            assertThat(suppressedEntry().isPresent()).isTrue();
+            assertThat(hiddenEntry().isPresent()).isTrue();
+        }
     }
 
-    @Test
-    void stylesAbsentEntriesWithDefaultButtonColorsAndGreyedOutIcon() {
-        var entry = entry(KmuConditionPickerEntryState.ABSENT);
+    @Nested
+    class ForEntry {
 
-        assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
-        assertButtonStyleRoles(entry, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.LIGHT_BLUE);
-        assertThat(entry.isPresent()).isFalse();
-        assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+        @Test
+        void stylesAbsentEntriesWithDefaultButtonColorsAndGreyedOutIcon() {
+            var entry = entry(KmuConditionPickerEntryState.ABSENT);
+
+            assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
+            assertButtonStyleRoles(entry, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.LIGHT_BLUE);
+            assertThat(entry.isPresent()).isFalse();
+            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+        }
+
+        @Test
+        void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenButtonColors() {
+            var entry = entry(KmuConditionPickerEntryState.PRESENT);
+
+            assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
+            assertButtonStyleRoles(entry, StarsectorUiColor.DARK_GREEN, StarsectorUiColor.BRIGHT_GREEN);
+            assertThat(entry.isPresent()).isTrue();
+            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isTrue();
+        }
+
+        @Test
+        void stylesHiddenPresentEntriesWithDefaultButtonColorsAndFullIcon() {
+            var entry = hiddenEntry();
+
+            assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
+            assertThat(entry.isPresent()).isTrue();
+            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+        }
+
+        @Test
+        void stylesSuppressedPresentEntriesWithWarningButtonColorsAndFullIcon() {
+            var entry = suppressedEntry();
+
+            assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
+            assertButtonStyleRoles(entry, StarsectorUiColor.MUTED_RED, StarsectorUiColor.BRIGHT_RED);
+            assertThat(entry.isPresent()).isTrue();
+            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+        }
+
+        @Test
+        void prioritizesSuppressedStyleWhenEntryIsBothSuppressedAndHidden() {
+            var entry = new KmuConditionPickerEntry(
+                    "hot",
+                    "Hot",
+                    "graphics/icons/markets/hot.png",
+                    KmuConditionPickerEntryState.PRESENT,
+                    "Test tooltip",
+                    "Starsector",
+                    true,
+                    true);
+
+            assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
+        }
     }
 
-    @Test
-    void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenButtonColors() {
-        var entry = entry(KmuConditionPickerEntryState.PRESENT);
+    @Nested
+    class ComputeIconSize {
 
-        assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
-        assertButtonStyleRoles(entry, StarsectorUiColor.DARK_GREEN, StarsectorUiColor.BRIGHT_GREEN);
-        assertThat(entry.isPresent()).isTrue();
-        assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isTrue();
+        @Test
+        void iconSizeReturnsFallbackSizeForZeroDimensions() {
+            var bounds =
+                    KmuConditionIconButtonFactory.computeIconSize(0f, 0f);
+
+            assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
+            assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
+        }
+
+        @Test
+        void iconSizeReturnsFallbackSizeForNegativeDimensions() {
+            var bounds =
+                    KmuConditionIconButtonFactory.computeIconSize(-1f, -1f);
+
+            assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
+            assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
+        }
     }
 
-    @Test
-    void stylesHiddenPresentEntriesWithDefaultButtonColorsAndFullIcon() {
-        var entry = hiddenEntry();
+    @Nested
+    class ComputeKmuConditionIconButtonLayout {
 
-        assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
-        assertThat(entry.isPresent()).isTrue();
-        assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+        @Test
+        void rendersIconsAtVanillaHeightWhenSourceAlreadyMatches() {
+            var wide =
+                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(120f, 40f);
+
+            assertThat(wide.getIconWidth()).isEqualTo(120f);
+            assertThat(wide.getIconHeight()).isEqualTo(40f);
+            assertThat(wide.getButtonWidth())
+                    .isEqualTo(120f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+            assertThat(wide.getButtonHeight())
+                    .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+        }
+
+        @Test
+        void upscalesSmallerIconsToVanillaHeightWithoutChangingAspectRatio() {
+            var small =
+                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(20f, 20f);
+
+            assertThat(small.getIconWidth()).isEqualTo(40f);
+            assertThat(small.getIconHeight())
+                    .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+            assertThat(small.getButtonWidth())
+                    .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+            assertThat(small.getButtonHeight())
+                    .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+        }
+
+        @Test
+        void preservesWideIconWidthWhenHeightMatchesVanillaTarget() {
+            var wide =
+                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(180f, 40f);
+
+            assertThat(wide.getIconWidth()).isEqualTo(180f);
+            assertThat(wide.getIconHeight())
+                    .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+        }
+
+        @Test
+        void downscalesOversizedIconsToVanillaHeightWithoutChangingAspectRatio() {
+            var tall =
+                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 192f);
+
+            assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
+            assertThat(tall.getIconHeight())
+                    .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+        }
     }
 
-    @Test
-    void stylesSuppressedPresentEntriesWithWarningButtonColorsAndFullIcon() {
-        var entry = suppressedEntry();
+    @Nested
+    class UpdateEntry {
 
-        assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
-        assertButtonStyleRoles(entry, StarsectorUiColor.MUTED_RED, StarsectorUiColor.BRIGHT_RED);
-        assertThat(entry.isPresent()).isTrue();
-        assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+        @Test
+        void updatesEntryStateInPlace() {
+            var button = new KmuConditionIconButton(
+                    entry(KmuConditionPickerEntryState.ABSENT),
+                    action -> {
+                    });
+
+            button.updateEntry(entry(KmuConditionPickerEntryState.PRESENT));
+
+            assertThat(button.getEntry().getState()).isEqualTo(KmuConditionPickerEntryState.PRESENT);
+            assertThat(button.getEntry().isPresent()).isTrue();
+        }
     }
 
-    @Test
-    void prioritizesSuppressedStyleWhenEntryIsBothSuppressedAndHidden() {
-        var entry = new KmuConditionPickerEntry(
-                "hot",
-                "Hot",
-                "graphics/icons/markets/hot.png",
-                KmuConditionPickerEntryState.PRESENT,
-                "Test tooltip",
-                "Starsector",
-                true,
-                true);
+    @Nested
+    class CreateTooltip {
 
-        assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
-    }
+        @Test
+        void appendsMetadataFooterInExpectedOrder() {
+            var tooltip = RecordingTooltip.create();
+            var entry = new KmuConditionPickerEntry(
+                    "hot",
+                    "Hot",
+                    "graphics/icons/markets/hot.png",
+                    KmuConditionPickerEntryState.PRESENT,
+                    "Test tooltip",
+                    "Starsector",
+                    true,
+                    false);
 
-    @Test
-    void iconSizeReturnsFallbackSizeForZeroDimensions() {
-        var bounds =
-                KmuConditionIconButtonFactory.computeIconSize(0f, 0f);
+            new KmuConditionEntryTooltipCreator(() -> entry)
+                    .createTooltip(tooltip.getApi(), false, null);
 
-        assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
-        assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
-    }
+            assertThat(tooltip.getHeadings()).contains("Metadata");
+            assertThat(tooltip.getParagraphs()).containsSequence(
+                    "source: Starsector",
+                    "id: hot",
+                    "icon: graphics/icons/markets/hot.png",
+                    "hidden: false",
+                    "suppressed: true");
+        }
 
-    @Test
-    void iconSizeReturnsFallbackSizeForNegativeDimensions() {
-        var bounds =
-                KmuConditionIconButtonFactory.computeIconSize(-1f, -1f);
+        @Test
+        void omitsHiddenAndSuppressedMetadataForAbsentEntries() {
+            var tooltip = RecordingTooltip.create();
+            var entry = new KmuConditionPickerEntry(
+                    "hot",
+                    "Hot",
+                    "graphics/icons/markets/hot.png",
+                    KmuConditionPickerEntryState.ABSENT,
+                    "Test tooltip",
+                    "Starsector",
+                    true,
+                    true);
 
-        assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
-        assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
-    }
+            new KmuConditionEntryTooltipCreator(() -> entry)
+                    .createTooltip(tooltip.getApi(), false, null);
 
-    @Test
-    void rendersIconsAtVanillaHeightWhenSourceAlreadyMatches() {
-        var wide =
-                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(120f, 40f);
-
-        assertThat(wide.getIconWidth()).isEqualTo(120f);
-        assertThat(wide.getIconHeight()).isEqualTo(40f);
-        assertThat(wide.getButtonWidth())
-                .isEqualTo(120f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
-        assertThat(wide.getButtonHeight())
-                .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
-    }
-
-    @Test
-    void upscalesSmallerIconsToVanillaHeightWithoutChangingAspectRatio() {
-        var small =
-                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(20f, 20f);
-
-        assertThat(small.getIconWidth()).isEqualTo(40f);
-        assertThat(small.getIconHeight())
-                .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
-        assertThat(small.getButtonWidth())
-                .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
-        assertThat(small.getButtonHeight())
-                .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
-    }
-
-    @Test
-    void preservesWideIconWidthWhenHeightMatchesVanillaTarget() {
-        var wide =
-                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(180f, 40f);
-
-        assertThat(wide.getIconWidth()).isEqualTo(180f);
-        assertThat(wide.getIconHeight())
-                .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
-    }
-
-    @Test
-    void downscalesOversizedIconsToVanillaHeightWithoutChangingAspectRatio() {
-        var tall =
-                KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 192f);
-
-        assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
-        assertThat(tall.getIconHeight())
-                .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
-    }
-
-    @Test
-    void updatesEntryStateInPlace() {
-        var button = new KmuConditionIconButton(
-                entry(KmuConditionPickerEntryState.ABSENT),
-                action -> {
-                });
-
-        button.updateEntry(entry(KmuConditionPickerEntryState.PRESENT));
-
-        assertThat(button.getEntry().getState()).isEqualTo(KmuConditionPickerEntryState.PRESENT);
-        assertThat(button.getEntry().isPresent()).isTrue();
-    }
-
-    @Test
-    void appendsMetadataFooterInExpectedOrder() {
-        var tooltip = RecordingTooltip.create();
-        var entry = new KmuConditionPickerEntry(
-                "hot",
-                "Hot",
-                "graphics/icons/markets/hot.png",
-                KmuConditionPickerEntryState.PRESENT,
-                "Test tooltip",
-                "Starsector",
-                true,
-                false);
-
-        new KmuConditionEntryTooltipCreator(() -> entry)
-                .createTooltip(tooltip.getApi(), false, null);
-
-        assertThat(tooltip.getHeadings()).contains("Metadata");
-        assertThat(tooltip.getParagraphs()).containsSequence(
-                "source: Starsector",
-                "id: hot",
-                "icon: graphics/icons/markets/hot.png",
-                "hidden: false",
-                "suppressed: true");
-    }
-
-    @Test
-    void omitsHiddenAndSuppressedMetadataForAbsentEntries() {
-        var tooltip = RecordingTooltip.create();
-        var entry = new KmuConditionPickerEntry(
-                "hot",
-                "Hot",
-                "graphics/icons/markets/hot.png",
-                KmuConditionPickerEntryState.ABSENT,
-                "Test tooltip",
-                "Starsector",
-                true,
-                true);
-
-        new KmuConditionEntryTooltipCreator(() -> entry)
-                .createTooltip(tooltip.getApi(), false, null);
-
-        assertThat(tooltip.getParagraphs()).containsSequence(
-                "source: Starsector",
-                "id: hot",
-                "icon: graphics/icons/markets/hot.png");
-        assertThat(tooltip.getParagraphs()).doesNotContain("hidden: true", "suppressed: true");
+            assertThat(tooltip.getParagraphs()).containsSequence(
+                    "source: Starsector",
+                    "id: hot",
+                    "icon: graphics/icons/markets/hot.png");
+            assertThat(tooltip.getParagraphs()).doesNotContain("hidden: true", "suppressed: true");
+        }
     }
 
     private static KmuConditionPickerEntry entry(KmuConditionPickerEntryState state) {

@@ -15,6 +15,7 @@ import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.domain.StarsectorEditableMarket;
 import kmu.starsector.StarsectorGravityWellResolver;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
@@ -31,98 +32,102 @@ class StarsectorConditionPickerLocationFactoryTest {
     private final StarsectorConditionPickerLocationFactory factory =
             new StarsectorConditionPickerLocationFactory(new StarsectorGravityWellResolver());
 
-    @Test
-    void returnsUnknownLocationForNonStarsectorMarket() {
-        var fakeMarket = new KmuEditableMarket() {
-            @Override public Set<String> getConditionIds() { return Set.of(); }
-            @Override public boolean hasCondition(String id) { return false; }
-            @Override public boolean isConditionSuppressed(String id) { return false; }
-            @Override public void addCondition(String id) {}
-            @Override public void markConditionSurveyed(String id) {}
-            @Override public void reapplyConditions() {}
-        };
+    @Nested
+    class Create {
 
-        var location = factory.create(fakeMarket);
+        @Test
+        void returnsUnknownLocationForNonStarsectorMarket() {
+            var fakeMarket = new KmuEditableMarket() {
+                @Override public Set<String> getConditionIds() { return Set.of(); }
+                @Override public boolean hasCondition(String id) { return false; }
+                @Override public boolean isConditionSuppressed(String id) { return false; }
+                @Override public void addCondition(String id) {}
+                @Override public void markConditionSurveyed(String id) {}
+                @Override public void reapplyConditions() {}
+            };
 
-        assertThat(location.getPlanetName()).isEmpty();
-        assertThat(location.getFaction()).isEmpty();
-        assertThat(location.getStarSystemName()).isEmpty();
-    }
+            var location = factory.create(fakeMarket);
 
-    @Test
-    void fallsBackToPrimaryEntityNameWhenPlanetNameIsBlank() {
-        // planet.getName() is blank; primaryEntity.getName() provides the display name
-        var blankNamePlanet = planet("  ", "terran world");
-        var primary = entity("Station Alpha");
-        var market = market(null, blankNamePlanet, primary, null, null, null);
+            assertThat(location.getPlanetName()).isEmpty();
+            assertThat(location.getFaction()).isEmpty();
+            assertThat(location.getStarSystemName()).isEmpty();
+        }
 
-        var location = factory.create(new StarsectorEditableMarket(market));
+        @Test
+        void fallsBackToPrimaryEntityNameWhenPlanetNameIsBlank() {
+            // planet.getName() is blank; primaryEntity.getName() provides the display name
+            var blankNamePlanet = planet("  ", "terran world");
+            var primary = entity("Station Alpha");
+            var market = market(null, blankNamePlanet, primary, null, null, null);
 
-        assertThat(location.getPlanetName()).contains("Station Alpha");
-    }
+            var location = factory.create(new StarsectorEditableMarket(market));
 
-    @Test
-    void fallsBackToMarketNameWhenBothPlanetAndEntityNamesAreBlank() {
-        var blankNamePlanet = planet("  ", "terran world");
-        var blankNameEntity = entity("  ");
-        var market = market("Relay Station", blankNamePlanet, blankNameEntity, null, null, null);
+            assertThat(location.getPlanetName()).contains("Station Alpha");
+        }
 
-        var location = factory.create(new StarsectorEditableMarket(market));
+        @Test
+        void fallsBackToMarketNameWhenBothPlanetAndEntityNamesAreBlank() {
+            var blankNamePlanet = planet("  ", "terran world");
+            var blankNameEntity = entity("  ");
+            var market = market("Relay Station", blankNamePlanet, blankNameEntity, null, null, null);
 
-        assertThat(location.getPlanetName()).contains("Relay Station");
-    }
+            var location = factory.create(new StarsectorEditableMarket(market));
 
-    @Test
-    void readsPlanetTypeFromPrimaryEntityWhenItIsAPlanetAndPlanetEntityIsNull() {
-        // No planet entity; primaryEntity is a PlanetAPI so its type name is used
-        var primaryPlanet = planet("Valis", "barren world");
-        var market = market(null, null, primaryPlanet, null, null, null);
+            assertThat(location.getPlanetName()).contains("Relay Station");
+        }
 
-        var location = factory.create(new StarsectorEditableMarket(market));
+        @Test
+        void readsPlanetTypeFromPrimaryEntityWhenItIsAPlanetAndPlanetEntityIsNull() {
+            // No planet entity; primaryEntity is a PlanetAPI so its type name is used
+            var primaryPlanet = planet("Valis", "barren world");
+            var market = market(null, null, primaryPlanet, null, null, null);
 
-        assertThat(location.getPlanetType()).contains("barren world");
-    }
+            var location = factory.create(new StarsectorEditableMarket(market));
 
-    @Test
-    void readsFactionFromPrimaryEntityWhenMarketFactionIsNull() {
-        // market.getFaction() returns null; primaryEntity.getFaction() provides the faction
-        var hegemony = faction("Hegemony");
-        var primaryMock = mock(SectorEntityToken.class);
-        when(primaryMock.getName()).thenReturn("Primary Entity");
-        when(primaryMock.getFaction()).thenReturn(hegemony);
-        var market = market(null, null, primaryMock, null, null, null);
+            assertThat(location.getPlanetType()).contains("barren world");
+        }
 
-        var location = factory.create(new StarsectorEditableMarket(market));
+        @Test
+        void readsFactionFromPrimaryEntityWhenMarketFactionIsNull() {
+            // market.getFaction() returns null; primaryEntity.getFaction() provides the faction
+            var hegemony = faction("Hegemony");
+            var primaryMock = mock(SectorEntityToken.class);
+            when(primaryMock.getName()).thenReturn("Primary Entity");
+            when(primaryMock.getFaction()).thenReturn(hegemony);
+            var market = market(null, null, primaryMock, null, null, null);
 
-        assertThat(location.getFaction()).isPresent();
-        assertThat(location.getFaction().get().getName()).isEqualTo("Hegemony");
-    }
+            var location = factory.create(new StarsectorEditableMarket(market));
 
-    @Test
-    void readsLocationNameFromContainingLocationWhenStarSystemIsNull() {
-        // getStarSystem() returns null; getContainingLocation() provides the name
-        var containingLocation = location("Hyperspace");
-        var market = market(null, null, null, null, null, containingLocation);
+            assertThat(location.getFaction()).isPresent();
+            assertThat(location.getFaction().get().getName()).isEqualTo("Hegemony");
+        }
 
-        var result = factory.create(new StarsectorEditableMarket(market));
+        @Test
+        void readsLocationNameFromContainingLocationWhenStarSystemIsNull() {
+            // getStarSystem() returns null; getContainingLocation() provides the name
+            var containingLocation = location("Hyperspace");
+            var market = market(null, null, null, null, null, containingLocation);
 
-        assertThat(result.getStarSystemName()).contains("Hyperspace");
-    }
+            var result = factory.create(new StarsectorEditableMarket(market));
 
-    @Test
-    void readsConstellationFromContainingLocationWhenStarSystemHasNone() {
-        // Star system has no constellation; containingLocation provides it
-        var constellation = new Constellation(
-                Constellation.ConstellationType.NORMAL, StarAge.AVERAGE);
-        constellation.setNameOverride("Serpens");
-        var containingLocation = locationWithConstellation("Outer Rim", constellation);
-        var emptySystemMock = mock(StarSystemAPI.class);
-        // getConstellation, getCenter, getStar all default to null on Mockito mocks.
-        var market = market(null, null, null, emptySystemMock, null, containingLocation);
+            assertThat(result.getStarSystemName()).contains("Hyperspace");
+        }
 
-        var result = factory.create(new StarsectorEditableMarket(market));
+        @Test
+        void readsConstellationFromContainingLocationWhenStarSystemHasNone() {
+            // Star system has no constellation; containingLocation provides it
+            var constellation = new Constellation(
+                    Constellation.ConstellationType.NORMAL, StarAge.AVERAGE);
+            constellation.setNameOverride("Serpens");
+            var containingLocation = locationWithConstellation("Outer Rim", constellation);
+            var emptySystemMock = mock(StarSystemAPI.class);
+            // getConstellation, getCenter, getStar all default to null on Mockito mocks.
+            var market = market(null, null, null, emptySystemMock, null, containingLocation);
 
-        assertThat(result.getConstellationName()).isPresent().get().asString().contains("Serpens");
+            var result = factory.create(new StarsectorEditableMarket(market));
+
+            assertThat(result.getConstellationName()).isPresent().get().asString().contains("Serpens");
+        }
     }
 
     // --- mock helpers ---
