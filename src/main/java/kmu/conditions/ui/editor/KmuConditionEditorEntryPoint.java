@@ -8,6 +8,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class KmuConditionEditorEntryPoint {
+    // Failure messages, each reported to the error sink and returned on the
+    // result, so the two copies cannot drift.
+    private static final String FAILED_TO_RESOLVE_MARKET_CONTEXT =
+            "Failed to resolve current market context.";
+    private static final String FAILED_TO_VALIDATE_TARGET =
+            "Failed to validate MCM target.";
+    private static final String FAILED_TO_OPEN_MANAGER =
+            "Failed to open Market Condition Manager.";
+
     private final KmuMarketUiContextResolver contextResolver;
     private final KmuConditionEditor editor;
     private final KmuConditionEditorTargetValidator targetValidator;
@@ -46,9 +55,9 @@ public final class KmuConditionEditorEntryPoint {
         try {
             context = contextResolver.findCurrentMarketContext();
         } catch (RuntimeException exception) {
-            errorReporter.report("Failed to resolve current market context.", exception);
+            errorReporter.report(FAILED_TO_RESOLVE_MARKET_CONTEXT, exception);
             return KmuConditionEditorOpenResult.failed(
-                    "Failed to resolve current market context.",
+                    FAILED_TO_RESOLVE_MARKET_CONTEXT,
                     exception);
         }
 
@@ -61,9 +70,9 @@ public final class KmuConditionEditorEntryPoint {
         try {
             unsupportedReason = targetValidator.getUnsupportedReason(marketContext);
         } catch (RuntimeException exception) {
-            errorReporter.report("Failed to validate MCM target.", exception);
+            errorReporter.report(FAILED_TO_VALIDATE_TARGET, exception);
             return KmuConditionEditorOpenResult.failed(
-                    "Failed to validate MCM target.",
+                    FAILED_TO_VALIDATE_TARGET,
                     exception);
         }
 
@@ -75,9 +84,9 @@ public final class KmuConditionEditorEntryPoint {
             editor.open(marketContext);
             return KmuConditionEditorOpenResult.opened();
         } catch (RuntimeException exception) {
-            errorReporter.report("Failed to open Market Condition Manager.", exception);
+            errorReporter.report(FAILED_TO_OPEN_MANAGER, exception);
             return KmuConditionEditorOpenResult.failed(
-                    "Failed to open Market Condition Manager.",
+                    FAILED_TO_OPEN_MANAGER,
                     exception);
         }
     }
