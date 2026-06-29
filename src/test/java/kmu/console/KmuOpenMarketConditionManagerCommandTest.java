@@ -32,7 +32,26 @@ class KmuOpenMarketConditionManagerCommandTest {
 
             assertThat(result).isEqualTo(CommandResult.WRONG_CONTEXT);
             assertThat(opened).isFalse();
-            assertThat(output).containsExactly("kmu_mcm_open can only run from campaign or market context.");
+            assertThat(output).containsExactly("This command can only run in a campaign.");
+        }
+
+        @Test
+        void rejectsAStrayArgumentAsBadSyntaxWithoutOpeningEditor() {
+            var opened = new AtomicBoolean(false);
+            var output = new ArrayList<String>();
+            var command = new KmuOpenMarketConditionManagerCommand(
+                    () -> {
+                        opened.set(true);
+                        return KmuConditionEditorOpenResult.opened();
+                    },
+                    output::add);
+
+            var result = command.runCommand("bogus", CommandContext.CAMPAIGN_MARKET);
+
+            assertThat(result).isEqualTo(CommandResult.BAD_SYNTAX);
+            // A malformed invocation must not reach the editor entry point.
+            assertThat(opened).isFalse();
+            assertThat(output).anyMatch(message -> message.contains("Too many arguments"));
         }
 
         @Test

@@ -1,5 +1,10 @@
 package kmu.console;
 
+import kmlib.console.KmlibBaseConsoleCommand;
+import kmlib.console.output.CommandOutput;
+import kmlib.console.output.ConsoleCommandOutput;
+import kmlib.console.parsing.ParameterSpec;
+
 import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.StarsectorConditionRepository;
 import kmu.conditions.ui.editor.KmuConditionEditorEntryPoint;
@@ -9,48 +14,53 @@ import kmu.conditions.ui.picker.KmuConditionPickerEditor;
 import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
 import kmu.ui.context.StarsectorMarketUiContextResolver;
 
-import org.lazywizard.console.BaseCommand;
-import org.lazywizard.console.Console;
-
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static kmu.util.KmuValues.normalizeText;
 
-public final class KmuOpenMarketConditionManagerCommand implements BaseCommand {
+public final class KmuOpenMarketConditionManagerCommand extends KmlibBaseConsoleCommand {
+    // No parameters; declaring the spec still makes the parser reject a stray
+    // argument as bad syntax rather than silently ignoring it.
+    private static final ParameterSpec SPEC =
+            ParameterSpec.takingNoArguments("Usage: kmu_mcm_open.");
+
     private final Supplier<KmuConditionEditorOpenResult> openEditor;
-    private final Consumer<String> output;
 
     public KmuOpenMarketConditionManagerCommand() {
-        this(() -> createDefaultEntryPoint().openForCurrentMarketDetailed(), message -> Console.showMessage(message));
+        this(() -> createDefaultEntryPoint().openForCurrentMarketDetailed(), ConsoleCommandOutput.INSTANCE);
     }
 
     KmuOpenMarketConditionManagerCommand(
             Supplier<KmuConditionEditorOpenResult> openEditor,
-            Consumer<String> output) {
+            CommandOutput output) {
+        super(output);
         this.openEditor = Objects.requireNonNull(openEditor, "openEditor");
-        this.output = Objects.requireNonNull(output, "output");
     }
 
     @Override
     public CommandResult runCommand(String args, CommandContext context) {
         Objects.requireNonNull(context, "context");
 
-        if (!context.isInCampaign()) {
-            output.accept("kmu_mcm_open can only run from campaign or market context.");
-            return CommandResult.WRONG_CONTEXT;
+        // Defer the campaign-context guard to KMLib's shared validator so this
+        // command's precondition check and feedback match every other KM
+        // console command rather than maintaining a parallel inline check.
+        var parsed = readInput(context, args)
+                .requireCampaign()
+                .parseArguments(SPEC);
+        if (!parsed.isValid()) {
+            return parsed.getResult();
         }
 
         KmuConditionEditorOpenResult result;
         try {
             result = openEditor.get();
         } catch (RuntimeException exception) {
-            output.accept("Failed to open Market Condition Manager: " + exception.getMessage());
+            output.showMessage("Failed to open Market Condition Manager: " + exception.getMessage());
             return CommandResult.ERROR;
         }
 
-        output.accept(messageFor(result));
+        output.showMessage(messageFor(result));
         if (result.getStatus() == KmuConditionEditorOpenStatus.OPENED) {
             return CommandResult.SUCCESS;
         }

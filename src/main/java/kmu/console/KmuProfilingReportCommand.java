@@ -1,6 +1,6 @@
 package kmu.console;
 
-import kmlib.console.BaseConsoleCommand;
+import kmlib.console.KmlibBaseConsoleCommand;
 import kmlib.console.output.CommandOutput;
 import kmlib.console.output.ConsoleCommandOutput;
 import kmlib.console.parsing.Parameter;
@@ -22,7 +22,7 @@ import java.util.Objects;
  * can be read without flooding the log. The profiler and output sink are
  * injected so the formatting and reset behaviour test without the console.
  */
-public final class KmuProfilingReportCommand extends BaseConsoleCommand {
+public final class KmuProfilingReportCommand extends KmlibBaseConsoleCommand {
     private static final KmuProfilingSpec SPEC = new KmuProfilingSpec();
 
     private final Profiler profiler;
