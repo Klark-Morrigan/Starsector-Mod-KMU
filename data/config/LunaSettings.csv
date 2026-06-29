@@ -1,2 +1,5 @@
 fieldID,,,,fieldName,,fieldType,defaultValue,secondaryValue,,,fieldDescription,,,minValue,maxValue,tab
-kmu_logLevel,,,,KMU log verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,"Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics.",,,,,Logging
+kmu_loggingHeader,,,,Logging,,Header,Logging,,,,,,,,,Dev
+kmu_logLevel,,,,KMU log verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,"Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics.",,,,,Dev
+kmu_politicalMapHeader,,,,Political Map,,Header,Political Map,,,,,,,,,Dev
+kmu_politicalMapShowUninhabited,,,,Show uninhabited systems,,Boolean,false,,,,"When on, uninhabited systems are outlined in the neutral color and left unfilled. Off by default - only faction-held systems are drawn on the political map.",,,,,Dev

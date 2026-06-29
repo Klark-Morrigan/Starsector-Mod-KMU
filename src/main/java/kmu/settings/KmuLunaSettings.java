@@ -1,6 +1,9 @@
 package kmu.settings;
 
 import kmlib.logging.KmLogging;
+import kmlib.settings.LunaSettingsReader;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Single place where KMU registers its LunaLib settings bindings.
@@ -21,6 +24,16 @@ public final class KmuLunaSettings {
     private static final String LOGGER_ROOT = "kmu";
     private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
 
+    // Political-map overlay: whether uninhabited systems are drawn at all.
+    // Matches the Boolean field in data/config/LunaSettings.csv.
+    private static final String SHOW_UNINHABITED_FIELD = "kmu_politicalMapShowUninhabited";
+
+    // Bumped on every change to KMU's LunaLib settings. Consumers that cache
+    // derived state (e.g. the political-map overlay) read this generation and
+    // rebuild only when it moves, so they react to settings changes live off a
+    // single event rather than polling each setting every frame.
+    private static final AtomicInteger settingsGeneration = new AtomicInteger();
+
     private KmuLunaSettings() {
     }
 
@@ -31,5 +44,29 @@ public final class KmuLunaSettings {
      */
     public static void installBindings() {
         KmLogging.bindToLunaSetting(MOD_ID, LOGGER_ROOT, LOG_LEVEL_FIELD);
+        // One listener, registered once at load, advances the generation on any
+        // KMU settings change - the live-update signal for cached consumers.
+        LunaSettingsReader.runOnSettingsChange(MOD_ID, settingsGeneration::incrementAndGet);
+    }
+
+    /**
+     * @return a counter that advances whenever KMU's LunaLib settings change;
+     *         a consumer rebuilds its cached state when this differs from the
+     *         value it last saw
+     */
+    public static int getSettingsGeneration() {
+        return settingsGeneration.get();
+    }
+
+    /**
+     * Reads whether the player has opted to draw uninhabited systems on the
+     * political map. Off by default, so only faction-held systems show unless
+     * the player turns it on.
+     *
+     * @return true when uninhabited systems should be outlined; false (the
+     *         default) when the setting is unset or unreadable
+     */
+    public static boolean isShowUninhabitedSystemsEnabled() {
+        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_UNINHABITED_FIELD, false);
     }
 }
