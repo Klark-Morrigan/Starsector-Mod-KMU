@@ -122,15 +122,29 @@ class SectorPoliticsIntegrationTest {
 
         @Test
         void resolveDominantOwnerExcludesUndiscoveredStation() {
-            // A concealed station (entity still discoverable, e.g. Knights of Ludd's
-            // Battlestar Libra) is absent from the map until found, so it claims no
-            // territory - regardless of any system survey.
+            // A concealed station - hidden market on a still-discoverable entity,
+            // e.g. Knights of Ludd's Battlestar Libra - is absent from the map
+            // until found, so it claims no territory.
             var knights = faction("knights_of_selkie", HEGEMONY_BRIGHT);
             var sector = sectorWith("undiscovered-system", List.of(knights),
-                    market(knights, 5, false, false, true));
+                    concealedStation(knights, 5));
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
                     .doesNotContainKey("undiscovered-system");
+        }
+
+        @Test
+        void resolveDominantOwnerPaintsRevealedColonyAwaitingApproach() {
+            // A colony surfaced ahead of its entity being physically found - the
+            // market un-hidden but the entity still discoverable, as FSF's DWR43
+            // colonies sit between first entry and the fleet closing in. It is
+            // public knowledge, so it claims its system at once.
+            var fsf = faction("aEP_FSF", HEGEMONY_BRIGHT);
+            var sector = sectorWith("revealed-system", List.of(fsf),
+                    revealedColonyAwaitingApproach(fsf, 5));
+
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
+                    .containsEntry("revealed-system", new DominantOwner("aEP_FSF", HEGEMONY_BRIGHT));
         }
 
         @Test
@@ -196,13 +210,25 @@ class SectorPoliticsIntegrationTest {
 
         @Test
         void hasDiscoveredOwnedMarketIsFalseForUndiscoveredStation() {
-            // A concealed station the player has not found yet is absent from the
-            // map, so it confers no presence.
+            // A concealed station the player has not found yet - hidden market on a
+            // still-discoverable entity - is absent from the map, so it confers no
+            // presence.
             var knights = faction("knights_of_selkie", HEGEMONY_BRIGHT);
             var sector = sectorWith("undiscovered-system", List.of(knights),
-                    market(knights, 5, false, false, true));
+                    concealedStation(knights, 5));
 
             assertThat(SectorPolitics.hasDiscoveredOwnedMarket(sector, onlySystem(sector))).isFalse();
+        }
+
+        @Test
+        void hasDiscoveredOwnedMarketIsTrueForRevealedColonyAwaitingApproach() {
+            // A colony un-hidden ahead of its entity being found is public
+            // knowledge, so it confers presence before the fleet closes in.
+            var fsf = faction("aEP_FSF", HEGEMONY_BRIGHT);
+            var sector = sectorWith("revealed-system", List.of(fsf),
+                    revealedColonyAwaitingApproach(fsf, 5));
+
+            assertThat(SectorPolitics.hasDiscoveredOwnedMarket(sector, onlySystem(sector))).isTrue();
         }
 
         @Test
@@ -225,6 +251,20 @@ class SectorPoliticsIntegrationTest {
     // marks its system, but folds into dominance at a token size of 1.
     private static MarketAPI hiddenMarket(FactionAPI faction, int size) {
         return market(faction, size, false, true, false);
+    }
+
+    // A concealed station: a hidden market on a still-discoverable entity, the
+    // shape a base wears before the player finds it. Fails both known-market
+    // arms, so it confers no presence until discovery un-hides or reveals it.
+    private static MarketAPI concealedStation(FactionAPI faction, int size) {
+        return market(faction, size, false, true, true);
+    }
+
+    // A colony surfaced ahead of its entity being physically found: the market
+    // un-hidden but the entity still discoverable. Public knowledge already, so
+    // it counts as presence (FSF's DWR43 colonies between entry and approach).
+    private static MarketAPI revealedColonyAwaitingApproach(FactionAPI faction, int size) {
+        return market(faction, size, false, false, true);
     }
 
     // A visible market sitting on a planet (getPlanetEntity() non-null), which

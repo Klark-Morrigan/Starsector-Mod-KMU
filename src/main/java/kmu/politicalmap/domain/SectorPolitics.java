@@ -59,7 +59,7 @@ public final class SectorPolitics {
         }
 
         for (var system : sector.getStarSystems()) {
-            var footprintByFactionId = buildDiscoveredFootprintByFaction(sector, system);
+            var footprintByFactionId = buildKnownFootprintByFaction(sector, system);
             var dominantFactionId = SystemDominance.resolveDominantFactionId(footprintByFactionId);
             if (dominantFactionId == null) {
                 continue;
@@ -93,29 +93,30 @@ public final class SectorPolitics {
     }
 
     /**
-     * Whether the player has discovered at least one owned, non-condition-only
-     * market in the system - its faction-presence test, used to admit the system
-     * to the map as inhabited. Shares the discovery and condition-only filters
-     * the color pipeline uses, so "counts as a colony" means one thing.
+     * Whether the player knows of at least one owned, non-condition-only market
+     * in the system - its faction-presence test, used to admit the system to the
+     * map as inhabited. Shares the known-market and condition-only filters the
+     * color pipeline uses, so "counts as a colony" means one thing: a market is
+     * known once its entity is discovered or the market has been un-hidden.
      *
      * @param sector the sector to read; null yields false
      * @param system the system to test; null yields false
-     * @return true when a discovered faction colony exists in the system
+     * @return true when a known faction colony exists in the system
      */
     public static boolean hasDiscoveredOwnedMarket(SectorAPI sector, StarSystemAPI system) {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return false;
         }
-        return !buildDiscoveredFootprintByFaction(sector, system).isEmpty();
+        return !buildKnownFootprintByFaction(sector, system).isEmpty();
     }
 
-    // Folds each faction's discovered markets in one system into the footprint
-    // the dominance rule compares. Condition-only markets (the placeholder
+    // Folds each faction's known markets in one system into the footprint the
+    // dominance rule compares. Condition-only markets (the placeholder
     // market every uninhabited planet carries for hazard and atmosphere
     // conditions) are skipped: they are not a colony, so they confer no
     // ownership. Decivilised colonies are already absent - vanilla drops them
     // from the economy - so they need no extra guard here.
-    private static Map<String, FactionFootprint> buildDiscoveredFootprintByFaction(
+    private static Map<String, FactionFootprint> buildKnownFootprintByFaction(
             SectorAPI sector, StarSystemAPI system) {
         var footprintByFactionId = new LinkedHashMap<String, FactionFootprint>();
         for (var market : sector.getEconomy().getMarkets(system)) {
@@ -123,7 +124,7 @@ public final class SectorPolitics {
             if (market.isPlanetConditionMarketOnly() || faction == null) {
                 continue;
             }
-            if (!isMarketDiscovered(market)) {
+            if (!isMarketKnownToPlayer(market)) {
                 continue;
             }
             var factionId = faction.getId();
@@ -142,20 +143,26 @@ public final class SectorPolitics {
         return footprintByFactionId;
     }
 
-    // Whether the player has discovered this market's entity - the sole gate on
-    // what counts as political presence. It is purely about discovery, never
-    // about the owner or whether the market is concealed from the economy: a
-    // faction hidden from the intel directory is not barred, and a hidden market
-    // (vanilla bases like the Galatia Academy) still paints its system once its
-    // entity is on the map - it just folds into dominance at a token size. The
-    // gate matters for a concealed station like Knights of Ludd's Battlestar
-    // Libra: the entity is setDiscoverable(true), so it is absent from the map
-    // until the player finds it. Surveying the system reveals its planets, not
-    // the station, so survey is deliberately not a trigger - only discovery is.
-    // An undiscovered station therefore never paints its system or joins the
-    // dominance computation.
-    private static boolean isMarketDiscovered(MarketAPI market) {
+    // Whether the player knows this market exists - the gate on what counts as
+    // political presence. Known means the entity has been discovered (no longer
+    // flagged discoverable) OR the market has been un-hidden, surfaced into the
+    // open by a story reveal. Neither arm cares about the owner or whether the
+    // faction is in the intel directory: a faction hidden from the directory is
+    // not barred, and a Galatia-Academy-style base (hidden market on an
+    // always-visible entity) still paints via the discovery arm, folding into
+    // dominance at a token size.
+    //
+    // The un-hidden arm catches a colony surfaced ahead of its entity being
+    // physically found: FSF Military Corporation's DWR43 colonies un-hide on the
+    // player's first entry yet stay setDiscoverable(true) until the fleet closes
+    // to sensor range. They are public knowledge in that window - listed on the
+    // star's map tooltip - so they paint their system at once rather than waiting
+    // on the approach. A still-concealed station (a hidden market on a
+    // discoverable entity, e.g. Knights of Ludd's Battlestar Libra, or DWR43
+    // before its reveal) fails both arms and never paints until found.
+    private static boolean isMarketKnownToPlayer(MarketAPI market) {
         var entity = market.getPrimaryEntity();
-        return entity == null || !entity.isDiscoverable();
+        var isEntityDiscovered = entity == null || !entity.isDiscoverable();
+        return isEntityDiscovered || !market.isHidden();
     }
 }
