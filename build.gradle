@@ -15,9 +15,16 @@ def consoleCommandsJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/
 // the install root because the mod always lives at <starsector>/mods/KMLib,
 // the directory layout the launcher expects.
 def kmlibJarFile = file("${starsectorRoot}/mods/KMLib/jars/KMLib.jar")
+// Random Assortment of Things is an optional runtime dependency. KMU compiles
+// against its Abyssal Fracture type so the access rule can treat the fracture
+// as a means of arrival; the mod classloader supplies the jar at runtime when
+// RAT is installed, and RandomAssortmentOfThingsMatcher gates every use behind
+// a mod-enabled check so a RAT-free install never resolves the type.
+def ratJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/RandomAssortmentofThings.jar'])
 
 dependencies {
     compileOnly consoleCommandsJars
+    compileOnly ratJars
     // KMLib is a hard dependency in mod_info.json; Starsector's mod
     // classloader provides the jar at runtime so compileOnly is enough.
     // KMU drives its logging through KMLib's KmLogging, so the LunaLib
@@ -26,8 +33,10 @@ dependencies {
     compileOnly files(kmlibJarFile)
 
     testCompileOnly consoleCommandsJars
+    testCompileOnly ratJars
     testCompileOnly files(kmlibJarFile)
     testRuntimeOnly consoleCommandsJars
+    testRuntimeOnly ratJars
     testRuntimeOnly files(kmlibJarFile)
 }
 
@@ -44,6 +53,15 @@ tasks.withType(JavaCompile).configureEach {
                     "Could not find KMLib jar at ${kmlibJarFile}. " +
                     "Build KMLib first (run `./gradlew jar` in mods/KMLib) " +
                     "or install it under mods/KMLib/jars/KMLib.jar.")
+        }
+        // RAT is optional at runtime but its Abyssal Fracture type is needed to
+        // compile RandomAssortmentOfThingsMatcher, so the jar must be present
+        // to build even though a player can run KMU without RAT installed.
+        if (ratJars.files.isEmpty()) {
+            throw new GradleException(
+                    "Could not find Random Assortment of Things jar under " +
+                    "${starsectorRoot}/mods/**/jars/RandomAssortmentofThings.jar. " +
+                    "Install RAT for compiling KMU's Abyssal Fracture access integration.")
         }
     }
 }

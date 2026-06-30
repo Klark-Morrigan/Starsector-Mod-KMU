@@ -11,6 +11,7 @@
   - [Click handling](#click-handling)
 - [Decisions](#decisions)
   - [Surfaces and ownership](#surfaces-and-ownership)
+  - [Dominance rule](#dominance-rule)
   - [Decivilized markers (neutral)](#decivilized-markers-neutral)
   - [Toggle state contract](#toggle-state-contract)
   - [Sub-view detection](#sub-view-detection)
@@ -58,17 +59,17 @@ a mod-drawn control rendered over the map in UI coordinates.
   Decivilised planets and abandoned stations are factionless, so they
   hold no *territory* - they never seed a faction-colored region, join
   the dominance computation, or trigger connectors.
-- Show **known decivilised planets** as neutral, unaffiliated markers
-  in their system's blip stack (a grey "dead colony here" dot), gated so
-  the marker appears exactly when vanilla would show the planet's
-  decivilised status to the player (see
-  [Decivilized markers (neutral)](#decivilized-markers-neutral)). This
-  overrides feature 019's blanket exclusion of
-  decivilised entities
+- Show **known decivilised systems** as neutral, unaffiliated cells: a
+  system holding a revealed decivilised planet is *inhabited*, so it seeds
+  a cell and always draws a neutral outline, but takes no faction color and
+  never counts toward dominance (see
+  [Decivilized markers (neutral)](#decivilized-markers-neutral)). The cell
+  appears exactly when vanilla would show the planet's decivilised status to
+  the player. This overrides feature 019's blanket exclusion of decivilised
+  entities
   ([research: Decivilised entities are factionless](../019-political-map/research.md#decivilised-entities-are-factionless)):
   022 still excludes them from *territory*, but surfaces them as a
-  faction-less point of interest. See
-  [Decivilized markers (neutral)](#decivilized-markers-neutral).
+  faction-less, known-but-unowned region.
 - Draw a **small custom sidebar** over the sector map carrying a single
   on/off control for the overlay. The sidebar is mod-rendered in UI
   coordinates, not a vanilla tab.
@@ -99,9 +100,10 @@ a mod-drawn control rendered over the map in UI coordinates.
   classification, and the Voronoi cell geometry, computed once and
   cached, invalidated by the fingerprint poll plus listener prods from
   [research: State, persistence, lifecycle](../019-political-map/research.md#state-persistence-lifecycle).
-- **Neutral decivilised markers**: known (player-visible) decivilised
-  planets rendered as faction-less blips, derived from a separate scan
-  (they are not in the economy), excluded from territory. See
+- **Neutral decivilised systems**: a system with a known (player-visible)
+  decivilised planet seeds a cell and draws a faction-less neutral outline,
+  derived from a separate planet scan (decivilised markets are not in the
+  economy), excluded from territory. See
   [Decivilized markers (neutral)](#decivilized-markers-neutral).
 - The **sidebar**: one mod-rendered panel over the sector map with a
   single on/off toggle, drawn in UI coordinates via
@@ -134,7 +136,7 @@ a mod-drawn control rendered over the map in UI coordinates.
   renders only on the Sector view. No per-system political drawing.
 - **Decivilised *territory*.** Decivilised planets never form a
   faction-colored region, count toward dominance, or draw connectors -
-  they are unowned. They *are* shown as neutral markers when surveyed
+  they are unowned. Their system *is* shown as a neutral cell when surveyed
   (see [Decivilized markers (neutral)](#decivilized-markers-neutral));
   it is only their participation as *territory* that is out of scope.
 - **Recovering a decivilised planet's former owner.** Vanilla wipes the
@@ -209,71 +211,107 @@ tight hit-test (the sidebar occupies empty map margin).
 - All identifiers prefixed `kmu_political_` so they cannot collide with
   vanilla, KMO, or third-party mods.
 
+### Dominance rule
+
+The owner of a system is decided by a four-level comparison of each
+faction's footprint, every level breaking a tie in the one above so the
+ordering is total and the winner deterministic. This refines feature
+019's element-wise lexicographic proposal
+([research: Dominance rule](../019-political-map/research.md#dominance-rule))
+into a fixed chain:
+
+1. **Combined market size.** Sum `MarketAPI.getSize()` over the faction's
+   counted markets in the system; the largest sum wins.
+2. **Largest single market.** At an equal sum, the faction holding the
+   single biggest market wins.
+3. **Planet-size sum.** At an equal sum and equal biggest market, the
+   faction with more size on planets (vs stations) wins, ranking planets
+   above stations. A market is on a planet when
+   `MarketAPI.getPlanetEntity()` is non-null and on a station when it is
+   null.
+4. **Faction id ascending.** The always-decisive backstop, so the winner
+   never depends on economy or map iteration order. Reaching it requires
+   an exact tie on all three size measures.
+
+Markets whose entity the player has discovered, that are owned and not
+condition-only, feed the footprint - the same visibility filter the cell
+color uses (see [Surfaces and ownership](#surfaces-and-ownership));
+decivilised and abandoned entities are factionless and never participate.
+
+A **hidden** market (vanilla concealed bases like the Galatia Academy) is
+no longer disqualified: once its entity is on the map it still marks its
+system, but it folds in at a fixed token size of 1 at every level above -
+combined size, largest single market, and (if on a planet) planet-size
+sum - so a concealed outpost can flag presence without ever outweighing
+an openly held colony. Discovery is still required: a hidden base on an
+as-yet-undiscovered entity stays off the map until the player finds it.
+
+The rule stays pure - it compares plain footprint values with no
+Starsector types - and the economy read that builds those footprints,
+including the token-size substitution, is confined to the ownership
+adapter, so the rule can be exercised on hand-built inputs.
+
 ### Decivilized markers (neutral)
 
-Surveyed decivilised planets are surfaced as a faction-less presence,
-distinct from the faction territory pipeline.
+A revealed decivilised planet makes its system count as *inhabited* on the
+political map, but *unaffiliated*. Inhabited and affiliated are two separate
+axes: a dead colony is presence, not territory.
 
+- **Inhabited but unaffiliated.** A system holding a revealed decivilised
+  planet seeds its own Voronoi cell and always draws a neutral outline - no
+  fill, no faction color - regardless of the `kmu_politicalMapShowUninhabited`
+  setting, which governs only genuinely empty space. It is excluded from the
+  dominance rule and takes no owner color, so it reads as a known-but-unowned
+  region rather than territory.
+- **Admission regardless of access.** Inhabitation alone puts a system on the
+  map: `PoliticalMapVisibility.shouldAppearOnMap` is `SystemAccess.hasMapAccess`
+  OR inhabited (a discovered colony or a revealed decivilised planet), so a
+  transverse-only or abyssal world - hidden from the map by its own
+  `star_hidden_on_map` / abyssal tags - still appears once it holds a revealed
+  dead colony. The hiding tags never veto an inhabited system.
 - **Detection.** Decivilised markets are not in
   `Sector.getEconomy().getMarketsCopy()`, so they are found by scanning
-  planets per system (`StarSystemAPI.getPlanets()`) for a market with
-  `hasCondition("decivilized")`. `isPlanetConditionMarketOnly()` alone is
-  insufficient - every uninhabited planet has a condition-only market for
-  hazard / atmosphere; the `"decivilized"` condition is what marks a
-  *former colony*. (Full-destroy and `removeColony` paths may omit the
-  condition but set the `$wasCivilized` memory key; treat that key as a
-  secondary marker if those cases need covering.)
-- **Survey gate.** A marker draws only when the player would already know
-  the planet is decivilised in vanilla - the overlay must neither reveal
-  a dead colony the player has not learned about, nor hide one vanilla
-  already shows. **Vanilla's own visibility is the bar; we mirror it, we
-  do not second-guess it.** Whatever survey requirement vanilla puts on
-  the `decivilized` condition is the intended one - if vanilla surfaces
-  it on sensor contact, so do we; if vanilla hides it until charted, so
-  do we. The gate is two independent parts:
+  planets per system (`StarSystemAPI.getPlanets()`) for a market carrying the
+  `"decivilized"` condition (`MarketAPI.getSpecificCondition`).
+  `isPlanetConditionMarketOnly()` alone is insufficient - every uninhabited
+  planet has a condition-only market for hazard / atmosphere; the
+  `"decivilized"` condition is what marks a *former colony*.
+- **Survey gate.** A system reveals only when the player would already know
+  the planet is decivilised in vanilla - the overlay must neither reveal a
+  dead colony the player has not learned about, nor hide one vanilla already
+  shows. **Vanilla's own visibility is the bar; we mirror it, we do not
+  second-guess it.** The gate is two independent parts:
 
   ```
   hasBeenEncountered = market.getSurveyLevel() != MarketAPI.SurveyLevel.NONE
   cond               = market.getSpecificCondition("decivilized")
   isRevealed         = cond != null && (!cond.requiresSurveying() || cond.isSurveyed())
-  shouldDrawMarker   = hasBeenEncountered && isRevealed
+  shouldReveal       = hasBeenEncountered && isRevealed
   ```
 
-  - `hasBeenEncountered` guards against drawing markers for systems the
-    player has never visited (a planet stays at `SurveyLevel.NONE` until
-    first contact). This is the only "has the player been here" gate; it
-    is not a depth requirement.
-  - `isRevealed` is vanilla's per-condition visibility, verbatim. A
-    colony that decivilises *during play* has its ruins condition
-    force-marked surveyed by the deciv process, so it reveals
-    immediately; a *procgen* dead world follows whatever survey rule the
-    condition carries.
+  - `hasBeenEncountered` guards against revealing systems the player has never
+    visited (a planet stays at `SurveyLevel.NONE` until first contact). This
+    is the only "has the player been here" gate; it is not a depth
+    requirement.
+  - `isRevealed` is vanilla's per-condition visibility, verbatim. A colony
+    that decivilises *during play* has its condition force-marked surveyed by
+    the deciv process, so it reveals immediately; a *procgen* dead world
+    follows whatever survey rule the condition carries.
 
-  There is deliberately no `SurveyLevel.FULL` requirement: imposing one
-  would hide decivilised planets that vanilla already shows at a lower
-  level, which is exactly the second-guessing this gate avoids. Survey
-  levels run `NONE -> SEEN -> PRELIMINARY -> FULL` for reference, but the
-  gate keys off condition visibility, not a fixed tier.
+  There is deliberately no `SurveyLevel.FULL` requirement: imposing one would
+  hide decivilised planets that vanilla already shows at a lower level, which
+  is exactly the second-guessing this gate avoids. Survey levels run
+  `NONE -> SEEN -> PRELIMINARY -> FULL` for reference, but the gate keys off
+  condition visibility, not a fixed tier.
 - **Color.** The neutral faction's UI color
-  (`getFaction("neutral").getBaseUIColor()`), so the marker reads as
-  unaffiliated and stays consistent with how live factions are colored.
-- **Render treatment.** A blip in the system's blip stack only. Marker
-  planets:
-  - do **not** seed Voronoi cells (no faction = no claimed area),
-  - do **not** enter the dominance metric or presence tiers,
-  - do **not** spawn dog-bone connectors.
-- **Systems with only decivilised planets.** Such a system is not
-  "inhabited" and seeds no cell, but still shows its neutral marker(s).
-  It appears as a grey dot inside whichever live faction's cell contains
-  it (or in the void), never as territory of its own.
+  (`getFaction("neutral").getBaseUIColor()`), so the cell reads as
+  unaffiliated and stays consistent with how unowned space is drawn.
 - **Cadence.** The decivilised set changes on the same months-to-never
-  cadence as ownership; fold its scan into the same cached pipeline and
-  invalidate it on the existing fingerprint poll plus the
-  `ColonyDecivListener` prod from
-  [research: State, persistence, lifecycle](../019-political-map/research.md#state-persistence-lifecycle).
-  Visibility changes are caught by the fingerprint (include each
-  decivilised planet's marker-visibility result in the hash) so a freshly
-  surveyed ruin appears without a reload.
+  cadence as ownership; its scan folds into the same cached pipeline,
+  invalidated by the on-map visibility fingerprint. The fingerprint includes
+  each decivilised system - both that it is on the map and that it is the
+  unaffiliated, always-drawn kind - so a freshly surveyed ruin appears without
+  a reload.
 
 ### Toggle state contract
 
@@ -367,25 +405,26 @@ location culling is the source of truth.
 - Unit: click polling is edge-triggered - a held button flips the toggle
   exactly once, not once per frame.
 - Unit: the dominance rule picks the expected faction for hand-built
-  market sets, including the lexicographic and faction-id tie-breaks
-  ([research: Dominance rule](../019-political-map/research.md#dominance-rule)).
+  footprints, isolating each of the four tie-break levels - combined
+  size, largest single market, planet-size sum, then faction id (see
+  [Dominance rule](#dominance-rule)).
 - Unit: presence-tier classification returns the highest matching tier
   for planet-only, station-only, and settlement-only systems
   ([research: Presence tiers](../019-political-map/research.md#presence-tiers-under-candidate-a)).
-- Unit: a faction's live markets seed cells and dominance, while
-  decivilised / abandoned entities contribute no faction presence and
-  seed no cell.
-- Unit: a planet yields a neutral marker only when both gate parts hold -
-  `hasBeenEncountered` (`getSurveyLevel() != NONE`) and `isRevealed`
-  (`!requiresSurveying() || isSurveyed()`). Each part failing alone
-  (never-encountered at `NONE`; encountered but condition still hidden)
-  yields no marker.
+- Unit: a faction's live markets seed faction-colored cells and dominance,
+  while decivilised / abandoned entities contribute no faction presence and
+  take no color - a revealed decivilised planet still seeds a neutral cell.
+- Unit: a planet counts as a revealed decivilised planet only when both
+  gate parts hold - `hasBeenEncountered` (`getSurveyLevel() != NONE`) and
+  `isRevealed` (`!requiresSurveying() || isSurveyed()`). Each part failing
+  alone (never-encountered at `NONE`; encountered but condition still
+  hidden) yields no reveal.
 - Unit: an uninhabited planet with a condition-only market but no
-  `"decivilized"` condition yields no marker (guards against treating
-  every rock as a dead colony).
+  `"decivilized"` condition is not a revealed decivilised planet (guards
+  against treating every rock as a dead colony).
 - Unit: a system whose only presence is a surveyed decivilised planet
-  seeds no Voronoi cell and joins no dominance, but emits its neutral
-  marker.
+  seeds a Voronoi cell and always draws a neutral outline, but never counts
+  toward dominance and takes no faction color.
 - Unit (wiring): the per-frame script is registered as an
   `EveryFrameScript`; the cache invalidates when the dominance
   fingerprint changes and stays put when it does not.

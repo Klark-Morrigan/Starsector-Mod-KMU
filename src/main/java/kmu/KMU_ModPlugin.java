@@ -2,10 +2,10 @@ package kmu;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.CampaignTerrainAPI;
-import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
+
+import kmu.politicalmap.PoliticalMapAccessWatcher;
+import kmu.politicalmap.PoliticalMapDiscoveryListener;
 import kmu.settings.KmuLunaSettings;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
@@ -49,6 +49,18 @@ public class KMU_ModPlugin extends BaseModPlugin {
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU political map terrain", exception);
         }
+
+        try {
+            installPoliticalMapDiscoveryListener(Global.getSector());
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to install KMU political map discovery listener", exception);
+        }
+
+        try {
+            installPoliticalMapAccessWatcher(Global.getSector());
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to install KMU political map access watcher", exception);
+        }
     }
 
     static void installMarketUiContextTracker(SectorAPI sector) {
@@ -62,6 +74,36 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         listenerManager.addListener(new StarsectorMarketUiContextTracker(), true);
+    }
+
+    // Registers the listener that refreshes the political map when the player
+    // discovers a map-relevant entity (a market, a jump point, or a gate), so
+    // the overlay updates live rather than only on reload. Idempotent: a
+    // reloaded save already carries it.
+    static void installPoliticalMapDiscoveryListener(SectorAPI sector) {
+        if (sector == null) {
+            return;
+        }
+
+        var listenerManager = sector.getListenerManager();
+        if (listenerManager == null
+                || listenerManager.hasListenerOfClass(PoliticalMapDiscoveryListener.class)) {
+            return;
+        }
+
+        listenerManager.addListener(new PoliticalMapDiscoveryListener(), true);
+    }
+
+    // Registers the per-frame watcher that refreshes the political map when the
+    // set of accessible systems changes (a gate activating, a jump point
+    // established) - the engine has no event for those. Transient: not saved, so
+    // it is re-added fresh each load and never duplicates across reloads.
+    static void installPoliticalMapAccessWatcher(SectorAPI sector) {
+        if (sector == null) {
+            return;
+        }
+
+        sector.addTransientScript(new PoliticalMapAccessWatcher());
     }
 
     static void installPoliticalMapTerrain(SectorAPI sector) {
