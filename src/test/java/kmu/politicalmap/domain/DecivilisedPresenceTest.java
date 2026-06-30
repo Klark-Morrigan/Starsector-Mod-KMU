@@ -141,11 +141,11 @@ final class DecivilisedPresenceTest {
         when(conditionMock.isSurveyed()).thenReturn(isSurveyed);
         var marketMock = mock(MarketAPI.class);
         when(marketMock.getSurveyLevel()).thenReturn(surveyLevel);
-        when(marketMock.getSpecificCondition(Conditions.DECIVILIZED)).thenReturn(conditionMock);
+        when(marketMock.getFirstCondition(Conditions.DECIVILIZED)).thenReturn(conditionMock);
         return marketMock;
     }
 
-    // A market with no decivilised condition (getSpecificCondition returns null),
+    // A market with no decivilised condition (getFirstCondition returns null),
     // standing in for an ordinary uninhabited planet.
     private static MarketAPI marketWithoutDecivilisedCondition(MarketAPI.SurveyLevel surveyLevel) {
         var marketMock = mock(MarketAPI.class);

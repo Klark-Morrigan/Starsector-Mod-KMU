@@ -76,7 +76,12 @@ public final class DecivilisedPresence {
         if (!hasBeenEncountered) {
             return false;
         }
-        var condition = market.getSpecificCondition(Conditions.DECIVILIZED);
+        // getFirstCondition, not getSpecificCondition: the latter matches on a
+        // condition's plugin-modification id (the bare id plus a "_<unique>"
+        // suffix), so a bare condition id never matches it and it always returns
+        // null. getFirstCondition keys off the plain id, the same id the engine
+        // and the colony UI show.
+        var condition = market.getFirstCondition(Conditions.DECIVILIZED);
         return condition != null
                 && (!condition.requiresSurveying() || condition.isSurveyed());
     }
