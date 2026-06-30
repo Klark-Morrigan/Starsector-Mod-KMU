@@ -80,6 +80,17 @@ class PoliticalMapVisibilityIntegrationTest {
             assertThat(PoliticalMapVisibility.shouldAppearOnMap(sectorWithHiddenStar(system), system))
                     .isFalse();
         }
+
+        @Test
+        void shouldAppearOnMapIsTrueForReachableNebulaWithNoVisibleStar() {
+            // A nebula has no star anchor, so it is never in the visible-star
+            // index; the vanilla map draws it as a cloud, so the political map
+            // must admit it on the access path without an inhabitation.
+            var system = reachableNebula("a");
+
+            assertThat(PoliticalMapVisibility.shouldAppearOnMap(sectorWithoutStarAnchors(system), system))
+                    .isTrue();
+        }
     }
 
     @Nested
@@ -134,6 +145,19 @@ class PoliticalMapVisibilityIntegrationTest {
         }
 
         @Test
+        void visibilityFingerprintShiftsWhenAReachableSystemBecomesANebula() {
+            // No star anchor in either sector: the system is off the map until the
+            // nebula draw puts it on, so the fingerprint must move.
+            var before = PoliticalMapVisibility.computeVisibilityFingerprint(
+                    sectorWithoutStarAnchors(reachableSystem("a")));
+
+            var after = PoliticalMapVisibility.computeVisibilityFingerprint(
+                    sectorWithoutStarAnchors(reachableNebula("a")));
+
+            assertThat(after).isNotEqualTo(before);
+        }
+
+        @Test
         void visibilityFingerprintIsZeroForNullSector() {
             assertThat(PoliticalMapVisibility.computeVisibilityFingerprint(null)).isZero();
         }
@@ -167,34 +191,42 @@ class PoliticalMapVisibilityIntegrationTest {
         return sectorMock;
     }
 
-    // A star anchor tagged hidden at the system's location, so the vanilla map
+    // A star anchor tagged hidden leading into the system, so the vanilla map
     // draws no star and the system reads as map-invisible.
     private static LocationAPI hyperspaceWithHiddenStarAnchorFor(StarSystemAPI system) {
-        // Read the location before stubbing, so this mock call is not nested
-        // inside the getLocation() stubbing on the anchor.
-        var location = system.getLocation();
         var anchorMock = mock(JumpPointAPI.class);
         when(anchorMock.isStarAnchor()).thenReturn(true);
         when(anchorMock.hasTag(Tags.STAR_HIDDEN_ON_MAP)).thenReturn(true);
-        when(anchorMock.getLocation()).thenReturn(location);
+        when(anchorMock.getDestinationStarSystem()).thenReturn(system);
         var hyperspaceMock = mock(LocationAPI.class);
         when(hyperspaceMock.getEntities(JumpPointAPI.class)).thenReturn(List.of(anchorMock));
         return hyperspaceMock;
     }
 
-    // A visible (untagged) star anchor at the system's location, so a reachable
+    // A visible (untagged) star anchor leading into the system, so a reachable
     // system reads as map-visible. A system with no jump point stays off the map
-    // regardless, so a co-located anchor cannot wrongly admit it.
+    // regardless, so its anchor cannot wrongly admit it.
     private static LocationAPI hyperspaceWithVisibleStarAnchorFor(StarSystemAPI system) {
-        // Read the location before stubbing, so this mock call is not nested
-        // inside the getLocation() stubbing on the anchor.
-        var location = system.getLocation();
         var anchorMock = mock(JumpPointAPI.class);
         when(anchorMock.isStarAnchor()).thenReturn(true);
-        when(anchorMock.getLocation()).thenReturn(location);
+        when(anchorMock.getDestinationStarSystem()).thenReturn(system);
         var hyperspaceMock = mock(LocationAPI.class);
         when(hyperspaceMock.getEntities(JumpPointAPI.class)).thenReturn(List.of(anchorMock));
         return hyperspaceMock;
+    }
+
+    // A sector whose hyperspace holds no star anchor, so no system reads as
+    // star-visible: the route onto the map is the nebula draw or inhabitation.
+    private static SectorAPI sectorWithoutStarAnchors(StarSystemAPI system) {
+        var economyMock = mock(EconomyAPI.class);
+        when(economyMock.getMarkets(system)).thenReturn(List.of());
+        var hyperspaceMock = mock(LocationAPI.class);
+        when(hyperspaceMock.getEntities(JumpPointAPI.class)).thenReturn(List.of());
+        var sectorMock = mock(SectorAPI.class);
+        when(sectorMock.getStarSystems()).thenReturn(List.of(system));
+        when(sectorMock.getEconomy()).thenReturn(economyMock);
+        when(sectorMock.getHyperspace()).thenReturn(hyperspaceMock);
+        return sectorMock;
     }
 
     private static StarSystemAPI reachableSystem(String id) {
@@ -204,6 +236,14 @@ class PoliticalMapVisibilityIntegrationTest {
         when(systemMock.getId()).thenReturn(id);
         when(systemMock.getLocation()).thenReturn(new Vector2f(1f, 1f));
         when(systemMock.getJumpPoints()).thenReturn(List.of(mock(SectorEntityToken.class)));
+        return systemMock;
+    }
+
+    private static StarSystemAPI reachableNebula(String id) {
+        // Reachable, but drawn on the map as a nebula cloud rather than a star, so
+        // it never appears in the visible-star index - its draw is the nebula flag.
+        var systemMock = reachableSystem(id);
+        when(systemMock.isNebula()).thenReturn(true);
         return systemMock;
     }
 
@@ -231,7 +271,7 @@ class PoliticalMapVisibilityIntegrationTest {
         when(conditionMock.requiresSurveying()).thenReturn(false);
         var marketMock = mock(MarketAPI.class);
         when(marketMock.getSurveyLevel()).thenReturn(MarketAPI.SurveyLevel.FULL);
-        when(marketMock.getSpecificCondition(Conditions.DECIVILIZED)).thenReturn(conditionMock);
+        when(marketMock.getFirstCondition(Conditions.DECIVILIZED)).thenReturn(conditionMock);
         var planetMock = mock(PlanetAPI.class);
         when(planetMock.getMarket()).thenReturn(marketMock);
         return planetMock;

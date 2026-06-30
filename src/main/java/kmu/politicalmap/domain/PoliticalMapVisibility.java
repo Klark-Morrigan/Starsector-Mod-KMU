@@ -58,13 +58,21 @@ public final class PoliticalMapVisibility {
         return hasVisibleMapAccess(system, visibleStars) || isInhabited(sector, system);
     }
 
-    // The access path onto the map: the system is reachable AND its star is drawn
-    // on the vanilla map. A reachable system whose star anchor is hidden (an
-    // abyssal rogue object) is excluded here and reaches the map only if
-    // inhabited. Composing the two concerns here keeps SystemAccess about
+    // The access path onto the map: the system is reachable AND the vanilla map
+    // draws it. Composing access with the draw check here keeps SystemAccess about
     // reachability alone.
     private static boolean hasVisibleMapAccess(StarSystemAPI system, MapVisibleStars visibleStars) {
-        return SystemAccess.hasMapAccess(system) && visibleStars.isStarVisibleForSystem(system);
+        return SystemAccess.hasMapAccess(system) && isDrawnOnMap(system, visibleStars);
+    }
+
+    // Whether the vanilla map draws the system at all: as its star (a visible
+    // star anchor leads into it) or as a nebula cloud. A nebula carries no star
+    // anchor, so it is absent from the visible-star index; reading isNebula() here
+    // keeps a reachable nebula on the political map. A deliberately hidden star
+    // (star_hidden_on_map, an abyssal rogue object) has neither a visible anchor
+    // nor the nebula flag, so it stays off - mirroring what the player sees drawn.
+    private static boolean isDrawnOnMap(StarSystemAPI system, MapVisibleStars visibleStars) {
+        return visibleStars.isStarVisibleForSystem(system) || system.isNebula();
     }
 
     /**
