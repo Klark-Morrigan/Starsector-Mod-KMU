@@ -100,18 +100,15 @@ final class PoliticalMapGeometryCacheTest {
         return sectorMock;
     }
 
-    // A visible (untagged) star anchor at each system's location, so a system
-    // with a jump point reads as map-visible. A cut-off or jump-point-less system
-    // stays off the map regardless, so its co-located anchor cannot admit it.
+    // A visible (untagged) star anchor leading into each system, so a system with
+    // a jump point reads as map-visible. A cut-off or jump-point-less system stays
+    // off the map regardless, so its anchor cannot admit it.
     private static LocationAPI hyperspaceWithVisibleStarAnchorsFor(StarSystemAPI... systems) {
         var anchors = new ArrayList<JumpPointAPI>();
         for (var system : systems) {
-            // Read the location before stubbing, so this mock call is not nested
-            // inside the getLocation() stubbing on the anchor.
-            var location = system.getLocation();
             var anchorMock = mock(JumpPointAPI.class);
             when(anchorMock.isStarAnchor()).thenReturn(true);
-            when(anchorMock.getLocation()).thenReturn(location);
+            when(anchorMock.getDestinationStarSystem()).thenReturn(system);
             anchors.add(anchorMock);
         }
         var hyperspaceMock = mock(LocationAPI.class);
@@ -153,7 +150,7 @@ final class PoliticalMapGeometryCacheTest {
         when(conditionMock.requiresSurveying()).thenReturn(false);
         var marketMock = mock(MarketAPI.class);
         when(marketMock.getSurveyLevel()).thenReturn(MarketAPI.SurveyLevel.FULL);
-        when(marketMock.getSpecificCondition(Conditions.DECIVILIZED)).thenReturn(conditionMock);
+        when(marketMock.getFirstCondition(Conditions.DECIVILIZED)).thenReturn(conditionMock);
         var planetMock = mock(PlanetAPI.class);
         when(planetMock.getMarket()).thenReturn(marketMock);
         return planetMock;

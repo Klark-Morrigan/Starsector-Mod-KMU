@@ -7,9 +7,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * Pins the two contracts of the terrain that are testable off-engine: the
- * engine-layer override the map relies on, and the per-owner alpha scale that
- * draws independent-held space more faintly. The GL emission itself runs only
+ * Pins the contracts of the terrain that are testable off-engine: the engine-
+ * layer override the map relies on, and the two pure opacity resolvers that
+ * decide how each cell category is drawn. The GL emission itself runs only
  * in-engine and is out of scope here.
  *
  * <p>{@code BaseTerrain.getActiveLayers} throws by default, and the engine calls
@@ -32,32 +32,71 @@ final class PoliticalMapTerrainPluginTest {
     }
 
     @Nested
-    class ResolveAlphaMultiplier {
+    class ResolveOwnedOpacity {
 
         @Test
-        void resolveAlphaMultiplierHalvesIndependentRelativeToAFaction() {
-            var factionScale = PoliticalMapTerrainPlugin.resolveAlphaMultiplier("hegemony");
+        void resolveOwnedOpacityUsesTheIndependentOpacitiesForIndependentSpace() {
+            var opacity = PoliticalMapTerrainPlugin.resolveOwnedOpacity("independent", 0.4, 0.75);
 
-            // Independent-held space draws (fill and outline) at half a faction
-            // province's strength.
-            assertThat(PoliticalMapTerrainPlugin.resolveAlphaMultiplier("independent"))
-                    .isEqualTo(factionScale * 0.5f);
+            // Independent space draws at the player's independent fill/border
+            // opacities, so it reads as loosely held.
+            assertThat(opacity.fillAlpha()).isEqualTo(0.4f);
+            assertThat(opacity.borderAlpha()).isEqualTo(0.75f);
         }
 
         @Test
-        void resolveAlphaMultiplierUsesFullStrengthForANonIndependentFaction() {
-            // Any other owner draws at full scale; only independent is singled out,
-            // so two unrelated factions match.
-            assertThat(PoliticalMapTerrainPlugin.resolveAlphaMultiplier("tritachyon"))
-                    .isEqualTo(PoliticalMapTerrainPlugin.resolveAlphaMultiplier("hegemony"));
+        void resolveOwnedOpacityUsesTheFixedFactionDefaultForAnyOtherFaction() {
+            // A core faction ignores the independent opacities (passed here as
+            // distinct values) for the fixed province default: a 0.4 fill under a
+            // fully opaque (1.0) border.
+            var opacity = PoliticalMapTerrainPlugin.resolveOwnedOpacity("hegemony", 0.11, 0.22);
+
+            assertThat(opacity.fillAlpha()).isEqualTo(0.4f);
+            assertThat(opacity.borderAlpha()).isEqualTo(1f);
         }
 
         @Test
-        void resolveAlphaMultiplierUsesFullStrengthForAnUnknownOwner() {
-            // A cell whose dominant id failed to resolve (null) is not independent,
-            // so it keeps full strength rather than being dimmed by accident.
-            assertThat(PoliticalMapTerrainPlugin.resolveAlphaMultiplier(null))
-                    .isEqualTo(PoliticalMapTerrainPlugin.resolveAlphaMultiplier("hegemony"));
+        void resolveOwnedOpacityTreatsAnUnknownOwnerAsANonIndependentFaction() {
+            // A null owner id (dominant faction failed to resolve) is not
+            // independent, so it gets the faction default, not the independent
+            // opacities.
+            var opacity = PoliticalMapTerrainPlugin.resolveOwnedOpacity(null, 0.11, 0.22);
+
+            assertThat(opacity.fillAlpha()).isEqualTo(0.4f);
+            assertThat(opacity.borderAlpha()).isEqualTo(1f);
+        }
+    }
+
+    @Nested
+    class ResolveNeutralBorderOpacity {
+
+        @Test
+        void resolveNeutralBorderOpacityUsesTheDecivilisedOpacityForADeadColony() {
+            // A revealed decivilised system always draws, at the decivilised
+            // opacity, regardless of the uninhabited toggle.
+            assertThat(PoliticalMapTerrainPlugin.resolveNeutralBorderOpacity(true, false, 0.3, 0.15))
+                    .hasValue(0.3);
+        }
+
+        @Test
+        void resolveNeutralBorderOpacityUsesTheUninhabitedOpacityWhenEmptyAndOptedIn() {
+            assertThat(PoliticalMapTerrainPlugin.resolveNeutralBorderOpacity(false, true, 0.3, 0.15))
+                    .hasValue(0.15);
+        }
+
+        @Test
+        void resolveNeutralBorderOpacityIsEmptyForAnEmptySystemWhenNotOptedIn() {
+            // A genuinely empty system is not drawn unless the player opts in.
+            assertThat(PoliticalMapTerrainPlugin.resolveNeutralBorderOpacity(false, false, 0.3, 0.15))
+                    .isEmpty();
+        }
+
+        @Test
+        void resolveNeutralBorderOpacityPrefersDecivilisedWhenOptedIn() {
+            // Decivilised takes precedence: a dead colony uses its own opacity, not
+            // the uninhabited one, even with the toggle on.
+            assertThat(PoliticalMapTerrainPlugin.resolveNeutralBorderOpacity(true, true, 0.3, 0.15))
+                    .hasValue(0.3);
         }
     }
 }

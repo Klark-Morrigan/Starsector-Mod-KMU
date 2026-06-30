@@ -22,6 +22,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.OptionalDouble;
 
 /**
  * Terrain plugin that paints the political map's faction territory on the
@@ -30,21 +31,22 @@ import java.util.List;
  * <p>Prototype scope (feature 022, ownership experiment): each faction-held
  * star system's cell is filled and outlined in the owner's bright UI color -
  * the fill at a partial alpha so the region reads as territory, the outline
- * opaque so borders stay crisp. An independent-dominated system draws at half
- * alpha - both its fill and its outline - so it reads as loosely held space
- * rather than core faction territory. Uninhabited systems are unfilled and
- * outlined
- * faintly in the neutral color (the same color decivilised markers use), and
- * only when the player opts in - {@code kmu_politicalMapShowUninhabited}, off by
- * default. A decivilised system - inhabited but factionless - always draws that
- * neutral outline regardless of the opt-in, since a known dead colony is
- * presence, not empty space. Both fill and outline are the cell inset into a
+ * opaque so borders stay crisp. An independent-held system fills and outlines
+ * in its own opacities, lighter than a core faction's so it reads as loosely
+ * held space. Decivilised systems (inhabited but factionless) and genuinely
+ * empty systems carry no fill, only a faint outline in the neutral color, each
+ * at its own opacity: an empty system is drawn only when the player opts in
+ * ({@code kmu_politicalMapShowUninhabited}, off by default), while a revealed
+ * decivilised system always draws, since a known dead colony is presence, not
+ * empty space. The independent, decivilised, and uninhabited opacities are all
+ * player-tunable under the LunaLib "Visuals customisation" tab, read via
+ * {@link KmuLunaSettings}. Both fill and outline are the cell inset into a
  * single closed convex polygon, so a province reads as one clean shape, not a
  * ring of line segments.
- * The geometry comes from {@link PoliticalMapBorderGeometry} and the ownership
+ * The geometry comes from {@link PoliticalMapGeometryCache} and the ownership
  * colors from {@link SectorPolitics}; this plugin only draws them, always on.
- * There is deliberately no overlay toggle, sidebar, presence tiers, or blip
- * stack yet - the goal is to confirm that faction territory reads correctly.
+ * There is deliberately no master overlay toggle, sidebar, presence tiers, or
+ * blip stack yet - the goal is to confirm that faction territory reads correctly.
  *
  * <p>Terrain is the surface because the sector map renders terrain through
  * {@code renderOnMap} - the same hook the vanilla nebulae draw with. A custom
@@ -56,33 +58,26 @@ import java.util.List;
  *
  * <p>System positions in hyperspace are fixed for the life of a save, so the
  * cell outlines are built once and cached. The drawables (which cells are
- * filled, and in what color) are rebuilt only when KMU's LunaLib settings
- * change, detected off LunaLib's change event via
+ * filled, in what color, and at what opacity) are rebuilt only when KMU's
+ * LunaLib settings change, detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsGeneration()} - so toggling the
- * uninhabited-systems setting takes effect live, and the per-frame path is a
- * single int compare, not a settings lookup. Ownership colors are sampled at
- * the same point - live re-sampling on ownership change (raid, colonisation) is
- * a later step and is intentionally not done per frame, which would scan the
- * whole economy every frame.
+ * uninhabited-systems setting or dragging an opacity slider takes effect live,
+ * and the per-frame path is a single int compare, not a settings lookup. The
+ * opacities and ownership colors are baked into the draw lists at that same
+ * rebuild; live re-sampling on ownership change (raid, colonisation) is a later
+ * step and is intentionally not done per frame, which would scan the whole
+ * economy every frame.
  */
 public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private static final float OUTLINE_LINE_WIDTH = 2f;
 
-    // Fill alpha for an owned province: high enough that the faction color is
-    // easy to read at a glance, low enough that the opaque outline still stands
-    // out and neighbouring fills do not muddy where they meet.
-    private static final float FILL_ALPHA = 0.4f;
-
-    // Per-owner alpha scale applied to both fill and outline: a cell draws at
-    // full strength or halved to a quieter presence that still reads as owned.
-    // Halved is defined as half of full so the two stay in lockstep.
-    private static final float FULL_ALPHA_MULTIPLIER = 1f;
-    private static final float HALVED_ALPHA_MULTIPLIER = FULL_ALPHA_MULTIPLIER / 2f;
-
-    // Uninhabited outlines are a faint hint, not territory, so they draw at a
-    // low alpha - the neutral color is otherwise bright enough to compete with
-    // the faction borders.
-    private static final float NEUTRAL_BORDER_ALPHA = 0.3f;
+    // Fill and outline opacities for a core-faction province. Fixed (not player-
+    // tunable, unlike the independent/decivilised/uninhabited opacities): the
+    // fill is high enough that the faction color reads at a glance yet low enough
+    // that neighbouring fills do not muddy where they meet, and the outline is
+    // fully opaque so faction borders stay the crispest thing on the map.
+    private static final float FACTION_FILL_ALPHA = 0.4f;
+    private static final float FACTION_BORDER_ALPHA = 1f;
 
     // Map rendering ignores this (the map calls the map hooks regardless), but
     // BaseTerrain requires the override; large so the terrain is never treated
@@ -104,16 +99,12 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // lose access - only the cells near a change are rebuilt, not the whole map.
     private final PoliticalMapGeometryCache geometryCache = new PoliticalMapGeometryCache();
 
-    // Drawables derived from the outlines. Owned cells carry their owner's color
-    // (used for fill and outline); neutral cells carry just an outline drawn in
-    // the shared neutral color.
-    private List<float[]> ownedOutlines;
-    private List<Color> ownedColors;
-    // Per-owned-cell alpha scale, parallel to ownedOutlines: 1 for a faction
-    // province, halved for an independent-held system. Applied to both the fill
-    // and the outline so the whole cell reads as loosely held.
-    private List<Float> ownedAlphaMultipliers;
-    private List<float[]> neutralOutlines;
+    // Drawables derived from the outlines. Filled cells (owned: faction or
+    // independent) carry their owner's color and the fill/border opacities
+    // resolved for that owner; outline-only cells (decivilised or genuinely
+    // empty) carry just a border opacity and draw in the shared neutral color.
+    private List<FilledCell> filledCells;
+    private List<OutlineCell> outlineCells;
     private Color neutralColor;
     // The revisions each half of the cache was built against. Geometry rebuilds
     // only when the reachable-system set changes; the drawables rebuild on a
@@ -155,7 +146,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     public void renderOnMap(float factor, float alphaMult) {
         rebuildIfStale();
         logFirstRenderOnce(factor, alphaMult);
-        if (ownedOutlines.isEmpty() && neutralOutlines.isEmpty()) {
+        if (filledCells.isEmpty() && outlineCells.isEmpty()) {
             return;
         }
 
@@ -172,38 +163,38 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // Time only the per-frame GL emission; the surrounding state push/pop is
         // negligible and the cache checks above are deliberately outside.
         KmuProfiling.getProfiler().measure("politicalMap.render", () -> {
-            drawOwnedFills(factor, alphaMult);
+            drawFills(factor, alphaMult);
             drawOutlines(factor, alphaMult);
         });
 
         GL11.glPopAttrib();
     }
 
-    // Fills each owned province with its owner's color at the fill alpha, scaled
-    // by that cell's multiplier (halved for independent-held space). The outline
-    // is convex, so a triangle fan from the first vertex tessellates it correctly.
-    private void drawOwnedFills(float factor, float alphaMult) {
-        for (var i = 0; i < ownedOutlines.size(); i++) {
-            GlColor.set(ownedColors.get(i), alphaMult * FILL_ALPHA * ownedAlphaMultipliers.get(i));
-            drawPolygon(GL11.GL_TRIANGLE_FAN, ownedOutlines.get(i), factor);
+    // Fills each owned province with its owner's color at that cell's resolved
+    // fill opacity. The outline is convex, so a triangle fan from the first
+    // vertex tessellates it correctly.
+    private void drawFills(float factor, float alphaMult) {
+        for (var cell : filledCells) {
+            GlColor.set(cell.color(), alphaMult * cell.fillAlpha());
+            drawPolygon(GL11.GL_TRIANGLE_FAN, cell.outline(), factor);
         }
     }
 
-    // Draws each province outline as a closed loop on top of the fills: owned
-    // outlines in the owner's color, opaque but for independent-held cells which
-    // halve like their fill; neutral outlines faint.
+    // Draws each province outline as a closed loop on top of the fills, each at
+    // its resolved border opacity: owned outlines in the owner's color, outline-
+    // only (decivilised/empty) cells in the shared neutral color.
     private void drawOutlines(float factor, float alphaMult) {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
         GL11.glLineWidth(OUTLINE_LINE_WIDTH);
 
-        for (var i = 0; i < ownedOutlines.size(); i++) {
-            GlColor.set(ownedColors.get(i), alphaMult * ownedAlphaMultipliers.get(i));
-            drawPolygon(GL11.GL_LINE_LOOP, ownedOutlines.get(i), factor);
+        for (var cell : filledCells) {
+            GlColor.set(cell.color(), alphaMult * cell.borderAlpha());
+            drawPolygon(GL11.GL_LINE_LOOP, cell.outline(), factor);
         }
-        for (var outline : neutralOutlines) {
-            GlColor.set(neutralColor, alphaMult * NEUTRAL_BORDER_ALPHA);
-            drawPolygon(GL11.GL_LINE_LOOP, outline, factor);
+        for (var cell : outlineCells) {
+            GlColor.set(neutralColor, alphaMult * cell.borderAlpha());
+            drawPolygon(GL11.GL_LINE_LOOP, cell.outline(), factor);
         }
     }
 
@@ -255,7 +246,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             rebuiltCells = true;
         }
 
-        // ownedOutlines == null means the drawables have never been built this
+        // filledCells == null means the drawables have never been built this
         // session. The revision seeds (-1) force the first build for a freshly
         // constructed plugin, but a plugin restored from a save comes back with
         // its revision fields already advanced past -1 while the static counters
@@ -263,14 +254,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // leaving the drawable lists null for renderOnMap to dereference. The
         // null check forces the build regardless of how the counters line up.
         var contentRevision = computeContentRevision();
-        if (rebuiltCells || ownedOutlines == null || contentRevision != lastContentRevision) {
+        if (rebuiltCells || filledCells == null || contentRevision != lastContentRevision) {
             rebuildDrawables();
             lastContentRevision = contentRevision;
             // Result trace: the cell counts the overlay will actually paint, so a
             // wrong or empty render can be confirmed against what was built.
             LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
-                    + " ownedCells=" + ownedOutlines.size()
-                    + " neutralCells=" + neutralOutlines.size()
+                    + " filledCells=" + filledCells.size()
+                    + " outlineCells=" + outlineCells.size()
                     + " geometryRebuilt=" + rebuiltCells);
         }
     }
@@ -280,11 +271,9 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // dereference. Empty lists make the render a harmless no-op until a later
     // frame's retry succeeds.
     private void ensureDrawablesNonNull() {
-        if (ownedOutlines == null) {
-            ownedOutlines = new ArrayList<>();
-            ownedColors = new ArrayList<>();
-            ownedAlphaMultipliers = new ArrayList<>();
-            neutralOutlines = new ArrayList<>();
+        if (filledCells == null) {
+            filledCells = new ArrayList<>();
+            outlineCells = new ArrayList<>();
             neutralColor = Color.GRAY;
         }
     }
@@ -303,16 +292,19 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 () -> geometryCache.updateFromSector(Global.getSector()));
     }
 
-    // Partitions the cached outlines into owned (filled + colored) and neutral
-    // (faint outline) draw lists, reading the current ownership and uninhabited
-    // setting. Flattens each outline to a GL-ready vertex run here.
+    // Partitions the cached outlines into filled (owned) and outline-only
+    // (decivilised/empty) draw lists, baking in each cell's color and the
+    // opacities resolved from the current settings. Flattens each outline to a
+    // GL-ready vertex run here. Reads the opacity settings once, not per cell.
     private void rebuildDrawables() {
         KmuProfiling.getProfiler().measure("politicalMap.rebuildDrawables", () -> {
             var isShowingUninhabited = KmuLunaSettings.isShowUninhabitedSystemsEnabled();
-            ownedOutlines = new ArrayList<>();
-            ownedColors = new ArrayList<>();
-            ownedAlphaMultipliers = new ArrayList<>();
-            neutralOutlines = new ArrayList<>();
+            var independentBorderOpacity = KmuLunaSettings.getIndependentBorderOpacity();
+            var independentFillOpacity = KmuLunaSettings.getIndependentFillOpacity();
+            var decivilisedBorderOpacity = KmuLunaSettings.getDecivilisedBorderOpacity();
+            var uninhabitedBorderOpacity = KmuLunaSettings.getUninhabitedBorderOpacity();
+            filledCells = new ArrayList<>();
+            outlineCells = new ArrayList<>();
 
             var ownerBySystemId =
                     SectorPolitics.resolveDominantOwnerBySystemId(Global.getSector());
@@ -329,27 +321,48 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 var flat = flattenVertices(outline);
                 var owner = ownerBySystemId.get(entry.getKey());
                 if (owner != null) {
-                    ownedOutlines.add(flat);
-                    ownedColors.add(owner.color());
-                    ownedAlphaMultipliers.add(resolveAlphaMultiplier(owner.factionId()));
-                } else if (decivilisedSystemIds.contains(entry.getKey()) || isShowingUninhabited) {
-                    // A revealed decivilised system is inhabited but unaffiliated:
-                    // it always draws a neutral outline, regardless of the
-                    // uninhabited toggle, which governs only genuinely empty space.
-                    neutralOutlines.add(flat);
+                    var opacity = resolveOwnedOpacity(owner.factionId(),
+                            independentFillOpacity, independentBorderOpacity);
+                    filledCells.add(new FilledCell(flat, owner.color(),
+                            opacity.fillAlpha(), opacity.borderAlpha()));
+                } else {
+                    var borderOpacity = resolveNeutralBorderOpacity(
+                            decivilisedSystemIds.contains(entry.getKey()), isShowingUninhabited,
+                            decivilisedBorderOpacity, uninhabitedBorderOpacity);
+                    borderOpacity.ifPresent(
+                            opacity -> outlineCells.add(new OutlineCell(flat, (float) opacity)));
                 }
             }
         });
     }
 
-    // Picks an owned cell's alpha scale from its dominant faction: independent
-    // space draws at half strength so it reads as loosely held rather than a
-    // faction's core province. Every other owner draws at full. The same scale
-    // dims both the fill and the outline.
-    static float resolveAlphaMultiplier(String dominantFactionId) {
-        return Factions.INDEPENDENT.equals(dominantFactionId)
-                ? HALVED_ALPHA_MULTIPLIER
-                : FULL_ALPHA_MULTIPLIER;
+    // Resolves the fill and border opacities for an owned province by its owner.
+    // Independent space uses the player's independent opacities so it reads as
+    // loosely held; every other faction draws at the fixed, opaque-bordered
+    // province default.
+    static OwnedOpacity resolveOwnedOpacity(String dominantFactionId,
+            double independentFillOpacity, double independentBorderOpacity) {
+        if (Factions.INDEPENDENT.equals(dominantFactionId)) {
+            return new OwnedOpacity((float) independentFillOpacity, (float) independentBorderOpacity);
+        }
+        return new OwnedOpacity(FACTION_FILL_ALPHA, FACTION_BORDER_ALPHA);
+    }
+
+    // Resolves the outline opacity for a neutral (unfilled) cell, or empty when
+    // the cell is not drawn. A revealed decivilised system - a known dead colony -
+    // is always outlined, at the decivilised opacity, since it is presence rather
+    // than empty space. A genuinely empty system is outlined only when the player
+    // has opted in, at the uninhabited opacity.
+    static OptionalDouble resolveNeutralBorderOpacity(boolean isDecivilised,
+            boolean isShowingUninhabited, double decivilisedBorderOpacity,
+            double uninhabitedBorderOpacity) {
+        if (isDecivilised) {
+            return OptionalDouble.of(decivilisedBorderOpacity);
+        }
+        if (isShowingUninhabited) {
+            return OptionalDouble.of(uninhabitedBorderOpacity);
+        }
+        return OptionalDouble.empty();
     }
 
     // Flattens a polygon's {x, y} vertices into a [x, y, x, y, ...] run.
@@ -371,8 +384,25 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             return;
         }
         hasLoggedFirstRender = true;
-        LOG.debug("Political map overlay renderOnMap fired: ownedCells="
-                + ownedOutlines.size() + " neutralCells=" + neutralOutlines.size()
+        LOG.debug("Political map overlay renderOnMap fired: filledCells="
+                + filledCells.size() + " outlineCells=" + outlineCells.size()
                 + " factor=" + factor + " alphaMult=" + alphaMult);
+    }
+
+    // The fill and border opacities resolved for one owned province (faction or
+    // independent), kept together because resolveOwnedOpacity decides both from
+    // the same owner. Package-private: it is the return of the package-private
+    // resolveOwnedOpacity, the seam that owner-styling is pinned at.
+    record OwnedOpacity(float fillAlpha, float borderAlpha) {
+    }
+
+    // A filled province ready to draw: its flattened outline, owner color, and
+    // the fill and border opacities resolved for its owner.
+    private record FilledCell(float[] outline, Color color, float fillAlpha, float borderAlpha) {
+    }
+
+    // An outline-only cell (a decivilised or genuinely empty system): its
+    // flattened outline and border opacity. Drawn in the shared neutral color.
+    private record OutlineCell(float[] outline, float borderAlpha) {
     }
 }
