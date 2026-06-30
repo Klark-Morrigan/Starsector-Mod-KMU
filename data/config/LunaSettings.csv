@@ -1,5 +1,11 @@
 fieldID,,,,fieldName,,fieldType,defaultValue,secondaryValue,,,fieldDescription,,,minValue,maxValue,tab
+kmu_visualsDecivilisedHeader,,,,Decivilised systems,,Header,Decivilised systems,,,,,,,,,Visuals customisation
+kmu_politicalMapDecivilisedBorderOpacity,,,,Border opacity,,Double,0.35,,,,"Political map outline opacity for decivilised systems - known dead colonies. Default: 0.35.",,,0,1,Visuals customisation
+kmu_visualsIndependentHeader,,,,Independent systems,,Header,Independent systems,,,,,,,,,Visuals customisation
+kmu_politicalMapIndependentBorderOpacity,,,,Border opacity,,Double,0.5,,,,"Political map outline opacity for independent-held systems. Default: 0.5.",,,0,1,Visuals customisation
+kmu_politicalMapIndependentFillOpacity,,,,Fill opacity,,Double,0.15,,,,"Political map fill opacity for independent-held systems. Default: 0.15.",,,0,1,Visuals customisation
+kmu_visualsUninhabitedHeader,,,,Uninhabited systems,,Header,Uninhabited systems,,,,,,,,,Visuals customisation
+kmu_politicalMapShowUninhabited,,,,Show uninhabited systems,,Boolean,false,,,,"When on, uninhabited systems are outlined in the neutral color and left unfilled. Off by default - only faction-held, independent, and decivilised systems are drawn. Default: off.",,,,,Visuals customisation
+kmu_politicalMapUninhabitedBorderOpacity,,,,Border opacity,,Double,0.15,,,,"Political map outline opacity for uninhabited systems (drawn only when 'Show uninhabited systems' is on). Default: 0.15.",,,0,1,Visuals customisation
 kmu_loggingHeader,,,,Logging,,Header,Logging,,,,,,,,,Dev
-kmu_logLevel,,,,KMU log verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,"Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics.",,,,,Dev
-kmu_politicalMapHeader,,,,Political Map,,Header,Political Map,,,,,,,,,Dev
-kmu_politicalMapShowUninhabited,,,,Show uninhabited systems,,Boolean,false,,,,"When on, uninhabited systems are outlined in the neutral color and left unfilled. Off by default - only faction-held systems are drawn on the political map.",,,,,Dev
+kmu_logLevel,,,,KMU log verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,"Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics. Default: WARN.",,,,,Dev

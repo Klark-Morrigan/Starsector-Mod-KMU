@@ -24,9 +24,27 @@ public final class KmuLunaSettings {
     private static final String LOGGER_ROOT = "kmu";
     private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
 
-    // Political-map overlay: whether uninhabited systems are drawn at all.
-    // Matches the Boolean field in data/config/LunaSettings.csv.
+    // Political-map overlay fields, matching data/config/LunaSettings.csv. The
+    // first toggles whether genuinely empty systems are drawn at all; the rest
+    // are the per-category outline/fill opacities the player tunes under the
+    // "Visuals customisation" tab.
     private static final String SHOW_UNINHABITED_FIELD = "kmu_politicalMapShowUninhabited";
+    private static final String DECIVILISED_BORDER_OPACITY_FIELD =
+            "kmu_politicalMapDecivilisedBorderOpacity";
+    private static final String INDEPENDENT_BORDER_OPACITY_FIELD =
+            "kmu_politicalMapIndependentBorderOpacity";
+    private static final String INDEPENDENT_FILL_OPACITY_FIELD =
+            "kmu_politicalMapIndependentFillOpacity";
+    private static final String UNINHABITED_BORDER_OPACITY_FIELD =
+            "kmu_politicalMapUninhabitedBorderOpacity";
+
+    // Fallbacks used only when a setting is read before LunaLib has loaded it;
+    // the live values come from LunaLib. These mirror the defaultValue column in
+    // data/config/LunaSettings.csv and must be kept in step with it.
+    private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.35;
+    private static final double DEFAULT_INDEPENDENT_BORDER_OPACITY = 0.5;
+    private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.15;
+    private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
     // derived state (e.g. the political-map overlay) read this generation and
@@ -68,5 +86,42 @@ public final class KmuLunaSettings {
      */
     public static boolean isShowUninhabitedSystemsEnabled() {
         return LunaSettingsReader.getBoolean(MOD_ID, SHOW_UNINHABITED_FIELD, false);
+    }
+
+    /**
+     * @return the political-map outline opacity for decivilised systems (known
+     *         dead colonies), 0..1; the default when the setting is unreadable
+     */
+    public static double getDecivilisedBorderOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, DECIVILISED_BORDER_OPACITY_FIELD,
+                DEFAULT_DECIVILISED_BORDER_OPACITY);
+    }
+
+    /**
+     * @return the political-map outline opacity for independent-held systems,
+     *         0..1; the default when the setting is unreadable
+     */
+    public static double getIndependentBorderOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_BORDER_OPACITY_FIELD,
+                DEFAULT_INDEPENDENT_BORDER_OPACITY);
+    }
+
+    /**
+     * @return the political-map fill opacity for independent-held systems, 0..1;
+     *         the default when the setting is unreadable
+     */
+    public static double getIndependentFillOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_FILL_OPACITY_FIELD,
+                DEFAULT_INDEPENDENT_FILL_OPACITY);
+    }
+
+    /**
+     * @return the political-map outline opacity for uninhabited systems, 0..1;
+     *         only applied when {@link #isShowUninhabitedSystemsEnabled()} is on,
+     *         and the default when the setting is unreadable
+     */
+    public static double getUninhabitedBorderOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, UNINHABITED_BORDER_OPACITY_FIELD,
+                DEFAULT_UNINHABITED_BORDER_OPACITY);
     }
 }
