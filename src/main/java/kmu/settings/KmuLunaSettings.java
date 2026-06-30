@@ -43,7 +43,7 @@ public final class KmuLunaSettings {
     // data/config/LunaSettings.csv and must be kept in step with it.
     private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.35;
     private static final double DEFAULT_INDEPENDENT_BORDER_OPACITY = 0.5;
-    private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.15;
+    private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.2;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
