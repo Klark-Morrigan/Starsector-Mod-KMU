@@ -8,7 +8,6 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
 
@@ -17,10 +16,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link MapVisibleStars}: a system is map-visible when a star anchor sits
- * at its hyperspace location and is not tagged hidden; a hidden anchor, a
- * non-anchor jump point, no co-located anchor, or a missing hyperspace all read
- * as not visible. Location is matched by coordinates, not entity identity.
+ * Pins {@link MapVisibleStars}: a system is map-visible when an untagged star
+ * anchor leads into it; a hidden anchor, a non-anchor jump point, an anchor
+ * leading into a different system, an anchor leading nowhere, or a missing
+ * hyperspace all read as not visible. Anchors are resolved to systems by the
+ * destination they lead into, never by location.
  */
 final class MapVisibleStarsTest {
 
@@ -28,41 +28,48 @@ final class MapVisibleStarsTest {
     class IsStarVisibleForSystem {
 
         @Test
-        void isStarVisibleForSystemIsTrueWhenAVisibleStarAnchorSitsAtItsLocation() {
+        void isStarVisibleForSystemIsTrueWhenAVisibleStarAnchorLeadsIntoIt() {
+            var system = systemWithId("alpha");
             var visibleStars = MapVisibleStars.scan(
-                    sectorWithHyperEntities(starAnchorAt(new Vector2f(100f, 200f), false)));
+                    sectorWithHyperEntities(starAnchorLeadingTo(system, false)));
 
-            // A distinct Vector2f instance with the same coordinates, to prove the
-            // match is by location and not object identity.
-            assertThat(visibleStars.isStarVisibleForSystem(systemAt(new Vector2f(100f, 200f))))
-                    .isTrue();
+            assertThat(visibleStars.isStarVisibleForSystem(system)).isTrue();
         }
 
         @Test
         void isStarVisibleForSystemIsFalseWhenItsStarAnchorIsHiddenOnMap() {
-            var location = new Vector2f(100f, 200f);
+            var system = systemWithId("alpha");
             var visibleStars = MapVisibleStars.scan(
-                    sectorWithHyperEntities(starAnchorAt(location, true)));
+                    sectorWithHyperEntities(starAnchorLeadingTo(system, true)));
 
-            assertThat(visibleStars.isStarVisibleForSystem(systemAt(location))).isFalse();
+            assertThat(visibleStars.isStarVisibleForSystem(system)).isFalse();
         }
 
         @Test
-        void isStarVisibleForSystemIsFalseWhenTheCoLocatedJumpPointIsNotAStarAnchor() {
-            var location = new Vector2f(100f, 200f);
-            var visibleStars = MapVisibleStars.scan(
-                    sectorWithHyperEntities(nonAnchorAt(location)));
+        void isStarVisibleForSystemIsFalseWhenTheJumpPointIsNotAStarAnchor() {
+            var visibleStars = MapVisibleStars.scan(sectorWithHyperEntities(nonAnchor()));
 
-            assertThat(visibleStars.isStarVisibleForSystem(systemAt(location))).isFalse();
+            assertThat(visibleStars.isStarVisibleForSystem(systemWithId("alpha"))).isFalse();
         }
 
         @Test
-        void isStarVisibleForSystemIsFalseWhenNoAnchorSitsAtItsLocation() {
+        void isStarVisibleForSystemIsFalseWhenTheOnlyAnchorLeadsIntoAnotherSystem() {
+            // Resolution is by the destination system's identity, so an anchor for
+            // "alpha" cannot make "beta" read as visible.
             var visibleStars = MapVisibleStars.scan(
-                    sectorWithHyperEntities(starAnchorAt(new Vector2f(100f, 200f), false)));
+                    sectorWithHyperEntities(starAnchorLeadingTo(systemWithId("alpha"), false)));
 
-            assertThat(visibleStars.isStarVisibleForSystem(systemAt(new Vector2f(500f, 600f))))
-                    .isFalse();
+            assertThat(visibleStars.isStarVisibleForSystem(systemWithId("beta"))).isFalse();
+        }
+
+        @Test
+        void isStarVisibleForSystemIgnoresAStarAnchorThatLeadsNowhere() {
+            // A malformed anchor with no destination must drop out of the scan
+            // rather than crash it or admit a phantom system.
+            var visibleStars = MapVisibleStars.scan(
+                    sectorWithHyperEntities(starAnchorLeadingTo(null, false)));
+
+            assertThat(visibleStars.isStarVisibleForSystem(systemWithId("alpha"))).isFalse();
         }
 
         @Test
@@ -70,16 +77,14 @@ final class MapVisibleStarsTest {
             // getHyperspace() defaults to null on the mock - the empty-index path.
             var visibleStars = MapVisibleStars.scan(mock(SectorAPI.class));
 
-            assertThat(visibleStars.isStarVisibleForSystem(systemAt(new Vector2f(0f, 0f))))
-                    .isFalse();
+            assertThat(visibleStars.isStarVisibleForSystem(systemWithId("alpha"))).isFalse();
         }
 
         @Test
         void isStarVisibleForSystemIsFalseForNullSector() {
             var visibleStars = MapVisibleStars.scan(null);
 
-            assertThat(visibleStars.isStarVisibleForSystem(systemAt(new Vector2f(0f, 0f))))
-                    .isFalse();
+            assertThat(visibleStars.isStarVisibleForSystem(systemWithId("alpha"))).isFalse();
         }
     }
 
@@ -91,24 +96,23 @@ final class MapVisibleStarsTest {
         return sectorMock;
     }
 
-    private static JumpPointAPI starAnchorAt(Vector2f location, boolean isHiddenOnMap) {
+    private static JumpPointAPI starAnchorLeadingTo(StarSystemAPI destination, boolean isHiddenOnMap) {
         var jumpPointMock = mock(JumpPointAPI.class);
         when(jumpPointMock.isStarAnchor()).thenReturn(true);
         when(jumpPointMock.hasTag(Tags.STAR_HIDDEN_ON_MAP)).thenReturn(isHiddenOnMap);
-        when(jumpPointMock.getLocation()).thenReturn(location);
+        when(jumpPointMock.getDestinationStarSystem()).thenReturn(destination);
         return jumpPointMock;
     }
 
-    private static JumpPointAPI nonAnchorAt(Vector2f location) {
+    private static JumpPointAPI nonAnchor() {
         var jumpPointMock = mock(JumpPointAPI.class);
         when(jumpPointMock.isStarAnchor()).thenReturn(false);
-        when(jumpPointMock.getLocation()).thenReturn(location);
         return jumpPointMock;
     }
 
-    private static StarSystemAPI systemAt(Vector2f location) {
+    private static StarSystemAPI systemWithId(String id) {
         var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getLocation()).thenReturn(location);
+        when(systemMock.getId()).thenReturn(id);
         return systemMock;
     }
 }

@@ -6,8 +6,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
-import org.lwjgl.util.vector.Vector2f;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,74 +13,71 @@ import java.util.Set;
  * Records which star systems show a star on the vanilla hyperspace map, so the
  * political map can mirror that visibility.
  *
- * <p>A system's star is drawn on the map by its star-anchor jump point. The
- * engine suppresses that draw with the {@code star_hidden_on_map} tag for
+ * <p>The map draws a system's star from its hyperspace star-anchor jump point.
+ * The engine suppresses that draw with the {@code star_hidden_on_map} tag for
  * abyssal rogue-stellar objects - a neutron star, magnetar, or black hole whose
  * one-way gravity-well exit is meant to stay hidden - while leaving the system
- * its (fringe) jump points. The tag lives on the hyperspace anchor, not on the
- * system, its in-system jump points, or {@code getHyperspaceAnchor()} (which is
- * the bare {@code system_anchor} token), so it is only reachable by scanning
- * hyperspace.
+ * its (fringe) jump points. The tag lives on the star anchor, not on the system
+ * or its in-system jump points, so it is only reachable by scanning hyperspace.
  *
- * <p>This scans once and indexes the locations of the visible (untagged) star
- * anchors. A star anchor sits at its system's hyperspace coordinates, so a
- * system is map-visible when a visible anchor is indexed at its location.
- * Building the index once keeps the per-system query an O(1) lookup, so callers
- * that walk every system (the visibility fingerprint, the geometry rebuild) do
- * not rescan hyperspace per system.
+ * <p>This scans hyperspace once and resolves each visible (untagged) star anchor
+ * to the system it leads into via {@link JumpPointAPI#getDestinationStarSystem},
+ * indexing those system ids. Resolving by identity, not by coordinates, is what
+ * makes a barycenter or multi-star system match: its {@code getLocation} returns
+ * an empty centre offset from where the star anchor actually sits, so a
+ * position-based lookup would miss it. Building the index once keeps the
+ * per-system query an O(1) lookup, so callers that walk every system (the
+ * visibility fingerprint, the geometry rebuild) do not rescan hyperspace per
+ * system.
  */
 public final class MapVisibleStars {
 
-    private final Set<String> visibleAnchorLocationKeys;
+    private final Set<String> visibleStarSystemIds;
 
-    private MapVisibleStars(Set<String> visibleAnchorLocationKeys) {
-        this.visibleAnchorLocationKeys = visibleAnchorLocationKeys;
+    private MapVisibleStars(Set<String> visibleStarSystemIds) {
+        this.visibleStarSystemIds = visibleStarSystemIds;
     }
 
     /**
-     * Scans the sector's hyperspace for the star anchors the map draws.
+     * Scans the sector's hyperspace for the systems whose star the map draws.
      *
      * @param sector the sector to scan; null, or a sector with no hyperspace,
      *               yields an empty index (no star treated as visible)
-     * @return an index of the locations holding a visible star anchor
+     * @return an index of the ids of systems whose star the map draws
      */
     public static MapVisibleStars scan(SectorAPI sector) {
-        var visibleAnchorLocationKeys = new HashSet<String>();
+        var visibleStarSystemIds = new HashSet<String>();
         var hyperspace = sector == null ? null : sector.getHyperspace();
         if (hyperspace != null) {
-            indexVisibleStarAnchors(hyperspace, visibleAnchorLocationKeys);
+            indexVisibleStarSystems(hyperspace, visibleStarSystemIds);
         }
-        return new MapVisibleStars(visibleAnchorLocationKeys);
+        return new MapVisibleStars(visibleStarSystemIds);
     }
 
     /**
      * @param system the system to test
-     * @return true when a visible star anchor sits at the system's hyperspace
-     *         location - i.e. the vanilla map draws its star
+     * @return true when the vanilla map draws this system's star - a visible
+     *         star anchor leads into it
      */
     public boolean isStarVisibleForSystem(StarSystemAPI system) {
-        return visibleAnchorLocationKeys.contains(locationKey(system.getLocation()));
+        return visibleStarSystemIds.contains(system.getId());
     }
 
-    private static void indexVisibleStarAnchors(LocationAPI hyperspace, Set<String> keys) {
+    private static void indexVisibleStarSystems(LocationAPI hyperspace, Set<String> ids) {
         for (Object entity : hyperspace.getEntities(JumpPointAPI.class)) {
             var jumpPoint = (JumpPointAPI) entity;
             // Only a star anchor draws a system's star; one tagged hidden (an
-            // abyssal rogue object) does not, so its location is left out and the
-            // system reads as map-invisible.
-            if (jumpPoint.isStarAnchor() && !jumpPoint.hasTag(Tags.STAR_HIDDEN_ON_MAP)) {
-                keys.add(locationKey(jumpPoint.getLocation()));
+            // abyssal rogue object) does not, so the system it leads into is left
+            // out of the index and reads as map-invisible.
+            if (!jumpPoint.isStarAnchor() || jumpPoint.hasTag(Tags.STAR_HIDDEN_ON_MAP)) {
+                continue;
+            }
+            var system = jumpPoint.getDestinationStarSystem();
+            // A star anchor always leads into a system; the null guard keeps a
+            // malformed anchor from failing the whole scan rather than expecting it.
+            if (system != null) {
+                ids.add(system.getId());
             }
         }
-    }
-
-    // A star anchor sits at its system's hyperspace coordinates, so rounded
-    // coordinates key the two together. Systems are thousands of units apart, so
-    // rounding to the nearest unit cannot collide distinct systems.
-    private static String locationKey(Vector2f location) {
-        if (location == null) {
-            return "null";
-        }
-        return Math.round(location.x) + ":" + Math.round(location.y);
     }
 }
