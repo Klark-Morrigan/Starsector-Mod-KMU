@@ -13,10 +13,13 @@ import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.PoliticalMapRefresh;
 import kmu.politicalmap.domain.CellShaper;
 import kmu.politicalmap.domain.DecivilisedPresence;
+import kmu.politicalmap.domain.DominantOwner;
 import kmu.politicalmap.domain.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.SectorPolitics;
 import kmu.politicalmap.domain.ShapedCell;
+import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
+import kmu.settings.NeutralColorChoice;
 
 import org.apache.log4j.Logger;
 import org.lwjgl.opengl.GL11;
@@ -25,7 +28,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.OptionalDouble;
 
 /**
  * Terrain plugin that paints the political map's faction territory on the
@@ -37,24 +39,28 @@ import java.util.OptionalDouble;
  * channel between them. Every edge against a different faction, unowned space, or
  * the map frontier is pulled inward instead, so the bloc keeps a uniform national
  * border channel against everything outside it. Each bloc is stroked twice: its
- * national-border edges in the owner's bright color and a bold width, and its
- * interior seams (the fused edges between member cells) in the owner's dark UI
- * color and a thin width, so the province lines inside a bloc recede behind the
- * border.
- * The seam ends stay within the padded border rather than reaching the raw
- * midline between cells, so the bloc's edge reads as one uniform border. The fill
- * sits at a partial alpha so territory reads without muddying where blocs meet.
+ * national-border (outer) edges, then its interior seams (the fused edges between
+ * member cells) beneath them, so the province lines inside a bloc recede behind
+ * the border. The seam ends stay within the padded border rather than reaching the
+ * raw midline between cells, so the bloc's edge reads as one uniform border.
  *
- * <p>An independent-held system draws at the player's independent fill/border
- * opacities, lighter than a core faction's, so it reads as loosely held space.
- * Decivilised systems (inhabited but factionless) and genuinely empty systems
- * carry no fill, only a faint inset outline in the neutral color, each at its own
- * opacity: an empty system draws only when the player opts in
- * ({@code kmu_politicalMapShowUninhabited}, off by default), while a revealed
- * decivilised system always draws, since a known dead colony is presence, not
- * empty space. The independent, decivilised, and uninhabited opacities are all
- * player-tunable under the LunaLib "Visuals customisation" tab, read via
- * {@link KmuLunaSettings}.
+ * <p>Every element is player-styled per category under the LunaLib "Visuals
+ * customisation" tab, read via {@link KmuLunaSettings}. The two owned categories -
+ * core factions and independent space - each fuse into blocs and get a fill, an
+ * outer border, and an inner seam; each element draws in one of the owner faction's
+ * two palette colors (its bright "primary" or dark "secondary" shade) or "No
+ * color" to omit it, at its own opacity, and - for the borders - its own line
+ * width. Independent draws from its own bundle (lighter opacities by default) so it
+ * reads as loosely held space. The defaults reproduce the built-in look: a primary
+ * fill and outer border, a secondary inner seam.
+ *
+ * <p>Decivilised systems (inhabited but factionless) and uninhabited systems do
+ * not merge and carry no fill - only a single inset outline in the shared neutral
+ * color, or "No color" to hide it, each at its own opacity and width. A revealed
+ * decivilised system draws by default, since a known dead colony is presence, not
+ * empty space; uninhabited systems default to "No color" (hidden), so only
+ * faction-held, independent, and decivilised systems draw unless the player turns
+ * uninhabited on.
  *
  * <p>The raw cells and their adjacency come from {@link PoliticalMapGeometryCache}
  * and the ownership colors from {@link SectorPolitics}; {@link CellShaper} turns
@@ -74,10 +80,10 @@ import java.util.OptionalDouble;
  * cells are built once and cached. The drawables (which blocs are filled, in what
  * color, at what opacity, and where their border and seam edges run) are rebuilt
  * only when KMU's LunaLib settings change, detected off LunaLib's change event
- * via {@link KmuLunaSettings#getSettingsGeneration()} - so toggling the
- * uninhabited-systems setting or dragging an opacity slider takes effect live,
- * and the per-frame path is a single int compare, not a settings lookup. The
- * opacities, ownership colors, and merged shaping are baked into the draw lists
+ * via {@link KmuLunaSettings#getSettingsGeneration()} - so switching a category's
+ * color or dragging an opacity slider takes effect live, and the per-frame path is
+ * a single int compare, not a settings lookup. The colors, opacities, widths, and
+ * merged shaping are baked into the draw lists
  * at that same rebuild; live re-sampling on ownership change (raid, colonisation)
  * is a later step and is intentionally not done per frame, which would scan the
  * whole economy every frame.
@@ -119,10 +125,10 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     // Drawables derived from the raw cells, all transient for the same reasons as
     // the geometry cache: rebuilt each session, record-typed, kept out of the
-    // save. Owned blocs carry their owner's color, the fill/border opacities
-    // resolved for that owner, and their flattened fill/border/seam runs;
-    // outline-only cells (decivilised or genuinely empty) carry just a border
-    // opacity and their inset loop, drawn in the shared neutral color.
+    // save. Owned blocs carry their per-element resolved colors, opacities, and
+    // line widths and their flattened fill/border/seam runs; outline-only cells
+    // (decivilised or uninhabited) carry just an opacity, width, and their inset
+    // loop, drawn in the shared neutral color.
     private transient List<FilledBloc> filledBlocs;
     private transient List<NeutralOutline> neutralOutlines;
     private transient Color neutralColor;
@@ -194,37 +200,49 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         GL11.glPopAttrib();
     }
 
-    // Fills each bloc with its owner's color at that bloc's resolved fill opacity.
-    // The fill polygon is convex, so a triangle fan from the first vertex
+    // Fills each bloc with its resolved fill color at its resolved fill opacity. A
+    // null fill color is the player's "No color" choice, so that bloc is left
+    // unfilled. The fill polygon is convex, so a triangle fan from the first vertex
     // tessellates it correctly.
     private void drawFills(float factor, float alphaMult) {
         for (var bloc : filledBlocs) {
-            GlColor.set(bloc.color(), alphaMult * bloc.fillAlpha());
+            if (bloc.fillColor() == null) {
+                continue;
+            }
+            GlColor.set(bloc.fillColor(), alphaMult * bloc.fillAlpha());
             drawVertexRun(GL11.GL_TRIANGLE_FAN, bloc.fill(), factor);
         }
     }
 
-    // Strokes the interior seams first (thin, dark) then the national borders
-    // (thick, bright) on top, so a bloc's edge dominates its internal province
-    // lines. Owned edges are GL_LINES segment runs (the border and seam subsets of
-    // each bloc's shaped outline); a neutral cell has no seams, so its inset loop
-    // draws as one closed line loop in the shared neutral color.
+    // Strokes the interior seams first, then the national borders over them, so a
+    // bloc's edge dominates its internal province lines where they meet. Color,
+    // opacity, and line width are all per bloc (they differ by category and by the
+    // player's choices), so the width is set per bloc; a null color is the player's
+    // "No color" choice and skips that element. A neutral cell has no seams, so its
+    // inset loop draws as one closed line loop in the shared neutral color at its
+    // own width.
     private void drawBorders(float factor, float alphaMult) {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        GL11.glLineWidth(PoliticalMapStyle.INTERIOR_LINE_WIDTH);
         for (var bloc : filledBlocs) {
-            GlColor.set(bloc.interiorColor(), alphaMult * bloc.borderAlpha());
+            if (bloc.innerColor() == null) {
+                continue;
+            }
+            GL11.glLineWidth(bloc.innerWidth());
+            GlColor.set(bloc.innerColor(), alphaMult * bloc.innerAlpha());
             drawVertexRun(GL11.GL_LINES, bloc.interiorEdges(), factor);
         }
-
-        GL11.glLineWidth(PoliticalMapStyle.BOUNDARY_LINE_WIDTH);
         for (var bloc : filledBlocs) {
-            GlColor.set(bloc.color(), alphaMult * bloc.borderAlpha());
+            if (bloc.outerColor() == null) {
+                continue;
+            }
+            GL11.glLineWidth(bloc.outerWidth());
+            GlColor.set(bloc.outerColor(), alphaMult * bloc.outerAlpha());
             drawVertexRun(GL11.GL_LINES, bloc.boundaryEdges(), factor);
         }
         for (var outline : neutralOutlines) {
+            GL11.glLineWidth(outline.borderWidth());
             GlColor.set(neutralColor, alphaMult * outline.borderAlpha());
             drawVertexRun(GL11.GL_LINE_LOOP, outline.outlineLoop(), factor);
         }
@@ -340,20 +358,22 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 () -> geometryCache.updateFromSector(Global.getSector()));
     }
 
-    // Shapes the cached raw cells into merged faction blocs and partitions them
-    // into filled (owned) and outline-only (decivilised/empty) draw lists, baking
-    // in each cell's color and the opacities resolved from the current settings,
-    // then flattens each to GL-ready vertex runs. Reads the opacity settings once,
+    // Shapes the cached raw cells into merged blocs and partitions them into filled
+    // (owned) and outline-only (decivilised/uninhabited) draw lists, baking in each
+    // cell's colors, opacities, and widths resolved from the current settings, then
+    // flattens each to GL-ready vertex runs. Reads the settings once per category,
     // not per cell.
     private void rebuildDrawables() {
         var profiler = KmuProfiling.getProfiler();
         profiler.measure("politicalMap.rebuildDrawables", () -> {
             var sector = Global.getSector();
-            var isShowingUninhabited = KmuLunaSettings.isShowUninhabitedSystemsEnabled();
-            var independentBorderOpacity = KmuLunaSettings.getIndependentBorderOpacity();
-            var independentFillOpacity = KmuLunaSettings.getIndependentFillOpacity();
-            var decivilisedBorderOpacity = KmuLunaSettings.getDecivilisedBorderOpacity();
-            var uninhabitedBorderOpacity = KmuLunaSettings.getUninhabitedBorderOpacity();
+            // One style bundle per owned category, applied by owner below; the
+            // factionless categories carry just a neutral color choice, opacity, and
+            // width for their single outline.
+            var factionStyle = readFactionStyle();
+            var independentStyle = readIndependentStyle();
+            var decivilisedStyle = readDecivilisedStyle();
+            var uninhabitedStyle = readUninhabitedStyle();
             filledBlocs = new ArrayList<>();
             neutralOutlines = new ArrayList<>();
 
@@ -391,20 +411,23 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 }
                 var owner = ownerBySystemId.get(entry.getKey());
                 if (owner != null) {
-                    var opacity = resolveOwnedOpacity(owner.factionId(),
-                            independentFillOpacity, independentBorderOpacity);
-                    filledBlocs.add(new FilledBloc(
-                            flattenVertices(shaped.fillPolygon()),
-                            flattenEdgesOfClass(shaped, true),
-                            flattenEdgesOfClass(shaped, false),
-                            owner.color(), owner.seamColor(),
-                            opacity.fillAlpha(), opacity.borderAlpha()));
+                    // Independent space styles from its own bundle; every other
+                    // owner is a core faction.
+                    var style = Factions.INDEPENDENT.equals(owner.factionId())
+                            ? independentStyle
+                            : factionStyle;
+                    filledBlocs.add(buildFilledBloc(shaped, owner, style));
                 } else {
-                    var borderOpacity = resolveNeutralBorderOpacity(
-                            decivilisedSystemIds.contains(entry.getKey()), isShowingUninhabited,
-                            decivilisedBorderOpacity, uninhabitedBorderOpacity);
-                    borderOpacity.ifPresent(opacity -> neutralOutlines.add(new NeutralOutline(
-                            flattenVertices(shaped.fillPolygon()), (float) opacity)));
+                    // Factionless: decivilised or (otherwise) uninhabited, each a
+                    // single neutral outline, skipped when its color choice is NONE.
+                    var style = decivilisedSystemIds.contains(entry.getKey())
+                            ? decivilisedStyle
+                            : uninhabitedStyle;
+                    if (style.color().isDrawn()) {
+                        neutralOutlines.add(new NeutralOutline(
+                                flattenVertices(shaped.fillPolygon()),
+                                (float) style.opacity(), (float) style.width()));
+                    }
                 }
             }
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
@@ -414,34 +437,69 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         });
     }
 
-    // Resolves the fill and border opacities for an owned bloc by its owner.
-    // Independent space uses the player's independent opacities so it reads as
-    // loosely held; every other faction draws at the fixed, opaque-bordered
-    // province default.
-    static OwnedOpacity resolveOwnedOpacity(String dominantFactionId,
-            double independentFillOpacity, double independentBorderOpacity) {
-        if (Factions.INDEPENDENT.equals(dominantFactionId)) {
-            return new OwnedOpacity((float) independentFillOpacity, (float) independentBorderOpacity);
-        }
-        return new OwnedOpacity(PoliticalMapStyle.FACTION_FILL_ALPHA,
-                PoliticalMapStyle.FACTION_BORDER_ALPHA);
+    // Builds one owned bloc's draw record: its flattened geometry, plus each
+    // element's color resolved against this owner's palette (null for a "No color"
+    // choice) and the opacities and widths from the owner's category style.
+    private static FilledBloc buildFilledBloc(ShapedCell shaped, DominantOwner owner,
+            OwnedStyle style) {
+        return new FilledBloc(
+                flattenVertices(shaped.fillPolygon()),
+                flattenEdgesOfClass(shaped, true),
+                flattenEdgesOfClass(shaped, false),
+                pickPaletteColor(style.fillColor(), owner),
+                pickPaletteColor(style.outerColor(), owner),
+                pickPaletteColor(style.innerColor(), owner),
+                (float) style.fillOpacity(), (float) style.outerOpacity(),
+                (float) style.innerOpacity(),
+                (float) style.outerWidth(), (float) style.innerWidth());
     }
 
-    // Resolves the outline opacity for a neutral (unfilled) cell, or empty when
-    // the cell is not drawn. A revealed decivilised system - a known dead colony -
-    // is always outlined, at the decivilised opacity, since it is presence rather
-    // than empty space. A genuinely empty system is outlined only when the player
-    // has opted in, at the uninhabited opacity.
-    static OptionalDouble resolveNeutralBorderOpacity(boolean isDecivilised,
-            boolean isShowingUninhabited, double decivilisedBorderOpacity,
-            double uninhabitedBorderOpacity) {
-        if (isDecivilised) {
-            return OptionalDouble.of(decivilisedBorderOpacity);
-        }
-        if (isShowingUninhabited) {
-            return OptionalDouble.of(uninhabitedBorderOpacity);
-        }
-        return OptionalDouble.empty();
+    // Picks the owner-faction palette color the player pointed an element at: the
+    // faction's secondary (dark) shade for a SECONDARY choice, its primary (bright)
+    // shade for a PRIMARY choice, or null for NONE ("No color") so the caller skips
+    // that element.
+    static Color pickPaletteColor(FactionPaletteChoice choice, DominantOwner owner) {
+        return switch (choice) {
+            case PRIMARY -> owner.primaryColor();
+            case SECONDARY -> owner.secondaryColor();
+            case NONE -> null;
+        };
+    }
+
+    // Reads each owned category's eight style settings into one bundle, so the
+    // build loop applies them by owner without eight lookups per bloc.
+    private static OwnedStyle readFactionStyle() {
+        return new OwnedStyle(
+                KmuLunaSettings.getFactionFillColor(), KmuLunaSettings.getFactionFillOpacity(),
+                KmuLunaSettings.getFactionOuterBorderColor(),
+                KmuLunaSettings.getFactionOuterBorderOpacity(),
+                KmuLunaSettings.getFactionOuterBorderWidth(),
+                KmuLunaSettings.getFactionInnerBorderColor(),
+                KmuLunaSettings.getFactionInnerBorderOpacity(),
+                KmuLunaSettings.getFactionInnerBorderWidth());
+    }
+
+    private static OwnedStyle readIndependentStyle() {
+        return new OwnedStyle(
+                KmuLunaSettings.getIndependentFillColor(), KmuLunaSettings.getIndependentFillOpacity(),
+                KmuLunaSettings.getIndependentOuterBorderColor(),
+                KmuLunaSettings.getIndependentOuterBorderOpacity(),
+                KmuLunaSettings.getIndependentOuterBorderWidth(),
+                KmuLunaSettings.getIndependentInnerBorderColor(),
+                KmuLunaSettings.getIndependentInnerBorderOpacity(),
+                KmuLunaSettings.getIndependentInnerBorderWidth());
+    }
+
+    private static NeutralStyle readDecivilisedStyle() {
+        return new NeutralStyle(KmuLunaSettings.getDecivilisedBorderColor(),
+                KmuLunaSettings.getDecivilisedBorderOpacity(),
+                KmuLunaSettings.getDecivilisedBorderWidth());
+    }
+
+    private static NeutralStyle readUninhabitedStyle() {
+        return new NeutralStyle(KmuLunaSettings.getUninhabitedBorderColor(),
+                KmuLunaSettings.getUninhabitedBorderOpacity(),
+                KmuLunaSettings.getUninhabitedBorderWidth());
     }
 
     // Flattens the edges of a shaped bloc of one class into a GL_LINES vertex run
@@ -498,24 +556,37 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 + " factor=" + factor + " alphaMult=" + alphaMult);
     }
 
-    // The fill and border opacities resolved for one owned bloc (faction or
-    // independent), kept together because resolveOwnedOpacity decides both from
-    // the same owner. Package-private: it is the return of the package-private
-    // resolveOwnedOpacity, the seam that owner-styling is pinned at.
-    record OwnedOpacity(float fillAlpha, float borderAlpha) {
+    // One owned category's (faction or independent) full style, read once per
+    // rebuild and applied to every bloc of that category: the fill, outer-border,
+    // and inner-seam color choices with their opacities, plus the two border
+    // widths. The colors are choices (resolved against each owner's palette per
+    // bloc), not concrete colors, since one bundle serves many owners.
+    private record OwnedStyle(
+            FactionPaletteChoice fillColor, double fillOpacity,
+            FactionPaletteChoice outerColor, double outerOpacity, double outerWidth,
+            FactionPaletteChoice innerColor, double innerOpacity, double innerWidth) {
     }
 
-    // A filled bloc ready to draw: its flattened fill polygon, its national-border
-    // and interior-seam edge runs (GL_LINES segments), the owner's bright color
-    // for the fill and border and its dark UI color for the interior seams, and
-    // the fill/border opacities resolved for its owner.
+    // One factionless category's (decivilised or uninhabited) outline style: its
+    // neutral-color choice (or NONE to hide it), opacity, and width. No fill or
+    // inner seam, since these cells do not merge into blocs.
+    private record NeutralStyle(NeutralColorChoice color, double opacity, double width) {
+    }
+
+    // A filled bloc ready to draw: its flattened fill polygon and its national-
+    // border and interior-seam edge runs (GL_LINES segments), plus the resolved
+    // fill/outer/inner colors (null for a "No color" choice, which skips that
+    // element) with their opacities and the two border widths. All per bloc, since
+    // colors resolve against each owner's palette and widths differ by category.
     private record FilledBloc(float[] fill, float[] boundaryEdges, float[] interiorEdges,
-            Color color, Color interiorColor, float fillAlpha, float borderAlpha) {
+            Color fillColor, Color outerColor, Color innerColor,
+            float fillAlpha, float outerAlpha, float innerAlpha,
+            float outerWidth, float innerWidth) {
     }
 
-    // An outline-only cell (a decivilised or genuinely empty system): its inset
-    // outline as a closed loop and border opacity. Drawn in the shared neutral
-    // color; it has no interior seams, since it merges with nothing.
-    private record NeutralOutline(float[] outlineLoop, float borderAlpha) {
+    // An outline-only cell (a decivilised or uninhabited system): its inset outline
+    // as a closed loop, its border opacity, and its line width. Drawn in the shared
+    // neutral color; it has no interior seams, since it merges with nothing.
+    private record NeutralOutline(float[] outlineLoop, float borderAlpha, float borderWidth) {
     }
 }
