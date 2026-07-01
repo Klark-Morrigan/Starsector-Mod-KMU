@@ -130,21 +130,28 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // Cell geometry keyed by system id, updated incrementally as systems gain or
     // lose access - only the cells near a change are rebuilt, not the whole map.
     // Holds both the inset province outlines (the fills/outlines) and the raw cell
-    // edges (the adjacency graph the classification reads).
-    private final PoliticalMapGeometryCache geometryCache = new PoliticalMapGeometryCache();
+    // edges (the adjacency graph the classification reads). Transient: it is
+    // derived from the sector and rebuilt each session, and it holds record types
+    // (CellEdge) XStream cannot serialise, so it must never enter the save. A
+    // save-restored plugin comes back with it null, so it is recreated lazily in
+    // rebuildStaleHalves rather than in a field initialiser (which XStream skips).
+    private transient PoliticalMapGeometryCache geometryCache;
 
-    // Drawables derived from the outlines. Filled cells (owned: faction or
-    // independent) carry their owner's color and the fill/border opacities
-    // resolved for that owner; outline-only cells (decivilised or genuinely
-    // empty) carry just a border opacity and draw in the shared neutral color.
-    private List<FilledCell> filledCells;
-    private List<OutlineCell> outlineCells;
-    private Color neutralColor;
+    // Drawables derived from the outlines, all transient for the same reasons as
+    // the geometry cache: rebuilt each session, record-typed, kept out of the
+    // save. Filled cells (owned: faction or independent) carry their owner's color
+    // and the fill/border opacities resolved for that owner; outline-only cells
+    // (decivilised or genuinely empty) carry just a border opacity and draw in the
+    // shared neutral color.
+    private transient List<FilledCell> filledCells;
+    private transient List<OutlineCell> outlineCells;
+    private transient Color neutralColor;
     // The verification overlay's classified cell edges, flattened into two
     // GL_LINES vertex runs ([x, y, x, y, ...], two points per segment) grouped by
-    // class so each run draws under a single colour.
-    private float[] boundaryEdgeVertices = NO_VERTICES;
-    private float[] interiorSeamEdgeVertices = NO_VERTICES;
+    // class so each run draws under a single colour. Transient like the rest of
+    // the derived draw state.
+    private transient float[] boundaryEdgeVertices = NO_VERTICES;
+    private transient float[] interiorSeamEdgeVertices = NO_VERTICES;
     // The revisions each half of the cache was built against. Geometry rebuilds
     // only when the reachable-system set changes; the drawables rebuild on a
     // content change (settings, discovery) or whenever the geometry itself was
@@ -292,6 +299,17 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // Rebuilds only the stale half of the cache, advancing each cached revision
     // only after its rebuild completes so a thrown rebuild is retried next frame.
     private void rebuildStaleHalves() {
+        // A plugin restored from a save comes back with its transient caches null:
+        // XStream skips transient fields and does not run field initialisers. Bring
+        // the geometry cache back and seed the revision to -1 so the geometry - and
+        // through the rebuiltCells flag, the drawables - rebuild from scratch this
+        // frame, regardless of how the restored revision and the reset static
+        // counter happen to line up.
+        if (geometryCache == null) {
+            geometryCache = new PoliticalMapGeometryCache();
+            lastGeometryRevision = -1;
+        }
+
         var rebuiltCells = false;
         var geometryRevision = PoliticalMapRefresh.getGeometryRevision();
         if (geometryRevision != lastGeometryRevision) {
