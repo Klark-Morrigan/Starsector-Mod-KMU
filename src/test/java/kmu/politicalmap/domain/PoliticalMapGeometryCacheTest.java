@@ -16,7 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -77,6 +79,43 @@ final class PoliticalMapGeometryCacheTest {
         }
 
         @Test
+        void updateBuildsTheAdjacencyGraphTaggingNeighboursAcrossSharedEdges() {
+            var cache = new PoliticalMapGeometryCache();
+
+            // Two close systems share a Voronoi edge, so each cell must name the
+            // other across exactly that edge.
+            cache.updateFromSector(sectorOf(
+                    accessibleSystem("a", 0, 0),
+                    accessibleSystem("b", 1000, 0)));
+
+            assertThat(neighboursOf(cache, "a")).containsExactly("b");
+            assertThat(neighboursOf(cache, "b")).containsExactly("a");
+        }
+
+        @Test
+        void updateMarksAFrontierEdgeWithNoNeighbour() {
+            var cache = new PoliticalMapGeometryCache();
+
+            // A lone system has no neighbour to share an edge with, so every edge
+            // is a frontier into empty space - a null neighbour id.
+            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0)));
+
+            assertThat(cache.getCellEdgesBySystemId().get("a"))
+                    .isNotEmpty()
+                    .allSatisfy(edge -> assertThat(edge.neighbourSystemId()).isNull());
+        }
+
+        @Test
+        void updateDropsTheAdjacencyOfASystemThatLosesAccess() {
+            var cache = new PoliticalMapGeometryCache();
+            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)));
+
+            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0)));
+
+            assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a");
+        }
+
+        @Test
         void updateSeedsAnUnreachableSystemHoldingARevealedDecivilisedPlanet() {
             // No jump point, so the access rule rejects it, but the revealed ruin
             // makes it inhabited - it must still seed a cell.
@@ -88,6 +127,18 @@ final class PoliticalMapGeometryCacheTest {
 
             assertThat(cache.getOutlineBySystemId()).containsOnlyKeys("a", "ruin");
         }
+    }
+
+    // The distinct neighbouring system ids one cell names across its edges,
+    // dropping the null frontier markers - the adjacency the merge step reads.
+    private static Set<String> neighboursOf(PoliticalMapGeometryCache cache, String systemId) {
+        var neighbours = new LinkedHashSet<String>();
+        for (var edge : cache.getCellEdgesBySystemId().get(systemId)) {
+            if (edge.neighbourSystemId() != null) {
+                neighbours.add(edge.neighbourSystemId());
+            }
+        }
+        return neighbours;
     }
 
     private static SectorAPI sectorOf(StarSystemAPI... systems) {

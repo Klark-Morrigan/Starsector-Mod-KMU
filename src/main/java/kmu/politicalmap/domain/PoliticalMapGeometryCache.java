@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,6 +30,14 @@ import java.util.Set;
  * the cache and rebuilds only the affected outlines, leaving distant ones in
  * place. The first update (empty cache) rebuilds everything, since every system
  * is "added".
+ *
+ * <p>Alongside each system's drawn outline the cache keeps its raw cell as a
+ * list of {@link CellEdge}s - the cell-adjacency graph. Each edge is tagged with
+ * the neighbouring system across it (or none, for a frontier into empty space),
+ * which the render layer classifies into interior seams and national boundaries
+ * once it knows who owns what. The raw cells, not the inset outlines, carry the
+ * adjacency, since two same-faction cells share a true Voronoi edge that the
+ * inset channel would otherwise hide.
  *
  * <p>Geometry only, no GL: the partition can be reasoned about and tested on a
  * stub sector, independent of how the outlines are drawn.
@@ -52,6 +61,10 @@ public final class PoliticalMapGeometryCache {
 
     private final Map<String, double[]> siteBySystemId = new LinkedHashMap<>();
     private final Map<String, List<double[]>> outlineBySystemId = new LinkedHashMap<>();
+    // The raw cell of each system as adjacency edges, rebuilt in lockstep with
+    // its outline so the two never drift: an affected cell's edges are recomputed
+    // while distant cells keep their existing lists (and their adjacency).
+    private final Map<String, List<CellEdge>> cellEdgesBySystemId = new LinkedHashMap<>();
 
     /**
      * Brings the cache in line with the sector's current on-map systems,
@@ -90,10 +103,23 @@ public final class PoliticalMapGeometryCache {
         siteBySystemId.putAll(newSites);
         for (var id : removed) {
             outlineBySystemId.remove(id);
+            cellEdgesBySystemId.remove(id);
         }
+        // Ordered site list plus its parallel id list: the labelled cell builder
+        // works in site indices, and the adjacency graph translates each edge's
+        // neighbour index back to a system id through this list. The two stay
+        // aligned because a LinkedHashMap iterates keys and values in lockstep.
+        var allSiteIds = new ArrayList<String>(siteBySystemId.keySet());
         var allSites = new ArrayList<double[]>(siteBySystemId.values());
+        var indexBySystemId = new HashMap<String, Integer>();
+        for (var i = 0; i < allSiteIds.size(); i++) {
+            indexBySystemId.put(allSiteIds.get(i), i);
+        }
         for (var id : affected) {
-            outlineBySystemId.put(id, buildOutline(siteBySystemId.get(id), allSites));
+            var cell = VoronoiCellBuilder.buildLabelledCell(
+                    indexBySystemId.get(id), allSites, MAX_CELL_RADIUS);
+            outlineBySystemId.put(id, buildOutline(cell.vertices()));
+            cellEdgesBySystemId.put(id, buildCellEdges(cell, allSiteIds));
         }
 
         // The geometric diff: which systems entered/left the map and how many
@@ -111,6 +137,16 @@ public final class PoliticalMapGeometryCache {
      */
     public Map<String, List<double[]>> getOutlineBySystemId() {
         return Collections.unmodifiableMap(outlineBySystemId);
+    }
+
+    /**
+     * @return the cell-adjacency graph keyed by system id; each value is the
+     *         system's raw cell edges, every edge tagged with the neighbouring
+     *         system across it (null for a frontier into empty space). An
+     *         unmodifiable live view.
+     */
+    public Map<String, List<CellEdge>> getCellEdgesBySystemId() {
+        return Collections.unmodifiableMap(cellEdgesBySystemId);
     }
 
     private static Map<String, double[]> collectAccessibleSites(SectorAPI sector) {
@@ -147,12 +183,34 @@ public final class PoliticalMapGeometryCache {
         return near;
     }
 
-    // One system's province outline: its Voronoi cell, inset into a channel and
+    // One system's province outline from its raw cell: inset into a channel and
     // its corners rounded.
-    private static List<double[]> buildOutline(double[] site, List<double[]> allSites) {
-        var cell = VoronoiCellBuilder.buildCell(site, allSites, MAX_CELL_RADIUS);
+    private static List<double[]> buildOutline(List<double[]> cell) {
         var inset = Polygons.insetConvexPolygon(cell, BORDER_OFFSET);
         return Polygons.roundCorners(inset, CORNER_ROUNDING_RADIUS, CORNER_ROUNDING_SEGMENTS,
                 Math.toRadians(BEVEL_BELOW_ANGLE_DEGREES));
+    }
+
+    // Turns one labelled cell into its adjacency edges: each edge as a world-space
+    // segment tagged with the neighbouring system across it, or null for an edge
+    // on the max-radius bound (a frontier into empty space). The builder reports
+    // each edge's neighbour as a site index, resolved to a system id here through
+    // the parallel id list.
+    private static List<CellEdge> buildCellEdges(VoronoiCellBuilder.LabelledCell cell,
+            List<String> allSiteIds) {
+        var vertices = cell.vertices();
+        var neighbourIndices = cell.edgeNeighbourSiteIndices();
+        var count = vertices.size();
+        var edges = new ArrayList<CellEdge>(count);
+        for (var i = 0; i < count; i++) {
+            var start = vertices.get(i);
+            var end = vertices.get((i + 1) % count);
+            var neighbourIndex = neighbourIndices[i];
+            var neighbourId = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
+                    ? null
+                    : allSiteIds.get(neighbourIndex);
+            edges.add(new CellEdge(start[0], start[1], end[0], end[1], neighbourId));
+        }
+        return edges;
     }
 }

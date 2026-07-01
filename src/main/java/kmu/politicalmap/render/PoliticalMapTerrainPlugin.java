@@ -10,7 +10,10 @@ import kmlib.opengl.GlColor;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.PoliticalMapRefresh;
+import kmu.politicalmap.domain.ClassifiedEdge;
 import kmu.politicalmap.domain.DecivilisedPresence;
+import kmu.politicalmap.domain.EdgeClass;
+import kmu.politicalmap.domain.EdgeClassifier;
 import kmu.politicalmap.domain.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.SectorPolitics;
 import kmu.settings.KmuLunaSettings;
@@ -48,6 +51,19 @@ import java.util.OptionalDouble;
  * There is deliberately no master overlay toggle, sidebar, presence tiers, or
  * blip stack yet - the goal is to confirm that faction territory reads correctly.
  *
+ * <p>On top of that established render sits a verification overlay for the
+ * in-progress HOI4-style region work: every Voronoi edge between two cells is
+ * classified as an interior seam (the same faction holds both sides) or a
+ * boundary (a different owner, unowned space, or the map frontier), and the
+ * classified edges are stroked - boundary edges white, interior seams magenta -
+ * so a wrong classification is visible on the map. These are deliberately loud
+ * placeholder tints layered over the untouched province outlines, not a border
+ * redesign; the classified edges sit on the true cell borders (not the inset
+ * outline), since two same-faction cells share a true Voronoi edge that the inset
+ * channel would otherwise hide. Later steps turn this classification into merged
+ * faction blocs - raw-cell fills and real seam/border strokes - at which point
+ * the overlay and the per-cell outlines give way to it.
+ *
  * <p>Terrain is the surface because the sector map renders terrain through
  * {@code renderOnMap} - the same hook the vanilla nebulae draw with. A custom
  * campaign entity has no map-render hook, so its {@code render} never reaches
@@ -58,15 +74,15 @@ import java.util.OptionalDouble;
  *
  * <p>System positions in hyperspace are fixed for the life of a save, so the
  * cell outlines are built once and cached. The drawables (which cells are
- * filled, in what color, and at what opacity) are rebuilt only when KMU's
- * LunaLib settings change, detected off LunaLib's change event via
- * {@link KmuLunaSettings#getSettingsGeneration()} - so toggling the
+ * filled, in what color, at what opacity, and the classified edge runs) are
+ * rebuilt only when KMU's LunaLib settings change, detected off LunaLib's change
+ * event via {@link KmuLunaSettings#getSettingsGeneration()} - so toggling the
  * uninhabited-systems setting or dragging an opacity slider takes effect live,
  * and the per-frame path is a single int compare, not a settings lookup. The
- * opacities and ownership colors are baked into the draw lists at that same
- * rebuild; live re-sampling on ownership change (raid, colonisation) is a later
- * step and is intentionally not done per frame, which would scan the whole
- * economy every frame.
+ * opacities, ownership colors, and classification are baked into the draw lists
+ * at that same rebuild; live re-sampling on ownership change (raid, colonisation)
+ * is a later step and is intentionally not done per frame, which would scan the
+ * whole economy every frame.
  */
 public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private static final float OUTLINE_LINE_WIDTH = 2f;
@@ -78,6 +94,22 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // fully opaque so faction borders stay the crispest thing on the map.
     private static final float FACTION_FILL_ALPHA = 0.4f;
     private static final float FACTION_BORDER_ALPHA = 1f;
+
+    // Verification-overlay tints: a national boundary edge in white, an interior
+    // seam (same faction both sides) in magenta, so the adjacency classification
+    // can be eyeballed on the map. Deliberately loud placeholders layered over the
+    // province outlines - the finished region render restyles borders properly.
+    private static final Color BOUNDARY_TINT = Color.WHITE;
+    private static final Color INTERIOR_SEAM_TINT = Color.MAGENTA;
+
+    // Shared empty vertex run, so a map with no classified edges of a class never
+    // dereferences null and allocates nothing.
+    private static final float[] NO_VERTICES = new float[0];
+
+    // Floats per classified edge in a flattened GL_LINES run: two endpoints, each
+    // an (x, y) pair. The stride for sizing a run and for counting edges back out
+    // of one.
+    private static final int FLOATS_PER_EDGE = 4;
 
     // Map rendering ignores this (the map calls the map hooks regardless), but
     // BaseTerrain requires the override; large so the terrain is never treated
@@ -95,8 +127,10 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     private static final Logger LOG = Global.getLogger(PoliticalMapTerrainPlugin.class);
 
-    // Cell outlines keyed by system id, updated incrementally as systems gain or
+    // Cell geometry keyed by system id, updated incrementally as systems gain or
     // lose access - only the cells near a change are rebuilt, not the whole map.
+    // Holds both the inset province outlines (the fills/outlines) and the raw cell
+    // edges (the adjacency graph the classification reads).
     private final PoliticalMapGeometryCache geometryCache = new PoliticalMapGeometryCache();
 
     // Drawables derived from the outlines. Filled cells (owned: faction or
@@ -106,6 +140,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private List<FilledCell> filledCells;
     private List<OutlineCell> outlineCells;
     private Color neutralColor;
+    // The verification overlay's classified cell edges, flattened into two
+    // GL_LINES vertex runs ([x, y, x, y, ...], two points per segment) grouped by
+    // class so each run draws under a single colour.
+    private float[] boundaryEdgeVertices = NO_VERTICES;
+    private float[] interiorSeamEdgeVertices = NO_VERTICES;
     // The revisions each half of the cache was built against. Geometry rebuilds
     // only when the reachable-system set changes; the drawables rebuild on a
     // content change (settings, discovery) or whenever the geometry itself was
@@ -146,7 +185,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     public void renderOnMap(float factor, float alphaMult) {
         rebuildIfStale();
         logFirstRenderOnce(factor, alphaMult);
-        if (filledCells.isEmpty() && outlineCells.isEmpty()) {
+        if (filledCells.isEmpty() && outlineCells.isEmpty()
+                && boundaryEdgeVertices.length == 0 && interiorSeamEdgeVertices.length == 0) {
             return;
         }
 
@@ -165,6 +205,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         KmuProfiling.getProfiler().measure("politicalMap.render", () -> {
             drawFills(factor, alphaMult);
             drawOutlines(factor, alphaMult);
+            drawClassifiedEdges(factor, alphaMult);
         });
 
         GL11.glPopAttrib();
@@ -176,7 +217,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private void drawFills(float factor, float alphaMult) {
         for (var cell : filledCells) {
             GlColor.set(cell.color(), alphaMult * cell.fillAlpha());
-            drawPolygon(GL11.GL_TRIANGLE_FAN, cell.outline(), factor);
+            drawVertexRun(GL11.GL_TRIANGLE_FAN, cell.outline(), factor);
         }
     }
 
@@ -190,17 +231,34 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
         for (var cell : filledCells) {
             GlColor.set(cell.color(), alphaMult * cell.borderAlpha());
-            drawPolygon(GL11.GL_LINE_LOOP, cell.outline(), factor);
+            drawVertexRun(GL11.GL_LINE_LOOP, cell.outline(), factor);
         }
         for (var cell : outlineCells) {
             GlColor.set(neutralColor, alphaMult * cell.borderAlpha());
-            drawPolygon(GL11.GL_LINE_LOOP, cell.outline(), factor);
+            drawVertexRun(GL11.GL_LINE_LOOP, cell.outline(), factor);
         }
     }
 
+    // Strokes the classified cell edges in two passes, one colour each, so the
+    // adjacency classification reads directly off the map. Each run is a flat
+    // GL_LINES vertex list (two points per edge) already grouped by class. This
+    // is the verification overlay for the region work, layered over the outlines.
+    private void drawClassifiedEdges(float factor, float alphaMult) {
+        GL11.glEnable(GL11.GL_LINE_SMOOTH);
+        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+        GL11.glLineWidth(OUTLINE_LINE_WIDTH);
+
+        GlColor.set(BOUNDARY_TINT, alphaMult);
+        drawVertexRun(GL11.GL_LINES, boundaryEdgeVertices, factor);
+        GlColor.set(INTERIOR_SEAM_TINT, alphaMult);
+        drawVertexRun(GL11.GL_LINES, interiorSeamEdgeVertices, factor);
+    }
+
     // Emits one flat [x, y, x, y, ...] vertex run under the given GL primitive,
-    // scaling each world coordinate into map space.
-    private static void drawPolygon(int mode, float[] vertices, float factor) {
+    // scaling each world coordinate into map space. Serves every primitive the
+    // overlay draws: GL_TRIANGLE_FAN fills, GL_LINE_LOOP outlines, and GL_LINES
+    // classified-edge segments.
+    private static void drawVertexRun(int mode, float[] vertices, float factor) {
         GL11.glBegin(mode);
         for (var v = 0; v < vertices.length; v += 2) {
             GL11.glVertex2f(vertices[v] * factor, vertices[v + 1] * factor);
@@ -257,11 +315,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         if (rebuiltCells || filledCells == null || contentRevision != lastContentRevision) {
             rebuildDrawables();
             lastContentRevision = contentRevision;
-            // Result trace: the cell counts the overlay will actually paint, so a
-            // wrong or empty render can be confirmed against what was built.
+            // Result trace: the counts the overlay will actually paint, so a wrong
+            // or empty render can be confirmed against what was built.
             LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
                     + " filledCells=" + filledCells.size()
                     + " outlineCells=" + outlineCells.size()
+                    + " boundaryEdges=" + boundaryEdgeVertices.length / FLOATS_PER_EDGE
+                    + " interiorSeamEdges=" + interiorSeamEdgeVertices.length / FLOATS_PER_EDGE
                     + " geometryRebuilt=" + rebuiltCells);
         }
     }
@@ -274,6 +334,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         if (filledCells == null) {
             filledCells = new ArrayList<>();
             outlineCells = new ArrayList<>();
+            boundaryEdgeVertices = NO_VERTICES;
+            interiorSeamEdgeVertices = NO_VERTICES;
             neutralColor = Color.GRAY;
         }
     }
@@ -294,8 +356,9 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     // Partitions the cached outlines into filled (owned) and outline-only
     // (decivilised/empty) draw lists, baking in each cell's color and the
-    // opacities resolved from the current settings. Flattens each outline to a
-    // GL-ready vertex run here. Reads the opacity settings once, not per cell.
+    // opacities resolved from the current settings, then builds the classified-
+    // edge overlay runs. Flattens each outline to a GL-ready vertex run here.
+    // Reads the opacity settings once, not per cell.
     private void rebuildDrawables() {
         KmuProfiling.getProfiler().measure("politicalMap.rebuildDrawables", () -> {
             var isShowingUninhabited = KmuLunaSettings.isShowUninhabitedSystemsEnabled();
@@ -333,6 +396,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                             opacity -> outlineCells.add(new OutlineCell(flat, (float) opacity)));
                 }
             }
+
+            var classified = EdgeClassifier.classifyEdges(
+                    geometryCache.getCellEdgesBySystemId(), ownerBySystemId);
+            boundaryEdgeVertices = flattenEdges(classified, EdgeClass.BOUNDARY);
+            interiorSeamEdgeVertices = flattenEdges(classified, EdgeClass.INTERIOR_SEAM);
         });
     }
 
@@ -365,6 +433,30 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         return OptionalDouble.empty();
     }
 
+    // Flattens the edges of one class into a GL_LINES vertex run
+    // ([x1, y1, x2, y2, ...]). Sized in a first pass so the run is a single exact
+    // array rather than a growing list boxed per coordinate.
+    private static float[] flattenEdges(List<ClassifiedEdge> edges, EdgeClass edgeClass) {
+        var matching = 0;
+        for (var edge : edges) {
+            if (edge.edgeClass() == edgeClass) {
+                matching++;
+            }
+        }
+        var flat = new float[matching * FLOATS_PER_EDGE];
+        var index = 0;
+        for (var edge : edges) {
+            if (edge.edgeClass() != edgeClass) {
+                continue;
+            }
+            flat[index++] = (float) edge.x1();
+            flat[index++] = (float) edge.y1();
+            flat[index++] = (float) edge.x2();
+            flat[index++] = (float) edge.y2();
+        }
+        return flat;
+    }
+
     // Flattens a polygon's {x, y} vertices into a [x, y, x, y, ...] run.
     private static float[] flattenVertices(List<double[]> polygon) {
         var flat = new float[polygon.size() * 2];
@@ -386,6 +478,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         hasLoggedFirstRender = true;
         LOG.debug("Political map overlay renderOnMap fired: filledCells="
                 + filledCells.size() + " outlineCells=" + outlineCells.size()
+                + " boundaryEdges=" + boundaryEdgeVertices.length / FLOATS_PER_EDGE
+                + " interiorSeamEdges=" + interiorSeamEdgeVertices.length / FLOATS_PER_EDGE
                 + " factor=" + factor + " alphaMult=" + alphaMult);
     }
 
