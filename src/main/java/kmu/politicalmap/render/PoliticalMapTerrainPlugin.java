@@ -55,10 +55,11 @@ import java.util.OptionalDouble;
  * in-progress HOI4-style region work: every Voronoi edge between two cells is
  * classified as an interior seam (the same faction holds both sides) or a
  * boundary (a different owner, unowned space, or the map frontier), and the
- * classified edges are stroked - boundary edges white, interior seams magenta -
- * so a wrong classification is visible on the map. These are deliberately loud
- * placeholder tints layered over the untouched province outlines, not a border
- * redesign; the classified edges sit on the true cell borders (not the inset
+ * classified edges are stroked - interior seams solid yellow, boundaries a faint
+ * dashed white - so a wrong classification is visible on the map. These are
+ * deliberately loud debug placeholders layered over the untouched province
+ * outlines, not a border redesign; the classified edges sit on the true cell
+ * borders (not the inset
  * outline), since two same-faction cells share a true Voronoi edge that the inset
  * channel would otherwise hide. Later steps turn this classification into merged
  * faction blocs - raw-cell fills and real seam/border strokes - at which point
@@ -95,12 +96,19 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private static final float FACTION_FILL_ALPHA = 0.4f;
     private static final float FACTION_BORDER_ALPHA = 1f;
 
-    // Verification-overlay tints: a national boundary edge in white, an interior
-    // seam (same faction both sides) in magenta, so the adjacency classification
-    // can be eyeballed on the map. Deliberately loud placeholders layered over the
-    // province outlines - the finished region render restyles borders properly.
-    private static final Color BOUNDARY_TINT = Color.WHITE;
-    private static final Color INTERIOR_SEAM_TINT = Color.MAGENTA;
+    // Verification-overlay tints, sitting over the province outlines so the
+    // adjacency classification can be eyeballed. Interior seams (same faction both
+    // sides) draw solid yellow as the primary signal; national boundaries draw as
+    // a faint dashed white so they recede - they are already implied by where the
+    // faction outlines are. Deliberately loud debug placeholders; the finished
+    // region render restyles both borders properly.
+    private static final Color INTERIOR_SEAM_TINT = Color.YELLOW;
+    private static final Color BOUNDARY_TINT = new Color(1f, 1f, 1f, 0.1f);
+    // Line-stipple pattern for the dashed boundary edges: 0x00FF is eight bits on
+    // then eight off, and the factor scales each run into a readable dash length
+    // in screen pixels (stipple is applied post-transform, so zoom-independent).
+    private static final short BOUNDARY_DASH_PATTERN = (short) 0x00FF;
+    private static final int BOUNDARY_DASH_FACTOR = 2;
 
     // Shared empty vertex run, so a map with no classified edges of a class never
     // dereferences null and allocates nothing.
@@ -246,17 +254,22 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         }
     }
 
-    // Strokes the classified cell edges in two passes, one colour each, so the
+    // Strokes the classified cell edges in two passes, one style each, so the
     // adjacency classification reads directly off the map. Each run is a flat
     // GL_LINES vertex list (two points per edge) already grouped by class. This
-    // is the verification overlay for the region work, layered over the outlines.
+    // is the verification overlay for the region work, layered over the outlines:
+    // boundaries faint and dashed (line stipple), interior seams solid.
     private void drawClassifiedEdges(float factor, float alphaMult) {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
         GL11.glLineWidth(OUTLINE_LINE_WIDTH);
 
+        GL11.glEnable(GL11.GL_LINE_STIPPLE);
+        GL11.glLineStipple(BOUNDARY_DASH_FACTOR, BOUNDARY_DASH_PATTERN);
         GlColor.set(BOUNDARY_TINT, alphaMult);
         drawVertexRun(GL11.GL_LINES, boundaryEdgeVertices, factor);
+        GL11.glDisable(GL11.GL_LINE_STIPPLE);
+
         GlColor.set(INTERIOR_SEAM_TINT, alphaMult);
         drawVertexRun(GL11.GL_LINES, interiorSeamEdgeVertices, factor);
     }
