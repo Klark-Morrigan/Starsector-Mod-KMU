@@ -42,10 +42,11 @@ class SectorPoliticsIntegrationTest {
 
             var owners = SectorPolitics.resolveDominantOwnerBySystemId(sector);
 
-            // The owner carries both the id the renderer styles by and the bright
-            // UI color the cell is filled and outlined in.
+            // The owner carries the id the renderer styles by, the bright UI color
+            // the cell is filled and outlined in, and the dark UI color its
+            // interior seams are stroked in.
             assertThat(owners).containsEntry("owned-system",
-                    new DominantOwner("hegemony", HEGEMONY_BRIGHT));
+                    new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -58,7 +59,7 @@ class SectorPoliticsIntegrationTest {
             // the renderer's fill-alpha rule dims on.
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
                     .containsEntry("frontier-system",
-                            new DominantOwner("independent", NEUTRAL_BASE));
+                            new DominantOwner("independent", NEUTRAL_BASE, dark(NEUTRAL_BASE)));
         }
 
         @Test
@@ -89,7 +90,8 @@ class SectorPoliticsIntegrationTest {
                     hiddenMarket(hegemony, 5));
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
-                    .containsEntry("hidden-system", new DominantOwner("hegemony", HEGEMONY_BRIGHT));
+                    .containsEntry("hidden-system",
+                            new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -103,7 +105,8 @@ class SectorPoliticsIntegrationTest {
                     hiddenMarket(hegemony, 5), visibleMarket(tritachyon, 2));
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
-                    .containsEntry("mixed-system", new DominantOwner("tritachyon", TRITACHYON_BRIGHT));
+                    .containsEntry("mixed-system",
+                            new DominantOwner("tritachyon", TRITACHYON_BRIGHT, dark(TRITACHYON_BRIGHT)));
         }
 
         @Test
@@ -117,7 +120,7 @@ class SectorPoliticsIntegrationTest {
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
                     .containsEntry("hidden-faction-system",
-                            new DominantOwner("zea_dusk", HEGEMONY_BRIGHT));
+                            new DominantOwner("zea_dusk", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -144,7 +147,8 @@ class SectorPoliticsIntegrationTest {
                     revealedColonyAwaitingApproach(fsf, 5));
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
-                    .containsEntry("revealed-system", new DominantOwner("aEP_FSF", HEGEMONY_BRIGHT));
+                    .containsEntry("revealed-system",
+                            new DominantOwner("aEP_FSF", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -158,7 +162,8 @@ class SectorPoliticsIntegrationTest {
                     visibleMarket(hegemony, 5), planetMarket(tritachyon, 5));
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
-                    .containsEntry("tie-system", new DominantOwner("tritachyon", TRITACHYON_BRIGHT));
+                    .containsEntry("tie-system",
+                            new DominantOwner("tritachyon", TRITACHYON_BRIGHT, dark(TRITACHYON_BRIGHT)));
         }
 
         @Test
@@ -171,7 +176,7 @@ class SectorPoliticsIntegrationTest {
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector))
                     .containsEntry("discovered-system",
-                            new DominantOwner("knights_of_selkie", HEGEMONY_BRIGHT));
+                            new DominantOwner("knights_of_selkie", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
     }
 
@@ -292,7 +297,16 @@ class SectorPoliticsIntegrationTest {
         var factionMock = mock(FactionAPI.class);
         when(factionMock.getId()).thenReturn(id);
         when(factionMock.getBrightUIColor()).thenReturn(bright);
+        when(factionMock.getDarkUIColor()).thenReturn(dark(bright));
         return factionMock;
+    }
+
+    // The dark UI shade the faction stub returns for its seam color, distinct
+    // from the bright fill/border color so a test can tell the two apart. Any
+    // stable transform does; the pipeline only forwards whichever color the
+    // faction hands back, it does not compute the shade.
+    private static Color dark(Color bright) {
+        return bright.darker();
     }
 
     // Wires a sector with one system whose economy holds the given markets, the

@@ -25,10 +25,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link PoliticalMapGeometryCache}: the first update builds outlines for
- * the reachable systems and skips inaccessible ones; a later update rebuilds
- * only the cells near a changed system, leaving distant ones in place (asserted
- * by object identity); and a removed system's outline is dropped.
+ * Pins {@link PoliticalMapGeometryCache}: the first update builds cells for the
+ * reachable systems and skips inaccessible ones; a later update rebuilds only the
+ * cells near a changed system, leaving distant ones in place (asserted by object
+ * identity); and a removed system's cell is dropped.
  */
 final class PoliticalMapGeometryCacheTest {
     // Comfortably beyond 2 * MAX_CELL_RADIUS (8000), so changes near one do not
@@ -39,7 +39,7 @@ final class PoliticalMapGeometryCacheTest {
     class UpdateFromSector {
 
         @Test
-        void updateBuildsOutlinesForReachableSystemsAndSkipsInaccessibleOnes() {
+        void updateBuildsCellsForReachableSystemsAndSkipsInaccessibleOnes() {
             var cache = new PoliticalMapGeometryCache();
 
             cache.updateFromSector(sectorOf(
@@ -47,35 +47,35 @@ final class PoliticalMapGeometryCacheTest {
                     accessibleSystem("b", 4000, 0),
                     inaccessibleSystem("hidden", 8000, 0)));
 
-            assertThat(cache.getOutlineBySystemId()).containsOnlyKeys("a", "b");
-            assertThat(cache.getOutlineBySystemId().get("a")).isNotEmpty();
+            assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a", "b");
+            assertThat(cache.getCellEdgesBySystemId().get("a")).isNotEmpty();
         }
 
         @Test
         void updateLeavesDistantCellsUntouchedWhenASystemIsAdded() {
             var cache = new PoliticalMapGeometryCache();
             cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)));
-            var distantBefore = cache.getOutlineBySystemId().get("b");
+            var distantBefore = cache.getCellEdgesBySystemId().get("b");
 
-            // Add a system next to "a"; "b" is far away, so its outline must be the
+            // Add a system next to "a"; "b" is far away, so its cell must be the
             // very same object - proof it was not recomputed.
             cache.updateFromSector(sectorOf(
                     accessibleSystem("a", 0, 0),
                     accessibleSystem("b", FAR, 0),
                     accessibleSystem("c", 100, 0)));
 
-            assertThat(cache.getOutlineBySystemId()).containsKey("c");
-            assertThat(cache.getOutlineBySystemId().get("b")).isSameAs(distantBefore);
+            assertThat(cache.getCellEdgesBySystemId()).containsKey("c");
+            assertThat(cache.getCellEdgesBySystemId().get("b")).isSameAs(distantBefore);
         }
 
         @Test
-        void updateDropsTheOutlineOfASystemThatLosesAccess() {
+        void updateDropsTheCellOfASystemThatLosesAccess() {
             var cache = new PoliticalMapGeometryCache();
             cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)));
 
             cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0)));
 
-            assertThat(cache.getOutlineBySystemId()).containsOnlyKeys("a");
+            assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a");
         }
 
         @Test
@@ -125,7 +125,7 @@ final class PoliticalMapGeometryCacheTest {
                     accessibleSystem("a", 0, 0),
                     decivilisedUnreachableSystem("ruin", 4000, 0)));
 
-            assertThat(cache.getOutlineBySystemId()).containsOnlyKeys("a", "ruin");
+            assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a", "ruin");
         }
     }
 

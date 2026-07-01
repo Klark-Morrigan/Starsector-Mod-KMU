@@ -68,8 +68,13 @@ public final class SectorPolitics {
             if (faction == null) {
                 continue;
             }
+            // The seam color is the faction's own authored dark UI color rather
+            // than a darkened bright color: each .faction file specifies its dark
+            // shade directly, so borrowing it keeps interior province lines true
+            // to the faction palette.
             ownerBySystemId.put(system.getId(),
-                    new DominantOwner(dominantFactionId, faction.getBrightUIColor()));
+                    new DominantOwner(dominantFactionId,
+                            faction.getBrightUIColor(), faction.getDarkUIColor()));
         }
         return ownerBySystemId;
     }

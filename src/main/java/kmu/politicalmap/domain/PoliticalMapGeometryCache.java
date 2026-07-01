@@ -3,7 +3,6 @@ package kmu.politicalmap.domain;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.math.geometry.Polygons;
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
 
@@ -22,38 +21,31 @@ import java.util.Set;
  * Holds the political map's cell outlines, keyed by system id, and updates them
  * incrementally as systems gain or lose access.
  *
- * <p>The cells are a Voronoi partition of the on-map systems, each inset into
- * a rounded province outline. Recomputing the whole partition is O(n^3), but a
- * Voronoi cell is local: adding or removing one site only changes that site's
- * cell and the cells within {@code 2 * MAX_CELL_RADIUS} of it - every farther
- * cell is provably untouched (their shared bisector lies beyond the cell's
- * bounding radius). So {@link #updateFromSector} diffs the reachable set against
- * the cache and rebuilds only the affected outlines, leaving distant ones in
- * place. The first update (empty cache) rebuilds everything, since every system
- * is "added".
+ * <p>The cells are a Voronoi partition of the on-map systems. Recomputing the
+ * whole partition is O(n^3), but a Voronoi cell is local: adding or removing one
+ * site only changes that site's cell and the cells within
+ * {@code 2 * MAX_CELL_RADIUS} of it - every farther cell is provably untouched
+ * (their shared bisector lies beyond the cell's bounding radius). So
+ * {@link #updateFromSector} diffs the reachable set against the cache and rebuilds
+ * only the affected cells, leaving distant ones in place. The first update (empty
+ * cache) rebuilds everything, since every system is "added".
  *
- * <p>Alongside each system's drawn outline the cache keeps its raw cell as a
- * list of {@link CellEdge}s - the cell-adjacency graph. Each edge is tagged with
- * the neighbouring system across it (or none, for a frontier into empty space),
- * which the render layer classifies into interior seams and national boundaries
- * once it knows who owns what. The raw cells, not the inset outlines, carry the
- * adjacency, since two same-faction cells share a true Voronoi edge that the
- * inset channel would otherwise hide.
+ * <p>Each system's cell is kept as a list of {@link CellEdge}s - the raw convex
+ * cell and, at once, the cell-adjacency graph. Every edge is tagged with the
+ * neighbouring system across it (or none, for a frontier into empty space), which
+ * the render layer classifies into interior seams and national boundaries once it
+ * knows who owns what, then shapes into merged faction blocs. The cache holds the
+ * raw cells rather than any shaped outline: the inset that leaves a bloc its
+ * border channel is ownership-dependent - two same-faction cells fuse along their
+ * shared edge - so it belongs to the render pass, not to this ownership-agnostic
+ * geometry that rebuilds only on an access change.
  *
  * <p>Geometry only, no GL: the partition can be reasoned about and tested on a
- * stub sector, independent of how the outlines are drawn.
+ * stub sector, independent of how the cells are drawn.
  */
 public final class PoliticalMapGeometryCache {
     // How far a system's cell may reach - its zone of control.
     private static final double MAX_CELL_RADIUS = 4000.0;
-    // Inset from the true cell edge, so neighbours leave a uniform channel.
-    private static final double BORDER_OFFSET = 150.0;
-    // Fixed corner radius and arc segments for the rounded outline.
-    private static final double CORNER_ROUNDING_RADIUS = 300.0;
-    private static final int CORNER_ROUNDING_SEGMENTS = 4;
-    // Corners sharper than this are chamfered flat instead of rounded: a rounded
-    // arc on an acute Voronoi sliver still reads as a spike.
-    private static final double BEVEL_BELOW_ANGLE_DEGREES = 45.0;
     // A change at one site can only alter cells whose site is within twice the
     // cell radius (their bisector with the changed site reaches the cell).
     private static final double NEIGHBOURHOOD_RADIUS = 2.0 * MAX_CELL_RADIUS;
@@ -61,10 +53,9 @@ public final class PoliticalMapGeometryCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapGeometryCache.class);
 
     private final Map<String, double[]> siteBySystemId = new LinkedHashMap<>();
-    private final Map<String, List<double[]>> outlineBySystemId = new LinkedHashMap<>();
-    // The raw cell of each system as adjacency edges, rebuilt in lockstep with
-    // its outline so the two never drift: an affected cell's edges are recomputed
-    // while distant cells keep their existing lists (and their adjacency).
+    // The raw cell of each system as adjacency edges: an affected cell's edges are
+    // recomputed on an access change while distant cells keep their existing lists
+    // (and their adjacency), so untouched cells stay the very same object.
     private final Map<String, List<CellEdge>> cellEdgesBySystemId = new LinkedHashMap<>();
 
     /**
@@ -108,7 +99,6 @@ public final class PoliticalMapGeometryCache {
         siteBySystemId.clear();
         siteBySystemId.putAll(newSites);
         for (var id : removed) {
-            outlineBySystemId.remove(id);
             cellEdgesBySystemId.remove(id);
         }
         // Ordered site list plus its parallel id list: the labelled cell builder
@@ -121,38 +111,24 @@ public final class PoliticalMapGeometryCache {
         for (var i = 0; i < allSiteIds.size(); i++) {
             indexBySystemId.put(allSiteIds.get(i), i);
         }
-        var recomputedVertices = 0;
         var recomputedCellEdges = 0;
         for (var id : affected) {
             var cell = VoronoiCellBuilder.buildLabelledCell(
                     indexBySystemId.get(id), allSites, MAX_CELL_RADIUS);
-            var outline = buildOutline(cell.vertices());
             var edges = buildCellEdges(cell, allSiteIds);
-            outlineBySystemId.put(id, outline);
             cellEdgesBySystemId.put(id, edges);
-            recomputedVertices += outline.size();
             recomputedCellEdges += edges.size();
         }
 
-        // The geometric diff: which systems entered/left the map, how many outlines
-        // were recomputed and at what vertex/edge cost, and how long it took. The
-        // primary trace for a province that is misshapen, missing, or left behind
-        // after an access change, and for how heavy a rebuild the change triggered.
+        // The geometric diff: which systems entered/left the map, how many cells
+        // were recomputed and at what edge cost, and how long it took. The primary
+        // trace for a cell that is misshapen, missing, or left behind after an
+        // access change, and for how heavy a rebuild the change triggered.
         LOG.debug("Political map geometry rebuilt; added=" + added.size()
-                + " removed=" + removed.size() + " recomputedOutlines=" + affected.size()
-                + " recomputedVertices=" + recomputedVertices
+                + " removed=" + removed.size() + " recomputedCells=" + affected.size()
                 + " recomputedCellEdges=" + recomputedCellEdges
                 + " totalSites=" + siteBySystemId.size()
                 + " took=" + Timings.formatMillis(System.nanoTime() - start));
-    }
-
-    /**
-     * @return the cached province outlines keyed by system id; each outline is a
-     *         list of {x, y} vertices (empty for a cell consumed by the inset).
-     *         An unmodifiable live view.
-     */
-    public Map<String, List<double[]>> getOutlineBySystemId() {
-        return Collections.unmodifiableMap(outlineBySystemId);
     }
 
     /**
@@ -197,14 +173,6 @@ public final class PoliticalMapGeometryCache {
             }
         }
         return near;
-    }
-
-    // One system's province outline from its raw cell: inset into a channel and
-    // its corners rounded.
-    private static List<double[]> buildOutline(List<double[]> cell) {
-        var inset = Polygons.insetConvexPolygon(cell, BORDER_OFFSET);
-        return Polygons.roundCorners(inset, CORNER_ROUNDING_RADIUS, CORNER_ROUNDING_SEGMENTS,
-                Math.toRadians(BEVEL_BELOW_ANGLE_DEGREES));
     }
 
     // Turns one labelled cell into its adjacency edges: each edge as a world-space
