@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
 import kmlib.opengl.GlColor;
+import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.PoliticalMapRefresh;
@@ -216,11 +217,16 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
         // Time only the per-frame GL emission; the surrounding state push/pop is
-        // negligible and the cache checks above are deliberately outside.
-        KmuProfiling.getProfiler().measure("politicalMap.render", () -> {
-            drawFills(factor, alphaMult);
-            drawOutlines(factor, alphaMult);
-            drawClassifiedEdges(factor, alphaMult);
+        // negligible and the cache checks above are deliberately outside. Broken
+        // into the three passes so the profiler shows which one costs, but not
+        // logged - this runs every frame the map is open, so only the profiler's
+        // accumulated view is affordable here, never a per-frame log line.
+        var profiler = KmuProfiling.getProfiler();
+        profiler.measure("politicalMap.render", () -> {
+            profiler.measure("politicalMap.render.fills", () -> drawFills(factor, alphaMult));
+            profiler.measure("politicalMap.render.outlines", () -> drawOutlines(factor, alphaMult));
+            profiler.measure("politicalMap.render.classifiedEdges",
+                    () -> drawClassifiedEdges(factor, alphaMult));
         });
 
         GL11.glPopAttrib();
@@ -344,16 +350,19 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // null check forces the build regardless of how the counters line up.
         var contentRevision = computeContentRevision();
         if (rebuiltCells || filledCells == null || contentRevision != lastContentRevision) {
+            var drawablesStart = System.nanoTime();
             rebuildDrawables();
             lastContentRevision = contentRevision;
-            // Result trace: the counts the overlay will actually paint, so a wrong
-            // or empty render can be confirmed against what was built.
+            // Result trace: the counts the overlay will actually paint and the
+            // whole-rebuild time, so a wrong or empty render can be confirmed
+            // against what was built and how long it cost.
             LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
                     + " filledCells=" + filledCells.size()
                     + " outlineCells=" + outlineCells.size()
                     + " boundaryEdges=" + boundaryEdgeVertices.length / FLOATS_PER_EDGE
                     + " interiorSeamEdges=" + interiorSeamEdgeVertices.length / FLOATS_PER_EDGE
-                    + " geometryRebuilt=" + rebuiltCells);
+                    + " geometryRebuilt=" + rebuiltCells
+                    + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
         }
     }
 
@@ -391,7 +400,9 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // edge overlay runs. Flattens each outline to a GL-ready vertex run here.
     // Reads the opacity settings once, not per cell.
     private void rebuildDrawables() {
-        KmuProfiling.getProfiler().measure("politicalMap.rebuildDrawables", () -> {
+        var profiler = KmuProfiling.getProfiler();
+        profiler.measure("politicalMap.rebuildDrawables", () -> {
+            var sector = Global.getSector();
             var isShowingUninhabited = KmuLunaSettings.isShowUninhabitedSystemsEnabled();
             var independentBorderOpacity = KmuLunaSettings.getIndependentBorderOpacity();
             var independentFillOpacity = KmuLunaSettings.getIndependentFillOpacity();
@@ -400,11 +411,22 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             filledCells = new ArrayList<>();
             outlineCells = new ArrayList<>();
 
-            var ownerBySystemId =
-                    SectorPolitics.resolveDominantOwnerBySystemId(Global.getSector());
-            var decivilisedSystemIds =
-                    DecivilisedPresence.findRevealedDecivilisedSystemIds(Global.getSector());
-            neutralColor = SectorPolitics.resolveNeutralColor(Global.getSector());
+            // The politics scan walks the whole economy - the priciest content
+            // step - so it is profiled and timed on its own, and the owner count
+            // logged independent of the profiler's accumulated view.
+            var politicsStart = System.nanoTime();
+            var ownerBySystemId = profiler.measure("politicalMap.resolvePolitics",
+                    () -> SectorPolitics.resolveDominantOwnerBySystemId(sector));
+            LOG.debug("Political map politics resolved; ownedSystems=" + ownerBySystemId.size()
+                    + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
+
+            var decivilisedStart = System.nanoTime();
+            var decivilisedSystemIds = profiler.measure("politicalMap.findDecivilised",
+                    () -> DecivilisedPresence.findRevealedDecivilisedSystemIds(sector));
+            LOG.debug("Political map decivilised scan; systems=" + decivilisedSystemIds.size()
+                    + " took=" + Timings.formatMillis(System.nanoTime() - decivilisedStart));
+
+            neutralColor = SectorPolitics.resolveNeutralColor(sector);
 
             for (var entry
                     : geometryCache.getOutlineBySystemId().entrySet()) {
@@ -428,10 +450,16 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 }
             }
 
-            var classified = EdgeClassifier.classifyEdges(
-                    geometryCache.getCellEdgesBySystemId(), ownerBySystemId);
+            var classifyStart = System.nanoTime();
+            var classified = profiler.measure("politicalMap.classifyEdges",
+                    () -> EdgeClassifier.classifyEdges(
+                            geometryCache.getCellEdgesBySystemId(), ownerBySystemId));
             boundaryEdgeVertices = flattenEdges(classified, EdgeClass.BOUNDARY);
             interiorSeamEdgeVertices = flattenEdges(classified, EdgeClass.INTERIOR_SEAM);
+            LOG.debug("Political map edges classified; total=" + classified.size()
+                    + " boundary=" + boundaryEdgeVertices.length / FLOATS_PER_EDGE
+                    + " interior=" + interiorSeamEdgeVertices.length / FLOATS_PER_EDGE
+                    + " took=" + Timings.formatMillis(System.nanoTime() - classifyStart));
         });
     }
 

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Polygons;
 import kmlib.math.geometry.VoronoiCellBuilder;
+import kmlib.profiling.Timings;
 
 import org.apache.log4j.Logger;
 
@@ -74,6 +75,9 @@ public final class PoliticalMapGeometryCache {
      * @param sector the sector to read; null clears nothing and does nothing
      */
     public void updateFromSector(SectorAPI sector) {
+        // Timed independently of the profiler so the per-update cost (the whole
+        // diff, or a full rebuild) reads straight from the log.
+        var start = System.nanoTime();
         var newSites = collectAccessibleSites(sector);
 
         var added = new LinkedHashSet<String>(newSites.keySet());
@@ -83,8 +87,10 @@ public final class PoliticalMapGeometryCache {
         if (added.isEmpty() && removed.isEmpty()) {
             // A refresh was requested but the reachable set is identical (e.g. a
             // fingerprint collision, or a non-access change). Logged so a "why
-            // did nothing rebuild" question has an answer.
-            LOG.debug("Political map geometry unchanged; reachableSites=" + newSites.size());
+            // did nothing rebuild" question has an answer - and the diff cost
+            // (scanning every system) shows even when nothing rebuilds.
+            LOG.debug("Political map geometry unchanged; reachableSites=" + newSites.size()
+                    + " took=" + Timings.formatMillis(System.nanoTime() - start));
             return;
         }
 
@@ -115,19 +121,29 @@ public final class PoliticalMapGeometryCache {
         for (var i = 0; i < allSiteIds.size(); i++) {
             indexBySystemId.put(allSiteIds.get(i), i);
         }
+        var recomputedVertices = 0;
+        var recomputedCellEdges = 0;
         for (var id : affected) {
             var cell = VoronoiCellBuilder.buildLabelledCell(
                     indexBySystemId.get(id), allSites, MAX_CELL_RADIUS);
-            outlineBySystemId.put(id, buildOutline(cell.vertices()));
-            cellEdgesBySystemId.put(id, buildCellEdges(cell, allSiteIds));
+            var outline = buildOutline(cell.vertices());
+            var edges = buildCellEdges(cell, allSiteIds);
+            outlineBySystemId.put(id, outline);
+            cellEdgesBySystemId.put(id, edges);
+            recomputedVertices += outline.size();
+            recomputedCellEdges += edges.size();
         }
 
-        // The geometric diff: which systems entered/left the map and how many
-        // outlines were recomputed. The primary trace for a province that is
-        // misshapen, missing, or left behind after an access change.
+        // The geometric diff: which systems entered/left the map, how many outlines
+        // were recomputed and at what vertex/edge cost, and how long it took. The
+        // primary trace for a province that is misshapen, missing, or left behind
+        // after an access change, and for how heavy a rebuild the change triggered.
         LOG.debug("Political map geometry rebuilt; added=" + added.size()
                 + " removed=" + removed.size() + " recomputedOutlines=" + affected.size()
-                + " totalSites=" + siteBySystemId.size());
+                + " recomputedVertices=" + recomputedVertices
+                + " recomputedCellEdges=" + recomputedCellEdges
+                + " totalSites=" + siteBySystemId.size()
+                + " took=" + Timings.formatMillis(System.nanoTime() - start));
     }
 
     /**
