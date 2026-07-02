@@ -14,10 +14,10 @@ import java.awt.Color;
  * color - and the player points each map element (fill, outer border, inner seam)
  * at one of them through the "Faction ... color" settings. Naming them by palette
  * slot rather than by element keeps the record neutral about which element uses
- * which, since that is now the player's choice. Retaining the id beside the colors
- * keeps the owner available for per-owner styling (dimming independent-held space,
- * for one) and later per-owner behaviour, decided off the same dominance the fill
- * was.
+ * which, since that pairing is the player's choice. Retaining the id beside the
+ * colors keeps the owner available for per-owner styling (dimming independent-held
+ * space, for one) and later per-owner behaviour, decided off the same dominance the
+ * fill was.
  */
 public record DominantOwner(String factionId, Color primaryColor, Color secondaryColor) {
 }

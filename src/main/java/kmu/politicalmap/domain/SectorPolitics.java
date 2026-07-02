@@ -71,9 +71,8 @@ public final class SectorPolitics {
             // The two palette slots are the faction's own authored UI shades: the
             // bright color as primary and the dark color as secondary. Each
             // .faction file specifies both directly, so a map element pointed at
-            // either stays true to the faction palette rather than a mechanical
-            // darkening. Which element uses which is the player's choice, made
-            // downstream in the render layer.
+            // either stays true to the faction palette. Which element uses which is
+            // the player's choice, made downstream in the render layer.
             ownerBySystemId.put(system.getId(),
                     new DominantOwner(dominantFactionId,
                             faction.getBrightUIColor(), faction.getDarkUIColor()));

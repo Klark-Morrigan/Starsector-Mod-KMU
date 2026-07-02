@@ -1,6 +1,5 @@
 package kmu.politicalmap.render;
 
-import kmu.politicalmap.domain.DominantOwner;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -14,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 /**
  * Pins the contracts of the terrain that are testable off-engine: the engine-
  * layer override the map relies on, and the pure palette-color pick that maps a
- * player's color choice to one of an owner's two shades (or no color). The GL
+ * player's color choice to one of a bloc's two shades (or no color). The GL
  * emission itself runs only in-engine and is out of scope here.
  *
  * <p>{@code BaseTerrain.getActiveLayers} throws by default, and the engine calls
@@ -24,8 +23,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  */
 final class PoliticalMapTerrainPluginTest {
 
-    private static final DominantOwner OWNER =
-            new DominantOwner("hegemony", Color.RED, Color.BLUE);
+    // Two distinct shades so a pick can be told apart from its counterpart.
+    private static final Color PRIMARY = Color.RED;
+    private static final Color SECONDARY = Color.BLUE;
 
     @Nested
     class GetActiveLayers {
@@ -45,13 +45,13 @@ final class PoliticalMapTerrainPluginTest {
         @Test
         void pickPaletteColorReturnsThePrimaryShadeForAPrimaryChoice() {
             assertThat(PoliticalMapTerrainPlugin.pickPaletteColor(
-                    FactionPaletteChoice.PRIMARY, OWNER)).isEqualTo(OWNER.primaryColor());
+                    FactionPaletteChoice.PRIMARY, PRIMARY, SECONDARY)).isEqualTo(PRIMARY);
         }
 
         @Test
         void pickPaletteColorReturnsTheSecondaryShadeForASecondaryChoice() {
             assertThat(PoliticalMapTerrainPlugin.pickPaletteColor(
-                    FactionPaletteChoice.SECONDARY, OWNER)).isEqualTo(OWNER.secondaryColor());
+                    FactionPaletteChoice.SECONDARY, PRIMARY, SECONDARY)).isEqualTo(SECONDARY);
         }
 
         @Test
@@ -59,7 +59,7 @@ final class PoliticalMapTerrainPluginTest {
             // NONE is the player's "No color" choice; a null color signals the
             // render layer to skip that element.
             assertThat(PoliticalMapTerrainPlugin.pickPaletteColor(
-                    FactionPaletteChoice.NONE, OWNER)).isNull();
+                    FactionPaletteChoice.NONE, PRIMARY, SECONDARY)).isNull();
         }
     }
 }

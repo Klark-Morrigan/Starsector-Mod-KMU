@@ -13,7 +13,6 @@ import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.PoliticalMapRefresh;
 import kmu.politicalmap.domain.CellShaper;
 import kmu.politicalmap.domain.DecivilisedPresence;
-import kmu.politicalmap.domain.DominantOwner;
 import kmu.politicalmap.domain.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.SectorPolitics;
 import kmu.politicalmap.domain.ShapedCell;
@@ -51,8 +50,7 @@ import java.util.List;
  * two palette colors (its bright "primary" or dark "secondary" shade) or "No
  * color" to omit it, at its own opacity, and - for the borders - its own line
  * width. Independent draws from its own bundle (lighter opacities by default) so it
- * reads as loosely held space. The defaults reproduce the built-in look: a primary
- * fill and outer border, a secondary inner seam.
+ * reads as loosely held space.
  *
  * <p>Decivilised systems (inhabited but factionless) and uninhabited systems do
  * not merge and carry no fill - only a single inset outline in the shared neutral
@@ -123,14 +121,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // (which XStream skips).
     private transient PoliticalMapGeometryCache geometryCache;
 
-    // Drawables derived from the raw cells, all transient for the same reasons as
-    // the geometry cache: rebuilt each session, record-typed, kept out of the
-    // save. Owned blocs carry their per-element resolved colors, opacities, and
-    // line widths and their flattened fill/border/seam runs; outline-only cells
-    // (decivilised or uninhabited) carry just an opacity, width, and their inset
-    // loop, drawn in the shared neutral color.
-    private transient List<FilledBloc> filledBlocs;
-    private transient List<NeutralOutline> neutralOutlines;
+    // Drawables derived from the raw cells, transient for the same reasons as the
+    // geometry cache: rebuilt each session, record-typed, kept out of the save.
+    // Every category - faction, independent, decivilised, uninhabited - resolves to
+    // the same StyledBloc: its flattened fill/border/seam runs and each element's
+    // color, opacity, and width. A factionless category resolves both its palette
+    // slots to the shared neutral color and carries only an outline.
+    private transient List<StyledBloc> styledBlocs;
     private transient Color neutralColor;
     // The revisions each half of the cache was built against. Geometry rebuilds
     // only when the reachable-system set changes; the drawables rebuild on a
@@ -172,7 +169,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     public void renderOnMap(float factor, float alphaMult) {
         rebuildIfStale();
         logFirstRenderOnce(factor, alphaMult);
-        if (filledBlocs.isEmpty() && neutralOutlines.isEmpty()) {
+        if (styledBlocs.isEmpty()) {
             return;
         }
 
@@ -201,11 +198,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     }
 
     // Fills each bloc with its resolved fill color at its resolved fill opacity. A
-    // null fill color is the player's "No color" choice, so that bloc is left
-    // unfilled. The fill polygon is convex, so a triangle fan from the first vertex
-    // tessellates it correctly.
+    // null fill color is a "No color" choice (and every factionless bloc), so that
+    // bloc is left unfilled. The fill polygon is convex, so a triangle fan from the
+    // first vertex tessellates it correctly.
     private void drawFills(float factor, float alphaMult) {
-        for (var bloc : filledBlocs) {
+        for (var bloc : styledBlocs) {
             if (bloc.fillColor() == null) {
                 continue;
             }
@@ -216,16 +213,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     // Strokes the interior seams first, then the national borders over them, so a
     // bloc's edge dominates its internal province lines where they meet. Color,
-    // opacity, and line width are all per bloc (they differ by category and by the
-    // player's choices), so the width is set per bloc; a null color is the player's
-    // "No color" choice and skips that element. A neutral cell has no seams, so its
-    // inset loop draws as one closed line loop in the shared neutral color at its
-    // own width.
+    // opacity, and line width are all per bloc, so the width is set per bloc; a null
+    // color is a "No color" choice and skips that element. A factionless bloc has no
+    // seams, so only its outer outline draws.
     private void drawBorders(float factor, float alphaMult) {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        for (var bloc : filledBlocs) {
+        for (var bloc : styledBlocs) {
             if (bloc.innerColor() == null) {
                 continue;
             }
@@ -233,7 +228,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             GlColor.set(bloc.innerColor(), alphaMult * bloc.innerAlpha());
             drawVertexRun(GL11.GL_LINES, bloc.interiorEdges(), factor);
         }
-        for (var bloc : filledBlocs) {
+        for (var bloc : styledBlocs) {
             if (bloc.outerColor() == null) {
                 continue;
             }
@@ -241,17 +236,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             GlColor.set(bloc.outerColor(), alphaMult * bloc.outerAlpha());
             drawVertexRun(GL11.GL_LINES, bloc.boundaryEdges(), factor);
         }
-        for (var outline : neutralOutlines) {
-            GL11.glLineWidth(outline.borderWidth());
-            GlColor.set(neutralColor, alphaMult * outline.borderAlpha());
-            drawVertexRun(GL11.GL_LINE_LOOP, outline.outlineLoop(), factor);
-        }
     }
 
     // Emits one flat [x, y, x, y, ...] vertex run under the given GL primitive,
-    // scaling each world coordinate into map space. Serves every primitive the
-    // render draws: GL_TRIANGLE_FAN fills, GL_LINE_LOOP neutral outlines, and
-    // GL_LINES border/seam segments.
+    // scaling each world coordinate into map space. Serves both primitives the
+    // render draws: GL_TRIANGLE_FAN fills and GL_LINES border/seam segments.
     private static void drawVertexRun(int mode, float[] vertices, float factor) {
         GL11.glBegin(mode);
         for (var v = 0; v < vertices.length; v += FLOATS_PER_VERTEX) {
@@ -309,15 +298,15 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             rebuiltCells = true;
         }
 
-        // filledBlocs == null means the drawables have never been built this
+        // styledBlocs == null means the drawables have never been built this
         // session. The revision seeds (-1) force the first build for a freshly
         // constructed plugin, but a plugin restored from a save comes back with
         // its revision fields already advanced past -1 while the static counters
         // reset to 0 on load - so the seed trick can match and skip the build,
-        // leaving the drawable lists null for renderOnMap to dereference. The
-        // null check forces the build regardless of how the counters line up.
+        // leaving the drawable list null for renderOnMap to dereference. The null
+        // check forces the build regardless of how the counters line up.
         var contentRevision = computeContentRevision();
-        if (rebuiltCells || filledBlocs == null || contentRevision != lastContentRevision) {
+        if (rebuiltCells || styledBlocs == null || contentRevision != lastContentRevision) {
             var drawablesStart = System.nanoTime();
             rebuildDrawables();
             lastContentRevision = contentRevision;
@@ -325,8 +314,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             // whole-rebuild time, so a wrong or empty render can be confirmed
             // against what was built and how long it cost.
             LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
-                    + " filledBlocs=" + filledBlocs.size()
-                    + " neutralOutlines=" + neutralOutlines.size()
+                    + " styledBlocs=" + styledBlocs.size()
                     + " geometryRebuilt=" + rebuiltCells
                     + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
         }
@@ -337,9 +325,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // dereference. Empty lists make the render a harmless no-op until a later
     // frame's retry succeeds.
     private void ensureDrawablesNonNull() {
-        if (filledBlocs == null) {
-            filledBlocs = new ArrayList<>();
-            neutralOutlines = new ArrayList<>();
+        if (styledBlocs == null) {
+            styledBlocs = new ArrayList<>();
             neutralColor = Color.GRAY;
         }
     }
@@ -367,15 +354,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         var profiler = KmuProfiling.getProfiler();
         profiler.measure("politicalMap.rebuildDrawables", () -> {
             var sector = Global.getSector();
-            // One style bundle per owned category, applied by owner below; the
-            // factionless categories carry just a neutral color choice, opacity, and
-            // width for their single outline.
+            // One style bundle per category, applied below by the cell's category.
+            // A factionless style points its fill and inner seam at "No color" and
+            // draws only an outline.
             var factionStyle = readFactionStyle();
             var independentStyle = readIndependentStyle();
             var decivilisedStyle = readDecivilisedStyle();
             var uninhabitedStyle = readUninhabitedStyle();
-            filledBlocs = new ArrayList<>();
-            neutralOutlines = new ArrayList<>();
+            styledBlocs = new ArrayList<>();
 
             // The politics scan walks the whole economy - the priciest content
             // step - so it is profiled and timed on its own, and the owner count
@@ -394,9 +380,9 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
             neutralColor = SectorPolitics.resolveNeutralColor(sector);
 
-            // Shape the raw cells into merged blocs once, ownership-aware, then
-            // split into filled and neutral draw lists. Cells consumed by the inset
-            // (fewer than three vertices left) drop out - nothing to fill or stroke.
+            // Shape the raw cells into merged blocs once, ownership-aware. Cells
+            // consumed by the inset (fewer than three vertices left) drop out -
+            // nothing to fill or stroke.
             var shapeStart = System.nanoTime();
             var shapedCells = profiler.measure("politicalMap.shapeCells",
                     () -> CellShaper.shapeCells(geometryCache.getCellEdgesBySystemId(),
@@ -412,64 +398,67 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 var owner = ownerBySystemId.get(entry.getKey());
                 if (owner != null) {
                     // Independent space styles from its own bundle; every other
-                    // owner is a core faction.
+                    // owner is a core faction. Each element resolves against the
+                    // owner's two palette shades.
                     var style = Factions.INDEPENDENT.equals(owner.factionId())
                             ? independentStyle
                             : factionStyle;
-                    filledBlocs.add(buildFilledBloc(shaped, owner, style));
+                    styledBlocs.add(buildStyledBloc(shaped, owner.primaryColor(),
+                            owner.secondaryColor(), style));
                 } else {
-                    // Factionless: decivilised or (otherwise) uninhabited, each a
-                    // single neutral outline, skipped when its color choice is NONE.
+                    // Factionless: decivilised or (otherwise) uninhabited. Its style
+                    // fills neither palette slot, so both resolve to the shared
+                    // neutral color and only its outline draws; skip it when that
+                    // outline is "No color".
                     var style = decivilisedSystemIds.contains(entry.getKey())
                             ? decivilisedStyle
                             : uninhabitedStyle;
-                    if (style.color().isDrawn()) {
-                        neutralOutlines.add(new NeutralOutline(
-                                flattenVertices(shaped.fillPolygon()),
-                                (float) style.opacity(), (float) style.width()));
+                    if (style.outerColor() != FactionPaletteChoice.NONE) {
+                        styledBlocs.add(
+                                buildStyledBloc(shaped, neutralColor, neutralColor, style));
                     }
                 }
             }
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
-                    + " filledBlocs=" + filledBlocs.size()
-                    + " neutralOutlines=" + neutralOutlines.size()
+                    + " styledBlocs=" + styledBlocs.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
         });
     }
 
-    // Builds one owned bloc's draw record: its flattened geometry, plus each
-    // element's color resolved against this owner's palette (null for a "No color"
-    // choice) and the opacities and widths from the owner's category style.
-    private static FilledBloc buildFilledBloc(ShapedCell shaped, DominantOwner owner,
-            OwnedStyle style) {
-        return new FilledBloc(
+    // Builds one bloc's draw record: its flattened geometry, plus each element's
+    // color resolved against this bloc's two palette shades (null for a "No color"
+    // choice) and the opacities and widths from its category style. A factionless
+    // bloc passes the neutral color for both shades.
+    private static StyledBloc buildStyledBloc(ShapedCell shaped, Color primaryColor,
+            Color secondaryColor, MapStyle style) {
+        return new StyledBloc(
                 flattenVertices(shaped.fillPolygon()),
                 flattenEdgesOfClass(shaped, true),
                 flattenEdgesOfClass(shaped, false),
-                pickPaletteColor(style.fillColor(), owner),
-                pickPaletteColor(style.outerColor(), owner),
-                pickPaletteColor(style.innerColor(), owner),
+                pickPaletteColor(style.fillColor(), primaryColor, secondaryColor),
+                pickPaletteColor(style.outerColor(), primaryColor, secondaryColor),
+                pickPaletteColor(style.innerColor(), primaryColor, secondaryColor),
                 (float) style.fillOpacity(), (float) style.outerOpacity(),
                 (float) style.innerOpacity(),
                 (float) style.outerWidth(), (float) style.innerWidth());
     }
 
-    // Picks the owner-faction palette color the player pointed an element at: the
-    // faction's secondary (dark) shade for a SECONDARY choice, its primary (bright)
-    // shade for a PRIMARY choice, or null for NONE ("No color") so the caller skips
-    // that element.
-    static Color pickPaletteColor(FactionPaletteChoice choice, DominantOwner owner) {
+    // Picks the palette shade the player pointed an element at: the secondary
+    // (dark) shade for a SECONDARY choice, the primary (bright) shade for a PRIMARY
+    // choice, or null for NONE ("No color") so the caller skips that element.
+    static Color pickPaletteColor(FactionPaletteChoice choice, Color primaryColor,
+            Color secondaryColor) {
         return switch (choice) {
-            case PRIMARY -> owner.primaryColor();
-            case SECONDARY -> owner.secondaryColor();
+            case PRIMARY -> primaryColor;
+            case SECONDARY -> secondaryColor;
             case NONE -> null;
         };
     }
 
     // Reads each owned category's eight style settings into one bundle, so the
-    // build loop applies them by owner without eight lookups per bloc.
-    private static OwnedStyle readFactionStyle() {
-        return new OwnedStyle(
+    // build loop applies them per bloc without eight lookups each.
+    private static MapStyle readFactionStyle() {
+        return new MapStyle(
                 KmuLunaSettings.getFactionFillColor(), KmuLunaSettings.getFactionFillOpacity(),
                 KmuLunaSettings.getFactionOuterBorderColor(),
                 KmuLunaSettings.getFactionOuterBorderOpacity(),
@@ -479,8 +468,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 KmuLunaSettings.getFactionInnerBorderWidth());
     }
 
-    private static OwnedStyle readIndependentStyle() {
-        return new OwnedStyle(
+    private static MapStyle readIndependentStyle() {
+        return new MapStyle(
                 KmuLunaSettings.getIndependentFillColor(), KmuLunaSettings.getIndependentFillOpacity(),
                 KmuLunaSettings.getIndependentOuterBorderColor(),
                 KmuLunaSettings.getIndependentOuterBorderOpacity(),
@@ -490,16 +479,29 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 KmuLunaSettings.getIndependentInnerBorderWidth());
     }
 
-    private static NeutralStyle readDecivilisedStyle() {
-        return new NeutralStyle(KmuLunaSettings.getDecivilisedBorderColor(),
+    // A factionless category resolves to the same style with no fill and no inner
+    // seam - only its single outline draws, in the neutral color both palette slots
+    // will carry, or "No color" to hide it.
+    private static MapStyle readDecivilisedStyle() {
+        return neutralStyle(KmuLunaSettings.getDecivilisedBorderColor(),
                 KmuLunaSettings.getDecivilisedBorderOpacity(),
                 KmuLunaSettings.getDecivilisedBorderWidth());
     }
 
-    private static NeutralStyle readUninhabitedStyle() {
-        return new NeutralStyle(KmuLunaSettings.getUninhabitedBorderColor(),
+    private static MapStyle readUninhabitedStyle() {
+        return neutralStyle(KmuLunaSettings.getUninhabitedBorderColor(),
                 KmuLunaSettings.getUninhabitedBorderOpacity(),
                 KmuLunaSettings.getUninhabitedBorderWidth());
+    }
+
+    // Assembles a factionless outline's style: its outline as the outer border (in
+    // the neutral color via a PRIMARY choice, or NONE to hide it), with no fill and
+    // no inner seam. Both slots hold the neutral color at draw time, so PRIMARY and
+    // SECONDARY would paint identically; PRIMARY is the drawn arm here.
+    private static MapStyle neutralStyle(NeutralColorChoice color, double opacity, double width) {
+        var outerColor = color.isDrawn() ? FactionPaletteChoice.PRIMARY : FactionPaletteChoice.NONE;
+        return new MapStyle(FactionPaletteChoice.NONE, 0, outerColor, opacity, width,
+                FactionPaletteChoice.NONE, 0, 0);
     }
 
     // Flattens the edges of a shaped bloc of one class into a GL_LINES vertex run
@@ -551,42 +553,30 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             return;
         }
         hasLoggedFirstRender = true;
-        LOG.debug("Political map render renderOnMap fired: filledBlocs="
-                + filledBlocs.size() + " neutralOutlines=" + neutralOutlines.size()
-                + " factor=" + factor + " alphaMult=" + alphaMult);
+        LOG.debug("Political map render renderOnMap fired: styledBlocs="
+                + styledBlocs.size() + " factor=" + factor + " alphaMult=" + alphaMult);
     }
 
-    // One owned category's (faction or independent) full style, read once per
-    // rebuild and applied to every bloc of that category: the fill, outer-border,
-    // and inner-seam color choices with their opacities, plus the two border
-    // widths. The colors are choices (resolved against each owner's palette per
-    // bloc), not concrete colors, since one bundle serves many owners.
-    private record OwnedStyle(
+    // One category's full political-map style, read once per rebuild and applied to
+    // every bloc of that category: the fill, outer-border, and inner-seam color
+    // choices with their opacities, plus the two border widths. The colors are
+    // choices (resolved against each bloc's two palette shades), not concrete
+    // colors, since one bundle serves many blocs. A factionless category sets fill
+    // and inner to NONE so only its outline draws.
+    private record MapStyle(
             FactionPaletteChoice fillColor, double fillOpacity,
             FactionPaletteChoice outerColor, double outerOpacity, double outerWidth,
             FactionPaletteChoice innerColor, double innerOpacity, double innerWidth) {
     }
 
-    // One factionless category's (decivilised or uninhabited) outline style: its
-    // neutral-color choice (or NONE to hide it), opacity, and width. No fill or
-    // inner seam, since these cells do not merge into blocs.
-    private record NeutralStyle(NeutralColorChoice color, double opacity, double width) {
-    }
-
-    // A filled bloc ready to draw: its flattened fill polygon and its national-
-    // border and interior-seam edge runs (GL_LINES segments), plus the resolved
-    // fill/outer/inner colors (null for a "No color" choice, which skips that
-    // element) with their opacities and the two border widths. All per bloc, since
-    // colors resolve against each owner's palette and widths differ by category.
-    private record FilledBloc(float[] fill, float[] boundaryEdges, float[] interiorEdges,
+    // A bloc ready to draw: its flattened fill polygon and its national-border and
+    // interior-seam edge runs (GL_LINES segments), plus the resolved fill/outer/
+    // inner colors (null for a "No color" choice, which skips that element) with
+    // their opacities and the two border widths. All per bloc, since colors resolve
+    // against each bloc's palette and widths differ by category.
+    private record StyledBloc(float[] fill, float[] boundaryEdges, float[] interiorEdges,
             Color fillColor, Color outerColor, Color innerColor,
             float fillAlpha, float outerAlpha, float innerAlpha,
             float outerWidth, float innerWidth) {
-    }
-
-    // An outline-only cell (a decivilised or uninhabited system): its inset outline
-    // as a closed loop, its border opacity, and its line width. Drawn in the shared
-    // neutral color; it has no interior seams, since it merges with nothing.
-    private record NeutralOutline(float[] outlineLoop, float borderAlpha, float borderWidth) {
     }
 }
