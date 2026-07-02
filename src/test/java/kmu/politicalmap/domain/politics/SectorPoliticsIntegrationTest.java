@@ -19,11 +19,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration coverage for the ownership pipeline: {@link SectorPolitics}
- * reading a stubbed economy and delegating the rule to the real
- * {@link SystemDominance}. Exercises the two together because the value of the
- * adapter is the wiring (footprint sum, visibility filter, color lookup) feeding
- * the live rule, which a mock of the rule would hide.
+ * Integration coverage for the ownership pipeline end to end: {@link SectorPolitics}
+ * reading a stubbed economy through {@link KnownMarketFootprints} and the real
+ * {@link SystemDominance}, then resolving the winner's palette. Exercises them
+ * together because the value of the adapter is the wiring (footprint read,
+ * dominance rule, color lookup), which mocking either collaborator would hide.
  */
 class SectorPoliticsIntegrationTest {
     private static final Color HEGEMONY_BRIGHT = new Color(120, 160, 200);
@@ -236,59 +236,6 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("empty-system", List.of());
 
             assertThat(SectorPolitics.resolveNeutralColor(sector)).isEqualTo(NEUTRAL_BASE);
-        }
-    }
-
-    @Nested
-    class HasDiscoveredOwnedMarket {
-
-        @Test
-        void hasDiscoveredOwnedMarketIsTrueForVisibleOwnedMarket() {
-            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
-            var sector = sectorWith("owned-system", List.of(hegemony), visibleMarket(hegemony, 5));
-
-            assertThat(SectorPolitics.hasDiscoveredOwnedMarket(sector, onlySystem(sector))).isTrue();
-        }
-
-        @Test
-        void hasDiscoveredOwnedMarketIsFalseForConditionOnlyMarket() {
-            // A bare rock's condition-only market is no colony, so the system has
-            // no faction presence.
-            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
-            var sector = sectorWith("bare-system", List.of(hegemony),
-                    market(hegemony, 6, true, false, false));
-
-            assertThat(SectorPolitics.hasDiscoveredOwnedMarket(sector, onlySystem(sector))).isFalse();
-        }
-
-        @Test
-        void hasDiscoveredOwnedMarketIsFalseForUndiscoveredStation() {
-            // A concealed station the player has not found yet - hidden market on a
-            // still-discoverable entity - is absent from the map, so it confers no
-            // presence.
-            var knights = faction("knights_of_selkie", HEGEMONY_BRIGHT);
-            var sector = sectorWith("undiscovered-system", List.of(knights),
-                    concealedStation(knights, 5));
-
-            assertThat(SectorPolitics.hasDiscoveredOwnedMarket(sector, onlySystem(sector))).isFalse();
-        }
-
-        @Test
-        void hasDiscoveredOwnedMarketIsTrueForRevealedColonyAwaitingApproach() {
-            // A colony un-hidden ahead of its entity being found is public
-            // knowledge, so it confers presence before the fleet closes in.
-            var fsf = faction("aEP_FSF", HEGEMONY_BRIGHT);
-            var sector = sectorWith("revealed-system", List.of(fsf),
-                    revealedColonyAwaitingApproach(fsf, 5));
-
-            assertThat(SectorPolitics.hasDiscoveredOwnedMarket(sector, onlySystem(sector))).isTrue();
-        }
-
-        @Test
-        void hasDiscoveredOwnedMarketIsFalseForUninhabitedSystem() {
-            var sector = sectorWith("empty-system", List.of());
-
-            assertThat(SectorPolitics.hasDiscoveredOwnedMarket(sector, onlySystem(sector))).isFalse();
         }
     }
 

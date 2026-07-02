@@ -3,6 +3,7 @@ package kmu.politicalmap.domain.visibility;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.politicalmap.domain.politics.KnownMarketFootprints;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 
 /**
@@ -87,7 +88,7 @@ public final class PoliticalMapVisibility {
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(SectorAPI sector, StarSystemAPI system) {
-        return SectorPolitics.hasDiscoveredOwnedMarket(sector, system)
+        return KnownMarketFootprints.hasKnownOwnedMarket(sector, system)
                 || DecivilisedPresence.hasRevealedDecivilisedPlanet(system);
     }
 
@@ -115,7 +116,7 @@ public final class PoliticalMapVisibility {
             // economy read for owned markets runs only when neither it nor a
             // decivilised planet already puts the system on the map.
             var isOnMap = hasVisibleMapAccess(system, visibleStars) || hasDecivilised
-                    || SectorPolitics.hasDiscoveredOwnedMarket(sector, system);
+                    || KnownMarketFootprints.hasKnownOwnedMarket(sector, system);
             if (!isOnMap) {
                 continue;
             }
