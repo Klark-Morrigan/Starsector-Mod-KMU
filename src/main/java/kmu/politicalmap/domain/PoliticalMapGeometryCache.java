@@ -34,8 +34,8 @@ import java.util.Set;
  * cell and, at once, the cell-adjacency graph. Every edge is tagged with the
  * neighbouring system across it (or none, for a frontier into empty space), which
  * the render layer classifies into interior seams and national boundaries once it
- * knows who owns what, then shapes into merged faction blocs. The cache holds the
- * raw cells rather than any shaped outline: the inset that leaves a bloc its
+ * knows who owns what, then shapes into merged faction clusters. The cache holds the
+ * raw cells rather than any shaped outline: the inset that leaves a cluster its
  * border channel is ownership-dependent - two same-faction cells fuse along their
  * shared edge - so it belongs to the render pass, not to this ownership-agnostic
  * geometry that rebuilds only on an access change.

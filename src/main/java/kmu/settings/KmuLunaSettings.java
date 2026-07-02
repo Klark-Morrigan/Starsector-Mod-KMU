@@ -23,6 +23,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * uninhabited systems - draw only a single outline, so they get just a neutral
  * color choice (or none, to hide them), an opacity, and a width. All are tuned
  * under the LunaLib "Visuals customisation" tab.
+ *
+ * <p>The national-border geometry (corner radius, corner segments, chamfer
+ * angle, and vertex weld tolerance) is exposed separately under the "Dev" tab: it
+ * shapes the rounded frontier rather than recoloring it, so it is a tuning knob for
+ * experimentation, not a styling choice. Like the visual fields it feeds the same
+ * drawables rebuild, so a change takes effect live.
  */
 public final class KmuLunaSettings {
     // KMU's LunaLib settings id (matches data/config/LunaSettings.csv) and the
@@ -34,7 +40,7 @@ public final class KmuLunaSettings {
     private static final String LOGGER_ROOT = "kmu";
     private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
 
-    // Faction (core-faction bloc) style fields.
+    // Faction (core-faction cluster) style fields.
     private static final String FACTION_OUTER_BORDER_COLOR_FIELD =
             "kmu_politicalMapFactionOuterBorderColor";
     private static final String FACTION_OUTER_BORDER_OPACITY_FIELD =
@@ -50,7 +56,7 @@ public final class KmuLunaSettings {
     private static final String FACTION_FILL_COLOR_FIELD = "kmu_politicalMapFactionFillColor";
     private static final String FACTION_FILL_OPACITY_FIELD = "kmu_politicalMapFactionFillOpacity";
 
-    // Independent (independent-held bloc) style fields, the same shape as faction.
+    // Independent (independent-held cluster) style fields, the same shape as faction.
     private static final String INDEPENDENT_OUTER_BORDER_COLOR_FIELD =
             "kmu_politicalMapIndependentOuterBorderColor";
     private static final String INDEPENDENT_OUTER_BORDER_OPACITY_FIELD =
@@ -81,6 +87,28 @@ public final class KmuLunaSettings {
             "kmu_politicalMapUninhabitedBorderOpacity";
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
             "kmu_politicalMapUninhabitedBorderWidth";
+
+    // National-border geometry (Dev tab): the shape of the rounded frontier
+    // stroked and filled per cluster, exposed for live tuning rather than baked as
+    // constants. All feed the drawables rebuild, so a change takes effect the moment
+    // it is applied.
+    private static final String BORDER_CORNER_RADIUS_FIELD =
+            "kmu_politicalMapBorderCornerRadius";
+    private static final String BORDER_CORNER_SEGMENTS_FIELD =
+            "kmu_politicalMapBorderCornerSegments";
+    private static final String BORDER_CHAMFER_ANGLE_FIELD =
+            "kmu_politicalMapBorderChamferAngle";
+    private static final String BORDER_WELD_TOLERANCE_FIELD =
+            "kmu_politicalMapBorderWeldTolerance";
+    private static final String BORDER_MITER_LIMIT_FIELD =
+            "kmu_politicalMapBorderMiterLimit";
+    // Spike sanding of the resolved border before rounding: a corner both sharper than
+    // the angle and shallower (nearer its neighbour chord) than the height is a
+    // needle or cusp the rounding cannot fix, so it is spliced out.
+    private static final String BORDER_SPIKE_HEIGHT_FIELD =
+            "kmu_politicalMapBorderSpikeHeight";
+    private static final String BORDER_SPIKE_ANGLE_FIELD =
+            "kmu_politicalMapBorderSpikeAngle";
 
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
@@ -117,6 +145,13 @@ public final class KmuLunaSettings {
             NeutralColorChoice.NONE;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
+    private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
+    private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 6;
+    private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
+    private static final double DEFAULT_BORDER_WELD_TOLERANCE = 50.0;
+    private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
+    private static final double DEFAULT_BORDER_SPIKE_HEIGHT = 150.0;
+    private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 90.0;
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
     // derived state (e.g. the political-map overlay) read this generation and
@@ -332,6 +367,74 @@ public final class KmuLunaSettings {
     public static double getUninhabitedBorderWidth() {
         return LunaSettingsReader.getDouble(MOD_ID, UNINHABITED_BORDER_WIDTH_FIELD,
                 DEFAULT_UNINHABITED_BORDER_WIDTH);
+    }
+
+    /**
+     * @return the corner-rounding radius of the national border, in world
+     *         units; higher rounds the cluster outline more
+     */
+    public static double getPoliticalMapBorderCornerRadius() {
+        return LunaSettingsReader.getDouble(MOD_ID, BORDER_CORNER_RADIUS_FIELD,
+                DEFAULT_BORDER_CORNER_RADIUS);
+    }
+
+    /**
+     * @return the arc segments per rounded corner of the national border; higher is
+     *         smoother
+     */
+    public static int getPoliticalMapBorderCornerSegments() {
+        return LunaSettingsReader.getInt(MOD_ID, BORDER_CORNER_SEGMENTS_FIELD,
+                DEFAULT_BORDER_CORNER_SEGMENTS);
+    }
+
+    /**
+     * @return the interior angle below which a national-border corner is chamfered
+     *         flat rather than rounded, in radians (the setting is authored in
+     *         degrees and converted here, since the rounding math works in radians)
+     */
+    public static double getPoliticalMapBorderChamferAngleRadians() {
+        return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, BORDER_CHAMFER_ANGLE_FIELD,
+                DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES));
+    }
+
+    /**
+     * @return how far apart two outline points may be and still weld into one corner
+     *         when chaining the national border, in world units; raised if borders
+     *         go missing, lowered if distinct corners merge
+     */
+    public static double getPoliticalMapBorderWeldTolerance() {
+        return LunaSettingsReader.getDouble(MOD_ID, BORDER_WELD_TOLERANCE_FIELD,
+                DEFAULT_BORDER_WELD_TOLERANCE);
+    }
+
+    /**
+     * @return the multiple of the border inset past which a sharp corner's miter is
+     *         bevelled instead of pointed; lower bevels sooner (rounder corners,
+     *         no inward spikes), higher keeps crisper points
+     */
+    public static double getPoliticalMapBorderMiterLimit() {
+        return LunaSettingsReader.getDouble(MOD_ID, BORDER_MITER_LIMIT_FIELD,
+                DEFAULT_BORDER_MITER_LIMIT);
+    }
+
+    /**
+     * @return the depth (world units) up to which a sharp corner counts as a spike
+     *         to sand off the border before rounding; a sharp corner that juts farther
+     *         than this is real shape and is kept. Zero disables the spike pass
+     */
+    public static double getPoliticalMapBorderSpikeHeight() {
+        return LunaSettingsReader.getDouble(MOD_ID, BORDER_SPIKE_HEIGHT_FIELD,
+                DEFAULT_BORDER_SPIKE_HEIGHT);
+    }
+
+    /**
+     * @return the interior angle (radians) below which a shallow corner counts as a
+     *         spike to sand off the border before rounding; a gentler corner is kept.
+     *         Zero disables the spike pass
+     */
+    public static double getPoliticalMapBorderSpikeAngleRadians() {
+        return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, BORDER_SPIKE_ANGLE_FIELD,
+                DEFAULT_BORDER_SPIKE_ANGLE_DEGREES));
     }
 
     // Reads a faction/independent palette Radio and maps its label to a choice,

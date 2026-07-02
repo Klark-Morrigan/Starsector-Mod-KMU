@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 /**
  * Pins the contracts of the terrain that are testable off-engine: the engine-
  * layer override the map relies on, and the pure palette-color pick that maps a
- * player's color choice to one of a bloc's two shades (or no color). The GL
+ * player's color choice to one of the two palette shades (or no color). The GL
  * emission itself runs only in-engine and is out of scope here.
  *
  * <p>{@code BaseTerrain.getActiveLayers} throws by default, and the engine calls

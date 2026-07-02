@@ -13,9 +13,9 @@ import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins {@link CellShaper}: a same-faction shared edge is left on the true cell
- * border (so two blocs fuse along it) while its ends are truncated within the
- * padded border; every other edge - a different faction, unowned space, or a
- * frontier - is pulled inward; an unowned cell has no interior seams; and two
+ * border (so two cells fuse into one cluster along it) while its ends are truncated
+ * within the padded border; every other edge - a different faction, unowned space,
+ * or a frontier - is pulled inward; an unowned cell has no interior seams; and two
  * neighbouring same-faction cells keep the very same shared line, so their fills
  * meet.
  */

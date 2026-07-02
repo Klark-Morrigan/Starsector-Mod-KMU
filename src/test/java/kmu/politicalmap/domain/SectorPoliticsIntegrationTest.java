@@ -181,6 +181,54 @@ class SectorPoliticsIntegrationTest {
     }
 
     @Nested
+    class ResolveDominantOwner {
+
+        @Test
+        void resolveDominantOwnerNamesDominantFactionWithPalette() {
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = sectorWith("owned-system", List.of(hegemony, tritachyon),
+                    visibleMarket(hegemony, 5), visibleMarket(tritachyon, 3));
+
+            // The single-system resolve returns the same winner and palette the bulk
+            // pass would put under this system's id.
+            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector)))
+                    .isEqualTo(new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
+        }
+
+        @Test
+        void resolveDominantOwnerReturnsNullForUninhabitedSystem() {
+            var sector = sectorWith("empty-system", List.of());
+
+            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector))).isNull();
+        }
+
+        @Test
+        void resolveDominantOwnerIgnoresConditionOnlyMarket() {
+            // A bare rock's condition-only market is no colony, so the system has no
+            // owner - matching the bulk pass.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var sector = sectorWith("bare-system", List.of(hegemony),
+                    market(hegemony, 6, true, false, false));
+
+            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector))).isNull();
+        }
+
+        @Test
+        void resolveDominantOwnerReturnsNullForNullSystem() {
+            var sector = sectorWith("owned-system", List.of(faction("hegemony", HEGEMONY_BRIGHT)),
+                    visibleMarket(faction("hegemony", HEGEMONY_BRIGHT), 5));
+
+            assertThat(SectorPolitics.resolveDominantOwner(sector, null)).isNull();
+        }
+
+        @Test
+        void resolveDominantOwnerReturnsNullForNullSector() {
+            assertThat(SectorPolitics.resolveDominantOwner(null, mock(StarSystemAPI.class))).isNull();
+        }
+    }
+
+    @Nested
     class ResolveNeutralColor {
 
         @Test

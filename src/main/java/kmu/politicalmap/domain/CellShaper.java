@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Shapes each system's raw Voronoi cell into a merged faction-bloc polygon.
+ * Shapes each system's raw Voronoi cell into a merged faction-cluster polygon.
  *
  * <p>An edge shared with a same-faction neighbour is left on the true cell border,
- * so the two cells' fills meet exactly along it and fuse into one bloc with no
+ * so the two cells' fills meet exactly along it and fuse into one cluster with no
  * seam. Every other edge - against a different faction, unowned space, or the map
- * frontier - is pulled inward, so a bloc keeps the uniform national-border channel
+ * frontier - is pulled inward, so a cluster keeps the uniform national-border channel
  * against everything outside it. A kept seam edge is truncated where it runs into
  * a pulled-in border, so its ends stay within the padded border rather than
  * reaching the raw cell corner on the midline between cells.
@@ -29,7 +29,7 @@ public final class CellShaper {
     }
 
     /**
-     * Shapes every system's cell into its merged-bloc polygon.
+     * Shapes every system's cell into its merged-cluster polygon.
      *
      * @param edgesBySystemId each system's raw cell edges, in winding order,
      *                        tagged with the neighbour across them
@@ -51,10 +51,20 @@ public final class CellShaper {
         return shaped;
     }
 
-    // Shapes one cell: rebuild its raw ring from the ordered edges (each edge's
-    // start vertex, in order, is the ring), flag every edge that is a national
-    // border rather than a same-faction seam, and inset only those.
-    private static ShapedCell shapeCell(List<CellEdge> edges, String ownerFactionId,
+    /**
+     * Shapes one system's cell into its merged-cluster polygon, for the incremental
+     * refresh path that re-shapes just the cells around an ownership change rather
+     * than the whole map. Same rule as {@link #shapeCells}, applied to one cell.
+     *
+     * @param edges           the cell's raw edges, in winding order, each tagged
+     *                        with the neighbour across it
+     * @param ownerFactionId  the faction holding this cell, or null if unowned
+     * @param ownerBySystemId the dominant owner per system, to classify each edge
+     *                        as a same-faction seam or a national border
+     * @param borderInset     inward inset applied to every national-border edge
+     * @return the shaped cell: its inset fill polygon and per-edge boundary flags
+     */
+    public static ShapedCell shapeCell(List<CellEdge> edges, String ownerFactionId,
             Map<String, DominantOwner> ownerBySystemId, double borderInset) {
         var vertices = new ArrayList<double[]>(edges.size());
         var isBorderEdge = new boolean[edges.size()];

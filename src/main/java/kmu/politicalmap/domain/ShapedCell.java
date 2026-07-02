@@ -3,7 +3,7 @@ package kmu.politicalmap.domain;
 import java.util.List;
 
 /**
- * One system's Voronoi cell shaped into its merged faction bloc: a closed fill
+ * One system's Voronoi cell shaped into its merged faction cluster: a closed fill
  * polygon plus, per edge, whether that edge is a national border rather than an
  * interior seam fused with a same-faction neighbour.
  *

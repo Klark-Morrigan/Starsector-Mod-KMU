@@ -2,20 +2,26 @@ package kmu.politicalmap.render;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignEngineLayers;
+import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
+import kmlib.math.geometry.Polygons;
 import kmlib.opengl.GlColor;
+import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.PoliticalMapRefresh;
 import kmu.politicalmap.domain.CellShaper;
 import kmu.politicalmap.domain.DecivilisedPresence;
+import kmu.politicalmap.domain.DominantOwner;
 import kmu.politicalmap.domain.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.SectorPolitics;
 import kmu.politicalmap.domain.ShapedCell;
+import kmu.politicalmap.domain.geometry.SystemClusterBorders;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;
@@ -26,26 +32,35 @@ import org.lwjgl.opengl.GL11;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Terrain plugin that paints the political map's faction territory on the
- * sector (M) map as merged HOI4-style blocs.
+ * sector (M) map as merged HOI4-style clusters.
  *
  * <p>Adjacent star systems held by the same faction fuse into one solid region:
- * their cells are filled with a per-edge inset that leaves the shared edge on the
- * true Voronoi border, so the two fills meet exactly and read as one bloc with no
- * channel between them. Every edge against a different faction, unowned space, or
- * the map frontier is pulled inward instead, so the bloc keeps a uniform national
- * border channel against everything outside it. Each bloc is stroked twice: its
- * national-border (outer) edges, then its interior seams (the fused edges between
- * member cells) beneath them, so the province lines inside a bloc recede behind
- * the border. The seam ends stay within the padded border rather than reaching the
- * raw midline between cells, so the bloc's edge reads as one uniform border.
+ * the faction's cells are traced into a single border ({@link SystemClusterBorders}),
+ * inset to leave a uniform national-border channel against everything outside the
+ * cluster and with its corners rounded so a fused-cell cluster reads as one smooth
+ * frontier rather than a cell mosaic. That one rounded region is both filled -
+ * tessellated into a triangle soup ({@link kmlib.opengl.PolygonTessellator}) so a
+ * concave cluster, and one with an enclave, fills correctly - and stroked as the
+ * national border, so the fill and the border are the exact same shape with no seam
+ * of fill peeking past the outline. The interior seams (the edges between member
+ * cells) are stroked as faint per-cell lines over the fill, so the province lines
+ * inside a cluster read beneath the border. Factionless cells (decivilised,
+ * uninhabited) do not fuse and carry no fill; each keeps a single per-cell inset
+ * outline.
  *
  * <p>Every element is player-styled per category under the LunaLib "Visuals
  * customisation" tab, read via {@link KmuLunaSettings}. The two owned categories -
- * core factions and independent space - each fuse into blocs and get a fill, an
+ * core factions and independent space - each fuse into clusters and get a fill, an
  * outer border, and an inner seam; each element draws in one of the owner faction's
  * two palette colors (its bright "primary" or dark "secondary" shade) or "No
  * color" to omit it, at its own opacity, and - for the borders - its own line
@@ -62,7 +77,7 @@ import java.util.List;
  *
  * <p>The raw cells and their adjacency come from {@link PoliticalMapGeometryCache}
  * and the ownership colors from {@link SectorPolitics}; {@link CellShaper} turns
- * the two into the merged-bloc geometry, and this plugin only flattens and draws
+ * the two into the merged-cluster geometry, and this plugin only flattens and draws
  * it. There is deliberately no master overlay toggle, sidebar, presence tiers, or
  * blip stack yet - the goal is to confirm that faction territory reads correctly.
  *
@@ -75,7 +90,7 @@ import java.util.List;
  * quiet background layer.
  *
  * <p>System positions in hyperspace are fixed for the life of a save, so the raw
- * cells are built once and cached. The drawables (which blocs are filled, in what
+ * cells are built once and cached. The drawables (which clusters are filled, in what
  * color, at what opacity, and where their border and seam edges run) are rebuilt
  * only when KMU's LunaLib settings change, detected off LunaLib's change event
  * via {@link KmuLunaSettings#getSettingsGeneration()} - so switching a category's
@@ -95,6 +110,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // A stroked edge is two endpoints, so its flattened GL_LINES contribution is
     // two vertices wide. Sizes the border/seam runs in flattenEdgesOfClass.
     private static final int FLOATS_PER_EDGE = 2 * FLOATS_PER_VERTEX;
+
+    // The empty vertex run shared by every draw element a cluster omits (an owned
+    // cell's per-cell fill and outline, a faction with no fill), so an omitted
+    // element draws nothing without allocating a fresh empty array each time.
+    private static final float[] NO_VERTICES = new float[0];
 
     // Map rendering ignores this (the map calls the map hooks regardless), but
     // BaseTerrain requires the override; large so the terrain is never treated
@@ -124,11 +144,38 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // Drawables derived from the raw cells, transient for the same reasons as the
     // geometry cache: rebuilt each session, record-typed, kept out of the save.
     // Every category - faction, independent, decivilised, uninhabited - resolves to
-    // the same StyledBloc: its flattened fill/border/seam runs and each element's
+    // the same StyledCell: its flattened fill/border/seam runs and each element's
     // color, opacity, and width. A factionless category resolves both its palette
     // slots to the shared neutral color and carries only an outline.
-    private transient List<StyledBloc> styledBlocs;
+    // Per-cell draw records keyed by system id. For an owned cell this now carries
+    // only its interior seams (the fill and national border are per-cluster, in
+    // factionTerritories); for a factionless cell it still carries the single
+    // per-cell inset outline, since factionless cells do not fuse into clusters. Keyed
+    // rather than a flat list so the incremental refresh can replace or drop just
+    // the cells around an ownership change without rebuilding the rest.
+    private transient Map<String, StyledCell> styledCellBySystemId;
+    // The fill and national border of each owned faction's cluster(s): the rounded
+    // region tessellated into fill triangles and flattened into border loops, so both
+    // are the same shape. Kept apart from the per-cell records because a cluster is
+    // traced across all of a faction's cells, not one cell at a time. Keyed by faction
+    // id
+    // so the incremental refresh rebuilds only the two factions an ownership change
+    // touched. Transient for the same reasons as the other draw lists: derived,
+    // record-typed, kept out of the save.
+    private transient Map<String, FactionTerritory> factionTerritoryByFactionId;
     private transient Color neutralColor;
+    // The last resolved owners, decivilised set, and per-category styles, retained
+    // from the last full rebuild so the incremental refresh can re-derive one
+    // system's owner and re-shape a handful of cells against the same inputs. A
+    // settings change bumps the content revision and forces a full rebuild, so
+    // these never go stale under an incremental update. Transient: derived state,
+    // kept out of the save.
+    private transient Map<String, DominantOwner> ownerBySystemId;
+    private transient Set<String> decivilisedSystemIds;
+    private transient MapStyle factionStyle;
+    private transient MapStyle independentStyle;
+    private transient MapStyle decivilisedStyle;
+    private transient MapStyle uninhabitedStyle;
     // The revisions each half of the cache was built against. Geometry rebuilds
     // only when the reachable-system set changes; the drawables rebuild on a
     // content change (settings, discovery) or whenever the geometry itself was
@@ -169,7 +216,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     public void renderOnMap(float factor, float alphaMult) {
         rebuildIfStale();
         logFirstRenderOnce(factor, alphaMult);
-        if (styledBlocs.isEmpty()) {
+        if (styledCellBySystemId.isEmpty() && factionTerritoryByFactionId.isEmpty()) {
             return;
         }
 
@@ -197,44 +244,59 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         GL11.glPopAttrib();
     }
 
-    // Fills each bloc with its resolved fill color at its resolved fill opacity. A
-    // null fill color is a "No color" choice (and every factionless bloc), so that
-    // bloc is left unfilled. The fill polygon is convex, so a triangle fan from the
-    // first vertex tessellates it correctly.
+    // Fills each owned faction's cluster(s) with the faction's resolved fill color at
+    // its opacity. The fill is the cluster's rounded region pre-tessellated into a
+    // triangle soup, so a concave cluster (or one with an enclave) fills correctly and
+    // exactly matches the stroked border. A null fill color is a "No color" choice,
+    // so that faction is left unfilled; factionless cells carry no fill at all.
     private void drawFills(float factor, float alphaMult) {
-        for (var bloc : styledBlocs) {
-            if (bloc.fillColor() == null) {
+        for (var territory : factionTerritoryByFactionId.values()) {
+            if (territory.fillColor() == null) {
                 continue;
             }
-            GlColor.set(bloc.fillColor(), alphaMult * bloc.fillAlpha());
-            drawVertexRun(GL11.GL_TRIANGLE_FAN, bloc.fill(), factor);
+            GlColor.set(territory.fillColor(), alphaMult * territory.fillAlpha());
+            drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
         }
     }
 
-    // Strokes the interior seams first, then the national borders over them, so a
-    // bloc's edge dominates its internal province lines where they meet. Color,
-    // opacity, and line width are all per bloc, so the width is set per bloc; a null
-    // color is a "No color" choice and skips that element. A factionless bloc has no
-    // seams, so only its outer outline draws.
+    // Strokes the interior province seams first, then the factionless outlines, then
+    // the smoothed national borders over them, so a cluster's frontier dominates its
+    // internal province lines where they meet. Color, opacity, and line width are all
+    // per element; a null color is a "No color" choice and skips it. An owned cluster's
+    // national border is its border ring (in factionTerritories), so the per-cell
+    // outline only carries factionless cells; an owned cell contributes only its
+    // seams and a factionless cell only its outline.
     private void drawBorders(float factor, float alphaMult) {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        for (var bloc : styledBlocs) {
-            if (bloc.innerColor() == null) {
+        for (var cell : styledCellBySystemId.values()) {
+            if (cell.innerColor() == null) {
                 continue;
             }
-            GL11.glLineWidth(bloc.innerWidth());
-            GlColor.set(bloc.innerColor(), alphaMult * bloc.innerAlpha());
-            drawVertexRun(GL11.GL_LINES, bloc.interiorEdges(), factor);
+            GL11.glLineWidth(cell.innerWidth());
+            GlColor.set(cell.innerColor(), alphaMult * cell.innerAlpha());
+            drawVertexRun(GL11.GL_LINES, cell.interiorEdges(), factor);
         }
-        for (var bloc : styledBlocs) {
-            if (bloc.outerColor() == null) {
+        for (var cell : styledCellBySystemId.values()) {
+            if (cell.outerColor() == null) {
                 continue;
             }
-            GL11.glLineWidth(bloc.outerWidth());
-            GlColor.set(bloc.outerColor(), alphaMult * bloc.outerAlpha());
-            drawVertexRun(GL11.GL_LINES, bloc.boundaryEdges(), factor);
+            GL11.glLineWidth(cell.outerWidth());
+            GlColor.set(cell.outerColor(), alphaMult * cell.outerAlpha());
+            drawVertexRun(GL11.GL_LINES, cell.boundaryEdges(), factor);
+        }
+        // Each border ring is a closed rounded loop, so it strokes as one continuous
+        // GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
+        for (var territory : factionTerritoryByFactionId.values()) {
+            if (territory.borderColor() == null) {
+                continue;
+            }
+            GL11.glLineWidth(territory.borderWidth());
+            GlColor.set(territory.borderColor(), alphaMult * territory.borderAlpha());
+            for (var loop : territory.borderLoops()) {
+                drawVertexRun(GL11.GL_LINE_LOOP, loop, factor);
+            }
         }
     }
 
@@ -298,26 +360,43 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             rebuiltCells = true;
         }
 
-        // styledBlocs == null means the drawables have never been built this
-        // session. The revision seeds (-1) force the first build for a freshly
+        // TODO: when only geometry changed (rebuiltCells), reshape just the cells
+        // PoliticalMapGeometryCache rebuilt - the system that gained or lost access
+        // and every cell it touches - rather than the full drawables rebuild below.
+        // Have updateFromSector report its affected-cell set and drive a targeted
+        // reshape from it, the geometry-side analogue of applyStalePoliticsUpdates.
+
+        // styledCellBySystemId == null means the drawables have never been built
+        // this session. The revision seeds (-1) force the first build for a freshly
         // constructed plugin, but a plugin restored from a save comes back with
         // its revision fields already advanced past -1 while the static counters
         // reset to 0 on load - so the seed trick can match and skip the build,
-        // leaving the drawable list null for renderOnMap to dereference. The null
+        // leaving the drawable map null for renderOnMap to dereference. The null
         // check forces the build regardless of how the counters line up.
         var contentRevision = computeContentRevision();
-        if (rebuiltCells || styledBlocs == null || contentRevision != lastContentRevision) {
+        if (rebuiltCells || styledCellBySystemId == null
+                || contentRevision != lastContentRevision) {
             var drawablesStart = System.nanoTime();
             rebuildDrawables();
             lastContentRevision = contentRevision;
+            // A full rebuild re-derives every system, so any pending per-system
+            // staleness is already reflected - drain and discard it rather than
+            // re-processing the same systems immediately after.
+            PoliticalMapRefresh.drainStalePoliticsSystemIds();
             // Result trace: the counts the render will actually paint and the
             // whole-rebuild time, so a wrong or empty render can be confirmed
             // against what was built and how long it cost.
             LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
-                    + " styledBlocs=" + styledBlocs.size()
+                    + " styledCells=" + styledCellBySystemId.size()
                     + " geometryRebuilt=" + rebuiltCells
                     + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
+            return;
         }
+
+        // No full rebuild this frame: fold in any per-system ownership changes a
+        // colony resize marked, re-deriving and re-shaping only those systems and
+        // their neighbours over the standing drawables.
+        applyStalePoliticsUpdates();
     }
 
     // Guards the render path after a failed first build: a rebuild that threw
@@ -325,17 +404,19 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // dereference. Empty lists make the render a harmless no-op until a later
     // frame's retry succeeds.
     private void ensureDrawablesNonNull() {
-        if (styledBlocs == null) {
-            styledBlocs = new ArrayList<>();
+        if (styledCellBySystemId == null) {
+            styledCellBySystemId = new LinkedHashMap<>();
+            factionTerritoryByFactionId = new LinkedHashMap<>();
             neutralColor = Color.GRAY;
         }
     }
 
-    // The drawables-staleness token. Settings changes and discovered markets
-    // both restyle the same fixed geometry, so they share one counter; both only
-    // ever increase, so the sum increases on any such change.
+    // The drawables-staleness token: a settings change restyles every cell over the
+    // fixed geometry, so a settings-generation bump forces a full drawables rebuild.
+    // Ownership changes no longer feed this - a discovered market or a resized colony
+    // marks just its system stale now - so settings is the one whole-map restyle left.
     private static int computeContentRevision() {
-        return KmuLunaSettings.getSettingsGeneration() + PoliticalMapRefresh.getContentRevision();
+        return KmuLunaSettings.getSettingsGeneration();
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding
@@ -345,7 +426,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 () -> geometryCache.updateFromSector(Global.getSector()));
     }
 
-    // Shapes the cached raw cells into merged blocs and partitions them into filled
+    // Shapes the cached raw cells into merged clusters and partitions them into filled
     // (owned) and outline-only (decivilised/uninhabited) draw lists, baking in each
     // cell's colors, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category,
@@ -354,89 +435,358 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         var profiler = KmuProfiling.getProfiler();
         profiler.measure("politicalMap.rebuildDrawables", () -> {
             var sector = Global.getSector();
-            // One style bundle per category, applied below by the cell's category.
-            // A factionless style points its fill and inner seam at "No color" and
-            // draws only an outline.
-            var factionStyle = readFactionStyle();
-            var independentStyle = readIndependentStyle();
-            var decivilisedStyle = readDecivilisedStyle();
-            var uninhabitedStyle = readUninhabitedStyle();
-            styledBlocs = new ArrayList<>();
+            // One style bundle per category, retained so the incremental refresh
+            // re-shapes cells against the same styles this pass used. A factionless
+            // style points its fill and inner seam at "No color", drawing only an
+            // outline.
+            factionStyle = readFactionStyle();
+            independentStyle = readIndependentStyle();
+            decivilisedStyle = readDecivilisedStyle();
+            uninhabitedStyle = readUninhabitedStyle();
 
             // The politics scan walks the whole economy - the priciest content
             // step - so it is profiled and timed on its own, and the owner count
             // logged independent of the profiler's accumulated view.
             var politicsStart = System.nanoTime();
-            var ownerBySystemId = profiler.measure("politicalMap.resolvePolitics",
+            ownerBySystemId = profiler.measure("politicalMap.resolvePolitics",
                     () -> SectorPolitics.resolveDominantOwnerBySystemId(sector));
             LOG.debug("Political map politics resolved; ownedSystems=" + ownerBySystemId.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
 
             var decivilisedStart = System.nanoTime();
-            var decivilisedSystemIds = profiler.measure("politicalMap.findDecivilised",
+            decivilisedSystemIds = profiler.measure("politicalMap.findDecivilised",
                     () -> DecivilisedPresence.findRevealedDecivilisedSystemIds(sector));
             LOG.debug("Political map decivilised scan; systems=" + decivilisedSystemIds.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - decivilisedStart));
 
             neutralColor = SectorPolitics.resolveNeutralColor(sector);
 
-            // Shape the raw cells into merged blocs once, ownership-aware. Cells
+            // Shape the raw cells into merged clusters once, ownership-aware. Cells
             // consumed by the inset (fewer than three vertices left) drop out -
             // nothing to fill or stroke.
             var shapeStart = System.nanoTime();
             var shapedCells = profiler.measure("politicalMap.shapeCells",
                     () -> CellShaper.shapeCells(geometryCache.getCellEdgesBySystemId(),
                             ownerBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE));
+            styledCellBySystemId = new LinkedHashMap<>();
             for (var entry : shapedCells.entrySet()) {
-                var shaped = entry.getValue();
-                // A cell the border inset consumed or collapsed comes back with an
-                // empty fill (CellShaper via Polygons.insetSelectedEdges guarantees
-                // empty-or-drawable), so there is nothing to fill or stroke.
-                if (shaped.fillPolygon().isEmpty()) {
-                    continue;
-                }
-                var owner = ownerBySystemId.get(entry.getKey());
-                if (owner != null) {
-                    // Independent space styles from its own bundle; every other
-                    // owner is a core faction. Each element resolves against the
-                    // owner's two palette shades.
-                    var style = Factions.INDEPENDENT.equals(owner.factionId())
-                            ? independentStyle
-                            : factionStyle;
-                    styledBlocs.add(buildStyledBloc(shaped, owner.primaryColor(),
-                            owner.secondaryColor(), style));
-                } else {
-                    // Factionless: decivilised or (otherwise) uninhabited. Its style
-                    // fills neither palette slot, so both resolve to the shared
-                    // neutral color and only its outline draws; skip it when that
-                    // outline is "No color".
-                    var style = decivilisedSystemIds.contains(entry.getKey())
-                            ? decivilisedStyle
-                            : uninhabitedStyle;
-                    if (style.outerColor() != FactionPaletteChoice.NONE) {
-                        styledBlocs.add(
-                                buildStyledBloc(shaped, neutralColor, neutralColor, style));
-                    }
+                var styled = buildStyledCellForSystem(entry.getKey(), entry.getValue());
+                if (styled != null) {
+                    styledCellBySystemId.put(entry.getKey(), styled);
                 }
             }
+
+            // Each owned faction's territory: one rounded region per cluster (traced
+            // across all its cells so a multi-system cluster reads as one frontier),
+            // tessellated for the fill and flattened for the border - the same shape
+            // for both. Built off the same raw cells and owners the seams used, and
+            // profiled on its own since chaining, rounding, and tessellating every
+            // faction's outline is comparable in cost to shaping the cells.
+            factionTerritoryByFactionId = profiler.measure(
+                    "politicalMap.buildFactionTerritories", this::buildAllFactionTerritories);
+
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
-                    + " styledBlocs=" + styledBlocs.size()
+                    + " styledCells=" + styledCellBySystemId.size()
+                    + " factionTerritories=" + factionTerritoryByFactionId.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
         });
     }
 
-    // Builds one bloc's draw record: its flattened geometry, plus each element's
-    // color resolved against this bloc's two palette shades (null for a "No color"
-    // choice) and the opacities and widths from its category style. A factionless
-    // bloc passes the neutral color for both shades.
-    private static StyledBloc buildStyledBloc(ShapedCell shaped, Color primaryColor,
-            Color secondaryColor, MapStyle style) {
-        return new StyledBloc(
-                flattenVertices(shaped.fillPolygon()),
-                flattenEdgesOfClass(shaped, true),
+    // Folds any per-system ownership changes a colony resize marked into the
+    // standing drawables, re-deriving only those systems' owners and re-shaping only
+    // them and their neighbours. A resize that does not flip a system's owner costs
+    // just the re-derivation; a flip re-shapes the ring of affected cells and
+    // rebuilds the two factions' territories (the old owner and the new one).
+    private void applyStalePoliticsUpdates() {
+        var staleSystemIds = PoliticalMapRefresh.drainStalePoliticsSystemIds();
+        if (staleSystemIds.isEmpty()) {
+            return;
+        }
+        KmuProfiling.getProfiler().measure("politicalMap.applyPoliticsUpdates", () -> {
+            var sector = Global.getSector();
+            var systemById = indexSystemsById(sector);
+            var cellsToReshape = new LinkedHashSet<String>();
+            var affectedFactionIds = new LinkedHashSet<String>();
+            // Re-derive every marked system first, so re-shaping below reads a fully
+            // updated owner map even when two adjacent systems flipped in one batch.
+            for (var systemId : staleSystemIds) {
+                rederiveSystemOwner(sector, systemById, systemId, cellsToReshape,
+                        affectedFactionIds);
+            }
+            if (affectedFactionIds.isEmpty()) {
+                // Every marked system resized without flipping its owner - nothing
+                // to redraw. Logged so an un-updated colour can be confirmed a no-op
+                // flip rather than a missed event.
+                LOG.debug("Political map politics update: no owner changed; stale="
+                        + staleSystemIds.size());
+                return;
+            }
+            for (var cellId : cellsToReshape) {
+                reshapeCellInPlace(cellId);
+            }
+            // Only the old and new owners' territories can have changed shape; every
+            // other faction's rings trace unchanged cells, so they are left as-is.
+            var systemsByFaction = groupOwnedSystemsByFaction();
+            for (var factionId : affectedFactionIds) {
+                rebuildFactionTerritoryInPlace(factionId, systemsByFaction.get(factionId));
+            }
+            LOG.debug("Political map politics updated incrementally; stale="
+                    + staleSystemIds.size() + " reshapedCells=" + cellsToReshape.size()
+                    + " rebuiltFactions=" + affectedFactionIds.size());
+        });
+    }
+
+    // Re-derives one system's owner and, when it actually changed, records the cells
+    // to re-shape (the system and its neighbours, whose edge against it flips between
+    // a same-faction seam and a national border) and the factions whose territory
+    // must rebuild (the old and new owner). A system with no cell seeds no drawing,
+    // so it is skipped: a resize changes ownership over existing cells, never map
+    // membership.
+    private void rederiveSystemOwner(SectorAPI sector, Map<String, StarSystemAPI> systemById,
+            String systemId, Set<String> cellsToReshape, Set<String> affectedFactionIds) {
+        if (!geometryCache.getCellEdgesBySystemId().containsKey(systemId)) {
+            return;
+        }
+        var newOwner = SectorPolitics.resolveDominantOwner(sector, systemById.get(systemId));
+        var oldOwner = ownerBySystemId.get(systemId);
+        // DominantOwner is a record, so equality covers the faction and its palette:
+        // a resize that leaves the same winner leaves the drawing identical.
+        if (Objects.equals(oldOwner, newOwner)) {
+            return;
+        }
+        if (newOwner == null) {
+            ownerBySystemId.remove(systemId);
+        } else {
+            ownerBySystemId.put(systemId, newOwner);
+        }
+        if (oldOwner != null) {
+            affectedFactionIds.add(oldOwner.factionId());
+        }
+        if (newOwner != null) {
+            affectedFactionIds.add(newOwner.factionId());
+        }
+        cellsToReshape.add(systemId);
+        cellsToReshape.addAll(neighbourSystemIdsOf(systemId));
+    }
+
+    // Indexes the sector's systems by id, so a stale system id resolves to its
+    // StarSystemAPI directly rather than through SectorAPI.getStarSystem, which
+    // matches by name and would miss an id that differs from the display name.
+    private static Map<String, StarSystemAPI> indexSystemsById(SectorAPI sector) {
+        var systemById = new HashMap<String, StarSystemAPI>();
+        for (var system : sector.getStarSystems()) {
+            systemById.put(system.getId(), system);
+        }
+        return systemById;
+    }
+
+    // The systems whose cell borders this one, read from the adjacency graph. When
+    // this system's owner flips, each neighbour's shared edge flips between a
+    // same-faction seam and a national border, so every neighbour re-shapes too.
+    private Set<String> neighbourSystemIdsOf(String systemId) {
+        var neighbours = new LinkedHashSet<String>();
+        var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
+        if (edges != null) {
+            for (var edge : edges) {
+                if (edge.neighbourSystemId() != null) {
+                    neighbours.add(edge.neighbourSystemId());
+                }
+            }
+        }
+        return neighbours;
+    }
+
+    // Re-shapes one cell against the now-updated owners and replaces its draw record,
+    // or drops it when the cell contributes nothing (inset-collapsed, or factionless
+    // with a "No color" outline).
+    private void reshapeCellInPlace(String systemId) {
+        var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
+        if (edges == null) {
+            styledCellBySystemId.remove(systemId);
+            return;
+        }
+        var owner = ownerBySystemId.get(systemId);
+        var ownerFactionId = owner == null ? null : owner.factionId();
+        var shaped = CellShaper.shapeCell(edges, ownerFactionId, ownerBySystemId,
+                PoliticalMapStyle.BORDER_INSET_DISTANCE);
+        var styled = buildStyledCellForSystem(systemId, shaped);
+        if (styled == null) {
+            styledCellBySystemId.remove(systemId);
+        } else {
+            styledCellBySystemId.put(systemId, styled);
+        }
+    }
+
+    // Rebuilds (or drops) one faction's territory entry from its current members. A
+    // faction that lost its last member, or whose cluster no longer yields drawable
+    // geometry, is removed so its fill and border stop drawing.
+    private void rebuildFactionTerritoryInPlace(String factionId, List<String> memberSystemIds) {
+        var territory = memberSystemIds == null || memberSystemIds.isEmpty()
+                ? null
+                : buildFactionTerritory(factionId, memberSystemIds);
+        if (territory == null) {
+            factionTerritoryByFactionId.remove(factionId);
+        } else {
+            factionTerritoryByFactionId.put(factionId, territory);
+        }
+    }
+
+    // Builds one system's per-cell draw record from its shaped cell, or null when
+    // the cell draws nothing: an inset-collapsed cell, or a factionless cell whose
+    // outline is "No color". An owned cell keeps only its interior seams (its fill
+    // and national border are per-cluster, in factionTerritories); a factionless cell
+    // keeps its own inset fill and outline, since factionless cells do not fuse.
+    // Shared by the full rebuild and the incremental re-shape so both classify a
+    // cell identically.
+    private StyledCell buildStyledCellForSystem(String systemId, ShapedCell shaped) {
+        // A cell the border inset consumed or collapsed comes back with an empty
+        // fill (CellShaper via Polygons.insetSelectedEdges guarantees
+        // empty-or-drawable), so there is nothing to fill or stroke.
+        if (shaped.fillPolygon().isEmpty()) {
+            return null;
+        }
+        var owner = ownerBySystemId.get(systemId);
+        if (owner != null) {
+            // Independent space styles from its own bundle; every other owner is a
+            // core faction. The fill and national border are per cluster from the
+            // tessellated region, so an owned cell contributes only its interior seams
+            // here, in its inner-seam color resolved against the owner's palette.
+            var style = Factions.INDEPENDENT.equals(owner.factionId())
+                    ? independentStyle
+                    : factionStyle;
+            return buildStyledCell(shaped, owner.primaryColor(), owner.secondaryColor(),
+                    style, false);
+        }
+        // Factionless: decivilised or (otherwise) uninhabited. Its style fills
+        // neither palette slot, so both resolve to the shared neutral color and only
+        // its per-cell outline draws; drop it when that outline is "No color".
+        var style = decivilisedSystemIds.contains(systemId)
+                ? decivilisedStyle
+                : uninhabitedStyle;
+        if (style.outerColor() == FactionPaletteChoice.NONE) {
+            return null;
+        }
+        return buildStyledCell(shaped, neutralColor, neutralColor, style, true);
+    }
+
+    // Builds every owned faction's territory keyed by faction id. Each faction is
+    // independent - its cluster(s) trace only its own cells - so the incremental
+    // refresh rebuilds one faction's entry without touching the rest.
+    private Map<String, FactionTerritory> buildAllFactionTerritories() {
+        var territories = new LinkedHashMap<String, FactionTerritory>();
+        for (var faction : groupOwnedSystemsByFaction().entrySet()) {
+            var territory = buildFactionTerritory(faction.getKey(), faction.getValue());
+            if (territory != null) {
+                territories.put(faction.getKey(), territory);
+            }
+        }
+        return territories;
+    }
+
+    // Groups the currently owned systems by their faction id, so each faction's
+    // cluster(s) are traced from its own members.
+    private Map<String, List<String>> groupOwnedSystemsByFaction() {
+        var systemsByFaction = new LinkedHashMap<String, List<String>>();
+        for (var entry : ownerBySystemId.entrySet()) {
+            systemsByFaction
+                    .computeIfAbsent(entry.getValue().factionId(), factionId -> new ArrayList<>())
+                    .add(entry.getKey());
+        }
+        return systemsByFaction;
+    }
+
+    // Builds one faction's fill and national border from its rounded border rings,
+    // traced across all the systems it holds so a multi-system cluster reads as one
+    // continuous frontier. The rings are tessellated into fill triangles and
+    // flattened into border loops - the same geometry - so the fill exactly matches
+    // the stroked border. Disjoint clusters and enclaves each come back as their own
+    // ring, so rebuilding a faction from its current members alone re-splits or
+    // re-merges its clusters when the incremental refresh gains or loses one. Returns
+    // null when the faction has no fill and no border color, or no borderable
+    // geometry.
+    private FactionTerritory buildFactionTerritory(String factionId, List<String> memberSystemIds) {
+        var style = Factions.INDEPENDENT.equals(factionId) ? independentStyle : factionStyle;
+        // Every system of a faction shares its palette, so any member resolves the
+        // same fill and border colors.
+        var palette = ownerBySystemId.get(memberSystemIds.get(0));
+        var fillColor = pickPaletteColor(
+                style.fillColor(), palette.primaryColor(), palette.secondaryColor());
+        var borderColor = pickPaletteColor(
+                style.outerColor(), palette.primaryColor(), palette.secondaryColor());
+        if (fillColor == null && borderColor == null) {
+            return null;
+        }
+        var insetRings = SystemClusterBorders.traceBorderRings(memberSystemIds,
+                geometryCache.getCellEdgesBySystemId(), ownerBySystemId,
+                PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
+                KmuLunaSettings.getPoliticalMapBorderMiterLimit());
+        if (insetRings.isEmpty()) {
+            return null;
+        }
+        // Resolve the inset rings to their clean outer envelope first (positive
+        // winding drops any neck self-crossing), THEN round - rounding before the
+        // resolve would have its arc clipped off at the crossing and left a sharp
+        // corner. Fill and border are the same rounded region (triangulated vs its
+        // boundary loops), so they match exactly.
+        var roundedLoops = roundBorderLoops(
+                PolygonTessellator.tessellateToBoundaryLoops(insetRings));
+        var fillTriangles = fillColor == null
+                ? NO_VERTICES
+                : PolygonTessellator.tessellateToTriangles(roundedLoops);
+        var borderLoops = new ArrayList<float[]>();
+        if (borderColor != null) {
+            for (var loop : PolygonTessellator.tessellateToBoundaryLoops(roundedLoops)) {
+                borderLoops.add(flattenVertices(loop));
+            }
+        }
+        return new FactionTerritory(fillTriangles, fillColor,
+                (float) style.fillOpacity(), borderLoops, borderColor,
+                (float) style.outerOpacity(), (float) style.outerWidth());
+    }
+
+    // Rounds each clean border loop with the current corner settings, so a corner's
+    // arc is applied to the resolved envelope rather than a self-crossing inset (a
+    // crossing would clip the arc back to a sharp point). Each loop is first despiked
+    // - needle protrusions and inward cusps too thin for the rounding to sand off
+    // (its step-back clamps to their tiny edges) are spliced out, so the arc runs on
+    // clean geometry. Reused for every faction's rebuild.
+    private static List<List<double[]>> roundBorderLoops(List<List<double[]>> cleanLoops) {
+        var spikeHeight = KmuLunaSettings.getPoliticalMapBorderSpikeHeight();
+        var spikeAngle = KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians();
+        var radius = KmuLunaSettings.getPoliticalMapBorderCornerRadius();
+        var segments = KmuLunaSettings.getPoliticalMapBorderCornerSegments();
+        var chamfer = KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians();
+        var rounded = new ArrayList<List<double[]>>(cleanLoops.size());
+        for (var loop : cleanLoops) {
+            var despiked = Polygons.removeSpikes(loop, spikeHeight, spikeAngle);
+            rounded.add(Polygons.roundCorners(despiked, radius, segments, chamfer));
+        }
+        return rounded;
+    }
+
+    // Builds one cell's per-cell draw record: its interior seams always, plus - only
+    // when {@code perCellFillAndBorder} - a fill and an outer outline. An owned cell
+    // passes false: its fill and national border come per cluster from the tessellated
+    // region, so it contributes only its seams here. A factionless cell passes true and
+    // the neutral color for both palette shades: it does not fuse into a cluster, so it
+    // keeps its own inset fill and outline. Its outline is rounded with the same
+    // corner settings the cluster borders use, so a lone dead system reads as smoothly
+    // as a cluster rather than a sharp Voronoi cell. Each color resolves against the two
+    // palette shades, null for a "No color" choice, so the draw pass skips it.
+    private static StyledCell buildStyledCell(ShapedCell shaped, Color primaryColor,
+            Color secondaryColor, MapStyle style, boolean perCellFillAndBorder) {
+        return new StyledCell(
+                perCellFillAndBorder ? flattenVertices(shaped.fillPolygon()) : NO_VERTICES,
+                perCellFillAndBorder ? flattenClosedLoopAsSegments(roundCellOutline(shaped))
+                        : NO_VERTICES,
                 flattenEdgesOfClass(shaped, false),
-                pickPaletteColor(style.fillColor(), primaryColor, secondaryColor),
-                pickPaletteColor(style.outerColor(), primaryColor, secondaryColor),
+                perCellFillAndBorder
+                        ? pickPaletteColor(style.fillColor(), primaryColor, secondaryColor)
+                        : null,
+                perCellFillAndBorder
+                        ? pickPaletteColor(style.outerColor(), primaryColor, secondaryColor)
+                        : null,
                 pickPaletteColor(style.innerColor(), primaryColor, secondaryColor),
                 (float) style.fillOpacity(), (float) style.outerOpacity(),
                 (float) style.innerOpacity(),
@@ -456,7 +806,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     }
 
     // Reads each owned category's eight style settings into one bundle, so the
-    // build loop applies them per bloc without eight lookups each.
+    // build loop applies them per cluster without eight lookups each.
     private static MapStyle readFactionStyle() {
         return new MapStyle(
                 KmuLunaSettings.getFactionFillColor(), KmuLunaSettings.getFactionFillOpacity(),
@@ -504,7 +854,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 FactionPaletteChoice.NONE, 0, 0);
     }
 
-    // Flattens the edges of a shaped bloc of one class into a GL_LINES vertex run
+    // Flattens the edges of a shaped cell of one class into a GL_LINES vertex run
     // ([x1, y1, x2, y2, ...]): national borders when wantBoundary is true, interior
     // seams when false. Sized in a first pass so the run is a single exact array
     // rather than a growing list boxed per coordinate.
@@ -534,6 +884,35 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         return flat;
     }
 
+    // Rounds a factionless cell's inset outline with the same corner settings the
+    // cluster borders use, so its border reads consistently. The cell is a single
+    // convex inset polygon (all its edges are national border), so it needs no
+    // chaining or envelope resolve - only the corner rounding.
+    private static List<double[]> roundCellOutline(ShapedCell shaped) {
+        return Polygons.roundCorners(shaped.fillPolygon(),
+                KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
+                KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
+                KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians());
+    }
+
+    // Flattens a closed ring into GL_LINES segment pairs, one per edge including the
+    // wrap from the last vertex back to the first, so a rounded outline strokes as a
+    // closed loop under the same GL_LINES pass the per-cell edges use.
+    private static float[] flattenClosedLoopAsSegments(List<double[]> ring) {
+        var count = ring.size();
+        var flat = new float[count * FLOATS_PER_EDGE];
+        var index = 0;
+        for (var i = 0; i < count; i++) {
+            var start = ring.get(i);
+            var end = ring.get((i + 1) % count);
+            flat[index++] = (float) start[0];
+            flat[index++] = (float) start[1];
+            flat[index++] = (float) end[0];
+            flat[index++] = (float) end[1];
+        }
+        return flat;
+    }
+
     // Flattens a polygon's {x, y} vertices into a [x, y, x, y, ...] run.
     private static float[] flattenVertices(List<double[]> polygon) {
         var flat = new float[polygon.size() * FLOATS_PER_VERTEX];
@@ -553,15 +932,15 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             return;
         }
         hasLoggedFirstRender = true;
-        LOG.debug("Political map render renderOnMap fired: styledBlocs="
-                + styledBlocs.size() + " factor=" + factor + " alphaMult=" + alphaMult);
+        LOG.debug("Political map render renderOnMap fired: styledCells="
+                + styledCellBySystemId.size() + " factor=" + factor + " alphaMult=" + alphaMult);
     }
 
     // One category's full political-map style, read once per rebuild and applied to
-    // every bloc of that category: the fill, outer-border, and inner-seam color
+    // every cluster of that category: the fill, outer-border, and inner-seam color
     // choices with their opacities, plus the two border widths. The colors are
-    // choices (resolved against each bloc's two palette shades), not concrete
-    // colors, since one bundle serves many blocs. A factionless category sets fill
+    // choices (resolved against each cluster's two palette shades), not concrete
+    // colors, since one bundle serves many clusters. A factionless category sets fill
     // and inner to NONE so only its outline draws.
     private record MapStyle(
             FactionPaletteChoice fillColor, double fillOpacity,
@@ -569,14 +948,25 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             FactionPaletteChoice innerColor, double innerOpacity, double innerWidth) {
     }
 
-    // A bloc ready to draw: its flattened fill polygon and its national-border and
+    // A cell ready to draw: its flattened fill polygon and its national-border and
     // interior-seam edge runs (GL_LINES segments), plus the resolved fill/outer/
     // inner colors (null for a "No color" choice, which skips that element) with
-    // their opacities and the two border widths. All per bloc, since colors resolve
-    // against each bloc's palette and widths differ by category.
-    private record StyledBloc(float[] fill, float[] boundaryEdges, float[] interiorEdges,
+    // their opacities and the two border widths. All per cell, since colors resolve
+    // against each cell's palette and widths differ by category.
+    private record StyledCell(float[] fill, float[] boundaryEdges, float[] interiorEdges,
             Color fillColor, Color outerColor, Color innerColor,
             float fillAlpha, float outerAlpha, float innerAlpha,
             float outerWidth, float innerWidth) {
+    }
+
+    // One owned faction's fill and national border, both the same GLU-resolved
+    // region of the border rings so they match exactly. {@code fillTriangles} is that
+    // region as a GL_TRIANGLES soup ([x, y, x, y, ...], empty when the fill is "No
+    // color"); {@code borderLoops} is its boundary as GL_LINE_LOOP runs (empty when
+    // the border is "No color") - one loop per disjoint cluster and per enclave, with
+    // any narrow-neck self-crossing resolved away. Colors are null for a "No color"
+    // choice, which skips that element.
+    private record FactionTerritory(float[] fillTriangles, Color fillColor, float fillAlpha,
+            List<float[]> borderLoops, Color borderColor, float borderAlpha, float borderWidth) {
     }
 }

@@ -59,25 +59,51 @@ public final class SectorPolitics {
         }
 
         for (var system : sector.getStarSystems()) {
-            var footprintByFactionId = buildKnownFootprintByFaction(sector, system);
-            var dominantFactionId = SystemDominance.resolveDominantFactionId(footprintByFactionId);
-            if (dominantFactionId == null) {
-                continue;
+            var owner = resolveDominantOwner(sector, system);
+            if (owner != null) {
+                ownerBySystemId.put(system.getId(), owner);
             }
-            var faction = sector.getFaction(dominantFactionId);
-            if (faction == null) {
-                continue;
-            }
-            // The two palette slots are the faction's own authored UI shades: the
-            // bright color as primary and the dark color as secondary. Each
-            // .faction file specifies both directly, so a map element pointed at
-            // either stays true to the faction palette. Which element uses which is
-            // the player's choice, made downstream in the render layer.
-            ownerBySystemId.put(system.getId(),
-                    new DominantOwner(dominantFactionId,
-                            faction.getBrightUIColor(), faction.getDarkUIColor()));
         }
         return ownerBySystemId;
+    }
+
+    /**
+     * Resolves the dominant owner of one star system - the same result the bulk
+     * pass would put under this system's id, computed for it alone.
+     *
+     * <p>The single-system entry point the incremental refresh path leans on:
+     * when one colony's size changes, only that system's ownership can shift, so
+     * only it is re-derived rather than re-walking the whole economy. Shares the
+     * footprint, dominance rule, and palette lookup with
+     * {@link #resolveDominantOwnerBySystemId}, so a system resolves the same
+     * winner and colors whether it is refreshed alone or in the full pass.
+     *
+     * @param sector the sector whose economy is read; null (or a null economy)
+     *               yields null
+     * @param system the system to resolve; null yields null
+     * @return the dominant owner, or null when the system holds no owned market
+     *         (uninhabited)
+     */
+    public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system) {
+        if (sector == null || system == null || sector.getEconomy() == null) {
+            return null;
+        }
+        var footprintByFactionId = buildKnownFootprintByFaction(sector, system);
+        var dominantFactionId = SystemDominance.resolveDominantFactionId(footprintByFactionId);
+        if (dominantFactionId == null) {
+            return null;
+        }
+        var faction = sector.getFaction(dominantFactionId);
+        if (faction == null) {
+            return null;
+        }
+        // The two palette slots are the faction's own authored UI shades: the
+        // bright color as primary and the dark color as secondary. Each .faction
+        // file specifies both directly, so a map element pointed at either stays
+        // true to the faction palette. Which element uses which is the player's
+        // choice, made downstream in the render layer.
+        return new DominantOwner(dominantFactionId,
+                faction.getBrightUIColor(), faction.getDarkUIColor());
     }
 
     /**
