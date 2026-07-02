@@ -1,4 +1,4 @@
-package kmu.politicalmap.domain;
+package kmu.politicalmap.domain.geometry;
 
 /**
  * The ownership rule that turns a cell-adjacency edge into an interior seam or a

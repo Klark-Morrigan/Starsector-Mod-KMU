@@ -1,4 +1,4 @@
-package kmu.politicalmap.domain;
+package kmu.politicalmap.domain.politics;
 
 /**
  * One faction's market footprint within a single star system, reduced to the

@@ -1,6 +1,8 @@
-package kmu.politicalmap.domain;
+package kmu.politicalmap.domain.geometry;
 
 import kmlib.math.geometry.Polygons;
+
+import kmu.politicalmap.domain.politics.DominantOwner;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

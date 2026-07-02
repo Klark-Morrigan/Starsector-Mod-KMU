@@ -1,4 +1,4 @@
-package kmu.politicalmap.domain;
+package kmu.politicalmap.domain.politics;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

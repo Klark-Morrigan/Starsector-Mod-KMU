@@ -1,4 +1,4 @@
-package kmu.politicalmap.domain;
+package kmu.politicalmap.domain.politics;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;

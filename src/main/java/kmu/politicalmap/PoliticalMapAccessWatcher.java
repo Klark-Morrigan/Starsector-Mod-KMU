@@ -4,7 +4,7 @@ import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.util.IntervalUtil;
 
-import kmu.politicalmap.domain.PoliticalMapVisibility;
+import kmu.politicalmap.domain.visibility.PoliticalMapVisibility;
 
 import org.apache.log4j.Logger;
 

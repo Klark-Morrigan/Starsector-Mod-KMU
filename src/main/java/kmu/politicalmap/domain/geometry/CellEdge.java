@@ -1,4 +1,4 @@
-package kmu.politicalmap.domain;
+package kmu.politicalmap.domain.geometry;
 
 /**
  * One edge of a system's raw Voronoi cell, tagged with the neighbouring system

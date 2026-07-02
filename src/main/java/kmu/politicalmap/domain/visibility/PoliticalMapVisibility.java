@@ -1,7 +1,9 @@
-package kmu.politicalmap.domain;
+package kmu.politicalmap.domain.visibility;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+import kmu.politicalmap.domain.politics.SectorPolitics;
 
 /**
  * Decides which star systems appear on the political map, and fingerprints that

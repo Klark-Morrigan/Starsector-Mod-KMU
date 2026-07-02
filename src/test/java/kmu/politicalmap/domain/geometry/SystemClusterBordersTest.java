@@ -1,7 +1,6 @@
 package kmu.politicalmap.domain.geometry;
 
-import kmu.politicalmap.domain.CellEdge;
-import kmu.politicalmap.domain.DominantOwner;
+import kmu.politicalmap.domain.politics.DominantOwner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -5,10 +5,7 @@ import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Polygons;
 import kmlib.math.geometry.Segment;
 
-import kmu.politicalmap.domain.CellEdge;
-import kmu.politicalmap.domain.DominantOwner;
-import kmu.politicalmap.domain.EdgeClass;
-import kmu.politicalmap.domain.EdgeClassifier;
+import kmu.politicalmap.domain.politics.DominantOwner;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +15,7 @@ import java.util.Map;
 /**
  * Traces the inset border rings that outline one faction's system cluster(s).
  *
- * <p>Where {@link kmu.politicalmap.domain.CellShaper} shapes each cell on its
+ * <p>Where {@link CellShaper} shapes each cell on its
  * own, this looks at a whole cluster: it gathers the boundary edges of every
  * system a faction holds - the edges against a different owner, unowned space, or
  * the map frontier, with same-faction seams dropped - and chains them into the

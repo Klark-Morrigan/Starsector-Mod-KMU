@@ -1,10 +1,13 @@
-package kmu.politicalmap.domain;
+package kmu.politicalmap.domain.geometry;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
+
+import kmu.politicalmap.domain.visibility.MapVisibleStars;
+import kmu.politicalmap.domain.visibility.PoliticalMapVisibility;
 
 import org.apache.log4j.Logger;
 
