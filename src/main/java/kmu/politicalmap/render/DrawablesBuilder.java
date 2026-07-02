@@ -89,7 +89,7 @@ final class DrawablesBuilder {
             for (var entry : shapedCells.entrySet()) {
                 var styled = buildStyledCellForSystem(drawables, entry.getKey(), entry.getValue());
                 if (styled != null) {
-                    drawables.styledCellBySystemId().put(entry.getKey(), styled);
+                    drawables.getStyledCellBySystemId().put(entry.getKey(), styled);
                 }
             }
 
@@ -103,8 +103,8 @@ final class DrawablesBuilder {
                     () -> buildAllFactionTerritories(drawables, geometryCache));
 
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
-                    + " styledCells=" + drawables.styledCellBySystemId().size()
-                    + " factionTerritories=" + drawables.factionTerritoryByFactionId().size()
+                    + " styledCells=" + drawables.getStyledCellBySystemId().size()
+                    + " factionTerritories=" + drawables.getFactionTerritoryByFactionId().size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
             return drawables;
         });
@@ -124,28 +124,28 @@ final class DrawablesBuilder {
         if (shaped.fillPolygon().isEmpty()) {
             return null;
         }
-        var owner = drawables.ownerBySystemId().get(systemId);
+        var owner = drawables.getOwnerBySystemId().get(systemId);
         if (owner != null) {
             // Independent space styles from its own bundle; every other owner is a core
             // faction. The fill and national border are per cluster from the tessellated
             // region, so an owned cell contributes only its interior seams here, in its
             // inner-seam color resolved against the owner's palette.
             var style = Factions.INDEPENDENT.equals(owner.factionId())
-                    ? drawables.independentStyle()
-                    : drawables.factionStyle();
+                    ? drawables.getIndependentStyle()
+                    : drawables.getFactionStyle();
             return buildStyledCell(shaped, owner.primaryColor(), owner.secondaryColor(),
                     style, false);
         }
         // Factionless: decivilised or (otherwise) uninhabited. Its style fills neither
         // palette slot, so both resolve to the shared neutral color and only its
         // per-cell outline draws; drop it when that outline is "No color".
-        var style = drawables.decivilisedSystemIds().contains(systemId)
-                ? drawables.decivilisedStyle()
-                : drawables.uninhabitedStyle();
+        var style = drawables.getDecivilisedSystemIds().contains(systemId)
+                ? drawables.getDecivilisedStyle()
+                : drawables.getUninhabitedStyle();
         if (style.outerColor() == FactionPaletteChoice.NONE) {
             return null;
         }
-        var neutralColor = drawables.neutralColor();
+        var neutralColor = drawables.getNeutralColor();
         return buildStyledCell(shaped, neutralColor, neutralColor, style, true);
     }
 
@@ -158,7 +158,7 @@ final class DrawablesBuilder {
             var territory = buildFactionTerritory(drawables, geometryCache,
                     faction.getKey(), faction.getValue());
             if (territory != null) {
-                drawables.factionTerritoryByFactionId().put(faction.getKey(), territory);
+                drawables.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
             }
         }
     }
@@ -167,7 +167,7 @@ final class DrawablesBuilder {
     // cluster(s) are traced from its own members.
     static Map<String, List<String>> groupOwnedSystemsByFaction(PoliticalMapDrawables drawables) {
         var systemsByFaction = new LinkedHashMap<String, List<String>>();
-        for (var entry : drawables.ownerBySystemId().entrySet()) {
+        for (var entry : drawables.getOwnerBySystemId().entrySet()) {
             systemsByFaction
                     .computeIfAbsent(entry.getValue().factionId(), factionId -> new ArrayList<>())
                     .add(entry.getKey());
@@ -187,11 +187,11 @@ final class DrawablesBuilder {
             PoliticalMapGeometryCache geometryCache, String factionId,
             List<String> memberSystemIds) {
         var style = Factions.INDEPENDENT.equals(factionId)
-                ? drawables.independentStyle()
-                : drawables.factionStyle();
+                ? drawables.getIndependentStyle()
+                : drawables.getFactionStyle();
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
-        var palette = drawables.ownerBySystemId().get(memberSystemIds.get(0));
+        var palette = drawables.getOwnerBySystemId().get(memberSystemIds.get(0));
         var fillColor = pickPaletteColor(
                 style.fillColor(), palette.primaryColor(), palette.secondaryColor());
         var borderColor = pickPaletteColor(
@@ -200,7 +200,7 @@ final class DrawablesBuilder {
             return null;
         }
         var insetRings = SystemClusterBorders.traceBorderRings(memberSystemIds,
-                geometryCache.getCellEdgesBySystemId(), drawables.ownerBySystemId(),
+                geometryCache.getCellEdgesBySystemId(), drawables.getOwnerBySystemId(),
                 PoliticalMapStyle.BORDER_INSET_DISTANCE,
                 KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
                 KmuLunaSettings.getPoliticalMapBorderMiterLimit());

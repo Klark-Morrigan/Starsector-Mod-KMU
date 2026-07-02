@@ -57,7 +57,7 @@ final class PoliticalMapRenderer {
     // exactly matches the stroked border. A null fill color is a "No color" choice, so
     // that faction is left unfilled; factionless cells carry no fill at all.
     private static void drawFills(PoliticalMapDrawables drawables, float factor, float alphaMult) {
-        for (var territory : drawables.factionTerritoryByFactionId().values()) {
+        for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
             if (territory.fillColor() == null) {
                 continue;
             }
@@ -78,7 +78,7 @@ final class PoliticalMapRenderer {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        for (var cell : drawables.styledCellBySystemId().values()) {
+        for (var cell : drawables.getStyledCellBySystemId().values()) {
             if (cell.innerColor() == null) {
                 continue;
             }
@@ -86,7 +86,7 @@ final class PoliticalMapRenderer {
             GlColor.set(cell.innerColor(), alphaMult * cell.innerAlpha());
             drawVertexRun(GL11.GL_LINES, cell.interiorEdges(), factor);
         }
-        for (var cell : drawables.styledCellBySystemId().values()) {
+        for (var cell : drawables.getStyledCellBySystemId().values()) {
             if (cell.outerColor() == null) {
                 continue;
             }
@@ -96,7 +96,7 @@ final class PoliticalMapRenderer {
         }
         // Each border ring is a closed rounded loop, so it strokes as one continuous
         // GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
-        for (var territory : drawables.factionTerritoryByFactionId().values()) {
+        for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
             if (territory.borderColor() == null) {
                 continue;
             }

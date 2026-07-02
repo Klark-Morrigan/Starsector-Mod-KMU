@@ -94,16 +94,16 @@ final class IncrementalPoliticsRefresh {
             return;
         }
         var newOwner = SectorPolitics.resolveDominantOwner(sector, systemById.get(systemId));
-        var oldOwner = drawables.ownerBySystemId().get(systemId);
+        var oldOwner = drawables.getOwnerBySystemId().get(systemId);
         // DominantOwner is a record, so equality covers the faction and its palette: a
         // resize that leaves the same winner leaves the drawing identical.
         if (Objects.equals(oldOwner, newOwner)) {
             return;
         }
         if (newOwner == null) {
-            drawables.ownerBySystemId().remove(systemId);
+            drawables.getOwnerBySystemId().remove(systemId);
         } else {
-            drawables.ownerBySystemId().put(systemId, newOwner);
+            drawables.getOwnerBySystemId().put(systemId, newOwner);
         }
         if (oldOwner != null) {
             affectedFactionIds.add(oldOwner.factionId());
@@ -150,18 +150,18 @@ final class IncrementalPoliticsRefresh {
             PoliticalMapGeometryCache geometryCache, String systemId) {
         var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
         if (edges == null) {
-            drawables.styledCellBySystemId().remove(systemId);
+            drawables.getStyledCellBySystemId().remove(systemId);
             return;
         }
-        var owner = drawables.ownerBySystemId().get(systemId);
+        var owner = drawables.getOwnerBySystemId().get(systemId);
         var ownerFactionId = owner == null ? null : owner.factionId();
-        var shaped = CellShaper.shapeCell(edges, ownerFactionId, drawables.ownerBySystemId(),
+        var shaped = CellShaper.shapeCell(edges, ownerFactionId, drawables.getOwnerBySystemId(),
                 PoliticalMapStyle.BORDER_INSET_DISTANCE);
         var styled = DrawablesBuilder.buildStyledCellForSystem(drawables, systemId, shaped);
         if (styled == null) {
-            drawables.styledCellBySystemId().remove(systemId);
+            drawables.getStyledCellBySystemId().remove(systemId);
         } else {
-            drawables.styledCellBySystemId().put(systemId, styled);
+            drawables.getStyledCellBySystemId().put(systemId, styled);
         }
     }
 
@@ -176,9 +176,9 @@ final class IncrementalPoliticsRefresh {
                 : DrawablesBuilder.buildFactionTerritory(drawables, geometryCache, factionId,
                         memberSystemIds);
         if (territory == null) {
-            drawables.factionTerritoryByFactionId().remove(factionId);
+            drawables.getFactionTerritoryByFactionId().remove(factionId);
         } else {
-            drawables.factionTerritoryByFactionId().put(factionId, territory);
+            drawables.getFactionTerritoryByFactionId().put(factionId, territory);
         }
     }
 }

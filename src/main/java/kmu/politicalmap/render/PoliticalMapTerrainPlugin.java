@@ -194,7 +194,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             // rebuild time, so a wrong or empty render can be confirmed against what was
             // built and how long it cost.
             LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
-                    + " styledCells=" + drawables.styledCellBySystemId().size()
+                    + " styledCells=" + drawables.getStyledCellBySystemId().size()
                     + " geometryRebuilt=" + rebuiltCells
                     + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
             return;
@@ -212,7 +212,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // succeeds.
     private void ensureDrawablesNonNull() {
         if (drawables == null) {
-            drawables = PoliticalMapDrawables.empty();
+            drawables = PoliticalMapDrawables.createEmpty();
         }
     }
 
@@ -240,7 +240,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         }
         hasLoggedFirstRender = true;
         LOG.debug("Political map render renderOnMap fired: styledCells="
-                + drawables.styledCellBySystemId().size()
+                + drawables.getStyledCellBySystemId().size()
                 + " factor=" + factor + " alphaMult=" + alphaMult);
     }
 }
