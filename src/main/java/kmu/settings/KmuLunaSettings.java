@@ -102,7 +102,7 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_INDEPENDENT_OUTER_BORDER_WIDTH = 3.0;
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_INNER_BORDER_COLOR =
             FactionPaletteChoice.PRIMARY;
-    private static final double DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY = 0.5;
+    private static final double DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY = 0.1;
     private static final double DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH = 5.0;
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_FILL_COLOR =
             FactionPaletteChoice.PRIMARY;
