@@ -144,6 +144,16 @@ public final class PoliticalMapGeometryCache {
         return Collections.unmodifiableMap(cellEdgesBySystemId);
     }
 
+    /**
+     * @return each on-map system's Voronoi site - its {@code {x, y}} hyperspace
+     *         position and the natural centre of its cell - keyed by system id. The
+     *         point cloud a cluster's label anchor is fitted to. An unmodifiable live
+     *         view.
+     */
+    public Map<String, double[]> getSiteBySystemId() {
+        return Collections.unmodifiableMap(siteBySystemId);
+    }
+
     private static Map<String, double[]> collectAccessibleSites(SectorAPI sector) {
         var sites = new LinkedHashMap<String, double[]>();
         if (sector == null) {

@@ -75,6 +75,11 @@ final class IncrementalPoliticsRefresh {
                 rebuildFactionTerritoryInPlace(drawables, geometryCache, factionId,
                         systemsByFaction.get(factionId));
             }
+            // A flip can split or merge clusters (a lost system severs one, a gained
+            // one bridges two), so re-fit every anchor off the updated owners rather than
+            // patching the touched factions' anchors alone. A no-op while the toggle is
+            // off. Runs only on a real flip - the early return above already left.
+            DrawablesBuilder.rebuildClusterAnchors(drawables, geometryCache);
             LOG.debug("Political map politics updated incrementally; stale="
                     + staleSystemIds.size() + " reshapedCells=" + cellsToReshape.size()
                     + " rebuiltFactions=" + affectedFactionIds.size());

@@ -20,4 +20,17 @@ import java.awt.Color;
  * fill was.
  */
 public record DominantOwner(String factionId, Color primaryColor, Color secondaryColor) {
+
+    /**
+     * The faction id of a possibly-absent owner: {@code owner}'s id, or null when
+     * {@code owner} is null. The single null-safe read the political-map geometry
+     * classifies edges through, so an unowned cell and one held by no faction read
+     * alike without each caller repeating the null guard.
+     *
+     * @param owner the owner to read, or null for an unowned system
+     * @return the owner's faction id, or null when there is no owner
+     */
+    public static String factionIdOf(DominantOwner owner) {
+        return owner == null ? null : owner.factionId();
+    }
 }

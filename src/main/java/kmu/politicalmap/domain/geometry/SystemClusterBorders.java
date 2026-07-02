@@ -99,12 +99,9 @@ public final class SystemClusterBorders {
             if (edges == null) {
                 continue;
             }
-            var ownerFactionId = factionIdOf(ownerBySystemId.get(systemId));
+            var ownerFactionId = DominantOwner.factionIdOf(ownerBySystemId.get(systemId));
             for (var edge : edges) {
-                var neighbourFactionId = edge.neighbourSystemId() == null
-                        ? null
-                        : factionIdOf(ownerBySystemId.get(edge.neighbourSystemId()));
-                if (EdgeClassifier.classify(ownerFactionId, neighbourFactionId)
+                if (EdgeClassifier.classifyAcross(edge, ownerFactionId, ownerBySystemId)
                         == EdgeClass.BOUNDARY) {
                     segments.add(new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
                 }
@@ -132,9 +129,5 @@ public final class SystemClusterBorders {
             return true;
         }
         return rawArea > 0 && insetArea > rawArea;
-    }
-
-    private static String factionIdOf(DominantOwner owner) {
-        return owner == null ? null : owner.factionId();
     }
 }

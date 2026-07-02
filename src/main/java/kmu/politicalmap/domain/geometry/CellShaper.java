@@ -46,7 +46,7 @@ public final class CellShaper {
             Map<String, DominantOwner> ownerBySystemId, double borderInset) {
         var shaped = new LinkedHashMap<String, ShapedCell>();
         for (var entry : edgesBySystemId.entrySet()) {
-            var ownerFactionId = factionIdOf(ownerBySystemId.get(entry.getKey()));
+            var ownerFactionId = DominantOwner.factionIdOf(ownerBySystemId.get(entry.getKey()));
             shaped.put(entry.getKey(),
                     shapeCell(entry.getValue(), ownerFactionId, ownerBySystemId, borderInset));
         }
@@ -73,17 +73,10 @@ public final class CellShaper {
         for (var i = 0; i < edges.size(); i++) {
             var edge = edges.get(i);
             vertices.add(new double[] {edge.x1(), edge.y1()});
-            var neighbourFactionId = edge.neighbourSystemId() == null
-                    ? null
-                    : factionIdOf(ownerBySystemId.get(edge.neighbourSystemId()));
-            isBorderEdge[i] =
-                    EdgeClassifier.classify(ownerFactionId, neighbourFactionId) == EdgeClass.BOUNDARY;
+            isBorderEdge[i] = EdgeClassifier.classifyAcross(edge, ownerFactionId, ownerBySystemId)
+                    == EdgeClass.BOUNDARY;
         }
         var inset = Polygons.insetSelectedEdges(vertices, isBorderEdge, borderInset);
         return new ShapedCell(inset.vertices(), inset.edgeIsInset());
-    }
-
-    private static String factionIdOf(DominantOwner owner) {
-        return owner == null ? null : owner.factionId();
     }
 }

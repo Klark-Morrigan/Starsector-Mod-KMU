@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.geometry.Polygons;
+import kmlib.math.geometry.PrincipalAxis;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 
@@ -13,6 +14,8 @@ import kmu.politicalmap.domain.geometry.CellShaper;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.geometry.ShapedCell;
 import kmu.politicalmap.domain.geometry.SystemClusterBorders;
+import kmu.politicalmap.domain.geometry.SystemClusters;
+import kmu.politicalmap.domain.politics.DominantOwner;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 import kmu.politicalmap.domain.visibility.DecivilisedPresence;
 import kmu.settings.FactionPaletteChoice;
@@ -73,7 +76,7 @@ final class DrawablesBuilder {
             // drawables so the incremental refresh re-shapes cells against the same
             // inputs this pass used.
             var drawables = new PoliticalMapDrawables(
-                    new LinkedHashMap<>(), new LinkedHashMap<>(),
+                    new LinkedHashMap<>(), new LinkedHashMap<>(), new ArrayList<>(),
                     ownerBySystemId, decivilisedSystemIds,
                     SectorPolitics.resolveNeutralColor(sector),
                     MapStyleReader.readFactionStyle(), MapStyleReader.readIndependentStyle(),
@@ -101,6 +104,11 @@ final class DrawablesBuilder {
             // outline is comparable in cost to shaping the cells.
             profiler.measure("politicalMap.buildFactionTerritories",
                     () -> buildAllFactionTerritories(drawables, geometryCache));
+
+            // The debug label anchors, when the dev toggle asks for them. Cheap next to
+            // the shaping above, so it shares the same rebuild rather than a pass of its
+            // own; a no-op (leaving the list empty) when the toggle is off.
+            rebuildClusterAnchors(drawables, geometryCache);
 
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
                     + " styledCells=" + drawables.getStyledCellBySystemId().size()
@@ -161,6 +169,65 @@ final class DrawablesBuilder {
                 drawables.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
             }
         }
+    }
+
+    // Rebuilds the debug label anchors in place: clears the standing list, then - only
+    // when the dev toggle is on - splits the owned systems into contiguous clusters and
+    // fits one anchor to each. Shared by the full rebuild and the incremental refresh so
+    // an ownership change keeps the anchors in step with the fills and borders. Reads
+    // the toggle here (not at the call sites) so both paths gate identically.
+    static void rebuildClusterAnchors(PoliticalMapDrawables drawables,
+            PoliticalMapGeometryCache geometryCache) {
+        var anchors = drawables.getClusterAnchors();
+        anchors.clear();
+        if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
+            return;
+        }
+        var clusters = SystemClusters.findClusters(
+                geometryCache.getCellEdgesBySystemId(), drawables.getOwnerBySystemId());
+        anchors.addAll(computeClusterAnchors(
+                clusters, geometryCache.getSiteBySystemId(), drawables.getOwnerBySystemId()));
+    }
+
+    // Fits one label anchor to each contiguous cluster: the principal axis of its member
+    // system positions gives the centre to hang the label on, the direction it runs, and
+    // the span it can fill. The axis segment is centred on the anchor, so it reaches half
+    // the span each way; a single-system cluster has zero span and collapses to the dot.
+    // The owning faction's bright shade colours the marker so it reads against the fill.
+    static List<ClusterAnchor> computeClusterAnchors(List<List<String>> clusters,
+            Map<String, double[]> siteBySystemId, Map<String, DominantOwner> ownerBySystemId) {
+        var anchors = new ArrayList<ClusterAnchor>(clusters.size());
+        for (var memberSystemIds : clusters) {
+            var sites = collectClusterSites(memberSystemIds, siteBySystemId);
+            if (sites.isEmpty()) {
+                continue;
+            }
+            var axis = PrincipalAxis.fitTo(sites);
+            var halfSpan = axis.length() / 2.0;
+            var color = ownerBySystemId.get(memberSystemIds.get(0)).primaryColor();
+            anchors.add(new ClusterAnchor(
+                    (float) axis.centroidX(), (float) axis.centroidY(),
+                    (float) (axis.centroidX() - axis.axisX() * halfSpan),
+                    (float) (axis.centroidY() - axis.axisY() * halfSpan),
+                    (float) (axis.centroidX() + axis.axisX() * halfSpan),
+                    (float) (axis.centroidY() + axis.axisY() * halfSpan),
+                    color));
+        }
+        return anchors;
+    }
+
+    // Gathers the {x, y} sites of a cluster's members, skipping any whose site is missing
+    // - the point cloud the anchor's axis is fitted to.
+    private static List<double[]> collectClusterSites(List<String> memberSystemIds,
+            Map<String, double[]> siteBySystemId) {
+        var sites = new ArrayList<double[]>(memberSystemIds.size());
+        for (var systemId : memberSystemIds) {
+            var site = siteBySystemId.get(systemId);
+            if (site != null) {
+                sites.add(site);
+            }
+        }
+        return sites;
     }
 
     // Groups the currently owned systems by their faction id, so each faction's

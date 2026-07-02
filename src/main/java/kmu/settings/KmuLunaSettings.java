@@ -109,6 +109,11 @@ public final class KmuLunaSettings {
             "kmu_politicalMapBorderSpikeHeight";
     private static final String BORDER_SPIKE_ANGLE_FIELD =
             "kmu_politicalMapBorderSpikeAngle";
+    // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and an
+    // axis line) so the clustering and axis fit behind the coming faction labels can be
+    // eyeballed on the map. Off by default.
+    private static final String SHOW_CLUSTER_ANCHORS_FIELD =
+            "kmu_politicalMapShowClusterAnchors";
 
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
@@ -152,6 +157,7 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
     private static final double DEFAULT_BORDER_SPIKE_HEIGHT = 150.0;
     private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 90.0;
+    private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
     // derived state (e.g. the political-map overlay) read this generation and
@@ -435,6 +441,16 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapBorderSpikeAngleRadians() {
         return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, BORDER_SPIKE_ANGLE_FIELD,
                 DEFAULT_BORDER_SPIKE_ANGLE_DEGREES));
+    }
+
+    /**
+     * @return whether the political map draws the per-cluster label anchors - a dot at
+     *         each contiguous cluster's centre and a line along its long axis; off by
+     *         default, a diagnostic for the coming faction labels
+     */
+    public static boolean getPoliticalMapShowClusterAnchors() {
+        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_CLUSTER_ANCHORS_FIELD,
+                DEFAULT_SHOW_CLUSTER_ANCHORS);
     }
 
     // Reads a faction/independent palette Radio and maps its label to a choice,
