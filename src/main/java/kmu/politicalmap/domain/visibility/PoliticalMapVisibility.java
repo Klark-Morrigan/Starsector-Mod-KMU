@@ -3,6 +3,8 @@ package kmu.politicalmap.domain.visibility;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.math.hashing.Avalanche;
+
 import kmu.politicalmap.domain.politics.KnownMarketFootprints;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 
@@ -25,11 +27,17 @@ import kmu.politicalmap.domain.politics.SectorPolitics;
  * seeding and the refresh fingerprint share one rule.
  */
 public final class PoliticalMapVisibility {
-    // Salt folded into the fingerprint for an inhabited-but-unaffiliated
-    // decivilised system, so a freshly revealed ruin - a draw-class change on a
-    // system that was already on the map - moves the fingerprint, not only a
-    // system entering or leaving the set.
+    // Salt XORed into a decivilised system's id hash before the avalanche, so a
+    // revealed ruin - a draw-class change on a system already on the map - lands a
+    // different contribution from that same system drawn live, and the fingerprint
+    // moves even when the membership set does not.
     private static final int DECIVILISED_FINGERPRINT_SALT = 31;
+
+    // Seed XORed into every contribution before the avalanche. fmix32 maps 0 to 0,
+    // so an id hashing to 0 would otherwise contribute 0 and vanish from the sum;
+    // seeding shifts that single blind spot off 0 onto an arbitrary value (the
+    // golden-ratio constant) that no real system id hashes to.
+    private static final int FINGERPRINT_SEED = 0x9e3779b9;
 
     private PoliticalMapVisibility() {
     }
@@ -114,10 +122,11 @@ public final class PoliticalMapVisibility {
      * The fingerprint contribution of one on-map system, identifying it by id and
      * folding in its draw class so a decivilised shell reads differently from a
      * live colony on the same system. Summing this over every on-map system gives
-     * the visibility fingerprint the sector watcher polls: identity-based and
-     * order-independent, so it still moves when one system enters as another
-     * leaves, and a freshly revealed ruin - a draw-class flip on a system already
-     * shown - shifts it without the membership set changing.
+     * the visibility fingerprint the sector watcher polls: order-independent, so it
+     * still moves when one system enters as another leaves, and collision-resistant
+     * because each contribution is avalanched before the sum - a freshly revealed
+     * ruin, a draw-class flip on a system already shown, shifts it without the
+     * membership set changing.
      *
      * <p>The ownership half of the picture (who holds each system) is tracked
      * separately, as a per-system owner map collected in the same walk but never
@@ -131,7 +140,15 @@ public final class PoliticalMapVisibility {
      */
     public static int computeVisibilityContribution(String systemId,
             boolean isRevealedDecivilised) {
+        // Seed, fold the draw class in, then avalanche before the caller sums it.
+        // Summing raw id hashes lets structured values cancel - hashes that are
+        // small or related can net to no change across a swap - so the drawn set
+        // could shift without moving the fingerprint. Spreading each id across all
+        // 32 bits makes such a cancellation need a full 32-bit coincidence, while
+        // staying a sum keeps the fingerprint order-independent. The seed covers
+        // fmix32's lone fixed point at 0, so a 0-hash id still contributes non-zero.
         var idHash = systemId.hashCode();
-        return isRevealedDecivilised ? DECIVILISED_FINGERPRINT_SALT * idHash : idHash;
+        var drawClassSalt = isRevealedDecivilised ? DECIVILISED_FINGERPRINT_SALT : 0;
+        return Avalanche.mixBits(idHash ^ FINGERPRINT_SEED ^ drawClassSalt);
     }
 }

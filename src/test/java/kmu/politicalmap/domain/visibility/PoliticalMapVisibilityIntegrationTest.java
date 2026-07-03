@@ -139,6 +139,39 @@ class PoliticalMapVisibilityIntegrationTest {
             assertThat(PoliticalMapVisibility.computeVisibilityContribution("a", true))
                     .isNotEqualTo(PoliticalMapVisibility.computeVisibilityContribution("a", false));
         }
+
+        @Test
+        void visibilityContributionIsNonZeroForAnIdThatHashesToZero() {
+            // The avalanche has a fixed point at 0, so an unseeded 0-hash id would
+            // contribute 0 and be invisible to the summed fingerprint - the system
+            // could enter or leave the map without moving it. The empty string is
+            // the canonical 0-hash id; the seed spreads it to a non-zero value.
+            var idHashingToZero = "";
+            assertThat(idHashingToZero.hashCode()).isZero();
+            assertThat(PoliticalMapVisibility.computeVisibilityContribution(idHashingToZero, false))
+                    .isNotZero();
+        }
+
+        @Test
+        void summedFingerprintMovesWhenAZeroHashSystemJoinsTheDrawnSet() {
+            // The fingerprint is a sum of contributions, so a system joining the
+            // drawn set must change it - including a 0-hash id, whose contribution
+            // has to be non-zero for its arrival to register in the sum.
+            assertThat("".hashCode()).isZero();
+            var before = PoliticalMapVisibility.computeVisibilityContribution("a", false);
+            var after = before + PoliticalMapVisibility.computeVisibilityContribution("", false);
+            assertThat(after).isNotEqualTo(before);
+        }
+
+        @Test
+        void visibilityContributionShiftsWhenAZeroHashSystemBecomesDecivilised() {
+            // A draw-class flip must move the contribution even for a 0-hash id, so a
+            // live-to-dead change on such a system still moves the summed fingerprint
+            // rather than reading identically live and dead.
+            assertThat("".hashCode()).isZero();
+            assertThat(PoliticalMapVisibility.computeVisibilityContribution("", true))
+                    .isNotEqualTo(PoliticalMapVisibility.computeVisibilityContribution("", false));
+        }
     }
 
     // Wires a single-system sector whose economy returns the given markets for
