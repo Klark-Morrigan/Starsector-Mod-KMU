@@ -9,6 +9,7 @@ import kmu.politicalmap.domain.geometry.CellShaper;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
+import kmu.politicalmap.render.model.PoliticalMapDrawables;
 
 import org.apache.log4j.Logger;
 

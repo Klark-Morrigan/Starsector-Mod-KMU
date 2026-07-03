@@ -3,6 +3,7 @@ package kmu.politicalmap.render;
 import kmlib.opengl.GlColor;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.politicalmap.render.model.PoliticalMapDrawables;
 
 import org.lwjgl.opengl.GL11;
 

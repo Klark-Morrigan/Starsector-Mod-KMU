@@ -10,6 +10,8 @@ import kmlib.profiling.Timings;
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
+import kmu.politicalmap.render.model.PoliticalMapDebugDrawables;
+import kmu.politicalmap.render.model.PoliticalMapDrawables;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;

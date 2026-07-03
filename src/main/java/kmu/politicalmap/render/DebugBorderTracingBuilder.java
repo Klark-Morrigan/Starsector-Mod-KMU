@@ -10,6 +10,7 @@ import kmu.politicalmap.domain.geometry.SystemClusterBorders;
 import kmu.politicalmap.domain.politics.DominantOwner;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 import kmu.politicalmap.domain.visibility.DecivilisedPresence;
+import kmu.politicalmap.render.model.PoliticalMapDebugDrawables;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 

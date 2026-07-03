@@ -1,4 +1,4 @@
-package kmu.politicalmap.render;
+package kmu.politicalmap.render.model;
 
 import java.util.List;
 
@@ -13,10 +13,10 @@ import java.util.List;
  * smoothing gates - so an empty stage means that pass was off and the renderer skips it.
  * Each run is a flat [x, y, x, y, ...] ring in world coordinates.
  */
-record PoliticalMapDebugDrawables(List<float[]> baseLoops, List<float[]> despikedLoops,
+public record PoliticalMapDebugDrawables(List<float[]> baseLoops, List<float[]> despikedLoops,
         List<float[]> roundedLoops) {
     // True when no stage has any loop, so the renderer can skip the GL state push entirely.
-    boolean isEmpty() {
+    public boolean isEmpty() {
         return baseLoops.isEmpty() && despikedLoops.isEmpty() && roundedLoops.isEmpty();
     }
 }

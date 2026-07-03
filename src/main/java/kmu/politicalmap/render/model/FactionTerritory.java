@@ -1,4 +1,4 @@
-package kmu.politicalmap.render;
+package kmu.politicalmap.render.model;
 
 import java.util.List;
 
@@ -12,6 +12,6 @@ import java.util.List;
  * and opacity and reports whether it is hidden, so the draw pass skips what shows
  * nothing.
  */
-record FactionTerritory(float[] fillTriangles, ElementPaint fill,
+public record FactionTerritory(float[] fillTriangles, ElementPaint fill,
         List<float[]> borderLoops, ElementPaint border, float borderWidth) {
 }

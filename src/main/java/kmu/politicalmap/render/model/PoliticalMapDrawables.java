@@ -1,4 +1,4 @@
-package kmu.politicalmap.render;
+package kmu.politicalmap.render.model;
 
 import kmu.politicalmap.domain.politics.DominantOwner;
 
@@ -28,7 +28,7 @@ import java.util.Set;
  * set once at build and only read after, so an incremental pass re-shapes against the
  * exact inputs the full build baked in.
  */
-final class PoliticalMapDrawables {
+public final class PoliticalMapDrawables {
     // Render output, mutated in place by the incremental refresh.
     private final Map<String, StyledCell> styledCellBySystemId;
     private final Map<String, FactionTerritory> factionTerritoryByFactionId;
@@ -46,7 +46,7 @@ final class PoliticalMapDrawables {
     private final MapStyle decivilisedStyle;
     private final MapStyle uninhabitedStyle;
 
-    PoliticalMapDrawables(
+    public PoliticalMapDrawables(
             Map<String, StyledCell> styledCellBySystemId,
             Map<String, FactionTerritory> factionTerritoryByFactionId,
             List<ClusterAnchor> clusterAnchors,
@@ -73,56 +73,56 @@ final class PoliticalMapDrawables {
     // build: the two draw lists are empty so the render is a harmless no-op, and the
     // next frame's retry replaces it with a real build before any incremental pass -
     // which needs the styles - can run, so the null styles here are never read.
-    static PoliticalMapDrawables createEmpty() {
+    public static PoliticalMapDrawables createEmpty() {
         return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                 new ArrayList<>(), new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
                 null, null, null, null);
     }
 
-    Map<String, StyledCell> getStyledCellBySystemId() {
+    public Map<String, StyledCell> getStyledCellBySystemId() {
         return styledCellBySystemId;
     }
 
-    Map<String, FactionTerritory> getFactionTerritoryByFactionId() {
+    public Map<String, FactionTerritory> getFactionTerritoryByFactionId() {
         return factionTerritoryByFactionId;
     }
 
-    List<ClusterAnchor> getClusterAnchors() {
+    public List<ClusterAnchor> getClusterAnchors() {
         return clusterAnchors;
     }
 
-    Map<String, DominantOwner> getOwnerBySystemId() {
+    public Map<String, DominantOwner> getOwnerBySystemId() {
         return ownerBySystemId;
     }
 
-    Set<String> getDecivilisedSystemIds() {
+    public Set<String> getDecivilisedSystemIds() {
         return decivilisedSystemIds;
     }
 
-    Color getNeutralColor() {
+    public Color getNeutralColor() {
         return neutralColor;
     }
 
-    MapStyle getFactionStyle() {
+    public MapStyle getFactionStyle() {
         return factionStyle;
     }
 
-    MapStyle getIndependentStyle() {
+    public MapStyle getIndependentStyle() {
         return independentStyle;
     }
 
-    MapStyle getDecivilisedStyle() {
+    public MapStyle getDecivilisedStyle() {
         return decivilisedStyle;
     }
 
-    MapStyle getUninhabitedStyle() {
+    public MapStyle getUninhabitedStyle() {
         return uninhabitedStyle;
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push
     // entirely. The debug anchors count too, so the overlay still draws when only they
     // are present.
-    boolean isEmpty() {
+    public boolean isEmpty() {
         return styledCellBySystemId.isEmpty() && factionTerritoryByFactionId.isEmpty()
                 && clusterAnchors.isEmpty();
     }

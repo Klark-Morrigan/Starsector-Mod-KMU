@@ -1,4 +1,4 @@
-package kmu.politicalmap.render;
+package kmu.politicalmap.render.model;
 
 import java.awt.Color;
 
@@ -14,8 +14,8 @@ import java.awt.Color;
  * keeps shaping its neighbours' borders - but emitting its run would only rasterise
  * pixels the blend discards.
  */
-record ElementPaint(Color color, float alpha) {
-    boolean isHidden() {
+public record ElementPaint(Color color, float alpha) {
+    public boolean isHidden() {
         return color == null || alpha <= 0f;
     }
 }

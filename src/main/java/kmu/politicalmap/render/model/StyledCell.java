@@ -1,4 +1,4 @@
-package kmu.politicalmap.render;
+package kmu.politicalmap.render.model;
 
 /**
  * A cell ready to draw: its flattened fill polygon and its national-border and
@@ -7,7 +7,7 @@ package kmu.politicalmap.render;
  * hidden) and the two border widths. All per cell, since colors resolve against each
  * cell's palette and widths differ by category.
  */
-record StyledCell(float[] fill, float[] boundaryEdges, float[] interiorEdges,
+public record StyledCell(float[] fill, float[] boundaryEdges, float[] interiorEdges,
         ElementPaint fillPaint, ElementPaint outer, ElementPaint inner,
         float outerWidth, float innerWidth) {
 }

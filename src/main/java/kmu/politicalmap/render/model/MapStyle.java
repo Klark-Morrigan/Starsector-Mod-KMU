@@ -1,4 +1,4 @@
-package kmu.politicalmap.render;
+package kmu.politicalmap.render.model;
 
 import kmu.settings.FactionPaletteChoice;
 
@@ -10,7 +10,7 @@ import kmu.settings.FactionPaletteChoice;
  * one bundle serves many clusters. A factionless category sets fill and inner to
  * NONE so only its outline draws.
  */
-record MapStyle(
+public record MapStyle(
         FactionPaletteChoice fillColor, double fillOpacity,
         FactionPaletteChoice outerColor, double outerOpacity, double outerWidth,
         FactionPaletteChoice innerColor, double innerOpacity, double innerWidth) {

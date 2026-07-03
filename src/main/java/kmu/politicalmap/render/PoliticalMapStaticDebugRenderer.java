@@ -2,6 +2,8 @@ package kmu.politicalmap.render;
 
 import kmlib.opengl.GlColor;
 
+import kmu.politicalmap.render.model.PoliticalMapDebugDrawables;
+
 import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;

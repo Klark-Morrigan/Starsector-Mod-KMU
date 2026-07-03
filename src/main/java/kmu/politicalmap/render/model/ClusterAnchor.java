@@ -1,4 +1,4 @@
-package kmu.politicalmap.render;
+package kmu.politicalmap.render.model;
 
 import java.awt.Color;
 
@@ -20,6 +20,6 @@ import java.awt.Color;
  * axis fit verifiable on the map before any text is drawn. Only built when the "show
  * cluster anchors" dev toggle is on.
  */
-record ClusterAnchor(float centroidX, float centroidY, float axisStartX, float axisStartY,
+public record ClusterAnchor(float centroidX, float centroidY, float axisStartX, float axisStartY,
         float axisEndX, float axisEndY, Color color) {
 }

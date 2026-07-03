@@ -1,5 +1,6 @@
 package kmu.politicalmap.render;
 
+import kmu.politicalmap.render.model.MapStyle;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;
