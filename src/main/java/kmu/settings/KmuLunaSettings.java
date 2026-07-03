@@ -33,7 +33,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * pass off whole without zeroing the knobs beneath it, so the switch reads as their gate.
  * The corner-rounding gate also covers the factionless (decivilised and uninhabited)
  * cell outlines, which reuse the same rounding. Like the visual fields all feed the same
- * drawables rebuild, so a change takes effect live.
+ * drawables rebuild, so a change takes effect live. The "Label anchors" section that
+ * follows carries the label-anchor fit's modifiers - horizontal bias, end inset, and
+ * icon clearance - live for the same reason: the fit is tuned by eye on the open map.
  *
  * <p>The "Dev" tab also carries the cell frontier resolution - the vertex count of
  * each raw Voronoi cell's rounded reach into empty space. It is the one field that
@@ -157,6 +159,16 @@ public final class KmuLunaSettings {
             "kmu_politicalMapBorderCornerSegments";
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
             "kmu_politicalMapBorderChamferAngle";
+    // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor fit - the
+    // straight line a faction name will sit on, refit inside the national border and
+    // clear of the system icons. Live knobs rather than constants so the fit can be
+    // tuned on the open map; all feed the drawables rebuild, which re-fits every anchor.
+    private static final String ANCHOR_HORIZONTAL_BIAS_FIELD =
+            "kmu_politicalMapAnchorHorizontalBias";
+    private static final String ANCHOR_END_INSET_MULTIPLE_FIELD =
+            "kmu_politicalMapAnchorEndInsetMultiple";
+    private static final String ANCHOR_ICON_CLEARANCE_FIELD =
+            "kmu_politicalMapAnchorIconClearance";
     // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and an
     // axis line) so the clustering and axis fit behind the coming faction labels can be
     // eyeballed on the map. Off by default.
@@ -227,6 +239,10 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
+    // Label-anchor fit knobs.
+    private static final double DEFAULT_ANCHOR_HORIZONTAL_BIAS = 0.5;
+    private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 2.5;
+    private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 120.0;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
     private static final boolean DEFAULT_DEBUG_BORDER_TRACING = false;
     // On by default: the picker is a hands-on condition manager, so it lists every
@@ -558,6 +574,39 @@ public final class KmuLunaSettings {
     public static boolean shouldSandBorderSpikes() {
         return LunaSettingsReader.getBoolean(MOD_ID, SAND_SPIKES_FIELD,
                 DEFAULT_SAND_SPIKES);
+    }
+
+    /**
+     * @return how strongly a cluster's label anchor leans horizontal: the scale
+     *         applied to the anchor axis's vertical component before the fit, 1 for
+     *         no bias, 0 for flat horizontal - a soft lean, so an ambiguous cluster
+     *         tips horizontal while a strongly vertical one stays vertical
+     */
+    public static double getPoliticalMapAnchorHorizontalBias() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_HORIZONTAL_BIAS_FIELD,
+                DEFAULT_ANCHOR_HORIZONTAL_BIAS);
+    }
+
+    /**
+     * @return how far short of the national border each end of a label anchor stops,
+     *         in multiples of the border inset channel - the gap a faction name
+     *         needs so it does not touch the border; a clear line shorter than twice
+     *         this collapses to the dot
+     */
+    public static double getPoliticalMapAnchorEndInsetMultiple() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_END_INSET_MULTIPLE_FIELD,
+                DEFAULT_ANCHOR_END_INSET_MULTIPLE);
+    }
+
+    /**
+     * @return the keep-out radius around each system icon that a label anchor must
+     *         not cross, in world units - a tuned approximation of the icon's on-map
+     *         footprint, since icons draw at a fixed pixel size while the anchor is
+     *         fitted once in world space
+     */
+    public static double getPoliticalMapAnchorIconClearance() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_ICON_CLEARANCE_FIELD,
+                DEFAULT_ANCHOR_ICON_CLEARANCE);
     }
 
     /**

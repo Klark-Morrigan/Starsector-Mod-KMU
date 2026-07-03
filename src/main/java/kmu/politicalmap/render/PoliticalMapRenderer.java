@@ -126,10 +126,11 @@ final class PoliticalMapRenderer {
     }
 
     // Draws each cluster's debug label anchor over the fills and borders: a dot at the
-    // centroid and a line down the long axis, both in the owning faction's bright shade.
-    // Empty (nothing emitted) unless the dev toggle built the anchors, so the normal map
-    // pays only an empty-list check. The dot is a fixed-pixel GL_POINTS mark; the axis is
-    // one GL_LINES segment, collapsed to a point for a single-system cluster.
+    // centroid and the fitted label line (the long axis refit inside the border and
+    // clear of the icons), both in the owning faction's bright shade. Empty (nothing
+    // emitted) unless the dev toggle built the anchors, so the normal map pays only an
+    // empty-list check. The dot is a fixed-pixel GL_POINTS mark; the axis is one
+    // GL_LINES segment, collapsed to a point when the fit found no room for a line.
     private static void drawClusterAnchors(PoliticalMapDrawables drawables, float factor,
             float alphaMult) {
         var anchors = drawables.getClusterAnchors();

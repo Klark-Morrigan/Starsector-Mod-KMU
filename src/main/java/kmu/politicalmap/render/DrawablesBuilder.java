@@ -4,12 +4,16 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Polygons;
 import kmlib.math.geometry.PrincipalAxis;
+import kmlib.math.geometry.Segments;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.politicalmap.domain.geometry.CellEdge;
 import kmu.politicalmap.domain.geometry.CellShaper;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.geometry.ShapedCell;
@@ -181,7 +185,8 @@ final class DrawablesBuilder {
     // when the dev toggle is on - splits the owned systems into contiguous clusters and
     // fits one anchor to each. Shared by the full rebuild and the incremental refresh so
     // an ownership change keeps the anchors in step with the fills and borders. Reads
-    // the toggle here (not at the call sites) so both paths gate identically.
+    // the toggle here (not at the call sites) so both paths gate identically; the fit's
+    // tuning is read here too, so a settings change re-fits on the rebuild it triggers.
     static void rebuildClusterAnchors(PoliticalMapDrawables drawables,
             PoliticalMapGeometryCache geometryCache) {
         var anchors = drawables.getClusterAnchors();
@@ -191,17 +196,23 @@ final class DrawablesBuilder {
         }
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesBySystemId(), drawables.getOwnerBySystemId());
-        anchors.addAll(computeClusterAnchors(
-                clusters, geometryCache.getSiteBySystemId(), drawables.getOwnerBySystemId()));
+        anchors.addAll(computeClusterAnchors(clusters, geometryCache.getCellEdgesBySystemId(),
+                geometryCache.getSiteBySystemId(), drawables.getOwnerBySystemId(),
+                AnchorTuning.readFromSettings()));
     }
 
     // Fits one label anchor to each contiguous cluster: the principal axis of its member
-    // system positions gives the centre to hang the label on, the direction it runs, and
-    // the span it can fill. The axis segment is centred on the anchor, so it reaches half
-    // the span each way; a single-system cluster has zero span and collapses to the dot.
-    // The owning faction's bright shade colours the marker so it reads against the fill.
+    // system positions gives the centre to hang the label on and the raw direction,
+    // leaned horizontal by the tuning's bias; the segment on that line is then refit so
+    // every part of it lies inside the cluster's national border (concavities and
+    // enclaves shorten it, never bridged), clear of every system icon, and short of the
+    // border by the end inset - the straight line a faction name can actually sit on.
+    // A cluster with no spread (a single system), no traceable border, or no clear
+    // interval longer than twice the end inset collapses to the dot alone. The owning
+    // faction's bright shade colours the marker so it reads against the fill.
     static List<ClusterAnchor> computeClusterAnchors(List<List<String>> clusters,
-            Map<String, double[]> siteBySystemId, Map<String, DominantOwner> ownerBySystemId) {
+            Map<String, List<CellEdge>> edgesBySystemId, Map<String, double[]> siteBySystemId,
+            Map<String, DominantOwner> ownerBySystemId, AnchorTuning tuning) {
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         for (var memberSystemIds : clusters) {
             var sites = collectClusterSites(memberSystemIds, siteBySystemId);
@@ -209,17 +220,82 @@ final class DrawablesBuilder {
                 continue;
             }
             var axis = PrincipalAxis.fitTo(sites);
-            var halfSpan = axis.length() / 2.0;
             var color = ownerBySystemId.get(memberSystemIds.get(0)).primaryColor();
+            // No spread means no direction to lay a name along (a single system or
+            // coincident sites), so only the dot marks the cluster.
+            var direction = axis.length() < Limits.MIN_EDGE_LENGTH
+                    ? null
+                    : leanTowardHorizontal(axis, tuning.horizontalBias());
+            var clearSpan = direction == null
+                    ? null
+                    : fitClearSpan(memberSystemIds, edgesBySystemId, siteBySystemId,
+                            ownerBySystemId, axis, direction, tuning);
+            if (clearSpan == null) {
+                anchors.add(new ClusterAnchor(
+                        (float) axis.centroidX(), (float) axis.centroidY(),
+                        (float) axis.centroidX(), (float) axis.centroidY(),
+                        (float) axis.centroidX(), (float) axis.centroidY(),
+                        color));
+                continue;
+            }
             anchors.add(new ClusterAnchor(
                     (float) axis.centroidX(), (float) axis.centroidY(),
-                    (float) (axis.centroidX() - axis.axisX() * halfSpan),
-                    (float) (axis.centroidY() - axis.axisY() * halfSpan),
-                    (float) (axis.centroidX() + axis.axisX() * halfSpan),
-                    (float) (axis.centroidY() + axis.axisY() * halfSpan),
+                    (float) (axis.centroidX() + direction[0] * clearSpan[0]),
+                    (float) (axis.centroidY() + direction[1] * clearSpan[0]),
+                    (float) (axis.centroidX() + direction[0] * clearSpan[1]),
+                    (float) (axis.centroidY() + direction[1] * clearSpan[1]),
                     color));
         }
         return anchors;
+    }
+
+    // Leans the fitted unit axis toward horizontal: its vertical component is scaled by
+    // the bias (1 no bias, 0 flat) and the result renormalised, so an ambiguous cluster
+    // tips horizontal while a strongly vertical one keeps its slope - a soft lean, not a
+    // hard clamp. A fully vertical axis under a flat (zero) bias has no direction left,
+    // so it falls back to horizontal outright - which is what a flat bias asks for.
+    private static double[] leanTowardHorizontal(PrincipalAxis axis, double horizontalBias) {
+        var biasedX = axis.axisX();
+        var biasedY = axis.axisY() * horizontalBias;
+        var length = Points.computeVectorLength(biasedX, biasedY);
+        if (length < Limits.MIN_EDGE_LENGTH) {
+            return new double[] {1.0, 0.0};
+        }
+        return new double[] {biasedX / length, biasedY / length};
+    }
+
+    // The clear {tStart, tEnd} interval (parameters along the direction from the
+    // centroid) the anchor line may occupy, or null when the fit collapses to the dot.
+    // The cluster's inset border rings - the same rings the national border strokes, so
+    // the anchor clips against what the player sees - bound the line to its genuinely
+    // interior pieces (a chord across a concavity or an enclave is never kept); every
+    // system icon then carves its keep-out interval; the longest survivor is pulled in
+    // from both ends so the name stops short of the border. All sites act as icon
+    // blockers, not just the cluster's own: a neighbour faction's icon just across the
+    // border can still overhang the inset interior.
+    private static double[] fitClearSpan(List<String> memberSystemIds,
+            Map<String, List<CellEdge>> edgesBySystemId, Map<String, double[]> siteBySystemId,
+            Map<String, DominantOwner> ownerBySystemId, PrincipalAxis axis, double[] direction,
+            AnchorTuning tuning) {
+        var rings = SystemClusterBorders.traceBorderRings(memberSystemIds, edgesBySystemId,
+                ownerBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                tuning.borderWeldTolerance(), tuning.borderMiterLimit());
+        if (rings.isEmpty()) {
+            return null;
+        }
+        var interiorSpans = Polygons.findLineInteriorSpans(rings,
+                axis.centroidX(), axis.centroidY(), direction[0], direction[1]);
+        var clear = Segments.findLongestClearSubsegment(interiorSpans,
+                axis.centroidX(), axis.centroidY(), direction[0], direction[1],
+                siteBySystemId.values(), tuning.iconClearance());
+        if (clear == null) {
+            return null;
+        }
+        var start = clear[0] + tuning.endInsetDistance();
+        var end = clear[1] - tuning.endInsetDistance();
+        // An interval shorter than twice the end inset leaves no room for a name
+        // between the margins, so the anchor collapses to the dot.
+        return start < end ? new double[] {start, end} : null;
     }
 
     // Gathers the {x, y} sites of a cluster's members, skipping any whose site is missing
@@ -376,5 +452,42 @@ final class DrawablesBuilder {
             case SECONDARY -> secondaryColor;
             case NONE -> null;
         };
+    }
+
+    /**
+     * The modifiers the cluster-anchor fit reads, gathered into one value so the fit
+     * takes its whole tuning surface as data rather than reaching into the settings
+     * mid-computation.
+     *
+     * @param borderWeldTolerance largest gap between two reports of a shared corner
+     *                            still welded into one when tracing the border rings
+     *                            the anchor clips against - the same value the
+     *                            national border traces with, so both see one ring
+     * @param borderMiterLimit    the miter spike limit of that same border trace
+     * @param horizontalBias      the scale applied to the anchor axis's vertical
+     *                            component before the fit; 1 no bias, 0 flat
+     * @param endInsetDistance    how far each end of the clear interval pulls inward,
+     *                            in world units - the border-inset multiple already
+     *                            resolved to a distance
+     * @param iconClearance       the keep-out radius around each system icon, world
+     *                            units
+     */
+    record AnchorTuning(double borderWeldTolerance, double borderMiterLimit,
+            double horizontalBias, double endInsetDistance, double iconClearance) {
+
+        // Reads the live tuning: the anchor knobs from the Dev "Label anchors" section
+        // plus the border-trace pair the national border itself uses, so the anchor
+        // clips against the same rings the player sees. The end-inset multiple is
+        // resolved against the fixed border channel here, so the fit works in plain
+        // distances.
+        static AnchorTuning readFromSettings() {
+            return new AnchorTuning(
+                    KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
+                    KmuLunaSettings.getPoliticalMapBorderMiterLimit(),
+                    KmuLunaSettings.getPoliticalMapAnchorHorizontalBias(),
+                    KmuLunaSettings.getPoliticalMapAnchorEndInsetMultiple()
+                            * PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                    KmuLunaSettings.getPoliticalMapAnchorIconClearance());
+        }
     }
 }
