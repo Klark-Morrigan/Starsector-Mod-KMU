@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
+import kmu.politicalmap.refresh.listeners.PoliticalMapColonizationListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDecivListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
@@ -75,6 +76,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU political map deciv listener", exception);
         }
+
+        try {
+            installPoliticalMapColonizationListener(Global.getSector());
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to install KMU political map colonization listener", exception);
+        }
     }
 
     static void installMarketUiContextTracker(SectorAPI sector) {
@@ -142,6 +149,24 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         listenerManager.addListener(new PoliticalMapDecivListener(), true);
+    }
+
+    // Registers the listener that marks a system's political-map ownership stale
+    // when the player founds or abandons a colony in it, so planting or dropping
+    // a colony repaints its system live rather than only on reload. Idempotent: a
+    // reloaded save already carries it.
+    static void installPoliticalMapColonizationListener(SectorAPI sector) {
+        if (sector == null) {
+            return;
+        }
+
+        var listenerManager = sector.getListenerManager();
+        if (listenerManager == null
+                || listenerManager.hasListenerOfClass(PoliticalMapColonizationListener.class)) {
+            return;
+        }
+
+        listenerManager.addListener(new PoliticalMapColonizationListener(), true);
     }
 
     // Registers the per-frame watcher that refreshes the political map when the
