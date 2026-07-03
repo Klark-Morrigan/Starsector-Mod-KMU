@@ -1,10 +1,7 @@
 package kmu.politicalmap;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonyDecivListener;
-
-import org.apache.log4j.Logger;
 
 /**
  * Marks a decivilised colony's system politics-stale, so a colony that dies mid
@@ -37,7 +34,6 @@ import org.apache.log4j.Logger;
  * faction-owned, so it is a no-op here.
  */
 public class PoliticalMapDecivListener implements ColonyDecivListener {
-    private static final Logger LOG = Global.getLogger(PoliticalMapDecivListener.class);
 
     // The colony is still faction-owned at this point, so re-deriving now would
     // read the pre-deciv owner. The stale mark is deferred to the completed
@@ -48,21 +44,11 @@ public class PoliticalMapDecivListener implements ColonyDecivListener {
 
     @Override
     public void reportColonyDecivilized(MarketAPI market, boolean fullyDestroyed) {
-        if (market == null) {
-            return;
-        }
-        // A market not seated in a star system (a deep-hyperspace station) seeds
-        // no political-map cell, so its decivilisation can change no drawing. The
-        // system still resolves post-removal: the primary entity (the planet) is
-        // preserved and stays in its system.
-        var system = market.getStarSystem();
-        if (system == null) {
-            return;
-        }
-        // Logged with the market, system, and the full-destroy flag so a cell that
+        // The completed event sees the neutral, economy-removed market, and the
+        // system still resolves post-removal since the primary entity (the planet)
+        // is preserved. The full-destroy flag rides along in the log so a cell that
         // does (or does not) repaint neutral on death can be traced to this event.
-        LOG.debug("Political map politics stale on decivilised colony; market=" + market.getId()
-                + " system=" + system.getId() + " fullyDestroyed=" + fullyDestroyed);
-        PoliticalMapRefresh.markSystemPoliticsStale(system.getId());
+        MarketPoliticsRefresh.markSystemStaleForMarket(market, "decivilised colony",
+                "fullyDestroyed=" + fullyDestroyed);
     }
 }

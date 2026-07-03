@@ -1,10 +1,7 @@
 package kmu.politicalmap;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonySizeChangeListener;
-
-import org.apache.log4j.Logger;
 
 /**
  * Marks a system's political-map ownership stale when one of its colonies grows
@@ -26,23 +23,12 @@ import org.apache.log4j.Logger;
  * {@link PoliticalMapAccessWatcher}.
  */
 public class PoliticalMapColonySizeListener implements ColonySizeChangeListener {
-    private static final Logger LOG = Global.getLogger(PoliticalMapColonySizeListener.class);
 
     @Override
     public void reportColonySizeChanged(MarketAPI market, int prevSize) {
-        if (market == null) {
-            return;
-        }
-        // A market not seated in a star system (a deep-hyperspace station) seeds
-        // no political-map cell, so its resize can change no drawing.
-        var system = market.getStarSystem();
-        if (system == null) {
-            return;
-        }
-        // Logged with the market and its previous size so a colony that does (or
-        // does not) repaint on growth can be traced to this event.
-        LOG.debug("Political map politics stale on colony resize; market=" + market.getId()
-                + " system=" + system.getId() + " prevSize=" + prevSize);
-        PoliticalMapRefresh.markSystemPoliticsStale(system.getId());
+        // The previous size rides along in the log so a colony that does (or does
+        // not) repaint on growth can be traced to this resize.
+        MarketPoliticsRefresh.markSystemStaleForMarket(market, "colony resize",
+                "prevSize=" + prevSize);
     }
 }

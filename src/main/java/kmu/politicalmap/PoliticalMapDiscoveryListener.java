@@ -1,10 +1,7 @@
 package kmu.politicalmap;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.listeners.DiscoverEntityListener;
-
-import org.apache.log4j.Logger;
 
 /**
  * Marks a discovered market's system politics-stale, so a concealed colony or
@@ -22,24 +19,17 @@ import org.apache.log4j.Logger;
  * the single place that judges it.
  */
 public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {
-    private static final Logger LOG = Global.getLogger(PoliticalMapDiscoveryListener.class);
 
     @Override
     public void reportEntityDiscovered(SectorEntityToken entity) {
-        if (entity == null || entity.getMarket() == null) {
+        // Most discoveries carry no market (a jump point, inert salvage); those
+        // touch politics not at all, so the marketless case is filtered here before
+        // the shared refresh. The discovered entity rides along in the log so a
+        // colony that does (or does not) paint on discovery can be traced to it.
+        if (entity == null) {
             return;
         }
-        var market = entity.getMarket();
-        // A market not seated in a star system (a deep-hyperspace station) seeds
-        // no political-map cell, so its discovery can change no drawing.
-        var system = market.getStarSystem();
-        if (system == null) {
-            return;
-        }
-        // Logged with the entity, market, and system id so a colony that does (or
-        // does not) paint on discovery can be traced to this event.
-        LOG.debug("Political map politics stale on discovered market; entity="
-                + entity.getId() + " market=" + market.getId() + " system=" + system.getId());
-        PoliticalMapRefresh.markSystemPoliticsStale(system.getId());
+        MarketPoliticsRefresh.markSystemStaleForMarket(entity.getMarket(), "discovered market",
+                "entity=" + entity.getId());
     }
 }
