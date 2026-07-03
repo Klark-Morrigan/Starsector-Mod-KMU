@@ -122,46 +122,22 @@ class PoliticalMapVisibilityIntegrationTest {
     }
 
     @Nested
-    class ComputeVisibilityFingerprint {
+    class ComputeVisibilityContribution {
 
         @Test
-        void visibilityFingerprintShiftsWhenASystemBecomesReachable() {
-            var before = PoliticalMapVisibility.computeVisibilityFingerprint(
-                    sectorWith(unreachableSystem("a")));
-
-            var after = PoliticalMapVisibility.computeVisibilityFingerprint(
-                    sectorWith(reachableSystem("a")));
-
-            assertThat(after).isNotEqualTo(before);
+        void visibilityContributionDiffersBetweenSystems() {
+            // Distinct ids must land distinct contributions so two systems do not
+            // cancel when summed into the fingerprint.
+            assertThat(PoliticalMapVisibility.computeVisibilityContribution("a", false))
+                    .isNotEqualTo(PoliticalMapVisibility.computeVisibilityContribution("b", false));
         }
 
         @Test
-        void visibilityFingerprintShiftsWhenAnUnreachableSystemBecomesInhabited() {
-            var before = PoliticalMapVisibility.computeVisibilityFingerprint(
-                    sectorWith(unreachableSystem("a")));
-
-            var after = PoliticalMapVisibility.computeVisibilityFingerprint(
-                    sectorWith(unreachableSystem("a"), ownedMarket()));
-
-            assertThat(after).isNotEqualTo(before);
-        }
-
-        @Test
-        void visibilityFingerprintShiftsWhenAReachableSystemBecomesANebula() {
-            // No star anchor in either sector: the system is off the map until the
-            // nebula draw puts it on, so the fingerprint must move.
-            var before = PoliticalMapVisibility.computeVisibilityFingerprint(
-                    sectorWithoutStarAnchors(reachableSystem("a")));
-
-            var after = PoliticalMapVisibility.computeVisibilityFingerprint(
-                    sectorWithoutStarAnchors(reachableNebula("a")));
-
-            assertThat(after).isNotEqualTo(before);
-        }
-
-        @Test
-        void visibilityFingerprintIsZeroForNullSector() {
-            assertThat(PoliticalMapVisibility.computeVisibilityFingerprint(null)).isZero();
+        void visibilityContributionShiftsWhenASystemBecomesDecivilised() {
+            // A live-to-dead flip on the same system - its draw class changing while
+            // it stays on the map - must move its contribution via the deciv salt.
+            assertThat(PoliticalMapVisibility.computeVisibilityContribution("a", true))
+                    .isNotEqualTo(PoliticalMapVisibility.computeVisibilityContribution("a", false));
         }
     }
 

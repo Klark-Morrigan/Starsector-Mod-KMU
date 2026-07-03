@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -37,10 +36,10 @@ final class NexerelinInvasionListenerInstallerTest {
 
         @Test
         void addsTransientListenerWhenNexEnabledAndNotYetPresent() {
-            var listenerManager = mock(ListenerManagerAPI.class);
-            when(listenerManager.hasListenerOfClass(PoliticalMapMarketTransferListener.class))
+            var listenerManagerMock = mock(ListenerManagerAPI.class);
+            when(listenerManagerMock.hasListenerOfClass(PoliticalMapMarketTransferListener.class))
                     .thenReturn(false);
-            var sectorMock = sectorWith(listenerManager);
+            var sectorMock = sectorWith(listenerManagerMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 stubModEnabled(globalMock, true);
 
@@ -48,36 +47,36 @@ final class NexerelinInvasionListenerInstallerTest {
 
                 // false: the listener implements a Nex interface, so it is not
                 // serialised into the save and is re-added on each load instead.
-                verify(listenerManager)
+                verify(listenerManagerMock)
                         .addListener(any(PoliticalMapMarketTransferListener.class), eq(false));
             }
         }
 
         @Test
         void addsNothingWhenNexDisabled() {
-            var listenerManager = mock(ListenerManagerAPI.class);
-            var sectorMock = sectorWith(listenerManager);
+            var listenerManagerMock = mock(ListenerManagerAPI.class);
+            var sectorMock = sectorWith(listenerManagerMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 stubModEnabled(globalMock, false);
 
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
 
-                verify(listenerManager, never()).addListener(any(), anyBoolean());
+                verify(listenerManagerMock, never()).addListener(any(), anyBoolean());
             }
         }
 
         @Test
         void addsNothingWhenListenerAlreadyPresent() {
-            var listenerManager = mock(ListenerManagerAPI.class);
-            when(listenerManager.hasListenerOfClass(PoliticalMapMarketTransferListener.class))
+            var listenerManagerMock = mock(ListenerManagerAPI.class);
+            when(listenerManagerMock.hasListenerOfClass(PoliticalMapMarketTransferListener.class))
                     .thenReturn(true);
-            var sectorMock = sectorWith(listenerManager);
+            var sectorMock = sectorWith(listenerManagerMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 stubModEnabled(globalMock, true);
 
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
 
-                verify(listenerManager, never()).addListener(any(), anyBoolean());
+                verify(listenerManagerMock, never()).addListener(any(), anyBoolean());
             }
         }
 
@@ -88,7 +87,7 @@ final class NexerelinInvasionListenerInstallerTest {
                 // never consulted.
                 NexerelinInvasionListenerInstaller.installIfPresent(null);
 
-                verifyNoInteractions(globalMock);
+                globalMock.verifyNoInteractions();
             }
         }
     }

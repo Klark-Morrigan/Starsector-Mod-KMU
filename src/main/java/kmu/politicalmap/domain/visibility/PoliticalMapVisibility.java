@@ -58,7 +58,25 @@ public final class PoliticalMapVisibility {
      */
     public static boolean shouldAppearOnMap(SectorAPI sector, StarSystemAPI system,
             MapVisibleStars visibleStars) {
-        return hasVisibleMapAccess(system, visibleStars) || isInhabited(sector, system);
+        return shouldAppearOnMap(system, visibleStars, isInhabited(sector, system));
+    }
+
+    /**
+     * Decides map membership from an inhabitation flag the caller already has,
+     * rather than re-reading the economy to recompute it. The single-walk
+     * fingerprint scan reads each system's markets once - to size dominance and to
+     * know if it is inhabited - so it passes that flag straight in here instead of
+     * paying for a second economy read through {@link #isInhabited}.
+     *
+     * @param system       the system to test
+     * @param visibleStars the index of systems whose star the map draws
+     * @param isInhabited   whether the system holds a known colony or a revealed
+     *                      dead colony, decided by the caller
+     * @return true when the system should seed a political-map cell
+     */
+    public static boolean shouldAppearOnMap(StarSystemAPI system, MapVisibleStars visibleStars,
+            boolean isInhabited) {
+        return hasVisibleMapAccess(system, visibleStars) || isInhabited;
     }
 
     // The access path onto the map: the system is reachable AND the vanilla map
@@ -93,36 +111,27 @@ public final class PoliticalMapVisibility {
     }
 
     /**
-     * A cheap fingerprint of the on-map set, polled to detect when it changes -
-     * a gate lighting, a colony founded, a ruin surveyed. Identity-based and
-     * order-independent so it still moves when one system enters as another
-     * leaves, and it folds in each decivilised system so a draw-class flip on an
-     * already-shown system is caught too.
+     * The fingerprint contribution of one on-map system, identifying it by id and
+     * folding in its draw class so a decivilised shell reads differently from a
+     * live colony on the same system. Summing this over every on-map system gives
+     * the visibility fingerprint the sector watcher polls: identity-based and
+     * order-independent, so it still moves when one system enters as another
+     * leaves, and a freshly revealed ruin - a draw-class flip on a system already
+     * shown - shifts it without the membership set changing.
      *
-     * @param sector the sector to scan; null yields 0
-     * @return a hash of the on-map systems' ids
+     * <p>The ownership half of the picture (who holds each system) is tracked
+     * separately, as a per-system owner map collected in the same walk but never
+     * blended in here - this hashes which systems are drawn, not who owns them.
+     *
+     * @param systemId              the on-map system's id
+     * @param isRevealedDecivilised whether the system is drawn only as a revealed
+     *                              dead colony, which salts its contribution so a
+     *                              live-to-dead flip is caught
+     * @return the value to add into the visibility fingerprint
      */
-    public static int computeVisibilityFingerprint(SectorAPI sector) {
-        if (sector == null) {
-            return 0;
-        }
-        // Scanned once for the whole walk so the per-system access check stays an
-        // O(1) lookup rather than rescanning hyperspace each time.
-        var visibleStars = MapVisibleStars.scan(sector);
-        var fingerprint = 0;
-        for (var system : sector.getStarSystems()) {
-            var hasDecivilised = DecivilisedPresence.hasRevealedDecivilisedPlanet(system);
-            // The access-and-visibility check is the cheap, common case; the
-            // economy read for owned markets runs only when neither it nor a
-            // decivilised planet already puts the system on the map.
-            var isOnMap = hasVisibleMapAccess(system, visibleStars) || hasDecivilised
-                    || KnownMarketFootprints.hasKnownOwnedMarket(sector, system);
-            if (!isOnMap) {
-                continue;
-            }
-            var idHash = system.getId().hashCode();
-            fingerprint += hasDecivilised ? DECIVILISED_FINGERPRINT_SALT * idHash : idHash;
-        }
-        return fingerprint;
+    public static int computeVisibilityContribution(String systemId,
+            boolean isRevealedDecivilised) {
+        var idHash = systemId.hashCode();
+        return isRevealedDecivilised ? DECIVILISED_FINGERPRINT_SALT * idHash : idHash;
     }
 }

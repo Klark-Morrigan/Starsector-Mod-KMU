@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
  * Pins {@link PoliticalMapDiscoveryListener}: discovering a market marks its
  * system politics-stale (the same targeted refresh a colony resize uses), while
  * discovering something with no market (a jump point, inert salvage) marks
- * nothing - accessibility is the access watcher's job, not the listener's. The
+ * nothing - accessibility is the sector watcher's job, not the listener's. The
  * stale set is drained to read it, so each case clears it first.
  */
 final class PoliticalMapDiscoveryListenerTest {

@@ -221,10 +221,10 @@ public final class KmuLunaSettings {
     private static final boolean DEFAULT_OFFER_ALL_CONDITIONS = true;
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
-    // derived state (e.g. the political-map overlay) read this generation and
+    // derived state (e.g. the political-map overlay) read this revision and
     // rebuild only when it moves, so they react to settings changes live off a
     // single event rather than polling each setting every frame.
-    private static final AtomicInteger settingsGeneration = new AtomicInteger();
+    private static final AtomicInteger settingsRevision = new AtomicInteger();
 
     private KmuLunaSettings() {
     }
@@ -236,9 +236,9 @@ public final class KmuLunaSettings {
      */
     public static void installBindings() {
         KmLogging.bindToLunaSetting(MOD_ID, LOGGER_ROOT, LOG_LEVEL_FIELD);
-        // One listener, registered once at load, advances the generation on any
+        // One listener, registered once at load, advances the revision on any
         // KMU settings change - the live-update signal for cached consumers.
-        LunaSettingsReader.runOnSettingsChange(MOD_ID, settingsGeneration::incrementAndGet);
+        LunaSettingsReader.runOnSettingsChange(MOD_ID, settingsRevision::incrementAndGet);
     }
 
     /**
@@ -246,8 +246,8 @@ public final class KmuLunaSettings {
      *         a consumer rebuilds its cached state when this differs from the
      *         value it last saw
      */
-    public static int getSettingsGeneration() {
-        return settingsGeneration.get();
+    public static int getSettingsRevision() {
+        return settingsRevision.get();
     }
 
     /**

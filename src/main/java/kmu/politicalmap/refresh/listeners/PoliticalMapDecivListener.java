@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonyDecivListener;
 
 import kmu.politicalmap.refresh.MarketPoliticsRefresh;
-import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
+import kmu.politicalmap.refresh.PoliticalMapSectorWatcher;
 
 /**
  * Marks a decivilised colony's system politics-stale, so a colony that dies mid
@@ -21,7 +21,7 @@ import kmu.politicalmap.refresh.PoliticalMapRefresh;
  * ownerless economy and dropping the faction fill.
  *
  * <p>Decivilisation can also change whether the system stays on the map at all,
- * a visibility-set change owned by {@link PoliticalMapAccessWatcher} rather than
+ * a visibility-set change owned by {@link PoliticalMapSectorWatcher} rather than
  * this listener. A deciv that leaves a revealed ruin on a planet keeps the system
  * on the map as a neutral dead colony; one that leaves none drops a system nothing
  * else keeps on the map. A partial deciv (fullyDestroyed false) leaves that ruin,

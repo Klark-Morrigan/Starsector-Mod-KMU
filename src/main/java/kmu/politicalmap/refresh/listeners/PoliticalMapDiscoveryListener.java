@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.listeners.DiscoverEntityListener;
 
 import kmu.politicalmap.refresh.MarketPoliticsRefresh;
-import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
+import kmu.politicalmap.refresh.PoliticalMapSectorWatcher;
 
 /**
  * Marks a discovered market's system politics-stale, so a concealed colony or
@@ -19,7 +19,7 @@ import kmu.politicalmap.refresh.PoliticalMapRefresh;
  * neighbours are re-derived and re-shaped, not the whole economy. Discoveries
  * that could change which systems are reachable (a jump point, a gate) are not
  * handled here - gate activation in particular is a separate, later step from
- * discovery - so that accessibility is left to {@link PoliticalMapAccessWatcher},
+ * discovery - so that accessibility is left to {@link PoliticalMapSectorWatcher},
  * the single place that judges it.
  */
 public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {

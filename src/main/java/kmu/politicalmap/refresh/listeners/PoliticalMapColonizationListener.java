@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.PlayerColonizationListener;
 
 import kmu.politicalmap.refresh.MarketPoliticsRefresh;
-import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
+import kmu.politicalmap.refresh.PoliticalMapSectorWatcher;
 
 /**
  * Marks a system's political-map ownership stale when the player founds a colony
@@ -27,7 +27,7 @@ import kmu.politicalmap.refresh.PoliticalMapRefresh;
  * <p>Only the changed colony's own system is marked - a colony's size affects
  * dominance in its own system alone. Whether founding or abandonment also changes
  * which systems appear on the map is a separate reachability axis owned by
- * {@link PoliticalMapAccessWatcher}. Mirrors {@link PoliticalMapDecivListener} on
+ * {@link PoliticalMapSectorWatcher}. Mirrors {@link PoliticalMapDecivListener} on
  * the ownership axis; this covers only player colonisation, since the engine
  * fires no listener for an NPC faction founding a colony.
  */

@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
  * {@link PoliticalMapRefresh#markSystemPoliticsStale} - the fine-grained refresh
  * that re-derives only the named system and its neighbours rather than rescanning
  * the whole economy. Reachability changes (a system joining or leaving the map)
- * are a separate axis owned by {@link PoliticalMapAccessWatcher}.
+ * are a separate axis owned by {@link PoliticalMapSectorWatcher}.
  */
 public final class MarketPoliticsRefresh {
     private static final Logger LOG = Global.getLogger(MarketPoliticsRefresh.class);

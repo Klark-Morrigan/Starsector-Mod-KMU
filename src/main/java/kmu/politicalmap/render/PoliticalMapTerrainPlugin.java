@@ -41,7 +41,7 @@ import java.util.EnumSet;
  * system set changes or the frontier-resolution setting changes (that count seeds every
  * cell). The drawables are rebuilt in full only when KMU's LunaLib settings change
  * (detected off LunaLib's change event via
- * {@link KmuLunaSettings#getSettingsGeneration()}) or when the geometry itself was
+ * {@link KmuLunaSettings#getSettingsRevision()}) or when the geometry itself was
  * rebuilt; between those, a colony resize marks just its own system stale and drives an
  * incremental re-shape. So switching a color or dragging an opacity slider takes effect
  * live, and the per-frame path is otherwise a couple of int compares, never a per-frame
@@ -272,11 +272,12 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     }
 
     // The drawables-staleness token: a settings change restyles every cell over the
-    // fixed geometry, so a settings-generation bump forces a full drawables rebuild.
-    // Ownership changes no longer feed this - a resized colony marks just its system
-    // stale now - so settings is the one whole-map restyle left.
+    // fixed geometry, so a settings-revision bump forces a full drawables rebuild.
+    // Ownership changes no longer feed this - a resized colony, or a system the
+    // sector watcher's owner diff caught, marks just its system stale now - so
+    // settings is the one whole-map restyle left.
     private static int computeContentRevision() {
-        return KmuLunaSettings.getSettingsGeneration();
+        return KmuLunaSettings.getSettingsRevision();
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the

@@ -4,7 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
+import kmu.politicalmap.refresh.PoliticalMapSectorWatcher;
 import kmu.politicalmap.refresh.listeners.PoliticalMapColonizationListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDecivListener;
@@ -61,9 +61,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         try {
-            installPoliticalMapAccessWatcher(Global.getSector());
+            installPoliticalMapSectorWatcher(Global.getSector());
         } catch (RuntimeException exception) {
-            LOG.error("Failed to install KMU political map access watcher", exception);
+            LOG.error("Failed to install KMU political map sector watcher", exception);
         }
 
         try {
@@ -178,16 +178,18 @@ public class KMU_ModPlugin extends BaseModPlugin {
         listenerManager.addListener(new PoliticalMapColonizationListener(), true);
     }
 
-    // Registers the per-frame watcher that refreshes the political map when the
-    // set of accessible systems changes (a gate activating, a jump point
-    // established) - the engine has no event for those. Transient: not saved, so
-    // it is re-added fresh each load and never duplicates across reloads.
-    static void installPoliticalMapAccessWatcher(SectorAPI sector) {
+    // Registers the per-frame watcher that refreshes the political map when a
+    // change the engine fires no event for slips past the listeners - the set of
+    // drawn systems shifting (a gate activating, a jump point established) or a
+    // drawn system changing hands (an AI colony founded in a system already on the
+    // map). Transient: not saved, so it is re-added fresh each load and never
+    // duplicates across reloads.
+    static void installPoliticalMapSectorWatcher(SectorAPI sector) {
         if (sector == null) {
             return;
         }
 
-        sector.addTransientScript(new PoliticalMapAccessWatcher());
+        sector.addTransientScript(new PoliticalMapSectorWatcher());
     }
 
     static void installPoliticalMapTerrain(SectorAPI sector) {

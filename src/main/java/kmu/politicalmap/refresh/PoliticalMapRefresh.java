@@ -20,11 +20,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>Ownership changes are finer-grained: rather than a whole-economy rescan, the
  * producers name exactly which systems went stale (a colony resized past its
- * neighbour, a market discovered), so the plugin re-derives and re-shapes only
- * those and their neighbours. A set because several colonies can resize in one
- * economy tick, and identity is all that matters (a system is stale or not, once
- * per refresh). The whole-map restyle a settings change needs is a separate signal
- * the plugin reads straight from {@code KmuLunaSettings}, not this class.
+ * neighbour, a market discovered, a colony a silent AI change handed to another
+ * faction), so the plugin re-derives and re-shapes only those and their
+ * neighbours. A set because several colonies can resize in one economy tick, and
+ * identity is all that matters (a system is stale or not, once per refresh). Both
+ * the event listeners and the sector watcher feed this same set, so a change a
+ * listener already marked and one the watcher's owner diff re-discovers collapse
+ * to a single reshape. The whole-map restyle a settings change needs is a separate
+ * signal the plugin reads straight from {@code KmuLunaSettings}, not this class.
  *
  * <p>A counter and a set rather than direct calls because the producers (a
  * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)
