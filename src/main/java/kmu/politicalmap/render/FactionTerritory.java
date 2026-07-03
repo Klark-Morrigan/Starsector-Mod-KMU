@@ -1,6 +1,5 @@
 package kmu.politicalmap.render;
 
-import java.awt.Color;
 import java.util.List;
 
 /**
@@ -9,9 +8,10 @@ import java.util.List;
  * a GL_TRIANGLES soup ([x, y, x, y, ...], empty when the fill is "No color");
  * {@code borderLoops} is its boundary as GL_LINE_LOOP runs (empty when the border is
  * "No color") - one loop per disjoint cluster and per enclave, with any narrow-neck
- * self-crossing resolved away. Colors are null for a "No color" choice, which skips
- * that element.
+ * self-crossing resolved away. Each {@link ElementPaint} carries that element's color
+ * and opacity and reports whether it is hidden, so the draw pass skips what shows
+ * nothing.
  */
-record FactionTerritory(float[] fillTriangles, Color fillColor, float fillAlpha,
-        List<float[]> borderLoops, Color borderColor, float borderAlpha, float borderWidth) {
+record FactionTerritory(float[] fillTriangles, ElementPaint fill,
+        List<float[]> borderLoops, ElementPaint border, float borderWidth) {
 }

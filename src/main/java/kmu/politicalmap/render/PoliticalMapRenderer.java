@@ -33,7 +33,10 @@ final class PoliticalMapRenderer {
     // and line settings from the rest of the map render. An empty overlay skips the
     // push entirely.
     static void renderOnMap(PoliticalMapDrawables drawables, float factor, float alphaMult) {
-        if (drawables.isEmpty()) {
+        // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would
+        // emit every run at zero effective alpha - all cost, nothing on screen - so the
+        // whole GL pass is skipped, not just left to blend away.
+        if (drawables.isEmpty() || alphaMult <= 0f) {
             return;
         }
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT
@@ -62,56 +65,61 @@ final class PoliticalMapRenderer {
     // Fills each owned faction's cluster(s) with the faction's resolved fill color at
     // its opacity. The fill is the cluster's rounded region pre-tessellated into a
     // triangle soup, so a concave cluster (or one with an enclave) fills correctly and
-    // exactly matches the stroked border. A null fill color is a "No color" choice, so
-    // that faction is left unfilled; factionless cells carry no fill at all.
+    // exactly matches the stroked border. A hidden fill (ElementPaint.isHidden) is
+    // skipped, its geometry kept to shape its neighbours but never emitted.
     private static void drawFills(PoliticalMapDrawables drawables, float factor, float alphaMult) {
         for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
-            if (territory.fillColor() == null) {
+            var fill = territory.fill();
+            if (fill.isHidden()) {
                 continue;
             }
-            GlColor.set(territory.fillColor(), alphaMult * territory.fillAlpha());
-            drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
+            GlColor.set(fill.color(), alphaMult * fill.alpha());
+            MapGl.drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
         }
     }
 
     // Strokes the interior province seams first, then the factionless outlines, then the
     // smoothed national borders over them, so a cluster's frontier dominates its
     // internal province lines where they meet. Color, opacity, and line width are all
-    // per element; a null color is a "No color" choice and skips it. An owned cluster's
-    // national border is its border ring (in factionTerritories), so the per-cell
-    // outline only carries factionless cells; an owned cell contributes only its seams
-    // and a factionless cell only its outline.
+    // per element, and a hidden element (ElementPaint.isHidden) is skipped - its geometry
+    // stays baked to shape its neighbours, but nothing invisible is emitted. An owned
+    // cluster's national border is its border ring (in factionTerritories), so the
+    // per-cell outline only carries factionless cells; an owned cell contributes only its
+    // seams and a factionless cell only its outline.
     private static void drawBorders(PoliticalMapDrawables drawables, float factor,
             float alphaMult) {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
         for (var cell : drawables.getStyledCellBySystemId().values()) {
-            if (cell.innerColor() == null) {
+            var inner = cell.inner();
+            if (inner.isHidden()) {
                 continue;
             }
             GL11.glLineWidth(cell.innerWidth());
-            GlColor.set(cell.innerColor(), alphaMult * cell.innerAlpha());
-            drawVertexRun(GL11.GL_LINES, cell.interiorEdges(), factor);
+            GlColor.set(inner.color(), alphaMult * inner.alpha());
+            MapGl.drawVertexRun(GL11.GL_LINES, cell.interiorEdges(), factor);
         }
         for (var cell : drawables.getStyledCellBySystemId().values()) {
-            if (cell.outerColor() == null) {
+            var outer = cell.outer();
+            if (outer.isHidden()) {
                 continue;
             }
             GL11.glLineWidth(cell.outerWidth());
-            GlColor.set(cell.outerColor(), alphaMult * cell.outerAlpha());
-            drawVertexRun(GL11.GL_LINES, cell.boundaryEdges(), factor);
+            GlColor.set(outer.color(), alphaMult * outer.alpha());
+            MapGl.drawVertexRun(GL11.GL_LINES, cell.boundaryEdges(), factor);
         }
         // Each border ring is a closed rounded loop, so it strokes as one continuous
         // GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
         for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
-            if (territory.borderColor() == null) {
+            var border = territory.border();
+            if (border.isHidden()) {
                 continue;
             }
             GL11.glLineWidth(territory.borderWidth());
-            GlColor.set(territory.borderColor(), alphaMult * territory.borderAlpha());
+            GlColor.set(border.color(), alphaMult * border.alpha());
             for (var loop : territory.borderLoops()) {
-                drawVertexRun(GL11.GL_LINE_LOOP, loop, factor);
+                MapGl.drawVertexRun(GL11.GL_LINE_LOOP, loop, factor);
             }
         }
     }
@@ -139,16 +147,5 @@ final class PoliticalMapRenderer {
             GL11.glVertex2f(anchor.axisEndX() * factor, anchor.axisEndY() * factor);
             GL11.glEnd();
         }
-    }
-
-    // Emits one flat [x, y, x, y, ...] vertex run under the given GL primitive, scaling
-    // each world coordinate into map space. Serves every primitive the render draws:
-    // GL_TRIANGLES fills, GL_LINES seams, and GL_LINE_LOOP border rings.
-    private static void drawVertexRun(int mode, float[] vertices, float factor) {
-        GL11.glBegin(mode);
-        for (var v = 0; v < vertices.length; v += VertexRuns.FLOATS_PER_VERTEX) {
-            GL11.glVertex2f(vertices[v] * factor, vertices[v + 1] * factor);
-        }
-        GL11.glEnd();
     }
 }

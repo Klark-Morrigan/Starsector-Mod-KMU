@@ -70,7 +70,8 @@ final class IncrementalPoliticsRefresh {
             }
             // Only the old and new owners' territories can have changed shape; every
             // other faction's rings trace unchanged cells, so they are left as-is.
-            var systemsByFaction = DrawablesBuilder.groupOwnedSystemsByFaction(drawables);
+            var systemsByFaction =
+                    DrawablesBuilder.groupOwnedSystemsByFaction(drawables.getOwnerBySystemId());
             for (var factionId : affectedFactionIds) {
                 rebuildFactionTerritoryInPlace(drawables, geometryCache, factionId,
                         systemsByFaction.get(factionId));

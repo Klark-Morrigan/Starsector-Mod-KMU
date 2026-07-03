@@ -162,7 +162,7 @@ final class DrawablesBuilder {
     // incremental refresh rebuilds one faction's entry without touching the rest.
     private static void buildAllFactionTerritories(PoliticalMapDrawables drawables,
             PoliticalMapGeometryCache geometryCache) {
-        for (var faction : groupOwnedSystemsByFaction(drawables).entrySet()) {
+        for (var faction : groupOwnedSystemsByFaction(drawables.getOwnerBySystemId()).entrySet()) {
             var territory = buildFactionTerritory(drawables, geometryCache,
                     faction.getKey(), faction.getValue());
             if (territory != null) {
@@ -231,10 +231,13 @@ final class DrawablesBuilder {
     }
 
     // Groups the currently owned systems by their faction id, so each faction's
-    // cluster(s) are traced from its own members.
-    static Map<String, List<String>> groupOwnedSystemsByFaction(PoliticalMapDrawables drawables) {
+    // cluster(s) are traced from its own members. Takes the owner map rather than the whole
+    // drawables so the debug overlay - which resolves owners without building any draw
+    // lists - can group the same way the production build does.
+    static Map<String, List<String>> groupOwnedSystemsByFaction(
+            Map<String, DominantOwner> ownerBySystemId) {
         var systemsByFaction = new LinkedHashMap<String, List<String>>();
-        for (var entry : drawables.getOwnerBySystemId().entrySet()) {
+        for (var entry : ownerBySystemId.entrySet()) {
             systemsByFaction
                     .computeIfAbsent(entry.getValue().factionId(), factionId -> new ArrayList<>())
                     .add(entry.getKey());
@@ -283,10 +286,10 @@ final class DrawablesBuilder {
         // they match exactly whichever passes ran.
         var borderLoops = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
         if (KmuLunaSettings.shouldSandBorderSpikes()) {
-            borderLoops = sandBorderSpikes(borderLoops);
+            borderLoops = BorderSmoothing.sandBorderSpikes(borderLoops);
         }
         if (KmuLunaSettings.shouldRoundBorderCorners()) {
-            borderLoops = roundBorderCorners(borderLoops);
+            borderLoops = BorderSmoothing.roundBorderCorners(borderLoops);
         }
         var fillTriangles = fillColor == null
                 ? VertexRuns.NO_VERTICES
@@ -297,38 +300,10 @@ final class DrawablesBuilder {
                 borderRuns.add(VertexRuns.flattenVertices(loop));
             }
         }
-        return new FactionTerritory(fillTriangles, fillColor,
-                (float) style.fillOpacity(), borderRuns, borderColor,
-                (float) style.outerOpacity(), (float) style.outerWidth());
-    }
-
-    // Splices out of every clean border loop the needle protrusions and inward cusps too
-    // thin for rounding to fix (the arc's step-back clamps to their tiny edges), so a
-    // rounding pass afterwards runs on clean geometry. Reused for every faction's
-    // rebuild; the caller gates this on the spike-sanding switch.
-    private static List<List<double[]>> sandBorderSpikes(List<List<double[]>> loops) {
-        var spikeHeight = KmuLunaSettings.getPoliticalMapBorderSpikeHeight();
-        var spikeAngle = KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians();
-        var sanded = new ArrayList<List<double[]>>(loops.size());
-        for (var loop : loops) {
-            sanded.add(Polygons.removeSpikes(loop, spikeHeight, spikeAngle));
-        }
-        return sanded;
-    }
-
-    // Rounds each border loop's corners into arcs with the current corner settings,
-    // applied to the resolved envelope rather than a self-crossing inset (a crossing
-    // would clip the arc back to a sharp point). Reused for every faction's rebuild; the
-    // caller gates this on the corner-rounding switch.
-    private static List<List<double[]>> roundBorderCorners(List<List<double[]>> loops) {
-        var radius = KmuLunaSettings.getPoliticalMapBorderCornerRadius();
-        var segments = KmuLunaSettings.getPoliticalMapBorderCornerSegments();
-        var chamfer = KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians();
-        var rounded = new ArrayList<List<double[]>>(loops.size());
-        for (var loop : loops) {
-            rounded.add(Polygons.roundCorners(loop, radius, segments, chamfer));
-        }
-        return rounded;
+        return new FactionTerritory(fillTriangles,
+                new ElementPaint(fillColor, (float) style.fillOpacity()), borderRuns,
+                new ElementPaint(borderColor, (float) style.outerOpacity()),
+                (float) style.outerWidth());
     }
 
     // Builds one cell's per-cell draw record: its interior seams always, plus - only
@@ -357,15 +332,19 @@ final class DrawablesBuilder {
                         ? VertexRuns.flattenClosedLoopAsSegments(outline)
                         : VertexRuns.NO_VERTICES,
                 VertexRuns.flattenEdgesOfClass(shaped, false),
-                perCellFillAndBorder
-                        ? pickPaletteColor(style.fillColor(), primaryColor, secondaryColor)
-                        : null,
-                perCellFillAndBorder
-                        ? pickPaletteColor(style.outerColor(), primaryColor, secondaryColor)
-                        : null,
-                pickPaletteColor(style.innerColor(), primaryColor, secondaryColor),
-                (float) style.fillOpacity(), (float) style.outerOpacity(),
-                (float) style.innerOpacity(),
+                new ElementPaint(
+                        perCellFillAndBorder
+                                ? pickPaletteColor(style.fillColor(), primaryColor, secondaryColor)
+                                : null,
+                        (float) style.fillOpacity()),
+                new ElementPaint(
+                        perCellFillAndBorder
+                                ? pickPaletteColor(style.outerColor(), primaryColor, secondaryColor)
+                                : null,
+                        (float) style.outerOpacity()),
+                new ElementPaint(
+                        pickPaletteColor(style.innerColor(), primaryColor, secondaryColor),
+                        (float) style.innerOpacity()),
                 (float) style.outerWidth(), (float) style.innerWidth());
     }
 

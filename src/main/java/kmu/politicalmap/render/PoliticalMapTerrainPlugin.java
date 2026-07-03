@@ -23,7 +23,10 @@ import java.util.EnumSet;
  * visual design lives in its collaborators: {@link DrawablesBuilder} shapes the cells
  * and bakes each element's colors, opacities, and widths from the LunaLib "Visuals
  * customisation" settings, {@link IncrementalPoliticsRefresh} folds in per-system
- * ownership changes, and {@link PoliticalMapRenderer} emits the GL.
+ * ownership changes, and {@link PoliticalMapRenderer} emits the GL. While the "debug
+ * border tracing" dev toggle is on, {@link DebugBorderTracingBuilder} and
+ * {@link PoliticalMapStaticDebugRenderer} replace the normal build and render with a
+ * layered view of the border-smoothing pipeline's stages.
  *
  * <p>Terrain is the surface because the sector map renders terrain through
  * {@code renderOnMap} - the same hook the vanilla nebulae draw with. A custom campaign
@@ -79,6 +82,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // record-typed, kept out of the save. Null until the first build this session.
     private transient PoliticalMapDrawables drawables;
 
+    // The debug border-tracing overlay, built instead of the drawables above while the
+    // "debug border tracing" dev toggle is on - exactly one of the two is non-null, and it
+    // is the one rendered. The toggle is a KMU setting, so flipping it bumps the settings
+    // generation and forces the content rebuild that swaps which view is built. Transient
+    // for the same reasons as the drawables above.
+    private transient PoliticalMapDebugDrawables debugDrawables;
+
     // The revisions each half of the cache was built against. Geometry rebuilds when
     // the reachable-system set changes or the frontier resolution setting changes (it
     // reseeds every cell); the drawables rebuild on a content change (settings) or
@@ -121,7 +131,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     public void renderOnMap(float factor, float alphaMult) {
         rebuildIfStale();
         logFirstRenderOnce(factor, alphaMult);
-        PoliticalMapRenderer.renderOnMap(drawables, factor, alphaMult);
+        // Swap production and debug render on the debug toggle: the rebuild builds the debug
+        // overlay only while the toggle is on, so its presence is the one branch here.
+        if (debugDrawables != null) {
+            PoliticalMapStaticDebugRenderer.renderOnMap(debugDrawables, factor, alphaMult);
+        } else {
+            PoliticalMapRenderer.renderOnMap(drawables, factor, alphaMult);
+        }
     }
 
     // Rebuilds only the stale half of the cache. The expensive cell geometry is rebuilt
@@ -184,36 +200,65 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // updateFromSector report its affected-cell set and drive a targeted reshape
         // from it, the geometry-side analogue of applyStalePoliticsUpdates.
 
-        // drawables == null means it has never been built this session. The revision
-        // seeds (-1) force the first build for a freshly constructed plugin, but a
-        // plugin restored from a save comes back with its revision fields already
-        // advanced past -1 while the static counters reset to 0 on load - so the seed
-        // trick can match and skip the build, leaving drawables null for renderOnMap to
-        // dereference. The null check forces the build regardless of how the counters
-        // line up.
+        // Both views null means neither has been built this session. The revision seeds
+        // (-1) force the first build for a freshly constructed plugin, but a plugin
+        // restored from a save comes back with its revision fields already advanced past
+        // -1 while the static counters reset to 0 on load - so the seed trick can match
+        // and skip the build, leaving both views null for renderOnMap to dereference. The
+        // both-null check forces the build regardless of how the counters line up.
         var contentRevision = computeContentRevision();
-        if (rebuiltCells || drawables == null || contentRevision != lastContentRevision) {
+        if (rebuiltCells || (drawables == null && debugDrawables == null)
+                || contentRevision != lastContentRevision) {
             var drawablesStart = System.nanoTime();
-            drawables = DrawablesBuilder.buildDrawables(geometryCache, Global.getSector());
+            // Build one view or the other, never both: the debug overlay replaces the
+            // normal render, so in debug mode the production draw lists are not built at
+            // all, and the unused view is nulled. The toggle is a KMU setting, so flipping
+            // it bumps the content revision and forces this rebuild - which is what swaps
+            // the two.
+            if (KmuLunaSettings.shouldTraceBordersForDebug()) {
+                debugDrawables = DebugBorderTracingBuilder.buildDebugDrawables(
+                        geometryCache, Global.getSector());
+                drawables = null;
+            } else {
+                drawables = DrawablesBuilder.buildDrawables(
+                        geometryCache, Global.getSector());
+                debugDrawables = null;
+            }
             lastContentRevision = contentRevision;
             // A full rebuild re-derives every system, so any pending per-system
             // staleness is already reflected - drain and discard it rather than
             // re-processing the same systems immediately after.
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
-            // Result trace: the counts the render will actually paint and the whole-
-            // rebuild time, so a wrong or empty render can be confirmed against what was
-            // built and how long it cost.
-            LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
-                    + " styledCells=" + drawables.getStyledCellBySystemId().size()
-                    + " geometryRebuilt=" + rebuiltCells
-                    + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
+            logContentRebuild(rebuiltCells, contentRevision, drawablesStart);
             return;
         }
 
-        // No full rebuild this frame: fold in any per-system ownership changes a colony
-        // resize marked, re-deriving and re-shaping only those systems and their
-        // neighbours over the standing drawables.
-        IncrementalPoliticsRefresh.applyStalePoliticsUpdates(drawables, geometryCache);
+        // No full rebuild this frame. In the normal view, fold in any per-system ownership
+        // changes a colony resize marked, re-shaping only those systems and their
+        // neighbours over the standing drawables. The static debug overlay has no draw
+        // lists to patch, so its staleness is drained instead - it refreshes on the next
+        // full rebuild (any settings or geometry change).
+        if (drawables != null) {
+            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(drawables, geometryCache);
+        } else {
+            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+        }
+    }
+
+    // Traces the content rebuild's result: the counts the render will paint and the whole-
+    // rebuild time, so a wrong or empty render can be confirmed against what was built. The
+    // count reported is whichever view was built this rebuild - the normal styled cells or
+    // the debug overlay's base loops.
+    private void logContentRebuild(boolean rebuiltCells, int contentRevision, long drawablesStart) {
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
+        var builtCounts = debugDrawables != null
+                ? "debugBaseLoops=" + debugDrawables.baseLoops().size()
+                : "styledCells=" + drawables.getStyledCellBySystemId().size();
+        LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
+                + " " + builtCounts + " geometryRebuilt=" + rebuiltCells
+                + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
     }
 
     // Guards the render path after a failed first build: a rebuild that threw before
@@ -250,8 +295,12 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             return;
         }
         hasLoggedFirstRender = true;
-        LOG.debug("Political map render renderOnMap fired: styledCells="
-                + drawables.getStyledCellBySystemId().size()
+        // Report whichever view is live: the normal draw lists, or the debug overlay when
+        // it has replaced them (drawables is null in debug mode).
+        var builtCounts = debugDrawables != null
+                ? "debugBaseLoops=" + debugDrawables.baseLoops().size()
+                : "styledCells=" + drawables.getStyledCellBySystemId().size();
+        LOG.debug("Political map render renderOnMap fired: " + builtCounts
                 + " factor=" + factor + " alphaMult=" + alphaMult);
     }
 }

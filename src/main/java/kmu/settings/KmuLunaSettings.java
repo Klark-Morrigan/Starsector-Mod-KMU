@@ -152,6 +152,11 @@ public final class KmuLunaSettings {
     // eyeballed on the map. Off by default.
     private static final String SHOW_CLUSTER_ANCHORS_FIELD =
             "kmu_politicalMapShowClusterAnchors";
+    // Diagnostics (Dev tab): replaces the normal render with a border-tracing overlay that
+    // layers the smoothing pipeline's stages (base, despiked, rounded) in distinct colors,
+    // honouring the two smoothing gates. Off by default.
+    private static final String DEBUG_BORDER_TRACING_FIELD =
+            "kmu_politicalMapDebugBorderTracing";
     // Market-conditions tab: whether the condition picker offers every market
     // condition, or only the planetary ones vanilla treats as hand-placeable.
     private static final String OFFER_ALL_CONDITIONS_FIELD =
@@ -210,6 +215,7 @@ public final class KmuLunaSettings {
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
+    private static final boolean DEFAULT_DEBUG_BORDER_TRACING = false;
     // On by default: the picker is a hands-on condition manager, so it lists every
     // condition unless the player narrows it to vanilla's planetary set.
     private static final boolean DEFAULT_OFFER_ALL_CONDITIONS = true;
@@ -539,6 +545,17 @@ public final class KmuLunaSettings {
     public static boolean getPoliticalMapShowClusterAnchors() {
         return LunaSettingsReader.getBoolean(MOD_ID, SHOW_CLUSTER_ANCHORS_FIELD,
                 DEFAULT_SHOW_CLUSTER_ANCHORS);
+    }
+
+    /**
+     * @return whether to replace the normal political-map render with the border-tracing
+     *         diagnostic that layers the smoothing pipeline's stages (base, despiked,
+     *         rounded) in distinct colors; off by default. Respects the two smoothing
+     *         gates, so a stage draws only when its pass ran
+     */
+    public static boolean shouldTraceBordersForDebug() {
+        return LunaSettingsReader.getBoolean(MOD_ID, DEBUG_BORDER_TRACING_FIELD,
+                DEFAULT_DEBUG_BORDER_TRACING);
     }
 
     /**
