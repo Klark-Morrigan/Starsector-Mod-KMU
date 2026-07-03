@@ -3,6 +3,8 @@ package kmu.politicalmap.domain.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.settings.KmuLunaSettings;
+
 import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,18 +44,40 @@ public final class SectorPolitics {
      * kept beside the color so per-owner styling - and later per-owner behaviour -
      * reads the same winner the fill was decided by.
      *
+     * <p>Reads the player's stability-weighting toggle once up front, so every
+     * system in the pass resolves under the same rule even if the player applies
+     * a settings change mid-walk.
+     *
      * @param sector the sector whose economy is read; null yields an empty map
      * @return the dominant owner keyed by system id; a system with no owned
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(SectorAPI sector) {
+        return resolveDominantOwnerBySystemId(sector,
+                KmuLunaSettings.shouldWeighDominanceByStability());
+    }
+
+    /**
+     * Builds the dominant owner for every inhabited star system under an explicit
+     * weighting rule, for a caller that has already read the player's toggle for
+     * the surrounding pass.
+     *
+     * @param sector             the sector whose economy is read; null yields an
+     *                           empty map
+     * @param isStabilityWeighted whether each market's size rating is scaled by
+     *                           its stability before dominance is compared
+     * @return the dominant owner keyed by system id; a system with no owned
+     *         markets is absent from the map (uninhabited)
+     */
+    public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
+            SectorAPI sector, boolean isStabilityWeighted) {
         var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
         if (sector == null) {
             return ownerBySystemId;
         }
 
         for (var system : sector.getStarSystems()) {
-            var owner = resolveDominantOwner(sector, system);
+            var owner = resolveDominantOwner(sector, system, isStabilityWeighted);
             if (owner != null) {
                 ownerBySystemId.put(system.getId(), owner);
             }
@@ -72,6 +96,9 @@ public final class SectorPolitics {
      * {@link #resolveDominantOwnerBySystemId}, so a system resolves the same
      * winner and colors whether it is refreshed alone or in the full pass.
      *
+     * <p>Reads the player's stability-weighting toggle live, so a single-system
+     * refresh resolves under the player's current rule.
+     *
      * @param sector the sector whose economy is read; null (or a null economy)
      *               yields null
      * @param system the system to resolve; null yields null
@@ -79,10 +106,30 @@ public final class SectorPolitics {
      *         (uninhabited)
      */
     public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system) {
+        return resolveDominantOwner(sector, system,
+                KmuLunaSettings.shouldWeighDominanceByStability());
+    }
+
+    /**
+     * Resolves the dominant owner of one star system under an explicit weighting
+     * rule, for a caller that has already read the player's toggle for the
+     * surrounding pass.
+     *
+     * @param sector             the sector whose economy is read; null (or a null
+     *                           economy) yields null
+     * @param system             the system to resolve; null yields null
+     * @param isStabilityWeighted whether each market's size rating is scaled by
+     *                           its stability before dominance is compared
+     * @return the dominant owner, or null when the system holds no owned market
+     *         (uninhabited)
+     */
+    public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system,
+            boolean isStabilityWeighted) {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
         }
-        var footprintByFactionId = KnownMarketFootprints.readByFaction(sector, system);
+        var footprintByFactionId =
+                KnownMarketFootprints.readByFaction(sector, system, isStabilityWeighted);
         var dominantFactionId = SystemDominance.resolveDominantFactionId(footprintByFactionId);
         if (dominantFactionId == null) {
             return null;

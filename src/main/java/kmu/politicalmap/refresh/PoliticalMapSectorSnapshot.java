@@ -8,6 +8,7 @@ import kmu.politicalmap.domain.politics.SystemDominance;
 import kmu.politicalmap.domain.visibility.DecivilisedPresence;
 import kmu.politicalmap.domain.visibility.MapVisibleStars;
 import kmu.politicalmap.domain.visibility.PoliticalMapVisibility;
+import kmu.settings.KmuLunaSettings;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -43,12 +44,32 @@ public record PoliticalMapSectorSnapshot(int visibilityFingerprint,
      * Walks the sector once and records both refresh inputs for every on-map
      * system.
      *
+     * <p>Reads the player's stability-weighting toggle once up front, so the whole
+     * walk resolves every system under the same rule even if the player applies a
+     * settings change mid-scan.
+     *
      * @param sector the sector to scan; null yields an empty snapshot
      * @return the visibility fingerprint and the dominant owner (by faction id) of
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
      *         shell) is absent from the owner map
      */
     public static PoliticalMapSectorSnapshot scan(SectorAPI sector) {
+        return scan(sector, KmuLunaSettings.shouldWeighDominanceByStability());
+    }
+
+    /**
+     * Walks the sector once under an explicit weighting rule, for a caller that
+     * has already read the player's toggle for the surrounding pass.
+     *
+     * @param sector             the sector to scan; null yields an empty snapshot
+     * @param isStabilityWeighted whether each market's size rating is scaled by
+     *                           its stability before dominance is compared
+     * @return the visibility fingerprint and the dominant owner (by faction id) of
+     *         each owned on-map system; a drawn-but-unowned system (a decivilised
+     *         shell) is absent from the owner map
+     */
+    public static PoliticalMapSectorSnapshot scan(SectorAPI sector,
+            boolean isStabilityWeighted) {
         if (sector == null) {
             return new PoliticalMapSectorSnapshot(0, Map.of());
         }
@@ -64,7 +85,7 @@ public record PoliticalMapSectorSnapshot(int visibilityFingerprint,
             // what the dominance rule ranks. A null economy (early load) reads as
             // no markets rather than faulting.
             Map<String, FactionFootprint> footprintByFactionId = hasEconomy
-                    ? KnownMarketFootprints.readByFaction(sector, system)
+                    ? KnownMarketFootprints.readByFaction(sector, system, isStabilityWeighted)
                     : Map.of();
             var hasRevealedDecivilised = DecivilisedPresence.hasRevealedDecivilisedPlanet(system);
             var isInhabited = !footprintByFactionId.isEmpty() || hasRevealedDecivilised;

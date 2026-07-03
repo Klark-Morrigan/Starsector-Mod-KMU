@@ -40,6 +40,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * reseeds the geometry rather than restyling it, so it feeds the geometry rebuild;
  * it exists to trade map framerate against frontier smoothness.
  *
+ * <p>The "Political map" tab holds the dominance rules - fields that change the
+ * map's political verdicts rather than its styling, which is why they do not sit
+ * under "Visuals customisation". Its one field chooses whether stability weighs
+ * each colony's dominance contribution; it is on by default.
+ *
  * <p>The "Market conditions" tab holds the condition-picker toggles. Its one field
  * chooses whether the picker offers every market condition or only the planetary
  * ones vanilla treats as hand-placeable; it is on by default, so non-planetary
@@ -102,6 +107,11 @@ public final class KmuLunaSettings {
             "kmu_politicalMapUninhabitedBorderOpacity";
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
             "kmu_politicalMapUninhabitedBorderWidth";
+
+    // Dominance rules (Political map tab): how the map decides a system's dominant
+    // faction. Not a styling field - it changes the political verdicts themselves.
+    private static final String STABILITY_WEIGHS_DOMINANCE_FIELD =
+            "kmu_politicalMapStabilityWeighsDominance";
 
     // Cell geometry (Dev tab): the resolution of the raw Voronoi cells, upstream of
     // any border shaping. Unlike the border fields below - which restyle fixed
@@ -197,6 +207,9 @@ public final class KmuLunaSettings {
             NeutralColorChoice.NONE;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
+    // On by default: a destabilised colony should hold less of its system than a
+    // functioning one; the toggle exists to opt back into raw-size dominance.
+    private static final boolean DEFAULT_STABILITY_WEIGHS_DOMINANCE = true;
     // Mirrors both the CSV defaultValue and VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
     // the geometric default this setting overrides; kept a literal like the other
     // fallbacks so this class stays decoupled from the geometry library.
@@ -434,6 +447,16 @@ public final class KmuLunaSettings {
     public static double getUninhabitedBorderWidth() {
         return LunaSettingsReader.getDouble(MOD_ID, UNINHABITED_BORDER_WIDTH_FIELD,
                 DEFAULT_UNINHABITED_BORDER_WIDTH);
+    }
+
+    /**
+     * @return whether each colony's dominance contribution is scaled by its
+     *         stability - at 0 stability a colony holds no political weight, at 10
+     *         its full size; on by default, off ranks colonies by raw size alone
+     */
+    public static boolean shouldWeighDominanceByStability() {
+        return LunaSettingsReader.getBoolean(MOD_ID, STABILITY_WEIGHS_DOMINANCE_FIELD,
+                DEFAULT_STABILITY_WEIGHS_DOMINANCE);
     }
 
     /**

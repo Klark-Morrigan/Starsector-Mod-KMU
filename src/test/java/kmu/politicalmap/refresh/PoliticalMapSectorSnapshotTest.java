@@ -34,12 +34,18 @@ import static org.mockito.Mockito.when;
  */
 class PoliticalMapSectorSnapshotTest {
 
+    private static final float FULL_STABILITY = 10.0f;
+    // The scan is exercised through the explicit-rule overload: the one-argument
+    // entry point reads the live LunaLib toggle, which only the running game
+    // provides.
+    private static final boolean IS_STABILITY_WEIGHTED = true;
+
     @Nested
     class Scan {
 
         @Test
         void scanReturnsEmptySnapshotForNullSector() {
-            var snapshot = PoliticalMapSectorSnapshot.scan(null);
+            var snapshot = PoliticalMapSectorSnapshot.scan(null, IS_STABILITY_WEIGHTED);
 
             assertThat(snapshot.visibilityFingerprint()).isZero();
             assertThat(snapshot.ownerBySystemId()).isEmpty();
@@ -48,7 +54,7 @@ class PoliticalMapSectorSnapshotTest {
         @Test
         void ownerMapNamesTheDominantFactionOfAnOwnedSystem() {
             var snapshot = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)));
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)), IS_STABILITY_WEIGHTED);
 
             assertThat(snapshot.ownerBySystemId()).containsExactly(entry("a", "hegemony"));
         }
@@ -57,11 +63,12 @@ class PoliticalMapSectorSnapshotTest {
         void visibilityFingerprintShiftsWhenASystemBecomesInhabited() {
             // An empty system is off the map; a colony admits it, so the on-map set
             // - and the visibility fingerprint - changes.
-            var before = PoliticalMapSectorSnapshot.scan(sectorWith(system("a")))
-                    .visibilityFingerprint();
+            var before = PoliticalMapSectorSnapshot.scan(sectorWith(system("a")),
+                    IS_STABILITY_WEIGHTED).visibilityFingerprint();
 
             var after = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5))).visibilityFingerprint();
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)), IS_STABILITY_WEIGHTED)
+                    .visibilityFingerprint();
 
             assertThat(after).isNotEqualTo(before);
         }
@@ -72,10 +79,10 @@ class PoliticalMapSectorSnapshotTest {
             // its owner flips. The owner map must move while the visibility hash
             // stays put, so only that system reshapes and no geometry rebuilds.
             var before = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)));
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)), IS_STABILITY_WEIGHTED);
 
             var after = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("tritachyon", 5)));
+                    sectorWith(system("a"), ownedMarket("tritachyon", 5)), IS_STABILITY_WEIGHTED);
 
             assertThat(after.ownerBySystemId()).containsExactly(entry("a", "tritachyon"));
             assertThat(after.visibilityFingerprint()).isEqualTo(before.visibilityFingerprint());
@@ -85,7 +92,8 @@ class PoliticalMapSectorSnapshotTest {
         void ownerMapOmitsADecivilisedShellThatStillCountsForVisibility() {
             // A revealed dead colony is drawn (visibility) but confers no owner, so
             // it is absent from the owner map - the mirror image of an owned system.
-            var snapshot = PoliticalMapSectorSnapshot.scan(sectorWith(decivilisedSystem("a")));
+            var snapshot = PoliticalMapSectorSnapshot.scan(sectorWith(decivilisedSystem("a")),
+                    IS_STABILITY_WEIGHTED);
 
             assertThat(snapshot.visibilityFingerprint()).isNotZero();
             assertThat(snapshot.ownerBySystemId()).isEmpty();
@@ -148,6 +156,9 @@ class PoliticalMapSectorSnapshotTest {
         var marketMock = mock(MarketAPI.class);
         when(marketMock.getFaction()).thenReturn(factionMock);
         when(marketMock.getSize()).thenReturn(size);
+        // Full stability, so the market weighs its whole size and the snapshot
+        // tests stay about visibility and owner diffs, not the weight scaling.
+        when(marketMock.getStabilityValue()).thenReturn(FULL_STABILITY);
         when(marketMock.isPlanetConditionMarketOnly()).thenReturn(false);
         when(marketMock.isHidden()).thenReturn(false);
         when(marketMock.getPrimaryEntity()).thenReturn(entityMock);

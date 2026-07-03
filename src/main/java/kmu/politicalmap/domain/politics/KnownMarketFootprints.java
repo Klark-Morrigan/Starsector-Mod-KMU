@@ -14,18 +14,42 @@ import java.util.Map;
  * <p>The economy / {@code MarketAPI} half of the ownership pipeline: it applies
  * the "counts as a colony" filter - a market is in only when a faction owns it,
  * it is not a bare planet's condition-only placeholder, and the player knows it
- * exists - and sizes each surviving market for dominance. Confining the
- * {@code MarketAPI} access here lets both the owner-resolution pipeline and the
- * map's inhabitation test share one definition of a known colony. The pure
+ * exists - and weighs each surviving market for dominance, scaling its size
+ * rating by stability when the caller asks for it (the player-facing LunaLib
+ * toggle, read upstream so this class stays free of settings access). Confining
+ * the {@code MarketAPI} access here lets both the owner-resolution pipeline and
+ * the map's inhabitation test share one definition of a known colony. The pure
  * comparison of the footprints it produces is {@link SystemDominance}'s job;
  * turning the winner into draw colors is {@link SectorPolitics}'s.
  */
 public final class KnownMarketFootprints {
+
+    /**
+     * The fixed-point grid dominance weights live on: one market size point at
+     * full stability contributes this many weight units. Rounding each market's
+     * stability-scaled worth onto an integer grid keeps the dominance rule's
+     * comparisons exact - and its faction-id backstop deterministic - where
+     * fractional weights would force epsilon math into the rule.
+     */
+    public static final int DOMINANCE_WEIGHT_SCALE = 1000;
+
     // A hidden market (vanilla concealed bases like the Galatia Academy) still
     // marks its system on the political map, but folds into dominance at this
-    // fixed token size rather than its real size, so a concealed outpost can
-    // flag presence without ever outweighing an openly held colony.
+    // fixed token size rating rather than its real size, so a concealed outpost
+    // can flag presence without ever outweighing an openly held colony.
     private static final int HIDDEN_MARKET_DOMINANCE_SIZE = 1;
+
+    // Stability's vanilla 0..10 band, the denominator of the per-market weight
+    // fraction. Values are clamped into the band on read: a modded market can
+    // sit outside it, and an out-of-band value must scale as "none" or "full",
+    // never flip a comparison or overshoot the market's own size.
+    private static final float MAX_STABILITY_VALUE = 10.0f;
+
+    // The presence test asks only whether a footprint exists, and the stability
+    // weighting never adds or removes entries - a weightless colony still folds
+    // in at 0 - so the presence read skips the weighting and stays independent
+    // of the player's toggle.
+    private static final boolean PRESENCE_READ_IS_STABILITY_WEIGHTED = false;
 
     private KnownMarketFootprints() {
     }
@@ -39,14 +63,20 @@ public final class KnownMarketFootprints {
      * colony, so they confer no ownership. Decivilised colonies are already absent
      * - vanilla drops them from the economy - so they need no extra guard here.
      *
-     * @param sector the sector whose economy is read; assumed non-null with a
-     *               non-null economy, which the callers guard before delegating
-     * @param system the system whose markets are folded
+     * @param sector             the sector whose economy is read; assumed non-null
+     *                           with a non-null economy, which the callers guard
+     *                           before delegating
+     * @param system             the system whose markets are folded
+     * @param isStabilityWeighted whether each market's size rating is scaled by
+     *                           its stability; false folds every market in at its
+     *                           full rating. The player's LunaLib toggle, read
+     *                           once per pass by the caller so a whole pass
+     *                           resolves under one rule
      * @return each faction's footprint in the system, keyed by faction id; empty
      *         when the system holds no known owned market
      */
     public static Map<String, FactionFootprint> readByFaction(
-            SectorAPI sector, StarSystemAPI system) {
+            SectorAPI sector, StarSystemAPI system, boolean isStabilityWeighted) {
         var footprintByFactionId = new LinkedHashMap<String, FactionFootprint>();
         for (var market : sector.getEconomy().getMarkets(system)) {
             var faction = market.getFaction();
@@ -60,14 +90,9 @@ public final class KnownMarketFootprints {
             // getPlanetEntity() is non-null for a market on a planet and null
             // for one on a station; the rule prefers planets at an exact tie.
             var isPlanetMarket = market.getPlanetEntity() != null;
-            // A hidden market counts as a token presence rather than its real
-            // size, so it can mark the system without skewing the dominance.
-            var dominanceSize = market.isHidden()
-                    ? HIDDEN_MARKET_DOMINANCE_SIZE
-                    : market.getSize();
             var footprint = footprintByFactionId.getOrDefault(factionId, FactionFootprint.EMPTY);
-            footprintByFactionId.put(factionId,
-                    footprint.addMarket(dominanceSize, isPlanetMarket));
+            footprintByFactionId.put(factionId, footprint.addMarket(
+                    computeDominanceWeight(market, isStabilityWeighted), isPlanetMarket));
         }
         return footprintByFactionId;
     }
@@ -87,7 +112,28 @@ public final class KnownMarketFootprints {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return false;
         }
-        return !readByFaction(sector, system).isEmpty();
+        return !readByFaction(sector, system, PRESENCE_READ_IS_STABILITY_WEIGHTED).isEmpty();
+    }
+
+    // A market's worth to the dominance rule: its size rating scaled linearly by
+    // stability, rounded onto the fixed-point grid. The size rating is the raw
+    // getSize(), or the fixed token for a hidden market - stability scales the
+    // token like any other rating. Stability decides how much of the rating the
+    // faction actually holds - a colony at 0 stability is worth nothing to
+    // dominance (it still marks presence and paints its system when unopposed),
+    // at 5 half its size, at 10 the full size - so a destabilised colony holds
+    // less of its system than a functioning colony of equal size. With the
+    // weighting toggled off, every market is worth its full rating.
+    private static int computeDominanceWeight(MarketAPI market, boolean isStabilityWeighted) {
+        var dominanceSize = market.isHidden()
+                ? HIDDEN_MARKET_DOMINANCE_SIZE
+                : market.getSize();
+        if (!isStabilityWeighted) {
+            return dominanceSize * DOMINANCE_WEIGHT_SCALE;
+        }
+        var stabilityFraction = market.getStabilityValue() / MAX_STABILITY_VALUE;
+        var clampedFraction = Math.min(Math.max(stabilityFraction, 0.0f), 1.0f);
+        return Math.round(dominanceSize * clampedFraction * DOMINANCE_WEIGHT_SCALE);
     }
 
     // Whether the player knows this market exists - the gate on what counts as

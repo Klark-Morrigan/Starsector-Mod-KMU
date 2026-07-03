@@ -9,11 +9,11 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link SystemDominance}'s four-level rule: combined size, then largest
- * single market, then planet size, then the lowest faction id. Each test forces
- * a tie on every earlier level so it isolates exactly one tie-break, and lists
- * the higher faction id first so the winner is shown to come from the rule, not
- * from map iteration order.
+ * Pins {@link SystemDominance}'s four-level rule: combined weight, then
+ * heaviest single market, then planet weight, then the lowest faction id. Each
+ * test forces a tie on every earlier level so it isolates exactly one
+ * tie-break, and lists the higher faction id first so the winner is shown to
+ * come from the rule, not from map iteration order.
  */
 class SystemDominanceTest {
 
@@ -35,9 +35,10 @@ class SystemDominanceTest {
         }
 
         @Test
-        void picksLargerCombinedSizeOverBiggerSingleMarketAndPlanets() {
-            // Tritachyon holds the bigger single market and all the planet size,
-            // but combined size is the top level, so the larger sum wins.
+        void picksLargerCombinedWeightOverHeavierSingleMarketAndPlanets() {
+            // Tritachyon holds the heavier single market and all the planet
+            // weight, but combined weight is the top level, so the larger sum
+            // wins.
             var footprints = orderedFootprints(
                     "tritachyon", new FactionFootprint(6, 6, 6),
                     "hegemony", new FactionFootprint(8, 4, 0));
@@ -47,8 +48,8 @@ class SystemDominanceTest {
         }
 
         @Test
-        void breaksCombinedSizeTieByLargestSingleMarket() {
-            // Equal totals: the faction holding the single biggest market wins.
+        void breaksCombinedWeightTieByHeaviestSingleMarket() {
+            // Equal totals: the faction holding the single heaviest market wins.
             var footprints = orderedFootprints(
                     "tritachyon", new FactionFootprint(9, 4, 0),
                     "hegemony", new FactionFootprint(9, 6, 0));
@@ -58,8 +59,8 @@ class SystemDominanceTest {
         }
 
         @Test
-        void breaksLargestMarketTieByPlanetSize() {
-            // Equal total and equal biggest market: more size on planets (vs
+        void breaksHeaviestMarketTieByPlanetWeight() {
+            // Equal total and equal heaviest market: more weight on planets (vs
             // stations) outranks a footprint leaning on stations.
             var footprints = orderedFootprints(
                     "tritachyon", new FactionFootprint(9, 5, 2),

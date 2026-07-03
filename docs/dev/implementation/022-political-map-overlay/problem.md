@@ -12,6 +12,7 @@
 - [Decisions](#decisions)
   - [Surfaces and ownership](#surfaces-and-ownership)
   - [Dominance rule](#dominance-rule)
+  - [Stability weighting](#stability-weighting)
   - [Decivilized markers (neutral)](#decivilized-markers-neutral)
   - [Toggle state contract](#toggle-state-contract)
   - [Sub-view detection](#sub-view-detection)
@@ -251,6 +252,41 @@ Starsector types - and the economy read that builds those footprints,
 including the token-size substitution, is confined to the ownership
 adapter, so the rule can be exercised on hand-built inputs.
 
+### Stability weighting
+
+Sibling rule to the dominance chain above: each market's size rating is
+scaled by its stability before any footprint math, so every level of the
+comparison ranks stability-weighted worth rather than raw size.
+
+- **The weight.** A market contributes
+  `sizeRating * clamp(stability / 10, 0..1)` - the raw `getSize()` (or the
+  hidden market's token rating of 1, which scales like any other size
+  rating). At stability 0 a colony is worth nothing to dominance, at 5
+  half its size, at 10 its full size, so a destabilised colony holds less
+  of its system than a functioning colony of equal size.
+- **Presence is unaffected.** Worth and knowledge are separate axes: a
+  stability-0 colony still counts as a known colony, keeps its faction's
+  footprint entry, marks its system inhabited, and paints it when
+  unopposed. Only its pull in a *contested* system drops to nothing.
+- **Fixed-point grid.** Weights fold as integers - 1000 weight units per
+  size point at full stability - rather than as floats, so the rule's
+  comparisons stay exact, its ordering total, and its faction-id backstop
+  reached only on genuine ties, with no epsilon math inside the rule.
+- **Live read, normal cadence.** Stability comes from
+  `MarketAPI.getStabilityValue()` at footprint-read time, clamped into the
+  vanilla 0..10 band (modded markets can sit outside it). The periodic
+  snapshot re-derives footprints from the live economy, so a stability
+  swing that flips a system's winner repaints on the existing refresh
+  cadence with no extra invalidation hook.
+- **Player toggle.** The weighting is gated by the LunaLib boolean
+  `kmu_politicalMapStabilityWeighsDominance` ("Political map" tab,
+  "Dominance" header), on by default; off ranks every market at its full
+  size rating. The toggle is read once per resolution pass and threaded
+  into the footprint read as a plain flag, so one pass resolves every
+  system under the same rule and the domain read stays free of settings
+  access. Presence is toggle-independent - the weighting never adds or
+  removes footprint entries.
+
 ### Decivilized markers (neutral)
 
 A revealed decivilised planet makes its system count as *inhabited* on the
@@ -406,8 +442,12 @@ location culling is the source of truth.
   exactly once, not once per frame.
 - Unit: the dominance rule picks the expected faction for hand-built
   footprints, isolating each of the four tie-break levels - combined
-  size, largest single market, planet-size sum, then faction id (see
+  weight, heaviest single market, planet weight, then faction id (see
   [Dominance rule](#dominance-rule)).
+- Unit: the footprint read scales each market's weight by stability -
+  half stability halves the contribution, stability 0 yields a weightless
+  but still-present footprint entry, and out-of-band values clamp into
+  0..10 (see [Stability weighting](#stability-weighting)).
 - Unit: presence-tier classification returns the highest matching tier
   for planet-only, station-only, and settlement-only systems
   ([research: Presence tiers](../019-political-map/research.md#presence-tiers-under-candidate-a)).
