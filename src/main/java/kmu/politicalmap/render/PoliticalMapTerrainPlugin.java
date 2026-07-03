@@ -34,13 +34,15 @@ import java.util.EnumSet;
  *
  * <p>The plugin's own job is to keep the cached draw lists fresh with the least work
  * per frame. System positions in hyperspace are fixed for the life of a save, so the
- * raw cells are built once and cached. The drawables are rebuilt in full only when
- * KMU's LunaLib settings change (detected off LunaLib's change event via
- * {@link KmuLunaSettings#getSettingsGeneration()}) or when the reachable-
- * system geometry itself changed; between those, a colony resize marks just its own
- * system stale and drives an incremental re-shape. So switching a color or dragging an
- * opacity slider takes effect live, and the per-frame path is otherwise a couple of int
- * compares, never a per-frame settings lookup or economy scan.
+ * raw cells are built once and cached; they are reseeded only when the reachable-
+ * system set changes or the frontier-resolution setting changes (that count seeds every
+ * cell). The drawables are rebuilt in full only when KMU's LunaLib settings change
+ * (detected off LunaLib's change event via
+ * {@link KmuLunaSettings#getSettingsGeneration()}) or when the geometry itself was
+ * rebuilt; between those, a colony resize marks just its own system stale and drives an
+ * incremental re-shape. So switching a color or dragging an opacity slider takes effect
+ * live, and the per-frame path is otherwise a couple of int compares, never a per-frame
+ * economy scan.
  *
  * <p>The geometry cache and drawables are {@code transient}: they are derived from the
  * sector and rebuilt each session, and they hold record types XStream cannot serialise,
@@ -77,12 +79,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // record-typed, kept out of the save. Null until the first build this session.
     private transient PoliticalMapDrawables drawables;
 
-    // The revisions each half of the cache was built against. Geometry rebuilds only
-    // when the reachable-system set changes; the drawables rebuild on a content change
-    // (settings) or whenever the geometry itself was rebuilt. Start at -1 so the first
-    // render builds both.
+    // The revisions each half of the cache was built against. Geometry rebuilds when
+    // the reachable-system set changes or the frontier resolution setting changes (it
+    // reseeds every cell); the drawables rebuild on a content change (settings) or
+    // whenever the geometry itself was rebuilt. Start at -1 so the first render builds
+    // both, and so any real segment count differs from the seed.
     private int lastGeometryRevision = -1;
     private int lastContentRevision = -1;
+    private int lastBoundSegments = -1;
 
     // Diagnostic: ensures the first map render logs exactly once.
     private boolean hasLoggedFirstRender;
@@ -158,13 +162,19 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
         var rebuiltCells = false;
         var geometryRevision = PoliticalMapRefresh.getGeometryRevision();
-        if (geometryRevision != lastGeometryRevision) {
+        // The frontier resolution is a geometry input, not just a style: a change
+        // reseeds every cell, so it makes the geometry stale the same way an access
+        // change does. Read once here and let updateFromSector do the reseed.
+        var boundSegments = KmuLunaSettings.getPoliticalMapCellBoundSegments();
+        if (geometryRevision != lastGeometryRevision || boundSegments != lastBoundSegments) {
             // Transition trace: a stale cell or one left behind after an access change
-            // can be tied to the revision step that drove it.
+            // can be tied to the revision step - or segment count - that drove it.
             LOG.debug("Political map geometry stale; rebuilding from revision "
-                    + lastGeometryRevision + " to " + geometryRevision);
-            rebuildGeometry();
+                    + lastGeometryRevision + " to " + geometryRevision
+                    + ", boundSegments " + lastBoundSegments + " to " + boundSegments);
+            rebuildGeometry(boundSegments);
             lastGeometryRevision = geometryRevision;
+            lastBoundSegments = boundSegments;
             rebuiltCells = true;
         }
 
@@ -225,10 +235,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the
-    // cells affected by an access change.
-    private void rebuildGeometry() {
+    // cells affected by an access change - or every cell, when the frontier resolution
+    // changed, since that reseeds them all.
+    private void rebuildGeometry(int boundSegments) {
         KmuProfiling.getProfiler().measure("politicalMap.updateGeometry",
-                () -> geometryCache.updateFromSector(Global.getSector()));
+                () -> geometryCache.updateFromSector(Global.getSector(), boundSegments));
     }
 
     // One-shot diagnostic for the no-draw investigation. Guarded on isDebugEnabled so

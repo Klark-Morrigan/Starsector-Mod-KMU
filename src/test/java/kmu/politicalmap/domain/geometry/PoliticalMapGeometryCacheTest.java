@@ -11,6 +11,8 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
+import kmlib.math.geometry.VoronoiCellBuilder;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
@@ -35,6 +37,11 @@ final class PoliticalMapGeometryCacheTest {
     // reach the other.
     private static final float FAR = 20_000f;
 
+    // The frontier resolution cells are seeded at unless the tuning knob changes it;
+    // the access-diff tests all run at this one count so a rebuild is driven only by
+    // the reachable set, never by a resolution change.
+    private static final int DEFAULT_BOUND_SEGMENTS = VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS;
+
     @Nested
     class UpdateFromSector {
 
@@ -42,10 +49,10 @@ final class PoliticalMapGeometryCacheTest {
         void updateBuildsCellsForReachableSystemsAndSkipsInaccessibleOnes() {
             var cache = new PoliticalMapGeometryCache();
 
-            cache.updateFromSector(sectorOf(
+            updateAtDefaultResolution(cache,
                     accessibleSystem("a", 0, 0),
                     accessibleSystem("b", 4000, 0),
-                    inaccessibleSystem("hidden", 8000, 0)));
+                    inaccessibleSystem("hidden", 8000, 0));
 
             assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a", "b");
             assertThat(cache.getCellEdgesBySystemId().get("a")).isNotEmpty();
@@ -54,26 +61,47 @@ final class PoliticalMapGeometryCacheTest {
         @Test
         void updateLeavesDistantCellsUntouchedWhenASystemIsAdded() {
             var cache = new PoliticalMapGeometryCache();
-            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)));
+            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0));
             var distantBefore = cache.getCellEdgesBySystemId().get("b");
 
             // Add a system next to "a"; "b" is far away, so its cell must be the
             // very same object - proof it was not recomputed.
-            cache.updateFromSector(sectorOf(
+            updateAtDefaultResolution(cache,
                     accessibleSystem("a", 0, 0),
                     accessibleSystem("b", FAR, 0),
-                    accessibleSystem("c", 100, 0)));
+                    accessibleSystem("c", 100, 0));
 
             assertThat(cache.getCellEdgesBySystemId()).containsKey("c");
             assertThat(cache.getCellEdgesBySystemId().get("b")).isSameAs(distantBefore);
         }
 
         @Test
+        void updateReseedsEveryCellWhenTheFrontierResolutionChanges() {
+            var cache = new PoliticalMapGeometryCache();
+            cache.updateFromSector(
+                    sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
+                    DEFAULT_BOUND_SEGMENTS);
+            var distantBefore = cache.getCellEdgesBySystemId().get("b");
+
+            // The segment count seeds every cell's frontier polygon, so lowering it
+            // invalidates all cells even where the reachable set is identical: the
+            // distant cell must be a fresh object, not the untouched one an access
+            // diff would leave. A lone bounded cell keeps one edge per seed segment,
+            // so its edge count drops to the new count.
+            cache.updateFromSector(
+                    sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
+                    24);
+
+            assertThat(cache.getCellEdgesBySystemId().get("b")).isNotSameAs(distantBefore);
+            assertThat(cache.getCellEdgesBySystemId().get("b")).hasSize(24);
+        }
+
+        @Test
         void updateDropsTheCellOfASystemThatLosesAccess() {
             var cache = new PoliticalMapGeometryCache();
-            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)));
+            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0));
 
-            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0)));
+            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
 
             assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a");
         }
@@ -84,9 +112,9 @@ final class PoliticalMapGeometryCacheTest {
 
             // Two close systems share a Voronoi edge, so each cell must name the
             // other across exactly that edge.
-            cache.updateFromSector(sectorOf(
+            updateAtDefaultResolution(cache,
                     accessibleSystem("a", 0, 0),
-                    accessibleSystem("b", 1000, 0)));
+                    accessibleSystem("b", 1000, 0));
 
             assertThat(neighboursOf(cache, "a")).containsExactly("b");
             assertThat(neighboursOf(cache, "b")).containsExactly("a");
@@ -98,7 +126,7 @@ final class PoliticalMapGeometryCacheTest {
 
             // A lone system has no neighbour to share an edge with, so every edge
             // is a frontier into empty space - a null neighbour id.
-            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0)));
+            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
 
             assertThat(cache.getCellEdgesBySystemId().get("a"))
                     .isNotEmpty()
@@ -108,9 +136,9 @@ final class PoliticalMapGeometryCacheTest {
         @Test
         void updateDropsTheAdjacencyOfASystemThatLosesAccess() {
             var cache = new PoliticalMapGeometryCache();
-            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)));
+            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0));
 
-            cache.updateFromSector(sectorOf(accessibleSystem("a", 0, 0)));
+            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
 
             assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a");
         }
@@ -121,9 +149,9 @@ final class PoliticalMapGeometryCacheTest {
             // makes it inhabited - it must still seed a cell.
             var cache = new PoliticalMapGeometryCache();
 
-            cache.updateFromSector(sectorOf(
+            updateAtDefaultResolution(cache,
                     accessibleSystem("a", 0, 0),
-                    decivilisedUnreachableSystem("ruin", 4000, 0)));
+                    decivilisedUnreachableSystem("ruin", 4000, 0));
 
             assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a", "ruin");
         }
@@ -139,6 +167,14 @@ final class PoliticalMapGeometryCacheTest {
             }
         }
         return neighbours;
+    }
+
+    // Runs an update at the default frontier resolution, the count cells stay at
+    // unless the tuning knob changes it. The access-diff tests use this so the only
+    // thing that drives a rebuild is the reachable set.
+    private static void updateAtDefaultResolution(PoliticalMapGeometryCache cache,
+            StarSystemAPI... systems) {
+        cache.updateFromSector(sectorOf(systems), DEFAULT_BOUND_SEGMENTS);
     }
 
     private static SectorAPI sectorOf(StarSystemAPI... systems) {

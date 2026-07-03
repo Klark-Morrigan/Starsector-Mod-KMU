@@ -31,7 +31,9 @@ import java.util.Set;
  * (their shared bisector lies beyond the cell's bounding radius). So
  * {@link #updateFromSector} diffs the reachable set against the cache and rebuilds
  * only the affected cells, leaving distant ones in place. The first update (empty
- * cache) rebuilds everything, since every system is "added".
+ * cache) rebuilds everything, since every system is "added". A change to the
+ * frontier resolution passed in is the one input that also forces a full rebuild:
+ * it seeds every cell, so it invalidates them all regardless of the access diff.
  *
  * <p>Each system's cell is kept as a list of {@link CellEdge}s - the raw convex
  * cell and, at once, the cell-adjacency graph. Every edge is tagged with the
@@ -61,18 +63,37 @@ public final class PoliticalMapGeometryCache {
     // (and their adjacency), so untouched cells stay the very same object.
     private final Map<String, List<CellEdge>> cellEdgesBySystemId = new LinkedHashMap<>();
 
+    // The frontier resolution the cached cells were seeded at. The bound-segment
+    // count is a per-cell seed input, so a change invalidates every built cell, not
+    // just the ones an access change touched. Held here so updateFromSector can spot
+    // the change and force a full rebuild. Starts at a value no real count takes, so
+    // the first update always rebuilds from scratch.
+    private int lastBoundSegments = -1;
+
     /**
      * Brings the cache in line with the sector's current on-map systems,
      * rebuilding only the outlines affected by systems that joined or left the
      * map. A no-op when the on-map set is unchanged.
      *
-     * @param sector the sector to read; null clears nothing and does nothing
+     * @param sector        the sector to read; null clears nothing and does nothing
+     * @param boundSegments the frontier resolution to seed each cell at (sides of
+     *                      the max-radius bound polygon); a change from the last
+     *                      update reseeds every cell, since it is a per-cell input
      */
-    public void updateFromSector(SectorAPI sector) {
+    public void updateFromSector(SectorAPI sector, int boundSegments) {
         // Timed independently of the profiler so the per-update cost (the whole
         // diff, or a full rebuild) reads straight from the log.
         var start = System.nanoTime();
         var newSites = collectAccessibleSites(sector);
+
+        // The bound-segment count seeds every cell's frontier polygon, so a change
+        // invalidates all cached cells regardless of the access diff. Drop them so
+        // the diff below reads every current system as "added" and reseeds it.
+        if (boundSegments != lastBoundSegments) {
+            siteBySystemId.clear();
+            cellEdgesBySystemId.clear();
+            lastBoundSegments = boundSegments;
+        }
 
         var added = new LinkedHashSet<String>(newSites.keySet());
         added.removeAll(siteBySystemId.keySet());
@@ -117,7 +138,7 @@ public final class PoliticalMapGeometryCache {
         var recomputedCellEdges = 0;
         for (var id : affected) {
             var cell = VoronoiCellBuilder.buildLabelledCell(
-                    indexBySystemId.get(id), allSites, MAX_CELL_RADIUS);
+                    indexBySystemId.get(id), allSites, MAX_CELL_RADIUS, boundSegments);
             var edges = buildCellEdges(cell, allSiteIds);
             cellEdgesBySystemId.put(id, edges);
             recomputedCellEdges += edges.size();

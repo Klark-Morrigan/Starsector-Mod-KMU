@@ -29,6 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * shapes the rounded frontier rather than recoloring it, so it is a tuning knob for
  * experimentation, not a styling choice. Like the visual fields it feeds the same
  * drawables rebuild, so a change takes effect live.
+ *
+ * <p>The "Dev" tab also carries the cell frontier resolution - the vertex count of
+ * each raw Voronoi cell's rounded reach into empty space. It is the one field that
+ * reseeds the geometry rather than restyling it, so it feeds the geometry rebuild;
+ * it exists to trade map framerate against frontier smoothness.
  */
 public final class KmuLunaSettings {
     // KMU's LunaLib settings id (matches data/config/LunaSettings.csv) and the
@@ -87,6 +92,14 @@ public final class KmuLunaSettings {
             "kmu_politicalMapUninhabitedBorderOpacity";
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
             "kmu_politicalMapUninhabitedBorderWidth";
+
+    // Cell geometry (Dev tab): the resolution of the raw Voronoi cells, upstream of
+    // any border shaping. Unlike the border fields below - which restyle fixed
+    // geometry through the drawables rebuild - this reseeds the cells themselves, so
+    // it feeds the geometry rebuild. Every segment is a vertex on each frontier cell,
+    // so it is the lever for trading map FPS against frontier smoothness.
+    private static final String CELL_BOUND_SEGMENTS_FIELD =
+            "kmu_politicalMapCellBoundSegments";
 
     // National-border geometry (Dev tab): the shape of the rounded frontier
     // stroked and filled per cluster, exposed for live tuning rather than baked as
@@ -150,6 +163,10 @@ public final class KmuLunaSettings {
             NeutralColorChoice.NONE;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
+    // Mirrors both the CSV defaultValue and VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
+    // the geometric default this setting overrides; kept a literal like the other
+    // fallbacks so this class stays decoupled from the geometry library.
+    private static final int DEFAULT_CELL_BOUND_SEGMENTS = 96;
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 6;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
@@ -373,6 +390,17 @@ public final class KmuLunaSettings {
     public static double getUninhabitedBorderWidth() {
         return LunaSettingsReader.getDouble(MOD_ID, UNINHABITED_BORDER_WIDTH_FIELD,
                 DEFAULT_UNINHABITED_BORDER_WIDTH);
+    }
+
+    /**
+     * @return the sides of the polygon that rounds each system cell's outer
+     *         frontier - its reach into empty space; higher is smoother but adds a
+     *         vertex per segment to every frontier cell (a map-FPS cost), lower
+     *         trades a faceted frontier for fewer vertices
+     */
+    public static int getPoliticalMapCellBoundSegments() {
+        return LunaSettingsReader.getInt(MOD_ID, CELL_BOUND_SEGMENTS_FIELD,
+                DEFAULT_CELL_BOUND_SEGMENTS);
     }
 
     /**
