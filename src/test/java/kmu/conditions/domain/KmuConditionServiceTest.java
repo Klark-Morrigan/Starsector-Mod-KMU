@@ -92,6 +92,25 @@ class KmuConditionServiceTest {
                     .extracting(KmuConditionSpec::getId)
                     .containsExactly("hot", "abandoned_station");
         }
+
+        @Test
+        void visibleSpecsIncludeNonPlanetaryConditionsTheOfferPolicyOffers() {
+            var repositoryFake = new ConditionRepositoryFake(
+                    spec("hot", "Hot", true),
+                    spec("decivilized", "Decivilized", false),
+                    spec("population_3", "Population 3", false));
+            KmuConditionOfferPolicy offerPolicy =
+                    candidate -> candidate != null
+                            && (candidate.isPlanetary() || "decivilized".equals(candidate.getId()));
+            var service = new KmuConditionService(repositoryFake, (message, cause) -> { }, offerPolicy);
+            var marketFake = new EditableMarketFake();
+
+            var specs = service.listConditionSpecsVisibleForMarket(marketFake);
+
+            assertThat(specs)
+                    .extracting(KmuConditionSpec::getId)
+                    .containsExactly("hot", "decivilized");
+        }
     }
 
     @Nested
@@ -134,7 +153,7 @@ class KmuConditionServiceTest {
     }
 
     @Nested
-    class AddPlanetaryConditionIfAbsent {
+    class AddOfferableConditionIfAbsent {
 
         @Test
         void addsValidAbsentPlanetaryConditionAndReappliesMarket() {
@@ -142,7 +161,7 @@ class KmuConditionServiceTest {
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake();
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "habitable");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "habitable");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
             assertThat(result.getStatus().isMutationApplied()).isTrue();
@@ -160,7 +179,7 @@ class KmuConditionServiceTest {
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake();
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "  hot  ");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "  hot  ");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
             assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot", "reapply");
@@ -172,7 +191,7 @@ class KmuConditionServiceTest {
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake("hot");
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "hot");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
             assertThat(result.getStatus().isMutationApplied()).isFalse();
@@ -185,7 +204,7 @@ class KmuConditionServiceTest {
             var service = new KmuConditionService(new ConditionRepositoryFake());
             var marketFake = new EditableMarketFake();
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "missing_condition");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "missing_condition");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
             assertThat(result.getStatus().isMutationApplied()).isFalse();
@@ -197,7 +216,7 @@ class KmuConditionServiceTest {
             var service = new KmuConditionService(new ConditionRepositoryFake());
             var marketFake = new EditableMarketFake();
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "   ");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "   ");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
             assertThat(result.getConditionId()).contains("   ");
@@ -209,7 +228,7 @@ class KmuConditionServiceTest {
             var service = new KmuConditionService(new ConditionRepositoryFake());
             var marketFake = new EditableMarketFake();
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, null);
+            var result = service.addOfferableConditionIfAbsent(marketFake, null);
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.CONDITION_NOT_FOUND);
             assertThat(result.getConditionId()).isEmpty();
@@ -217,16 +236,31 @@ class KmuConditionServiceTest {
         }
 
         @Test
-        void rejectsNonPlanetaryConditionSpec() {
+        void rejectsNonPlanetaryConditionSpecUnderThePlanetaryOnlyDefault() {
             var repositoryFake = new ConditionRepositoryFake(spec("population_3", "Population 3", false));
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake();
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "population_3");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "population_3");
 
-            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.NOT_PLANETARY);
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.NOT_OFFERABLE);
             assertThat(result.getStatus().isMutationApplied()).isFalse();
             assertThat(marketFake.calls).isEmpty();
+        }
+
+        @Test
+        void addsNonPlanetaryConditionWhenOfferPolicyOffersIt() {
+            var repositoryFake = new ConditionRepositoryFake(spec("decivilized", "Decivilized", false));
+            KmuConditionOfferPolicy offerPolicy =
+                    candidate -> candidate != null
+                            && (candidate.isPlanetary() || "decivilized".equals(candidate.getId()));
+            var service = new KmuConditionService(repositoryFake, (message, cause) -> { }, offerPolicy);
+            var marketFake = new EditableMarketFake();
+
+            var result = service.addOfferableConditionIfAbsent(marketFake, "decivilized");
+
+            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
+            assertThat(marketFake.getConditionIds()).containsExactly("decivilized");
         }
 
         @Test
@@ -238,7 +272,7 @@ class KmuConditionServiceTest {
                     (message, cause) -> reports.add(message + " / " + cause.getMessage()));
             var marketFake = new EditableMarketFake();
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "hot");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
@@ -261,7 +295,7 @@ class KmuConditionServiceTest {
             var marketFake = new EditableMarketFake()
                     .failHasCondition(exception);
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "hot");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
             assertThat(result.getCause()).contains(exception);
@@ -277,7 +311,7 @@ class KmuConditionServiceTest {
             var marketFake = new EditableMarketFake()
                     .failMarkConditionSurveyed(exception);
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "hot");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
             assertThat(result.getCause()).contains(exception);
@@ -296,7 +330,7 @@ class KmuConditionServiceTest {
             var marketFake = new EditableMarketFake()
                     .failAddCondition(exception);
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "hot");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
@@ -314,7 +348,7 @@ class KmuConditionServiceTest {
             var marketFake = new EditableMarketFake()
                     .failReapplyConditions(exception);
 
-            var result = service.addPlanetaryConditionIfAbsent(marketFake, "hot");
+            var result = service.addOfferableConditionIfAbsent(marketFake, "hot");
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
             assertThat(result.getCause()).contains(exception);

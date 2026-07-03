@@ -32,8 +32,8 @@ public final class KmuConditionAddResult {
         return new KmuConditionAddResult(KmuConditionAddStatus.CONDITION_NOT_FOUND, conditionId, null, null);
     }
 
-    public static KmuConditionAddResult notPlanetary(String conditionId) {
-        return new KmuConditionAddResult(KmuConditionAddStatus.NOT_PLANETARY, conditionId, null, null);
+    public static KmuConditionAddResult notOfferable(String conditionId) {
+        return new KmuConditionAddResult(KmuConditionAddStatus.NOT_OFFERABLE, conditionId, null, null);
     }
 
     public static KmuConditionAddResult failed(String conditionId, String message, RuntimeException cause) {

@@ -26,12 +26,17 @@ Plan doc:
 [plan.md](docs/dev/implementation/010-add-planetary-condition/plan.md)
 
 The planned first feature is a `Planetary Conditions` picker for an active
-colony market. The picker opens every planetary market condition as a clickable
-entry with a tooltip. Entries already on the planet use the player's normal UI
-color; entries not present are darkened. Clicking an absent entry adds that
-condition to the market without removing mutually exclusive or same-group
-conditions. At this stage, any inspected colony can be edited regardless of
-ownership.
+colony market. The picker opens every market condition as a clickable entry with
+a tooltip. Entries already on the planet use the player's normal UI color;
+entries not present are darkened. Clicking an absent entry adds that condition to
+the market without removing mutually exclusive or same-group conditions. At this
+stage, any inspected colony can be edited regardless of ownership.
+
+The LunaLib "Market conditions" tab holds a `Show all conditions` toggle. It is
+on by default, so the picker lists every condition, including non-planetary ones
+the game does not normally offer for hand placement (such as decivilisation).
+Turning it off restricts the picker to the planetary conditions vanilla treats
+as hand-placeable.
 
 When Console Commands is enabled, KMU registers `kmu_pcp_open` as an
 optional developer entry point for the same picker. KMU console commands use the

@@ -5,13 +5,16 @@ import kmlib.console.output.CommandOutput;
 import kmlib.console.output.ConsoleCommandOutput;
 import kmlib.console.parsing.ParameterSpec;
 
+import kmu.KmuErrorReporter;
 import kmu.conditions.domain.KmuConditionService;
+import kmu.conditions.domain.StarsectorConditionOfferPolicy;
 import kmu.conditions.domain.StarsectorConditionRepository;
 import kmu.conditions.ui.editor.KmuConditionEditorEntryPoint;
 import kmu.conditions.ui.editor.KmuConditionEditorOpenResult;
 import kmu.conditions.ui.editor.KmuConditionEditorOpenStatus;
 import kmu.conditions.ui.picker.KmuConditionPickerEditor;
 import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
+import kmu.settings.KmuLunaSettings;
 import kmu.ui.context.StarsectorMarketUiContextResolver;
 
 import java.util.Objects;
@@ -88,7 +91,10 @@ public final class KmuOpenMarketConditionManagerCommand extends KmlibBaseConsole
     }
 
     private static KmuConditionEditorEntryPoint createDefaultEntryPoint() {
-        var conditionService = new KmuConditionService(new StarsectorConditionRepository());
+        var conditionService = new KmuConditionService(
+                new StarsectorConditionRepository(),
+                KmuErrorReporter.noop(),
+                new StarsectorConditionOfferPolicy(KmuLunaSettings::shouldOfferAllConditions));
         return new KmuConditionEditorEntryPoint(
                 new StarsectorMarketUiContextResolver(),
                 new KmuConditionPickerEditor(

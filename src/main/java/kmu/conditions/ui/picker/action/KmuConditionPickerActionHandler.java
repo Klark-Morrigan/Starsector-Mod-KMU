@@ -42,7 +42,7 @@ public final class KmuConditionPickerActionHandler {
             return KmuConditionAddResult.alreadyPresent(action.getConditionId());
         }
 
-        var result = conditionService.addPlanetaryConditionIfAbsent(market, action.getConditionId());
+        var result = conditionService.addOfferableConditionIfAbsent(market, action.getConditionId());
         model = modelFactory.create(market);
         feedback = KmuConditionPickerFeedback.from(result);
         return result;

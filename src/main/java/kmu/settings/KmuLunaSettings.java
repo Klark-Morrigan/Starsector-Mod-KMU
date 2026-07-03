@@ -34,6 +34,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * each raw Voronoi cell's rounded reach into empty space. It is the one field that
  * reseeds the geometry rather than restyling it, so it feeds the geometry rebuild;
  * it exists to trade map framerate against frontier smoothness.
+ *
+ * <p>The "Market conditions" tab holds the condition-picker toggles. Its one field
+ * chooses whether the picker offers every market condition or only the planetary
+ * ones vanilla treats as hand-placeable; it is on by default, so non-planetary
+ * conditions (such as decivilisation) are offered too.
  */
 public final class KmuLunaSettings {
     // KMU's LunaLib settings id (matches data/config/LunaSettings.csv) and the
@@ -127,6 +132,10 @@ public final class KmuLunaSettings {
     // eyeballed on the map. Off by default.
     private static final String SHOW_CLUSTER_ANCHORS_FIELD =
             "kmu_politicalMapShowClusterAnchors";
+    // Market-conditions tab: whether the condition picker offers every market
+    // condition, or only the planetary ones vanilla treats as hand-placeable.
+    private static final String OFFER_ALL_CONDITIONS_FIELD =
+            "kmu_conditionsShowAll";
 
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
@@ -175,6 +184,9 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_BORDER_SPIKE_HEIGHT = 150.0;
     private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 120.0;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
+    // On by default: the picker is a hands-on condition manager, so it lists every
+    // condition unless the player narrows it to vanilla's planetary set.
+    private static final boolean DEFAULT_OFFER_ALL_CONDITIONS = true;
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
     // derived state (e.g. the political-map overlay) read this generation and
@@ -479,6 +491,16 @@ public final class KmuLunaSettings {
     public static boolean getPoliticalMapShowClusterAnchors() {
         return LunaSettingsReader.getBoolean(MOD_ID, SHOW_CLUSTER_ANCHORS_FIELD,
                 DEFAULT_SHOW_CLUSTER_ANCHORS);
+    }
+
+    /**
+     * @return whether the market-condition picker offers every condition, or only
+     *         the planetary ones vanilla treats as hand-placeable; on by default,
+     *         so non-planetary conditions (such as decivilisation) are offered too
+     */
+    public static boolean shouldOfferAllConditions() {
+        return LunaSettingsReader.getBoolean(MOD_ID, OFFER_ALL_CONDITIONS_FIELD,
+                DEFAULT_OFFER_ALL_CONDITIONS);
     }
 
     // Reads a faction/independent palette Radio and maps its label to a choice,

@@ -14,14 +14,23 @@ import static kmu.util.KmuValues.normalizeText;
 public final class KmuConditionService {
     private final KmuConditionRepository repository;
     private final KmuErrorReporter errorReporter;
+    private final KmuConditionOfferPolicy offerPolicy;
 
     public KmuConditionService(KmuConditionRepository repository) {
         this(repository, KmuErrorReporter.noop());
     }
 
     public KmuConditionService(KmuConditionRepository repository, KmuErrorReporter errorReporter) {
+        this(repository, errorReporter, KmuConditionOfferPolicy.planetaryOnly());
+    }
+
+    public KmuConditionService(
+            KmuConditionRepository repository,
+            KmuErrorReporter errorReporter,
+            KmuConditionOfferPolicy offerPolicy) {
         this.repository = Objects.requireNonNull(repository, "repository");
         this.errorReporter = Objects.requireNonNull(errorReporter, "errorReporter");
+        this.offerPolicy = Objects.requireNonNull(offerPolicy, "offerPolicy");
     }
 
     public List<KmuConditionSpec> listPlanetaryConditionSpecs() {
@@ -42,7 +51,8 @@ public final class KmuConditionService {
         try {
             return repository.getAllConditionSpecs().stream()
                     .filter(Objects::nonNull)
-                    .filter(spec -> spec.isPlanetary() || currentConditionIds.contains(spec.getId()))
+                    .filter(spec -> offerPolicy.isConditionOfferable(spec)
+                            || currentConditionIds.contains(spec.getId()))
                     .collect(Collectors.toUnmodifiableList());
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to list visible market condition specs.", exception);
@@ -60,7 +70,7 @@ public final class KmuConditionService {
         }
     }
 
-    public KmuConditionAddResult addPlanetaryConditionIfAbsent(
+    public KmuConditionAddResult addOfferableConditionIfAbsent(
             KmuEditableMarket market,
             String conditionId) {
         Objects.requireNonNull(market, "market");
@@ -80,8 +90,10 @@ public final class KmuConditionService {
         if (spec == null) {
             return KmuConditionAddResult.conditionNotFound(normalizedId);
         }
-        if (!spec.isPlanetary()) {
-            return KmuConditionAddResult.notPlanetary(normalizedId);
+        // Guard the add against conditions the picker would not offer, so a direct
+        // (e.g. console) call cannot place a condition the policy hides.
+        if (!offerPolicy.isConditionOfferable(spec)) {
+            return KmuConditionAddResult.notOfferable(normalizedId);
         }
 
         try {
