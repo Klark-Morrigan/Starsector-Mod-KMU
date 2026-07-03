@@ -5,10 +5,10 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.politicalmap.PoliticalMapRefresh;
 import kmu.politicalmap.domain.geometry.CellShaper;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.politics.SectorPolitics;
+import kmu.politicalmap.refresh.PoliticalMapRefresh;
 
 import org.apache.log4j.Logger;
 

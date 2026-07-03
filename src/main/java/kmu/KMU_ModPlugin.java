@@ -4,10 +4,10 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.politicalmap.PoliticalMapAccessWatcher;
-import kmu.politicalmap.PoliticalMapColonySizeListener;
-import kmu.politicalmap.PoliticalMapDecivListener;
-import kmu.politicalmap.PoliticalMapDiscoveryListener;
+import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
+import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
+import kmu.politicalmap.refresh.listeners.PoliticalMapDecivListener;
+import kmu.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.settings.KmuLunaSettings;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 

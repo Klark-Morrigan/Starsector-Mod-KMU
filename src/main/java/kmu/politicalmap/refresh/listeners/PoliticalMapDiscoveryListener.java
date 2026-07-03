@@ -1,7 +1,11 @@
-package kmu.politicalmap;
+package kmu.politicalmap.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.listeners.DiscoverEntityListener;
+
+import kmu.politicalmap.refresh.MarketPoliticsRefresh;
+import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
+import kmu.politicalmap.refresh.PoliticalMapRefresh;
 
 /**
  * Marks a discovered market's system politics-stale, so a concealed colony or

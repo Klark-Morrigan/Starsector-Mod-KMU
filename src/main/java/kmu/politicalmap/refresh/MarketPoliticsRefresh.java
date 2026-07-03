@@ -1,4 +1,4 @@
-package kmu.politicalmap;
+package kmu.politicalmap.refresh;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;

@@ -1,7 +1,9 @@
-package kmu.politicalmap;
+package kmu.politicalmap.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+
+import kmu.politicalmap.refresh.PoliticalMapRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

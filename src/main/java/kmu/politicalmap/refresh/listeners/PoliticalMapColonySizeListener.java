@@ -1,7 +1,10 @@
-package kmu.politicalmap;
+package kmu.politicalmap.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonySizeChangeListener;
+
+import kmu.politicalmap.refresh.MarketPoliticsRefresh;
+import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
 
 /**
  * Marks a system's political-map ownership stale when one of its colonies grows

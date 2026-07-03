@@ -1,4 +1,4 @@
-package kmu.politicalmap;
+package kmu.politicalmap.refresh;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
@@ -11,22 +11,33 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link PoliticalMapColonySizeListener}: a colony resize marks its own
- * star system politics-stale, while a resize on a market with no star system (a
- * deep-hyperspace station) marks nothing. The stale set is drained to read it,
- * so each case clears it first.
+ * Pins {@link MarketPoliticsRefresh}, the shared seat guard the politics
+ * listeners funnel through: a market seated in a star system marks that system
+ * stale, while a null market or one with no star system (a deep-hyperspace
+ * station) marks nothing. The stale set is drained to read it, so each case
+ * clears it first.
  */
-final class PoliticalMapColonySizeListenerTest {
-    private final PoliticalMapColonySizeListener listener = new PoliticalMapColonySizeListener();
+final class MarketPoliticsRefreshTest {
 
     @Nested
-    class ReportColonySizeChanged {
+    class MarkSystemStaleForMarket {
 
         @Test
-        void marksTheResizedColonysSystemStale() {
+        void marksTheMarketsSystemStale() {
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
 
-            listener.reportColonySizeChanged(marketInSystem("mkt", "sys"), 3);
+            MarketPoliticsRefresh.markSystemStaleForMarket(marketInSystem("mkt", "sys"),
+                    "colony resize", "prevSize=3");
+
+            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+        }
+
+        @Test
+        void marksTheMarketsSystemStaleWithEmptyContext() {
+            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+
+            MarketPoliticsRefresh.markSystemStaleForMarket(marketInSystem("mkt", "sys"),
+                    "colony resize", "");
 
             assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
         }
@@ -35,10 +46,10 @@ final class PoliticalMapColonySizeListenerTest {
         void marksNothingForMarketWithoutStarSystem() {
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
             var marketMock = mock(MarketAPI.class);
-            when(marketMock.getId()).thenReturn("mkt");
             when(marketMock.getStarSystem()).thenReturn(null);
 
-            listener.reportColonySizeChanged(marketMock, 3);
+            MarketPoliticsRefresh.markSystemStaleForMarket(marketMock, "colony resize",
+                    "prevSize=3");
 
             assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
@@ -47,7 +58,7 @@ final class PoliticalMapColonySizeListenerTest {
         void marksNothingForNullMarket() {
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
 
-            listener.reportColonySizeChanged(null, 3);
+            MarketPoliticsRefresh.markSystemStaleForMarket(null, "colony resize", "prevSize=3");
 
             assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }

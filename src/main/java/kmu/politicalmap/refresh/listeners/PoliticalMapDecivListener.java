@@ -1,7 +1,11 @@
-package kmu.politicalmap;
+package kmu.politicalmap.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonyDecivListener;
+
+import kmu.politicalmap.refresh.MarketPoliticsRefresh;
+import kmu.politicalmap.refresh.PoliticalMapAccessWatcher;
+import kmu.politicalmap.refresh.PoliticalMapRefresh;
 
 /**
  * Marks a decivilised colony's system politics-stale, so a colony that dies mid
