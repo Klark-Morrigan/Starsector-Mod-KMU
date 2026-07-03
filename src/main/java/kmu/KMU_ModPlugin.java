@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.politicalmap.PoliticalMapAccessWatcher;
 import kmu.politicalmap.PoliticalMapColonySizeListener;
+import kmu.politicalmap.PoliticalMapDecivListener;
 import kmu.politicalmap.PoliticalMapDiscoveryListener;
 import kmu.settings.KmuLunaSettings;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -68,6 +69,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU political map colony size listener", exception);
         }
+
+        try {
+            installPoliticalMapDecivListener(Global.getSector());
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to install KMU political map deciv listener", exception);
+        }
     }
 
     static void installMarketUiContextTracker(SectorAPI sector) {
@@ -117,6 +124,24 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         listenerManager.addListener(new PoliticalMapColonySizeListener(), true);
+    }
+
+    // Registers the listener that marks a system's political-map ownership stale
+    // when one of its colonies decivilises, so a dying colony sheds its faction
+    // color and repaints neutral live rather than only on reload. Idempotent: a
+    // reloaded save already carries it.
+    static void installPoliticalMapDecivListener(SectorAPI sector) {
+        if (sector == null) {
+            return;
+        }
+
+        var listenerManager = sector.getListenerManager();
+        if (listenerManager == null
+                || listenerManager.hasListenerOfClass(PoliticalMapDecivListener.class)) {
+            return;
+        }
+
+        listenerManager.addListener(new PoliticalMapDecivListener(), true);
     }
 
     // Registers the per-frame watcher that refreshes the political map when the
