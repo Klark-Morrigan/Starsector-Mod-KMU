@@ -24,10 +24,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * color choice (or none, to hide them), an opacity, and a width. All are tuned
  * under the LunaLib "Visuals customisation" tab.
  *
- * <p>The national-border geometry (corner radius, corner segments, chamfer
- * angle, and vertex weld tolerance) is exposed separately under the "Dev" tab: it
- * shapes the rounded frontier rather than recoloring it, so it is a tuning knob for
- * experimentation, not a styling choice. Like the visual fields it feeds the same
+ * <p>The national-border geometry is exposed separately under the "Dev" tab: it
+ * shapes the frontier rather than recoloring it, so it is a tuning surface for
+ * experimentation, not a styling choice. The tab splits it into the three operations
+ * that produce a border, in pipeline order - border tracing (weld tolerance, miter
+ * limit), spike sanding, and corner rounding - each its own section. The two smoothing
+ * operations are gated: their section leads with a boolean master switch that turns the
+ * pass off whole without zeroing the knobs beneath it, so the switch reads as their gate.
+ * The corner-rounding gate also covers the factionless (decivilised and uninhabited)
+ * cell outlines, which reuse the same rounding. Like the visual fields all feed the same
  * drawables rebuild, so a change takes effect live.
  *
  * <p>The "Dev" tab also carries the cell frontier resolution - the vertex count of
@@ -106,27 +111,42 @@ public final class KmuLunaSettings {
     private static final String CELL_BOUND_SEGMENTS_FIELD =
             "kmu_politicalMapCellBoundSegments";
 
-    // National-border geometry (Dev tab): the shape of the rounded frontier
-    // stroked and filled per cluster, exposed for live tuning rather than baked as
-    // constants. All feed the drawables rebuild, so a change takes effect the moment
-    // it is applied.
+    // National-border geometry (Dev tab): the shape of the frontier stroked and filled
+    // per cluster, exposed for live tuning rather than baked as constants. All feed the
+    // drawables rebuild, so a change takes effect the moment it is applied. The Dev tab
+    // groups these into the three operations that produce the border, in pipeline order
+    // below; the two gated operations each lead with their master switch so the switch
+    // reads as the gate for the knobs beneath it.
+
+    // Border tracing: the raw ring chaining and miter inset. Always applied - it is
+    // upstream of the two gated smoothing passes, so it has no switch of its own.
+    private static final String BORDER_WELD_TOLERANCE_FIELD =
+            "kmu_politicalMapBorderWeldTolerance";
+    private static final String BORDER_MITER_LIMIT_FIELD =
+            "kmu_politicalMapBorderMiterLimit";
+
+    // Spike sanding: gate then its knobs. Splices out needle/cusp protrusions the
+    // rounding cannot fix (a corner both sharper than the angle and shallower than the
+    // height) from the resolved border before rounding. The gate leaves both knobs
+    // unread when off, so their values survive for when it is switched back on.
+    private static final String SAND_SPIKES_FIELD =
+            "kmu_politicalMapSandSpikes";
+    private static final String BORDER_SPIKE_HEIGHT_FIELD =
+            "kmu_politicalMapBorderSpikeHeight";
+    private static final String BORDER_SPIKE_ANGLE_FIELD =
+            "kmu_politicalMapBorderSpikeAngle";
+
+    // Corner rounding: gate then its knobs. Replaces each sharp corner with an arc. The
+    // gate leaves the radius, segments, and chamfer unread when off, and also covers the
+    // factionless cell outlines, which reuse this same corner-rounding pass.
+    private static final String ROUND_CORNERS_FIELD =
+            "kmu_politicalMapRoundCorners";
     private static final String BORDER_CORNER_RADIUS_FIELD =
             "kmu_politicalMapBorderCornerRadius";
     private static final String BORDER_CORNER_SEGMENTS_FIELD =
             "kmu_politicalMapBorderCornerSegments";
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
             "kmu_politicalMapBorderChamferAngle";
-    private static final String BORDER_WELD_TOLERANCE_FIELD =
-            "kmu_politicalMapBorderWeldTolerance";
-    private static final String BORDER_MITER_LIMIT_FIELD =
-            "kmu_politicalMapBorderMiterLimit";
-    // Spike sanding of the resolved border before rounding: a corner both sharper than
-    // the angle and shallower (nearer its neighbour chord) than the height is a
-    // needle or cusp the rounding cannot fix, so it is spliced out.
-    private static final String BORDER_SPIKE_HEIGHT_FIELD =
-            "kmu_politicalMapBorderSpikeHeight";
-    private static final String BORDER_SPIKE_ANGLE_FIELD =
-            "kmu_politicalMapBorderSpikeAngle";
     // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and an
     // axis line) so the clustering and axis fit behind the coming faction labels can be
     // eyeballed on the map. Off by default.
@@ -176,13 +196,19 @@ public final class KmuLunaSettings {
     // the geometric default this setting overrides; kept a literal like the other
     // fallbacks so this class stays decoupled from the geometry library.
     private static final int DEFAULT_CELL_BOUND_SEGMENTS = 96;
+    // Border-tracing knobs (ungated).
+    private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
+    private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
+    // Spike-sanding gate then its knobs; the gate runs the pass by default, existing to
+    // switch it off rather than to opt into it.
+    private static final boolean DEFAULT_SAND_SPIKES = true;
+    private static final double DEFAULT_BORDER_SPIKE_HEIGHT = 150.0;
+    private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 120.0;
+    // Corner-rounding gate then its knobs; likewise on by default.
+    private static final boolean DEFAULT_ROUND_CORNERS = true;
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
-    private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
-    private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
-    private static final double DEFAULT_BORDER_SPIKE_HEIGHT = 150.0;
-    private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 120.0;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
     // On by default: the picker is a hands-on condition manager, so it lists every
     // condition unless the player narrows it to vanilla's planetary set.
@@ -481,6 +507,28 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapBorderSpikeAngleRadians() {
         return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, BORDER_SPIKE_ANGLE_FIELD,
                 DEFAULT_BORDER_SPIKE_ANGLE_DEGREES));
+    }
+
+    /**
+     * @return whether the national-border corner rounding runs; on by default. When
+     *         off the resolved envelope keeps its sharp corners and the radius,
+     *         segments, and chamfer knobs go unread. Also gates the factionless
+     *         (decivilised and uninhabited) cell outlines, which reuse the same
+     *         corner-rounding pass, so the whole map's corners round or not together
+     */
+    public static boolean shouldRoundBorderCorners() {
+        return LunaSettingsReader.getBoolean(MOD_ID, ROUND_CORNERS_FIELD,
+                DEFAULT_ROUND_CORNERS);
+    }
+
+    /**
+     * @return whether the spike-sanding pass runs before corner rounding; on by
+     *         default. When off the spike height and angle knobs go unread and needle
+     *         or cusp protrusions are left in the border for the rounding to meet
+     */
+    public static boolean shouldSandBorderSpikes() {
+        return LunaSettingsReader.getBoolean(MOD_ID, SAND_SPIKES_FIELD,
+                DEFAULT_SAND_SPIKES);
     }
 
     /**

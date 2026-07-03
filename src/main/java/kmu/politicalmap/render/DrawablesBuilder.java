@@ -96,12 +96,12 @@ final class DrawablesBuilder {
                 }
             }
 
-            // Each owned faction's territory: one rounded region per cluster (traced
-            // across all its cells so a multi-system cluster reads as one frontier),
-            // tessellated for the fill and flattened for the border - the same shape for
-            // both. Built off the same raw cells and owners the seams used, and profiled
-            // on its own since chaining, rounding, and tessellating every faction's
-            // outline is comparable in cost to shaping the cells.
+            // Each owned faction's territory: one region per cluster (traced across all
+            // its cells so a multi-system cluster reads as one frontier), tessellated for
+            // the fill and flattened for the border - the same shape for both. Built off
+            // the same raw cells and owners the seams used, and profiled on its own since
+            // chaining, smoothing, and tessellating every faction's outline is comparable
+            // in cost to shaping the cells.
             profiler.measure("politicalMap.buildFactionTerritories",
                     () -> buildAllFactionTerritories(drawables, geometryCache));
 
@@ -242,7 +242,7 @@ final class DrawablesBuilder {
         return systemsByFaction;
     }
 
-    // Builds one faction's fill and national border from its rounded border rings,
+    // Builds one faction's fill and national border from its border rings,
     // traced across all the systems it holds so a multi-system cluster reads as one
     // continuous frontier. The rings are tessellated into fill triangles and flattened
     // into border loops - the same geometry - so the fill exactly matches the stroked
@@ -275,42 +275,58 @@ final class DrawablesBuilder {
             return null;
         }
         // Resolve the inset rings to their clean outer envelope first (positive winding
-        // drops any neck self-crossing), THEN round - rounding before the resolve would
-        // have its arc clipped off at the crossing and left a sharp corner. Fill and
-        // border are the same rounded region (triangulated vs its boundary loops), so
-        // they match exactly.
-        var roundedLoops = roundBorderLoops(
-                PolygonTessellator.tessellateToBoundaryLoops(insetRings));
+        // drops any neck self-crossing), then run each smoothing pass only when its
+        // Dev-tab gate is on: sand the spikes, then round the corners. Smoothing before
+        // the resolve would have any arc clipped off at the crossing and left a sharp
+        // corner, and sanding must precede rounding so the arc meets clean geometry.
+        // Fill and border are the same loops (triangulated vs its boundary loops), so
+        // they match exactly whichever passes ran.
+        var borderLoops = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
+        if (KmuLunaSettings.shouldSandBorderSpikes()) {
+            borderLoops = sandBorderSpikes(borderLoops);
+        }
+        if (KmuLunaSettings.shouldRoundBorderCorners()) {
+            borderLoops = roundBorderCorners(borderLoops);
+        }
         var fillTriangles = fillColor == null
                 ? VertexRuns.NO_VERTICES
-                : PolygonTessellator.tessellateToTriangles(roundedLoops);
-        var borderLoops = new ArrayList<float[]>();
+                : PolygonTessellator.tessellateToTriangles(borderLoops);
+        var borderRuns = new ArrayList<float[]>();
         if (borderColor != null) {
-            for (var loop : PolygonTessellator.tessellateToBoundaryLoops(roundedLoops)) {
-                borderLoops.add(VertexRuns.flattenVertices(loop));
+            for (var loop : PolygonTessellator.tessellateToBoundaryLoops(borderLoops)) {
+                borderRuns.add(VertexRuns.flattenVertices(loop));
             }
         }
         return new FactionTerritory(fillTriangles, fillColor,
-                (float) style.fillOpacity(), borderLoops, borderColor,
+                (float) style.fillOpacity(), borderRuns, borderColor,
                 (float) style.outerOpacity(), (float) style.outerWidth());
     }
 
-    // Rounds each clean border loop with the current corner settings, so a corner's arc
-    // is applied to the resolved envelope rather than a self-crossing inset (a crossing
-    // would clip the arc back to a sharp point). Each loop is first despiked - needle
-    // protrusions and inward cusps too thin for the rounding to sand off (its step-back
-    // clamps to their tiny edges) are spliced out, so the arc runs on clean geometry.
-    // Reused for every faction's rebuild.
-    private static List<List<double[]>> roundBorderLoops(List<List<double[]>> cleanLoops) {
+    // Splices out of every clean border loop the needle protrusions and inward cusps too
+    // thin for rounding to fix (the arc's step-back clamps to their tiny edges), so a
+    // rounding pass afterwards runs on clean geometry. Reused for every faction's
+    // rebuild; the caller gates this on the spike-sanding switch.
+    private static List<List<double[]>> sandBorderSpikes(List<List<double[]>> loops) {
         var spikeHeight = KmuLunaSettings.getPoliticalMapBorderSpikeHeight();
         var spikeAngle = KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians();
+        var sanded = new ArrayList<List<double[]>>(loops.size());
+        for (var loop : loops) {
+            sanded.add(Polygons.removeSpikes(loop, spikeHeight, spikeAngle));
+        }
+        return sanded;
+    }
+
+    // Rounds each border loop's corners into arcs with the current corner settings,
+    // applied to the resolved envelope rather than a self-crossing inset (a crossing
+    // would clip the arc back to a sharp point). Reused for every faction's rebuild; the
+    // caller gates this on the corner-rounding switch.
+    private static List<List<double[]>> roundBorderCorners(List<List<double[]>> loops) {
         var radius = KmuLunaSettings.getPoliticalMapBorderCornerRadius();
         var segments = KmuLunaSettings.getPoliticalMapBorderCornerSegments();
         var chamfer = KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians();
-        var rounded = new ArrayList<List<double[]>>(cleanLoops.size());
-        for (var loop : cleanLoops) {
-            var despiked = Polygons.removeSpikes(loop, spikeHeight, spikeAngle);
-            rounded.add(Polygons.roundCorners(despiked, radius, segments, chamfer));
+        var rounded = new ArrayList<List<double[]>>(loops.size());
+        for (var loop : loops) {
+            rounded.add(Polygons.roundCorners(loop, radius, segments, chamfer));
         }
         return rounded;
     }
@@ -320,18 +336,25 @@ final class DrawablesBuilder {
     // passes false: its fill and national border come per cluster from the tessellated
     // region, so it contributes only its seams here. A factionless cell passes true and
     // the neutral color for both palette shades: it does not fuse into a cluster, so it
-    // keeps its own inset fill and outline. Its outline is rounded with the same corner
-    // settings the cluster borders use, so a lone dead system reads as smoothly as a
-    // cluster rather than a sharp Voronoi cell. Each color resolves against the two
-    // palette shades, null for a "No color" choice, so the draw pass skips it.
+    // keeps its own inset fill and outline. That outline's corners are rounded - with the
+    // same corner settings and gate the cluster borders use, so a lone dead system reads
+    // as smoothly as a cluster when rounding is on and stays a sharp Voronoi cell when it
+    // is off. Each color resolves against the two palette shades, null for a "No color"
+    // choice, so the draw pass skips it.
     private static StyledCell buildStyledCell(ShapedCell shaped, Color primaryColor,
             Color secondaryColor, MapStyle style, boolean perCellFillAndBorder) {
+        // Gate the corner rounding outside the round call: on rounds this cell's outline
+        // in step with the cluster borders, off leaves its raw inset outline.
+        var outline = shaped.fillPolygon();
+        if (perCellFillAndBorder && KmuLunaSettings.shouldRoundBorderCorners()) {
+            outline = roundCellOutline(shaped);
+        }
         return new StyledCell(
                 perCellFillAndBorder
                         ? VertexRuns.flattenVertices(shaped.fillPolygon())
                         : VertexRuns.NO_VERTICES,
                 perCellFillAndBorder
-                        ? VertexRuns.flattenClosedLoopAsSegments(roundCellOutline(shaped))
+                        ? VertexRuns.flattenClosedLoopAsSegments(outline)
                         : VertexRuns.NO_VERTICES,
                 VertexRuns.flattenEdgesOfClass(shaped, false),
                 perCellFillAndBorder
@@ -349,7 +372,8 @@ final class DrawablesBuilder {
     // Rounds a factionless cell's inset outline with the same corner settings the
     // cluster borders use, so its border reads consistently. The cell is a single
     // convex inset polygon (all its edges are national border), so it needs no chaining
-    // or envelope resolve - only the corner rounding.
+    // or envelope resolve - only the corner rounding. The caller gates this on the
+    // corner-rounding switch.
     private static List<double[]> roundCellOutline(ShapedCell shaped) {
         return Polygons.roundCorners(shaped.fillPolygon(),
                 KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
