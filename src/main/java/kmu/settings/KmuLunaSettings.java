@@ -168,12 +168,12 @@ public final class KmuLunaSettings {
     // fallbacks so this class stays decoupled from the geometry library.
     private static final int DEFAULT_CELL_BOUND_SEGMENTS = 96;
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
-    private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 6;
+    private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
-    private static final double DEFAULT_BORDER_WELD_TOLERANCE = 50.0;
+    private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
     private static final double DEFAULT_BORDER_SPIKE_HEIGHT = 150.0;
-    private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 90.0;
+    private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 120.0;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
