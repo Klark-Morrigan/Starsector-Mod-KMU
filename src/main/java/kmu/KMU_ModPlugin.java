@@ -10,6 +10,7 @@ import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDecivListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.settings.KmuLunaSettings;
+import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.apache.log4j.Logger;
@@ -81,6 +82,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
             installPoliticalMapColonizationListener(Global.getSector());
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU political map colonization listener", exception);
+        }
+
+        try {
+            // Nex-gated: no-op unless Nexerelin is enabled, so a Nex-free install
+            // never loads the market-transfer listener's Nex-coupled class.
+            NexerelinInvasionListenerInstaller.installIfPresent(Global.getSector());
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to install KMU political map market-transfer listener", exception);
         }
     }
 

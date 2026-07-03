@@ -21,10 +21,17 @@ def kmlibJarFile = file("${starsectorRoot}/mods/KMLib/jars/KMLib.jar")
 // RAT is installed, and RandomAssortmentOfThingsMatcher gates every use behind
 // a mod-enabled check so a RAT-free install never resolves the type.
 def ratJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/RandomAssortmentofThings.jar'])
+// Nexerelin is an optional runtime dependency. KMU compiles against its
+// InvasionListener so the political map can repaint a colony that changes hands
+// in a Nex war; the mod classloader supplies the jar at runtime when Nex is
+// installed, and NexerelinInvasionListenerInstaller gates the listener behind a
+// mod-enabled check so a Nex-free install never resolves the type.
+def nexJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/ExerelinCore.jar'])
 
 dependencies {
     compileOnly consoleCommandsJars
     compileOnly ratJars
+    compileOnly nexJars
     // KMLib is a hard dependency in mod_info.json; Starsector's mod
     // classloader provides the jar at runtime so compileOnly is enough.
     // KMU drives its logging through KMLib's KmLogging, so the LunaLib
@@ -34,9 +41,11 @@ dependencies {
 
     testCompileOnly consoleCommandsJars
     testCompileOnly ratJars
+    testCompileOnly nexJars
     testCompileOnly files(kmlibJarFile)
     testRuntimeOnly consoleCommandsJars
     testRuntimeOnly ratJars
+    testRuntimeOnly nexJars
     testRuntimeOnly files(kmlibJarFile)
 }
 
@@ -62,6 +71,15 @@ tasks.withType(JavaCompile).configureEach {
                     "Could not find Random Assortment of Things jar under " +
                     "${starsectorRoot}/mods/**/jars/RandomAssortmentofThings.jar. " +
                     "Install RAT for compiling KMU's Abyssal Fracture access integration.")
+        }
+        // Nex is optional at runtime but its InvasionListener is needed to
+        // compile PoliticalMapMarketTransferListener, so the jar must be present
+        // to build even though a player can run KMU without Nex installed.
+        if (nexJars.files.isEmpty()) {
+            throw new GradleException(
+                    "Could not find Nexerelin jar under " +
+                    "${starsectorRoot}/mods/**/jars/ExerelinCore.jar. " +
+                    "Install Nexerelin for compiling KMU's market-transfer map integration.")
         }
     }
 }
