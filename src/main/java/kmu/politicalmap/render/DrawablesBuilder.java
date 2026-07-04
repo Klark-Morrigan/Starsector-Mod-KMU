@@ -8,7 +8,7 @@ import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Polygons;
 import kmlib.math.geometry.PrincipalAxis;
-import kmlib.math.geometry.Segments;
+import kmlib.math.geometry.Spans;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 
@@ -285,7 +285,7 @@ final class DrawablesBuilder {
         }
         var interiorSpans = Polygons.findLineInteriorSpans(rings,
                 axis.centroidX(), axis.centroidY(), direction[0], direction[1]);
-        var clear = Segments.findLongestClearSubsegment(interiorSpans,
+        var clear = Spans.findLongestClearSubsegment(interiorSpans,
                 axis.centroidX(), axis.centroidY(), direction[0], direction[1],
                 siteBySystemId.values(), tuning.iconClearance());
         if (clear == null) {
