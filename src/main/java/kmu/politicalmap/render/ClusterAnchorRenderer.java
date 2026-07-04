@@ -1,13 +1,20 @@
 package kmu.politicalmap.render;
 
+import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.Points;
 import kmlib.opengl.GlColor;
+import kmlib.opengl.GlLines;
+import kmlib.opengl.GlQuads;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.render.model.ClusterAnchor;
+import kmu.settings.KmuLunaSettings;
 
 import org.lwjgl.opengl.GL11;
 
+import java.awt.Color;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's anchor
@@ -27,6 +34,14 @@ final class ClusterAnchorRenderer {
     // border-tracing overlay grade their layers identically.
     private static final float ANCHOR_DOT_SIZE = 10f;
     private static final float ANCHOR_AXIS_WIDTH = 2f;
+
+    // Below this world girth a band is drawn as its centreline alone: a collapsed fit
+    // (thickness zero) and the sub-unit residue of the thickness bisection both have no
+    // meaningful area to fill, so only the line shows. A rendering floor, distinct from
+    // the geometric degenerate-length guard (kmlib's Limits.MIN_EDGE_LENGTH) a segment's
+    // own direction is checked against below - the two happen to differ by orders of
+    // magnitude, so conflating them would silently change one when tuning the other.
+    private static final float MIN_BAND_THICKNESS = 1f;
 
     // Emits only; never instantiated.
     private ClusterAnchorRenderer() {
@@ -60,24 +75,33 @@ final class ClusterAnchorRenderer {
         GL11.glPopAttrib();
     }
 
-    // The three line layers and the dots, each layered pass one color. The dot is a
-    // fixed-pixel GL_POINTS mark; each line is one GL_LINES segment.
+    // The band quads, the centrelines, and the dots, layered bottom to top so a verdict
+    // reads consistently where they overlap: the fitted-box bands first (rejected, then
+    // unbiased, then accepted), each a translucent fill so the border shows through and an
+    // overflow is visible; then the thin centrelines in the same order; then the dots in
+    // each owner's bright shade over everything. All three verdicts draw their band at the
+    // accepted box's girth so their footprints compare like-for-like. The band fill's alpha
+    // is the dev opacity knob times the map fade; the outlines, rules, lines, and dots take
+    // the map fade alone.
     private static void drawClusterAnchors(List<ClusterAnchor> anchors, float factor,
             float alphaMult) {
-        GL11.glPointSize(ANCHOR_DOT_SIZE);
+        var bandAlpha = (float) KmuLunaSettings.getPoliticalMapAnchorBandOpacity() * alphaMult;
+        drawBandLayer(anchors, ClusterAnchor::rejectedAxis, DiagnosticPalette.DISCARDED_COLOR,
+                factor, bandAlpha, alphaMult);
+        drawBandLayer(anchors, ClusterAnchor::unbiasedAxis, DiagnosticPalette.INTERMEDIATE_COLOR,
+                factor, bandAlpha, alphaMult);
+        drawBandLayer(anchors, ClusterAnchor::acceptedAxis, DiagnosticPalette.ACCEPTED_COLOR,
+                factor, bandAlpha, alphaMult);
+
         GL11.glLineWidth(ANCHOR_AXIS_WIDTH);
-        GlColor.set(DiagnosticPalette.DISCARDED_COLOR, alphaMult);
-        for (var anchor : anchors) {
-            drawAxisSegment(anchor.rejectedAxis(), factor);
-        }
-        GlColor.set(DiagnosticPalette.INTERMEDIATE_COLOR, alphaMult);
-        for (var anchor : anchors) {
-            drawAxisSegment(anchor.unbiasedAxis(), factor);
-        }
-        GlColor.set(DiagnosticPalette.ACCEPTED_COLOR, alphaMult);
-        for (var anchor : anchors) {
-            drawAxisSegment(anchor.acceptedAxis(), factor);
-        }
+        drawCentrelineLayer(anchors, ClusterAnchor::rejectedAxis,
+                DiagnosticPalette.DISCARDED_COLOR, factor, alphaMult);
+        drawCentrelineLayer(anchors, ClusterAnchor::unbiasedAxis,
+                DiagnosticPalette.INTERMEDIATE_COLOR, factor, alphaMult);
+        drawCentrelineLayer(anchors, ClusterAnchor::acceptedAxis,
+                DiagnosticPalette.ACCEPTED_COLOR, factor, alphaMult);
+
+        GL11.glPointSize(ANCHOR_DOT_SIZE);
         for (var anchor : anchors) {
             GlColor.set(anchor.color(), alphaMult);
             GL11.glBegin(GL11.GL_POINTS);
@@ -86,15 +110,101 @@ final class ClusterAnchorRenderer {
         }
     }
 
-    // Strokes one of an anchor's lines; an anchor without that line carries null and
-    // emits nothing - a collapsed fit, or a diagnostic whose toggle is off.
-    private static void drawAxisSegment(ClusterAnchor.AxisSegment segment, float factor) {
-        if (segment == null) {
+    // Draws one verdict's band across every anchor that carries that line and a band girth
+    // to show: a translucent fill, a solid outline, and the line-count divider rules that
+    // split the band into the lanes the name's lines would fill. A band thinner than the
+    // floor (a collapsed fit or bisection residue) is left to the centreline layer.
+    private static void drawBandLayer(List<ClusterAnchor> anchors,
+            Function<ClusterAnchor, ClusterAnchor.AxisSegment> line, Color color, float factor,
+            float bandAlpha, float outlineAlpha) {
+        for (var anchor : anchors) {
+            var segment = line.apply(anchor);
+            if (segment == null || anchor.thickness() < MIN_BAND_THICKNESS) {
+                continue;
+            }
+            var band = bandCorners(segment, anchor.thickness(), factor);
+            if (band == null) {
+                continue;
+            }
+            GlColor.set(color, bandAlpha);
+            GlQuads.fillQuad(band);
+            GlColor.set(color, outlineAlpha);
+            GlLines.strokeLoop(band);
+            drawLineRules(segment, anchor.thickness(), anchor.lineCount(), factor);
+        }
+    }
+
+    // Strokes one verdict's centrelines across every anchor that carries that line - the
+    // axis a name follows, drawn over the band fill so the line reads on top; an anchor
+    // without that line carries null and emits nothing.
+    private static void drawCentrelineLayer(List<ClusterAnchor> anchors,
+            Function<ClusterAnchor, ClusterAnchor.AxisSegment> line, Color color, float factor,
+            float alphaMult) {
+        GlColor.set(color, alphaMult);
+        for (var anchor : anchors) {
+            var segment = line.apply(anchor);
+            if (segment == null) {
+                continue;
+            }
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex2f(segment.startX() * factor, segment.startY() * factor);
+            GL11.glVertex2f(segment.endX() * factor, segment.endY() * factor);
+            GL11.glEnd();
+        }
+    }
+
+    // The four corners of a band, in draw (factor-scaled) coordinates: the centreline
+    // segment widened to the girth along its own perpendicular. Null when the segment has
+    // no length to take a direction from, so the band collapses to its centreline.
+    private static float[] bandCorners(ClusterAnchor.AxisSegment segment, float thickness,
+            float factor) {
+        var normal = unitNormalOf(segment);
+        if (normal == null) {
+            return null;
+        }
+        // Half the girth along the centreline's perpendicular - the offset from the
+        // centreline to each long edge.
+        var halfX = normal[0] * thickness / 2f;
+        var halfY = normal[1] * thickness / 2f;
+        return new float[] {
+                (segment.startX() + halfX) * factor, (segment.startY() + halfY) * factor,
+                (segment.endX() + halfX) * factor, (segment.endY() + halfY) * factor,
+                (segment.endX() - halfX) * factor, (segment.endY() - halfY) * factor,
+                (segment.startX() - halfX) * factor, (segment.startY() - halfY) * factor};
+    }
+
+    // The centreline's unit perpendicular, shared by the band's edges and its lane rules,
+    // or null when the segment is too short to take a direction from. Reuses kmlib's
+    // degenerate-vector guard (Points.computeUnitVector against Limits.MIN_EDGE_LENGTH)
+    // rather than re-deriving the same hypot-and-divide check locally, then rotates the
+    // unit direction a quarter turn to its perpendicular.
+    private static float[] unitNormalOf(ClusterAnchor.AxisSegment segment) {
+        var unit = Points.computeUnitVector(segment.endX() - segment.startX(),
+                segment.endY() - segment.startY(), Limits.MIN_EDGE_LENGTH);
+        return unit == null ? null : new float[] {(float) -unit[1], (float) unit[0]};
+    }
+
+    // Draws the divider rules between a multi-line band's lanes: lineCount minus one lines
+    // parallel to the centreline, evenly spaced across the girth, so a two- or three-line
+    // fit reads as stacked lines rather than one thick bar. Nothing for a single line.
+    private static void drawLineRules(ClusterAnchor.AxisSegment segment, float thickness,
+            int lineCount, float factor) {
+        if (lineCount < 2) {
+            return;
+        }
+        var normal = unitNormalOf(segment);
+        if (normal == null) {
             return;
         }
         GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2f(segment.startX() * factor, segment.startY() * factor);
-        GL11.glVertex2f(segment.endX() * factor, segment.endY() * factor);
+        for (var rule = 1; rule < lineCount; rule++) {
+            // Step from one edge (-half) across the girth in even lane widths.
+            var offset = -thickness / 2f + thickness * rule / lineCount;
+            GL11.glVertex2f((segment.startX() + normal[0] * offset) * factor,
+                    (segment.startY() + normal[1] * offset) * factor);
+            GL11.glVertex2f((segment.endX() + normal[0] * offset) * factor,
+                    (segment.endY() + normal[1] * offset) * factor);
+        }
         GL11.glEnd();
     }
 }

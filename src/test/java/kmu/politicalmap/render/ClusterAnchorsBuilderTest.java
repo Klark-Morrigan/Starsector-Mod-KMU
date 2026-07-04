@@ -15,12 +15,17 @@ import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins the cluster-anchor search: the deterministic geometry that turns a cluster's
- * system positions, cell edges, and tuning into the accepted label line - the
+ * system positions, cell edges, and tuning into the accepted label box - the
  * highest-scoring of many candidate lines swept across the cluster, each clipped inside
  * the national border, trimmed clear of system icons, and pulled short of the border at
- * both ends, with shallower lines favoured over steep ones by a length-versus-slope
- * score, and collapsed to the site-centroid dot when no candidate survives. The builder's
- * settings-fed rebuild entry points only resolve in-engine.
+ * both ends, with shallower lines favoured over steep ones by a font-height-versus-slope
+ * score, and collapsed to the site-centroid dot when no candidate survives. The line-fit
+ * tests run a slender single-line band that reduces the box to its centreline, so they
+ * pin the underlying line geometry; the band-fit tests give the stand-in name real girth
+ * to pin that a fat band stays inside the border, that a square cluster stacks the name
+ * into two lines to spend spare girth, that the line cap forbids stacking, and that a
+ * band too thick to fit collapses to the dot. The builder's settings-fed rebuild entry
+ * points only resolve in-engine.
  */
 final class ClusterAnchorsBuilderTest {
 
@@ -404,8 +409,95 @@ final class ClusterAnchorsBuilderTest {
             assertThat(anchors).isEmpty();
         }
 
-        // A tuning with the fixture's border-trace pair baked in and both diagnostic
-        // toggles off, so each test names only the search knobs it exercises.
+        @Test
+        void computeClusterAnchorsCapsTheBandGirthSoTheWholeBandStaysInsideTheBorder() {
+            // A slab region 700 tall once inset (y 150..850). A fat stand-in name (aspect 1)
+            // wants all the girth it can get, but the band cannot exceed the 700 the border
+            // allows, so the fit caps the girth at the region rather than overrun it - and
+            // the whole band, centreline give or take half its girth, stays within
+            // y 150..850. The thin centreline of the line fit hid this; the band makes the
+            // "too close to the border" case explicit and keeps it inside.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
+                    HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
+                    bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
+                            1.0, 100.0, 2000.0, 1, 1.0));
+
+            var anchor = anchors.get(0);
+            assertThat(anchor.acceptedAxis()).isNotNull();
+            assertThat(anchor.acceptedAxis().startY()).isCloseTo(500f, within(1f));
+            // Girth capped just under the 700-tall region, never crossing the border.
+            assertThat(anchor.thickness()).isGreaterThan(600f);
+            assertThat(anchor.thickness()).isLessThanOrEqualTo(700f);
+            assertThat(anchor.anchorY() - anchor.thickness() / 2f).isGreaterThanOrEqualTo(149f);
+            assertThat(anchor.anchorY() + anchor.thickness() / 2f).isLessThanOrEqualTo(851f);
+        }
+
+        @Test
+        void computeClusterAnchorsStacksASquareClusterNameIntoTwoLines() {
+            // In a square cluster (inset 1700 on a side) a name six times as long as it is
+            // tall cannot run big on one line - the side caps a single line's font. Stacking
+            // it into two lines halves the length each line needs and spends the square's
+            // spare girth, so the two-line box carries a taller font and the fit chooses it
+            // over one line and over three (which the region's girth cannot make taller).
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
+                    SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
+                    bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
+                            6.0, 100.0, 1700.0, 3, 1.15));
+
+            assertThat(anchors.get(0).lineCount()).isEqualTo(2);
+            assertThat(anchors.get(0).thickness()).isGreaterThan(0f);
+        }
+
+        @Test
+        void computeClusterAnchorsKeepsANameOnOneLineWhenTheLineCapIsOne() {
+            // The same square that would prefer two lines is held to one when the line cap
+            // is one, so the name stays a single line at the smaller font the cap forces -
+            // the knob that lets a caller forbid stacking.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
+                    SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
+                    bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
+                            6.0, 100.0, 1700.0, 1, 1.15));
+
+            assertThat(anchors.get(0).lineCount()).isEqualTo(1);
+        }
+
+        @Test
+        void computeClusterAnchorsCollapsesToTheDotWhenTheMinimumBandCannotFit() {
+            // A minimum band girth wider than the 1700 the square holds cannot sit anywhere
+            // - no placement can prove even the thinnest required band interior - so the fit
+            // collapses to the site-centroid dot, the same fallback a no-room line takes.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
+                    SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
+                    bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
+                            6.0, 3000.0, 4000.0, 1, 1.0));
+
+            var anchor = anchors.get(0);
+            assertThat(anchor.acceptedAxis()).isNull();
+            assertThat(anchor.thickness()).isEqualTo(0f);
+            assertThat(anchor.lineCount()).isEqualTo(0);
+            assertThat(anchor.anchorX()).isCloseTo(1000f, within(1e-3f));
+            assertThat(anchor.anchorY()).isCloseTo(1000f, within(1e-3f));
+        }
+
+        // A very slender stand-in name (length 500x its line height) so the box solver
+        // sizes a band only a few world units thick before it runs out of length: the band
+        // then hugs its centreline and the accepted line reproduces the pre-band line fit,
+        // letting the line-fit tests below pin the same geometry they always did while the
+        // band-fit tests exercise real girth. A single line with a wide thickness ceiling,
+        // so the girth is capped by the region, never the knob, and never split.
+        private static final double SLENDER_ASPECT = 500.0;
+        private static final double NO_MIN_THICKNESS = 0.0;
+        private static final double AMPLE_MAX_THICKNESS = 2000.0;
+        private static final int ONE_LINE = 1;
+        private static final double FLUSH_LINES = 1.0;
+
+        // A tuning with the fixture's border-trace pair baked in, a slender single-line
+        // band that reduces the fit to a line, and both diagnostic toggles off, so each
+        // line-fit test names only the search knobs it exercises.
         private static ClusterAnchorsBuilder.AnchorTuning tuning(double endInsetDistance,
                 double iconClearance, int directionCount, int offsetCount,
                 double verticalPenaltyStrength, double verticalPenaltyExponent) {
@@ -413,16 +505,32 @@ final class ClusterAnchorsBuilderTest {
                     verticalPenaltyStrength, verticalPenaltyExponent, false, false);
         }
 
-        // The full tuning, for the tests that also exercise the rejected- and
-        // unbiased-axis diagnostics.
+        // The full line-fit tuning, for the tests that also exercise the rejected- and
+        // unbiased-axis diagnostics; still the slender single-line band.
         private static ClusterAnchorsBuilder.AnchorTuning tuning(double endInsetDistance,
                 double iconClearance, int directionCount, int offsetCount,
                 double verticalPenaltyStrength, double verticalPenaltyExponent,
                 boolean showRejectedAxis, boolean showUnbiasedAxis) {
+            return bandTuning(endInsetDistance, iconClearance, directionCount, offsetCount,
+                    verticalPenaltyStrength, verticalPenaltyExponent, showRejectedAxis,
+                    showUnbiasedAxis, SLENDER_ASPECT, NO_MIN_THICKNESS, AMPLE_MAX_THICKNESS,
+                    ONE_LINE, FLUSH_LINES);
+        }
+
+        // The full tuning with the band-fit knobs exposed, for the tests that exercise real
+        // girth: how thick a band the fit must hold, how tall it may grow, and how many
+        // lines it may stack a name into.
+        private static ClusterAnchorsBuilder.AnchorTuning bandTuning(double endInsetDistance,
+                double iconClearance, int directionCount, int offsetCount,
+                double verticalPenaltyStrength, double verticalPenaltyExponent,
+                boolean showRejectedAxis, boolean showUnbiasedAxis, double bandAspect,
+                double bandMinThickness, double bandMaxThickness, int bandMaxLines,
+                double bandLineSpacing) {
             return new ClusterAnchorsBuilder.AnchorTuning(
                     new BorderTrace(WELD_TOLERANCE, MITER_LIMIT), endInsetDistance,
                     iconClearance, directionCount, offsetCount, verticalPenaltyStrength,
-                    verticalPenaltyExponent, showRejectedAxis, showUnbiasedAxis);
+                    verticalPenaltyExponent, showRejectedAxis, showUnbiasedAxis, bandAspect,
+                    bandMinThickness, bandMaxThickness, bandMaxLines, bandLineSpacing);
         }
 
         // One square cell's CCW edges (bottom, right, top, left), each tagged with the

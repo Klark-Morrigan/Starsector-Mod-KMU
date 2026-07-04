@@ -38,12 +38,22 @@ import java.awt.Color;
  * dot; the three lines instead use the renderer's fixed diagnostic palette (accepted,
  * rejected, unbiased) so their verdict reads the same regardless of faction.
  *
+ * <p>{@code thickness} is the girth of the fitted label band in world units - the
+ * height of the box a name would fill along the accepted line, not just its
+ * centreline - and {@code lineCount} how many lines the fit stacked the name into to
+ * spend that girth (one for a single line). Together they turn the accepted line into
+ * the oriented box the name will occupy, so the search can keep the whole band inside
+ * the border and the debug overlay can draw the true footprint rather than a thin
+ * line that hides an overflow. Both are zero on a collapsed fit (dot only), where
+ * there is no band.
+ *
  * <p>Scaffolding for the label work: it makes the otherwise invisible clustering and
  * placement search verifiable on the map before any text is drawn. Only built when the
  * "show cluster anchors" dev toggle is on.
  */
 public record ClusterAnchor(float anchorX, float anchorY, Color color,
-        AxisSegment acceptedAxis, AxisSegment rejectedAxis, AxisSegment unbiasedAxis) {
+        AxisSegment acceptedAxis, AxisSegment rejectedAxis, AxisSegment unbiasedAxis,
+        float thickness, int lineCount) {
 
     /**
      * One of a {@link ClusterAnchor}'s lines, in world (hyperspace) coordinates - the

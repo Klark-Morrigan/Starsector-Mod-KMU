@@ -4,9 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
-import kmlib.math.geometry.Polygons;
 import kmlib.math.geometry.PrincipalAxis;
-import kmlib.math.geometry.Spans;
+import kmlib.math.solving.Picks;
 
 import kmu.politicalmap.domain.geometry.CellEdge;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
@@ -23,11 +22,13 @@ import java.util.Map;
 
 /**
  * Fits the debug label anchors: one {@link ClusterAnchor} per contiguous same-faction
- * cluster, its label line the highest-scoring of many candidate lines swept across the
- * cluster - each clipped inside the national border, trimmed clear of system icons, and
- * pulled short of the border at both ends - with shallower (more horizontal) lines
- * favoured over steep ones by a length-versus-slope score rather than by bending any
- * direction before the fit.
+ * cluster, its label box the highest-scoring of many candidate lines swept across the
+ * cluster. This class generates the candidates (a direction fan crossed at parallel
+ * offsets) and selects among them; {@link LabelBoxFitter} sizes each into the largest
+ * name-holding box - clipped inside the national border, trimmed clear of system icons,
+ * pulled short of the border at both ends, and stacked into extra lines where girth is
+ * spare. Shallower (more horizontal) boxes are favoured over steep ones by a
+ * font-height-versus-slope score rather than by bending any direction before the fit.
  *
  * <p>Its own builder, apart from {@link DrawablesBuilder}, because the anchors are an
  * independent overlay, not part of the production draw lists: they draw over the normal
@@ -100,16 +101,18 @@ final class ClusterAnchorsBuilder {
         return anchors;
     }
 
-    // Searches one cluster's candidate lines and assembles its anchor. Every candidate is
-    // a direction (a fan over the half-circle, plus pure horizontal and the cluster's own
-    // axis) crossed at a parallel offset (a sweep across the cluster's perpendicular
-    // extent), fit through that offset point against the border rings, the icons, and the
-    // end inset. The best-scoring accepted candidate wins; its midpoint becomes the anchor
-    // point a name will hang on. When nothing is accepted the anchor collapses to the site
-    // centroid dot - the one point that always exists - optionally carrying the best
-    // rejected candidate for the red diagnostic. With the unbiased toggle on, the pure
-    // longest accepted line (the winner scored with no vertical penalty) rides along as
-    // the yellow diagnostic whenever the penalty actually moved the pick.
+    // Searches one cluster's candidate lines and assembles its anchor as a fitted label
+    // box. Every candidate is a direction (a fan over the half-circle, plus pure
+    // horizontal and the cluster's own axis) crossed at a parallel offset (a sweep across
+    // the cluster's perpendicular extent). At each, the box solver sizes the largest
+    // stand-in name that fits - growing the band's girth against the border, spending
+    // spare girth on extra lines - and the candidate is scored by that fitted font height
+    // docked for steep slopes. The best-scoring box wins; its clear span is the accepted
+    // line and its girth and line count the band a name will fill, and the span's midpoint
+    // the point the name hangs on. When no box fits anywhere the anchor collapses to the
+    // site centroid dot, optionally carrying the best near-miss span for the red
+    // diagnostic. With the unbiased toggle on, the box that wins on raw font height (no
+    // slope penalty) rides along as the yellow diagnostic whenever the penalty moved the pick.
     private static ClusterAnchor searchClusterAnchor(List<List<double[]>> rings,
             Map<String, double[]> siteBySystemId, PrincipalAxis axis, Color color,
             AnchorTuning tuning) {
@@ -118,27 +121,38 @@ final class ClusterAnchorsBuilder {
         if (rings.isEmpty()) {
             // No traceable border leaves nothing to prove a candidate interior - the
             // one dead end the search cannot work around, so only the dot can show.
-            return new ClusterAnchor(centroidX, centroidY, color, null, null, null);
+            return new ClusterAnchor(centroidX, centroidY, color, null, null, null, 0f, 0);
         }
 
+        var fitter = newBoxFitter(tuning);
+        var icons = siteBySystemId.values();
         var directions = buildCandidateDirections(axis, tuning.directionCount());
-        ScoredSegment bestAccepted = null;
-        ScoredSegment longestAccepted = null;
-        ScoredSegment bestRejected = null;
+        LabelBoxFitter.BoxFit bestAccepted = null;
+        var bestScore = 0.0;
+        LabelBoxFitter.BoxFit longestAccepted = null;
+        RejectedSpan bestRejected = null;
         for (var direction : directions) {
             var extent = projectRingsExtent(rings, -direction[1], direction[0]);
             for (var offsetIndex = 1; offsetIndex <= tuning.offsetCount(); offsetIndex++) {
                 var through = offsetThroughPoint(axis, direction, extent, offsetIndex,
                         tuning.offsetCount());
-                var fit = fitAlongDirection(rings, siteBySystemId, through[0], through[1],
-                        direction, tuning);
-                if (fit.acceptedSpan() != null) {
-                    var candidate = scoreCandidate(through, direction, fit.acceptedSpan(), tuning);
-                    bestAccepted = pickHigherScore(bestAccepted, candidate);
-                    longestAccepted = pickLonger(longestAccepted, candidate);
-                } else if (tuning.showRejectedAxis() && fit.rejectedSpan() != null) {
-                    bestRejected = pickHigherScore(bestRejected,
-                            scoreCandidate(through, direction, fit.rejectedSpan(), tuning));
+                var placement = new Placement(rings, icons, through[0], through[1], direction);
+                var box = fitter.fitLargestBox(placement);
+                if (box != null) {
+                    // Selection docks the fitted font height for steep slopes - a
+                    // sizing-blind choice, so it lives here, not in the fitter; the
+                    // unbiased pick keeps the raw-height winner for the yellow diagnostic.
+                    var score = box.fontHeight() * slopePenaltyMultiplier(direction, tuning);
+                    if (bestAccepted == null || score > bestScore) {
+                        bestAccepted = box;
+                        bestScore = score;
+                    }
+                    longestAccepted = Picks.pickHigher(longestAccepted, box,
+                            LabelBoxFitter.BoxFit::fontHeight);
+                } else if (tuning.showRejectedAxis()) {
+                    bestRejected = Picks.pickHigher(bestRejected,
+                            findRejectedSpan(fitter, placement, tuning.bandMinThickness()),
+                            RejectedSpan::length);
                 }
             }
         }
@@ -152,12 +166,33 @@ final class ClusterAnchorsBuilder {
             var unbiased = tuning.showUnbiasedAxis() && longestAccepted != null
                     && !longestAccepted.segment().equals(accepted)
                     ? longestAccepted.segment() : null;
-            return new ClusterAnchor(midX, midY, color, accepted, null, unbiased);
+            return new ClusterAnchor(midX, midY, color, accepted, null, unbiased,
+                    (float) bestAccepted.thickness(), bestAccepted.lineCount());
         }
-        // Collapse: no candidate survived anywhere, so the dot marks the site centroid;
-        // the best rejected candidate rides along only when its toggle asked for it.
+        // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
+        // near-miss span rides along only when the rejected toggle asked for it.
         var rejected = bestRejected != null ? bestRejected.segment() : null;
-        return new ClusterAnchor(centroidX, centroidY, color, null, rejected, null);
+        return new ClusterAnchor(centroidX, centroidY, color, null, rejected, null, 0f, 0);
+    }
+
+    // Builds the box fitter from the tuning: the thickness clamp, line count, and spacing
+    // that shape the girth growth, the icon clearance and end inset every band trim reads,
+    // and the stand-in name model the fit sizes against. The one place the aspect stand-in
+    // is wired in, so a font-backed model later swaps in here alone.
+    private static LabelBoxFitter newBoxFitter(AnchorTuning tuning) {
+        return new LabelBoxFitter(tuning.bandMinThickness(), tuning.bandMaxThickness(),
+                tuning.bandMaxLines(), tuning.bandLineSpacing(), tuning.iconClearance(),
+                tuning.endInsetDistance(), new AspectNameLengthModel(tuning.bandAspect()));
+    }
+
+    // The slope penalty's multiplier for a candidate direction: 1 for a horizontal line,
+    // falling toward zero as the line runs vertical - 1 - strength * rise^exponent, with
+    // rise the direction's unit vertical component. A selection bias measured on the
+    // fitted line, never a pre-rotation of the direction.
+    private static double slopePenaltyMultiplier(double[] direction, AnchorTuning tuning) {
+        var rise = Math.abs(direction[1]);
+        return 1.0 - tuning.verticalPenaltyStrength()
+                * Math.pow(rise, tuning.verticalPenaltyExponent());
     }
 
     // The candidate directions for one cluster: an even fan of unit directions over the
@@ -209,38 +244,23 @@ final class ClusterAnchorsBuilder {
         return new double[] {min, max};
     }
 
-    // Scores one accepted (or rejected) candidate: its clear length scaled by the
-    // vertical penalty - length * (1 - strength * sin(angle)^exponent), with sin(angle)
-    // the direction's rise (its unit vertical component) so a horizontal line keeps its
-    // whole length and a steeper one is docked more the closer it runs to vertical. The
-    // resulting world segment and its raw length ride along so the pick and the unbiased
-    // (pure-longest) comparison read from the same record.
-    private static ScoredSegment scoreCandidate(double[] through, double[] direction,
-            double[] span, AnchorTuning tuning) {
-        var length = span[1] - span[0];
-        var rise = Math.abs(direction[1]);
-        var penalty = tuning.verticalPenaltyStrength()
-                * Math.pow(rise, tuning.verticalPenaltyExponent());
-        var score = length * (1.0 - penalty);
-        return new ScoredSegment(toSegment(through[0], through[1], direction, span), length, score);
+    // The best near-miss line for the red diagnostic: a candidate's clear span before the
+    // end-margin trim, kept with its length so the longest across candidates wins.
+    private record RejectedSpan(ClusterAnchor.AxisSegment segment, double length) {
     }
 
-    // One scored candidate line: its world segment, its raw clear length (the tie-break
-    // the unbiased pure-longest pick reads), and its penalised score (the tie-break the
-    // accepted pick reads).
-    private record ScoredSegment(ClusterAnchor.AxisSegment segment, double length, double score) {
-    }
-
-    // The higher-scoring of two candidates; the first seen wins a tie, keeping the pick
-    // deterministic across a rebuild.
-    private static ScoredSegment pickHigherScore(ScoredSegment current, ScoredSegment candidate) {
-        return current == null || candidate.score() > current.score() ? candidate : current;
-    }
-
-    // The longer of two candidates by raw clear length - the pick a zero-penalty search
-    // would make, which the yellow diagnostic contrasts against the penalised winner.
-    private static ScoredSegment pickLonger(ScoredSegment current, ScoredSegment candidate) {
-        return current == null || candidate.length() > current.length() ? candidate : current;
+    // A candidate's near-miss span for the red diagnostic: the pre-margin clear span of a
+    // minimum-thickness band - the furthest a name-holding line got before the border,
+    // icon, or end-margin trim discarded it. Null when even the thin band finds no clear
+    // interior at all.
+    private static RejectedSpan findRejectedSpan(LabelBoxFitter fitter, Placement placement,
+            double minThickness) {
+        var band = fitter.fitBand(placement, minThickness / 2.0);
+        if (band.clearSpan() == null) {
+            return null;
+        }
+        return new RejectedSpan(placement.toSegment(band.clearSpan()),
+                band.clearSpan()[1] - band.clearSpan()[0]);
     }
 
     // The direction and length to fit a cluster's label line along: the principal axis
@@ -288,60 +308,6 @@ final class ClusterAnchorsBuilder {
         return vertices;
     }
 
-    // One directional fit's outcome: the accepted {tStart, tEnd} interval the name may
-    // occupy, or - only when nothing was accepted - the best rejected candidate found
-    // along the way, for the red diagnostic line. Exactly one of the two is non-null;
-    // both are null only when the direction found no interior geometry at all to work
-    // with (the line misses the region entirely).
-    private record DirectionalFit(double[] acceptedSpan, double[] rejectedSpan) {
-    }
-
-    // Fits one candidate line (a direction through a chosen offset point) against a
-    // cluster's border rings and the system icons: the rings - the same ones the national
-    // border strokes, so the anchor clips against what the player sees - bound the line to
-    // its genuinely interior pieces (a chord across a concavity or an enclave is never
-    // kept); every system icon then carves its keep-out interval from what remains; the
-    // longest survivor is pulled in from both ends by the end inset so the name stops
-    // short of the border. All sites act as icon blockers, not just the cluster's own: a
-    // neighbour faction's icon just across the border can still overhang the inset
-    // interior. Falls through the ways a candidate can fail to produce an accepted line,
-    // keeping the furthest-along candidate as the rejected span: the line missing the
-    // interior entirely (nothing to report), the icons consuming every interior span (the
-    // longest interior span reported), or the end inset consuming what the icons left (the
-    // pre-inset clear span reported).
-    private static DirectionalFit fitAlongDirection(List<List<double[]>> rings,
-            Map<String, double[]> siteBySystemId, double throughX, double throughY,
-            double[] direction, AnchorTuning tuning) {
-        var interiorSpans = Polygons.findLineInteriorSpans(rings, throughX, throughY,
-                direction[0], direction[1]);
-        if (interiorSpans.isEmpty()) {
-            return new DirectionalFit(null, null);
-        }
-        var clear = Spans.findLongestClearSubsegment(interiorSpans, throughX, throughY,
-                direction[0], direction[1], siteBySystemId.values(), tuning.iconClearance());
-        if (clear == null) {
-            return new DirectionalFit(null, Spans.findLongestSpan(interiorSpans));
-        }
-        var start = clear[0] + tuning.endInsetDistance();
-        var end = clear[1] - tuning.endInsetDistance();
-        // An interval shorter than twice the end inset leaves no room for a name
-        // between the margins; the pre-inset clear span is the best rejected candidate.
-        return start < end ? new DirectionalFit(new double[] {start, end}, null)
-                : new DirectionalFit(null, clear);
-    }
-
-    // Maps a {tStart, tEnd} parameter interval back to world-coordinate endpoints along
-    // the given direction from the candidate's through-point - the last step shared by
-    // the accepted, rejected, and unbiased lines alike.
-    private static ClusterAnchor.AxisSegment toSegment(double throughX, double throughY,
-            double[] direction, double[] span) {
-        return new ClusterAnchor.AxisSegment(
-                (float) (throughX + direction[0] * span[0]),
-                (float) (throughY + direction[1] * span[0]),
-                (float) (throughX + direction[0] * span[1]),
-                (float) (throughY + direction[1] * span[1]));
-    }
-
     // Gathers the {x, y} sites of a cluster's members, skipping any whose site is missing
     // - the point cloud the anchor's axis is fitted to.
     private static List<double[]> collectClusterSites(List<String> memberSystemIds,
@@ -383,10 +349,22 @@ final class ClusterAnchorsBuilder {
      * @param showUnbiasedAxis       whether each cluster also carries the pure-longest
      *                               accepted line (the winner with no vertical penalty),
      *                               for the yellow diagnostic line
+     * @param bandAspect             the stand-in name's length as a multiple of one line's
+     *                               height, sized against before real fonts exist
+     * @param bandMinThickness       the smallest band girth a fit will accept, world units
+     *                               - below it a placement collapses to the dot
+     * @param bandMaxThickness       the largest band girth a fit will grow to, world units,
+     *                               so a roomy cluster does not mint an oversized label
+     * @param bandMaxLines           the most lines a name may stack into, spending girth to
+     *                               shorten the length it needs
+     * @param bandLineSpacing        the line-height multiple a multi-line band leaves
+     *                               between lines, at least 1
      */
     record AnchorTuning(BorderTrace borderTrace, double endInsetDistance, double iconClearance,
             int directionCount, int offsetCount, double verticalPenaltyStrength,
-            double verticalPenaltyExponent, boolean showRejectedAxis, boolean showUnbiasedAxis) {
+            double verticalPenaltyExponent, boolean showRejectedAxis, boolean showUnbiasedAxis,
+            double bandAspect, double bandMinThickness, double bandMaxThickness, int bandMaxLines,
+            double bandLineSpacing) {
 
         // Reads the live tuning: the anchor knobs from the Dev "Label anchors" section
         // plus the same border trace the national border renders with. The end-inset
@@ -404,7 +382,12 @@ final class ClusterAnchorsBuilder {
                     KmuLunaSettings.getPoliticalMapAnchorVerticalPenaltyStrength(),
                     KmuLunaSettings.getPoliticalMapAnchorVerticalPenaltyExponent(),
                     KmuLunaSettings.getPoliticalMapShowRejectedAxes(),
-                    KmuLunaSettings.getPoliticalMapShowUnbiasedAxes());
+                    KmuLunaSettings.getPoliticalMapShowUnbiasedAxes(),
+                    KmuLunaSettings.getPoliticalMapAnchorBandAspect(),
+                    KmuLunaSettings.getPoliticalMapAnchorBandMinThickness(),
+                    KmuLunaSettings.getPoliticalMapAnchorBandMaxThickness(),
+                    KmuLunaSettings.getPoliticalMapAnchorBandMaxLines(),
+                    KmuLunaSettings.getPoliticalMapAnchorBandLineSpacing());
         }
     }
 }

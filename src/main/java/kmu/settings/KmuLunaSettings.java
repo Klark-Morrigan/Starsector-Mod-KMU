@@ -183,6 +183,23 @@ public final class KmuLunaSettings {
             "kmu_politicalMapAnchorEndInsetMultiple";
     private static final String ANCHOR_ICON_CLEARANCE_FIELD =
             "kmu_politicalMapAnchorIconClearance";
+    // Band-fit knobs (Dev tab): a label is not a centreline but a box with girth, sized
+    // to the space it sits in. The aspect is the stand-in name shape the debug fit sizes
+    // against (length:thickness) before real fonts exist; min/max thickness clamp the
+    // font-height search; max lines and line spacing let a length-poor cluster stack the
+    // name instead of shrinking it; the opacity is the debug band quad's fill alpha.
+    private static final String ANCHOR_BAND_ASPECT_FIELD =
+            "kmu_politicalMapAnchorBandAspect";
+    private static final String ANCHOR_BAND_MIN_THICKNESS_FIELD =
+            "kmu_politicalMapAnchorBandMinThickness";
+    private static final String ANCHOR_BAND_MAX_THICKNESS_FIELD =
+            "kmu_politicalMapAnchorBandMaxThickness";
+    private static final String ANCHOR_BAND_MAX_LINES_FIELD =
+            "kmu_politicalMapAnchorBandMaxLines";
+    private static final String ANCHOR_BAND_LINE_SPACING_FIELD =
+            "kmu_politicalMapAnchorBandLineSpacing";
+    private static final String ANCHOR_BAND_OPACITY_FIELD =
+            "kmu_politicalMapAnchorBandOpacity";
     // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and the
     // accepted label line in green) so the clustering and axis fit behind the coming
     // faction labels can be eyeballed on the map. Off by default.
@@ -269,6 +286,16 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT = 2.0;
     private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 4.0;
     private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 750.0;
+    // Band-fit defaults, in world units where a distance. Aspect is a plausible
+    // faction-name shape (six times as long as tall); the thickness clamp brackets a
+    // single readable line against the map's scale (the border inset channel is 150);
+    // three lines is the HOI4-style ceiling; 1.15 leads the lines with a little air.
+    private static final double DEFAULT_ANCHOR_BAND_ASPECT = 6.0;
+    private static final double DEFAULT_ANCHOR_BAND_MIN_THICKNESS = 200.0;
+    private static final double DEFAULT_ANCHOR_BAND_MAX_THICKNESS = 1200.0;
+    private static final int DEFAULT_ANCHOR_BAND_MAX_LINES = 3;
+    private static final double DEFAULT_ANCHOR_BAND_LINE_SPACING = 1.15;
+    private static final double DEFAULT_ANCHOR_BAND_OPACITY = 0.35;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
     private static final boolean DEFAULT_SHOW_REJECTED_AXES = false;
     private static final boolean DEFAULT_SHOW_UNBIASED_AXES = false;
@@ -671,6 +698,69 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapAnchorIconClearance() {
         return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_ICON_CLEARANCE_FIELD,
                 DEFAULT_ANCHOR_ICON_CLEARANCE);
+    }
+
+    /**
+     * @return the stand-in name shape the band fit sizes against before real fonts
+     *         exist - a label box's length as a multiple of its thickness (a single
+     *         line's height). The fit grows the box until its width meets the clear
+     *         length or its thickness hits the clamp, so a larger aspect models a
+     *         longer, thinner name. Replaced by measured glyph metrics once names draw
+     */
+    public static double getPoliticalMapAnchorBandAspect() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_ASPECT_FIELD,
+                DEFAULT_ANCHOR_BAND_ASPECT);
+    }
+
+    /**
+     * @return the smallest band thickness (single-line height, world units) the fit
+     *         will accept; a placement that cannot hold a band this thick anywhere
+     *         collapses to the dot. The minimum-readable floor a real font will honour
+     */
+    public static double getPoliticalMapAnchorBandMinThickness() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_MIN_THICKNESS_FIELD,
+                DEFAULT_ANCHOR_BAND_MIN_THICKNESS);
+    }
+
+    /**
+     * @return the largest band thickness (single-line height, world units) the fit will
+     *         grow to, so a roomy cluster does not mint an oversized label; the upper
+     *         bound of the font-height search
+     */
+    public static double getPoliticalMapAnchorBandMaxThickness() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_MAX_THICKNESS_FIELD,
+                DEFAULT_ANCHOR_BAND_MAX_THICKNESS);
+    }
+
+    /**
+     * @return the most lines the band fit may stack a name into: a length-poor but
+     *         girth-rich cluster spends its spare thickness on extra lines (each line
+     *         cuts the length the name needs by about one over the line count squared)
+     *         rather than shrinking the font. 1 forces a single line
+     */
+    public static int getPoliticalMapAnchorBandMaxLines() {
+        return LunaSettingsReader.getInt(MOD_ID, ANCHOR_BAND_MAX_LINES_FIELD,
+                DEFAULT_ANCHOR_BAND_MAX_LINES);
+    }
+
+    /**
+     * @return the line-height multiple a multi-line band leaves between stacked lines,
+     *         so a two- or three-line box is that much taller than the raw line heights;
+     *         at least 1 (lines flush)
+     */
+    public static double getPoliticalMapAnchorBandLineSpacing() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_LINE_SPACING_FIELD,
+                DEFAULT_ANCHOR_BAND_LINE_SPACING);
+    }
+
+    /**
+     * @return the fill opacity of the debug band quad, 0..1 - low enough that the
+     *         national border reads through the band so an overflow is visible, since
+     *         the whole point of drawing the band is to see it kiss or clear the border
+     */
+    public static double getPoliticalMapAnchorBandOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_OPACITY_FIELD,
+                DEFAULT_ANCHOR_BAND_OPACITY);
     }
 
     /**
