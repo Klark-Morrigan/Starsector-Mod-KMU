@@ -27,12 +27,10 @@ import java.util.List;
  * out from under the one drawn over it rather than being fully hidden.
  */
 final class PoliticalMapStaticDebugRenderer {
-    // Stage colors, bottom (base) to top (rounded), in pipeline order.
-    private static final Color BASE_COLOR = Color.RED;
-    private static final Color DESPIKED_COLOR = Color.YELLOW;
-    private static final Color ROUNDED_COLOR = Color.GREEN;
     // Widths taper so each earlier stage's line haloes out from under the next: the base is
-    // widest, the rounded thinnest and on top.
+    // widest, the rounded thinnest and on top. The stage colors come from the shared
+    // {@link DiagnosticPalette}: the base trace is superseded geometry (red), the despiked
+    // border a mid-pipeline view (yellow), and the rounded border what ships (green).
     private static final float BASE_WIDTH = 5f;
     private static final float DESPIKED_WIDTH = 3f;
     private static final float ROUNDED_WIDTH = 1.5f;
@@ -57,9 +55,12 @@ final class PoliticalMapStaticDebugRenderer {
 
         // Bottom to top: base under despiked under rounded, so the final rounded outline
         // reads on top and the earlier stages halo out from under it.
-        drawStage(debug.baseLoops(), BASE_COLOR, BASE_WIDTH, factor, alphaMult);
-        drawStage(debug.despikedLoops(), DESPIKED_COLOR, DESPIKED_WIDTH, factor, alphaMult);
-        drawStage(debug.roundedLoops(), ROUNDED_COLOR, ROUNDED_WIDTH, factor, alphaMult);
+        drawStage(debug.baseLoops(), DiagnosticPalette.DISCARDED_COLOR, BASE_WIDTH,
+                factor, alphaMult);
+        drawStage(debug.despikedLoops(), DiagnosticPalette.INTERMEDIATE_COLOR, DESPIKED_WIDTH,
+                factor, alphaMult);
+        drawStage(debug.roundedLoops(), DiagnosticPalette.ACCEPTED_COLOR, ROUNDED_WIDTH,
+                factor, alphaMult);
 
         GL11.glPopAttrib();
     }

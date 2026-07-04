@@ -36,6 +36,7 @@ import org.apache.log4j.Logger;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -229,16 +230,17 @@ final class DrawablesBuilder {
             }
             var color = ownerBySystemId.get(memberSystemIds.get(0)).primaryColor();
             var axis = resolveClusterAxis(memberSystemIds, edgesBySystemId, sites);
+            var centroidX = (float) axis.centroidX();
+            var centroidY = (float) axis.centroidY();
             if (axis.length() < Limits.MIN_EDGE_LENGTH) {
                 // Nothing survives even the cell-shape fallback (missing or fully
                 // degenerate geometry) - the true dead end where only the dot can show.
-                anchors.add(collapsedAnchor(axis, color));
+                anchors.add(new ClusterAnchor(centroidX, centroidY, color, null, null, null));
                 continue;
             }
 
-            var rings = SystemClusterBorders.traceBorderRings(memberSystemIds, edgesBySystemId,
-                    ownerBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE,
-                    tuning.borderWeldTolerance(), tuning.borderMiterLimit());
+            var rings = tuning.borderTrace().traceRings(memberSystemIds, edgesBySystemId,
+                    ownerBySystemId);
             var biasedDirection = leanTowardHorizontal(axis, tuning.horizontalBias());
             var biasedFit = fitAlongDirection(rings, siteBySystemId, axis.centroidX(),
                     axis.centroidY(), biasedDirection, tuning);
@@ -256,23 +258,17 @@ final class DrawablesBuilder {
                 }
             }
 
-            if (biasedFit.acceptedSpan() != null) {
-                var accepted = toSegment(axis, biasedDirection, biasedFit.acceptedSpan());
-                anchors.add(new ClusterAnchor(
-                        (float) axis.centroidX(), (float) axis.centroidY(),
-                        accepted.startX(), accepted.startY(), accepted.endX(), accepted.endY(),
-                        color, null, unbiasedAxis));
-                continue;
-            }
+            // The fit yields at most one of the two spans (a rejected candidate exists
+            // only when nothing was accepted), so the anchor carries an accepted line,
+            // or a rejected line when its toggle asks for it, or - both null - the dot.
+            var acceptedAxis = biasedFit.acceptedSpan() != null
+                    ? toSegment(axis, biasedDirection, biasedFit.acceptedSpan())
+                    : null;
             var rejectedAxis = tuning.showRejectedAxis() && biasedFit.rejectedSpan() != null
                     ? toSegment(axis, biasedDirection, biasedFit.rejectedSpan())
                     : null;
-            var collapsed = collapsedAnchor(axis, color);
-            anchors.add(new ClusterAnchor(
-                    collapsed.centroidX(), collapsed.centroidY(),
-                    collapsed.axisStartX(), collapsed.axisStartY(),
-                    collapsed.axisEndX(), collapsed.axisEndY(),
-                    color, rejectedAxis, unbiasedAxis));
+            anchors.add(new ClusterAnchor(centroidX, centroidY, color,
+                    acceptedAxis, rejectedAxis, unbiasedAxis));
         }
         return anchors;
     }
@@ -404,15 +400,6 @@ final class DrawablesBuilder {
                 (float) (axis.centroidY() + direction[1] * span[1]));
     }
 
-    // An anchor with its axis segment collapsed onto the centroid - the dot-only marker
-    // for a cluster whose fit found no accepted line, with no diagnostic lines attached.
-    private static ClusterAnchor collapsedAnchor(PrincipalAxis axis, Color color) {
-        var centroidX = (float) axis.centroidX();
-        var centroidY = (float) axis.centroidY();
-        return new ClusterAnchor(centroidX, centroidY, centroidX, centroidY, centroidX, centroidY,
-                color, null, null);
-    }
-
     // Gathers the {x, y} sites of a cluster's members, skipping any whose site is missing
     // - the point cloud the anchor's axis is fitted to.
     private static List<double[]> collectClusterSites(List<String> memberSystemIds,
@@ -466,11 +453,8 @@ final class DrawablesBuilder {
         if (fillColor == null && borderColor == null) {
             return null;
         }
-        var insetRings = SystemClusterBorders.traceBorderRings(memberSystemIds,
-                geometryCache.getCellEdgesBySystemId(), drawables.getOwnerBySystemId(),
-                PoliticalMapStyle.BORDER_INSET_DISTANCE,
-                KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
-                KmuLunaSettings.getPoliticalMapBorderMiterLimit());
+        var insetRings = BorderTrace.readFromSettings().traceRings(memberSystemIds,
+                geometryCache.getCellEdgesBySystemId(), drawables.getOwnerBySystemId());
         if (insetRings.isEmpty()) {
             return null;
         }
@@ -574,45 +558,72 @@ final class DrawablesBuilder {
      * takes its whole tuning surface as data rather than reaching into the settings
      * mid-computation.
      *
-     * @param borderWeldTolerance largest gap between two reports of a shared corner
-     *                            still welded into one when tracing the border rings
-     *                            the anchor clips against - the same value the
-     *                            national border traces with, so both see one ring
-     * @param borderMiterLimit    the miter spike limit of that same border trace
-     * @param horizontalBias      the scale applied to the anchor axis's vertical
-     *                            component before the fit; 1 no bias, 0 flat
-     * @param endInsetDistance    how far each end of the clear interval pulls inward,
-     *                            in world units - the border-inset multiple already
-     *                            resolved to a distance
-     * @param iconClearance       the keep-out radius around each system icon, world
-     *                            units
-     * @param showRejectedAxis    whether a cluster whose accepted line collapsed also
-     *                            carries the best rejected candidate the fit found,
-     *                            for the red diagnostic line
-     * @param showUnbiasedAxis    whether each cluster also carries the line the fit
-     *                            would produce with no horizontal bias, for the
-     *                            yellow diagnostic line
+     * @param borderTrace      the national-border trace the anchor clips against -
+     *                         shared with the territory build, so the anchor sees
+     *                         the same rings the player does by construction
+     * @param horizontalBias   the scale applied to the anchor axis's vertical
+     *                         component before the fit; 1 no bias, 0 flat
+     * @param endInsetDistance how far each end of the clear interval pulls inward,
+     *                         in world units - the border-inset multiple already
+     *                         resolved to a distance
+     * @param iconClearance    the keep-out radius around each system icon, world
+     *                         units
+     * @param showRejectedAxis whether a cluster whose accepted line collapsed also
+     *                         carries the best rejected candidate the fit found,
+     *                         for the red diagnostic line
+     * @param showUnbiasedAxis whether each cluster also carries the line the fit
+     *                         would produce with no horizontal bias, for the
+     *                         yellow diagnostic line
      */
-    record AnchorTuning(double borderWeldTolerance, double borderMiterLimit,
-            double horizontalBias, double endInsetDistance, double iconClearance,
+    record AnchorTuning(BorderTrace borderTrace, double horizontalBias,
+            double endInsetDistance, double iconClearance,
             boolean showRejectedAxis, boolean showUnbiasedAxis) {
 
         // Reads the live tuning: the anchor knobs from the Dev "Label anchors" section
-        // plus the border-trace pair the national border itself uses, so the anchor
-        // clips against the same rings the player sees. The end-inset multiple is
-        // resolved against the fixed border channel here, so the fit works in plain
-        // distances. The two diagnostic-line toggles ride along so the fit only
-        // computes the extra candidates while someone is looking at them.
+        // plus the same border trace the national border renders with. The end-inset
+        // multiple is resolved against the fixed border channel here, so the fit works
+        // in plain distances. The two diagnostic-line toggles ride along so the fit
+        // only computes the extra candidates while someone is looking at them.
         static AnchorTuning readFromSettings() {
             return new AnchorTuning(
-                    KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
-                    KmuLunaSettings.getPoliticalMapBorderMiterLimit(),
+                    BorderTrace.readFromSettings(),
                     KmuLunaSettings.getPoliticalMapAnchorHorizontalBias(),
                     KmuLunaSettings.getPoliticalMapAnchorEndInsetMultiple()
                             * PoliticalMapStyle.BORDER_INSET_DISTANCE,
                     KmuLunaSettings.getPoliticalMapAnchorIconClearance(),
                     KmuLunaSettings.getPoliticalMapShowRejectedAxes(),
                     KmuLunaSettings.getPoliticalMapShowUnbiasedAxes());
+        }
+    }
+
+    /**
+     * The parameters of one national-border ring trace, and the trace itself - the
+     * single path both the territory build and the anchor fit go through, so "the
+     * anchor clips against the rings the player sees" holds by construction: a new
+     * trace parameter lands here once and both consumers pick it up together.
+     *
+     * @param weldTolerance   largest gap between two reports of a shared corner still
+     *                        welded into one when chaining the boundary
+     * @param miterSpikeLimit the multiple of the border inset past which a sharp
+     *                        corner's inset miter is bevelled instead of pointed
+     */
+    record BorderTrace(double weldTolerance, double miterSpikeLimit) {
+
+        // Reads the live trace parameters from the Dev "Border tracing" section.
+        static BorderTrace readFromSettings() {
+            return new BorderTrace(
+                    KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
+                    KmuLunaSettings.getPoliticalMapBorderMiterLimit());
+        }
+
+        // Traces one cluster's inset border rings with these parameters and the fixed
+        // border channel every trace shares.
+        List<List<double[]>> traceRings(Collection<String> memberSystemIds,
+                Map<String, List<CellEdge>> edgesBySystemId,
+                Map<String, DominantOwner> ownerBySystemId) {
+            return SystemClusterBorders.traceBorderRings(memberSystemIds, edgesBySystemId,
+                    ownerBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                    weldTolerance, miterSpikeLimit);
         }
     }
 }

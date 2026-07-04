@@ -8,8 +8,6 @@ import kmu.politicalmap.render.model.PoliticalMapDrawables;
 
 import org.lwjgl.opengl.GL11;
 
-import java.awt.Color;
-
 /**
  * Paints the political map's pre-built draw lists on the sector (M) map: the faction
  * fills first, then the interior seams, factionless outlines, and national borders
@@ -24,18 +22,11 @@ import java.awt.Color;
 final class PoliticalMapRenderer {
     // The debug anchor dot's diameter in screen pixels (GL_POINTS sizes in pixels, so it
     // stays a constant dot at any zoom) and its axis line's width. Sized to read over the
-    // fills and borders without swamping the systems they mark.
+    // fills and borders without swamping the systems they mark. The lines' colors come
+    // from the shared {@link DiagnosticPalette}, so the anchor overlay and the
+    // border-tracing overlay grade their layers identically.
     private static final float ANCHOR_DOT_SIZE = 10f;
     private static final float ANCHOR_AXIS_WIDTH = 2f;
-
-    // The anchor lines' fixed diagnostic palette, matching the border-tracing overlay's
-    // rejected-to-final ramp so red always reads "discarded" and green "what ships":
-    // the best candidate a collapsed fit had (red, bottom), the fit with no horizontal
-    // bias (yellow, middle), and the accepted label line (green, top). Fixed rather
-    // than faction-colored so a line's verdict reads the same on every fill.
-    private static final Color REJECTED_AXIS_COLOR = Color.RED;
-    private static final Color UNBIASED_AXIS_COLOR = Color.YELLOW;
-    private static final Color ACCEPTED_AXIS_COLOR = Color.GREEN;
 
     // Emits only; never instantiated.
     private PoliticalMapRenderer() {
@@ -153,17 +144,17 @@ final class PoliticalMapRenderer {
         }
         GL11.glPointSize(ANCHOR_DOT_SIZE);
         GL11.glLineWidth(ANCHOR_AXIS_WIDTH);
-        GlColor.set(REJECTED_AXIS_COLOR, alphaMult);
+        GlColor.set(DiagnosticPalette.DISCARDED_COLOR, alphaMult);
         for (var anchor : anchors) {
             drawAxisSegment(anchor.rejectedAxis(), factor);
         }
-        GlColor.set(UNBIASED_AXIS_COLOR, alphaMult);
+        GlColor.set(DiagnosticPalette.INTERMEDIATE_COLOR, alphaMult);
         for (var anchor : anchors) {
             drawAxisSegment(anchor.unbiasedAxis(), factor);
         }
-        GlColor.set(ACCEPTED_AXIS_COLOR, alphaMult);
+        GlColor.set(DiagnosticPalette.ACCEPTED_COLOR, alphaMult);
         for (var anchor : anchors) {
-            drawAcceptedAxis(anchor, factor);
+            drawAxisSegment(anchor.acceptedAxis(), factor);
         }
         for (var anchor : anchors) {
             GlColor.set(anchor.color(), alphaMult);
@@ -173,8 +164,8 @@ final class PoliticalMapRenderer {
         }
     }
 
-    // Strokes one optional diagnostic line; a cluster without that diagnostic carries
-    // null and emits nothing.
+    // Strokes one of an anchor's lines; an anchor without that line carries null and
+    // emits nothing - a collapsed fit, or a diagnostic whose toggle is off.
     private static void drawAxisSegment(ClusterAnchor.AxisSegment segment, float factor) {
         if (segment == null) {
             return;
@@ -182,20 +173,6 @@ final class PoliticalMapRenderer {
         GL11.glBegin(GL11.GL_LINES);
         GL11.glVertex2f(segment.startX() * factor, segment.startY() * factor);
         GL11.glVertex2f(segment.endX() * factor, segment.endY() * factor);
-        GL11.glEnd();
-    }
-
-    // Strokes an anchor's accepted label line. A collapsed fit stores the segment as a
-    // point on the centroid; that is skipped so no green speck draws over the faction
-    // dot that is the collapse's actual marker.
-    private static void drawAcceptedAxis(ClusterAnchor anchor, float factor) {
-        if (anchor.axisStartX() == anchor.axisEndX()
-                && anchor.axisStartY() == anchor.axisEndY()) {
-            return;
-        }
-        GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2f(anchor.axisStartX() * factor, anchor.axisStartY() * factor);
-        GL11.glVertex2f(anchor.axisEndX() * factor, anchor.axisEndY() * factor);
         GL11.glEnd();
     }
 }

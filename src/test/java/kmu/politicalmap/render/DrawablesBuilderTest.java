@@ -95,13 +95,14 @@ final class DrawablesBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     tuning(1.0, 0.0, 0.0));
 
-            var anchor = anchors.get(0);
-            assertThat(Math.min(anchor.axisStartX(), anchor.axisEndX()))
+            var accepted = anchors.get(0).acceptedAxis();
+            assertThat(accepted).isNotNull();
+            assertThat(Math.min(accepted.startX(), accepted.endX()))
                     .isCloseTo(150f, within(1e-3f));
-            assertThat(Math.max(anchor.axisStartX(), anchor.axisEndX()))
+            assertThat(Math.max(accepted.startX(), accepted.endX()))
                     .isCloseTo(1850f, within(1e-3f));
-            assertThat(anchor.axisStartY()).isCloseTo(500f, within(1e-3f));
-            assertThat(anchor.axisEndY()).isCloseTo(500f, within(1e-3f));
+            assertThat(accepted.startY()).isCloseTo(500f, within(1e-3f));
+            assertThat(accepted.endY()).isCloseTo(500f, within(1e-3f));
         }
 
         @Test
@@ -114,10 +115,11 @@ final class DrawablesBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     tuning(1.0, 0.0, 300.0));
 
-            var anchor = anchors.get(0);
-            assertThat(Math.min(anchor.axisStartX(), anchor.axisEndX()))
+            var accepted = anchors.get(0).acceptedAxis();
+            assertThat(accepted).isNotNull();
+            assertThat(Math.min(accepted.startX(), accepted.endX()))
                     .isCloseTo(800f, within(1e-3f));
-            assertThat(Math.max(anchor.axisStartX(), anchor.axisEndX()))
+            assertThat(Math.max(accepted.startX(), accepted.endX()))
                     .isCloseTo(1200f, within(1e-3f));
         }
 
@@ -130,10 +132,11 @@ final class DrawablesBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     tuning(1.0, 100.0, 0.0));
 
-            var anchor = anchors.get(0);
-            assertThat(Math.min(anchor.axisStartX(), anchor.axisEndX()))
+            var accepted = anchors.get(0).acceptedAxis();
+            assertThat(accepted).isNotNull();
+            assertThat(Math.min(accepted.startX(), accepted.endX()))
                     .isCloseTo(250f, within(1e-3f));
-            assertThat(Math.max(anchor.axisStartX(), anchor.axisEndX()))
+            assertThat(Math.max(accepted.startX(), accepted.endX()))
                     .isCloseTo(1750f, within(1e-3f));
         }
 
@@ -146,12 +149,13 @@ final class DrawablesBuilderTest {
                     VERTICAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     tuning(1.0, 0.0, 0.0));
 
-            var anchor = anchors.get(0);
-            assertThat(anchor.axisStartX()).isCloseTo(500f, within(1e-3f));
-            assertThat(anchor.axisEndX()).isCloseTo(500f, within(1e-3f));
-            assertThat(Math.min(anchor.axisStartY(), anchor.axisEndY()))
+            var accepted = anchors.get(0).acceptedAxis();
+            assertThat(accepted).isNotNull();
+            assertThat(accepted.startX()).isCloseTo(500f, within(1e-3f));
+            assertThat(accepted.endX()).isCloseTo(500f, within(1e-3f));
+            assertThat(Math.min(accepted.startY(), accepted.endY()))
                     .isCloseTo(150f, within(1e-3f));
-            assertThat(Math.max(anchor.axisStartY(), anchor.axisEndY()))
+            assertThat(Math.max(accepted.startY(), accepted.endY()))
                     .isCloseTo(1850f, within(1e-3f));
         }
 
@@ -165,12 +169,13 @@ final class DrawablesBuilderTest {
                     VERTICAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     tuning(0.0, 0.0, 0.0));
 
-            var anchor = anchors.get(0);
-            assertThat(anchor.axisStartY()).isCloseTo(1000f, within(1e-3f));
-            assertThat(anchor.axisEndY()).isCloseTo(1000f, within(1e-3f));
-            assertThat(Math.min(anchor.axisStartX(), anchor.axisEndX()))
+            var accepted = anchors.get(0).acceptedAxis();
+            assertThat(accepted).isNotNull();
+            assertThat(accepted.startY()).isCloseTo(1000f, within(1e-3f));
+            assertThat(accepted.endY()).isCloseTo(1000f, within(1e-3f));
+            assertThat(Math.min(accepted.startX(), accepted.endX()))
                     .isCloseTo(150f, within(1e-3f));
-            assertThat(Math.max(anchor.axisStartX(), anchor.axisEndX()))
+            assertThat(Math.max(accepted.startX(), accepted.endX()))
                     .isCloseTo(850f, within(1e-3f));
         }
 
@@ -192,12 +197,14 @@ final class DrawablesBuilderTest {
             var anchor = anchors.get(0);
             assertThat(anchor.centroidX()).isEqualTo(1000f);
             assertThat(anchor.centroidY()).isEqualTo(500f);
-            assertThat(Math.min(anchor.axisStartX(), anchor.axisEndX()))
+            var accepted = anchor.acceptedAxis();
+            assertThat(accepted).isNotNull();
+            assertThat(Math.min(accepted.startX(), accepted.endX()))
                     .isCloseTo(150f, within(1e-3f));
-            assertThat(Math.max(anchor.axisStartX(), anchor.axisEndX()))
+            assertThat(Math.max(accepted.startX(), accepted.endX()))
                     .isCloseTo(1850f, within(1e-3f));
-            assertThat(anchor.axisStartY()).isCloseTo(500f, within(1e-3f));
-            assertThat(anchor.axisEndY()).isCloseTo(500f, within(1e-3f));
+            assertThat(accepted.startY()).isCloseTo(500f, within(1e-3f));
+            assertThat(accepted.endY()).isCloseTo(500f, within(1e-3f));
         }
 
         @Test
@@ -211,10 +218,7 @@ final class DrawablesBuilderTest {
                     tuning(1.0, 1000.0, 0.0));
 
             var anchor = anchors.get(0);
-            assertThat(anchor.axisStartX()).isEqualTo(anchor.centroidX());
-            assertThat(anchor.axisStartY()).isEqualTo(anchor.centroidY());
-            assertThat(anchor.axisEndX()).isEqualTo(anchor.centroidX());
-            assertThat(anchor.axisEndY()).isEqualTo(anchor.centroidY());
+            assertThat(anchor.acceptedAxis()).isNull();
             assertThat(anchor.rejectedAxis()).isNull();
             assertThat(anchor.unbiasedAxis()).isNull();
         }
@@ -230,7 +234,7 @@ final class DrawablesBuilderTest {
                     tuning(1.0, 1000.0, 0.0, true, false));
 
             var anchor = anchors.get(0);
-            assertThat(anchor.axisStartX()).isEqualTo(anchor.centroidX());
+            assertThat(anchor.acceptedAxis()).isNull();
             var rejected = anchor.rejectedAxis();
             assertThat(rejected).isNotNull();
             assertThat(Math.min(rejected.startX(), rejected.endX()))
@@ -253,7 +257,7 @@ final class DrawablesBuilderTest {
                     tuning(1.0, 0.0, 900.0, true, false));
 
             var anchor = anchors.get(0);
-            assertThat(anchor.axisStartX()).isEqualTo(anchor.centroidX());
+            assertThat(anchor.acceptedAxis()).isNull();
             var rejected = anchor.rejectedAxis();
             assertThat(rejected).isNotNull();
             assertThat(Math.min(rejected.startX(), rejected.endX()))
@@ -274,8 +278,10 @@ final class DrawablesBuilderTest {
 
             var anchor = anchors.get(0);
             // The accepted line stays the biased (horizontal) one.
-            assertThat(anchor.axisStartY()).isCloseTo(1000f, within(1e-3f));
-            assertThat(anchor.axisEndY()).isCloseTo(1000f, within(1e-3f));
+            var accepted = anchor.acceptedAxis();
+            assertThat(accepted).isNotNull();
+            assertThat(accepted.startY()).isCloseTo(1000f, within(1e-3f));
+            assertThat(accepted.endY()).isCloseTo(1000f, within(1e-3f));
             var unbiased = anchor.unbiasedAxis();
             assertThat(unbiased).isNotNull();
             assertThat(unbiased.startX()).isCloseTo(500f, within(1e-3f));
@@ -310,8 +316,7 @@ final class DrawablesBuilderTest {
 
             var anchor = anchors.get(0);
             assertThat(anchor.centroidX()).isCloseTo(1000f, within(1e-4f));
-            assertThat(anchor.axisStartX()).isEqualTo(anchor.centroidX());
-            assertThat(anchor.axisEndX()).isEqualTo(anchor.centroidX());
+            assertThat(anchor.acceptedAxis()).isNull();
         }
 
         @Test
@@ -352,7 +357,8 @@ final class DrawablesBuilderTest {
         private static DrawablesBuilder.AnchorTuning tuning(double horizontalBias,
                 double endInsetDistance, double iconClearance, boolean showRejectedAxis,
                 boolean showUnbiasedAxis) {
-            return new DrawablesBuilder.AnchorTuning(WELD_TOLERANCE, MITER_LIMIT,
+            return new DrawablesBuilder.AnchorTuning(
+                    new DrawablesBuilder.BorderTrace(WELD_TOLERANCE, MITER_LIMIT),
                     horizontalBias, endInsetDistance, iconClearance, showRejectedAxis,
                     showUnbiasedAxis);
         }
