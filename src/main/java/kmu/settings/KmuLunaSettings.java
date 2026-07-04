@@ -249,15 +249,14 @@ public final class KmuLunaSettings {
     // Mirrors both the CSV defaultValue and VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
     // the geometric default this setting overrides; kept a literal like the other
     // fallbacks so this class stays decoupled from the geometry library.
-    private static final int DEFAULT_CELL_BOUND_SEGMENTS = 96;
+    private static final int DEFAULT_CELL_BOUND_SEGMENTS = 48;
     // Border-tracing knobs (ungated).
     private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
-    // Spike-sanding gate then its knobs; the gate runs the pass by default, existing to
-    // switch it off rather than to opt into it.
-    private static final boolean DEFAULT_SAND_SPIKES = true;
+    // Spike-sanding gate then its knobs; the gate leaves the pass off by default.
+    private static final boolean DEFAULT_SAND_SPIKES = false;
     private static final double DEFAULT_BORDER_SPIKE_HEIGHT = 150.0;
-    private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 120.0;
+    private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 60.0;
     // Corner-rounding gate then its knobs; likewise on by default.
     private static final boolean DEFAULT_ROUND_CORNERS = true;
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
@@ -266,10 +265,10 @@ public final class KmuLunaSettings {
     // Label-anchor search knobs.
     private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
     private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
-    private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH = 0.5;
+    private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH = 0.2;
     private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT = 2.0;
-    private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 2.5;
-    private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 120.0;
+    private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 4.0;
+    private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 750.0;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
     private static final boolean DEFAULT_SHOW_REJECTED_AXES = false;
     private static final boolean DEFAULT_SHOW_UNBIASED_AXES = false;
