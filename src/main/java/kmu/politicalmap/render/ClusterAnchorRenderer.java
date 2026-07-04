@@ -81,29 +81,31 @@ final class ClusterAnchorRenderer {
     // overflow is visible; then the thin centrelines in the same order; then the dots in
     // each owner's bright shade over everything. All three verdicts draw their band at the
     // accepted box's girth so their footprints compare like-for-like. The band fill's alpha
-    // is the dev opacity knob times the map fade; the outlines, rules, lines, and dots take
-    // the map fade alone.
+    // is the fill-opacity knob times the map fade; the outlines, rules, centrelines, and
+    // dots take the separate line-opacity knob times the map fade, so the strokes can read
+    // stronger than the wash they sit on.
     private static void drawClusterAnchors(List<ClusterAnchor> anchors, float factor,
             float alphaMult) {
         var bandAlpha = (float) KmuLunaSettings.getPoliticalMapAnchorBandOpacity() * alphaMult;
+        var lineAlpha = (float) KmuLunaSettings.getPoliticalMapAnchorBandLineOpacity() * alphaMult;
         drawBandLayer(anchors, ClusterAnchor::rejectedAxis, DiagnosticPalette.DISCARDED_COLOR,
-                factor, bandAlpha, alphaMult);
+                factor, bandAlpha, lineAlpha);
         drawBandLayer(anchors, ClusterAnchor::unbiasedAxis, DiagnosticPalette.INTERMEDIATE_COLOR,
-                factor, bandAlpha, alphaMult);
+                factor, bandAlpha, lineAlpha);
         drawBandLayer(anchors, ClusterAnchor::acceptedAxis, DiagnosticPalette.ACCEPTED_COLOR,
-                factor, bandAlpha, alphaMult);
+                factor, bandAlpha, lineAlpha);
 
         GL11.glLineWidth(ANCHOR_AXIS_WIDTH);
         drawCentrelineLayer(anchors, ClusterAnchor::rejectedAxis,
-                DiagnosticPalette.DISCARDED_COLOR, factor, alphaMult);
+                DiagnosticPalette.DISCARDED_COLOR, factor, lineAlpha);
         drawCentrelineLayer(anchors, ClusterAnchor::unbiasedAxis,
-                DiagnosticPalette.INTERMEDIATE_COLOR, factor, alphaMult);
+                DiagnosticPalette.INTERMEDIATE_COLOR, factor, lineAlpha);
         drawCentrelineLayer(anchors, ClusterAnchor::acceptedAxis,
-                DiagnosticPalette.ACCEPTED_COLOR, factor, alphaMult);
+                DiagnosticPalette.ACCEPTED_COLOR, factor, lineAlpha);
 
         GL11.glPointSize(ANCHOR_DOT_SIZE);
         for (var anchor : anchors) {
-            GlColor.set(anchor.color(), alphaMult);
+            GlColor.set(anchor.color(), lineAlpha);
             GL11.glBegin(GL11.GL_POINTS);
             GL11.glVertex2f(anchor.anchorX() * factor, anchor.anchorY() * factor);
             GL11.glEnd();
@@ -116,7 +118,7 @@ final class ClusterAnchorRenderer {
     // floor (a collapsed fit or bisection residue) is left to the centreline layer.
     private static void drawBandLayer(List<ClusterAnchor> anchors,
             Function<ClusterAnchor, ClusterAnchor.AxisSegment> line, Color color, float factor,
-            float bandAlpha, float outlineAlpha) {
+            float bandAlpha, float lineAlpha) {
         for (var anchor : anchors) {
             var segment = line.apply(anchor);
             if (segment == null || anchor.thickness() < MIN_BAND_THICKNESS) {
@@ -128,7 +130,7 @@ final class ClusterAnchorRenderer {
             }
             GlColor.set(color, bandAlpha);
             GlQuads.fillQuad(band);
-            GlColor.set(color, outlineAlpha);
+            GlColor.set(color, lineAlpha);
             GlLines.strokeLoop(band);
             drawLineRules(segment, anchor.thickness(), anchor.lineCount(), factor);
         }

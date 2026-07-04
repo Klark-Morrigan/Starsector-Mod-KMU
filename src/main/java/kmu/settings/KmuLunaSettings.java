@@ -217,7 +217,9 @@ public final class KmuLunaSettings {
     // to the space it sits in. The aspect is the stand-in name shape the debug fit sizes
     // against (length:thickness) before real fonts exist; min/max thickness clamp the
     // font-height search; max lines and line spacing let a length-poor cluster stack the
-    // name instead of shrinking it; the opacity is the debug band quad's fill alpha.
+    // name instead of shrinking it; the opacity is the debug band quad's fill alpha, and
+    // the line opacity is the separate alpha of that box's strokes so the outline can read
+    // stronger than the fill it sits on.
     private static final String ANCHOR_BAND_ASPECT_FIELD =
             "kmu_politicalMapAnchorBandAspect";
     private static final String ANCHOR_BAND_MIN_THICKNESS_FIELD =
@@ -230,6 +232,8 @@ public final class KmuLunaSettings {
             "kmu_politicalMapAnchorBandLineSpacing";
     private static final String ANCHOR_BAND_OPACITY_FIELD =
             "kmu_politicalMapAnchorBandOpacity";
+    private static final String ANCHOR_BAND_LINE_OPACITY_FIELD =
+            "kmu_politicalMapAnchorBandLineOpacity";
     // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and the
     // accepted label line in green) so the clustering and axis fit behind the coming
     // faction labels can be eyeballed on the map. Off by default.
@@ -349,6 +353,7 @@ public final class KmuLunaSettings {
     private static final int DEFAULT_ANCHOR_BAND_MAX_LINES = 3;
     private static final double DEFAULT_ANCHOR_BAND_LINE_SPACING = 1.15;
     private static final double DEFAULT_ANCHOR_BAND_OPACITY = 0.35;
+    private static final double DEFAULT_ANCHOR_BAND_LINE_OPACITY = 0.9;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
     private static final boolean DEFAULT_SHOW_REJECTED_AXES = false;
     private static final boolean DEFAULT_SHOW_UNBIASED_AXES = false;
@@ -869,6 +874,16 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapAnchorBandOpacity() {
         return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_OPACITY_FIELD,
                 DEFAULT_ANCHOR_BAND_OPACITY);
+    }
+
+    /**
+     * @return the opacity of the debug band box's strokes - its outline, the line-count
+     *         divider rules, the centreline, and the anchor dot - 0..1, kept separate
+     *         from the fill alpha so the outline stays legible over a faint band wash
+     */
+    public static double getPoliticalMapAnchorBandLineOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_LINE_OPACITY_FIELD,
+                DEFAULT_ANCHOR_BAND_LINE_OPACITY);
     }
 
     /**
