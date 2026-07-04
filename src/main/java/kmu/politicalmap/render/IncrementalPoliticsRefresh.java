@@ -40,12 +40,14 @@ final class IncrementalPoliticsRefresh {
     }
 
     // Drains the systems a colony resize marked stale and folds their ownership changes
-    // into the standing drawables and the anchor overlay. The stale drain runs first, so
-    // a frame with nothing marked returns before touching the sector - the cheap
-    // per-frame path. The anchor list rides along because it is the plugin's own overlay,
-    // not part of the drawables, yet must track the same ownership the cells do.
+    // into the standing drawables, the placements, and the name labels. The stale drain
+    // runs first, so a frame with nothing marked returns before touching the sector - the
+    // cheap per-frame path. The placement and label lists ride along because they are the
+    // plugin's own overlays, not part of the drawables, yet must track the same ownership
+    // the cells do.
     static void applyStalePoliticsUpdates(PoliticalMapDrawables drawables,
-            List<ClusterAnchor> clusterAnchors, PoliticalMapGeometryCache geometryCache) {
+            List<ClusterAnchor> clusterAnchors, List<FactionLabel> factionLabels,
+            PoliticalMapGeometryCache geometryCache) {
         var staleSystemIds = PoliticalMapRefresh.drainStalePoliticsSystemIds();
         if (staleSystemIds.isEmpty()) {
             return;
@@ -81,11 +83,14 @@ final class IncrementalPoliticsRefresh {
                         systemsByFaction.get(factionId));
             }
             // A flip can split or merge clusters (a lost system severs one, a gained
-            // one bridges two), so re-fit every anchor off the updated owners rather than
-            // patching the touched factions' anchors alone. A no-op while the toggle is
-            // off. Runs only on a real flip - the early return above already left.
+            // one bridges two), so re-fit every placement off the updated owners rather than
+            // patching the touched factions' anchors alone. A no-op while both consumers are
+            // off. Runs only on a real flip - the early return above already left. The name
+            // labels then rebuild from the re-fitted placements so a renamed or relocated
+            // cluster's name follows.
             ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
                     drawables.getOwnerBySystemId());
+            FactionLabelsBuilder.rebuildFactionLabels(factionLabels, clusterAnchors, sector);
             LOG.debug("Political map politics updated incrementally; stale="
                     + staleSystemIds.size() + " reshapedCells=" + cellsToReshape.size()
                     + " rebuiltFactions=" + affectedFactionIds.size());

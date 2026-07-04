@@ -3,10 +3,13 @@ package kmu.politicalmap.render.model;
 import java.awt.Color;
 
 /**
- * A debug marker for one system cluster's label anchor: where a faction name will sit
- * and which way it will run, drawn as a dot at the anchor point plus up to three lines -
- * the accepted label line and two optional diagnostics that show how the search arrived
- * at it.
+ * One system cluster's resolved label placement: where a faction name sits and which way
+ * it runs. It is both the production input the faction-name renderer hangs a name on -
+ * {@code factionId}, {@code (anchorX, anchorY)}, {@code color}, and {@code acceptedAxis}'s
+ * slant - and the debug marker the "show cluster anchors" overlay draws as a dot plus up
+ * to three lines. The placement search runs whenever either the names or the anchor
+ * overlay is on, so the two consumers share one computation; each then draws only under
+ * its own toggle.
  *
  * <p>{@code (anchorX, anchorY)} is the point a name will hang on, in world (hyperspace)
  * coordinates. When a label line was accepted it is that line's own midpoint - the
@@ -34,9 +37,12 @@ import java.awt.Color;
  * already the shallowest) the accepted line already stands in for it, so no separate
  * line is built.
  *
- * <p>{@code color} is the owning faction's bright palette shade and marks the anchor
- * dot; the three lines instead use the renderer's fixed diagnostic palette (accepted,
- * rejected, unbiased) so their verdict reads the same regardless of faction.
+ * <p>{@code color} is the owning faction's bright palette shade - it marks the anchor
+ * dot and is the color the faction name draws in; the three debug lines instead use the
+ * renderer's fixed diagnostic palette (accepted, rejected, unbiased) so their verdict
+ * reads the same regardless of faction. {@code factionId} is that owner's faction id,
+ * carried so the name renderer can resolve the cluster's display name without re-deriving
+ * ownership from the sector.
  *
  * <p>{@code thickness} is the girth of the fitted label band in world units - the
  * height of the box a name would fill along the accepted line, not just its
@@ -51,7 +57,7 @@ import java.awt.Color;
  * placement search verifiable on the map before any text is drawn. Only built when the
  * "show cluster anchors" dev toggle is on.
  */
-public record ClusterAnchor(float anchorX, float anchorY, Color color,
+public record ClusterAnchor(float anchorX, float anchorY, Color color, String factionId,
         AxisSegment acceptedAxis, AxisSegment rejectedAxis, AxisSegment unbiasedAxis,
         float thickness, int lineCount) {
 

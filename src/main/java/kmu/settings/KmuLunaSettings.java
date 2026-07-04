@@ -68,6 +68,16 @@ public final class KmuLunaSettings {
     private static final String LOGGER_ROOT = "kmu";
     private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
 
+    // Faction-name label field (Political map - visuals tab): whether each contiguous
+    // faction cluster draws its owner's name across it, HOI4-style. On by default - the
+    // names are the point of the merged-territory look, not a diagnostic.
+    private static final String SHOW_FACTION_NAMES_FIELD =
+            "kmu_politicalMapShowFactionNames";
+    // The bitmap font faction names render in, chosen from the game's graphics/fonts by
+    // basename; the label renderer resolves the basename to its .fnt path.
+    private static final String FACTION_NAME_FONT_FIELD =
+            "kmu_politicalMapFactionNameFont";
+
     // Faction (core-faction cluster) style fields.
     private static final String FACTION_OUTER_BORDER_COLOR_FIELD =
             "kmu_politicalMapFactionOuterBorderColor";
@@ -248,6 +258,13 @@ public final class KmuLunaSettings {
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
     // data/config/LunaSettings.csv and must be kept in step with it.
+    // On by default: the faction names are the payoff of the merged-territory map, so
+    // they show unless the player turns them off.
+    private static final boolean DEFAULT_SHOW_FACTION_NAMES = true;
+    // The default label font: the antialiased LazyFont face vanilla uses for map text,
+    // and the one the renderer falls back to before LunaLib has loaded the choice. Kept
+    // in step with the CSV row's defaultValue and the font list the radio offers.
+    private static final String DEFAULT_FACTION_NAME_FONT = "insignia15LTaa";
     private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_OUTER_BORDER_OPACITY = 1.0;
@@ -852,6 +869,27 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapAnchorBandOpacity() {
         return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_OPACITY_FIELD,
                 DEFAULT_ANCHOR_BAND_OPACITY);
+    }
+
+    /**
+     * @return whether each contiguous faction cluster draws its owner's name across it,
+     *         HOI4-style; on by default. Independent of the debug anchor overlay - the
+     *         two share the placement search but draw under their own toggles
+     */
+    public static boolean getPoliticalMapShowFactionNames() {
+        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_FACTION_NAMES_FIELD,
+                DEFAULT_SHOW_FACTION_NAMES);
+    }
+
+    /**
+     * @return the basename of the {@code graphics/fonts} face the faction names render
+     *         in (e.g. {@code insignia15LTaa}); the label renderer resolves it to the
+     *         {@code .fnt} path. Falls back to the default face before LunaLib has loaded
+     *         the choice
+     */
+    public static String getPoliticalMapFactionNameFont() {
+        return LunaSettingsReader.getString(MOD_ID, FACTION_NAME_FONT_FIELD,
+                DEFAULT_FACTION_NAME_FONT);
     }
 
     /**

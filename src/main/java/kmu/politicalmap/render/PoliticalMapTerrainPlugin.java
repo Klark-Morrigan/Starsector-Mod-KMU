@@ -98,11 +98,17 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // for the same reasons as the drawables above.
     private transient PoliticalMapDebugDrawables debugDrawables;
 
-    // The debug cluster-anchor overlay, owned here rather than by either view above so
-    // it draws over whichever is live - turning border tracing on must not hide the
-    // anchors. Empty unless the "show cluster anchors" dev toggle built it. Transient
-    // for the same reasons as the views; recreated lazily in rebuildStaleHalves.
+    // The cluster-label placements, owned here rather than by either view above so they
+    // draw over whichever is live - turning border tracing on must not hide them. Empty
+    // unless the names or the anchor overlay is on; they feed both. Transient for the same
+    // reasons as the views; recreated lazily in rebuildStaleHalves.
     private transient List<ClusterAnchor> clusterAnchors;
+
+    // The cached faction-name labels, built from the placements above. Each owns a GL
+    // buffer, so the builder disposes the standing strings whenever it rebuilds this list.
+    // Empty unless the "show faction names" toggle is on. Transient for the same reasons as
+    // the views; recreated lazily in rebuildStaleHalves.
+    private transient List<FactionLabel> factionLabels;
 
     // The revisions each half of the cache was built against. Geometry rebuilds when
     // the reachable-system set changes or the frontier resolution setting changes (it
@@ -154,8 +160,17 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             PoliticalMapRenderer.renderOnMap(drawables, factor, alphaMult);
         }
         // The anchor overlay layers over whichever base view just drew - it is
-        // independent of the swap above, so the two debug toggles compose.
-        ClusterAnchorRenderer.renderOnMap(clusterAnchors, factor, alphaMult);
+        // independent of the swap above, so the two debug toggles compose. Gated on its own
+        // toggle here (not by the list being empty): the placements are also built for the
+        // faction names, so the list can be non-empty while the debug overlay is off.
+        if (KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
+            ClusterAnchorRenderer.renderOnMap(clusterAnchors, factor, alphaMult);
+        }
+        // The faction names draw last of the map passes, so a name reads over its territory
+        // and the debug band, but still beneath the vanilla star and constellation names
+        // (drawn after every terrain renderOnMap). The list is empty unless the names toggle
+        // is on, so this is an empty-list check when they are off.
+        FactionLabelRenderer.renderOnMap(factionLabels, factor, alphaMult);
     }
 
     // Rebuilds only the stale half of the cache. The expensive cell geometry is rebuilt
@@ -193,11 +208,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             geometryCache = new PoliticalMapGeometryCache();
             lastGeometryRevision = -1;
         }
-        // Same restore path for the anchor overlay: transient, so a save-restored plugin
-        // comes back with it null. Recreated empty here - before any rebuild work can
-        // throw - so the render below always has a list to draw.
+        // Same restore path for the placements and the label cache: transient, so a
+        // save-restored plugin comes back with them null. Recreated empty here - before any
+        // rebuild work can throw - so the render below always has lists to draw.
         if (clusterAnchors == null) {
             clusterAnchors = new ArrayList<>();
+        }
+        if (factionLabels == null) {
+            factionLabels = new ArrayList<>();
         }
 
         var rebuiltCells = false;
@@ -254,6 +272,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 ClusterAnchorsBuilder.rebuildClusterAnchors(
                         clusterAnchors, geometryCache, drawables.getOwnerBySystemId());
             }
+            // The name labels are minted from the placements just rebuilt (empty when the
+            // names toggle is off), keeping them in step with the fills and borders and
+            // reusing the one placement search both consumers share.
+            FactionLabelsBuilder.rebuildFactionLabels(factionLabels, clusterAnchors,
+                    Global.getSector());
             lastContentRevision = contentRevision;
             // A full rebuild re-derives every system, so any pending per-system
             // staleness is already reflected - drain and discard it rather than
@@ -270,7 +293,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // full rebuild (any settings or geometry change).
         if (drawables != null) {
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(drawables, clusterAnchors,
-                    geometryCache);
+                    factionLabels, geometryCache);
         } else {
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
         }

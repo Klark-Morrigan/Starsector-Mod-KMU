@@ -397,6 +397,20 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
+        void computeClusterAnchorsCarriesTheOwningFactionId() {
+            // The placement carries its owner's faction id so the name renderer can resolve
+            // the cluster's display name without re-deriving ownership from the sector.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0));
+
+            assertThat(anchors.get(0).factionId()).isEqualTo("F");
+        }
+
+        @Test
         void computeClusterAnchorsSkipsAClusterWhoseSitesAreAllMissing() {
             // A cluster whose members have no site (none in the site map) has no point
             // cloud to fit, so it contributes no anchor rather than an empty fit.

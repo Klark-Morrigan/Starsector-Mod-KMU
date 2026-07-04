@@ -44,17 +44,22 @@ final class ClusterAnchorsBuilder {
     private ClusterAnchorsBuilder() {
     }
 
-    // Rebuilds the anchor overlay in place: clears the standing list, then - only when
-    // the dev toggle is on - splits the owned systems into contiguous clusters and fits
-    // one anchor to each. Shared by the full rebuild and the incremental refresh so an
-    // ownership change keeps the anchors in step with the fills and borders. Reads the
-    // toggle here (not at the call sites) so all paths gate identically; the search's
-    // tuning is read here too, so a settings change re-fits on the rebuild it triggers.
+    // Rebuilds the cluster-label placements in place: clears the standing list, then -
+    // only when the placements are needed - splits the owned systems into contiguous
+    // clusters and fits one anchor to each. The placements feed two consumers: the
+    // faction-name labels and the debug anchor overlay. Building whenever either is on
+    // keeps them a single computation (an SSOT the labels and the overlay share), so the
+    // search never runs twice; each consumer then draws only under its own toggle. Shared
+    // by the full rebuild and the incremental refresh so an ownership change keeps the
+    // placements in step with the fills and borders. Reads the toggles here (not at the
+    // call sites) so all paths gate identically; the search's tuning is read here too, so
+    // a settings change re-fits on the rebuild it triggers.
     static void rebuildClusterAnchors(List<ClusterAnchor> anchors,
             PoliticalMapGeometryCache geometryCache,
             Map<String, DominantOwner> ownerBySystemId) {
         anchors.clear();
-        if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
+        if (!KmuLunaSettings.getPoliticalMapShowFactionNames()
+                && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }
         var clusters = SystemClusters.findClusters(
@@ -94,11 +99,12 @@ final class ClusterAnchorsBuilder {
             if (sites.isEmpty()) {
                 continue;
             }
-            var color = ownerBySystemId.get(memberSystemIds.get(0)).primaryColor();
+            var owner = ownerBySystemId.get(memberSystemIds.get(0));
             var axis = resolveClusterAxis(memberSystemIds, edgesBySystemId, sites);
             var rings = tuning.borderTrace().traceRings(memberSystemIds, edgesBySystemId,
                     ownerBySystemId);
-            anchors.add(searchClusterAnchor(rings, siteBySystemId, axis, color, tuning));
+            anchors.add(searchClusterAnchor(rings, siteBySystemId, axis, owner.factionId(),
+                    owner.primaryColor(), tuning));
         }
         return anchors;
     }
@@ -117,14 +123,15 @@ final class ClusterAnchorsBuilder {
     // diagnostic. With the unbiased toggle on, the box that wins on raw font height (no
     // slope penalty) rides along as the yellow diagnostic whenever the penalty moved the pick.
     private static ClusterAnchor searchClusterAnchor(List<List<double[]>> rings,
-            Map<String, double[]> siteBySystemId, PrincipalAxis axis, Color color,
-            AnchorTuning tuning) {
+            Map<String, double[]> siteBySystemId, PrincipalAxis axis, String factionId,
+            Color color, AnchorTuning tuning) {
         var centroidX = (float) axis.centroidX();
         var centroidY = (float) axis.centroidY();
         if (rings.isEmpty()) {
             // No traceable border leaves nothing to prove a candidate interior - the
             // one dead end the search cannot work around, so only the dot can show.
-            return new ClusterAnchor(centroidX, centroidY, color, null, null, null, 0f, 0);
+            return new ClusterAnchor(centroidX, centroidY, color, factionId,
+                    null, null, null, 0f, 0);
         }
 
         var fitter = newBoxFitter(tuning);
@@ -172,13 +179,14 @@ final class ClusterAnchorsBuilder {
             var unbiased = tuning.showUnbiasedAxis() && longestAccepted != null
                     && !longestAccepted.segment().equals(accepted)
                     ? longestAccepted.segment() : null;
-            return new ClusterAnchor(midX, midY, color, accepted, null, unbiased,
+            return new ClusterAnchor(midX, midY, color, factionId, accepted, null, unbiased,
                     (float) bestAccepted.thickness(), bestAccepted.lineCount());
         }
         // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
         // near-miss span rides along only when the rejected toggle asked for it.
         var rejected = bestRejected != null ? bestRejected.segment() : null;
-        return new ClusterAnchor(centroidX, centroidY, color, null, rejected, null, 0f, 0);
+        return new ClusterAnchor(centroidX, centroidY, color, factionId,
+                null, rejected, null, 0f, 0);
     }
 
     // Builds the box fitter from the tuning: the thickness clamp, line count, and spacing
