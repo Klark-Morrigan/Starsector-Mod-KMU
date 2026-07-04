@@ -3,9 +3,12 @@ package kmu.politicalmap.render;
 import kmlib.opengl.GlColor;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.politicalmap.render.model.ClusterAnchor;
 import kmu.politicalmap.render.model.PoliticalMapDrawables;
 
 import org.lwjgl.opengl.GL11;
+
+import java.awt.Color;
 
 /**
  * Paints the political map's pre-built draw lists on the sector (M) map: the faction
@@ -24,6 +27,15 @@ final class PoliticalMapRenderer {
     // fills and borders without swamping the systems they mark.
     private static final float ANCHOR_DOT_SIZE = 10f;
     private static final float ANCHOR_AXIS_WIDTH = 2f;
+
+    // The anchor lines' fixed diagnostic palette, matching the border-tracing overlay's
+    // rejected-to-final ramp so red always reads "discarded" and green "what ships":
+    // the best candidate a collapsed fit had (red, bottom), the fit with no horizontal
+    // bias (yellow, middle), and the accepted label line (green, top). Fixed rather
+    // than faction-colored so a line's verdict reads the same on every fill.
+    private static final Color REJECTED_AXIS_COLOR = Color.RED;
+    private static final Color UNBIASED_AXIS_COLOR = Color.YELLOW;
+    private static final Color ACCEPTED_AXIS_COLOR = Color.GREEN;
 
     // Emits only; never instantiated.
     private PoliticalMapRenderer() {
@@ -125,12 +137,14 @@ final class PoliticalMapRenderer {
         }
     }
 
-    // Draws each cluster's debug label anchor over the fills and borders: a dot at the
-    // centroid and the fitted label line (the long axis refit inside the border and
-    // clear of the icons), both in the owning faction's bright shade. Empty (nothing
-    // emitted) unless the dev toggle built the anchors, so the normal map pays only an
-    // empty-list check. The dot is a fixed-pixel GL_POINTS mark; the axis is one
-    // GL_LINES segment, collapsed to a point when the fit found no room for a line.
+    // Draws each cluster's debug label anchor over the fills and borders. The lines
+    // layer bottom to top by verdict - rejected candidates in red, unbiased comparisons
+    // in yellow, accepted label lines in green - one color pass across all anchors per
+    // layer, so where lines overlap the accepted verdict always reads on top; the dots,
+    // in each owner's bright faction shade, go over everything to keep the cluster
+    // marker visible even under a pile of lines. Empty (nothing emitted) unless the dev
+    // toggle built the anchors, so the normal map pays only an empty-list check. The
+    // dot is a fixed-pixel GL_POINTS mark; each line is one GL_LINES segment.
     private static void drawClusterAnchors(PoliticalMapDrawables drawables, float factor,
             float alphaMult) {
         var anchors = drawables.getClusterAnchors();
@@ -139,15 +153,49 @@ final class PoliticalMapRenderer {
         }
         GL11.glPointSize(ANCHOR_DOT_SIZE);
         GL11.glLineWidth(ANCHOR_AXIS_WIDTH);
+        GlColor.set(REJECTED_AXIS_COLOR, alphaMult);
+        for (var anchor : anchors) {
+            drawAxisSegment(anchor.rejectedAxis(), factor);
+        }
+        GlColor.set(UNBIASED_AXIS_COLOR, alphaMult);
+        for (var anchor : anchors) {
+            drawAxisSegment(anchor.unbiasedAxis(), factor);
+        }
+        GlColor.set(ACCEPTED_AXIS_COLOR, alphaMult);
+        for (var anchor : anchors) {
+            drawAcceptedAxis(anchor, factor);
+        }
         for (var anchor : anchors) {
             GlColor.set(anchor.color(), alphaMult);
             GL11.glBegin(GL11.GL_POINTS);
             GL11.glVertex2f(anchor.centroidX() * factor, anchor.centroidY() * factor);
             GL11.glEnd();
-            GL11.glBegin(GL11.GL_LINES);
-            GL11.glVertex2f(anchor.axisStartX() * factor, anchor.axisStartY() * factor);
-            GL11.glVertex2f(anchor.axisEndX() * factor, anchor.axisEndY() * factor);
-            GL11.glEnd();
         }
+    }
+
+    // Strokes one optional diagnostic line; a cluster without that diagnostic carries
+    // null and emits nothing.
+    private static void drawAxisSegment(ClusterAnchor.AxisSegment segment, float factor) {
+        if (segment == null) {
+            return;
+        }
+        GL11.glBegin(GL11.GL_LINES);
+        GL11.glVertex2f(segment.startX() * factor, segment.startY() * factor);
+        GL11.glVertex2f(segment.endX() * factor, segment.endY() * factor);
+        GL11.glEnd();
+    }
+
+    // Strokes an anchor's accepted label line. A collapsed fit stores the segment as a
+    // point on the centroid; that is skipped so no green speck draws over the faction
+    // dot that is the collapse's actual marker.
+    private static void drawAcceptedAxis(ClusterAnchor anchor, float factor) {
+        if (anchor.axisStartX() == anchor.axisEndX()
+                && anchor.axisStartY() == anchor.axisEndY()) {
+            return;
+        }
+        GL11.glBegin(GL11.GL_LINES);
+        GL11.glVertex2f(anchor.axisStartX() * factor, anchor.axisStartY() * factor);
+        GL11.glVertex2f(anchor.axisEndX() * factor, anchor.axisEndY() * factor);
+        GL11.glEnd();
     }
 }

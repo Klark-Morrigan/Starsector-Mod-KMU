@@ -169,11 +169,21 @@ public final class KmuLunaSettings {
             "kmu_politicalMapAnchorEndInsetMultiple";
     private static final String ANCHOR_ICON_CLEARANCE_FIELD =
             "kmu_politicalMapAnchorIconClearance";
-    // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and an
-    // axis line) so the clustering and axis fit behind the coming faction labels can be
-    // eyeballed on the map. Off by default.
+    // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and the
+    // accepted label line in green) so the clustering and axis fit behind the coming
+    // faction labels can be eyeballed on the map. Off by default.
     private static final String SHOW_CLUSTER_ANCHORS_FIELD =
             "kmu_politicalMapShowClusterAnchors";
+    // Diagnostics (Dev tab): the two extra anchor lines layered under the accepted one,
+    // each behind its own toggle so the anchor overlay stays readable by default. The
+    // rejected line (red) shows the best candidate a collapsed fit had before the
+    // border, icon, or end-margin trim discarded it; the unbiased line (yellow) shows
+    // what the fit would accept with no horizontal bias, so the bias knob's effect is
+    // visible directly. Both meaningful only while the anchors themselves draw.
+    private static final String SHOW_REJECTED_AXES_FIELD =
+            "kmu_politicalMapShowRejectedAxes";
+    private static final String SHOW_UNBIASED_AXES_FIELD =
+            "kmu_politicalMapShowUnbiasedAxes";
     // Diagnostics (Dev tab): replaces the normal render with a border-tracing overlay that
     // layers the smoothing pipeline's stages (base, despiked, rounded) in distinct colors,
     // honouring the two smoothing gates. Off by default.
@@ -244,6 +254,8 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 2.5;
     private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 120.0;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
+    private static final boolean DEFAULT_SHOW_REJECTED_AXES = false;
+    private static final boolean DEFAULT_SHOW_UNBIASED_AXES = false;
     private static final boolean DEFAULT_DEBUG_BORDER_TRACING = false;
     // On by default: the picker is a hands-on condition manager, so it lists every
     // condition unless the player narrows it to vanilla's planetary set.
@@ -611,12 +623,39 @@ public final class KmuLunaSettings {
 
     /**
      * @return whether the political map draws the per-cluster label anchors - a dot at
-     *         each contiguous cluster's centre and a line along its long axis; off by
-     *         default, a diagnostic for the coming faction labels
+     *         each contiguous cluster's centre and, in green, the accepted label line
+     *         its fit produced; off by default, a diagnostic for the coming faction
+     *         labels. Master switch for the anchor overlay: the rejected- and
+     *         unbiased-axis toggles below only add lines while this is on
      */
     public static boolean getPoliticalMapShowClusterAnchors() {
         return LunaSettingsReader.getBoolean(MOD_ID, SHOW_CLUSTER_ANCHORS_FIELD,
                 DEFAULT_SHOW_CLUSTER_ANCHORS);
+    }
+
+    /**
+     * @return whether a cluster whose accepted label line collapsed to the dot also
+     *         draws, in red, the best candidate line its fit found before the border,
+     *         icon, or end-margin trim discarded it - how close the cluster came to
+     *         carrying a line; off by default, meaningful only while the cluster
+     *         anchors themselves draw
+     */
+    public static boolean getPoliticalMapShowRejectedAxes() {
+        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_REJECTED_AXES_FIELD,
+                DEFAULT_SHOW_REJECTED_AXES);
+    }
+
+    /**
+     * @return whether each cluster also draws, in yellow, the label line its fit would
+     *         accept with no horizontal bias applied - the anchor bias knob's effect
+     *         made visible by contrast. Drawn only when the unbiased direction actually
+     *         differs from the accepted line's (with the bias at 1, or an axis already
+     *         horizontal, the accepted line is the unbiased line); off by default,
+     *         meaningful only while the cluster anchors themselves draw
+     */
+    public static boolean getPoliticalMapShowUnbiasedAxes() {
+        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_UNBIASED_AXES_FIELD,
+                DEFAULT_SHOW_UNBIASED_AXES);
     }
 
     /**

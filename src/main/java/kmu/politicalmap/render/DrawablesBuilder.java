@@ -52,6 +52,11 @@ import java.util.Map;
  * so a full rebuild and an incremental re-shape classify and style a cell identically.
  */
 final class DrawablesBuilder {
+    // Two unit directions whose dot product clears this count as the same line for
+    // display purposes - the tolerance only absorbs floating-point drift in the
+    // renormalisation, so any real lean the bias applies lands far below it.
+    private static final double SAME_DIRECTION_MIN_DOT_PRODUCT = 1.0 - 1e-9;
+
     private static final Logger LOG = Global.getLogger(DrawablesBuilder.class);
 
     // Builds only; never instantiated.
@@ -201,15 +206,17 @@ final class DrawablesBuilder {
                 AnchorTuning.readFromSettings()));
     }
 
-    // Fits one label anchor to each contiguous cluster: the principal axis of its member
-    // system positions gives the centre to hang the label on and the raw direction,
-    // leaned horizontal by the tuning's bias; the segment on that line is then refit so
-    // every part of it lies inside the cluster's national border (concavities and
-    // enclaves shorten it, never bridged), clear of every system icon, and short of the
-    // border by the end inset - the straight line a faction name can actually sit on.
-    // A cluster with no spread (a single system), no traceable border, or no clear
-    // interval longer than twice the end inset collapses to the dot alone. The owning
-    // faction's bright shade colours the marker so it reads against the fill.
+    // Fits one label anchor to each contiguous cluster: resolveClusterAxis gives the
+    // centre to hang the label on and the raw direction (falling back to the member
+    // cells' own shape when the site cloud alone has no spread, so a single-system
+    // cluster still gets a real direction to try); leaning that horizontal by the
+    // tuning's bias and refitting it against the border, the icons, and the end inset
+    // (fitAlongDirection) gives the accepted line. When that collapses, the same fit's
+    // best rejected candidate becomes the red diagnostic line (if its toggle is on); a
+    // second fit with no bias applied becomes the yellow one (if its toggle is on and
+    // the bias actually changed the direction). The owning faction's bright shade
+    // colours the centroid dot so it reads against the fill; the lines use a fixed
+    // diagnostic palette instead, painted by the renderer.
     static List<ClusterAnchor> computeClusterAnchors(List<List<String>> clusters,
             Map<String, List<CellEdge>> edgesBySystemId, Map<String, double[]> siteBySystemId,
             Map<String, DominantOwner> ownerBySystemId, AnchorTuning tuning) {
@@ -219,34 +226,99 @@ final class DrawablesBuilder {
             if (sites.isEmpty()) {
                 continue;
             }
-            var axis = PrincipalAxis.fitTo(sites);
             var color = ownerBySystemId.get(memberSystemIds.get(0)).primaryColor();
-            // No spread means no direction to lay a name along (a single system or
-            // coincident sites), so only the dot marks the cluster.
-            var direction = axis.length() < Limits.MIN_EDGE_LENGTH
-                    ? null
-                    : leanTowardHorizontal(axis, tuning.horizontalBias());
-            var clearSpan = direction == null
-                    ? null
-                    : fitClearSpan(memberSystemIds, edgesBySystemId, siteBySystemId,
-                            ownerBySystemId, axis, direction, tuning);
-            if (clearSpan == null) {
-                anchors.add(new ClusterAnchor(
-                        (float) axis.centroidX(), (float) axis.centroidY(),
-                        (float) axis.centroidX(), (float) axis.centroidY(),
-                        (float) axis.centroidX(), (float) axis.centroidY(),
-                        color));
+            var axis = resolveClusterAxis(memberSystemIds, edgesBySystemId, sites);
+            if (axis.length() < Limits.MIN_EDGE_LENGTH) {
+                // Nothing survives even the cell-shape fallback (missing or fully
+                // degenerate geometry) - the true dead end where only the dot can show.
+                anchors.add(collapsedAnchor(axis, color));
                 continue;
             }
+
+            var rings = SystemClusterBorders.traceBorderRings(memberSystemIds, edgesBySystemId,
+                    ownerBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                    tuning.borderWeldTolerance(), tuning.borderMiterLimit());
+            var biasedDirection = leanTowardHorizontal(axis, tuning.horizontalBias());
+            var biasedFit = fitAlongDirection(rings, siteBySystemId, axis.centroidX(),
+                    axis.centroidY(), biasedDirection, tuning);
+
+            ClusterAnchor.AxisSegment unbiasedAxis = null;
+            if (tuning.showUnbiasedAxis()) {
+                var unbiasedDirection = leanTowardHorizontal(axis, 1.0);
+                if (!isSameDirection(biasedDirection, unbiasedDirection)) {
+                    var unbiasedFit = fitAlongDirection(rings, siteBySystemId, axis.centroidX(),
+                            axis.centroidY(), unbiasedDirection, tuning);
+                    if (unbiasedFit.acceptedSpan() != null) {
+                        unbiasedAxis = toSegment(axis, unbiasedDirection,
+                                unbiasedFit.acceptedSpan());
+                    }
+                }
+            }
+
+            if (biasedFit.acceptedSpan() != null) {
+                var accepted = toSegment(axis, biasedDirection, biasedFit.acceptedSpan());
+                anchors.add(new ClusterAnchor(
+                        (float) axis.centroidX(), (float) axis.centroidY(),
+                        accepted.startX(), accepted.startY(), accepted.endX(), accepted.endY(),
+                        color, null, unbiasedAxis));
+                continue;
+            }
+            var rejectedAxis = tuning.showRejectedAxis() && biasedFit.rejectedSpan() != null
+                    ? toSegment(axis, biasedDirection, biasedFit.rejectedSpan())
+                    : null;
+            var collapsed = collapsedAnchor(axis, color);
             anchors.add(new ClusterAnchor(
-                    (float) axis.centroidX(), (float) axis.centroidY(),
-                    (float) (axis.centroidX() + direction[0] * clearSpan[0]),
-                    (float) (axis.centroidY() + direction[1] * clearSpan[0]),
-                    (float) (axis.centroidX() + direction[0] * clearSpan[1]),
-                    (float) (axis.centroidY() + direction[1] * clearSpan[1]),
-                    color));
+                    collapsed.centroidX(), collapsed.centroidY(),
+                    collapsed.axisStartX(), collapsed.axisStartY(),
+                    collapsed.axisEndX(), collapsed.axisEndY(),
+                    color, rejectedAxis, unbiasedAxis));
         }
         return anchors;
+    }
+
+    // The direction and length to fit a cluster's label line along: the principal axis
+    // of its member system positions when that cloud has real spread (the usual case
+    // for a multi-system cluster), or - when it does not, a single-system cluster or
+    // coincident sites - the principal axis of the member cells' own raw Voronoi
+    // vertices instead, so even a lone system's cell shape gives it a real direction
+    // rather than defaulting straight to the dot. The site centroid is always kept as
+    // the anchor point regardless of which cloud supplied the direction, so the anchor
+    // still marks the system's own position, not the cell's vertex-cloud mean.
+    private static PrincipalAxis resolveClusterAxis(List<String> memberSystemIds,
+            Map<String, List<CellEdge>> edgesBySystemId, List<double[]> sites) {
+        var siteAxis = PrincipalAxis.fitTo(sites);
+        if (siteAxis.length() >= Limits.MIN_EDGE_LENGTH) {
+            return siteAxis;
+        }
+        var cellVertices = collectClusterCellVertices(memberSystemIds, edgesBySystemId);
+        if (cellVertices.size() < 2) {
+            return siteAxis;
+        }
+        var vertexAxis = PrincipalAxis.fitTo(cellVertices);
+        if (vertexAxis.length() < Limits.MIN_EDGE_LENGTH) {
+            return siteAxis;
+        }
+        return new PrincipalAxis(siteAxis.centroidX(), siteAxis.centroidY(),
+                vertexAxis.axisX(), vertexAxis.axisY(), vertexAxis.length());
+    }
+
+    // Gathers every member cell's raw Voronoi edge endpoints as a point cloud - the
+    // cluster's own footprint, fitted for a direction when its systems' site positions
+    // alone have no spread to fit one to.
+    private static List<double[]> collectClusterCellVertices(List<String> memberSystemIds,
+            Map<String, List<CellEdge>> edgesBySystemId) {
+        var vertices = new ArrayList<double[]>();
+        for (var systemId : memberSystemIds) {
+            var edges = edgesBySystemId.get(systemId);
+            if (edges == null) {
+                continue;
+            }
+            for (var edge : edges) {
+                vertices.add(new double[] {edge.x1(), edge.y1()});
+                vertices.add(new double[] {edge.x2(), edge.y2()});
+            }
+        }
+        return vertices;
     }
 
     // Leans the fitted unit axis toward horizontal: its vertical component is scaled by
@@ -264,38 +336,92 @@ final class DrawablesBuilder {
         return new double[] {biasedX / length, biasedY / length};
     }
 
-    // The clear {tStart, tEnd} interval (parameters along the direction from the
-    // centroid) the anchor line may occupy, or null when the fit collapses to the dot.
-    // The cluster's inset border rings - the same rings the national border strokes, so
-    // the anchor clips against what the player sees - bound the line to its genuinely
+    // Whether two unit directions are, for display purposes, the same line: their dot
+    // product sits at (effectively) 1. Catches both a no-op bias setting and an axis
+    // that was already horizontal (where leaning changes nothing regardless of the
+    // bias value) - either way there is nothing distinct for the unbiased line to add
+    // over the accepted one.
+    private static boolean isSameDirection(double[] a, double[] b) {
+        return a[0] * b[0] + a[1] * b[1] > SAME_DIRECTION_MIN_DOT_PRODUCT;
+    }
+
+    // One directional fit's outcome: the accepted {tStart, tEnd} interval the name may
+    // occupy, or - only when nothing was accepted - the best rejected candidate found
+    // along the way, for the red diagnostic line. Exactly one of the two is non-null;
+    // both are null only when the direction found no interior geometry at all to work
+    // with (no border ring, or the line misses the region entirely).
+    private record DirectionalFit(double[] acceptedSpan, double[] rejectedSpan) {
+    }
+
+    // Fits one direction through a cluster's centroid against its border rings and the
+    // system icons: the rings - the same ones the national border strokes, so the
+    // anchor clips against what the player sees - bound the line to its genuinely
     // interior pieces (a chord across a concavity or an enclave is never kept); every
-    // system icon then carves its keep-out interval; the longest survivor is pulled in
-    // from both ends so the name stops short of the border. All sites act as icon
-    // blockers, not just the cluster's own: a neighbour faction's icon just across the
-    // border can still overhang the inset interior.
-    private static double[] fitClearSpan(List<String> memberSystemIds,
-            Map<String, List<CellEdge>> edgesBySystemId, Map<String, double[]> siteBySystemId,
-            Map<String, DominantOwner> ownerBySystemId, PrincipalAxis axis, double[] direction,
-            AnchorTuning tuning) {
-        var rings = SystemClusterBorders.traceBorderRings(memberSystemIds, edgesBySystemId,
-                ownerBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE,
-                tuning.borderWeldTolerance(), tuning.borderMiterLimit());
+    // system icon then carves its keep-out interval from what remains; the longest
+    // survivor is pulled in from both ends by the end inset so the name stops short of
+    // the border. All sites act as icon blockers, not just the cluster's own: a
+    // neighbour faction's icon just across the border can still overhang the inset
+    // interior. Falls through three ways a direction can fail to produce an accepted
+    // line, keeping the furthest-along candidate as the rejected span: no border ring
+    // to clip against (nothing to report), the line missing the interior entirely
+    // (nothing to report), the icons consuming every interior span (the longest
+    // interior span reported), or the end inset consuming what the icons left (the
+    // pre-inset clear span reported).
+    private static DirectionalFit fitAlongDirection(List<List<double[]>> rings,
+            Map<String, double[]> siteBySystemId, double centroidX, double centroidY,
+            double[] direction, AnchorTuning tuning) {
         if (rings.isEmpty()) {
-            return null;
+            return new DirectionalFit(null, null);
         }
-        var interiorSpans = Polygons.findLineInteriorSpans(rings,
-                axis.centroidX(), axis.centroidY(), direction[0], direction[1]);
-        var clear = Spans.findLongestClearSubsegment(interiorSpans,
-                axis.centroidX(), axis.centroidY(), direction[0], direction[1],
-                siteBySystemId.values(), tuning.iconClearance());
+        var interiorSpans = Polygons.findLineInteriorSpans(rings, centroidX, centroidY,
+                direction[0], direction[1]);
+        if (interiorSpans.isEmpty()) {
+            return new DirectionalFit(null, null);
+        }
+        var clear = Spans.findLongestClearSubsegment(interiorSpans, centroidX, centroidY,
+                direction[0], direction[1], siteBySystemId.values(), tuning.iconClearance());
         if (clear == null) {
-            return null;
+            return new DirectionalFit(null, findLongestSpan(interiorSpans));
         }
         var start = clear[0] + tuning.endInsetDistance();
         var end = clear[1] - tuning.endInsetDistance();
         // An interval shorter than twice the end inset leaves no room for a name
-        // between the margins, so the anchor collapses to the dot.
-        return start < end ? new double[] {start, end} : null;
+        // between the margins; the pre-inset clear span is the best rejected candidate.
+        return start < end ? new DirectionalFit(new double[] {start, end}, null)
+                : new DirectionalFit(null, clear);
+    }
+
+    // The longest of a list of {tStart, tEnd} spans - the single best candidate to show
+    // when several interior spans exist but none survived the icon trim intact.
+    private static double[] findLongestSpan(List<double[]> spans) {
+        double[] longest = null;
+        for (var span : spans) {
+            if (longest == null || span[1] - span[0] > longest[1] - longest[0]) {
+                longest = span;
+            }
+        }
+        return longest;
+    }
+
+    // Maps a {tStart, tEnd} parameter interval back to world-coordinate endpoints along
+    // the given direction from the centroid - the last step shared by the accepted,
+    // rejected, and unbiased lines alike.
+    private static ClusterAnchor.AxisSegment toSegment(PrincipalAxis axis, double[] direction,
+            double[] span) {
+        return new ClusterAnchor.AxisSegment(
+                (float) (axis.centroidX() + direction[0] * span[0]),
+                (float) (axis.centroidY() + direction[1] * span[0]),
+                (float) (axis.centroidX() + direction[0] * span[1]),
+                (float) (axis.centroidY() + direction[1] * span[1]));
+    }
+
+    // An anchor with its axis segment collapsed onto the centroid - the dot-only marker
+    // for a cluster whose fit found no accepted line, with no diagnostic lines attached.
+    private static ClusterAnchor collapsedAnchor(PrincipalAxis axis, Color color) {
+        var centroidX = (float) axis.centroidX();
+        var centroidY = (float) axis.centroidY();
+        return new ClusterAnchor(centroidX, centroidY, centroidX, centroidY, centroidX, centroidY,
+                color, null, null);
     }
 
     // Gathers the {x, y} sites of a cluster's members, skipping any whose site is missing
@@ -471,15 +597,23 @@ final class DrawablesBuilder {
      *                            resolved to a distance
      * @param iconClearance       the keep-out radius around each system icon, world
      *                            units
+     * @param showRejectedAxis    whether a cluster whose accepted line collapsed also
+     *                            carries the best rejected candidate the fit found,
+     *                            for the red diagnostic line
+     * @param showUnbiasedAxis    whether each cluster also carries the line the fit
+     *                            would produce with no horizontal bias, for the
+     *                            yellow diagnostic line
      */
     record AnchorTuning(double borderWeldTolerance, double borderMiterLimit,
-            double horizontalBias, double endInsetDistance, double iconClearance) {
+            double horizontalBias, double endInsetDistance, double iconClearance,
+            boolean showRejectedAxis, boolean showUnbiasedAxis) {
 
         // Reads the live tuning: the anchor knobs from the Dev "Label anchors" section
         // plus the border-trace pair the national border itself uses, so the anchor
         // clips against the same rings the player sees. The end-inset multiple is
         // resolved against the fixed border channel here, so the fit works in plain
-        // distances.
+        // distances. The two diagnostic-line toggles ride along so the fit only
+        // computes the extra candidates while someone is looking at them.
         static AnchorTuning readFromSettings() {
             return new AnchorTuning(
                     KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
@@ -487,7 +621,9 @@ final class DrawablesBuilder {
                     KmuLunaSettings.getPoliticalMapAnchorHorizontalBias(),
                     KmuLunaSettings.getPoliticalMapAnchorEndInsetMultiple()
                             * PoliticalMapStyle.BORDER_INSET_DISTANCE,
-                    KmuLunaSettings.getPoliticalMapAnchorIconClearance());
+                    KmuLunaSettings.getPoliticalMapAnchorIconClearance(),
+                    KmuLunaSettings.getPoliticalMapShowRejectedAxes(),
+                    KmuLunaSettings.getPoliticalMapShowUnbiasedAxes());
         }
     }
 }
