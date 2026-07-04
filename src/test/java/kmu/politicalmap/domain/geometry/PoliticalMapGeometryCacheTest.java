@@ -42,6 +42,11 @@ final class PoliticalMapGeometryCacheTest {
     // the reachable set, never by a resolution change.
     private static final int DEFAULT_BOUND_SEGMENTS = VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS;
 
+    // No movers in the access-diff tests: an empty moving set makes every drawn system
+    // participate in the partition. The exclusion tests pass an explicit set to drop
+    // one system.
+    private static final Set<String> NO_MOVING_SYSTEMS = Set.of();
+
     @Nested
     class UpdateFromSector {
 
@@ -80,7 +85,7 @@ final class PoliticalMapGeometryCacheTest {
             var cache = new PoliticalMapGeometryCache();
             cache.updateFromSector(
                     sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
-                    DEFAULT_BOUND_SEGMENTS);
+                    NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS);
             var distantBefore = cache.getCellEdgesBySystemId().get("b");
 
             // The segment count seeds every cell's frontier polygon, so lowering it
@@ -90,7 +95,7 @@ final class PoliticalMapGeometryCacheTest {
             // so its edge count drops to the new count.
             cache.updateFromSector(
                     sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
-                    24);
+                    NO_MOVING_SYSTEMS, 24);
 
             assertThat(cache.getCellEdgesBySystemId().get("b")).isNotSameAs(distantBefore);
             assertThat(cache.getCellEdgesBySystemId().get("b")).hasSize(24);
@@ -155,6 +160,59 @@ final class PoliticalMapGeometryCacheTest {
 
             assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a", "ruin");
         }
+
+        @Test
+        void updateExcludesAMovingSystemAndReshapesItsNeighbourButNotDistantCells() {
+            var cache = new PoliticalMapGeometryCache();
+            updateAtDefaultResolution(cache,
+                    accessibleSystem("m", 0, 0),
+                    accessibleSystem("n", 2000, 0),
+                    accessibleSystem("f", FAR, 0));
+            var neighbourBefore = cache.getCellEdgesBySystemId().get("n");
+            var distantBefore = cache.getCellEdgesBySystemId().get("f");
+
+            // "m" starts moving, so it drops out of the partition: it seeds no cell, and
+            // "n" (within a neighbourhood radius) reshapes to reclaim its space, while
+            // "f" is beyond reach and keeps the very same cell object.
+            updateExcluding(cache, Set.of("m"),
+                    accessibleSystem("m", 0, 0),
+                    accessibleSystem("n", 2000, 0),
+                    accessibleSystem("f", FAR, 0));
+
+            assertThat(cache.getCellEdgesBySystemId()).doesNotContainKey("m");
+            assertThat(cache.getCellEdgesBySystemId().get("n")).isNotSameAs(neighbourBefore);
+            assertThat(cache.getCellEdgesBySystemId().get("f")).isSameAs(distantBefore);
+        }
+
+        @Test
+        void updateReturnsAStoppedSystemToThePartition() {
+            var cache = new PoliticalMapGeometryCache();
+            updateAtDefaultResolution(cache, accessibleSystem("m", 0, 0), accessibleSystem("n", 2000, 0));
+            updateExcluding(cache, Set.of("m"),
+                    accessibleSystem("m", 0, 0), accessibleSystem("n", 2000, 0));
+
+            // "m" comes to rest, so it is no longer a mover and rejoins the partition
+            // with a fresh cell.
+            updateAtDefaultResolution(cache, accessibleSystem("m", 0, 0), accessibleSystem("n", 2000, 0));
+
+            assertThat(cache.getCellEdgesBySystemId()).containsKey("m");
+            assertThat(cache.getCellEdgesBySystemId().get("m")).isNotEmpty();
+        }
+
+        @Test
+        void updateExcludingAnIsolatedSystemLeavesDistantCellsUntouched() {
+            var cache = new PoliticalMapGeometryCache();
+            updateAtDefaultResolution(cache, accessibleSystem("m", 0, 0), accessibleSystem("f", FAR, 0));
+            var distantBefore = cache.getCellEdgesBySystemId().get("f");
+
+            // "m" starts moving but has no neighbour within a neighbourhood radius, so
+            // its removal touches only itself; "f" keeps the same cell object.
+            updateExcluding(cache, Set.of("m"),
+                    accessibleSystem("m", 0, 0), accessibleSystem("f", FAR, 0));
+
+            assertThat(cache.getCellEdgesBySystemId()).doesNotContainKey("m");
+            assertThat(cache.getCellEdgesBySystemId().get("f")).isSameAs(distantBefore);
+        }
     }
 
     // The distinct neighbouring system ids one cell names across its edges,
@@ -169,12 +227,20 @@ final class PoliticalMapGeometryCacheTest {
         return neighbours;
     }
 
-    // Runs an update at the default frontier resolution, the count cells stay at
-    // unless the tuning knob changes it. The access-diff tests use this so the only
-    // thing that drives a rebuild is the reachable set.
+    // Runs an update at the default frontier resolution with no movers, the count
+    // cells stay at unless the tuning knob changes it. The access-diff tests use this
+    // so the only thing that drives a rebuild is the reachable set.
     private static void updateAtDefaultResolution(PoliticalMapGeometryCache cache,
             StarSystemAPI... systems) {
-        cache.updateFromSector(sectorOf(systems), DEFAULT_BOUND_SEGMENTS);
+        cache.updateFromSector(sectorOf(systems), NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS);
+    }
+
+    // Runs an update at the default frontier resolution with the named systems
+    // excluded from the partition as movers. The exclusion tests use this to drop a
+    // system: it seeds no cell and clips no neighbour.
+    private static void updateExcluding(PoliticalMapGeometryCache cache,
+            Set<String> movingSystemIds, StarSystemAPI... systems) {
+        cache.updateFromSector(sectorOf(systems), movingSystemIds, DEFAULT_BOUND_SEGMENTS);
     }
 
     private static SectorAPI sectorOf(StarSystemAPI... systems) {

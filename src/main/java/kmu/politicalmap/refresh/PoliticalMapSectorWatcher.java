@@ -26,6 +26,14 @@ import java.util.Map;
  * re-discovers collapse to a single reshape, and a change no listener saw is
  * caught here and reshaped just as narrowly.
  *
+ * <p>A third axis handles systems that move. Each poll also observes on-map positions
+ * through {@link MovingSystems}, which flags a system that rewrites its own hyperspace
+ * position so the geometry can leave it out of the partition rather than chase it.
+ * When that moving set changes - a system starts or stops moving - the geometry is
+ * stale through the same refresh a visibility change uses, since the mover joins or
+ * leaves the cell layout. A system that merely keeps moving changes nothing, since it
+ * is already excluded, so a steady drifter never churns the map.
+ *
  * <p>Throttled to a few seconds: these transitions are rare, and the map is
  * usually reopened after one, so it need not be instant. The first poll only
  * establishes the baselines. A transient script: pure runtime logic, re-added on
@@ -81,20 +89,34 @@ public class PoliticalMapSectorWatcher implements EveryFrameScript {
         }
     }
 
-    // Re-reads the snapshot in one sector walk and routes each half to the refresh
-    // it needs: a visibility move rebuilds geometry, an owner-map diff marks just
-    // the changed systems stale. The first poll only establishes the baselines.
+    // Re-reads the snapshot and stages on-map positions, then routes each axis to the
+    // refresh it needs: a visibility move or an accepted system move rebuilds geometry,
+    // an owner-map diff marks just the changed systems stale. The first poll only
+    // establishes the baselines.
     private void pollSnapshot() {
         var snapshot = PoliticalMapSectorSnapshot.scan(Global.getSector());
+        // Observe positions every poll so a system that starts or stops moving is
+        // taken out of, or returned to, the partition. Only a change to the moving set
+        // stales the geometry; a system that keeps moving is already excluded, so it
+        // reports no change and never churns the map.
+        var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(Global.getSector());
         var isFirstPoll = !hasPolled;
-        if (isFirstPoll || snapshot.visibilityFingerprint() != lastVisibilityFingerprint) {
+        var hasVisibilityChanged =
+                isFirstPoll || snapshot.visibilityFingerprint() != lastVisibilityFingerprint;
+        if (hasVisibilityChanged) {
             LOG.debug("Political map visibility fingerprint changed; old="
                     + (isFirstPoll ? 0 : lastVisibilityFingerprint) + " new="
                     + snapshot.visibilityFingerprint() + " firstPoll=" + isFirstPoll);
             lastVisibilityFingerprint = snapshot.visibilityFingerprint();
-            if (!isFirstPoll) {
-                PoliticalMapRefresh.requestGeometryRefresh();
+        }
+        // One geometry refresh covers both triggers: the rebuild reads the fresh moving
+        // set and reachable set whole, so a request is issued once even when visibility
+        // and the moving set both changed. The first poll only seeds the baselines.
+        if (!isFirstPoll && (hasVisibilityChanged || hasMovingSetChanged)) {
+            if (!hasVisibilityChanged) {
+                LOG.debug("Political map moving set changed");
             }
+            PoliticalMapRefresh.requestGeometryRefresh();
         }
         if (!isFirstPoll) {
             markChangedOwners(lastOwnerBySystemId, snapshot.ownerBySystemId());

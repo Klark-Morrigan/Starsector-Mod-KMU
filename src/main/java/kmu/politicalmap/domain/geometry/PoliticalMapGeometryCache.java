@@ -3,11 +3,11 @@ package kmu.politicalmap.domain.geometry;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
 
-import kmu.politicalmap.domain.visibility.MapVisibleStars;
-import kmu.politicalmap.domain.visibility.PoliticalMapVisibility;
+import kmu.politicalmap.domain.visibility.DrawnSystemPositions;
 
 import org.apache.log4j.Logger;
 
@@ -34,6 +34,15 @@ import java.util.Set;
  * cache) rebuilds everything, since every system is "added". A change to the
  * frontier resolution passed in is the one input that also forces a full rebuild:
  * it seeds every cell, so it invalidates them all regardless of the access diff.
+ *
+ * <p>Moving systems are excluded from the partition. A system that rewrites its own
+ * hyperspace position (a mobile colony) has no stable cell to draw, and letting it
+ * clip its neighbours would drag their borders around with it, so the moving-system
+ * ids passed in are dropped from the site set: a mover seeds no cell and clips no
+ * neighbour, and the surrounding cells fill the space as if it were absent. Because a
+ * mover is simply out of the site set, its entering or leaving that set reads as an
+ * ordinary remove or add in the diff - it comes to rest and rejoins with no special
+ * case here.
  *
  * <p>Each system's cell is kept as a list of {@link CellEdge}s - the raw convex
  * cell and, at once, the cell-adjacency graph. Every edge is tagged with the
@@ -73,18 +82,23 @@ public final class PoliticalMapGeometryCache {
     /**
      * Brings the cache in line with the sector's current on-map systems,
      * rebuilding only the outlines affected by systems that joined or left the
-     * map. A no-op when the on-map set is unchanged.
+     * partition - including a system that entered or left it by starting or stopping
+     * moving. A no-op when the participating set is unchanged.
      *
-     * @param sector        the sector to read; null clears nothing and does nothing
-     * @param boundSegments the frontier resolution to seed each cell at (sides of
-     *                      the max-radius bound polygon); a change from the last
-     *                      update reseeds every cell, since it is a per-cell input
+     * @param sector          the sector to read; null clears nothing and does nothing
+     * @param movingSystemIds the systems currently moving, left out of the partition -
+     *                        each seeds no cell and clips no neighbour, so the cells
+     *                        around it fill the space as if it were absent
+     * @param boundSegments   the frontier resolution to seed each cell at (sides of
+     *                        the max-radius bound polygon); a change from the last
+     *                        update reseeds every cell, since it is a per-cell input
      */
-    public void updateFromSector(SectorAPI sector, int boundSegments) {
+    public void updateFromSector(SectorAPI sector, Set<String> movingSystemIds,
+            int boundSegments) {
         // Timed independently of the profiler so the per-update cost (the whole
         // diff, or a full rebuild) reads straight from the log.
         var start = System.nanoTime();
-        var newSites = collectAccessibleSites(sector);
+        var newSites = collectAccessibleSites(sector, movingSystemIds);
 
         // The bound-segment count seeds every cell's frontier polygon, so a change
         // invalidates all cached cells regardless of the access diff. Drop them so
@@ -100,17 +114,18 @@ public final class PoliticalMapGeometryCache {
         var removed = new LinkedHashSet<String>(siteBySystemId.keySet());
         removed.removeAll(newSites.keySet());
         if (added.isEmpty() && removed.isEmpty()) {
-            // A refresh was requested but the reachable set is identical (e.g. a
-            // fingerprint collision, or a non-access change). Logged so a "why
-            // did nothing rebuild" question has an answer - and the diff cost
-            // (scanning every system) shows even when nothing rebuilds.
+            // A refresh was requested but the participating set is identical (e.g. a
+            // fingerprint collision, or a non-access change). Logged so a "why did
+            // nothing rebuild" question has an answer - and the diff cost (scanning
+            // every system) shows even when nothing rebuilds.
             LOG.debug("Political map geometry unchanged; reachableSites=" + newSites.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - start));
             return;
         }
 
-        // Outlines to recompute: each added site, plus every site near a site
-        // that was added (it cedes area) or removed (it reclaims area). Read
+        // Outlines to recompute: each added site, plus every site near a site that
+        // was added (it cedes area) or removed (it reclaims area). A system that
+        // started or stopped moving is an add or a remove here like any other. Read
         // removed sites' positions from the old map before it is replaced.
         var affected = new LinkedHashSet<String>(added);
         for (var id : added) {
@@ -144,10 +159,11 @@ public final class PoliticalMapGeometryCache {
             recomputedCellEdges += edges.size();
         }
 
-        // The geometric diff: which systems entered/left the map, how many cells
-        // were recomputed and at what edge cost, and how long it took. The primary
-        // trace for a cell that is misshapen, missing, or left behind after an
-        // access change, and for how heavy a rebuild the change triggered.
+        // The geometric diff: which systems entered/left the partition (an access
+        // change, or a system starting or stopping moving), how many cells were
+        // recomputed and at what edge cost, and how long it took. The primary trace
+        // for a cell that is misshapen, missing, or left behind after such a change,
+        // and for how heavy a rebuild it triggered.
         LOG.debug("Political map geometry rebuilt; added=" + added.size()
                 + " removed=" + removed.size() + " recomputedCells=" + affected.size()
                 + " recomputedCellEdges=" + recomputedCellEdges
@@ -175,22 +191,13 @@ public final class PoliticalMapGeometryCache {
         return Collections.unmodifiableMap(siteBySystemId);
     }
 
-    private static Map<String, double[]> collectAccessibleSites(SectorAPI sector) {
-        var sites = new LinkedHashMap<String, double[]>();
-        if (sector == null) {
-            return sites;
-        }
-        // Scanned once for the whole walk so each system's access check is an
-        // O(1) lookup rather than a per-system hyperspace rescan.
-        var visibleStars = MapVisibleStars.scan(sector);
-        for (var system : sector.getStarSystems()) {
-            var location = system.getLocation();
-            if (location == null
-                    || !PoliticalMapVisibility.shouldAppearOnMap(sector, system, visibleStars)) {
-                continue;
-            }
-            sites.put(system.getId(), new double[] {location.x, location.y});
-        }
+    // The live sites the partition is built from: every drawn system's position,
+    // minus the ones currently moving. A mover is left out so it seeds no cell and
+    // clips no neighbour; the cells around it fill the space as if it were absent.
+    private static Map<String, double[]> collectAccessibleSites(SectorAPI sector,
+            Set<String> movingSystemIds) {
+        var sites = DrawnSystemPositions.collectLivePositions(sector);
+        sites.keySet().removeAll(movingSystemIds);
         return sites;
     }
 
@@ -200,9 +207,7 @@ public final class PoliticalMapGeometryCache {
         var near = new LinkedHashSet<String>();
         var maxDistanceSquared = NEIGHBOURHOOD_RADIUS * NEIGHBOURHOOD_RADIUS;
         for (var entry : sites.entrySet()) {
-            var deltaX = entry.getValue()[0] - origin[0];
-            var deltaY = entry.getValue()[1] - origin[1];
-            if (deltaX * deltaX + deltaY * deltaY <= maxDistanceSquared) {
+            if (Points.computeDistanceSquared(origin, entry.getValue()) <= maxDistanceSquared) {
                 near.add(entry.getKey());
             }
         }

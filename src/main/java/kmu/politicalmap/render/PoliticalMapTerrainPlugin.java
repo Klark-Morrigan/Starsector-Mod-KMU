@@ -9,6 +9,7 @@ import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
+import kmu.politicalmap.refresh.MovingSystems;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
 import kmu.politicalmap.render.model.ClusterAnchor;
 import kmu.politicalmap.render.model.PoliticalMapDebugDrawables;
@@ -311,11 +312,15 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the
-    // cells affected by an access change - or every cell, when the frontier resolution
-    // changed, since that reseeds them all.
+    // cells affected by an access change or a system starting or stopping moving - or
+    // every cell, when the frontier resolution changed, since that reseeds them all.
+    // Feeds the cache the currently-moving systems so they are left out of the
+    // partition (they seed no cell and clip no neighbour).
     private void rebuildGeometry(int boundSegments) {
+        var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
         KmuProfiling.getProfiler().measure("politicalMap.updateGeometry",
-                () -> geometryCache.updateFromSector(Global.getSector(), boundSegments));
+                () -> geometryCache.updateFromSector(
+                        Global.getSector(), movingSystemIds, boundSegments));
     }
 
     // One-shot diagnostic for the no-draw investigation. Guarded on isDebugEnabled so

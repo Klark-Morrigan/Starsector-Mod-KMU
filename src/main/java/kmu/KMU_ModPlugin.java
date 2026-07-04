@@ -4,6 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.politicalmap.refresh.MovingSystems;
 import kmu.politicalmap.refresh.PoliticalMapSectorWatcher;
 import kmu.politicalmap.refresh.listeners.PoliticalMapColonizationListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
@@ -180,15 +181,20 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
     // Registers the per-frame watcher that refreshes the political map when a
     // change the engine fires no event for slips past the listeners - the set of
-    // drawn systems shifting (a gate activating, a jump point established) or a
-    // drawn system changing hands (an AI colony founded in a system already on the
-    // map). Transient: not saved, so it is re-added fresh each load and never
-    // duplicates across reloads.
+    // drawn systems shifting (a gate activating, a jump point established), a drawn
+    // system changing hands (an AI colony founded in a system already on the map),
+    // or a mobile system drifting to a new position. Transient: not saved, so it is
+    // re-added fresh each load and never duplicates across reloads.
     static void installPoliticalMapSectorWatcher(SectorAPI sector) {
         if (sector == null) {
             return;
         }
 
+        // Clear observed positions from any earlier save this app session: the shared
+        // tracker outlives a single save, so a system id reused across saves would
+        // otherwise be compared against the previous save's last-seen position until
+        // the first poll re-seeds it.
+        MovingSystems.getInstance().reset();
         sector.addTransientScript(new PoliticalMapSectorWatcher());
     }
 
