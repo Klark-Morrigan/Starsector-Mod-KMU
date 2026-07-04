@@ -34,8 +34,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The corner-rounding gate also covers the factionless (decivilised and uninhabited)
  * cell outlines, which reuse the same rounding. Like the visual fields all feed the same
  * drawables rebuild, so a change takes effect live. The "Label anchors" section that
- * follows carries the label-anchor fit's modifiers - horizontal bias, end inset, and
- * icon clearance - live for the same reason: the fit is tuned by eye on the open map.
+ * follows carries the label-anchor search's modifiers - the direction and offset counts
+ * that size the candidate grid, the vertical-penalty strength and exponent that trade a
+ * line's slope against its length, and the end inset and icon clearance every candidate
+ * is trimmed by - live for the same reason: the search is tuned by eye on the open map.
  *
  * <p>The "Dev" tab also carries the cell frontier resolution - the vertex count of
  * each raw Voronoi cell's rounded reach into empty space. It is the one field that
@@ -159,12 +161,24 @@ public final class KmuLunaSettings {
             "kmu_politicalMapBorderCornerSegments";
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
             "kmu_politicalMapBorderChamferAngle";
-    // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor fit - the
-    // straight line a faction name will sit on, refit inside the national border and
-    // clear of the system icons. Live knobs rather than constants so the fit can be
-    // tuned on the open map; all feed the drawables rebuild, which re-fits every anchor.
-    private static final String ANCHOR_HORIZONTAL_BIAS_FIELD =
-            "kmu_politicalMapAnchorHorizontalBias";
+    // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor search -
+    // the straight line a faction name will sit on, chosen by scoring many candidate
+    // lines swept across the cluster (a fan of directions times a family of parallel
+    // offsets), each fit inside the national border and clear of the system icons. Live
+    // knobs rather than constants so the search can be tuned on the open map; all feed
+    // the drawables rebuild, which re-runs the search for every anchor. The direction and
+    // offset counts size the candidate grid; the vertical-penalty strength and exponent
+    // shape how much a shallower (more horizontal) line may sacrifice in length and still
+    // win, so horizontal preference is decided on measured lengths rather than by bending
+    // any direction before the fit.
+    private static final String ANCHOR_DIRECTION_COUNT_FIELD =
+            "kmu_politicalMapAnchorDirectionCount";
+    private static final String ANCHOR_OFFSET_COUNT_FIELD =
+            "kmu_politicalMapAnchorOffsetCount";
+    private static final String ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD =
+            "kmu_politicalMapAnchorVerticalPenaltyStrength";
+    private static final String ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD =
+            "kmu_politicalMapAnchorVerticalPenaltyExponent";
     private static final String ANCHOR_END_INSET_MULTIPLE_FIELD =
             "kmu_politicalMapAnchorEndInsetMultiple";
     private static final String ANCHOR_ICON_CLEARANCE_FIELD =
@@ -249,8 +263,11 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
-    // Label-anchor fit knobs.
-    private static final double DEFAULT_ANCHOR_HORIZONTAL_BIAS = 0.5;
+    // Label-anchor search knobs.
+    private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
+    private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
+    private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH = 0.5;
+    private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT = 2.0;
     private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 2.5;
     private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 120.0;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
@@ -589,14 +606,50 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return how strongly a cluster's label anchor leans horizontal: the scale
-     *         applied to the anchor axis's vertical component before the fit, 1 for
-     *         no bias, 0 for flat horizontal - a soft lean, so an ambiguous cluster
-     *         tips horizontal while a strongly vertical one stays vertical
+     * @return how many directions the label-anchor search fans over the half-circle
+     *         (0..180 degrees, since a label line is undirected); more directions
+     *         let the accepted line align more closely with the cluster's open space
+     *         at a higher search cost. Pure horizontal and the cluster's own principal
+     *         axis are always searched on top of the fan
      */
-    public static double getPoliticalMapAnchorHorizontalBias() {
-        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_HORIZONTAL_BIAS_FIELD,
-                DEFAULT_ANCHOR_HORIZONTAL_BIAS);
+    public static int getPoliticalMapAnchorDirectionCount() {
+        return LunaSettingsReader.getInt(MOD_ID, ANCHOR_DIRECTION_COUNT_FIELD,
+                DEFAULT_ANCHOR_DIRECTION_COUNT);
+    }
+
+    /**
+     * @return how many parallel lines the search sweeps across the cluster per
+     *         direction, spaced evenly over the cluster's extent perpendicular to
+     *         that direction; this is what lets the accepted line slide off the
+     *         centroid into a roomier part of the cluster. 1 degenerates to a single
+     *         centred line per direction
+     */
+    public static int getPoliticalMapAnchorOffsetCount() {
+        return LunaSettingsReader.getInt(MOD_ID, ANCHOR_OFFSET_COUNT_FIELD,
+                DEFAULT_ANCHOR_OFFSET_COUNT);
+    }
+
+    /**
+     * @return how much length a shallower (more horizontal) candidate line may give
+     *         up and still win the search, 0..1: a candidate's clear length is scaled
+     *         by {@code 1 - strength * sin(angle)^exponent}, so 0 picks the pure
+     *         longest line regardless of slope and 1 scores a vertical line zero
+     */
+    public static double getPoliticalMapAnchorVerticalPenaltyStrength() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD,
+                DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH);
+    }
+
+    /**
+     * @return how sharply the vertical penalty concentrates toward vertical: the
+     *         exponent on {@code sin(angle)} in the score, at least 1. A higher
+     *         exponent leaves already-shallow lines almost unpenalised and bites only
+     *         as a line approaches vertical, the falloff a flat vertical-component
+     *         scale got backwards
+     */
+    public static double getPoliticalMapAnchorVerticalPenaltyExponent() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD,
+                DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT);
     }
 
     /**

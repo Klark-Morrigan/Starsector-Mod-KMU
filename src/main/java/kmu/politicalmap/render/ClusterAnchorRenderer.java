@@ -10,7 +10,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.List;
 
 /**
- * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's centroid
+ * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's anchor
  * dot plus its accepted, rejected, and unbiased label lines.
  *
  * <p>Its own renderer, apart from {@link PoliticalMapRenderer}, because the anchors are
@@ -36,7 +36,7 @@ final class ClusterAnchorRenderer {
     // verdict - rejected candidates in red, unbiased comparisons in yellow, accepted
     // label lines in green - one color pass across all anchors per layer, so where lines
     // overlap the accepted verdict always reads on top; the dots, in each owner's bright
-    // faction shade, go over everything to keep the cluster marker visible even under a
+    // faction shade, go over everything to keep the anchor marker visible even under a
     // pile of lines. Empty (nothing emitted) unless the dev toggle built the anchors, so
     // the normal map pays only an empty-list check; a state push/pop isolates the blend,
     // line, and point settings from the rest of the map render.
@@ -81,7 +81,7 @@ final class ClusterAnchorRenderer {
         for (var anchor : anchors) {
             GlColor.set(anchor.color(), alphaMult);
             GL11.glBegin(GL11.GL_POINTS);
-            GL11.glVertex2f(anchor.centroidX() * factor, anchor.centroidY() * factor);
+            GL11.glVertex2f(anchor.anchorX() * factor, anchor.anchorY() * factor);
             GL11.glEnd();
         }
     }
