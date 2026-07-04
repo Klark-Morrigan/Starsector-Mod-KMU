@@ -10,13 +10,16 @@ import kmlib.profiling.Timings;
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
+import kmu.politicalmap.render.model.ClusterAnchor;
 import kmu.politicalmap.render.model.PoliticalMapDebugDrawables;
 import kmu.politicalmap.render.model.PoliticalMapDrawables;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 
 /**
  * Terrain plugin that paints the political map's faction territory on the sector (M)
@@ -28,7 +31,10 @@ import java.util.EnumSet;
  * ownership changes, and {@link PoliticalMapRenderer} emits the GL. While the "debug
  * border tracing" dev toggle is on, {@link DebugBorderTracingBuilder} and
  * {@link PoliticalMapStaticDebugRenderer} replace the normal build and render with a
- * layered view of the border-smoothing pipeline's stages.
+ * layered view of the border-smoothing pipeline's stages. The debug cluster anchors are
+ * independent of that swap: {@link ClusterAnchorsBuilder} rebuilds them alongside
+ * whichever view was built and {@link ClusterAnchorRenderer} draws them over it, so the
+ * two debug facilities compose instead of the border view hiding the anchors.
  *
  * <p>Terrain is the surface because the sector map renders terrain through
  * {@code renderOnMap} - the same hook the vanilla nebulae draw with. A custom campaign
@@ -91,6 +97,12 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // for the same reasons as the drawables above.
     private transient PoliticalMapDebugDrawables debugDrawables;
 
+    // The debug cluster-anchor overlay, owned here rather than by either view above so
+    // it draws over whichever is live - turning border tracing on must not hide the
+    // anchors. Empty unless the "show cluster anchors" dev toggle built it. Transient
+    // for the same reasons as the views; recreated lazily in rebuildStaleHalves.
+    private transient List<ClusterAnchor> clusterAnchors;
+
     // The revisions each half of the cache was built against. Geometry rebuilds when
     // the reachable-system set changes or the frontier resolution setting changes (it
     // reseeds every cell); the drawables rebuild on a content change (settings) or
@@ -140,6 +152,9 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         } else {
             PoliticalMapRenderer.renderOnMap(drawables, factor, alphaMult);
         }
+        // The anchor overlay layers over whichever base view just drew - it is
+        // independent of the swap above, so the two debug toggles compose.
+        ClusterAnchorRenderer.renderOnMap(clusterAnchors, factor, alphaMult);
     }
 
     // Rebuilds only the stale half of the cache. The expensive cell geometry is rebuilt
@@ -176,6 +191,12 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         if (geometryCache == null) {
             geometryCache = new PoliticalMapGeometryCache();
             lastGeometryRevision = -1;
+        }
+        // Same restore path for the anchor overlay: transient, so a save-restored plugin
+        // comes back with it null. Recreated empty here - before any rebuild work can
+        // throw - so the render below always has a list to draw.
+        if (clusterAnchors == null) {
+            clusterAnchors = new ArrayList<>();
         }
 
         var rebuiltCells = false;
@@ -216,15 +237,21 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             // normal render, so in debug mode the production draw lists are not built at
             // all, and the unused view is nulled. The toggle is a KMU setting, so flipping
             // it bumps the content revision and forces this rebuild - which is what swaps
-            // the two.
+            // the two. The anchor overlay rebuilds either way - it draws over both views -
+            // borrowing the normal build's owner map when there is one, resolving its own
+            // from the sector when the debug build left none behind.
             if (KmuLunaSettings.shouldTraceBordersForDebug()) {
                 debugDrawables = DebugBorderTracingBuilder.buildDebugDrawables(
                         geometryCache, Global.getSector());
                 drawables = null;
+                ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                        clusterAnchors, geometryCache, Global.getSector());
             } else {
                 drawables = DrawablesBuilder.buildDrawables(
                         geometryCache, Global.getSector());
                 debugDrawables = null;
+                ClusterAnchorsBuilder.rebuildClusterAnchors(
+                        clusterAnchors, geometryCache, drawables.getOwnerBySystemId());
             }
             lastContentRevision = contentRevision;
             // A full rebuild re-derives every system, so any pending per-system
@@ -241,7 +268,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // lists to patch, so its staleness is drained instead - it refreshes on the next
         // full rebuild (any settings or geometry change).
         if (drawables != null) {
-            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(drawables, geometryCache);
+            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(drawables, clusterAnchors,
+                    geometryCache);
         } else {
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
         }

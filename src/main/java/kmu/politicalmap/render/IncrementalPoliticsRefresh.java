@@ -9,6 +9,7 @@ import kmu.politicalmap.domain.geometry.CellShaper;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
+import kmu.politicalmap.render.model.ClusterAnchor;
 import kmu.politicalmap.render.model.PoliticalMapDrawables;
 
 import org.apache.log4j.Logger;
@@ -39,10 +40,12 @@ final class IncrementalPoliticsRefresh {
     }
 
     // Drains the systems a colony resize marked stale and folds their ownership changes
-    // into the standing drawables. The stale drain runs first, so a frame with nothing
-    // marked returns before touching the sector - the cheap per-frame path.
+    // into the standing drawables and the anchor overlay. The stale drain runs first, so
+    // a frame with nothing marked returns before touching the sector - the cheap
+    // per-frame path. The anchor list rides along because it is the plugin's own overlay,
+    // not part of the drawables, yet must track the same ownership the cells do.
     static void applyStalePoliticsUpdates(PoliticalMapDrawables drawables,
-            PoliticalMapGeometryCache geometryCache) {
+            List<ClusterAnchor> clusterAnchors, PoliticalMapGeometryCache geometryCache) {
         var staleSystemIds = PoliticalMapRefresh.drainStalePoliticsSystemIds();
         if (staleSystemIds.isEmpty()) {
             return;
@@ -81,7 +84,8 @@ final class IncrementalPoliticsRefresh {
             // one bridges two), so re-fit every anchor off the updated owners rather than
             // patching the touched factions' anchors alone. A no-op while the toggle is
             // off. Runs only on a real flip - the early return above already left.
-            DrawablesBuilder.rebuildClusterAnchors(drawables, geometryCache);
+            ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
+                    drawables.getOwnerBySystemId());
             LOG.debug("Political map politics updated incrementally; stale="
                     + staleSystemIds.size() + " reshapedCells=" + cellsToReshape.size()
                     + " rebuiltFactions=" + affectedFactionIds.size());

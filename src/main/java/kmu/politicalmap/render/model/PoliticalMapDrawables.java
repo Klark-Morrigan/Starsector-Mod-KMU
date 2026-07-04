@@ -3,10 +3,8 @@ package kmu.politicalmap.render.model;
 import kmu.politicalmap.domain.politics.DominantOwner;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,10 +30,6 @@ public final class PoliticalMapDrawables {
     // Render output, mutated in place by the incremental refresh.
     private final Map<String, StyledCell> styledCellBySystemId;
     private final Map<String, FactionTerritory> factionTerritoryByFactionId;
-    // Debug label anchors, one per contiguous system cluster; empty unless the "show
-    // cluster anchors" dev toggle is on. Rebuilt in place whenever ownership shifts, so
-    // it tracks the cells and factions alongside the two draw lists above.
-    private final List<ClusterAnchor> clusterAnchors;
     // Retained derivation inputs. The owner map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
     private final Map<String, DominantOwner> ownerBySystemId;
@@ -49,7 +43,6 @@ public final class PoliticalMapDrawables {
     public PoliticalMapDrawables(
             Map<String, StyledCell> styledCellBySystemId,
             Map<String, FactionTerritory> factionTerritoryByFactionId,
-            List<ClusterAnchor> clusterAnchors,
             Map<String, DominantOwner> ownerBySystemId,
             Set<String> decivilisedSystemIds,
             Color neutralColor,
@@ -59,7 +52,6 @@ public final class PoliticalMapDrawables {
             MapStyle uninhabitedStyle) {
         this.styledCellBySystemId = styledCellBySystemId;
         this.factionTerritoryByFactionId = factionTerritoryByFactionId;
-        this.clusterAnchors = clusterAnchors;
         this.ownerBySystemId = ownerBySystemId;
         this.decivilisedSystemIds = decivilisedSystemIds;
         this.neutralColor = neutralColor;
@@ -75,7 +67,7 @@ public final class PoliticalMapDrawables {
     // which needs the styles - can run, so the null styles here are never read.
     public static PoliticalMapDrawables createEmpty() {
         return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
-                new ArrayList<>(), new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
+                new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
                 null, null, null, null);
     }
 
@@ -85,10 +77,6 @@ public final class PoliticalMapDrawables {
 
     public Map<String, FactionTerritory> getFactionTerritoryByFactionId() {
         return factionTerritoryByFactionId;
-    }
-
-    public List<ClusterAnchor> getClusterAnchors() {
-        return clusterAnchors;
     }
 
     public Map<String, DominantOwner> getOwnerBySystemId() {
@@ -120,10 +108,8 @@ public final class PoliticalMapDrawables {
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push
-    // entirely. The debug anchors count too, so the overlay still draws when only they
-    // are present.
+    // entirely.
     public boolean isEmpty() {
-        return styledCellBySystemId.isEmpty() && factionTerritoryByFactionId.isEmpty()
-                && clusterAnchors.isEmpty();
+        return styledCellBySystemId.isEmpty() && factionTerritoryByFactionId.isEmpty();
     }
 }

@@ -3,7 +3,6 @@ package kmu.politicalmap.render;
 import kmlib.opengl.GlColor;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.politicalmap.render.model.ClusterAnchor;
 import kmu.politicalmap.render.model.PoliticalMapDrawables;
 
 import org.lwjgl.opengl.GL11;
@@ -11,7 +10,9 @@ import org.lwjgl.opengl.GL11;
 /**
  * Paints the political map's pre-built draw lists on the sector (M) map: the faction
  * fills first, then the interior seams, factionless outlines, and national borders
- * over them, and last the debug cluster anchors when the dev toggle built any.
+ * over them. The debug cluster anchors are not drawn here: they are an independent
+ * overlay ({@link ClusterAnchorRenderer}) the terrain plugin layers over whichever
+ * base view is live.
  *
  * <p>This is pure GL emission over an already-baked {@link PoliticalMapDrawables} - it
  * scales each world coordinate into map space and strokes/fills the flattened vertex
@@ -20,14 +21,6 @@ import org.lwjgl.opengl.GL11;
  * scale is applied here.
  */
 final class PoliticalMapRenderer {
-    // The debug anchor dot's diameter in screen pixels (GL_POINTS sizes in pixels, so it
-    // stays a constant dot at any zoom) and its axis line's width. Sized to read over the
-    // fills and borders without swamping the systems they mark. The lines' colors come
-    // from the shared {@link DiagnosticPalette}, so the anchor overlay and the
-    // border-tracing overlay grade their layers identically.
-    private static final float ANCHOR_DOT_SIZE = 10f;
-    private static final float ANCHOR_AXIS_WIDTH = 2f;
-
     // Emits only; never instantiated.
     private PoliticalMapRenderer() {
     }
@@ -44,8 +37,7 @@ final class PoliticalMapRenderer {
             return;
         }
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT
-                | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_LINE_BIT | GL11.GL_POINT_BIT
-                | GL11.GL_HINT_BIT);
+                | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_LINE_BIT | GL11.GL_HINT_BIT);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -59,8 +51,6 @@ final class PoliticalMapRenderer {
             profiler.measure("politicalMap.render.fills", () -> drawFills(drawables, factor, alphaMult));
             profiler.measure("politicalMap.render.borders",
                     () -> drawBorders(drawables, factor, alphaMult));
-            profiler.measure("politicalMap.render.anchors",
-                    () -> drawClusterAnchors(drawables, factor, alphaMult));
         });
 
         GL11.glPopAttrib();
@@ -128,51 +118,4 @@ final class PoliticalMapRenderer {
         }
     }
 
-    // Draws each cluster's debug label anchor over the fills and borders. The lines
-    // layer bottom to top by verdict - rejected candidates in red, unbiased comparisons
-    // in yellow, accepted label lines in green - one color pass across all anchors per
-    // layer, so where lines overlap the accepted verdict always reads on top; the dots,
-    // in each owner's bright faction shade, go over everything to keep the cluster
-    // marker visible even under a pile of lines. Empty (nothing emitted) unless the dev
-    // toggle built the anchors, so the normal map pays only an empty-list check. The
-    // dot is a fixed-pixel GL_POINTS mark; each line is one GL_LINES segment.
-    private static void drawClusterAnchors(PoliticalMapDrawables drawables, float factor,
-            float alphaMult) {
-        var anchors = drawables.getClusterAnchors();
-        if (anchors.isEmpty()) {
-            return;
-        }
-        GL11.glPointSize(ANCHOR_DOT_SIZE);
-        GL11.glLineWidth(ANCHOR_AXIS_WIDTH);
-        GlColor.set(DiagnosticPalette.DISCARDED_COLOR, alphaMult);
-        for (var anchor : anchors) {
-            drawAxisSegment(anchor.rejectedAxis(), factor);
-        }
-        GlColor.set(DiagnosticPalette.INTERMEDIATE_COLOR, alphaMult);
-        for (var anchor : anchors) {
-            drawAxisSegment(anchor.unbiasedAxis(), factor);
-        }
-        GlColor.set(DiagnosticPalette.ACCEPTED_COLOR, alphaMult);
-        for (var anchor : anchors) {
-            drawAxisSegment(anchor.acceptedAxis(), factor);
-        }
-        for (var anchor : anchors) {
-            GlColor.set(anchor.color(), alphaMult);
-            GL11.glBegin(GL11.GL_POINTS);
-            GL11.glVertex2f(anchor.centroidX() * factor, anchor.centroidY() * factor);
-            GL11.glEnd();
-        }
-    }
-
-    // Strokes one of an anchor's lines; an anchor without that line carries null and
-    // emits nothing - a collapsed fit, or a diagnostic whose toggle is off.
-    private static void drawAxisSegment(ClusterAnchor.AxisSegment segment, float factor) {
-        if (segment == null) {
-            return;
-        }
-        GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2f(segment.startX() * factor, segment.startY() * factor);
-        GL11.glVertex2f(segment.endX() * factor, segment.endY() * factor);
-        GL11.glEnd();
-    }
 }
