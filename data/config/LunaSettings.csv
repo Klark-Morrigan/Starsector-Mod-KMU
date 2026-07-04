@@ -1,6 +1,6 @@
 fieldID,,,,fieldName,,fieldType,defaultValue,secondaryValue,,,fieldDescription,,,minValue,maxValue,tab
-kmu_politicalMapDominanceHeader,,,,Dominance,,Header,Dominance,,,,,,,,,Political map - behavior
-kmu_politicalMapStabilityWeighsDominance,,,,Stability weighs dominance,,Boolean,true,,,,"Weigh each colony's pull on its system's dominant faction by its stability: at 0 stability a colony holds no political weight, at 5 half its size, at 10 its full size. A concealed outpost's token presence scales the same way. Turn off to rank colonies by raw size alone. Default: true.",,,,,Political map - behavior
+kmu_politicalMapDominanceHeader,,,,Dominance,,Header,Dominance,,,,,,,,,Political map - domination
+kmu_politicalMapStabilityWeighsDominance,,,,Stability weighs dominance,,Boolean,true,,,,"Weigh each colony's pull on its system's dominant faction by its stability: at 0 stability a colony holds no political weight, at 5 half its size, at 10 its full size. A concealed outpost's token presence scales the same way. Turn off to rank colonies by raw size alone. Default: true.",,,,,Political map - domination
 kmu_visualsFactionHeader,,,,Faction systems,,Header,Faction systems,,,,,,,,,Political map - visuals
 kmu_politicalMapFactionOuterBorderColor,,,,Outer border color,,Radio,Primary faction color,"Primary faction color, Secondary faction color, No color",,,"Which faction palette color the outer (national) border draws in, or No color to hide it. Default: Primary faction color.",,,,,Political map - visuals
 kmu_politicalMapFactionOuterBorderOpacity,,,,Outer border opacity,,Double,1,,,,"Political map opacity of the outer (national) border for faction systems. Default: 1.",,,0,1,Political map - visuals

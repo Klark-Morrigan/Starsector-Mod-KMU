@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * reseeds the geometry rather than restyling it, so it feeds the geometry rebuild;
  * it exists to trade map framerate against frontier smoothness.
  *
- * <p>The "Political map" tab holds the dominance rules - fields that change the
+ * <p>The "Political map - domination" tab holds the dominance rules - fields that change the
  * map's political verdicts rather than its styling, which is why they do not sit
  * under "Visuals customisation". Its one field chooses whether stability weighs
  * each colony's dominance contribution; it is on by default.
