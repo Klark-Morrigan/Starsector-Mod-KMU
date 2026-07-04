@@ -15,6 +15,12 @@ def consoleCommandsJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/
 // the install root because the mod always lives at <starsector>/mods/KMLib,
 // the directory layout the launcher expects.
 def kmlibJarFile = file("${starsectorRoot}/mods/KMLib/jars/KMLib.jar")
+// LazyLib is a hard dependency in mod_info.json (its LazyFont/DrawableString draw
+// the political-map faction names - there is no vanilla font API). The mod
+// classloader supplies the jar at runtime, so compiling against it is enough.
+// Resolved via the install root because LazyLib always lives at
+// <starsector>/mods/lw_lazylib, the launcher's expected layout.
+def lazyLibJarFile = file("${starsectorRoot}/mods/lw_lazylib/jars/LazyLib.jar")
 // Random Assortment of Things is an optional runtime dependency. KMU compiles
 // against its Abyssal Fracture type so the access rule can treat the fracture
 // as a means of arrival; the mod classloader supplies the jar at runtime when
@@ -38,15 +44,18 @@ dependencies {
     // coupling lives in KMLib's classpath, not here - KMU keeps only its
     // runtime LunaLib dependency declared in mod_info.json.
     compileOnly files(kmlibJarFile)
+    compileOnly files(lazyLibJarFile)
 
     testCompileOnly consoleCommandsJars
     testCompileOnly ratJars
     testCompileOnly nexJars
     testCompileOnly files(kmlibJarFile)
+    testCompileOnly files(lazyLibJarFile)
     testRuntimeOnly consoleCommandsJars
     testRuntimeOnly ratJars
     testRuntimeOnly nexJars
     testRuntimeOnly files(kmlibJarFile)
+    testRuntimeOnly files(lazyLibJarFile)
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -62,6 +71,15 @@ tasks.withType(JavaCompile).configureEach {
                     "Could not find KMLib jar at ${kmlibJarFile}. " +
                     "Build KMLib first (run `./gradlew jar` in mods/KMLib) " +
                     "or install it under mods/KMLib/jars/KMLib.jar.")
+        }
+        // LazyLib is a hard dependency at runtime, but its LazyFont is needed to
+        // compile the political-map faction-name renderer, so the jar must be
+        // present to build.
+        if (!lazyLibJarFile.exists()) {
+            throw new GradleException(
+                    "Could not find LazyLib jar at ${lazyLibJarFile}. " +
+                    "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
+                    "for compiling KMU's political-map faction labels.")
         }
         // RAT is optional at runtime but its Abyssal Fracture type is needed to
         // compile RandomAssortmentOfThingsMatcher, so the jar must be present

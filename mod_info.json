@@ -16,6 +16,10 @@
     {
       "id": "lunalib",
       "name": "LunaLib"
+    },
+    {
+      "id": "lw_lazylib",
+      "name": "LazyLib"
     }
   ]
 }
