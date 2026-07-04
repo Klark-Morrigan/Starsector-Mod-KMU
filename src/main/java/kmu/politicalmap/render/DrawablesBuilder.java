@@ -381,7 +381,7 @@ final class DrawablesBuilder {
         var clear = Spans.findLongestClearSubsegment(interiorSpans, centroidX, centroidY,
                 direction[0], direction[1], siteBySystemId.values(), tuning.iconClearance());
         if (clear == null) {
-            return new DirectionalFit(null, findLongestSpan(interiorSpans));
+            return new DirectionalFit(null, Spans.findLongestSpan(interiorSpans));
         }
         var start = clear[0] + tuning.endInsetDistance();
         var end = clear[1] - tuning.endInsetDistance();
@@ -389,18 +389,6 @@ final class DrawablesBuilder {
         // between the margins; the pre-inset clear span is the best rejected candidate.
         return start < end ? new DirectionalFit(new double[] {start, end}, null)
                 : new DirectionalFit(null, clear);
-    }
-
-    // The longest of a list of {tStart, tEnd} spans - the single best candidate to show
-    // when several interior spans exist but none survived the icon trim intact.
-    private static double[] findLongestSpan(List<double[]> spans) {
-        double[] longest = null;
-        for (var span : spans) {
-            if (longest == null || span[1] - span[0] > longest[1] - longest[0]) {
-                longest = span;
-            }
-        }
-        return longest;
     }
 
     // Maps a {tStart, tEnd} parameter interval back to world-coordinate endpoints along
