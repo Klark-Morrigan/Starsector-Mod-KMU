@@ -168,9 +168,10 @@ public final class KmuLunaSettings {
     // knobs rather than constants so the search can be tuned on the open map; all feed
     // the drawables rebuild, which re-runs the search for every anchor. The direction and
     // offset counts size the candidate grid; the vertical-penalty strength and exponent
-    // shape how much a shallower (more horizontal) line may sacrifice in length and still
-    // win, so horizontal preference is decided on measured lengths rather than by bending
-    // any direction before the fit.
+    // shape how much a line straying from the cluster's own lean may sacrifice in length
+    // and still win, so slant preference is decided on measured lengths rather than by
+    // bending any direction before the fit; the max-slant degrees cap that lean short of
+    // vertical (and it fades to level for round clusters whose axis is meaningless).
     private static final String ANCHOR_DIRECTION_COUNT_FIELD =
             "kmu_politicalMapAnchorDirectionCount";
     private static final String ANCHOR_OFFSET_COUNT_FIELD =
@@ -179,6 +180,8 @@ public final class KmuLunaSettings {
             "kmu_politicalMapAnchorVerticalPenaltyStrength";
     private static final String ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD =
             "kmu_politicalMapAnchorVerticalPenaltyExponent";
+    private static final String ANCHOR_MAX_SLANT_DEGREES_FIELD =
+            "kmu_politicalMapAnchorMaxSlantDegrees";
     private static final String ANCHOR_END_INSET_MULTIPLE_FIELD =
             "kmu_politicalMapAnchorEndInsetMultiple";
     private static final String ANCHOR_ICON_CLEARANCE_FIELD =
@@ -284,6 +287,7 @@ public final class KmuLunaSettings {
     private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
     private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH = 0.2;
     private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT = 2.0;
+    private static final double DEFAULT_ANCHOR_MAX_SLANT_DEGREES = 22.0;
     private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 4.0;
     private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 750.0;
     // Band-fit defaults, in world units where a distance. Aspect is a plausible
@@ -635,8 +639,8 @@ public final class KmuLunaSettings {
      * @return how many directions the label-anchor search fans over the half-circle
      *         (0..180 degrees, since a label line is undirected); more directions
      *         let the accepted line align more closely with the cluster's open space
-     *         at a higher search cost. Pure horizontal and the cluster's own principal
-     *         axis are always searched on top of the fan
+     *         at a higher search cost. Pure horizontal, the cluster's own principal
+     *         axis, and the preferred slant are always searched on top of the fan
      */
     public static int getPoliticalMapAnchorDirectionCount() {
         return LunaSettingsReader.getInt(MOD_ID, ANCHOR_DIRECTION_COUNT_FIELD,
@@ -676,6 +680,18 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapAnchorVerticalPenaltyExponent() {
         return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD,
                 DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT);
+    }
+
+    /**
+     * @return how far a label may lean off level to follow its cluster's long axis, in
+     *         degrees. The anchor search prefers this cluster-specific slant over
+     *         screen-horizontal, capped here so a tall cluster never stands its name
+     *         vertical and faded toward level as a cluster gets rounder; 0 forces
+     *         dead-horizontal labels, 90 lets a label follow its axis to vertical
+     */
+    public static double getPoliticalMapAnchorMaxSlantDegrees() {
+        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_MAX_SLANT_DEGREES_FIELD,
+                DEFAULT_ANCHOR_MAX_SLANT_DEGREES);
     }
 
     /**

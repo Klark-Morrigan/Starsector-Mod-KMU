@@ -27,8 +27,10 @@ import java.util.Map;
  * offsets) and selects among them; {@link LabelBoxFitter} sizes each into the largest
  * name-holding box - clipped inside the national border, trimmed clear of system icons,
  * pulled short of the border at both ends, and stacked into extra lines where girth is
- * spare. Shallower (more horizontal) boxes are favoured over steep ones by a
- * font-height-versus-slope score rather than by bending any direction before the fit.
+ * spare. Boxes that lean along the cluster's own axis are favoured over ones that stray
+ * from it by a font-height-versus-slope score ({@link LabelSlantPreference}) rather than
+ * by bending any direction before the fit; the preferred lean is capped short of vertical
+ * and fades to level for round clusters whose axis carries no real direction.
  *
  * <p>Its own builder, apart from {@link DrawablesBuilder}, because the anchors are an
  * independent overlay, not part of the production draw lists: they draw over the normal
@@ -103,11 +105,12 @@ final class ClusterAnchorsBuilder {
 
     // Searches one cluster's candidate lines and assembles its anchor as a fitted label
     // box. Every candidate is a direction (a fan over the half-circle, plus pure
-    // horizontal and the cluster's own axis) crossed at a parallel offset (a sweep across
-    // the cluster's perpendicular extent). At each, the box solver sizes the largest
-    // stand-in name that fits - growing the band's girth against the border, spending
-    // spare girth on extra lines - and the candidate is scored by that fitted font height
-    // docked for steep slopes. The best-scoring box wins; its clear span is the accepted
+    // horizontal, the cluster's own axis, and the preferred slant) crossed at a parallel
+    // offset (a sweep across the cluster's perpendicular extent). At each, the box solver
+    // sizes the largest stand-in name that fits - growing the band's girth against the
+    // border, spending spare girth on extra lines - and the candidate is scored by that
+    // fitted font height docked for straying from the cluster's preferred lean. The
+    // best-scoring box wins; its clear span is the accepted
     // line and its girth and line count the band a name will fill, and the span's midpoint
     // the point the name hangs on. When no box fits anywhere the anchor collapses to the
     // site centroid dot, optionally carrying the best near-miss span for the red
@@ -126,7 +129,8 @@ final class ClusterAnchorsBuilder {
 
         var fitter = newBoxFitter(tuning);
         var icons = siteBySystemId.values();
-        var directions = buildCandidateDirections(axis, tuning.directionCount());
+        var slant = LabelSlantPreference.resolveFrom(axis, tuning.maxSlantDegrees());
+        var directions = buildCandidateDirections(axis, slant, tuning.directionCount());
         LabelBoxFitter.BoxFit bestAccepted = null;
         var bestScore = 0.0;
         LabelBoxFitter.BoxFit longestAccepted = null;
@@ -139,10 +143,12 @@ final class ClusterAnchorsBuilder {
                 var placement = new Placement(rings, icons, through[0], through[1], direction);
                 var box = fitter.fitLargestBox(placement);
                 if (box != null) {
-                    // Selection docks the fitted font height for steep slopes - a
-                    // sizing-blind choice, so it lives here, not in the fitter; the
-                    // unbiased pick keeps the raw-height winner for the yellow diagnostic.
-                    var score = box.fontHeight() * slopePenaltyMultiplier(direction, tuning);
+                    // Selection docks the fitted font height for lines that stray from the
+                    // cluster's preferred slant - a sizing-blind choice, so it lives here,
+                    // not in the fitter; the unbiased pick keeps the raw-height winner for
+                    // the yellow diagnostic.
+                    var score = box.fontHeight() * slant.computePenaltyMultiplier(direction,
+                            tuning.verticalPenaltyStrength(), tuning.verticalPenaltyExponent());
                     if (bestAccepted == null || score > bestScore) {
                         bestAccepted = box;
                         bestScore = score;
@@ -185,30 +191,22 @@ final class ClusterAnchorsBuilder {
                 tuning.endInsetDistance(), new AspectNameLengthModel(tuning.bandAspect()));
     }
 
-    // The slope penalty's multiplier for a candidate direction: 1 for a horizontal line,
-    // falling toward zero as the line runs vertical - 1 - strength * rise^exponent, with
-    // rise the direction's unit vertical component. A selection bias measured on the
-    // fitted line, never a pre-rotation of the direction.
-    private static double slopePenaltyMultiplier(double[] direction, AnchorTuning tuning) {
-        var rise = Math.abs(direction[1]);
-        return 1.0 - tuning.verticalPenaltyStrength()
-                * Math.pow(rise, tuning.verticalPenaltyExponent());
-    }
-
     // The candidate directions for one cluster: an even fan of unit directions over the
     // half-circle (index 0 is exactly horizontal, so horizontal is always searched),
-    // plus the cluster's own principal axis so an elongated cluster can still fit along
-    // its long dimension between two fan spokes. Directions are lines, not arrows - the
-    // half-circle covers every slope, and the search treats a direction and its opposite
-    // as one line.
+    // plus the cluster's own principal axis so an elongated cluster can fit along its long
+    // dimension between two fan spokes, plus the preferred slant so the winner can land
+    // exactly on the cluster's capped lean rather than the nearest spoke. Directions are
+    // lines, not arrows - the half-circle covers every slope, and the search treats a
+    // direction and its opposite as one line.
     private static List<double[]> buildCandidateDirections(PrincipalAxis axis,
-            int directionCount) {
-        var directions = new ArrayList<double[]>(directionCount + 1);
+            LabelSlantPreference slant, int directionCount) {
+        var directions = new ArrayList<double[]>(directionCount + 2);
         for (var i = 0; i < directionCount; i++) {
             var angle = Math.PI * i / directionCount;
             directions.add(new double[] {Math.cos(angle), Math.sin(angle)});
         }
         directions.add(new double[] {axis.axisX(), axis.axisY()});
+        directions.add(slant.toDirection());
         return directions;
     }
 
@@ -285,8 +283,12 @@ final class ClusterAnchorsBuilder {
         if (vertexAxis.length() < Limits.MIN_EDGE_LENGTH) {
             return siteAxis;
         }
+        // The vertex cloud supplies the direction, so it also supplies the minor extent -
+        // the slant gate reads the elongation of whichever cloud gave the axis, not the
+        // site cloud's (which had no usable spread here).
         return new PrincipalAxis(siteAxis.centroidX(), siteAxis.centroidY(),
-                vertexAxis.axisX(), vertexAxis.axisY(), vertexAxis.length());
+                vertexAxis.axisX(), vertexAxis.axisY(), vertexAxis.length(),
+                vertexAxis.minorLength());
     }
 
     // Gathers every member cell's raw Voronoi edge endpoints as a point cloud - the
@@ -338,11 +340,16 @@ final class ClusterAnchorsBuilder {
      * @param directionCount         the number of directions the candidate fan spans
      *                               over the half-circle
      * @param offsetCount            the number of parallel lines swept per direction
-     * @param verticalPenaltyStrength how much length a shallower line may give up and
-     *                               still win, 0 (pure longest) to 1 (vertical scores
+     * @param verticalPenaltyStrength how much font height a line straying from the
+     *                               cluster's preferred lean may give up and still win,
+     *                               0 (pure longest) to 1 (a perpendicular line scores
      *                               zero)
-     * @param verticalPenaltyExponent the exponent on the direction's rise in the score,
-     *                               concentrating the penalty toward vertical
+     * @param verticalPenaltyExponent the exponent on the line's deviation from the lean
+     *                               in the score, concentrating the penalty toward the
+     *                               perpendicular
+     * @param maxSlantDegrees        the ceiling on the cluster-axis lean the score
+     *                               prefers, in degrees; 0 forces level labels, 90 lets
+     *                               the lean follow a tall cluster's axis to vertical
      * @param showRejectedAxis       whether a cluster whose accepted line collapsed also
      *                               carries the best rejected candidate the search found,
      *                               for the red diagnostic line
@@ -362,9 +369,9 @@ final class ClusterAnchorsBuilder {
      */
     record AnchorTuning(BorderTrace borderTrace, double endInsetDistance, double iconClearance,
             int directionCount, int offsetCount, double verticalPenaltyStrength,
-            double verticalPenaltyExponent, boolean showRejectedAxis, boolean showUnbiasedAxis,
-            double bandAspect, double bandMinThickness, double bandMaxThickness, int bandMaxLines,
-            double bandLineSpacing) {
+            double verticalPenaltyExponent, double maxSlantDegrees, boolean showRejectedAxis,
+            boolean showUnbiasedAxis, double bandAspect, double bandMinThickness,
+            double bandMaxThickness, int bandMaxLines, double bandLineSpacing) {
 
         // Reads the live tuning: the anchor knobs from the Dev "Label anchors" section
         // plus the same border trace the national border renders with. The end-inset
@@ -381,6 +388,7 @@ final class ClusterAnchorsBuilder {
                     KmuLunaSettings.getPoliticalMapAnchorOffsetCount(),
                     KmuLunaSettings.getPoliticalMapAnchorVerticalPenaltyStrength(),
                     KmuLunaSettings.getPoliticalMapAnchorVerticalPenaltyExponent(),
+                    KmuLunaSettings.getPoliticalMapAnchorMaxSlantDegrees(),
                     KmuLunaSettings.getPoliticalMapShowRejectedAxes(),
                     KmuLunaSettings.getPoliticalMapShowUnbiasedAxes(),
                     KmuLunaSettings.getPoliticalMapAnchorBandAspect(),

@@ -519,7 +519,9 @@ final class ClusterAnchorsBuilderTest {
 
         // The full tuning with the band-fit knobs exposed, for the tests that exercise real
         // girth: how thick a band the fit must hold, how tall it may grow, and how many
-        // lines it may stack a name into.
+        // lines it may stack a name into. The max slant is 0 throughout, so the label
+        // preference collapses to dead-horizontal and these fixtures pin the pre-slant line
+        // and band geometry; the slant math is pinned on its own in LabelSlantPreferenceTest.
         private static ClusterAnchorsBuilder.AnchorTuning bandTuning(double endInsetDistance,
                 double iconClearance, int directionCount, int offsetCount,
                 double verticalPenaltyStrength, double verticalPenaltyExponent,
@@ -529,7 +531,7 @@ final class ClusterAnchorsBuilderTest {
             return new ClusterAnchorsBuilder.AnchorTuning(
                     new BorderTrace(WELD_TOLERANCE, MITER_LIMIT), endInsetDistance,
                     iconClearance, directionCount, offsetCount, verticalPenaltyStrength,
-                    verticalPenaltyExponent, showRejectedAxis, showUnbiasedAxis, bandAspect,
+                    verticalPenaltyExponent, 0.0, showRejectedAxis, showUnbiasedAxis, bandAspect,
                     bandMinThickness, bandMaxThickness, bandMaxLines, bandLineSpacing);
         }
 
