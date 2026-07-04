@@ -17,6 +17,8 @@ import java.util.Set;
 import static kmu.politicalmap.domain.politics.KnownMarketFootprints.DOMINANCE_WEIGHT_SCALE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -28,7 +30,8 @@ import static org.mockito.Mockito.when;
  * station point), the stability scaling of each market's dominance weight - both
  * toggle states - and the station presence bonus (its weight in size points before
  * stability, the hidden-base rate, the NO_ORBITAL_STATION opt-out, and the toggle
- * off), plus the presence predicate the map's inhabitation test leans on.
+ * off), the zero-weight short-circuits that skip the station scan and the stability
+ * read, plus the presence predicate the map's inhabitation test leans on.
  */
 class KnownMarketFootprintsIntegrationTest {
 
@@ -81,6 +84,15 @@ class KnownMarketFootprintsIntegrationTest {
     private static final DominanceWeighting STATION_DOUBLE_WEIGHTED_NO_STABILITY =
             new DominanceWeighting(DEFAULT_COLONY_SIZE_WEIGHT, false, true,
                     DOUBLE_STATION_WEIGHT, HIDDEN_STATION_RATE);
+    // Zero-weight variants pinning the short-circuits: a zeroed colony weight with
+    // stability still on (to prove the stability read is skipped) and a zeroed station
+    // weight with the station factor still on (to prove the station scan is skipped).
+    private static final DominanceWeighting COLONY_SIZE_ZERO_WEIGHTED =
+            new DominanceWeighting(0.0, true, false,
+                    DEFAULT_STATION_WEIGHT, HIDDEN_STATION_RATE);
+    private static final DominanceWeighting STATION_ZERO_WEIGHTED_NO_STABILITY =
+            new DominanceWeighting(DEFAULT_COLONY_SIZE_WEIGHT, false, true,
+                    0.0, HIDDEN_STATION_RATE);
 
     @Nested
     class ReadByFaction {
@@ -286,6 +298,37 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+        }
+
+        @Test
+        void readByFactionSkipsTheStationScanWhenTheStationWeightIsZero() {
+            // A zero station weight can add nothing, so the connected-entity station
+            // scan is skipped and the stationed market folds in at its size alone.
+            var market = stationedMarket(faction("hegemony"), 5);
+            var sector = sectorWith("zero-weight-station-system", market);
+
+            var footprints = KnownMarketFootprints.readByFaction(
+                    sector, onlySystem(sector), STATION_ZERO_WEIGHTED_NO_STABILITY);
+
+            assertThat(footprints.get("hegemony").totalWeight())
+                    .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+            verify(market, never()).getConnectedEntities();
+        }
+
+        @Test
+        void readByFactionSkipsTheStabilityReadWhenTheWeightedRatingIsZero() {
+            // A zero colony-size weight with no station bonus zeroes the rating before
+            // stability, so the stability read is skipped; the market still folds into
+            // the footprint (marking presence) but at no dominance weight.
+            var market = visibleMarket(faction("hegemony"), 5);
+            var sector = sectorWith("weightless-system", market);
+
+            var footprints = KnownMarketFootprints.readByFaction(
+                    sector, onlySystem(sector), COLONY_SIZE_ZERO_WEIGHTED);
+
+            assertThat(footprints).containsOnlyKeys("hegemony");
+            assertThat(footprints.get("hegemony").totalWeight()).isZero();
+            verify(market, never()).getStabilityValue();
         }
 
         @Test

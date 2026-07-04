@@ -50,7 +50,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * its system's dominant faction, whether stability further scales that contribution,
  * and whether (and by how many size points) an attached defensive station lifts it
  * (paired with the fraction of that station weight a hidden base earns); the size and
- * station weights default to 1 and the two weighting toggles are on by default.
+ * station weights default to 1 and the two weighting toggles are on by default. The
+ * tab groups them under Colony size, Stability, and Orbital stations headers.
  *
  * <p>The "Market conditions" tab holds the condition-picker toggles. Its one field
  * chooses whether the picker offers every market condition or only the planetary

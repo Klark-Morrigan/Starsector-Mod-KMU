@@ -135,6 +135,13 @@ public final class KnownMarketFootprints {
         var baseSize = market.isHidden() ? HIDDEN_MARKET_DOMINANCE_SIZE : market.getSize();
         var weightedBaseSize = baseSize * weighting.colonySizeWeight();
         var dominanceSize = weightedBaseSize + computeStationBonus(market, weighting);
+        // A rating that has already come out to nothing (both the colony-size weight
+        // and the station bonus zeroed) is worth zero at any stability, so skip the
+        // stability read entirely - the market still folds into the footprint at zero
+        // weight, marking presence like any weightless colony.
+        if (dominanceSize <= 0.0) {
+            return 0;
+        }
         var stabilityFraction = weighting.isStabilityWeighted()
                 ? Markets.getStabilityFraction(market)
                 : UNWEIGHTED_STABILITY_FRACTION;
@@ -145,9 +152,12 @@ public final class KnownMarketFootprints {
     // station weight in size points for an openly held stationed colony, a configured
     // fraction of that weight for a hidden base (so a concealed fortress reads above a
     // bare outpost without matching an open stationed colony), or nothing when the
-    // factor is toggled off or the market has no attached station.
+    // factor is toggled off, the weight is zero, or the market has no attached station.
+    // A zero weight is checked before the connected-entity station scan, so disabling
+    // the factor by weight - not just by the toggle - skips that scan too.
     private static double computeStationBonus(MarketAPI market, DominanceWeighting weighting) {
-        if (!weighting.isStationWeighted() || !Markets.hasAttachedStation(market)) {
+        if (!weighting.isStationWeighted() || weighting.stationWeight() <= 0.0
+                || !Markets.hasAttachedStation(market)) {
             return 0.0;
         }
         return market.isHidden()

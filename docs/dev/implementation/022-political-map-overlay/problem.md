@@ -530,6 +530,10 @@ location culling is the source of truth.
   half stability halves the contribution, stability 0 yields a weightless
   but still-present footprint entry, and out-of-band values clamp into
   0..10 (see [Stability weighting](#stability-weighting)).
+- Unit: a disabled factor skips its work, not just its result - a zero
+  station weight skips the connected-entity station scan, and a rating
+  already zeroed (zero colony-size weight, no station bonus) skips the
+  stability read, still folding the market in at zero weight for presence.
 - Unit: presence-tier classification returns the highest matching tier
   for planet-only, station-only, and settlement-only systems
   ([research: Presence tiers](../019-political-map/research.md#presence-tiers-under-candidate-a)).
