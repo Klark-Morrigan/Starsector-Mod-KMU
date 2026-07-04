@@ -46,8 +46,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>The "Political map - domination" tab holds the dominance rules - fields that change the
  * map's political verdicts rather than its styling, which is why they do not sit
- * under "Visuals customisation". Its one field chooses whether stability weighs
- * each colony's dominance contribution; it is on by default.
+ * under "Visuals customisation". They set how heavily a colony's raw size weighs on
+ * its system's dominant faction, whether stability further scales that contribution,
+ * and whether (and by how many size points) an attached defensive station lifts it
+ * (paired with the fraction of that station weight a hidden base earns); the size and
+ * station weights default to 1 and the two weighting toggles are on by default.
  *
  * <p>The "Market conditions" tab holds the condition-picker toggles. Its one field
  * chooses whether the picker offers every market condition or only the planetary
@@ -113,9 +116,22 @@ public final class KmuLunaSettings {
             "kmu_politicalMapUninhabitedBorderWidth";
 
     // Dominance rules (Political map tab): how the map decides a system's dominant
-    // faction. Not a styling field - it changes the political verdicts themselves.
+    // faction. Not styling fields - they change the political verdicts themselves.
+    // The colony-size weight multiplies each market's base size rating; the stability
+    // toggle then scales that rating; the station toggle adds the station weight in
+    // size points for an attached defensive station, paired with the fraction of that
+    // weight a hidden base earns. All fold into one DominanceWeighting read once per
+    // resolution pass.
+    private static final String COLONY_SIZE_WEIGHT_FIELD =
+            "kmu_politicalMapColonySizeWeight";
     private static final String STABILITY_WEIGHS_DOMINANCE_FIELD =
             "kmu_politicalMapStabilityWeighsDominance";
+    private static final String STATION_WEIGHS_DOMINANCE_FIELD =
+            "kmu_politicalMapStationWeighsDominance";
+    private static final String STATION_WEIGHT_FIELD =
+            "kmu_politicalMapStationWeight";
+    private static final String STATION_HIDDEN_MARKET_RATE_FIELD =
+            "kmu_politicalMapStationHiddenMarketRate";
 
     // Cell geometry (Dev tab): the resolution of the raw Voronoi cells, upstream of
     // any border shaping. Unlike the border fields below - which restyle fixed
@@ -263,9 +279,24 @@ public final class KmuLunaSettings {
             NeutralColorChoice.NONE;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
+    // The identity weight by default: raw colony size counts toward dominance as it
+    // does without the rule. Below 1 flattens the gap between large and small
+    // colonies, above 1 sharpens it; it scales a hidden base's fixed token too.
+    private static final double DEFAULT_COLONY_SIZE_WEIGHT = 1.0;
     // On by default: a destabilised colony should hold less of its system than a
     // functioning one; the toggle exists to opt back into raw-size dominance.
     private static final boolean DEFAULT_STABILITY_WEIGHS_DOMINANCE = true;
+    // On by default: an attached defensive station is real military presence, so it
+    // lifts a stationed colony's hold on its system by the station weight in size
+    // points; off ranks markets by stability-weighted size alone.
+    private static final boolean DEFAULT_STATION_WEIGHS_DOMINANCE = true;
+    // One size point by default: an attached station is worth a single colony size
+    // point toward its system's dominance. Below 1 softens the bonus, above 1
+    // sharpens it.
+    private static final double DEFAULT_STATION_WEIGHT = 1.0;
+    // A hidden base earns half the station weight, so a fortified secret base reads
+    // as more than a bare concealed outpost without matching an open stationed colony.
+    private static final double DEFAULT_STATION_HIDDEN_MARKET_RATE = 0.5;
     // Mirrors both the CSV defaultValue and VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
     // the geometric default this setting overrides; kept a literal like the other
     // fallbacks so this class stays decoupled from the geometry library.
@@ -525,6 +556,17 @@ public final class KmuLunaSettings {
     }
 
     /**
+     * @return the multiplier on each colony's base size rating - a visible market's
+     *         own size or a hidden base's fixed presence token - before the station
+     *         bonus and stability fold in; 1.0 by default (raw size), below 1 flattens
+     *         the gap between large and small colonies and above 1 sharpens it
+     */
+    public static double getColonySizeWeight() {
+        return LunaSettingsReader.getDouble(MOD_ID, COLONY_SIZE_WEIGHT_FIELD,
+                DEFAULT_COLONY_SIZE_WEIGHT);
+    }
+
+    /**
      * @return whether each colony's dominance contribution is scaled by its
      *         stability - at 0 stability a colony holds no political weight, at 10
      *         its full size; on by default, off ranks colonies by raw size alone
@@ -532,6 +574,38 @@ public final class KmuLunaSettings {
     public static boolean shouldWeighDominanceByStability() {
         return LunaSettingsReader.getBoolean(MOD_ID, STABILITY_WEIGHS_DOMINANCE_FIELD,
                 DEFAULT_STABILITY_WEIGHS_DOMINANCE);
+    }
+
+    /**
+     * @return whether a market with an attached defensive station gains one size
+     *         point toward its system's dominance, added before stability scales the
+     *         sum; on by default, off ranks markets by stability-weighted size alone
+     */
+    public static boolean shouldWeighDominanceByStation() {
+        return LunaSettingsReader.getBoolean(MOD_ID, STATION_WEIGHS_DOMINANCE_FIELD,
+                DEFAULT_STATION_WEIGHS_DOMINANCE);
+    }
+
+    /**
+     * @return the size points an attached defensive station adds to a visible colony's
+     *         dominance contribution, before stability scales the sum; 1.0 by default,
+     *         below 1 softens the station bonus and above 1 sharpens it. A hidden base
+     *         earns this scaled by the station hidden-base rate
+     */
+    public static double getStationWeight() {
+        return LunaSettingsReader.getDouble(MOD_ID, STATION_WEIGHT_FIELD,
+                DEFAULT_STATION_WEIGHT);
+    }
+
+    /**
+     * @return the fraction of the station weight a hidden (concealed) base earns
+     *         on its token presence rating, 0..1 - so a fortified secret base reads
+     *         above a bare outpost without matching an openly held stationed colony;
+     *         half by default
+     */
+    public static double getStationHiddenMarketRate() {
+        return LunaSettingsReader.getDouble(MOD_ID, STATION_HIDDEN_MARKET_RATE_FIELD,
+                DEFAULT_STATION_HIDDEN_MARKET_RATE);
     }
 
     /**

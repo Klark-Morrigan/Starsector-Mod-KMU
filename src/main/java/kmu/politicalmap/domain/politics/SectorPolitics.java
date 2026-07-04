@@ -3,9 +3,6 @@ package kmu.politicalmap.domain.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.settings.KmuLunaSettings;
-
-import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -17,18 +14,10 @@ import java.util.Map;
  * market footprints {@link KnownMarketFootprints} reads from the economy, asks
  * {@link SystemDominance} which faction holds the system, and resolves that
  * winner's authored UI shades into a {@link DominantOwner} the render layer draws.
- * Confining the {@code FactionAPI} palette lookups here - both the owner colors and
- * the neutral color for unowned space - keeps the render layer clear of Starsector
- * economy and faction types.
+ * Confining the winning owner's {@code FactionAPI} palette lookup here keeps the
+ * render layer clear of Starsector economy and faction types.
  */
 public final class SectorPolitics {
-    // Fallback when the sector has no "neutral" faction (it always does in
-    // vanilla); a mid grey so an uninhabited outline still reads as unowned.
-    private static final Color NEUTRAL_FALLBACK_COLOR = Color.GRAY;
-
-    // Vanilla's unaffiliated faction. Uninhabited systems (and decivilised
-    // planets) borrow its color so unowned space reads consistently.
-    private static final String NEUTRAL_FACTION_ID = "neutral";
 
     private SectorPolitics() {
     }
@@ -44,7 +33,7 @@ public final class SectorPolitics {
      * kept beside the color so per-owner styling - and later per-owner behaviour -
      * reads the same winner the fill was decided by.
      *
-     * <p>Reads the player's stability-weighting toggle once up front, so every
+     * <p>Reads the player's dominance-weighting rules once up front, so every
      * system in the pass resolves under the same rule even if the player applies
      * a settings change mid-walk.
      *
@@ -53,8 +42,7 @@ public final class SectorPolitics {
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(SectorAPI sector) {
-        return resolveDominantOwnerBySystemId(sector,
-                KmuLunaSettings.shouldWeighDominanceByStability());
+        return resolveDominantOwnerBySystemId(sector, DominanceWeighting.readFromSettings());
     }
 
     /**
@@ -62,22 +50,22 @@ public final class SectorPolitics {
      * weighting rule, for a caller that has already read the player's toggle for
      * the surrounding pass.
      *
-     * @param sector             the sector whose economy is read; null yields an
-     *                           empty map
-     * @param isStabilityWeighted whether each market's size rating is scaled by
-     *                           its stability before dominance is compared
+     * @param sector    the sector whose economy is read; null yields an empty map
+     * @param weighting the dominance-weighting rules for this pass - whether
+     *                  stability scales each rating and whether an attached station
+     *                  lifts it - before dominance is compared
      * @return the dominant owner keyed by system id; a system with no owned
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
-            SectorAPI sector, boolean isStabilityWeighted) {
+            SectorAPI sector, DominanceWeighting weighting) {
         var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
         if (sector == null) {
             return ownerBySystemId;
         }
 
         for (var system : sector.getStarSystems()) {
-            var owner = resolveDominantOwner(sector, system, isStabilityWeighted);
+            var owner = resolveDominantOwner(sector, system, weighting);
             if (owner != null) {
                 ownerBySystemId.put(system.getId(), owner);
             }
@@ -96,7 +84,7 @@ public final class SectorPolitics {
      * {@link #resolveDominantOwnerBySystemId}, so a system resolves the same
      * winner and colors whether it is refreshed alone or in the full pass.
      *
-     * <p>Reads the player's stability-weighting toggle live, so a single-system
+     * <p>Reads the player's dominance-weighting rules live, so a single-system
      * refresh resolves under the player's current rule.
      *
      * @param sector the sector whose economy is read; null (or a null economy)
@@ -106,8 +94,7 @@ public final class SectorPolitics {
      *         (uninhabited)
      */
     public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system) {
-        return resolveDominantOwner(sector, system,
-                KmuLunaSettings.shouldWeighDominanceByStability());
+        return resolveDominantOwner(sector, system, DominanceWeighting.readFromSettings());
     }
 
     /**
@@ -115,21 +102,22 @@ public final class SectorPolitics {
      * rule, for a caller that has already read the player's toggle for the
      * surrounding pass.
      *
-     * @param sector             the sector whose economy is read; null (or a null
-     *                           economy) yields null
-     * @param system             the system to resolve; null yields null
-     * @param isStabilityWeighted whether each market's size rating is scaled by
-     *                           its stability before dominance is compared
+     * @param sector    the sector whose economy is read; null (or a null economy)
+     *                  yields null
+     * @param system    the system to resolve; null yields null
+     * @param weighting the dominance-weighting rules for this pass - whether
+     *                  stability scales each rating and whether an attached station
+     *                  lifts it - before dominance is compared
      * @return the dominant owner, or null when the system holds no owned market
      *         (uninhabited)
      */
     public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system,
-            boolean isStabilityWeighted) {
+            DominanceWeighting weighting) {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
         }
         var footprintByFactionId =
-                KnownMarketFootprints.readByFaction(sector, system, isStabilityWeighted);
+                KnownMarketFootprints.readByFaction(sector, system, weighting);
         var dominantFactionId = SystemDominance.resolveDominantFactionId(footprintByFactionId);
         if (dominantFactionId == null) {
             return null;
@@ -145,23 +133,5 @@ public final class SectorPolitics {
         // choice, made downstream in the render layer.
         return new DominantOwner(dominantFactionId,
                 faction.getBrightUIColor(), faction.getDarkUIColor());
-    }
-
-    /**
-     * Resolves the neutral color uninhabited cells are outlined in (the same
-     * color decivilised markers use), so unowned space reads consistently.
-     *
-     * @param sector the sector to read; null falls back to a mid grey
-     * @return the neutral faction's base UI color, or a grey fallback
-     */
-    public static Color resolveNeutralColor(SectorAPI sector) {
-        if (sector == null) {
-            return NEUTRAL_FALLBACK_COLOR;
-        }
-        var neutral = sector.getFaction(NEUTRAL_FACTION_ID);
-        if (neutral == null) {
-            return NEUTRAL_FALLBACK_COLOR;
-        }
-        return neutral.getBaseUIColor();
     }
 }

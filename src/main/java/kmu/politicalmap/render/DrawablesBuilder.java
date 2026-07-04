@@ -8,6 +8,7 @@ import kmlib.math.geometry.Polygons;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
+import kmlib.starsector.factions.StarsectorFactionColors;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.domain.geometry.CellShaper;
@@ -81,7 +82,7 @@ final class DrawablesBuilder {
             var drawables = new PoliticalMapDrawables(
                     new LinkedHashMap<>(), new LinkedHashMap<>(),
                     ownerBySystemId, decivilisedSystemIds,
-                    SectorPolitics.resolveNeutralColor(sector),
+                    StarsectorFactionColors.resolveNeutralColor(sector),
                     MapStyleReader.readFactionStyle(), MapStyleReader.readIndependentStyle(),
                     MapStyleReader.readDecivilisedStyle(), MapStyleReader.readUninhabitedStyle());
 

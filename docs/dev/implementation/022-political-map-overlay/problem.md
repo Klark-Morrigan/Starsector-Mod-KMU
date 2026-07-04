@@ -12,7 +12,9 @@
 - [Decisions](#decisions)
   - [Surfaces and ownership](#surfaces-and-ownership)
   - [Dominance rule](#dominance-rule)
+  - [Colony size weighting](#colony-size-weighting)
   - [Stability weighting](#stability-weighting)
+  - [Station presence weighting](#station-presence-weighting)
   - [Decivilized markers (neutral)](#decivilized-markers-neutral)
   - [Toggle state contract](#toggle-state-contract)
   - [Sub-view detection](#sub-view-detection)
@@ -252,6 +254,36 @@ Starsector types - and the economy read that builds those footprints,
 including the token-size substitution, is confined to the ownership
 adapter, so the rule can be exercised on hand-built inputs.
 
+### Colony size weighting
+
+Sibling rule to the dominance chain above, and the base every other weighting
+rides on: each market's size rating is multiplied by a player-set colony-size
+weight before stability scales it or a station lifts it, so the map can be tuned
+between "raw size rules the map" and "size barely matters".
+
+- **The weight.** A market's base size rating - a visible colony's own
+  `getSize()`, or a hidden base's fixed presence token - is multiplied by the
+  weight before any other factor folds in. At 1 (the default) size counts exactly
+  as it does without the rule; below 1 the gap between a large and a small colony
+  narrows, above 1 it widens, and at 0 raw size drops out entirely - a colony then
+  holds a system only through its station bonus, if any.
+- **Hidden bases scale too.** The weight multiplies a concealed base's fixed
+  token the same way it multiplies a visible colony's real size, so the two stay
+  in proportion at every weight. A hidden base never leaks its true size, but the
+  player's dial still moves its token presence up and down with everything else.
+- **Order and the fixed-point grid.** The weight is applied to the base rating
+  first, then the station bonus is added, then the stability fraction scales the
+  sum, which rounds once onto the same 1000-units-per-size-point grid the other
+  weightings use - so a fractional weight (0.5, 1.5) lands cleanly and
+  [the dominance rule](#dominance-rule) stays exact-integer and order-independent.
+- **The control, no toggle.** Size is the base dominance measure, so there is no
+  on/off flag like the stability and station factors carry; the weight itself is
+  the control and 1 is its neutral setting. It is the LunaLib double
+  `kmu_politicalMapColonySizeWeight` ("Political map - domination" tab, "Dominance"
+  header, default 1), read once per resolution pass into the same weighting bundle
+  as the stability and station rules. Presence is unaffected - the weight never
+  adds or removes a footprint entry, only rescales its worth.
+
 ### Stability weighting
 
 Sibling rule to the dominance chain above: each market's size rating is
@@ -286,6 +318,52 @@ comparison ranks stability-weighted worth rather than raw size.
   system under the same rule and the domain read stays free of settings
   access. Presence is toggle-independent - the weighting never adds or
   removes footprint entries.
+
+### Station presence weighting
+
+The first military-presence factor layered onto the dominance chain: a market
+with an attached defensive station holds more of its system than an
+otherwise-identical unstationed colony, so a fortified world reads as the
+stronger presence even at equal size.
+
+- **The bonus.** A stationed market's size rating gains the player-set station
+  weight in size points - `sizeRating + stationWeight`, one point by default -
+  added *before* the stability fraction scales it, so the station bonus shares in
+  a colony's stability collapse rather than sitting outside it: a stability-crippled
+  fortress keeps only the stability-scaled remnant of the extra points, the same as
+  the rest of its size. The weight is applied after the colony-size weight has
+  scaled the base rating, and is itself left unscaled by it - the station is worth a
+  flat number of points, not a multiple of the colony's size.
+- **Station detection.** A market owns a station when one of its
+  `getConnectedEntities()` carries the `"station"` tag and is not opted out by
+  `"NO_ORBITAL_STATION"` - the exact scan vanilla's `OrbitalStation` runs.
+  Connected entities are an ownership link the game maintains, so a station
+  found this way is the market's own; a spatial orbit scan is deliberately not
+  used (it would false-positive on rival stations, independents sharing the
+  planet, and abandoned hulks that keep the tag after their market dies). No
+  industry ids are read - the entity tag captures vanilla and modded stations
+  alike.
+- **Hidden markets.** A concealed base earns a configurable fraction of the
+  station weight - `stationWeight * hiddenRate` on its token rating, before
+  stability scales the sum - so a fortified secret base reads above a bare
+  concealed outpost without a hidden base ever matching an openly held stationed
+  colony. The rate defaults to one half.
+- **Fixed-point grid, exact rule unchanged.** The lifted rating folds through
+  the same 1000-units-per-size-point grid and rounds once, so a fractional
+  hidden bonus (half a point = 500 units) lands cleanly and
+  [the dominance rule](#dominance-rule) stays exact-integer and order-
+  independent - `SystemDominance` is untouched.
+- **Player controls.** Gated by the LunaLib boolean
+  `kmu_politicalMapStationWeighsDominance` ("Political map - domination" tab,
+  "Dominance" header), on by default; off drops the bonus and ranks markets by
+  stability-weighted size alone. The magnitude is the double
+  `kmu_politicalMapStationWeight` (default 1) and the hidden-base fraction is the
+  double `kmu_politicalMapStationHiddenMarketRate` (0..1, default 0.5). All read
+  once per resolution pass alongside the stability toggle and colony-size weight
+  into one weighting bundle threaded through the footprint read, so a pass resolves
+  every system under the same rule and the domain read stays free of settings
+  access. Presence is toggle-independent - the station bonus never adds or removes
+  footprint entries.
 
 ### Decivilized markers (neutral)
 
@@ -444,6 +522,10 @@ location culling is the source of truth.
   footprints, isolating each of the four tie-break levels - combined
   weight, heaviest single market, planet weight, then faction id (see
   [Dominance rule](#dominance-rule)).
+- Unit: the footprint read multiplies each market's base size rating by the
+  colony-size weight - a doubled weight doubles a visible market's size and a
+  hidden base's token alike, while the flat station point is added after the
+  weight and so is left unscaled (see [Colony size weighting](#colony-size-weighting)).
 - Unit: the footprint read scales each market's weight by stability -
   half stability halves the contribution, stability 0 yields a weightless
   but still-present footprint entry, and out-of-band values clamp into

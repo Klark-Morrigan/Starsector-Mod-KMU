@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.markets.Markets;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -39,17 +41,15 @@ public final class KnownMarketFootprints {
     // can flag presence without ever outweighing an openly held colony.
     private static final int HIDDEN_MARKET_DOMINANCE_SIZE = 1;
 
-    // Stability's vanilla 0..10 band, the denominator of the per-market weight
-    // fraction. Values are clamped into the band on read: a modded market can
-    // sit outside it, and an out-of-band value must scale as "none" or "full",
-    // never flip a comparison or overshoot the market's own size.
-    private static final float MAX_STABILITY_VALUE = 10.0f;
+    // The full-worth stability fraction the weight uses when the player has turned
+    // stability weighting off: every market folds in at its whole lifted rating.
+    private static final double UNWEIGHTED_STABILITY_FRACTION = 1.0;
 
-    // The presence test asks only whether a footprint exists, and the stability
-    // weighting never adds or removes entries - a weightless colony still folds
-    // in at 0 - so the presence read skips the weighting and stays independent
-    // of the player's toggle.
-    private static final boolean PRESENCE_READ_IS_STABILITY_WEIGHTED = false;
+    // The presence test asks only whether a footprint exists, and no weighting
+    // factor adds or removes entries - a weightless colony still folds in at 0 -
+    // so the presence read folds every market in unweighted, independent of the
+    // player's toggles.
+    private static final DominanceWeighting PRESENCE_READ_WEIGHTING = DominanceWeighting.UNWEIGHTED;
 
     private KnownMarketFootprints() {
     }
@@ -67,23 +67,23 @@ public final class KnownMarketFootprints {
      *                           with a non-null economy, which the callers guard
      *                           before delegating
      * @param system             the system whose markets are folded
-     * @param isStabilityWeighted whether each market's size rating is scaled by
-     *                           its stability; false folds every market in at its
-     *                           full rating. The player's LunaLib toggle, read
-     *                           once per pass by the caller so a whole pass
-     *                           resolves under one rule
+     * @param weighting          the dominance-weighting rules for this pass -
+     *                           whether stability scales each rating and whether an
+     *                           attached station lifts it. The player's LunaLib
+     *                           toggles, read once per pass by the caller so a whole
+     *                           pass resolves under one rule
      * @return each faction's footprint in the system, keyed by faction id; empty
      *         when the system holds no known owned market
      */
     public static Map<String, FactionFootprint> readByFaction(
-            SectorAPI sector, StarSystemAPI system, boolean isStabilityWeighted) {
+            SectorAPI sector, StarSystemAPI system, DominanceWeighting weighting) {
         var footprintByFactionId = new LinkedHashMap<String, FactionFootprint>();
         for (var market : sector.getEconomy().getMarkets(system)) {
             var faction = market.getFaction();
             if (market.isPlanetConditionMarketOnly() || faction == null) {
                 continue;
             }
-            if (!isMarketKnownToPlayer(market)) {
+            if (!Markets.isKnownToPlayer(market)) {
                 continue;
             }
             var factionId = faction.getId();
@@ -92,7 +92,7 @@ public final class KnownMarketFootprints {
             var isPlanetMarket = market.getPlanetEntity() != null;
             var footprint = footprintByFactionId.getOrDefault(factionId, FactionFootprint.EMPTY);
             footprintByFactionId.put(factionId, footprint.addMarket(
-                    computeDominanceWeight(market, isStabilityWeighted), isPlanetMarket));
+                    computeDominanceWeight(market, weighting), isPlanetMarket));
         }
         return footprintByFactionId;
     }
@@ -112,50 +112,46 @@ public final class KnownMarketFootprints {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return false;
         }
-        return !readByFaction(sector, system, PRESENCE_READ_IS_STABILITY_WEIGHTED).isEmpty();
+        return !readByFaction(sector, system, PRESENCE_READ_WEIGHTING).isEmpty();
     }
 
-    // A market's worth to the dominance rule: its size rating scaled linearly by
-    // stability, rounded onto the fixed-point grid. The size rating is the raw
-    // getSize(), or the fixed token for a hidden market - stability scales the
-    // token like any other rating. Stability decides how much of the rating the
-    // faction actually holds - a colony at 0 stability is worth nothing to
-    // dominance (it still marks presence and paints its system when unopposed),
-    // at 5 half its size, at 10 the full size - so a destabilised colony holds
-    // less of its system than a functioning colony of equal size. With the
-    // weighting toggled off, every market is worth its full rating.
-    private static int computeDominanceWeight(MarketAPI market, boolean isStabilityWeighted) {
-        var dominanceSize = market.isHidden()
-                ? HIDDEN_MARKET_DOMINANCE_SIZE
-                : market.getSize();
-        if (!isStabilityWeighted) {
-            return dominanceSize * DOMINANCE_WEIGHT_SCALE;
+    // A market's worth to the dominance rule: its size rating - scaled by the
+    // colony-size weight, lifted by any station bonus - scaled linearly by stability,
+    // rounded onto the fixed-point grid. The base rating is the raw getSize(), or the
+    // fixed token for a hidden market; the colony-size weight multiplies that base (a
+    // hidden base's token included) so the player can dial how much raw size counts.
+    // An attached station adds the station weight in size points (a hidden base gets
+    // a configured fraction of it) after the colony-size weight and before stability
+    // scales the sum, so the station bonus shares in a colony's stability collapse
+    // rather than sitting outside it.
+    // Stability then decides how much of the lifted rating the faction actually
+    // holds - a colony at 0 stability is worth nothing to dominance (it still marks
+    // presence and paints its system when unopposed), at 5 half, at 10 the full
+    // amount - so a destabilised colony holds less of its system than a functioning
+    // one. With stability weighting off, the fraction is a flat 1, so every market
+    // is worth its full lifted rating. The lifted rating rounds once onto the grid
+    // so a fractional weight or hidden bonus lands cleanly and the rule stays exact.
+    private static int computeDominanceWeight(MarketAPI market, DominanceWeighting weighting) {
+        var baseSize = market.isHidden() ? HIDDEN_MARKET_DOMINANCE_SIZE : market.getSize();
+        var weightedBaseSize = baseSize * weighting.colonySizeWeight();
+        var dominanceSize = weightedBaseSize + computeStationBonus(market, weighting);
+        var stabilityFraction = weighting.isStabilityWeighted()
+                ? Markets.getStabilityFraction(market)
+                : UNWEIGHTED_STABILITY_FRACTION;
+        return (int) Math.round(dominanceSize * stabilityFraction * DOMINANCE_WEIGHT_SCALE);
+    }
+
+    // The station size bonus a market earns before stability scaling: the player-set
+    // station weight in size points for an openly held stationed colony, a configured
+    // fraction of that weight for a hidden base (so a concealed fortress reads above a
+    // bare outpost without matching an open stationed colony), or nothing when the
+    // factor is toggled off or the market has no attached station.
+    private static double computeStationBonus(MarketAPI market, DominanceWeighting weighting) {
+        if (!weighting.isStationWeighted() || !Markets.hasAttachedStation(market)) {
+            return 0.0;
         }
-        var stabilityFraction = market.getStabilityValue() / MAX_STABILITY_VALUE;
-        var clampedFraction = Math.min(Math.max(stabilityFraction, 0.0f), 1.0f);
-        return Math.round(dominanceSize * clampedFraction * DOMINANCE_WEIGHT_SCALE);
-    }
-
-    // Whether the player knows this market exists - the gate on what counts as
-    // political presence. Known means the entity has been discovered (no longer
-    // flagged discoverable) OR the market has been un-hidden, surfaced into the
-    // open by a story reveal. Neither arm cares about the owner or whether the
-    // faction is in the intel directory: a faction hidden from the directory is
-    // not barred, and a Galatia-Academy-style base (hidden market on an
-    // always-visible entity) still paints via the discovery arm, folding into
-    // dominance at a token size.
-    //
-    // The un-hidden arm catches a colony surfaced ahead of its entity being
-    // physically found: FSF Military Corporation's DWR43 colonies un-hide on the
-    // player's first entry yet stay setDiscoverable(true) until the fleet closes
-    // to sensor range. They are public knowledge in that window - listed on the
-    // star's map tooltip - so they paint their system at once rather than waiting
-    // on the approach. A still-concealed station (a hidden market on a
-    // discoverable entity, e.g. Knights of Ludd's Battlestar Libra, or DWR43
-    // before its reveal) fails both arms and never paints until found.
-    private static boolean isMarketKnownToPlayer(MarketAPI market) {
-        var entity = market.getPrimaryEntity();
-        var isEntityDiscovered = entity == null || !entity.isDiscoverable();
-        return isEntityDiscovered || !market.isHidden();
+        return market.isHidden()
+                ? weighting.stationWeight() * weighting.stationHiddenMarketRate()
+                : weighting.stationWeight();
     }
 }

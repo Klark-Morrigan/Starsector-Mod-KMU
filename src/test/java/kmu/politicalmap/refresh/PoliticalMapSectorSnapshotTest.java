@@ -12,6 +12,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
+import kmu.politicalmap.domain.politics.DominanceWeighting;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
@@ -36,16 +38,18 @@ class PoliticalMapSectorSnapshotTest {
 
     private static final float FULL_STABILITY = 10.0f;
     // The scan is exercised through the explicit-rule overload: the one-argument
-    // entry point reads the live LunaLib toggle, which only the running game
-    // provides.
-    private static final boolean IS_STABILITY_WEIGHTED = true;
+    // entry point reads the live LunaLib toggles, which only the running game
+    // provides. Station weighting is off so the snapshot tests turn on the
+    // stability rule alone, with the colony-size and station weights at their identity.
+    private static final DominanceWeighting STABILITY_WEIGHTED =
+            new DominanceWeighting(1.0, true, false, 1.0, 0.5);
 
     @Nested
     class Scan {
 
         @Test
         void scanReturnsEmptySnapshotForNullSector() {
-            var snapshot = PoliticalMapSectorSnapshot.scan(null, IS_STABILITY_WEIGHTED);
+            var snapshot = PoliticalMapSectorSnapshot.scan(null, STABILITY_WEIGHTED);
 
             assertThat(snapshot.visibilityFingerprint()).isZero();
             assertThat(snapshot.ownerBySystemId()).isEmpty();
@@ -54,7 +58,7 @@ class PoliticalMapSectorSnapshotTest {
         @Test
         void ownerMapNamesTheDominantFactionOfAnOwnedSystem() {
             var snapshot = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)), IS_STABILITY_WEIGHTED);
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)), STABILITY_WEIGHTED);
 
             assertThat(snapshot.ownerBySystemId()).containsExactly(entry("a", "hegemony"));
         }
@@ -64,10 +68,10 @@ class PoliticalMapSectorSnapshotTest {
             // An empty system is off the map; a colony admits it, so the on-map set
             // - and the visibility fingerprint - changes.
             var before = PoliticalMapSectorSnapshot.scan(sectorWith(system("a")),
-                    IS_STABILITY_WEIGHTED).visibilityFingerprint();
+                    STABILITY_WEIGHTED).visibilityFingerprint();
 
             var after = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)), IS_STABILITY_WEIGHTED)
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)), STABILITY_WEIGHTED)
                     .visibilityFingerprint();
 
             assertThat(after).isNotEqualTo(before);
@@ -79,10 +83,10 @@ class PoliticalMapSectorSnapshotTest {
             // its owner flips. The owner map must move while the visibility hash
             // stays put, so only that system reshapes and no geometry rebuilds.
             var before = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)), IS_STABILITY_WEIGHTED);
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)), STABILITY_WEIGHTED);
 
             var after = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("tritachyon", 5)), IS_STABILITY_WEIGHTED);
+                    sectorWith(system("a"), ownedMarket("tritachyon", 5)), STABILITY_WEIGHTED);
 
             assertThat(after.ownerBySystemId()).containsExactly(entry("a", "tritachyon"));
             assertThat(after.visibilityFingerprint()).isEqualTo(before.visibilityFingerprint());
@@ -93,7 +97,7 @@ class PoliticalMapSectorSnapshotTest {
             // A revealed dead colony is drawn (visibility) but confers no owner, so
             // it is absent from the owner map - the mirror image of an owned system.
             var snapshot = PoliticalMapSectorSnapshot.scan(sectorWith(decivilisedSystem("a")),
-                    IS_STABILITY_WEIGHTED);
+                    STABILITY_WEIGHTED);
 
             assertThat(snapshot.visibilityFingerprint()).isNotZero();
             assertThat(snapshot.ownerBySystemId()).isEmpty();
