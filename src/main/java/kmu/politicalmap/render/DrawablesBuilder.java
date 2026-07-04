@@ -9,6 +9,7 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Polygons;
 import kmlib.math.geometry.PrincipalAxis;
 import kmlib.math.geometry.Spans;
+import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 
@@ -488,12 +489,12 @@ final class DrawablesBuilder {
             borderLoops = BorderSmoothing.roundBorderCorners(borderLoops);
         }
         var fillTriangles = fillColor == null
-                ? VertexRuns.NO_VERTICES
+                ? GlVertexRuns.NO_VERTICES
                 : PolygonTessellator.tessellateToTriangles(borderLoops);
         var borderRuns = new ArrayList<float[]>();
         if (borderColor != null) {
             for (var loop : PolygonTessellator.tessellateToBoundaryLoops(borderLoops)) {
-                borderRuns.add(VertexRuns.flattenVertices(loop));
+                borderRuns.add(GlVertexRuns.flattenVertices(loop));
             }
         }
         return new FactionTerritory(fillTriangles,
@@ -522,11 +523,11 @@ final class DrawablesBuilder {
         }
         return new StyledCell(
                 perCellFillAndBorder
-                        ? VertexRuns.flattenVertices(shaped.fillPolygon())
-                        : VertexRuns.NO_VERTICES,
+                        ? GlVertexRuns.flattenVertices(shaped.fillPolygon())
+                        : GlVertexRuns.NO_VERTICES,
                 perCellFillAndBorder
-                        ? VertexRuns.flattenClosedLoopAsSegments(outline)
-                        : VertexRuns.NO_VERTICES,
+                        ? GlVertexRuns.flattenClosedLoopAsSegments(outline)
+                        : GlVertexRuns.NO_VERTICES,
                 VertexRuns.flattenEdgesOfClass(shaped, false),
                 new ElementPaint(
                         perCellFillAndBorder

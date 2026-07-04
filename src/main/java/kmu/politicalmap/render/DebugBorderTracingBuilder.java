@@ -2,6 +2,7 @@ package kmu.politicalmap.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 
 import kmu.politicalmap.domain.geometry.CellShaper;
@@ -128,7 +129,7 @@ final class DebugBorderTracingBuilder {
     // Flattens each loop of a stage into a GL run and appends it to that stage's list.
     private static void addFlattenedLoops(List<float[]> runs, List<List<double[]>> loops) {
         for (var loop : loops) {
-            runs.add(VertexRuns.flattenVertices(loop));
+            runs.add(GlVertexRuns.flattenVertices(loop));
         }
     }
 }
