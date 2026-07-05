@@ -38,16 +38,6 @@ public record DominanceWeighting(double colonySizeWeight, boolean isStabilityWei
         boolean isStationWeighted, double stationWeight, double stationHiddenMarketRate) {
 
     /**
-     * The identity weighting: every market folds in at its raw size rating - the
-     * colony-size weight is the identity 1.0, with no stability or station
-     * adjustment. The presence read uses it - whether any footprint exists never
-     * depends on the weighting, since no factor adds or removes entries, so presence
-     * stays independent of the player's toggles.
-     */
-    public static final DominanceWeighting UNWEIGHTED =
-            new DominanceWeighting(1.0, false, false, 1.0, 0.0);
-
-    /**
      * Reads the player's current dominance-weighting toggles from LunaLib into one
      * pass-wide rule.
      *

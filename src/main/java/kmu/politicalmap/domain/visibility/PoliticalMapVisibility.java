@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.hashing.Avalanche;
+import kmlib.starsector.systems.StarSystems;
 
-import kmu.politicalmap.domain.politics.KnownMarketFootprints;
 import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 
@@ -171,7 +171,7 @@ public final class PoliticalMapVisibility {
      */
     public static boolean isInhabited(SectorAPI sector, StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets) {
-        return KnownMarketFootprints.hasKnownOwnedMarket(sector, system,
+        return StarSystems.hasKnownOwnedMarket(sector, system,
                         shouldIncludeUndiscoveredMarkets)
                 || DecivilisedPresence.hasRevealedDecivilisedPlanet(system);
     }

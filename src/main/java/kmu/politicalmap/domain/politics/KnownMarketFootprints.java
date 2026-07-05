@@ -18,11 +18,12 @@ import java.util.Map;
  * it is not a bare planet's condition-only placeholder, and the player knows it
  * exists - and weighs each surviving market for dominance, scaling its size
  * rating by stability when the caller asks for it (the player-facing LunaLib
- * toggle, read upstream so this class stays free of settings access). Confining
- * the {@code MarketAPI} access here lets both the owner-resolution pipeline and
- * the map's inhabitation test share one definition of a known colony. The pure
- * comparison of the footprints it produces is {@link SystemDominance}'s job;
- * turning the winner into draw colors is {@link SectorPolitics}'s.
+ * toggle, read upstream so this class stays free of settings access). The
+ * "counts as a colony" filter itself is {@link kmlib.starsector.markets.Markets},
+ * so the map's inhabitation read (a plain presence test) and this weighted
+ * dominance read share one definition of a known colony. The pure comparison of
+ * the footprints it produces is {@link SystemDominance}'s job; turning the winner
+ * into draw colors is {@link SectorPolitics}'s.
  */
 public final class KnownMarketFootprints {
 
@@ -44,12 +45,6 @@ public final class KnownMarketFootprints {
     // The full-worth stability fraction the weight uses when the player has turned
     // stability weighting off: every market folds in at its whole lifted rating.
     private static final double UNWEIGHTED_STABILITY_FRACTION = 1.0;
-
-    // The presence test asks only whether a footprint exists, and no weighting
-    // factor adds or removes entries - a weightless colony still folds in at 0 -
-    // so the presence read folds every market in unweighted, independent of the
-    // player's toggles.
-    private static final DominanceWeighting PRESENCE_READ_WEIGHTING = DominanceWeighting.UNWEIGHTED;
 
     private KnownMarketFootprints() {
     }
@@ -102,14 +97,13 @@ public final class KnownMarketFootprints {
             boolean shouldIncludeUndiscoveredMarkets) {
         var footprintByFactionId = new LinkedHashMap<String, FactionFootprint>();
         for (var market : sector.getEconomy().getMarkets(system)) {
-            var faction = market.getFaction();
-            if (market.isPlanetConditionMarketOnly() || faction == null) {
+            if (!Markets.isOwnedColony(market)) {
                 continue;
             }
             if (!shouldIncludeUndiscoveredMarkets && !Markets.isKnownToPlayer(market)) {
                 continue;
             }
-            var factionId = faction.getId();
+            var factionId = market.getFaction().getId();
             // getPlanetEntity() is non-null for a market on a planet and null
             // for one on a station; the rule prefers planets at an exact tie.
             var isPlanetMarket = market.getPlanetEntity() != null;
@@ -118,43 +112,6 @@ public final class KnownMarketFootprints {
                     computeDominanceWeight(market, weighting), isPlanetMarket));
         }
         return footprintByFactionId;
-    }
-
-    /**
-     * Whether the player knows of at least one owned, non-condition-only market in
-     * the system, under the normal known-to-player filter.
-     *
-     * @param sector the sector to read; null (or a null economy) yields false
-     * @param system the system to test; null yields false
-     * @return true when a known faction colony exists in the system
-     */
-    public static boolean hasKnownOwnedMarket(SectorAPI sector, StarSystemAPI system) {
-        return hasKnownOwnedMarket(sector, system, false);
-    }
-
-    /**
-     * Whether at least one owned, non-condition-only market exists in the system -
-     * its faction-presence test, used to admit the system to the map as inhabited.
-     * Shares the known-market and condition-only filters {@link #readByFaction}
-     * applies, so "counts as a colony" means one thing across dominance and
-     * inhabitation.
-     *
-     * @param sector                       the sector to read; null (or a null economy)
-     *                                     yields false
-     * @param system                       the system to test; null yields false
-     * @param shouldIncludeUndiscoveredMarkets whether an undiscovered colony still
-     *                                     counts as presence (the "show all factions"
-     *                                     dev reveal); false applies the normal
-     *                                     known-to-player filter
-     * @return true when a folded faction colony exists in the system
-     */
-    public static boolean hasKnownOwnedMarket(SectorAPI sector, StarSystemAPI system,
-            boolean shouldIncludeUndiscoveredMarkets) {
-        if (sector == null || system == null || sector.getEconomy() == null) {
-            return false;
-        }
-        return !readByFaction(sector, system, PRESENCE_READ_WEIGHTING,
-                shouldIncludeUndiscoveredMarkets).isEmpty();
     }
 
     // A market's worth to the dominance rule: its size rating - scaled by the

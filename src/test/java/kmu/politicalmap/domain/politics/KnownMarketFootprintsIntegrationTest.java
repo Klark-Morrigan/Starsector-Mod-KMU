@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * toggle states - and the station presence bonus (its weight in size points before
  * stability, the hidden-base rate, the NO_ORBITAL_STATION opt-out, and the toggle
  * off), the zero-weight short-circuits that skip the station scan and the stability
- * read, plus the presence predicate the map's inhabitation test leans on.
+ * read.
  */
 class KnownMarketFootprintsIntegrationTest {
 
@@ -404,82 +404,6 @@ class KnownMarketFootprintsIntegrationTest {
         }
     }
 
-    @Nested
-    class HasKnownOwnedMarket {
-
-        @Test
-        void hasKnownOwnedMarketIsTrueForVisibleOwnedMarket() {
-            var sector = sectorWith("owned-system", visibleMarket(faction("hegemony"), 5));
-
-            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(sector, onlySystem(sector))).isTrue();
-        }
-
-        @Test
-        void hasKnownOwnedMarketIsTrueForZeroStabilityMarket() {
-            // Presence is about knowing the colony exists, not its worth: a
-            // weightless (stability 0) colony still inhabits its system.
-            var sector = sectorWith("collapsed-system",
-                    marketAtStability(faction("hegemony"), 5, 0.0f));
-
-            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(sector, onlySystem(sector))).isTrue();
-        }
-
-        @Test
-        void hasKnownOwnedMarketIsFalseForConditionOnlyMarket() {
-            // A bare rock's condition-only market is no colony, so the system has
-            // no faction presence.
-            var sector = sectorWith("bare-system",
-                    market(faction("hegemony"), 6, true, false, false, FULL_STABILITY));
-
-            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(sector, onlySystem(sector))).isFalse();
-        }
-
-        @Test
-        void hasKnownOwnedMarketIsFalseForUndiscoveredStation() {
-            // A concealed station the player has not found yet - hidden market on a
-            // still-discoverable entity - is absent from the map, so it confers no
-            // presence.
-            var sector = sectorWith("undiscovered-system",
-                    concealedStation(faction("knights_of_selkie"), 5));
-
-            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(sector, onlySystem(sector))).isFalse();
-        }
-
-        @Test
-        void hasKnownOwnedMarketIsTrueForRevealedColonyAwaitingApproach() {
-            // A colony un-hidden ahead of its entity being found is public
-            // knowledge, so it confers presence before the fleet closes in.
-            var sector = sectorWith("revealed-system",
-                    revealedColonyAwaitingApproach(faction("aEP_FSF"), 5));
-
-            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(sector, onlySystem(sector))).isTrue();
-        }
-
-        @Test
-        void hasKnownOwnedMarketIsFalseForUninhabitedSystem() {
-            var sector = sectorWith("empty-system");
-
-            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(sector, onlySystem(sector))).isFalse();
-        }
-
-        @Test
-        void hasKnownOwnedMarketIsFalseForNullSector() {
-            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(null, mock(StarSystemAPI.class)))
-                    .isFalse();
-        }
-
-        @Test
-        void hasKnownOwnedMarketIsTrueForUndiscoveredStationWhenIncludingUndiscoveredMarkets() {
-            // With the show-all-factions dev reveal the concealed station counts as
-            // presence, though it fails the normal known-to-player gate.
-            var sector = sectorWith("undiscovered-system",
-                    concealedStation(faction("knights_of_selkie"), 5));
-
-            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(
-                    sector, onlySystem(sector), true)).isTrue();
-        }
-    }
-
     private static StarSystemAPI onlySystem(SectorAPI sector) {
         return sector.getStarSystems().get(0);
     }
@@ -512,13 +436,6 @@ class KnownMarketFootprintsIntegrationTest {
     // so it confers no presence until discovery un-hides or reveals it.
     private static MarketAPI concealedStation(FactionAPI faction, int size) {
         return market(faction, size, false, true, true, FULL_STABILITY);
-    }
-
-    // A colony surfaced ahead of its entity being physically found: the market
-    // un-hidden but the entity still discoverable. Public knowledge already, so it
-    // counts as presence (FSF's DWR43 colonies between entry and approach).
-    private static MarketAPI revealedColonyAwaitingApproach(FactionAPI faction, int size) {
-        return market(faction, size, false, false, true, FULL_STABILITY);
     }
 
     // A visible owned market that owns an attached defensive station - a
