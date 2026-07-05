@@ -15,6 +15,7 @@ import kmu.politicalmap.refresh.PoliticalMapRefresh;
 import kmu.politicalmap.render.model.ClusterAnchor;
 import kmu.politicalmap.render.model.PoliticalMapDebugDrawables;
 import kmu.politicalmap.render.model.PoliticalMapDrawables;
+import kmu.politicalmap.ui.PoliticalOverlayToggle;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -159,6 +160,12 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     @Override
     public void renderOnMap(float factor, float alphaMult) {
+        // The overlay's on/off tab lives on the sidebar; deselecting it must hide the
+        // territory. Gate the whole draw (and its rebuild) on that choice, so a hidden
+        // overlay costs only this sector-memory read per frame.
+        if (!PoliticalOverlayToggle.isOverlayEnabled()) {
+            return;
+        }
         rebuildIfStale();
         logFirstRenderOnce(factor, alphaMult);
         // Swap production and debug render on the debug toggle: the rebuild builds the debug

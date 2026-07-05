@@ -18,6 +18,8 @@
     "condition_manager_tooltip_hidden_title": "Hidden",
     "condition_manager_tooltip_hidden_body": "This condition is present on the market, but it's hidden and still applies its effects.",
 
-    "dialog_close": "Close"
+    "dialog_close": "Close",
+
+    "political_map_sidebar_tab": "Political Map"
   }
 }

@@ -85,6 +85,13 @@ public final class KmuLunaSettings {
     // short form fits a tighter cluster at a larger font.
     private static final String FACTION_NAME_FORMAT_FIELD =
             "kmu_politicalMapFactionNameFormat";
+    // Overlay sidebar fields (Political map - visuals tab): the small on-map box carrying
+    // the overlay's on/off tab. Anchor is where the box sits on screen; opacity is its
+    // background translucency.
+    private static final String SIDEBAR_ANCHOR_FIELD =
+            "kmu_politicalMapSidebarAnchor";
+    private static final String SIDEBAR_OPACITY_FIELD =
+            "kmu_politicalMapSidebarOpacity";
 
     // Faction (core-faction cluster) style fields.
     private static final String FACTION_OUTER_BORDER_COLOR_FIELD =
@@ -285,6 +292,14 @@ public final class KmuLunaSettings {
     // On by default: the faction names are the payoff of the merged-territory map, so
     // they show unless the player turns them off.
     private static final boolean DEFAULT_SHOW_FACTION_NAMES = true;
+    // Top-left by default: the least-used corner of the sector map, so the box starts clear
+    // of the systems the player reads. Mirrors the CSV row's defaultValue.
+    private static final SidebarAnchorChoice DEFAULT_SIDEBAR_ANCHOR = SidebarAnchorChoice.TOP_LEFT;
+    // 80% opaque by default: readable over the map without fully masking what is behind it.
+    // Stored 0..100 in the CSV, exposed 0..1. Mirrors the CSV row's defaultValue.
+    private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
+    private static final int MIN_SIDEBAR_OPACITY_PERCENT = 0;
+    private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
     // The default label font: the highest-resolution antialiased LazyFont face the game
     // ships (a 42px glyph atlas). A name is stretched far past its atlas resolution to
     // span a cluster, so the magnified glyphs stay as clean as a bitmap face allows only
@@ -924,6 +939,29 @@ public final class KmuLunaSettings {
     public static String getPoliticalMapFactionNameFont() {
         return LunaSettingsReader.getString(MOD_ID, FACTION_NAME_FONT_FIELD,
                 DEFAULT_FACTION_NAME_FONT);
+    }
+
+    /**
+     * @return which screen corner or edge midpoint the overlay sidebar box anchors to;
+     *         the top-left corner by default
+     */
+    public static SidebarAnchorChoice getPoliticalMapSidebarAnchor() {
+        return SidebarAnchorChoice.fromLabel(
+                LunaSettingsReader.getString(MOD_ID, SIDEBAR_ANCHOR_FIELD,
+                        DEFAULT_SIDEBAR_ANCHOR.getLabel()),
+                DEFAULT_SIDEBAR_ANCHOR);
+    }
+
+    /**
+     * @return the overlay sidebar box's background opacity as a 0..1 fraction (the CSV
+     *         stores it as a 0..100 percentage); 0.8 by default
+     */
+    public static float getPoliticalMapSidebarBackgroundOpacity() {
+        var percent = LunaSettingsReader.getInt(MOD_ID, SIDEBAR_OPACITY_FIELD,
+                DEFAULT_SIDEBAR_OPACITY_PERCENT);
+        var clamped = Math.max(MIN_SIDEBAR_OPACITY_PERCENT,
+                Math.min(MAX_SIDEBAR_OPACITY_PERCENT, percent));
+        return clamped / (float) MAX_SIDEBAR_OPACITY_PERCENT;
     }
 
     /**

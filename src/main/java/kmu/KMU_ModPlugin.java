@@ -10,6 +10,7 @@ import kmu.politicalmap.refresh.listeners.PoliticalMapColonizationListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDecivListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
+import kmu.politicalmap.ui.PoliticalMapSidebar;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -59,6 +60,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
             installPoliticalMapDiscoveryListener(Global.getSector());
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU political map discovery listener", exception);
+        }
+
+        try {
+            installPoliticalMapSidebar(Global.getSector());
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to install KMU political map sidebar", exception);
         }
 
         try {
@@ -196,6 +203,25 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // the first poll re-seeds it.
         MovingSystems.getInstance().reset();
         sector.addTransientScript(new PoliticalMapSectorWatcher());
+    }
+
+    // Registers the UI-coords listener that draws the overlay's control box on the sector
+    // map and reads its click. Transient: it holds no save state (the on/off choice lives
+    // in sector memory) and its cached GL text must never enter a save, so it is re-added
+    // fresh each load. Remove-then-add keeps the install idempotent and also clears any
+    // persistent registration an older save captured, so exactly one instance renders.
+    static void installPoliticalMapSidebar(SectorAPI sector) {
+        if (sector == null) {
+            return;
+        }
+
+        var listenerManager = sector.getListenerManager();
+        if (listenerManager == null) {
+            return;
+        }
+
+        listenerManager.removeListenerOfClass(PoliticalMapSidebar.class);
+        listenerManager.addListener(new PoliticalMapSidebar(), true);
     }
 
     static void installPoliticalMapTerrain(SectorAPI sector) {

@@ -1,5 +1,8 @@
 package kmu.settings;
 
+import kmlib.settings.LabeledChoice;
+import kmlib.settings.LabeledChoices;
+
 /**
  * Which of a faction's two palette colors a political-map element draws in, or
  * whether it draws at all - the player's choice behind the "Faction ... color"
@@ -13,7 +16,7 @@ package kmu.settings;
  * labels here must match the {@code secondaryValue} options in
  * data/config/LunaSettings.csv exactly.
  */
-public enum FactionPaletteChoice {
+public enum FactionPaletteChoice implements LabeledChoice {
     PRIMARY("Primary faction color"),
     SECONDARY("Secondary faction color"),
     NONE("No color");
@@ -28,6 +31,7 @@ public enum FactionPaletteChoice {
      * @return the LunaLib Radio option label for this choice, used both as a
      *         read fallback and as the CSV default value
      */
+    @Override
     public String getLabel() {
         return label;
     }
@@ -41,11 +45,6 @@ public enum FactionPaletteChoice {
      * @return the matching choice, or {@code fallback} when none matches
      */
     public static FactionPaletteChoice fromLabel(String label, FactionPaletteChoice fallback) {
-        for (var choice : values()) {
-            if (choice.label.equals(label)) {
-                return choice;
-            }
-        }
-        return fallback;
+        return LabeledChoices.fromLabel(values(), label, fallback);
     }
 }

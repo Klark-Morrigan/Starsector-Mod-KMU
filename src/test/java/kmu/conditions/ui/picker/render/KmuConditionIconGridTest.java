@@ -26,11 +26,11 @@ class KmuConditionIconGridTest {
             var placements =
                     KmuConditionIconGrid.computeLayout(Arrays.asList(m, m, m), rowWidth);
 
-            assertThat(placements.get(0).getY()).isZero();
-            assertThat(placements.get(1).getY()).isZero();
-            assertThat(placements.get(2).getY()).isZero();
-            assertThat(placements.get(1).getX()).isEqualTo(m.getButtonWidth() + KmuConditionIconGrid.CELL_GAP);
-            assertThat(placements.get(2).getX()).isEqualTo(2 * (m.getButtonWidth() + KmuConditionIconGrid.CELL_GAP));
+            assertThat(placements.get(0).y()).isZero();
+            assertThat(placements.get(1).y()).isZero();
+            assertThat(placements.get(2).y()).isZero();
+            assertThat(placements.get(1).x()).isEqualTo(m.getButtonWidth() + KmuConditionIconGrid.CELL_GAP);
+            assertThat(placements.get(2).x()).isEqualTo(2 * (m.getButtonWidth() + KmuConditionIconGrid.CELL_GAP));
         }
 
         @Test
@@ -43,10 +43,10 @@ class KmuConditionIconGridTest {
             var placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
 
             assertThat(placements).hasSize(3);
-            assertThat(placements.get(0).getX()).isZero();
-            assertThat(placements.get(1).getX()).isEqualTo(metrics.get(0).getButtonWidth() + 8f);
-            assertThat(placements.get(2).getX()).isZero();
-            assertThat(placements.get(2).getY()).isEqualTo(metrics.get(1).getButtonHeight() + 8f);
+            assertThat(placements.get(0).x()).isZero();
+            assertThat(placements.get(1).x()).isEqualTo(metrics.get(0).getButtonWidth() + 8f);
+            assertThat(placements.get(2).x()).isZero();
+            assertThat(placements.get(2).y()).isEqualTo(metrics.get(1).getButtonHeight() + 8f);
         }
     }
 
@@ -67,7 +67,7 @@ class KmuConditionIconGridTest {
             var placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
 
             assertThat(KmuConditionIconGrid.computeHeightForPlacements(placements))
-                    .isEqualTo(placements.get(2).getY() + metrics.get(2).getButtonHeight());
+                    .isEqualTo(placements.get(2).y() + metrics.get(2).getButtonHeight());
         }
     }
 

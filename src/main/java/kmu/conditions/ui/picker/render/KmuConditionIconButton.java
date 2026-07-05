@@ -1,15 +1,15 @@
 package kmu.conditions.ui.picker.render;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.BaseCustomUIPanelPlugin;
-import com.fs.starfarer.api.graphics.SpriteAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.graphics.StarsectorSprites;
 import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.render.UiBoxes;
 
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
@@ -69,15 +69,11 @@ public final class KmuConditionIconButton {
             return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(fallback, fallback);
         }
 
-        try {
-            var sprite = Global.getSettings().getSprite(icon.get());
-            if (sprite == null) {
-                return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(fallback, fallback);
-            }
-            return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(sprite.getWidth(), sprite.getHeight());
-        } catch (RuntimeException exception) {
+        var sprite = StarsectorSprites.loadSprite(icon.get());
+        if (sprite == null) {
             return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(fallback, fallback);
         }
+        return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(sprite.getWidth(), sprite.getHeight());
     }
 
     private final class IconButtonPanelPlugin extends BaseCustomUIPanelPlugin {
@@ -110,10 +106,7 @@ public final class KmuConditionIconButton {
             var borderAlpha = style.getBorderAlpha();
 
             Misc.renderQuadAlpha(x, y, width, height, backdropColor, backdropAlpha * alphaMult);
-            Misc.renderQuadAlpha(x, y, width, 1f, borderColor, borderAlpha * alphaMult);
-            Misc.renderQuadAlpha(x, y + height - 1f, width, 1f, borderColor, borderAlpha * alphaMult);
-            Misc.renderQuadAlpha(x, y, 1f, height, borderColor, borderAlpha * alphaMult);
-            Misc.renderQuadAlpha(x + width - 1f, y, 1f, height, borderColor, borderAlpha * alphaMult);
+            UiBoxes.renderBorder(x, y, width, height, 1f, borderColor, borderAlpha * alphaMult);
         }
 
         @Override
@@ -145,7 +138,7 @@ public final class KmuConditionIconButton {
                 return;
             }
 
-            var sprite = getSprite(icon.get());
+            var sprite = StarsectorSprites.loadSprite(icon.get());
             if (sprite == null) {
                 return;
             }
@@ -168,14 +161,6 @@ public final class KmuConditionIconButton {
             sprite.setColor(previousColor);
             sprite.setAlphaMult(previousAlpha);
             sprite.setSize(previousWidth, previousHeight);
-        }
-
-        private SpriteAPI getSprite(String iconPath) {
-            try {
-                return Global.getSettings().getSprite(iconPath);
-            } catch (RuntimeException exception) {
-                return null;
-            }
         }
     }
 }

@@ -1,5 +1,8 @@
 package kmu.settings;
 
+import kmlib.settings.LabeledChoice;
+import kmlib.settings.LabeledChoices;
+
 /**
  * Whether a factionless political-map category (decivilised or uninhabited
  * systems) draws its outline in the neutral color or not at all - the player's
@@ -12,7 +15,7 @@ package kmu.settings;
  * strings. The labels here must match the {@code secondaryValue} options in
  * data/config/LunaSettings.csv exactly.
  */
-public enum NeutralColorChoice {
+public enum NeutralColorChoice implements LabeledChoice {
     NEUTRAL("Neutral color"),
     NONE("No color");
 
@@ -26,6 +29,7 @@ public enum NeutralColorChoice {
      * @return the LunaLib Radio option label for this choice, used both as a
      *         read fallback and as the CSV default value
      */
+    @Override
     public String getLabel() {
         return label;
     }
@@ -46,11 +50,6 @@ public enum NeutralColorChoice {
      * @return the matching choice, or {@code fallback} when none matches
      */
     public static NeutralColorChoice fromLabel(String label, NeutralColorChoice fallback) {
-        for (var choice : values()) {
-            if (choice.label.equals(label)) {
-                return choice;
-            }
-        }
-        return fallback;
+        return LabeledChoices.fromLabel(values(), label, fallback);
     }
 }

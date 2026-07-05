@@ -31,6 +31,7 @@ public final class KmuStrings {
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE = "condition_manager_tooltip_hidden_title";
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY = "condition_manager_tooltip_hidden_body";
     public static final String DIALOG_CLOSE = "dialog_close";
+    public static final String POLITICAL_MAP_SIDEBAR_TAB = "political_map_sidebar_tab";
 
     private KmuStrings() {
     }

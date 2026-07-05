@@ -5,10 +5,11 @@ import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
+import kmlib.math.geometry.Rectangle;
+
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
-import kmu.ui.geometry.KmuUiPlacement;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -91,7 +92,7 @@ public final class KmuConditionIconGrid {
             var placement = placements.get(index);
             var button = new KmuConditionIconButton(entry, actionConsumer);
 
-            button.addTo(gridPanel, tooltip, placement.getX(), placement.getY(), metrics.get(index));
+            button.addTo(gridPanel, tooltip, placement.x(), placement.y(), metrics.get(index));
             buttonsByConditionId.put(entry.getConditionId(), button);
         }
 
@@ -102,10 +103,10 @@ public final class KmuConditionIconGrid {
     /** Left-to-right, top-to-bottom row-wrapping layout. A button that would
      *  overflow the current row starts a new one. The first button in a row is
      *  never wrapped even if it is wider than the available width. */
-    static List<KmuUiPlacement> computeLayout(List<KmuConditionIconButtonLayout> metrics, float width) {
+    static List<Rectangle> computeLayout(List<KmuConditionIconButtonLayout> metrics, float width) {
         Objects.requireNonNull(metrics, "metrics");
 
-        var placements = new ArrayList<KmuUiPlacement>();
+        var placements = new ArrayList<Rectangle>();
         var safeWidth = Math.max(1f, width);
         var x = 0f;
         var y = 0f;
@@ -119,7 +120,7 @@ public final class KmuConditionIconGrid {
                 rowHeight = 0f;
             }
 
-            placements.add(new KmuUiPlacement(x, y, metric.getButtonWidth(), metric.getButtonHeight()));
+            placements.add(new Rectangle(x, y, metric.getButtonWidth(), metric.getButtonHeight()));
             x += metric.getButtonWidth() + CELL_GAP;
             rowHeight = Math.max(rowHeight, metric.getButtonHeight());
         }
@@ -128,13 +129,13 @@ public final class KmuConditionIconGrid {
     }
 
     /** Bottom edge of the last placement, which equals the total grid height. */
-    static float computeHeightForPlacements(List<KmuUiPlacement> placements) {
+    static float computeHeightForPlacements(List<Rectangle> placements) {
         Objects.requireNonNull(placements, "placements");
         if (placements.isEmpty()) {
             return 0f;
         }
         var last = placements.get(placements.size() - 1);
-        return last.getY() + last.getHeight();
+        return last.y() + last.height();
     }
 
     private static List<KmuConditionIconButtonLayout> computeKmuConditionIconButtonLayouts(List<KmuConditionPickerEntry> entries) {

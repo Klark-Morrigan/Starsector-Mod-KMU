@@ -1,5 +1,8 @@
 package kmu.settings;
 
+import kmlib.settings.LabeledChoice;
+import kmlib.settings.LabeledChoices;
+
 /**
  * Whether a faction cluster's label spells out the owner's full name or its short
  * name - the player's choice behind the "Faction name format" Radio setting.
@@ -12,7 +15,7 @@ package kmu.settings;
  * without matching raw strings. The labels here must match the
  * {@code secondaryValue} options in data/config/LunaSettings.csv exactly.
  */
-public enum FactionNameFormatChoice {
+public enum FactionNameFormatChoice implements LabeledChoice {
     FULL("Full names"),
     SHORT("Short names");
 
@@ -26,6 +29,7 @@ public enum FactionNameFormatChoice {
      * @return the LunaLib Radio option label for this choice, used both as a
      *         read fallback and as the CSV default value
      */
+    @Override
     public String getLabel() {
         return label;
     }
@@ -38,12 +42,8 @@ public enum FactionNameFormatChoice {
      *                 (unset, unreadable, or a stale label from an old config)
      * @return the matching choice, or {@code fallback} when none matches
      */
-    public static FactionNameFormatChoice fromLabel(String label, FactionNameFormatChoice fallback) {
-        for (var choice : values()) {
-            if (choice.label.equals(label)) {
-                return choice;
-            }
-        }
-        return fallback;
+    public static FactionNameFormatChoice fromLabel(String label,
+            FactionNameFormatChoice fallback) {
+        return LabeledChoices.fromLabel(values(), label, fallback);
     }
 }

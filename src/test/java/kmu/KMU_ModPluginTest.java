@@ -4,6 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmu.politicalmap.ui.PoliticalMapSidebar;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.junit.jupiter.api.Nested;
@@ -15,6 +16,7 @@ import java.lang.reflect.Proxy;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 class KMU_ModPluginTest {
 
@@ -43,7 +45,7 @@ class KMU_ModPluginTest {
             KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
 
             assertThat(listenerManager.addedListener).isInstanceOf(StarsectorMarketUiContextTracker.class);
-            assertThat(listenerManager.addedAsPermanent).isTrue();
+            assertThat(listenerManager.addedAsTransient).isTrue();
         }
 
         @Test
@@ -53,6 +55,31 @@ class KMU_ModPluginTest {
             KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
 
             assertThat(listenerManager.addedListener).isNull();
+        }
+    }
+
+    @Nested
+    class InstallPoliticalMapSidebar {
+
+        @Test
+        void reinstallsSidebarFreshAsTransient() {
+            var listenerManager = new RecordingListenerManager(false);
+
+            KMU_ModPlugin.installPoliticalMapSidebar(sector(listenerManager));
+
+            // Remove-then-add: clears any registration an older save carried, then adds
+            // the fresh instance transiently so it never enters the save.
+            assertThat(listenerManager.removedListenerClass).isEqualTo(PoliticalMapSidebar.class);
+            assertThat(listenerManager.addedListener).isInstanceOf(PoliticalMapSidebar.class);
+            assertThat(listenerManager.addedAsTransient).isTrue();
+        }
+
+        @Test
+        void toleratesAMissingListenerManager() {
+            var sidebarInstallOnNullManager = (Runnable) () ->
+                    KMU_ModPlugin.installPoliticalMapSidebar(sector(null));
+
+            assertThatCode(sidebarInstallOnNullManager::run).doesNotThrowAnyException();
         }
     }
 
@@ -92,7 +119,10 @@ class KMU_ModPluginTest {
     private static final class RecordingListenerManager implements ListenerManagerAPI {
         private final boolean hasTracker;
         private Object addedListener;
-        private boolean addedAsPermanent;
+        // The engine's second addListener parameter means transient (true keeps the
+        // listener out of the save), so the recording mirrors that vocabulary.
+        private boolean addedAsTransient;
+        private Class<?> removedListenerClass;
 
         private RecordingListenerManager(boolean hasTracker) {
             this.hasTracker = hasTracker;
@@ -101,13 +131,13 @@ class KMU_ModPluginTest {
         @Override
         public void addListener(Object listener) {
             addedListener = listener;
-            addedAsPermanent = false;
+            addedAsTransient = false;
         }
 
         @Override
-        public void addListener(Object listener, boolean permanent) {
+        public void addListener(Object listener, boolean isTransient) {
             addedListener = listener;
-            addedAsPermanent = permanent;
+            addedAsTransient = isTransient;
         }
 
         @Override
@@ -116,6 +146,7 @@ class KMU_ModPluginTest {
 
         @Override
         public void removeListenerOfClass(Class<?> listenerClass) {
+            removedListenerClass = listenerClass;
         }
 
         @Override
