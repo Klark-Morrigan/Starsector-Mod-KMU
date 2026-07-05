@@ -167,6 +167,14 @@ public final class KmuLunaSettings {
     private static final String CELL_BOUND_SEGMENTS_FIELD =
             "kmu_politicalMapCellBoundSegments";
 
+    // Cell reach (visuals tab): how far each system's territory extends into empty space
+    // before the frontier bound closes it off. A player-facing appearance knob - it sets
+    // how much open space each system colours in - so it sits on the visuals tab, not the
+    // Dev resolution knob above. Like the resolution it reseeds the cells, so it feeds the
+    // geometry rebuild rather than the drawables restyle.
+    private static final String CELL_RADIUS_FIELD =
+            "kmu_politicalMapCellRadius";
+
     // National-border geometry (Dev tab): the shape of the frontier stroked and filled
     // per cluster, exposed for live tuning rather than baked as constants. All feed the
     // drawables rebuild, so a change takes effect the moment it is applied. The Dev tab
@@ -367,6 +375,9 @@ public final class KmuLunaSettings {
     // the geometric default this setting overrides; kept a literal like the other
     // fallbacks so this class stays decoupled from the geometry library.
     private static final int DEFAULT_CELL_BOUND_SEGMENTS = 48;
+    // The default cell reach into empty space, world units - the constant the geometry
+    // used before this became a knob. Mirrors the CSV defaultValue.
+    private static final double DEFAULT_CELL_RADIUS = 4000.0;
     // Border-tracing knobs (ungated).
     private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
@@ -686,6 +697,16 @@ public final class KmuLunaSettings {
     public static int getPoliticalMapCellBoundSegments() {
         return LunaSettingsReader.getInt(MOD_ID, CELL_BOUND_SEGMENTS_FIELD,
                 DEFAULT_CELL_BOUND_SEGMENTS);
+    }
+
+    /**
+     * @return how far each system's territory reaches into empty space before its
+     *         frontier bound closes it off, in world units; higher lets each system
+     *         colour more open space (so distant systems' territories meet and merge),
+     *         lower pulls every territory in tight around its own systems
+     */
+    public static double getPoliticalMapCellRadius() {
+        return LunaSettingsReader.getDouble(MOD_ID, CELL_RADIUS_FIELD, DEFAULT_CELL_RADIUS);
     }
 
     /**

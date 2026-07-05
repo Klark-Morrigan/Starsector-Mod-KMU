@@ -121,6 +121,10 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private int lastGeometryRevision = -1;
     private int lastContentRevision = -1;
     private int lastBoundSegments = -1;
+    // The cell reach the cached geometry was last seeded at. Like the frontier resolution
+    // it reseeds every cell, so a change forces a geometry rebuild rather than a restyle.
+    // Starts NaN so any real radius differs from the seed and the first render rebuilds.
+    private double lastCellRadius = Double.NaN;
     // The dev reveal overrides the cached geometry was last seeded under. Like the
     // frontier resolution, they change which systems seed a cell, so a flip reseeds the
     // partition - the settings-revision bump alone only restyles fixed geometry. Held
@@ -240,25 +244,33 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // reseeds every cell, so it makes the geometry stale the same way an access
         // change does. Read once here and let updateFromSector do the reseed.
         var boundSegments = KmuLunaSettings.getPoliticalMapCellBoundSegments();
+        // The cell reach is a geometry input for the same reason as the resolution: it
+        // sets how far each cell extends into empty space, so a change reseeds every cell
+        // and must rebuild the partition here rather than only restyle it below.
+        var cellRadius = KmuLunaSettings.getPoliticalMapCellRadius();
         // The two dev reveal overrides are geometry inputs for the same reason: each
         // changes which systems seed a cell, so a flip must reseed the partition here
         // rather than only restyle it through the content revision below.
         var devOverrides = PoliticalMapDevOverrides.readFromSettings();
         if (geometryRevision != lastGeometryRevision || boundSegments != lastBoundSegments
+                || cellRadius != lastCellRadius
                 || devOverrides.isShowingAllFactions() != lastShowsAllFactions
                 || devOverrides.isForcingAllSystemsOnMap() != lastForcesAllSystemsOnMap) {
             // Transition trace: a stale cell or one left behind after an access change
-            // can be tied to the revision step - or segment count - that drove it.
+            // can be tied to the revision step - or segment count or cell reach - that
+            // drove it.
             LOG.debug("Political map geometry stale; rebuilding from revision "
                     + lastGeometryRevision + " to " + geometryRevision
                     + ", boundSegments " + lastBoundSegments + " to " + boundSegments
+                    + ", cellRadius " + lastCellRadius + " to " + cellRadius
                     + ", showAllFactions " + lastShowsAllFactions + " to "
                     + devOverrides.isShowingAllFactions()
                     + ", forceAllSystems " + lastForcesAllSystemsOnMap + " to "
                     + devOverrides.isForcingAllSystemsOnMap());
-            rebuildGeometry(boundSegments, devOverrides);
+            rebuildGeometry(boundSegments, cellRadius, devOverrides);
             lastGeometryRevision = geometryRevision;
             lastBoundSegments = boundSegments;
+            lastCellRadius = cellRadius;
             lastShowsAllFactions = devOverrides.isShowingAllFactions();
             lastForcesAllSystemsOnMap = devOverrides.isForcingAllSystemsOnMap();
             rebuiltCells = true;
@@ -363,15 +375,16 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the
     // cells affected by an access change or a system starting or stopping moving - or
-    // every cell, when the frontier resolution changed, since that reseeds them all.
-    // Feeds the cache the currently-moving systems so they are left out of the
-    // partition (they seed no cell and clip no neighbour), and the dev reveal overrides
-    // so a forced or undiscovered-colony system joins the drawn set.
-    private void rebuildGeometry(int boundSegments, PoliticalMapDevOverrides overrides) {
+    // every cell, when the frontier resolution or the cell radius changed, since either
+    // reseeds them all. Feeds the cache the currently-moving systems so they are left out
+    // of the partition (they seed no cell and clip no neighbour), and the dev reveal
+    // overrides so a forced or undiscovered-colony system joins the drawn set.
+    private void rebuildGeometry(int boundSegments, double cellRadius,
+            PoliticalMapDevOverrides overrides) {
         var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
         KmuProfiling.getProfiler().measure("politicalMap.updateGeometry",
                 () -> geometryCache.updateFromSector(
-                        Global.getSector(), movingSystemIds, boundSegments, overrides));
+                        Global.getSector(), movingSystemIds, boundSegments, cellRadius, overrides));
     }
 
     // One-shot diagnostic for the no-draw investigation. Guarded on isDebugEnabled so

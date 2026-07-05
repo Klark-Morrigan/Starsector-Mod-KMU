@@ -27,14 +27,15 @@ import java.util.Set;
  *
  * <p>The cells are a Voronoi partition of the on-map systems. Recomputing the
  * whole partition is O(n^3), but a Voronoi cell is local: adding or removing one
- * site only changes that site's cell and the cells within
- * {@code 2 * MAX_CELL_RADIUS} of it - every farther cell is provably untouched
- * (their shared bisector lies beyond the cell's bounding radius). So
+ * site only changes that site's cell and the cells within twice the cell radius of
+ * it - every farther cell is provably untouched (their shared bisector lies beyond
+ * the cell's bounding radius). So
  * {@link #updateFromSector} diffs the reachable set against the cache and rebuilds
  * only the affected cells, leaving distant ones in place. The first update (empty
- * cache) rebuilds everything, since every system is "added". A change to the
- * frontier resolution passed in is the one input that also forces a full rebuild:
- * it seeds every cell, so it invalidates them all regardless of the access diff.
+ * cache) rebuilds everything, since every system is "added". Two per-cell seed
+ * inputs passed in also force a full rebuild when they change - the frontier
+ * resolution and the cell radius - since each reseeds every cell, invalidating them
+ * all regardless of the access diff.
  *
  * <p>Moving systems are excluded from the partition. A system that rewrites its own
  * hyperspace position (a mobile colony) has no stable cell to draw, and letting it
@@ -59,12 +60,6 @@ import java.util.Set;
  * stub sector, independent of how the cells are drawn.
  */
 public final class PoliticalMapGeometryCache {
-    // How far a system's cell may reach - its zone of control.
-    private static final double MAX_CELL_RADIUS = 4000.0;
-    // A change at one site can only alter cells whose site is within twice the
-    // cell radius (their bisector with the changed site reaches the cell).
-    private static final double NEIGHBOURHOOD_RADIUS = 2.0 * MAX_CELL_RADIUS;
-
     private static final Logger LOG = Global.getLogger(PoliticalMapGeometryCache.class);
 
     private final Map<String, double[]> siteBySystemId = new LinkedHashMap<>();
@@ -80,6 +75,13 @@ public final class PoliticalMapGeometryCache {
     // the first update always rebuilds from scratch.
     private int lastBoundSegments = -1;
 
+    // The cell radius the cached cells were seeded at - how far a cell reaches into empty
+    // space. Like the bound-segment count it is a per-cell seed input, so a change
+    // invalidates every built cell; it also sets the neighbourhood radius the incremental
+    // diff scans (twice the reach), so it is held for both. Starts NaN so the first update
+    // always rebuilds from scratch.
+    private double lastCellRadius = Double.NaN;
+
     /**
      * Brings the cache in line with the sector's current on-map systems,
      * rebuilding only the outlines affected by systems that joined or left the
@@ -91,12 +93,16 @@ public final class PoliticalMapGeometryCache {
      *                        each seeds no cell and clips no neighbour, so the cells
      *                        around it fill the space as if it were absent
      * @param boundSegments   the frontier resolution to seed each cell at (sides of
-     *                        the max-radius bound polygon); a change from the last
-     *                        update reseeds every cell, since it is a per-cell input
+     *                        the bound polygon); a change from the last update reseeds
+     *                        every cell, since it is a per-cell input
+     * @param cellRadius      how far each cell may reach into empty space, world units;
+     *                        a change from the last update reseeds every cell, since it
+     *                        is a per-cell input, and it sets the diff's reach
      */
     public void updateFromSector(SectorAPI sector, Set<String> movingSystemIds,
-            int boundSegments) {
-        updateFromSector(sector, movingSystemIds, boundSegments, PoliticalMapDevOverrides.NONE);
+            int boundSegments, double cellRadius) {
+        updateFromSector(sector, movingSystemIds, boundSegments, cellRadius,
+                PoliticalMapDevOverrides.NONE);
     }
 
     /**
@@ -111,22 +117,26 @@ public final class PoliticalMapGeometryCache {
      * @param movingSystemIds the systems currently moving, left out of the partition
      * @param boundSegments   the frontier resolution to seed each cell at; a change
      *                        reseeds every cell
+     * @param cellRadius      how far each cell may reach into empty space, world units;
+     *                        a change reseeds every cell and sets the diff's reach
      * @param overrides       the pass's dev reveal overrides, applied to the drawn set
      */
     public void updateFromSector(SectorAPI sector, Set<String> movingSystemIds,
-            int boundSegments, PoliticalMapDevOverrides overrides) {
+            int boundSegments, double cellRadius, PoliticalMapDevOverrides overrides) {
         // Timed independently of the profiler so the per-update cost (the whole
         // diff, or a full rebuild) reads straight from the log.
         var start = System.nanoTime();
         var newSites = collectAccessibleSites(sector, movingSystemIds, overrides);
 
-        // The bound-segment count seeds every cell's frontier polygon, so a change
-        // invalidates all cached cells regardless of the access diff. Drop them so
-        // the diff below reads every current system as "added" and reseeds it.
-        if (boundSegments != lastBoundSegments) {
+        // The bound-segment count and the cell radius are both per-cell seed inputs -
+        // one sets each frontier polygon's resolution, the other its reach - so a change
+        // to either invalidates all cached cells regardless of the access diff. Drop them
+        // so the diff below reads every current system as "added" and reseeds it.
+        if (boundSegments != lastBoundSegments || cellRadius != lastCellRadius) {
             siteBySystemId.clear();
             cellEdgesBySystemId.clear();
             lastBoundSegments = boundSegments;
+            lastCellRadius = cellRadius;
         }
 
         var added = new LinkedHashSet<String>(newSites.keySet());
@@ -146,13 +156,16 @@ public final class PoliticalMapGeometryCache {
         // Outlines to recompute: each added site, plus every site near a site that
         // was added (it cedes area) or removed (it reclaims area). A system that
         // started or stopped moving is an add or a remove here like any other. Read
-        // removed sites' positions from the old map before it is replaced.
+        // removed sites' positions from the old map before it is replaced. A change at
+        // one site can only alter cells whose site is within twice the cell radius (the
+        // bisector with the changed site reaches no farther), so that is the diff's reach.
+        var neighbourhoodRadius = 2.0 * cellRadius;
         var affected = new LinkedHashSet<String>(added);
         for (var id : added) {
-            affected.addAll(findSystemsNear(newSites, newSites.get(id)));
+            affected.addAll(findSystemsNear(newSites, newSites.get(id), neighbourhoodRadius));
         }
         for (var id : removed) {
-            affected.addAll(findSystemsNear(newSites, siteBySystemId.get(id)));
+            affected.addAll(findSystemsNear(newSites, siteBySystemId.get(id), neighbourhoodRadius));
         }
 
         siteBySystemId.clear();
@@ -173,7 +186,7 @@ public final class PoliticalMapGeometryCache {
         var recomputedCellEdges = 0;
         for (var id : affected) {
             var cell = VoronoiCellBuilder.buildLabelledCell(
-                    indexBySystemId.get(id), allSites, MAX_CELL_RADIUS, boundSegments);
+                    indexBySystemId.get(id), allSites, cellRadius, boundSegments);
             var edges = buildCellEdges(cell, allSiteIds);
             cellEdgesBySystemId.put(id, edges);
             recomputedCellEdges += edges.size();
@@ -225,9 +238,10 @@ public final class PoliticalMapGeometryCache {
 
     // System ids whose site is within the neighbourhood radius of origin - the
     // cells a change at origin can reach.
-    private static Set<String> findSystemsNear(Map<String, double[]> sites, double[] origin) {
+    private static Set<String> findSystemsNear(Map<String, double[]> sites, double[] origin,
+            double neighbourhoodRadius) {
         var near = new LinkedHashSet<String>();
-        var maxDistanceSquared = NEIGHBOURHOOD_RADIUS * NEIGHBOURHOOD_RADIUS;
+        var maxDistanceSquared = neighbourhoodRadius * neighbourhoodRadius;
         for (var entry : sites.entrySet()) {
             if (Points.computeDistanceSquared(origin, entry.getValue()) <= maxDistanceSquared) {
                 near.add(entry.getKey());
@@ -238,7 +252,7 @@ public final class PoliticalMapGeometryCache {
 
     // Turns one labelled cell into its adjacency edges: each edge as a world-space
     // segment tagged with the neighbouring system across it, or null for an edge
-    // on the max-radius bound (a frontier into empty space). The builder reports
+    // on the cell's outer reach bound (a frontier into empty space). The builder reports
     // each edge's neighbour as a site index, resolved to a system id here through
     // the parallel id list.
     private static List<CellEdge> buildCellEdges(VoronoiCellBuilder.LabelledCell cell,

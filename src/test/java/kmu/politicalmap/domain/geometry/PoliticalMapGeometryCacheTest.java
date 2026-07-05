@@ -33,14 +33,19 @@ import static org.mockito.Mockito.when;
  * identity); and a removed system's cell is dropped.
  */
 final class PoliticalMapGeometryCacheTest {
-    // Comfortably beyond 2 * MAX_CELL_RADIUS (8000), so changes near one do not
-    // reach the other.
+    // Comfortably beyond twice the default cell radius (8000), so changes near one do
+    // not reach the other.
     private static final float FAR = 20_000f;
 
     // The frontier resolution cells are seeded at unless the tuning knob changes it;
     // the access-diff tests all run at this one count so a rebuild is driven only by
     // the reachable set, never by a resolution change.
     private static final int DEFAULT_BOUND_SEGMENTS = VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS;
+
+    // The cell reach cells are seeded at unless a test changes it - the production
+    // default. The access-diff tests all run at this one radius so a rebuild is driven
+    // only by the reachable set, never by a reach change; FAR is set well past twice it.
+    private static final double DEFAULT_CELL_RADIUS = 4000.0;
 
     // No movers in the access-diff tests: an empty moving set makes every drawn system
     // participate in the partition. The exclusion tests pass an explicit set to drop
@@ -85,7 +90,7 @@ final class PoliticalMapGeometryCacheTest {
             var cache = new PoliticalMapGeometryCache();
             cache.updateFromSector(
                     sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
-                    NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS);
+                    NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS);
             var distantBefore = cache.getCellEdgesBySystemId().get("b");
 
             // The segment count seeds every cell's frontier polygon, so lowering it
@@ -95,10 +100,29 @@ final class PoliticalMapGeometryCacheTest {
             // so its edge count drops to the new count.
             cache.updateFromSector(
                     sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
-                    NO_MOVING_SYSTEMS, 24);
+                    NO_MOVING_SYSTEMS, 24, DEFAULT_CELL_RADIUS);
 
             assertThat(cache.getCellEdgesBySystemId().get("b")).isNotSameAs(distantBefore);
             assertThat(cache.getCellEdgesBySystemId().get("b")).hasSize(24);
+        }
+
+        @Test
+        void updateReseedsEveryCellWhenTheCellRadiusChanges() {
+            var cache = new PoliticalMapGeometryCache();
+            cache.updateFromSector(
+                    sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
+                    NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS);
+            var distantBefore = cache.getCellEdgesBySystemId().get("b");
+
+            // The cell radius seeds each cell's reach into empty space, so changing it
+            // invalidates every cell even where the reachable set is identical - the
+            // isolated cell must be a fresh object, not the untouched one an access diff
+            // would leave in place, exactly as a frontier-resolution change reseeds it.
+            cache.updateFromSector(
+                    sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
+                    NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS / 2.0);
+
+            assertThat(cache.getCellEdgesBySystemId().get("b")).isNotSameAs(distantBefore);
         }
 
         @Test
@@ -232,7 +256,8 @@ final class PoliticalMapGeometryCacheTest {
     // so the only thing that drives a rebuild is the reachable set.
     private static void updateAtDefaultResolution(PoliticalMapGeometryCache cache,
             StarSystemAPI... systems) {
-        cache.updateFromSector(sectorOf(systems), NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS);
+        cache.updateFromSector(sectorOf(systems), NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS,
+                DEFAULT_CELL_RADIUS);
     }
 
     // Runs an update at the default frontier resolution with the named systems
@@ -240,7 +265,8 @@ final class PoliticalMapGeometryCacheTest {
     // system: it seeds no cell and clips no neighbour.
     private static void updateExcluding(PoliticalMapGeometryCache cache,
             Set<String> movingSystemIds, StarSystemAPI... systems) {
-        cache.updateFromSector(sectorOf(systems), movingSystemIds, DEFAULT_BOUND_SEGMENTS);
+        cache.updateFromSector(sectorOf(systems), movingSystemIds, DEFAULT_BOUND_SEGMENTS,
+                DEFAULT_CELL_RADIUS);
     }
 
     private static SectorAPI sectorOf(StarSystemAPI... systems) {
