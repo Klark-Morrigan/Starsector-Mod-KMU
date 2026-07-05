@@ -9,6 +9,7 @@ import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
+import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
 import kmu.politicalmap.refresh.MovingSystems;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
 import kmu.politicalmap.render.model.ClusterAnchor;
@@ -47,8 +48,9 @@ import java.util.List;
  * <p>The plugin's own job is to keep the cached draw lists fresh with the least work
  * per frame. System positions in hyperspace are fixed for the life of a save, so the
  * raw cells are built once and cached; they are reseeded only when the reachable-
- * system set changes or the frontier-resolution setting changes (that count seeds every
- * cell). The drawables are rebuilt in full only when KMU's LunaLib settings change
+ * system set changes, the frontier-resolution setting changes (that count seeds every
+ * cell), or a dev reveal override flips (each changes which systems seed a cell). The
+ * drawables are rebuilt in full only when KMU's LunaLib settings change
  * (detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsRevision()}) or when the geometry itself was
  * rebuilt; between those, a colony resize marks just its own system stale and drives an
@@ -118,6 +120,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private int lastGeometryRevision = -1;
     private int lastContentRevision = -1;
     private int lastBoundSegments = -1;
+    // The dev reveal overrides the cached geometry was last seeded under. Like the
+    // frontier resolution, they change which systems seed a cell, so a flip reseeds the
+    // partition - the settings-revision bump alone only restyles fixed geometry. Held
+    // here so the stale check catches a flip and forces a geometry rebuild the same
+    // frame, rather than waiting on the paused-on-map sector watcher's next poll.
+    private boolean lastShowsAllFactions;
+    private boolean lastForcesAllSystemsOnMap;
 
     // Diagnostic: ensures the first map render logs exactly once.
     private boolean hasLoggedFirstRender;
@@ -224,15 +233,27 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // reseeds every cell, so it makes the geometry stale the same way an access
         // change does. Read once here and let updateFromSector do the reseed.
         var boundSegments = KmuLunaSettings.getPoliticalMapCellBoundSegments();
-        if (geometryRevision != lastGeometryRevision || boundSegments != lastBoundSegments) {
+        // The two dev reveal overrides are geometry inputs for the same reason: each
+        // changes which systems seed a cell, so a flip must reseed the partition here
+        // rather than only restyle it through the content revision below.
+        var devOverrides = PoliticalMapDevOverrides.readFromSettings();
+        if (geometryRevision != lastGeometryRevision || boundSegments != lastBoundSegments
+                || devOverrides.isShowingAllFactions() != lastShowsAllFactions
+                || devOverrides.isForcingAllSystemsOnMap() != lastForcesAllSystemsOnMap) {
             // Transition trace: a stale cell or one left behind after an access change
             // can be tied to the revision step - or segment count - that drove it.
             LOG.debug("Political map geometry stale; rebuilding from revision "
                     + lastGeometryRevision + " to " + geometryRevision
-                    + ", boundSegments " + lastBoundSegments + " to " + boundSegments);
-            rebuildGeometry(boundSegments);
+                    + ", boundSegments " + lastBoundSegments + " to " + boundSegments
+                    + ", showAllFactions " + lastShowsAllFactions + " to "
+                    + devOverrides.isShowingAllFactions()
+                    + ", forceAllSystems " + lastForcesAllSystemsOnMap + " to "
+                    + devOverrides.isForcingAllSystemsOnMap());
+            rebuildGeometry(boundSegments, devOverrides);
             lastGeometryRevision = geometryRevision;
             lastBoundSegments = boundSegments;
+            lastShowsAllFactions = devOverrides.isShowingAllFactions();
+            lastForcesAllSystemsOnMap = devOverrides.isForcingAllSystemsOnMap();
             rebuiltCells = true;
         }
 
@@ -337,12 +358,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // cells affected by an access change or a system starting or stopping moving - or
     // every cell, when the frontier resolution changed, since that reseeds them all.
     // Feeds the cache the currently-moving systems so they are left out of the
-    // partition (they seed no cell and clip no neighbour).
-    private void rebuildGeometry(int boundSegments) {
+    // partition (they seed no cell and clip no neighbour), and the dev reveal overrides
+    // so a forced or undiscovered-colony system joins the drawn set.
+    private void rebuildGeometry(int boundSegments, PoliticalMapDevOverrides overrides) {
         var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
         KmuProfiling.getProfiler().measure("politicalMap.updateGeometry",
                 () -> geometryCache.updateFromSector(
-                        Global.getSector(), movingSystemIds, boundSegments));
+                        Global.getSector(), movingSystemIds, boundSegments, overrides));
     }
 
     // One-shot diagnostic for the no-draw investigation. Guarded on isDebugEnabled so

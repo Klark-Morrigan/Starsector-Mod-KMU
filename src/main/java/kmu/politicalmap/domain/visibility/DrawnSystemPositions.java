@@ -2,6 +2,8 @@ package kmu.politicalmap.domain.visibility;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -29,6 +31,23 @@ public final class DrawnSystemPositions {
      *         is skipped, since it has no site to place a cell at
      */
     public static Map<String, double[]> collectLivePositions(SectorAPI sector) {
+        return collectLivePositions(sector, PoliticalMapDevOverrides.NONE);
+    }
+
+    /**
+     * Walks the sector once under the dev reveal overrides and records the live
+     * {@code {x, y}} position of every on-map system, keyed by system id, preserving
+     * the sector's iteration order.
+     *
+     * @param sector    the sector to read; null yields an empty map
+     * @param overrides the pass's dev reveal overrides - force-all-systems seeds every
+     *                  system a cell, show-all-factions widens each system's
+     *                  inhabitation read
+     * @return each drawn system's live hyperspace position; a system with no location
+     *         is skipped, since it has no site to place a cell at
+     */
+    public static Map<String, double[]> collectLivePositions(SectorAPI sector,
+            PoliticalMapDevOverrides overrides) {
         var positions = new LinkedHashMap<String, double[]>();
         if (sector == null) {
             return positions;
@@ -38,8 +57,8 @@ public final class DrawnSystemPositions {
         var visibleStars = MapVisibleStars.scan(sector);
         for (var system : sector.getStarSystems()) {
             var location = system.getLocation();
-            if (location == null
-                    || !PoliticalMapVisibility.shouldAppearOnMap(sector, system, visibleStars)) {
+            if (location == null || !PoliticalMapVisibility.shouldAppearOnMap(
+                    sector, system, visibleStars, overrides)) {
                 continue;
             }
             positions.put(system.getId(), new double[] {location.x, location.y});

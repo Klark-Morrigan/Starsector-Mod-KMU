@@ -40,9 +40,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * is trimmed by - live for the same reason: the search is tuned by eye on the open map.
  *
  * <p>The "Dev" tab also carries the cell frontier resolution - the vertex count of
- * each raw Voronoi cell's rounded reach into empty space. It is the one field that
- * reseeds the geometry rather than restyling it, so it feeds the geometry rebuild;
- * it exists to trade map framerate against frontier smoothness.
+ * each raw Voronoi cell's rounded reach into empty space - and two reveal overrides
+ * that widen what the map draws for inspection: show-all-factions, which draws
+ * undiscovered colonies too, and force-all-systems, which seeds a cell for every star
+ * system. All three reseed the geometry rather than restyling it, so they feed the
+ * geometry rebuild rather than the drawables restyle; the frontier resolution trades
+ * map framerate against frontier smoothness, and the two overrides open up the whole
+ * sector's politics or the full cell partition.
  *
  * <p>The "Political map - domination" tab holds the dominance rules - fields that change the
  * map's political verdicts rather than its styling, which is why they do not sit
@@ -77,6 +81,10 @@ public final class KmuLunaSettings {
     // basename; the label renderer resolves the basename to its .fnt path.
     private static final String FACTION_NAME_FONT_FIELD =
             "kmu_politicalMapFactionNameFont";
+    // Whether each cluster label spells its owner's full name or its short name; the
+    // short form fits a tighter cluster at a larger font.
+    private static final String FACTION_NAME_FORMAT_FIELD =
+            "kmu_politicalMapFactionNameFormat";
 
     // Faction (core-faction cluster) style fields.
     private static final String FACTION_OUTER_BORDER_COLOR_FIELD =
@@ -234,6 +242,18 @@ public final class KmuLunaSettings {
             "kmu_politicalMapNameMaxLines";
     private static final String NAME_LINE_SPACING_FIELD =
             "kmu_politicalMapNameLineSpacing";
+    // Reveal overrides (Dev tab): two toggles that widen what the map draws for
+    // inspection, each bypassing a normal gate. Show-all-factions drops the
+    // known-to-player footprint filter so undiscovered colonies count toward
+    // dominance, inhabitation, and geometry; force-all-systems bypasses the map
+    // visibility rule so every star system seeds a cell. Both off by default. They
+    // reseed the geometry (they change which systems get a cell), so the plugin
+    // treats them like the frontier resolution - a change forces a geometry rebuild,
+    // not just the drawables restyle a styling setting triggers.
+    private static final String SHOW_ALL_FACTIONS_FIELD =
+            "kmu_politicalMapShowAllFactions";
+    private static final String FORCE_ALL_SYSTEMS_ON_MAP_FIELD =
+            "kmu_politicalMapForceAllSystemsOnMap";
     // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and the
     // accepted label line in green) so the clustering and axis fit behind the faction
     // labels can be eyeballed on the map. Off by default.
@@ -273,6 +293,11 @@ public final class KmuLunaSettings {
     // LunaLib has loaded the choice. Kept in step with the CSV row's defaultValue and the
     // font list the radio offers.
     private static final String DEFAULT_FACTION_NAME_FONT = "insignia42LTaa";
+    // Full names by default: a cluster label spells the owner's long-form name, the
+    // richer reading. The short form is opt-in for tighter clusters. Mirrors the CSV
+    // row's defaultValue and the label list the radio offers.
+    private static final FactionNameFormatChoice DEFAULT_FACTION_NAME_FORMAT =
+            FactionNameFormatChoice.FULL;
     private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_OUTER_BORDER_OPACITY = 1.0;
@@ -356,6 +381,10 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_NAME_LINE_SPACING = 1.15;
     private static final double DEFAULT_ANCHOR_BAND_OPACITY = 0.35;
     private static final double DEFAULT_ANCHOR_BAND_LINE_OPACITY = 0.9;
+    // Both reveal overrides off by default: the map draws exactly what the normal
+    // gates admit until the player opts into a wider view.
+    private static final boolean DEFAULT_SHOW_ALL_FACTIONS = false;
+    private static final boolean DEFAULT_FORCE_ALL_SYSTEMS_ON_MAP = false;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
     private static final boolean DEFAULT_SHOW_REJECTED_AXES = false;
     private static final boolean DEFAULT_SHOW_UNBIASED_AXES = false;
@@ -895,6 +924,40 @@ public final class KmuLunaSettings {
     public static String getPoliticalMapFactionNameFont() {
         return LunaSettingsReader.getString(MOD_ID, FACTION_NAME_FONT_FIELD,
                 DEFAULT_FACTION_NAME_FONT);
+    }
+
+    /**
+     * @return whether each cluster label spells its owner's full name or its short
+     *         name; the full (long-form) name by default
+     */
+    public static FactionNameFormatChoice getPoliticalMapFactionNameFormat() {
+        return FactionNameFormatChoice.fromLabel(
+                LunaSettingsReader.getString(MOD_ID, FACTION_NAME_FORMAT_FIELD,
+                        DEFAULT_FACTION_NAME_FORMAT.getLabel()),
+                DEFAULT_FACTION_NAME_FORMAT);
+    }
+
+    /**
+     * @return whether the political map draws every faction's colonies, including ones
+     *         the player has not discovered yet - bypasses the known-to-player gate so
+     *         an undiscovered colony still folds into its system's dominance,
+     *         inhabitation, and cell geometry; off by default, a reveal aid for
+     *         inspecting the whole sector's politics
+     */
+    public static boolean getPoliticalMapShowAllFactions() {
+        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_ALL_FACTIONS_FIELD,
+                DEFAULT_SHOW_ALL_FACTIONS);
+    }
+
+    /**
+     * @return whether the political map seeds a cell for every star system, not just the
+     *         reachable, visible, or inhabited ones - bypasses the visibility rule so a
+     *         system the map would otherwise omit still gets geometry; off by default, a
+     *         reveal aid for inspecting the full cell partition
+     */
+    public static boolean shouldForceAllSystemsOnMap() {
+        return LunaSettingsReader.getBoolean(MOD_ID, FORCE_ALL_SYSTEMS_ON_MAP_FIELD,
+                DEFAULT_FORCE_ALL_SYSTEMS_ON_MAP);
     }
 
     /**

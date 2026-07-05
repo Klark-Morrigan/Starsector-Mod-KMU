@@ -386,6 +386,22 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(9 * DOMINANCE_WEIGHT_SCALE);
         }
+
+        @Test
+        void readByFactionIncludesAnUndiscoveredStationWhenIncludingUndiscoveredMarkets() {
+            // The show-all-factions dev reveal drops the known-to-player gate, so a
+            // concealed station folds in at its hidden token size of 1 rather than being
+            // skipped as it is under the normal filter.
+            var sector = sectorWith("undiscovered-system",
+                    concealedStation(faction("knights_of_selkie"), 5));
+
+            var footprints = KnownMarketFootprints.readByFaction(
+                    sector, onlySystem(sector), STABILITY_WEIGHTED, true);
+
+            assertThat(footprints).containsOnlyKeys("knights_of_selkie");
+            assertThat(footprints.get("knights_of_selkie").totalWeight())
+                    .isEqualTo(DOMINANCE_WEIGHT_SCALE);
+        }
     }
 
     @Nested
@@ -450,6 +466,17 @@ class KnownMarketFootprintsIntegrationTest {
         void hasKnownOwnedMarketIsFalseForNullSector() {
             assertThat(KnownMarketFootprints.hasKnownOwnedMarket(null, mock(StarSystemAPI.class)))
                     .isFalse();
+        }
+
+        @Test
+        void hasKnownOwnedMarketIsTrueForUndiscoveredStationWhenIncludingUndiscoveredMarkets() {
+            // With the show-all-factions dev reveal the concealed station counts as
+            // presence, though it fails the normal known-to-player gate.
+            var sector = sectorWith("undiscovered-system",
+                    concealedStation(faction("knights_of_selkie"), 5));
+
+            assertThat(KnownMarketFootprints.hasKnownOwnedMarket(
+                    sector, onlySystem(sector), true)).isTrue();
         }
     }
 

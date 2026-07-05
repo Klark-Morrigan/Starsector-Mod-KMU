@@ -7,6 +7,7 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
 
+import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
 import kmu.politicalmap.domain.visibility.DrawnSystemPositions;
 
 import org.apache.log4j.Logger;
@@ -95,10 +96,29 @@ public final class PoliticalMapGeometryCache {
      */
     public void updateFromSector(SectorAPI sector, Set<String> movingSystemIds,
             int boundSegments) {
+        updateFromSector(sector, movingSystemIds, boundSegments, PoliticalMapDevOverrides.NONE);
+    }
+
+    /**
+     * Brings the cache in line with the sector's current on-map systems under the dev
+     * reveal overrides, which widen the participating set: force-all-systems seeds a
+     * cell for every star system, and show-all-factions admits systems inhabited only
+     * by an undiscovered colony. A change to either override shifts the participating
+     * set, so it reads through the same add/remove diff as an access change - the
+     * plugin forces this update when a toggle flips.
+     *
+     * @param sector          the sector to read; null clears nothing and does nothing
+     * @param movingSystemIds the systems currently moving, left out of the partition
+     * @param boundSegments   the frontier resolution to seed each cell at; a change
+     *                        reseeds every cell
+     * @param overrides       the pass's dev reveal overrides, applied to the drawn set
+     */
+    public void updateFromSector(SectorAPI sector, Set<String> movingSystemIds,
+            int boundSegments, PoliticalMapDevOverrides overrides) {
         // Timed independently of the profiler so the per-update cost (the whole
         // diff, or a full rebuild) reads straight from the log.
         var start = System.nanoTime();
-        var newSites = collectAccessibleSites(sector, movingSystemIds);
+        var newSites = collectAccessibleSites(sector, movingSystemIds, overrides);
 
         // The bound-segment count seeds every cell's frontier polygon, so a change
         // invalidates all cached cells regardless of the access diff. Drop them so
@@ -194,9 +214,11 @@ public final class PoliticalMapGeometryCache {
     // The live sites the partition is built from: every drawn system's position,
     // minus the ones currently moving. A mover is left out so it seeds no cell and
     // clips no neighbour; the cells around it fill the space as if it were absent.
+    // The dev reveal overrides pass through to the drawn-set walk, so a forced or
+    // undiscovered-colony system enters the partition like any other site.
     private static Map<String, double[]> collectAccessibleSites(SectorAPI sector,
-            Set<String> movingSystemIds) {
-        var sites = DrawnSystemPositions.collectLivePositions(sector);
+            Set<String> movingSystemIds, PoliticalMapDevOverrides overrides) {
+        var sites = DrawnSystemPositions.collectLivePositions(sector, overrides);
         sites.keySet().removeAll(movingSystemIds);
         return sites;
     }

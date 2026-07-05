@@ -1,5 +1,6 @@
 package kmu.politicalmap.render;
 
+import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
@@ -15,6 +16,7 @@ import kmu.politicalmap.domain.geometry.SystemClusters;
 import kmu.politicalmap.domain.politics.DominantOwner;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 import kmu.politicalmap.render.model.ClusterAnchor;
+import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
@@ -152,21 +154,26 @@ final class ClusterAnchorsBuilder {
     // cluster.
     private static Function<String, NameLengthModel> newNameModelResolver(SectorAPI sector) {
         var font = LabelFonts.loadConfiguredFont();
+        // Read once per rebuild, like the font: every cluster of a faction spells its
+        // name the same way, so the full/short choice is resolved here rather than per
+        // faction.
+        var nameFormat = KmuLunaSettings.getPoliticalMapFactionNameFormat();
         var modelByFactionId = new HashMap<String, NameLengthModel>();
         return factionId -> modelByFactionId.computeIfAbsent(factionId,
-                id -> resolveNameModel(sector, font, id));
+                id -> resolveNameModel(sector, font, nameFormat, id));
     }
 
     // One faction's name model: font-measured when both the font and a non-blank display
     // name resolved, the aspect stand-in otherwise (a stand-in fit still sizes the debug
-    // band; it wraps no lines, so no label is minted from it).
+    // band; it wraps no lines, so no label is minted from it). The name format picks the
+    // owner's long-form name (Full) or its abbreviated name (Short).
     private static NameLengthModel resolveNameModel(SectorAPI sector, LazyFont font,
-            String factionId) {
+            FactionNameFormatChoice nameFormat, String factionId) {
         if (font == null) {
             return new AspectNameLengthModel(FALLBACK_NAME_ASPECT);
         }
         var faction = sector.getFaction(factionId);
-        var name = faction == null ? null : faction.getDisplayNameLong();
+        var name = faction == null ? null : resolveFactionName(faction, nameFormat);
         if (name == null || name.isBlank()) {
             return new AspectNameLengthModel(FALLBACK_NAME_ASPECT);
         }
@@ -174,6 +181,16 @@ final class ClusterAnchorsBuilder {
         // LineWidthMeasurer port, so the name-measuring model stays independent of the
         // font itself.
         return new FontNameLengthModel(new LazyFontMeasurer(font), name);
+    }
+
+    // The owner's name in the player's chosen format: the abbreviated display name for
+    // Short, the long-form name for Full (the default). getDisplayName is a faction's
+    // short name and getDisplayNameLong its full title; both may be blank, which the
+    // caller then treats as an unresolved name and falls back to the aspect stand-in.
+    private static String resolveFactionName(FactionAPI faction, FactionNameFormatChoice nameFormat) {
+        return nameFormat == FactionNameFormatChoice.SHORT
+                ? faction.getDisplayName()
+                : faction.getDisplayNameLong();
     }
 
     // Searches one cluster's candidate lines and assembles its anchor as a fitted label

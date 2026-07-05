@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.politicalmap.domain.politics.DominanceWeighting;
 import kmu.politicalmap.domain.politics.FactionFootprint;
 import kmu.politicalmap.domain.politics.KnownMarketFootprints;
+import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
 import kmu.politicalmap.domain.politics.SystemDominance;
 import kmu.politicalmap.domain.visibility.DecivilisedPresence;
 import kmu.politicalmap.domain.visibility.MapVisibleStars;
@@ -54,23 +55,41 @@ public record PoliticalMapSectorSnapshot(int visibilityFingerprint,
      *         shell) is absent from the owner map
      */
     public static PoliticalMapSectorSnapshot scan(SectorAPI sector) {
-        return scan(sector, DominanceWeighting.readFromSettings());
+        return scan(sector, DominanceWeighting.readFromSettings(),
+                PoliticalMapDevOverrides.readFromSettings());
     }
 
     /**
-     * Walks the sector once under an explicit weighting rule, for a caller that
-     * has already read the player's toggle for the surrounding pass.
+     * Walks the sector once under an explicit weighting rule and the normal reveal
+     * gates.
+     *
+     * @param sector    the sector to scan; null yields an empty snapshot
+     * @param weighting the dominance-weighting rules for this pass
+     * @return the visibility fingerprint and the dominant owner (by faction id) of
+     *         each owned on-map system
+     */
+    public static PoliticalMapSectorSnapshot scan(SectorAPI sector,
+            DominanceWeighting weighting) {
+        return scan(sector, weighting, PoliticalMapDevOverrides.NONE);
+    }
+
+    /**
+     * Walks the sector once under an explicit weighting rule and dev reveal overrides,
+     * for a caller that has already read the player's toggles for the surrounding pass.
      *
      * @param sector    the sector to scan; null yields an empty snapshot
      * @param weighting the dominance-weighting rules for this pass - whether
      *                  stability scales each rating and whether an attached station
      *                  lifts it - before dominance is compared
+     * @param overrides the dev reveal overrides for this pass - show-all-factions folds
+     *                  undiscovered colonies into dominance and inhabitation,
+     *                  force-all-systems admits every system to the drawn set
      * @return the visibility fingerprint and the dominant owner (by faction id) of
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
      *         shell) is absent from the owner map
      */
     public static PoliticalMapSectorSnapshot scan(SectorAPI sector,
-            DominanceWeighting weighting) {
+            DominanceWeighting weighting, PoliticalMapDevOverrides overrides) {
         if (sector == null) {
             return new PoliticalMapSectorSnapshot(0, Map.of());
         }
@@ -86,11 +105,13 @@ public record PoliticalMapSectorSnapshot(int visibilityFingerprint,
             // what the dominance rule ranks. A null economy (early load) reads as
             // no markets rather than faulting.
             Map<String, FactionFootprint> footprintByFactionId = hasEconomy
-                    ? KnownMarketFootprints.readByFaction(sector, system, weighting)
+                    ? KnownMarketFootprints.readByFaction(sector, system, weighting,
+                            overrides.isShowingAllFactions())
                     : Map.of();
             var hasRevealedDecivilised = DecivilisedPresence.hasRevealedDecivilisedPlanet(system);
             var isInhabited = !footprintByFactionId.isEmpty() || hasRevealedDecivilised;
-            if (!PoliticalMapVisibility.shouldAppearOnMap(system, visibleStars, isInhabited)) {
+            if (!PoliticalMapVisibility.shouldAppearOnMap(system, visibleStars, isInhabited,
+                    overrides.isForcingAllSystemsOnMap())) {
                 continue;
             }
             var systemId = system.getId();

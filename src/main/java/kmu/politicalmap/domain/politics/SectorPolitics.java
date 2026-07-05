@@ -42,30 +42,52 @@ public final class SectorPolitics {
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(SectorAPI sector) {
-        return resolveDominantOwnerBySystemId(sector, DominanceWeighting.readFromSettings());
+        return resolveDominantOwnerBySystemId(sector, DominanceWeighting.readFromSettings(),
+                PoliticalMapDevOverrides.readFromSettings().isShowingAllFactions());
     }
 
     /**
      * Builds the dominant owner for every inhabited star system under an explicit
-     * weighting rule, for a caller that has already read the player's toggle for
-     * the surrounding pass.
+     * weighting rule and the normal known-to-player filter.
      *
      * @param sector    the sector whose economy is read; null yields an empty map
-     * @param weighting the dominance-weighting rules for this pass - whether
-     *                  stability scales each rating and whether an attached station
-     *                  lifts it - before dominance is compared
+     * @param weighting the dominance-weighting rules for this pass
      * @return the dominant owner keyed by system id; a system with no owned
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
             SectorAPI sector, DominanceWeighting weighting) {
+        return resolveDominantOwnerBySystemId(sector, weighting, false);
+    }
+
+    /**
+     * Builds the dominant owner for every inhabited star system under an explicit
+     * weighting rule, for a caller that has already read the player's toggles for
+     * the surrounding pass.
+     *
+     * @param sector                       the sector whose economy is read; null yields
+     *                                     an empty map
+     * @param weighting                    the dominance-weighting rules for this pass -
+     *                                     whether stability scales each rating and
+     *                                     whether an attached station lifts it - before
+     *                                     dominance is compared
+     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward
+     *                                     dominance (the "show all factions" dev reveal);
+     *                                     false applies the normal known-to-player filter
+     * @return the dominant owner keyed by system id; a system with no folded
+     *         markets is absent from the map (uninhabited)
+     */
+    public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
+            SectorAPI sector, DominanceWeighting weighting,
+            boolean shouldIncludeUndiscoveredMarkets) {
         var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
         if (sector == null) {
             return ownerBySystemId;
         }
 
         for (var system : sector.getStarSystems()) {
-            var owner = resolveDominantOwner(sector, system, weighting);
+            var owner = resolveDominantOwner(sector, system, weighting,
+                    shouldIncludeUndiscoveredMarkets);
             if (owner != null) {
                 ownerBySystemId.put(system.getId(), owner);
             }
@@ -94,30 +116,51 @@ public final class SectorPolitics {
      *         (uninhabited)
      */
     public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system) {
-        return resolveDominantOwner(sector, system, DominanceWeighting.readFromSettings());
+        return resolveDominantOwner(sector, system, DominanceWeighting.readFromSettings(),
+                PoliticalMapDevOverrides.readFromSettings().isShowingAllFactions());
     }
 
     /**
      * Resolves the dominant owner of one star system under an explicit weighting
-     * rule, for a caller that has already read the player's toggle for the
-     * surrounding pass.
+     * rule and the normal known-to-player filter.
      *
      * @param sector    the sector whose economy is read; null (or a null economy)
      *                  yields null
      * @param system    the system to resolve; null yields null
-     * @param weighting the dominance-weighting rules for this pass - whether
-     *                  stability scales each rating and whether an attached station
-     *                  lifts it - before dominance is compared
+     * @param weighting the dominance-weighting rules for this pass
      * @return the dominant owner, or null when the system holds no owned market
      *         (uninhabited)
      */
     public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system,
             DominanceWeighting weighting) {
+        return resolveDominantOwner(sector, system, weighting, false);
+    }
+
+    /**
+     * Resolves the dominant owner of one star system under an explicit weighting
+     * rule, for a caller that has already read the player's toggles for the
+     * surrounding pass.
+     *
+     * @param sector                       the sector whose economy is read; null (or a
+     *                                     null economy) yields null
+     * @param system                       the system to resolve; null yields null
+     * @param weighting                    the dominance-weighting rules for this pass -
+     *                                     whether stability scales each rating and
+     *                                     whether an attached station lifts it - before
+     *                                     dominance is compared
+     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward
+     *                                     dominance (the "show all factions" dev reveal);
+     *                                     false applies the normal known-to-player filter
+     * @return the dominant owner, or null when the system holds no folded market
+     *         (uninhabited)
+     */
+    public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system,
+            DominanceWeighting weighting, boolean shouldIncludeUndiscoveredMarkets) {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
         }
-        var footprintByFactionId =
-                KnownMarketFootprints.readByFaction(sector, system, weighting);
+        var footprintByFactionId = KnownMarketFootprints.readByFaction(sector, system,
+                weighting, shouldIncludeUndiscoveredMarkets);
         var dominantFactionId = SystemDominance.resolveDominantFactionId(footprintByFactionId);
         if (dominantFactionId == null) {
             return null;

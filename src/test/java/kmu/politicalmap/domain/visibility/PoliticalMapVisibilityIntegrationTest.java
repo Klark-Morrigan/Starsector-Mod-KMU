@@ -93,6 +93,28 @@ class PoliticalMapVisibilityIntegrationTest {
             assertThat(PoliticalMapVisibility.shouldAppearOnMap(sectorWithoutStarAnchors(system), system))
                     .isTrue();
         }
+
+        @Test
+        void shouldAppearOnMapIsTrueForUninhabitedSystemWhenForcedOntoMap() {
+            // The force-all-systems dev reveal admits a system the normal rule omits -
+            // unreachable and uninhabited - so the full partition can be inspected.
+            var system = unreachableSystem("a");
+            var visibleStars = MapVisibleStars.scan(sectorWithoutStarAnchors(system));
+
+            assertThat(PoliticalMapVisibility.shouldAppearOnMap(system, visibleStars, false, true))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldAppearOnMapIsFalseForUninhabitedSystemWhenNotForced() {
+            // Without the force override the same unreachable, uninhabited system
+            // stays off, so the reveal is what admits it, not the fixture.
+            var system = unreachableSystem("a");
+            var visibleStars = MapVisibleStars.scan(sectorWithoutStarAnchors(system));
+
+            assertThat(PoliticalMapVisibility.shouldAppearOnMap(system, visibleStars, false, false))
+                    .isFalse();
+        }
     }
 
     @Nested
@@ -118,6 +140,26 @@ class PoliticalMapVisibilityIntegrationTest {
             var system = unreachableSystem("a");
 
             assertThat(PoliticalMapVisibility.isInhabited(sectorWith(system), system)).isFalse();
+        }
+
+        @Test
+        void isInhabitedIsFalseForAnUndiscoveredColonyByDefault() {
+            // A concealed colony fails the normal known-to-player gate, so the system
+            // reads as uninhabited until the reveal is on.
+            var system = unreachableSystem("a");
+
+            assertThat(PoliticalMapVisibility.isInhabited(
+                    sectorWith(system, undiscoveredColony()), system)).isFalse();
+        }
+
+        @Test
+        void isInhabitedIsTrueForAnUndiscoveredColonyWhenShowingAllFactions() {
+            // The show-all-factions dev reveal folds the concealed colony in, so the
+            // system counts as inhabited and earns a cell.
+            var system = unreachableSystem("a");
+
+            assertThat(PoliticalMapVisibility.isInhabited(
+                    sectorWith(system, undiscoveredColony()), system, true)).isTrue();
         }
     }
 
@@ -300,6 +342,23 @@ class PoliticalMapVisibilityIntegrationTest {
         when(marketMock.getSize()).thenReturn(5);
         when(marketMock.isPlanetConditionMarketOnly()).thenReturn(false);
         when(marketMock.isHidden()).thenReturn(false);
+        when(marketMock.getPrimaryEntity()).thenReturn(entityMock);
+        return marketMock;
+    }
+
+    // A concealed colony the player has not found: hidden market on a still-
+    // discoverable entity, so it fails the normal known-to-player gate and confers
+    // presence only under the show-all-factions reveal.
+    private static MarketAPI undiscoveredColony() {
+        var entityMock = mock(SectorEntityToken.class);
+        when(entityMock.isDiscoverable()).thenReturn(true);
+        var factionMock = mock(FactionAPI.class);
+        when(factionMock.getId()).thenReturn("hegemony");
+        var marketMock = mock(MarketAPI.class);
+        when(marketMock.getFaction()).thenReturn(factionMock);
+        when(marketMock.getSize()).thenReturn(5);
+        when(marketMock.isPlanetConditionMarketOnly()).thenReturn(false);
+        when(marketMock.isHidden()).thenReturn(true);
         when(marketMock.getPrimaryEntity()).thenReturn(entityMock);
         return marketMock;
     }

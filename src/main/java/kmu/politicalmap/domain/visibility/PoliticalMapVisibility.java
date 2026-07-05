@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.math.hashing.Avalanche;
 
 import kmu.politicalmap.domain.politics.KnownMarketFootprints;
+import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 
 /**
@@ -66,7 +67,28 @@ public final class PoliticalMapVisibility {
      */
     public static boolean shouldAppearOnMap(SectorAPI sector, StarSystemAPI system,
             MapVisibleStars visibleStars) {
-        return shouldAppearOnMap(system, visibleStars, isInhabited(sector, system));
+        return shouldAppearOnMap(sector, system, visibleStars, PoliticalMapDevOverrides.NONE);
+    }
+
+    /**
+     * Convenience for single-system callers under the dev reveal overrides: reads the
+     * system's inhabitation with undiscovered colonies folded in when show-all-factions
+     * is on, then applies the force override so a system the normal rule would omit
+     * still appears.
+     *
+     * @param sector       the sector the system belongs to; supplies the economy read
+     * @param system       the system to test
+     * @param visibleStars the index of systems whose star the map draws, scanned once
+     *                     by the caller
+     * @param overrides    the pass's dev reveal overrides - show-all-factions widens the
+     *                     inhabitation read, force-all-systems admits the system outright
+     * @return true when the system should seed a political-map cell
+     */
+    public static boolean shouldAppearOnMap(SectorAPI sector, StarSystemAPI system,
+            MapVisibleStars visibleStars, PoliticalMapDevOverrides overrides) {
+        return shouldAppearOnMap(system, visibleStars,
+                isInhabited(sector, system, overrides.isShowingAllFactions()),
+                overrides.isForcingAllSystemsOnMap());
     }
 
     /**
@@ -84,7 +106,24 @@ public final class PoliticalMapVisibility {
      */
     public static boolean shouldAppearOnMap(StarSystemAPI system, MapVisibleStars visibleStars,
             boolean isInhabited) {
-        return hasVisibleMapAccess(system, visibleStars) || isInhabited;
+        return shouldAppearOnMap(system, visibleStars, isInhabited, false);
+    }
+
+    /**
+     * Decides map membership from an inhabitation flag the caller already has, with a
+     * dev force override that admits the system outright.
+     *
+     * @param system          the system to test
+     * @param visibleStars    the index of systems whose star the map draws
+     * @param isInhabited     whether the system holds a folded colony or a revealed
+     *                        dead colony, decided by the caller
+     * @param isForcedOntoMap whether the "force all systems" dev reveal admits the
+     *                        system regardless of access or inhabitation
+     * @return true when the system should seed a political-map cell
+     */
+    public static boolean shouldAppearOnMap(StarSystemAPI system, MapVisibleStars visibleStars,
+            boolean isInhabited, boolean isForcedOntoMap) {
+        return isForcedOntoMap || hasVisibleMapAccess(system, visibleStars) || isInhabited;
     }
 
     // The access path onto the map: the system is reachable AND the vanilla map
@@ -114,7 +153,26 @@ public final class PoliticalMapVisibility {
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(SectorAPI sector, StarSystemAPI system) {
-        return KnownMarketFootprints.hasKnownOwnedMarket(sector, system)
+        return isInhabited(sector, system, false);
+    }
+
+    /**
+     * Whether the system counts as inhabited under the dev reveal, folding in
+     * undiscovered colonies when show-all-factions is on. A revealed decivilised
+     * planet still counts regardless of the flag - it is always known once revealed.
+     *
+     * @param sector                       the sector the system belongs to; null yields
+     *                                     false
+     * @param system                       the system to test; null yields false
+     * @param shouldIncludeUndiscoveredMarkets whether an undiscovered colony counts as
+     *                                     inhabitation (the "show all factions" dev
+     *                                     reveal); false applies the normal filter
+     * @return true when the system holds a colony or a known dead colony
+     */
+    public static boolean isInhabited(SectorAPI sector, StarSystemAPI system,
+            boolean shouldIncludeUndiscoveredMarkets) {
+        return KnownMarketFootprints.hasKnownOwnedMarket(sector, system,
+                        shouldIncludeUndiscoveredMarkets)
                 || DecivilisedPresence.hasRevealedDecivilisedPlanet(system);
     }
 
