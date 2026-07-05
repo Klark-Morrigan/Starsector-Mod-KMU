@@ -2,30 +2,33 @@ package kmu.politicalmap.render;
 
 import kmu.politicalmap.domain.geometry.CellEdge;
 import kmu.politicalmap.domain.politics.DominantOwner;
+import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins the cluster-anchor search: the deterministic geometry that turns a cluster's
- * system positions, cell edges, and tuning into the accepted label box - the
+ * system positions, cell edges, tuning, and name model into the accepted label box - the
  * highest-scoring of many candidate lines swept across the cluster, each clipped inside
  * the national border, trimmed clear of system icons, and pulled short of the border at
  * both ends, with shallower lines favoured over steep ones by a font-height-versus-slope
  * score, and collapsed to the site-centroid dot when no candidate survives. The line-fit
  * tests run a slender single-line band that reduces the box to its centreline, so they
- * pin the underlying line geometry; the band-fit tests give the stand-in name real girth
- * to pin that a fat band stays inside the border, that a square cluster stacks the name
- * into two lines to spend spare girth, that the line cap forbids stacking, and that a
- * band too thick to fit collapses to the dot. The builder's settings-fed rebuild entry
- * points only resolve in-engine.
+ * pin the underlying line geometry; the band-fit tests give the name real girth to pin
+ * that a fat band stays inside the border, that a square cluster wraps the name into two
+ * lines to spend spare girth, that the line cap forbids stacking, and that a band too
+ * thick to fit collapses to the dot. The builder's settings-fed rebuild entry points
+ * (and their font and faction-name resolution) only resolve in-engine.
  */
 final class ClusterAnchorsBuilderTest {
 
@@ -120,7 +123,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0));
+                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0), slenderNameModels());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -141,7 +144,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    tuning(0.0, 150.0, 3, 3, 0.0, 2.0));
+                    tuning(0.0, 150.0, 3, 3, 0.0, 2.0), slenderNameModels());
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -164,7 +167,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    tuning(100.0, 0.0, 3, 1, 0.0, 2.0));
+                    tuning(100.0, 0.0, 3, 1, 0.0, 2.0), slenderNameModels());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -183,7 +186,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), THIN_COLUMN_EDGES,
                     THIN_COLUMN_SITES, THIN_COLUMN_OWNERS,
-                    tuning(0.0, 0.0, 3, 3, 0.5, 2.0));
+                    tuning(0.0, 0.0, 3, 3, 0.5, 2.0), slenderNameModels());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -204,7 +207,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_OWNERS,
-                    tuning(0.0, 0.0, 3, 3, 0.5, 2.0));
+                    tuning(0.0, 0.0, 3, 3, 0.5, 2.0), slenderNameModels());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -223,7 +226,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
-                    tuning(0.0, 0.0, 3, 3, 0.0, 2.0));
+                    tuning(0.0, 0.0, 3, 3, 0.0, 2.0), slenderNameModels());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -238,11 +241,11 @@ final class ClusterAnchorsBuilderTest {
         @Test
         void computeClusterAnchorsPlacesTheAnchorDotAtTheAcceptedLineMidpoint() {
             // The centred horizontal winner spans x 150..1850 at y 500, so its midpoint -
-            // the dot and the coming label's hang-point - is (1000, 500).
+            // the dot and the label's hang-point - is (1000, 500).
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0));
+                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0), slenderNameModels());
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -263,7 +266,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D", "E")), BOOT_EDGES,
                     BOOT_SITES, BOOT_OWNERS,
-                    tuning(0.0, 0.0, 3, 5, 0.5, 2.0));
+                    tuning(0.0, 0.0, 3, 5, 0.5, 2.0), slenderNameModels());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -283,7 +286,7 @@ final class ClusterAnchorsBuilderTest {
                             null, null, null, null)),
                     Map.of("A", new double[] {1000, 500}),
                     Map.of("A", FACTION_F),
-                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0));
+                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0), slenderNameModels());
 
             assertThat(anchors).hasSize(1);
             var accepted = anchors.get(0).acceptedAxis();
@@ -300,16 +303,19 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsCollapsesToTheSiteCentroidDotWhenNoLineFits() {
             // A 1000-unit end inset asks for 2000 units of margin from a 1700-unit longest
             // chord: no candidate survives, so the anchor is just the dot at the site
-            // centroid (1000, 500). With the diagnostic toggles off it carries no lines.
+            // centroid (1000, 500) - no lines, no name, no font. With the diagnostic
+            // toggles off it carries no lines.
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    tuning(1000.0, 0.0, 3, 3, 0.0, 2.0));
+                    tuning(1000.0, 0.0, 3, 3, 0.0, 2.0), slenderNameModels());
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();
             assertThat(anchor.rejectedAxis()).isNull();
             assertThat(anchor.unbiasedAxis()).isNull();
+            assertThat(anchor.nameLines()).isEmpty();
+            assertThat(anchor.fontHeight()).isEqualTo(0f);
             assertThat(anchor.anchorX()).isCloseTo(1000f, within(1e-3f));
             assertThat(anchor.anchorY()).isCloseTo(500f, within(1e-3f));
         }
@@ -322,7 +328,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    tuning(1000.0, 0.0, 3, 1, 0.0, 2.0, true, false));
+                    tuning(1000.0, 0.0, 3, 1, 0.0, 2.0, true, false), slenderNameModels());
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();
@@ -344,7 +350,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_OWNERS,
-                    tuning(0.0, 0.0, 3, 3, 0.5, 2.0, false, true));
+                    tuning(0.0, 0.0, 3, 3, 0.5, 2.0, false, true), slenderNameModels());
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -365,7 +371,7 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), THIN_COLUMN_EDGES,
                     THIN_COLUMN_SITES, THIN_COLUMN_OWNERS,
-                    tuning(0.0, 0.0, 3, 3, 0.5, 2.0, false, true));
+                    tuning(0.0, 0.0, 3, 3, 0.5, 2.0, false, true), slenderNameModels());
 
             assertThat(anchors.get(0).unbiasedAxis()).isNull();
         }
@@ -377,37 +383,71 @@ final class ClusterAnchorsBuilderTest {
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B")), Map.of(),
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    tuning(0.0, 0.0, 3, 3, 0.0, 2.0));
+                    tuning(0.0, 0.0, 3, 3, 0.0, 2.0), slenderNameModels());
 
             var anchor = anchors.get(0);
             assertThat(anchor.anchorX()).isCloseTo(1000f, within(1e-4f));
             assertThat(anchor.acceptedAxis()).isNull();
+            assertThat(anchor.nameLines()).isEmpty();
         }
 
         @Test
-        void computeClusterAnchorsColorsTheMarkerInTheOwningFactionsBrightShade() {
+        void computeClusterAnchorsColorsTheLabelWithThePrimaryShadeWhenTheOuterBorderIsPrimary() {
+            // The default outer-border choice is the bright primary shade, so the name
+            // (and its debug dot) inherits it - RED here.
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0));
+                    outerColorTuning(FactionPaletteChoice.PRIMARY), slenderNameModels());
 
             assertThat(anchors.get(0).color()).isEqualTo(PRIMARY);
         }
 
         @Test
-        void computeClusterAnchorsCarriesTheOwningFactionId() {
-            // The placement carries its owner's faction id so the name renderer can resolve
-            // the cluster's display name without re-deriving ownership from the sector.
+        void computeClusterAnchorsInheritsTheSecondaryShadeWhenTheOuterBorderIsSecondary() {
+            // Point the outer border at the secondary (dark) shade and the name follows
+            // it - BLUE - so the label reads as the border's own colour, not a fixed pick.
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0));
+                    outerColorTuning(FactionPaletteChoice.SECONDARY), slenderNameModels());
 
-            assertThat(anchors.get(0).factionId()).isEqualTo("F");
+            assertThat(anchors.get(0).color()).isEqualTo(SECONDARY);
+        }
+
+        @Test
+        void computeClusterAnchorsFallsBackToThePrimaryShadeWhenTheOuterBorderIsHidden() {
+            // A hidden outer border ("No color") resolves to no colour, but a name still
+            // needs one, so it falls back to the bright primary shade rather than vanishing.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    outerColorTuning(FactionPaletteChoice.NONE), slenderNameModels());
+
+            assertThat(anchors.get(0).color()).isEqualTo(PRIMARY);
+        }
+
+        @Test
+        void computeClusterAnchorsResolvesTheNameModelByTheOwningFactionId() {
+            // The model injected per faction is what the fit sizes against and what wraps
+            // the label's lines, so the resolver must be asked with the cluster's owner.
+            var askedFactionIds = new ArrayList<String>();
+            Function<String, NameLengthModel> recordingResolver = factionId -> {
+                askedFactionIds.add(factionId);
+                return new AspectNameLengthModel(SLENDER_ASPECT);
+            };
+            ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
+                    HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
+                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0), recordingResolver);
+
+            assertThat(askedFactionIds).containsExactly("F");
         }
 
         @Test
@@ -418,15 +458,15 @@ final class ClusterAnchorsBuilderTest {
                     List.of(List.of("A")), Map.of(),
                     Map.of(),
                     Map.of("A", FACTION_F),
-                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0));
+                    tuning(0.0, 0.0, 3, 1, 0.0, 2.0), slenderNameModels());
 
             assertThat(anchors).isEmpty();
         }
 
         @Test
         void computeClusterAnchorsCapsTheBandGirthSoTheWholeBandStaysInsideTheBorder() {
-            // A slab region 700 tall once inset (y 150..850). A fat stand-in name (aspect 1)
-            // wants all the girth it can get, but the band cannot exceed the 700 the border
+            // A slab region 700 tall once inset (y 150..850). A fat name (aspect 1) wants
+            // all the girth it can get, but the band cannot exceed the 700 the border
             // allows, so the fit caps the girth at the region rather than overrun it - and
             // the whole band, centreline give or take half its girth, stays within
             // y 150..850. The thin centreline of the line fit hid this; the band makes the
@@ -435,7 +475,8 @@ final class ClusterAnchorsBuilderTest {
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
-                            1.0, 100.0, 2000.0, 1, 1.0));
+                            100.0, 2000.0, 1, 1.0),
+                    aspectNameModels(1.0));
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNotNull();
@@ -452,16 +493,38 @@ final class ClusterAnchorsBuilderTest {
             // In a square cluster (inset 1700 on a side) a name six times as long as it is
             // tall cannot run big on one line - the side caps a single line's font. Stacking
             // it into two lines halves the length each line needs and spends the square's
-            // spare girth, so the two-line box carries a taller font and the fit chooses it
-            // over one line and over three (which the region's girth cannot make taller).
+            // spare girth, so the two-line box carries a strictly taller font and the fit
+            // chooses it over one line and over three (which the region's girth cannot make
+            // taller).
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
-                            6.0, 100.0, 1700.0, 3, 1.15));
+                            100.0, 1700.0, 3, 1.15),
+                    aspectNameModels(6.0));
 
             assertThat(anchors.get(0).lineCount()).isEqualTo(2);
             assertThat(anchors.get(0).thickness()).isGreaterThan(0f);
+        }
+
+        @Test
+        void computeClusterAnchorsCarriesTheWinningWrapAndItsFontHeight() {
+            // The same two-line winner fitted against a fake with real lines: the anchor
+            // carries the model's wrap at the winning line count and the per-line font
+            // height behind the band - girth = fontHeight * (1 + spacing) for two lines -
+            // so the label draws exactly the block the fit sized.
+            var nameModelFake = new NameLengthModelFake(6.0);
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
+                    SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
+                    bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
+                            100.0, 1700.0, 3, 1.15),
+                    factionId -> nameModelFake);
+
+            var anchor = anchors.get(0);
+            assertThat(anchor.nameLines()).containsExactly("Line 1", "Line 2");
+            assertThat(anchor.fontHeight())
+                    .isCloseTo(anchor.thickness() / 2.15f, within(1e-2f));
         }
 
         @Test
@@ -473,45 +536,60 @@ final class ClusterAnchorsBuilderTest {
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
-                            6.0, 100.0, 1700.0, 1, 1.15));
+                            100.0, 1700.0, 1, 1.15),
+                    aspectNameModels(6.0));
 
             assertThat(anchors.get(0).lineCount()).isEqualTo(1);
         }
 
         @Test
         void computeClusterAnchorsCollapsesToTheDotWhenTheMinimumBandCannotFit() {
-            // A minimum band girth wider than the 1700 the square holds cannot sit anywhere
+            // A minimum font taller than the 1700 the square holds cannot sit anywhere
             // - no placement can prove even the thinnest required band interior - so the fit
             // collapses to the site-centroid dot, the same fallback a no-room line takes.
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     bandTuning(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
-                            6.0, 3000.0, 4000.0, 1, 1.0));
+                            3000.0, 4000.0, 1, 1.0),
+                    aspectNameModels(6.0));
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();
             assertThat(anchor.thickness()).isEqualTo(0f);
             assertThat(anchor.lineCount()).isEqualTo(0);
+            assertThat(anchor.nameLines()).isEmpty();
+            assertThat(anchor.fontHeight()).isEqualTo(0f);
             assertThat(anchor.anchorX()).isCloseTo(1000f, within(1e-3f));
             assertThat(anchor.anchorY()).isCloseTo(1000f, within(1e-3f));
         }
 
-        // A very slender stand-in name (length 500x its line height) so the box solver
-        // sizes a band only a few world units thick before it runs out of length: the band
-        // then hugs its centreline and the accepted line reproduces the pre-band line fit,
-        // letting the line-fit tests below pin the same geometry they always did while the
-        // band-fit tests exercise real girth. A single line with a wide thickness ceiling,
+        // A very slender name (length 500x its line height) so the box solver sizes a
+        // band only a few world units thick before it runs out of length: the band then
+        // hugs its centreline and the accepted line reproduces the pre-band line fit,
+        // letting the line-fit tests above pin the same geometry they always did while
+        // the band-fit tests exercise real girth. A single line with a wide font ceiling,
         // so the girth is capped by the region, never the knob, and never split.
         private static final double SLENDER_ASPECT = 500.0;
-        private static final double NO_MIN_THICKNESS = 0.0;
-        private static final double AMPLE_MAX_THICKNESS = 2000.0;
+        private static final double NO_MIN_FONT_SIZE = 0.0;
+        private static final double AMPLE_MAX_FONT_SIZE = 2000.0;
         private static final int ONE_LINE = 1;
         private static final double FLUSH_LINES = 1.0;
 
-        // A tuning with the fixture's border-trace pair baked in, a slender single-line
-        // band that reduces the fit to a line, and both diagnostic toggles off, so each
-        // line-fit test names only the search knobs it exercises.
+        // A per-faction model resolver that hands every cluster the same aspect stand-in
+        // - the name-model seam the line- and band-fit tests size against.
+        private static Function<String, NameLengthModel> aspectNameModels(double aspect) {
+            return factionId -> new AspectNameLengthModel(aspect);
+        }
+
+        // The slender stand-in resolver behind the line-fit tests.
+        private static Function<String, NameLengthModel> slenderNameModels() {
+            return aspectNameModels(SLENDER_ASPECT);
+        }
+
+        // A tuning with the fixture's border-trace pair baked in, sized for the slender
+        // single-line band that reduces the fit to a line, and both diagnostic toggles
+        // off, so each line-fit test names only the search knobs it exercises.
         private static ClusterAnchorsBuilder.AnchorTuning tuning(double endInsetDistance,
                 double iconClearance, int directionCount, int offsetCount,
                 double verticalPenaltyStrength, double verticalPenaltyExponent) {
@@ -527,26 +605,39 @@ final class ClusterAnchorsBuilderTest {
                 boolean showRejectedAxis, boolean showUnbiasedAxis) {
             return bandTuning(endInsetDistance, iconClearance, directionCount, offsetCount,
                     verticalPenaltyStrength, verticalPenaltyExponent, showRejectedAxis,
-                    showUnbiasedAxis, SLENDER_ASPECT, NO_MIN_THICKNESS, AMPLE_MAX_THICKNESS,
+                    showUnbiasedAxis, NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE,
                     ONE_LINE, FLUSH_LINES);
         }
 
-        // The full tuning with the band-fit knobs exposed, for the tests that exercise real
-        // girth: how thick a band the fit must hold, how tall it may grow, and how many
-        // lines it may stack a name into. The max slant is 0 throughout, so the label
-        // preference collapses to dead-horizontal and these fixtures pin the pre-slant line
-        // and band geometry; the slant math is pinned on its own in LabelSlantPreferenceTest.
+        // The full tuning with the name-fit knobs exposed, for the tests that exercise real
+        // girth: the per-line font clamp and how many lines a name may wrap into. The max
+        // slant is 0 throughout, so the label preference collapses to dead-horizontal and
+        // these fixtures pin the pre-slant line and band geometry; the slant math is pinned
+        // on its own in LabelSlantPreferenceTest. Both outer-border colour choices default
+        // to PRIMARY, so the geometry tests read the owner's bright shade; the colour tests
+        // override them via outerColorTuning.
         private static ClusterAnchorsBuilder.AnchorTuning bandTuning(double endInsetDistance,
                 double iconClearance, int directionCount, int offsetCount,
                 double verticalPenaltyStrength, double verticalPenaltyExponent,
-                boolean showRejectedAxis, boolean showUnbiasedAxis, double bandAspect,
-                double bandMinThickness, double bandMaxThickness, int bandMaxLines,
-                double bandLineSpacing) {
+                boolean showRejectedAxis, boolean showUnbiasedAxis, double nameMinFontSize,
+                double nameMaxFontSize, int nameMaxLines, double nameLineSpacing) {
             return new ClusterAnchorsBuilder.AnchorTuning(
                     new BorderTrace(WELD_TOLERANCE, MITER_LIMIT), endInsetDistance,
                     iconClearance, directionCount, offsetCount, verticalPenaltyStrength,
-                    verticalPenaltyExponent, 0.0, showRejectedAxis, showUnbiasedAxis, bandAspect,
-                    bandMinThickness, bandMaxThickness, bandMaxLines, bandLineSpacing);
+                    verticalPenaltyExponent, 0.0, showRejectedAxis, showUnbiasedAxis,
+                    nameMinFontSize, nameMaxFontSize, nameMaxLines, nameLineSpacing,
+                    FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY);
+        }
+
+        // A slender single-line tuning whose faction outer-border colour choice the label
+        // inherits, for the colour-inheritance tests. The fixture owner is a core faction,
+        // so independent's choice never resolves here and is fixed to PRIMARY.
+        private static ClusterAnchorsBuilder.AnchorTuning outerColorTuning(
+                FactionPaletteChoice factionOuterColor) {
+            return new ClusterAnchorsBuilder.AnchorTuning(
+                    new BorderTrace(WELD_TOLERANCE, MITER_LIMIT), 0.0, 0.0, 3, 1, 0.0, 2.0,
+                    0.0, false, false, NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE, ONE_LINE,
+                    FLUSH_LINES, factionOuterColor, FactionPaletteChoice.PRIMARY);
         }
 
         // One square cell's CCW edges (bottom, right, top, left), each tagged with the
@@ -571,6 +662,28 @@ final class ClusterAnchorsBuilderTest {
                     new CellEdge(maxX, minY, maxX, maxY, rightNeighbour),
                     new CellEdge(maxX, maxY, minX, maxY, topNeighbour),
                     new CellEdge(minX, maxY, minX, minY, leftNeighbour));
+        }
+    }
+
+    /**
+     * A name model with the aspect stand-in's arithmetic but real lines behind it, so a
+     * test can pin that the anchor carries exactly the wrap the fit sized: line count
+     * {@code n} wraps to {@code "Line 1".."Line n"}.
+     */
+    private record NameLengthModelFake(double aspect) implements NameLengthModel {
+
+        @Override
+        public double requiredLengthFor(double lineHeight, int lineCount) {
+            return aspect * lineHeight / lineCount;
+        }
+
+        @Override
+        public List<String> wrapIntoLines(int lineCount) {
+            var lines = new ArrayList<String>(lineCount);
+            for (var lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
+                lines.add("Line " + lineNumber);
+            }
+            return lines;
         }
     }
 }

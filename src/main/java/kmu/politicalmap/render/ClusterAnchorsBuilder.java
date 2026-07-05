@@ -1,11 +1,13 @@
 package kmu.politicalmap.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PrincipalAxis;
 import kmlib.math.solving.Picks;
+import kmlib.starsector.ui.font.LazyFontMeasurer;
 
 import kmu.politicalmap.domain.geometry.CellEdge;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
@@ -13,24 +15,33 @@ import kmu.politicalmap.domain.geometry.SystemClusters;
 import kmu.politicalmap.domain.politics.DominantOwner;
 import kmu.politicalmap.domain.politics.SectorPolitics;
 import kmu.politicalmap.render.model.ClusterAnchor;
+import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
+
+import org.lazywizard.lazylib.ui.LazyFont;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
- * Fits the debug label anchors: one {@link ClusterAnchor} per contiguous same-faction
+ * Fits the label placements: one {@link ClusterAnchor} per contiguous same-faction
  * cluster, its label box the highest-scoring of many candidate lines swept across the
  * cluster. This class generates the candidates (a direction fan crossed at parallel
  * offsets) and selects among them; {@link LabelBoxFitter} sizes each into the largest
- * name-holding box - clipped inside the national border, trimmed clear of system icons,
- * pulled short of the border at both ends, and stacked into extra lines where girth is
- * spare. Boxes that lean along the cluster's own axis are favoured over ones that stray
- * from it by a font-height-versus-slope score ({@link LabelSlantPreference}) rather than
- * by bending any direction before the fit; the preferred lean is capped short of vertical
- * and fades to level for round clusters whose axis carries no real direction.
+ * box holding the owner's name - clipped inside the national border, trimmed clear of
+ * system icons, pulled short of the border at both ends, and stacked into extra lines
+ * where that buys a bigger font. The name is measured with the label font's own metrics
+ * ({@link FontNameLengthModel}), so the accepted box is sized for the glyphs that will
+ * actually fill it; where the font or the owner's name will not resolve, an aspect
+ * stand-in keeps the debug band meaningful and no name draws. Boxes that lean along the
+ * cluster's own axis are favoured over ones that stray from it by a
+ * font-height-versus-slope score ({@link LabelSlantPreference}) rather than by bending
+ * any direction before the fit; the preferred lean is capped short of vertical and
+ * fades to level for round clusters whose axis carries no real direction.
  *
  * <p>Its own builder, apart from {@link DrawablesBuilder}, because the anchors are an
  * independent overlay, not part of the production draw lists: they draw over the normal
@@ -39,6 +50,12 @@ import java.util.Map;
  * here, whichever base view a rebuild produced.
  */
 final class ClusterAnchorsBuilder {
+
+    // The stand-in name shape (length as a multiple of line height) sized against when
+    // no real measurement exists - the label font failed to load, or a cluster's owner
+    // resolves no display name. A plausible faction-name proportion, so the debug band
+    // still shows a realistic footprint; no name is drawn from a stand-in fit.
+    private static final double FALLBACK_NAME_ASPECT = 6.0;
 
     // Builds only; never instantiated.
     private ClusterAnchorsBuilder() {
@@ -53,10 +70,11 @@ final class ClusterAnchorsBuilder {
     // by the full rebuild and the incremental refresh so an ownership change keeps the
     // placements in step with the fills and borders. Reads the toggles here (not at the
     // call sites) so all paths gate identically; the search's tuning is read here too, so
-    // a settings change re-fits on the rebuild it triggers.
+    // a settings change re-fits on the rebuild it triggers. The sector supplies each
+    // owner's display name, which the fit sizes the boxes for.
     static void rebuildClusterAnchors(List<ClusterAnchor> anchors,
             PoliticalMapGeometryCache geometryCache,
-            Map<String, DominantOwner> ownerBySystemId) {
+            Map<String, DominantOwner> ownerBySystemId, SectorAPI sector) {
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowFactionNames()
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
@@ -66,7 +84,7 @@ final class ClusterAnchorsBuilder {
                 geometryCache.getCellEdgesBySystemId(), ownerBySystemId);
         anchors.addAll(computeClusterAnchors(clusters, geometryCache.getCellEdgesBySystemId(),
                 geometryCache.getSiteBySystemId(), ownerBySystemId,
-                AnchorTuning.readFromSettings()));
+                AnchorTuning.readFromSettings(), newNameModelResolver(sector)));
     }
 
     // The rebuild for a path with no owner map at hand - the debug border-tracing view,
@@ -80,19 +98,22 @@ final class ClusterAnchorsBuilder {
             return;
         }
         rebuildClusterAnchors(anchors, geometryCache,
-                SectorPolitics.resolveDominantOwnerBySystemId(sector));
+                SectorPolitics.resolveDominantOwnerBySystemId(sector), sector);
     }
 
     // Fits one label anchor to each contiguous cluster by searching over candidate lines
     // (searchClusterAnchor). The site centroid supplies the cluster's own principal axis
     // - one candidate direction among the fan, and the dot's fallback position - but has
     // no privileged pull on the accepted line, which is free to sit off-centre wherever
-    // the cluster is roomiest. The owning faction's bright shade colours the anchor dot
-    // so it reads against the fill; the candidate lines use a fixed diagnostic palette
-    // instead, painted by the renderer.
+    // the cluster is roomiest. Each cluster's fit sizes against its owner's name via the
+    // injected resolver, and the name (and its debug dot) draws in the shade the owner's
+    // national border resolves to (resolveLabelColor), so the name reads as that border's
+    // own colour; the candidate lines use a fixed diagnostic palette instead, painted by
+    // the renderer.
     static List<ClusterAnchor> computeClusterAnchors(List<List<String>> clusters,
             Map<String, List<CellEdge>> edgesBySystemId, Map<String, double[]> siteBySystemId,
-            Map<String, DominantOwner> ownerBySystemId, AnchorTuning tuning) {
+            Map<String, DominantOwner> ownerBySystemId, AnchorTuning tuning,
+            Function<String, NameLengthModel> nameModelByFactionId) {
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         for (var memberSystemIds : clusters) {
             var sites = collectClusterSites(memberSystemIds, siteBySystemId);
@@ -103,38 +124,85 @@ final class ClusterAnchorsBuilder {
             var axis = resolveClusterAxis(memberSystemIds, edgesBySystemId, sites);
             var rings = tuning.borderTrace().traceRings(memberSystemIds, edgesBySystemId,
                     ownerBySystemId);
-            anchors.add(searchClusterAnchor(rings, siteBySystemId, axis, owner.factionId(),
-                    owner.primaryColor(), tuning));
+            anchors.add(searchClusterAnchor(rings, siteBySystemId, axis,
+                    resolveLabelColor(owner, tuning), tuning,
+                    nameModelByFactionId.apply(owner.factionId())));
         }
         return anchors;
+    }
+
+    // The colour a cluster's name (and its debug dot) draws in: the shade the owner's
+    // national border resolves to, so the name inherits the border's own colour rather
+    // than a fixed bright pick. Independent space and core factions each carry their own
+    // outer-border palette choice, resolved against this owner's two shades by the same
+    // DrawablesBuilder mapping the border itself uses. A hidden border ("No color") still
+    // needs a legible name, so it falls back to the owner's bright primary shade.
+    private static Color resolveLabelColor(DominantOwner owner, AnchorTuning tuning) {
+        var choice = Factions.INDEPENDENT.equals(owner.factionId())
+                ? tuning.independentOuterColor() : tuning.factionOuterColor();
+        var color = DrawablesBuilder.pickPaletteColor(choice, owner.primaryColor(),
+                owner.secondaryColor());
+        return color != null ? color : owner.primaryColor();
+    }
+
+    // The per-faction name models one rebuild fits against: each faction's display name
+    // measured with the configured label font, or the aspect stand-in when the font or
+    // the name will not resolve. Cached per faction id because every cluster of a
+    // faction shares one name, so its wrap is measured once per rebuild, not per
+    // cluster.
+    private static Function<String, NameLengthModel> newNameModelResolver(SectorAPI sector) {
+        var font = LabelFonts.loadConfiguredFont();
+        var modelByFactionId = new HashMap<String, NameLengthModel>();
+        return factionId -> modelByFactionId.computeIfAbsent(factionId,
+                id -> resolveNameModel(sector, font, id));
+    }
+
+    // One faction's name model: font-measured when both the font and a non-blank display
+    // name resolved, the aspect stand-in otherwise (a stand-in fit still sizes the debug
+    // band; it wraps no lines, so no label is minted from it).
+    private static NameLengthModel resolveNameModel(SectorAPI sector, LazyFont font,
+            String factionId) {
+        if (font == null) {
+            return new AspectNameLengthModel(FALLBACK_NAME_ASPECT);
+        }
+        var faction = sector.getFaction(factionId);
+        var name = faction == null ? null : faction.getDisplayNameLong();
+        if (name == null || name.isBlank()) {
+            return new AspectNameLengthModel(FALLBACK_NAME_ASPECT);
+        }
+        // LazyFontMeasurer (KMLib) reads the concrete font's calcWidth behind the
+        // LineWidthMeasurer port, so the name-measuring model stays independent of the
+        // font itself.
+        return new FontNameLengthModel(new LazyFontMeasurer(font), name);
     }
 
     // Searches one cluster's candidate lines and assembles its anchor as a fitted label
     // box. Every candidate is a direction (a fan over the half-circle, plus pure
     // horizontal, the cluster's own axis, and the preferred slant) crossed at a parallel
     // offset (a sweep across the cluster's perpendicular extent). At each, the box solver
-    // sizes the largest stand-in name that fits - growing the band's girth against the
-    // border, spending spare girth on extra lines - and the candidate is scored by that
-    // fitted font height docked for straying from the cluster's preferred lean. The
-    // best-scoring box wins; its clear span is the accepted
-    // line and its girth and line count the band a name will fill, and the span's midpoint
-    // the point the name hangs on. When no box fits anywhere the anchor collapses to the
-    // site centroid dot, optionally carrying the best near-miss span for the red
-    // diagnostic. With the unbiased toggle on, the box that wins on raw font height (no
-    // slope penalty) rides along as the yellow diagnostic whenever the penalty moved the pick.
+    // sizes the largest name that fits - growing the font against the border, spending
+    // spare girth on extra lines only where that buys a bigger font - and the candidate
+    // is scored by that fitted font height docked for straying from the cluster's
+    // preferred lean. The best-scoring box wins; its clear span is the accepted line, its
+    // girth and line count the band the name fills, the span's midpoint the point the
+    // name block centres on, and the name model's wrap at the winning line count the
+    // lines the label draws. When no box fits anywhere the anchor collapses to the site
+    // centroid dot, optionally carrying the best near-miss span for the red diagnostic.
+    // With the unbiased toggle on, the box that wins on raw font height (no slope
+    // penalty) rides along as the yellow diagnostic whenever the penalty moved the pick.
     private static ClusterAnchor searchClusterAnchor(List<List<double[]>> rings,
-            Map<String, double[]> siteBySystemId, PrincipalAxis axis, String factionId,
-            Color color, AnchorTuning tuning) {
+            Map<String, double[]> siteBySystemId, PrincipalAxis axis, Color color,
+            AnchorTuning tuning, NameLengthModel nameModel) {
         var centroidX = (float) axis.centroidX();
         var centroidY = (float) axis.centroidY();
         if (rings.isEmpty()) {
             // No traceable border leaves nothing to prove a candidate interior - the
             // one dead end the search cannot work around, so only the dot can show.
-            return new ClusterAnchor(centroidX, centroidY, color, factionId,
+            return new ClusterAnchor(centroidX, centroidY, color, List.of(), 0f,
                     null, null, null, 0f, 0);
         }
 
-        var fitter = newBoxFitter(tuning);
+        var fitter = newBoxFitter(tuning, nameModel);
         var icons = siteBySystemId.values();
         var slant = LabelSlantPreference.resolveFrom(axis, tuning.maxSlantDegrees());
         var directions = buildCandidateDirections(axis, slant, tuning.directionCount());
@@ -143,7 +211,7 @@ final class ClusterAnchorsBuilder {
         LabelBoxFitter.BoxFit longestAccepted = null;
         RejectedSpan bestRejected = null;
         for (var direction : directions) {
-            var extent = projectRingsExtent(rings, -direction[1], direction[0]);
+            var extent = Points.projectCombinedExtentOnto(rings, -direction[1], direction[0]);
             for (var offsetIndex = 1; offsetIndex <= tuning.offsetCount(); offsetIndex++) {
                 var through = offsetThroughPoint(axis, direction, extent, offsetIndex,
                         tuning.offsetCount());
@@ -164,7 +232,7 @@ final class ClusterAnchorsBuilder {
                             LabelBoxFitter.BoxFit::fontHeight);
                 } else if (tuning.showRejectedAxis()) {
                     bestRejected = Picks.pickHigher(bestRejected,
-                            findRejectedSpan(fitter, placement, tuning.bandMinThickness()),
+                            findRejectedSpan(fitter, placement, tuning.nameMinFontSize()),
                             RejectedSpan::length);
                 }
             }
@@ -173,30 +241,31 @@ final class ClusterAnchorsBuilder {
         if (bestAccepted != null) {
             var accepted = bestAccepted.segment();
             // The accepted interval has no tie to the centroid any more, so the dot and
-            // the coming label's hang-point are the line's own midpoint.
+            // the label's hang-point are the line's own midpoint.
             var midX = (accepted.startX() + accepted.endX()) / 2f;
             var midY = (accepted.startY() + accepted.endY()) / 2f;
             var unbiased = tuning.showUnbiasedAxis() && longestAccepted != null
                     && !longestAccepted.segment().equals(accepted)
                     ? longestAccepted.segment() : null;
-            return new ClusterAnchor(midX, midY, color, factionId, accepted, null, unbiased,
+            return new ClusterAnchor(midX, midY, color,
+                    nameModel.wrapIntoLines(bestAccepted.lineCount()),
+                    (float) bestAccepted.fontHeight(), accepted, null, unbiased,
                     (float) bestAccepted.thickness(), bestAccepted.lineCount());
         }
         // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
         // near-miss span rides along only when the rejected toggle asked for it.
         var rejected = bestRejected != null ? bestRejected.segment() : null;
-        return new ClusterAnchor(centroidX, centroidY, color, factionId,
+        return new ClusterAnchor(centroidX, centroidY, color, List.of(), 0f,
                 null, rejected, null, 0f, 0);
     }
 
-    // Builds the box fitter from the tuning: the thickness clamp, line count, and spacing
-    // that shape the girth growth, the icon clearance and end inset every band trim reads,
-    // and the stand-in name model the fit sizes against. The one place the aspect stand-in
-    // is wired in, so a font-backed model later swaps in here alone.
-    private static LabelBoxFitter newBoxFitter(AnchorTuning tuning) {
-        return new LabelBoxFitter(tuning.bandMinThickness(), tuning.bandMaxThickness(),
-                tuning.bandMaxLines(), tuning.bandLineSpacing(), tuning.iconClearance(),
-                tuning.endInsetDistance(), new AspectNameLengthModel(tuning.bandAspect()));
+    // Builds the box fitter from the tuning and the cluster's name model: the font-size
+    // clamp, line count, and spacing that shape the growth, the icon clearance and end
+    // inset every band trim reads, and the name the fit sizes against.
+    private static LabelBoxFitter newBoxFitter(AnchorTuning tuning, NameLengthModel nameModel) {
+        return new LabelBoxFitter(tuning.nameMinFontSize(), tuning.nameMaxFontSize(),
+                tuning.nameMaxLines(), tuning.nameLineSpacing(), tuning.iconClearance(),
+                tuning.endInsetDistance(), nameModel);
     }
 
     // The candidate directions for one cluster: an even fan of unit directions over the
@@ -234,34 +303,18 @@ final class ClusterAnchorsBuilder {
         return new double[] {axis.centroidX() + shift * normalX, axis.centroidY() + shift * normalY};
     }
 
-    // The extent of every ring vertex projected onto an axis, as {min, max} - the width
-    // of the cluster along that axis, used to space the parallel offset lines across it.
-    // Each ring's own extent comes from the shared point-cloud projection; merging their
-    // bounds spans the whole cluster (outer ring and any holes) along the axis.
-    private static double[] projectRingsExtent(List<List<double[]>> rings, double axisX,
-            double axisY) {
-        var min = Double.POSITIVE_INFINITY;
-        var max = Double.NEGATIVE_INFINITY;
-        for (var ring : rings) {
-            var extent = Points.projectExtentOnto(ring, axisX, axisY);
-            min = Math.min(min, extent[0]);
-            max = Math.max(max, extent[1]);
-        }
-        return new double[] {min, max};
-    }
-
     // The best near-miss line for the red diagnostic: a candidate's clear span before the
     // end-margin trim, kept with its length so the longest across candidates wins.
     private record RejectedSpan(ClusterAnchor.AxisSegment segment, double length) {
     }
 
     // A candidate's near-miss span for the red diagnostic: the pre-margin clear span of a
-    // minimum-thickness band - the furthest a name-holding line got before the border,
-    // icon, or end-margin trim discarded it. Null when even the thin band finds no clear
-    // interior at all.
+    // band at the minimum font's single-line girth - the furthest a name-holding line got
+    // before the border, icon, or end-margin trim discarded it. Null when even the thin
+    // band finds no clear interior at all.
     private static RejectedSpan findRejectedSpan(LabelBoxFitter fitter, Placement placement,
-            double minThickness) {
-        var band = fitter.fitBand(placement, minThickness / 2.0);
+            double minFontSize) {
+        var band = fitter.fitBand(placement, minFontSize / 2.0);
         if (band.clearSpan() == null) {
             return null;
         }
@@ -364,28 +417,37 @@ final class ClusterAnchorsBuilder {
      * @param showUnbiasedAxis       whether each cluster also carries the pure-longest
      *                               accepted line (the winner with no vertical penalty),
      *                               for the yellow diagnostic line
-     * @param bandAspect             the stand-in name's length as a multiple of one line's
-     *                               height, sized against before real fonts exist
-     * @param bandMinThickness       the smallest band girth a fit will accept, world units
-     *                               - below it a placement collapses to the dot
-     * @param bandMaxThickness       the largest band girth a fit will grow to, world units,
-     *                               so a roomy cluster does not mint an oversized label
-     * @param bandMaxLines           the most lines a name may stack into, spending girth to
-     *                               shorten the length it needs
-     * @param bandLineSpacing        the line-height multiple a multi-line band leaves
-     *                               between lines, at least 1
+     * @param nameMinFontSize        the smallest per-line font height a fit will accept,
+     *                               world units - the readability floor; a placement that
+     *                               cannot hold even one line this tall collapses to the
+     *                               dot
+     * @param nameMaxFontSize        the largest per-line font height a fit will grow to,
+     *                               world units, so a roomy cluster does not mint an
+     *                               oversized label
+     * @param nameMaxLines           the most lines a name may wrap into, spending girth
+     *                               to shorten the length its widest line needs
+     * @param nameLineSpacing        the line-height multiple between stacked lines,
+     *                               at least 1
+     * @param factionOuterColor      the outer-border palette choice a core faction's
+     *                               name inherits its colour from, resolved against the
+     *                               owner's palette
+     * @param independentOuterColor  the outer-border palette choice independent space's
+     *                               name inherits its colour from
      */
     record AnchorTuning(BorderTrace borderTrace, double endInsetDistance, double iconClearance,
             int directionCount, int offsetCount, double verticalPenaltyStrength,
             double verticalPenaltyExponent, double maxSlantDegrees, boolean showRejectedAxis,
-            boolean showUnbiasedAxis, double bandAspect, double bandMinThickness,
-            double bandMaxThickness, int bandMaxLines, double bandLineSpacing) {
+            boolean showUnbiasedAxis, double nameMinFontSize, double nameMaxFontSize,
+            int nameMaxLines, double nameLineSpacing, FactionPaletteChoice factionOuterColor,
+            FactionPaletteChoice independentOuterColor) {
 
-        // Reads the live tuning: the anchor knobs from the Dev "Label anchors" section
-        // plus the same border trace the national border renders with. The end-inset
-        // multiple is resolved against the fixed border channel here, so the search works
-        // in plain distances. The two diagnostic-line toggles ride along so the search
-        // only builds the extra candidates while someone is looking at them.
+        // Reads the live tuning: the anchor knobs from the Dev "Label anchors" section,
+        // the name-fit knobs from the visuals "Faction names" section, the same two
+        // outer-border colour choices the national border reads (so the name inherits the
+        // border's colour), plus the same border trace the national border renders with.
+        // The end-inset multiple is resolved against the fixed border channel here, so the
+        // search works in plain distances. The two diagnostic-line toggles ride along so
+        // the search only builds the extra candidates while someone is looking at them.
         static AnchorTuning readFromSettings() {
             return new AnchorTuning(
                     BorderTrace.readFromSettings(),
@@ -399,11 +461,12 @@ final class ClusterAnchorsBuilder {
                     KmuLunaSettings.getPoliticalMapAnchorMaxSlantDegrees(),
                     KmuLunaSettings.getPoliticalMapShowRejectedAxes(),
                     KmuLunaSettings.getPoliticalMapShowUnbiasedAxes(),
-                    KmuLunaSettings.getPoliticalMapAnchorBandAspect(),
-                    KmuLunaSettings.getPoliticalMapAnchorBandMinThickness(),
-                    KmuLunaSettings.getPoliticalMapAnchorBandMaxThickness(),
-                    KmuLunaSettings.getPoliticalMapAnchorBandMaxLines(),
-                    KmuLunaSettings.getPoliticalMapAnchorBandLineSpacing());
+                    KmuLunaSettings.getPoliticalMapNameMinFontSize(),
+                    KmuLunaSettings.getPoliticalMapNameMaxFontSize(),
+                    KmuLunaSettings.getPoliticalMapNameMaxLines(),
+                    KmuLunaSettings.getPoliticalMapNameLineSpacing(),
+                    KmuLunaSettings.getFactionOuterBorderColor(),
+                    KmuLunaSettings.getIndependentOuterBorderColor());
         }
     }
 }

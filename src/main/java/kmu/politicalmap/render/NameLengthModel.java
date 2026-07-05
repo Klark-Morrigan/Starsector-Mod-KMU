@@ -1,18 +1,22 @@
 package kmu.politicalmap.render;
 
+import java.util.List;
+
 /**
- * How much length a faction name needs when set at a given line height across a given
- * number of lines - the one fact the label box fit cannot know from geometry alone.
+ * The name a label box is sized for: how much length it needs at a given line height and
+ * line count, and what its wrapped lines actually are - the two facts the geometry-only
+ * box fit cannot know on its own.
  *
- * <p>The seam between sizing a label box against a region and knowing how long the
- * actual name is. {@link LabelBoxFitter} grows a band's girth against the border and,
- * at each trial, asks this how much length the name would demand there; whatever
- * answers it decides the fit. Today {@link AspectNameLengthModel} answers from a
- * stand-in aspect ratio, before any font is loaded; once names draw, a font-backed
- * model measures the wrapped glyphs instead - and only this implementation changes,
- * not the fitter that consumes it.
+ * <p>The seam between sizing a label box against a region and knowing the name that must
+ * fill it. {@link LabelBoxFitter} grows a band's girth against the border and, at each
+ * trial, asks this how much length the name would demand there; whatever answers it
+ * decides the fit. Both answers come from the same wrap - the required length is the
+ * width of the widest wrapped line - so keeping them behind one model stops the measured
+ * fit and the drawn lines from ever disagreeing. {@link FontNameLengthModel} answers
+ * from real glyph metrics; {@link AspectNameLengthModel} stands in with a fixed shape
+ * where no font or name is available (the fit still sizes a debug band there, but no
+ * text draws).
  */
-@FunctionalInterface
 interface NameLengthModel {
 
     /**
@@ -22,7 +26,19 @@ interface NameLengthModel {
      * @param lineHeight the height of a single line
      * @param lineCount  how many lines the name is stacked into - more lines carry
      *                   fewer characters each, so each line is shorter
-     * @return the length the longest line of the name would occupy
+     * @return the length the longest line of the name would occupy, or positive
+     *         infinity when the name cannot be split into that many lines at all
      */
     double requiredLengthFor(double lineHeight, int lineCount);
+
+    /**
+     * The name's lines at the given line count - the same wrap
+     * {@link #requiredLengthFor} measured, so a label draws exactly the block the fit
+     * sized.
+     *
+     * @param lineCount how many lines to wrap the name into
+     * @return the wrapped lines, top line first, or an empty list when the name cannot
+     *         be split into that many lines or the model has no real text (a stand-in)
+     */
+    List<String> wrapIntoLines(int lineCount);
 }

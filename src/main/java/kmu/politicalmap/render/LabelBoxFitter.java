@@ -8,44 +8,48 @@ import kmlib.math.solving.Picks;
 import kmu.politicalmap.render.model.ClusterAnchor;
 
 /**
- * Sizes the largest label box that fits one candidate placement: how thick a band the
+ * Sizes the largest label box that fits one candidate placement: the tallest font the
  * region holds, how many lines the name stacks into, and the clear line the box centres
  * on. The sizing half of the anchor search, apart from the candidate generation and
  * selection in {@link ClusterAnchorsBuilder} - one placement in, one box out.
  *
- * <p>The fit is a monotone growth. A band of thickness {@code T} split into
- * {@code lineCount} lines gives each line a height of
- * {@code T / ((lineCount - 1) * lineSpacing + 1)}; the {@link NameLengthModel} then says
- * how much length the name needs at that line height. A fatter band fits in fewer
- * places, so its clear length only shrinks as {@code T} grows while the name's needed
- * length grows - the largest readable font is therefore at the largest thickness whose
+ * <p>The fit is a monotone growth on the per-line font height, clamped to
+ * {@code [minFontHeight, maxFontHeight]} - the readability floor and the oversize
+ * ceiling, both per line so they mean the same at any line count. A font of height
+ * {@code F} stacked into {@code lineCount} lines occupies a band of thickness
+ * {@code F * ((lineCount - 1) * lineSpacing + 1)}; the {@link NameLengthModel} says how
+ * much length the name needs at that line height. A taller font fattens the band (which
+ * fits in fewer places, so its clear length only shrinks) while the name's needed
+ * length grows - the largest readable font is therefore at the largest height whose
  * band still holds the name, found by {@link Bisection}. Trying every line count and
  * keeping the tallest font is what lets a length-poor but girth-rich placement win by
- * stacking lines instead of shrinking.
+ * stacking lines instead of shrinking; on a tie the lower line count holds
+ * ({@link Picks} keeps the incumbent), so a name goes multi-line only when stacking
+ * buys a strictly larger font.
  *
  * <p>The name model is injected, not baked in: the fitter never asks how long the name
- * actually is, only the model does, so swapping the stand-in aspect model for a
- * font-backed one changes nothing here.
+ * actually is, only the model does, so the same fit serves the font-measured names and
+ * the aspect stand-in alike.
  */
 final class LabelBoxFitter {
 
-    // How many times the thickness search halves its interval - enough to land the
-    // fitted girth within a fraction of a world unit, since each step doubles precision
-    // and the thickness clamp spans a few thousand units at most.
-    private static final int THICKNESS_BISECTION_STEPS = 20;
+    // How many times the font-height search halves its interval - enough to land the
+    // fitted height within a fraction of a world unit, since each step doubles precision
+    // and the font clamp spans a few thousand units at most.
+    private static final int FONT_HEIGHT_BISECTION_STEPS = 20;
 
-    private final double minThickness;
-    private final double maxThickness;
+    private final double minFontHeight;
+    private final double maxFontHeight;
     private final int maxLines;
     private final double lineSpacing;
     private final double iconClearance;
     private final double endInsetDistance;
     private final NameLengthModel nameLength;
 
-    LabelBoxFitter(double minThickness, double maxThickness, int maxLines, double lineSpacing,
+    LabelBoxFitter(double minFontHeight, double maxFontHeight, int maxLines, double lineSpacing,
             double iconClearance, double endInsetDistance, NameLengthModel nameLength) {
-        this.minThickness = minThickness;
-        this.maxThickness = maxThickness;
+        this.minFontHeight = minFontHeight;
+        this.maxFontHeight = maxFontHeight;
         this.maxLines = maxLines;
         this.lineSpacing = lineSpacing;
         this.iconClearance = iconClearance;
@@ -54,9 +58,9 @@ final class LabelBoxFitter {
     }
 
     // Sizes the largest name that fits the placement, as the box it occupies, or null
-    // when even the minimum-thickness band cannot hold a name at any line count. Keeps
+    // when even the minimum-height font cannot hold a name at any line count. Keeps
     // the line count whose box carries the tallest font, so more lines are chosen only
-    // when they buy a bigger font by spending the placement's spare girth.
+    // when they buy a strictly bigger font by spending the placement's spare girth.
     BoxFit fitLargestBox(Placement placement) {
         BoxFit best = null;
         for (var lineCount = 1; lineCount <= maxLines; lineCount++) {
@@ -68,7 +72,7 @@ final class LabelBoxFitter {
 
     // Fits one candidate band against the rings, the icons, and the end inset, widened to
     // the given half thickness. Exposed for the search's near-miss diagnostic, which reads
-    // the pre-margin clear span of a minimum-thickness band; the fit proper reaches it
+    // the pre-margin clear span of a minimum-height band; the fit proper reaches it
     // through the line-count sizing below.
     BandSpan fitBand(Placement placement, double halfThickness) {
         var interiorSpans = Polygons.findBandInteriorSpans(placement.rings(),
@@ -91,34 +95,34 @@ final class LabelBoxFitter {
                 : new BandSpan(clear, null);
     }
 
-    // Sizes the box for one fixed line count by growing the band's girth to the largest
-    // thickness whose band still holds the name, then reading that thickness's clear span
-    // and font height back. Null when even the minimum band cannot hold the name.
+    // Sizes the box for one fixed line count by growing the font to the largest height
+    // whose band still holds the name, then reading that band's clear span back. Null
+    // when even the minimum font cannot hold the name.
     private BoxFit fitForLineCount(Placement placement, int lineCount) {
         var linesFactor = (lineCount - 1) * lineSpacing + 1.0;
-        if (!bandHoldsName(placement, minThickness, lineCount, linesFactor)) {
+        if (!bandHoldsName(placement, minFontHeight, lineCount, linesFactor)) {
             return null;
         }
-        var thickness = Bisection.findLargestPassing(minThickness, maxThickness,
-                THICKNESS_BISECTION_STEPS,
+        var fontHeight = Bisection.findLargestPassing(minFontHeight, maxFontHeight,
+                FONT_HEIGHT_BISECTION_STEPS,
                 candidate -> bandHoldsName(placement, candidate, lineCount, linesFactor));
+        var thickness = fontHeight * linesFactor;
         var span = fitBand(placement, thickness / 2.0).insetSpan();
-        var fontHeight = thickness / linesFactor;
         return new BoxFit(placement.toSegment(span), thickness, lineCount, fontHeight);
     }
 
-    // Whether a band of the given thickness, split into lineCount lines, has room along
-    // the placement for the name: its clear (border-, icon-, and margin-trimmed) length
-    // is at least the length the model says the name needs at that line height.
-    private boolean bandHoldsName(Placement placement, double thickness, int lineCount,
+    // Whether a font of the given height, stacked into lineCount lines, has room along
+    // the placement for the name: the band those lines occupy must have a clear
+    // (border-, icon-, and margin-trimmed) length at least the length the model says the
+    // name needs at that line height.
+    private boolean bandHoldsName(Placement placement, double fontHeight, int lineCount,
             double linesFactor) {
-        var band = fitBand(placement, thickness / 2.0);
+        var band = fitBand(placement, fontHeight * linesFactor / 2.0);
         if (band.insetSpan() == null) {
             return false;
         }
         var clearLength = band.insetSpan()[1] - band.insetSpan()[0];
-        var lineHeight = thickness / linesFactor;
-        return clearLength >= nameLength.requiredLengthFor(lineHeight, lineCount);
+        return clearLength >= nameLength.requiredLengthFor(fontHeight, lineCount);
     }
 
     /**
@@ -135,8 +139,8 @@ final class LabelBoxFitter {
     /**
      * One fitted label box: its clear span as a world segment (the line the anchor
      * carries), the band girth that fits along it, the line count the name is stacked
-     * into, and the raw font height the fit achieved - the quantity the search maximises,
-     * before it docks steep candidates by the slope penalty.
+     * into, and the per-line font height the fit achieved - the quantity the search
+     * maximises, before it docks steep candidates by the slope penalty.
      */
     record BoxFit(ClusterAnchor.AxisSegment segment, double thickness, int lineCount,
             double fontHeight) {

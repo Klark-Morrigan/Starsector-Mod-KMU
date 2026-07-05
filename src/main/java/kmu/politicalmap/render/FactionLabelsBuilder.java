@@ -1,7 +1,6 @@
 package kmu.politicalmap.render;
 
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.Timings;
 
@@ -10,57 +9,34 @@ import kmu.politicalmap.render.model.ClusterAnchor;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
-import org.lazywizard.lazylib.ui.FontException;
 import org.lazywizard.lazylib.ui.LazyFont;
 import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
- * Builds the cached faction-name labels from the resolved cluster placements. One label
- * per cluster whose placement search accepted a line: the owner's display name, hung at
- * the accepted line's midpoint and slanted to its slope, in the owner's bright colour.
+ * Builds the cached faction-name labels from the resolved cluster placements. One name
+ * block per cluster whose placement search accepted a box: the owner's display name in
+ * the lines and at the font size the fit already chose, the lines stacked perpendicular
+ * to the accepted line and centred as a block on its midpoint, slanted to its slope, in
+ * the owner's bright colour.
  *
- * <p>Reuses the {@link ClusterAnchorsBuilder} placements rather than re-clustering: the
- * anchor list is the single source of where a name goes, so the labels and the debug
- * anchor overlay never disagree and the (costly) placement search runs once. This class
- * adds only the text - resolving each cluster's faction id to a display name and minting a
- * {@link DrawableString} - so it depends on the sector merely to read faction names, never
- * to re-derive ownership.
+ * <p>Reuses the {@link ClusterAnchorsBuilder} placements rather than re-fitting: the
+ * anchor carries the wrapped lines and font height its box was sized for, so the drawn
+ * block matches the fitted footprint by construction and the (costly) placement search
+ * runs once. This class adds only the geometry of the stack - each line's own hang
+ * point along the block's perpendicular - and the GL strings; it never touches the
+ * sector. The label font is the player's pick, loaded and cached by
+ * {@link LabelFonts} - the same face whose metrics sized the boxes - and a face that
+ * failed to load leaves the labels empty.
  *
- * <p>The {@link DrawableString}s own GL buffers, so a rebuild disposes the previous list's
- * strings before minting the new ones; nothing here runs per frame. The label font is the
- * player's pick from the "Faction name font" setting, resolved to a {@code graphics/fonts}
- * face and loaded lazily; each loaded face is cached by path (so switching fonts and back
- * costs nothing) and a face that fails to load is logged once and skipped, leaving the
- * labels empty rather than retrying every rebuild.
+ * <p>The {@link DrawableString}s own GL buffers, so a rebuild disposes the previous
+ * list's strings before minting the new ones; nothing here runs per frame.
  */
 final class FactionLabelsBuilder {
     private static final Logger LOG = Global.getLogger(FactionLabelsBuilder.class);
-
-    // The font setting stores a basename (e.g. insignia15LTaa); the faces all live under
-    // graphics/fonts with a .fnt extension, so the basename resolves to a path by wrapping.
-    private static final String FONT_DIR = "graphics/fonts/";
-    private static final String FONT_EXTENSION = ".fnt";
-
-    // One readable line at a fixed world-unit height. Chunk 7 draws every name at this one
-    // size; the placement already carries a solver-fitted band thickness and line count,
-    // but sizing the name to the cluster (and wrapping to multiple lines) is Chunk 8's job,
-    // so this constant stands in until then. World units because the renderer scales the
-    // glyphs by the map factor, so the name grows and shrinks with the territory it labels.
-    private static final float LABEL_WORLD_SIZE = 400f;
-
-    // Faces loaded on the render thread, cached by path so a font the player already
-    // selected loads once even after switching away and back. failedPaths remembers a face
-    // that would not load, so its FontException is logged once, not on every rebuild.
-    private static final Map<String, LazyFont> FONT_BY_PATH = new HashMap<>();
-    private static final Set<String> FAILED_FONT_PATHS = new HashSet<>();
 
     // Builds only; never instantiated.
     private FactionLabelsBuilder() {
@@ -68,66 +44,66 @@ final class FactionLabelsBuilder {
 
     // Rebuilds the label list in place from the current placements: disposes the standing
     // strings (they hold GL buffers), clears, and - only when the names toggle is on -
-    // mints one string per cluster that accepted a line. Profiled and timed on its own so
-    // the label build's cost is visible next to the drawables and anchor builds; a failed
-    // font load leaves the list empty. Runs at rebuild time only, never per frame.
-    static void rebuildFactionLabels(List<FactionLabel> labels, List<ClusterAnchor> anchors,
-            SectorAPI sector) {
+    // mints one string per planned line. Profiled and timed on its own so the label
+    // build's cost is visible next to the drawables and anchor builds; a failed font load
+    // leaves the list empty. Runs at rebuild time only, never per frame.
+    static void rebuildFactionLabels(List<FactionLabel> labels, List<ClusterAnchor> anchors) {
         disposeAll(labels);
         labels.clear();
         if (!KmuLunaSettings.getPoliticalMapShowFactionNames()) {
             return;
         }
-        var fontPath = FONT_DIR + KmuLunaSettings.getPoliticalMapFactionNameFont() + FONT_EXTENSION;
-        var resolvedFont = getFont(fontPath);
+        var resolvedFont = LabelFonts.loadConfiguredFont();
         if (resolvedFont == null) {
             return;
         }
         var buildStart = System.nanoTime();
         KmuProfiling.getProfiler().measure("politicalMap.buildFactionLabels", () -> {
-            // The plan step (which clusters get a name, its text, colour, hang point, and
-            // slant) is pure; only the mint below touches GL, so the decision is unit-
-            // testable without a font or a GL context.
-            for (var plan : planLabels(anchors, sector)) {
-                var text = resolvedFont.createText(plan.name(), plan.color(), LABEL_WORLD_SIZE);
+            // The plan step (each line's text, colour, hang point, slant, and font size)
+            // is pure computation; only the mint below touches GL, so the stacking
+            // geometry stays a self-contained calculation apart from GL resource creation.
+            for (var plan : planLabels(anchors,
+                    KmuLunaSettings.getPoliticalMapNameLineSpacing())) {
+                var text = resolvedFont.createText(plan.text(), plan.color(),
+                        plan.fontHeight());
                 text.setAnchor(LazyFont.TextAnchor.CENTER);
                 labels.add(new FactionLabel(text, plan.color(), plan.hangX(), plan.hangY(),
                         plan.slantDegrees()));
             }
         });
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Political map faction labels built; labels=" + labels.size()
+            LOG.debug("Political map faction labels built; lines=" + labels.size()
                     + " ofClusters=" + anchors.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - buildStart));
         }
     }
 
     /**
-     * A single cluster's resolved label decision, before any GL string is minted: the
-     * display name, the colour to draw it in, the world point it hangs on, and its slant.
-     * The pure output of {@link #planLabels}, so the placement-to-name logic is testable
-     * without a font or a GL context.
+     * One planned label line, before any GL string is minted: its text, the colour to
+     * draw it in, the world point its centre hangs on, its slant, and the font height
+     * (single-line world height) it renders at. The pure output of {@link #planLabels},
+     * holding the placement-to-line geometry as plain data, separate from the GL string
+     * minting that consumes it.
      */
-    record LabelPlan(String name, Color color, float hangX, float hangY, float slantDegrees) {
+    record LabelPlan(String text, Color color, float hangX, float hangY, float slantDegrees,
+            float fontHeight) {
     }
 
-    // Decides one label per cluster whose search accepted a line: skipping a collapsed
-    // placement (dot only, no accepted axis) and any cluster whose faction name will not
-    // resolve (missing faction, blank name), so a stray cluster never mints an empty label.
-    // Pure - no GL, no font - so the whole decision is unit-testable.
-    static List<LabelPlan> planLabels(List<ClusterAnchor> anchors, SectorAPI sector) {
+    // Plans every label line: skipping a collapsed placement (dot only, no accepted
+    // axis) and any cluster with no wrapped name (an owner whose font or display name
+    // did not resolve at fit time), then laying the cluster's lines out as a block -
+    // stacked along the accepted line's perpendicular at the given line-spacing multiple,
+    // centred on the anchor, first line on the upper side so the block reads top-down.
+    // The slant is folded upright first, so the stacking normal is taken from the
+    // direction the text actually reads in. Pure - no GL, no font, no sector.
+    static List<LabelPlan> planLabels(List<ClusterAnchor> anchors, double lineSpacing) {
         var plans = new ArrayList<LabelPlan>(anchors.size());
         for (var anchor : anchors) {
-            var acceptedAxis = anchor.acceptedAxis();
-            if (acceptedAxis == null) {
+            if (anchor.acceptedAxis() == null || anchor.nameLines().isEmpty()) {
                 continue;
             }
-            var name = resolveFactionName(sector, anchor.factionId());
-            if (name == null || name.isBlank()) {
-                continue;
-            }
-            plans.add(new LabelPlan(name, anchor.color(), anchor.anchorX(), anchor.anchorY(),
-                    computeSlantDegrees(acceptedAxis)));
+            var slantDegrees = computeSlantDegrees(anchor.acceptedAxis());
+            planBlockLines(plans, anchor, slantDegrees, lineSpacing);
         }
         return plans;
     }
@@ -141,17 +117,34 @@ final class FactionLabelsBuilder {
         }
     }
 
-    // The owner's on-map name: its long display name, or null when the faction cannot be
-    // resolved (an owner id with no live faction, e.g. a mod removed mid-save).
-    private static String resolveFactionName(SectorAPI sector, String factionId) {
-        var faction = sector.getFaction(factionId);
-        return faction == null ? null : faction.getDisplayNameLong();
+    // Lays one cluster's lines out around its anchor: line centres spaced one
+    // line-height-times-spacing apart along the upright slant's "up" perpendicular,
+    // the whole stack centred on the anchor point, first line highest. The distance
+    // from first to last centre plus one line height is exactly the band thickness the
+    // fit reserved, so the block fills the fitted box.
+    private static void planBlockLines(List<LabelPlan> plans, ClusterAnchor anchor,
+            float slantDegrees, double lineSpacing) {
+        var lines = anchor.nameLines();
+        var slantRadians = Math.toRadians(slantDegrees);
+        // The unit perpendicular on the reading direction's upper side: for an upright
+        // slant (|slant| <= 90) its y-component is non-negative, so "up" is screen-up.
+        var upX = (float) -Math.sin(slantRadians);
+        var upY = (float) Math.cos(slantRadians);
+        var lineStep = (float) (anchor.fontHeight() * lineSpacing);
+        for (var lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+            // Offsets run from +((L-1)/2)*step for the first line down to its negative
+            // for the last, symmetric about the anchor.
+            var offset = ((lines.size() - 1) / 2f - lineIndex) * lineStep;
+            plans.add(new LabelPlan(lines.get(lineIndex), anchor.color(),
+                    anchor.anchorX() + upX * offset, anchor.anchorY() + upY * offset,
+                    slantDegrees, anchor.fontHeight()));
+        }
     }
 
     // The slope of the accepted line in degrees, folded upright so the name reads
-    // left-to-right: a line pointing into the left half-plane is reversed first, so a name
-    // never renders upside down. The remaining lean (bounded by the anchor's max-slant cap)
-    // is kept as the label's slant. Chunk 8's fuller upright handling supersedes this.
+    // left-to-right: a line pointing into the left half-plane is reversed first, so a
+    // name never renders upside down. The remaining lean (bounded by the anchor's
+    // max-slant cap) is kept as every line's slant.
     private static float computeSlantDegrees(ClusterAnchor.AxisSegment axis) {
         var deltaX = axis.endX() - axis.startX();
         var deltaY = axis.endY() - axis.startY();
@@ -160,29 +153,5 @@ final class FactionLabelsBuilder {
             deltaY = -deltaY;
         }
         return (float) Math.toDegrees(Math.atan2(deltaY, deltaX));
-    }
-
-    // Loads one label face and caches it by path, so the player's current pick loads once
-    // even after switching fonts and back. A face known to have failed returns null without
-    // retrying; a FontException (a missing or malformed .fnt) is logged once for that path
-    // and the names simply do not draw rather than the map render throwing every frame.
-    private static LazyFont getFont(String fontPath) {
-        var cached = FONT_BY_PATH.get(fontPath);
-        if (cached != null) {
-            return cached;
-        }
-        if (FAILED_FONT_PATHS.contains(fontPath)) {
-            return null;
-        }
-        try {
-            var loaded = LazyFont.loadFont(fontPath);
-            FONT_BY_PATH.put(fontPath, loaded);
-            return loaded;
-        } catch (FontException exception) {
-            FAILED_FONT_PATHS.add(fontPath);
-            LOG.error("Political map could not load label font '" + fontPath
-                    + "'; faction names using this font disabled this session", exception);
-            return null;
-        }
     }
 }

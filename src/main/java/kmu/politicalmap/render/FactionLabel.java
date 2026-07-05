@@ -5,11 +5,17 @@ import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 import java.awt.Color;
 
 /**
- * One drawn faction name: a cached {@link DrawableString} plus where and how it hangs on
- * the map. Built from a {@link kmu.politicalmap.render.model.ClusterAnchor}'s accepted
- * placement - {@code (hangX, hangY)} is the anchor's accepted-line midpoint and
- * {@code slantDegrees} the line's slope - so the name sits inside the border, clear of
- * icons, leaning along the cluster's axis, in the owner's bright colour.
+ * One drawn line of a faction name: a cached {@link DrawableString} plus where and how
+ * it hangs on the map. Built from a
+ * {@link kmu.politicalmap.render.model.ClusterAnchor}'s accepted placement - a
+ * multi-line name mints one of these per wrapped line, each hung at its own point
+ * (stacked perpendicular to the accepted line, centred as a block on the anchor) with
+ * the shared slant - so the block sits inside the border, clear of icons, leaning along
+ * the cluster's axis, in the owner's bright colour, at the font size the fit achieved.
+ * Per-line strings rather than one embedded-newline string because each line centres on
+ * the block's axis individually and the stack honours the line-spacing knob, which a
+ * single {@link DrawableString} (fixed one-font-size line advance, left-aligned block)
+ * cannot do.
  *
  * <p>{@code baseColor} is that owner's bright shade at full opacity, kept alongside the
  * string because the renderer refades it to the map's alpha each frame: the string bakes

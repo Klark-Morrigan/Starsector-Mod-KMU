@@ -269,14 +269,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 drawables = DrawablesBuilder.buildDrawables(
                         geometryCache, Global.getSector());
                 debugDrawables = null;
-                ClusterAnchorsBuilder.rebuildClusterAnchors(
-                        clusterAnchors, geometryCache, drawables.getOwnerBySystemId());
+                ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
+                        drawables.getOwnerBySystemId(), Global.getSector());
             }
             // The name labels are minted from the placements just rebuilt (empty when the
             // names toggle is off), keeping them in step with the fills and borders and
             // reusing the one placement search both consumers share.
-            FactionLabelsBuilder.rebuildFactionLabels(factionLabels, clusterAnchors,
-                    Global.getSector());
+            FactionLabelsBuilder.rebuildFactionLabels(factionLabels, clusterAnchors);
             lastContentRevision = contentRevision;
             // A full rebuild re-derives every system, so any pending per-system
             // staleness is already reflected - drain and discard it rather than

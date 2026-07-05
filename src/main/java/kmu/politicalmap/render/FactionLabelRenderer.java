@@ -1,15 +1,19 @@
 package kmu.politicalmap.render;
 
+import kmlib.color.Colors;
+
 import kmu.diagnostics.KmuProfiling;
 
 import org.lwjgl.opengl.GL11;
 
-import java.awt.Color;
 import java.util.List;
 
 /**
- * Paints the cached faction-name labels on the sector (M) map: each cluster's name hung at
- * its anchor midpoint, slanted to its axis, in the owner's bright colour.
+ * Paints the cached faction-name labels on the sector (M) map: each cluster's name as a
+ * block of one or more lines centred on its anchor, slanted to its axis, in the owner's
+ * bright colour, at the font size its fitted box carries. Each cached label is one line
+ * with its own hang point - the builder laid the stack out - so this pass just draws
+ * them all alike.
  *
  * <p>Drawn in the same below-UI {@code renderOnMap} pass as the fills and the debug anchor
  * overlay, and last of the three, so a name reads on top of its territory and over the
@@ -50,17 +54,11 @@ final class FactionLabelRenderer {
         GL11.glPushMatrix();
         GL11.glScalef(factor, factor, 1f);
         for (var label : labels) {
-            label.text().setBaseColor(fade(label.baseColor(), alphaMult));
+            // Refade the label to the frame's alpha so it dims in step with the territory
+            // it sits on; scaleAlpha keeps a copy, so the cached base colour is untouched.
+            label.text().setBaseColor(Colors.scaleAlpha(label.baseColor(), alphaMult));
             label.text().drawAtAngle(label.hangX(), label.hangY(), label.slantDegrees());
         }
         GL11.glPopMatrix();
-    }
-
-    // The label colour scaled to the map's fade: the owner's bright shade with its alpha
-    // multiplied by the frame's alphaMult, so a label dims in step with the territory it
-    // sits on.
-    private static Color fade(Color color, float alphaMult) {
-        return new Color(color.getRed(), color.getGreen(), color.getBlue(),
-                Math.round(color.getAlpha() * alphaMult));
     }
 }
