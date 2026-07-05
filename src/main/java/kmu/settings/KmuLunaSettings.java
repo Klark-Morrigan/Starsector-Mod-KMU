@@ -265,10 +265,14 @@ public final class KmuLunaSettings {
     // On by default: the faction names are the payoff of the merged-territory map, so
     // they show unless the player turns them off.
     private static final boolean DEFAULT_SHOW_FACTION_NAMES = true;
-    // The default label font: the antialiased LazyFont face vanilla uses for map text,
-    // and the one the renderer falls back to before LunaLib has loaded the choice. Kept
-    // in step with the CSV row's defaultValue and the font list the radio offers.
-    private static final String DEFAULT_FACTION_NAME_FONT = "insignia15LTaa";
+    // The default label font: the highest-resolution antialiased LazyFont face the game
+    // ships (a 42px glyph atlas). A name is stretched far past its atlas resolution to
+    // span a cluster, so the magnified glyphs stay as clean as a bitmap face allows only
+    // when the source atlas is large - hence the biggest one as the default, and why the
+    // radio offers only large antialiased faces. Also the renderer's fallback before
+    // LunaLib has loaded the choice. Kept in step with the CSV row's defaultValue and the
+    // font list the radio offers.
+    private static final String DEFAULT_FACTION_NAME_FONT = "insignia42LTaa";
     private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_OUTER_BORDER_OPACITY = 1.0;
@@ -884,7 +888,7 @@ public final class KmuLunaSettings {
 
     /**
      * @return the basename of the {@code graphics/fonts} face the faction names render
-     *         in (e.g. {@code insignia15LTaa}); the label renderer resolves it to the
+     *         in (e.g. {@code insignia42LTaa}); the label renderer resolves it to the
      *         {@code .fnt} path. Falls back to the default face before LunaLib has loaded
      *         the choice
      */
