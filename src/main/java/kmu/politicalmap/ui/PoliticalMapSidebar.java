@@ -53,13 +53,13 @@ public final class PoliticalMapSidebar implements CampaignUIRenderingListener {
 
     private final ClickEdgeDetector clickEdgeDetector = new ClickEdgeDetector();
 
-    // Gate-transition trace. The box has no error state - when a signal blocks it, it is
-    // simply absent - so the log is the only place "why is it hidden" can be answered.
-    // Logging only on transitions keeps it to a handful of lines per session; starting
-    // unevaluated makes the first render pass log once, which also proves the listener is
-    // registered and the render hook fires at all.
-    private boolean hasEvaluatedGate;
-    private boolean wasSidebarShown;
+    // View-state trace. The box has no error state - when a signal blocks it, it is simply
+    // absent - so the log is the only place "why hidden" or "drawn where" is answerable.
+    // Deduped on the whole composed line: a steady state is one line, and every change (the
+    // pass first fires, the map tab opens, the filter toggles, the box resolves a rect) is a
+    // fresh one. Null to start, so the very first render pass logs and thereby proves the
+    // listener is registered and the hook fires at all.
+    private String lastLoggedLine;
 
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
@@ -80,25 +80,39 @@ public final class PoliticalMapSidebar implements CampaignUIRenderingListener {
         // Poll the button every frame, even off the map, so the edge state stays current
         // and returning to the map mid-hold is not read as a fresh click.
         var isPress = clickEdgeDetector.detectPress(Mouse.isButtonDown(LEFT_MOUSE_BUTTON));
-        var isSidebarShown = CampaignMapView.isSectorMapWithStarscapeOff();
-        if (!hasEvaluatedGate || wasSidebarShown != isSidebarShown) {
-            hasEvaluatedGate = true;
-            wasSidebarShown = isSidebarShown;
-            LOG.debug("Political map sidebar " + (isSidebarShown ? "showing" : "hidden")
-                    + "; " + CampaignMapView.describeViewState());
-        }
-        if (!isSidebarShown) {
+        if (!CampaignMapView.isSectorMapWithStarscapeOff()) {
+            logViewStateOnChange("hidden; " + CampaignMapView.describeViewState());
             return;
         }
         var settings = Global.getSettings();
         var placement = SidebarLayout.computePlacement(
                 settings.getScreenWidth(), settings.getScreenHeight(),
                 KmuLunaSettings.getPoliticalMapSidebarAnchor());
+        var opacity = KmuLunaSettings.getPoliticalMapSidebarBackgroundOpacity();
+        // Logged before the draw, with the resolved rect / screen / opacity, so a box that is
+        // gated in but never seen is diagnosed from the numbers rather than another run.
+        logViewStateOnChange("showing; " + CampaignMapView.describeViewState() + "; screen="
+                + settings.getScreenWidth() + "x" + settings.getScreenHeight()
+                + " box=" + formatRect(placement.box()) + " opacity=" + opacity);
         var isSelected = PoliticalOverlayToggle.isOverlayEnabled();
-        drawBox(placement, isSelected, KmuLunaSettings.getPoliticalMapSidebarBackgroundOpacity());
+        drawBox(placement, isSelected, opacity);
         if (isPress && placement.tab().containsPoint(UiCursor.getUiX(), UiCursor.getUiY())) {
             PoliticalOverlayToggle.toggleOverlayEnabled();
         }
+    }
+
+    // Logs the composed view-state line once per change (see the lastLoggedLine field); the
+    // dedupe keeps a steady state to one line while every real transition prints a fresh one.
+    private void logViewStateOnChange(String line) {
+        if (line.equals(lastLoggedLine)) {
+            return;
+        }
+        lastLoggedLine = line;
+        LOG.debug("Political map sidebar " + line);
+    }
+
+    private static String formatRect(Rectangle rect) {
+        return "[" + rect.x() + "," + rect.y() + " " + rect.width() + "x" + rect.height() + "]";
     }
 
     private void drawBox(SidebarPlacement placement, boolean isSelected, float opacity) {
