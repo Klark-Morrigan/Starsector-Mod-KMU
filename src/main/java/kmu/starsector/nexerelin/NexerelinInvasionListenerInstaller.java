@@ -50,15 +50,17 @@ public final class NexerelinInvasionListenerInstaller {
 
         private static void install(SectorAPI sector) {
             var listenerManager = sector.getListenerManager();
-            if (listenerManager == null
-                    || listenerManager.hasListenerOfClass(PoliticalMapMarketTransferListener.class)) {
+            if (listenerManager == null) {
                 return;
             }
-            // Registered transient (not persisted): the listener is a KMU class
-            // implementing a Nex interface, so serialising it into the save would
-            // fail to load if Nex were later removed. It is re-added on each load
-            // instead, exactly when the gate above still passes.
-            listenerManager.addListener(new PoliticalMapMarketTransferListener(), false);
+            // Transient (true), not persisted (false): the listener is a KMU class
+            // implementing a Nex interface, so serialising it into the save would fail to
+            // load if Nex were later removed. It is re-added on each load instead, exactly
+            // when the gate in installIfPresent still passes. Remove-then-add keeps the
+            // install idempotent and also clears any persisted copy an older build wrote into
+            // the save (it registered this non-transiently), repairing that save on load.
+            listenerManager.removeListenerOfClass(PoliticalMapMarketTransferListener.class);
+            listenerManager.addListener(new PoliticalMapMarketTransferListener(), true);
         }
     }
 }

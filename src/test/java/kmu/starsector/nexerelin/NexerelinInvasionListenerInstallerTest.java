@@ -22,10 +22,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link NexerelinInvasionListenerInstaller}: the market-transfer listener
- * is registered only when Nexerelin is enabled and not already present, and the
- * listener is transient (not persisted). The mod-enabled gate is what makes the
- * Nex dependency optional, so the disabled case is pinned alongside the install.
+ * Pins {@link NexerelinInvasionListenerInstaller}: when Nexerelin is enabled the
+ * market-transfer listener is (re)installed fresh and transient (not persisted), and
+ * when it is disabled nothing is touched. Transience matters because the listener
+ * implements a Nex interface - persisting it would fail to load if Nex were removed.
+ * The mod-enabled gate is what makes the Nex dependency optional, so the disabled case
+ * is pinned alongside the install.
  */
 final class NexerelinInvasionListenerInstallerTest {
 
@@ -35,20 +37,21 @@ final class NexerelinInvasionListenerInstallerTest {
     class InstallIfPresent {
 
         @Test
-        void addsTransientListenerWhenNexEnabledAndNotYetPresent() {
+        void reinstallsFreshTransientListenerWhenNexEnabled() {
             var listenerManagerMock = mock(ListenerManagerAPI.class);
-            when(listenerManagerMock.hasListenerOfClass(PoliticalMapMarketTransferListener.class))
-                    .thenReturn(false);
             var sectorMock = sectorWith(listenerManagerMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 stubModEnabled(globalMock, true);
 
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
 
-                // false: the listener implements a Nex interface, so it is not
-                // serialised into the save and is re-added on each load instead.
+                // Remove-then-add: clears any copy an older build persisted into the save,
+                // then adds the listener transiently (true) so it never enters the save - it
+                // implements a Nex interface and would fail to load if Nex were removed.
                 verify(listenerManagerMock)
-                        .addListener(any(PoliticalMapMarketTransferListener.class), eq(false));
+                        .removeListenerOfClass(PoliticalMapMarketTransferListener.class);
+                verify(listenerManagerMock)
+                        .addListener(any(PoliticalMapMarketTransferListener.class), eq(true));
             }
         }
 
@@ -62,21 +65,8 @@ final class NexerelinInvasionListenerInstallerTest {
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
 
                 verify(listenerManagerMock, never()).addListener(any(), anyBoolean());
-            }
-        }
-
-        @Test
-        void addsNothingWhenListenerAlreadyPresent() {
-            var listenerManagerMock = mock(ListenerManagerAPI.class);
-            when(listenerManagerMock.hasListenerOfClass(PoliticalMapMarketTransferListener.class))
-                    .thenReturn(true);
-            var sectorMock = sectorWith(listenerManagerMock);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                stubModEnabled(globalMock, true);
-
-                NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
-
-                verify(listenerManagerMock, never()).addListener(any(), anyBoolean());
+                verify(listenerManagerMock, never())
+                        .removeListenerOfClass(PoliticalMapMarketTransferListener.class);
             }
         }
 
