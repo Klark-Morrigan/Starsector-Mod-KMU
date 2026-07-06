@@ -21,7 +21,12 @@
     "dialog_close": "Close",
 
     "political_map_tab_no_layer": "No Layer",
-    "political_map_tab_factions": "Factions",
-    "political_map_caption_no_layer": "No map overlay selected."
+    "political_map_tab_political_map": "Political Map",
+
+    "political_map_ctl_uninhabited": "Uninhabited systems",
+    "political_map_ctl_name_short": "Short",
+    "political_map_ctl_name_full": "Full",
+    "political_map_ctl_names": "Names",
+    "political_map_ctl_factions": "Factions"
   }
 }

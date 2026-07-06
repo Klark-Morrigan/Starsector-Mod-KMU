@@ -21,7 +21,7 @@ public final class FactionsLayer implements PoliticalMapLayer {
 
     @Override
     public String getTabLabelKey() {
-        return KmuStrings.POLITICAL_MAP_TAB_FACTIONS;
+        return KmuStrings.POLITICAL_MAP_TAB_POLITICAL_MAP;
     }
 
     @Override
