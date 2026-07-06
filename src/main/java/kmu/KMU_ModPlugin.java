@@ -11,6 +11,7 @@ import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDecivListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.politicalmap.ui.PoliticalMapSidebar;
+import kmu.politicalmap.ui.PoliticalMapSidebarInput;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -205,11 +206,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
         sector.addTransientScript(new PoliticalMapSectorWatcher());
     }
 
-    // Registers the UI-coords listener that draws the overlay's control box on the sector
-    // map and reads its click. Transient: it holds no save state (the on/off choice lives
-    // in sector memory) and its cached GL text must never enter a save, so it is re-added
-    // fresh each load. Remove-then-add keeps the install idempotent and also clears any
-    // persistent registration an older save captured, so exactly one instance renders.
+    // Registers the layer bar's two listeners: the UI-coords render listener that draws the
+    // bar on the sector map, and the input listener that reads its clicks and hotkeys. Both
+    // transient: the active-layer pick lives in sector memory and the render listener's cached
+    // GL text must never enter a save, so both are re-added fresh each load. Remove-then-add
+    // keeps the install idempotent and clears any persistent registration an older save
+    // captured, so exactly one of each renders.
     static void installPoliticalMapSidebar(SectorAPI sector) {
         if (sector == null) {
             return;
@@ -222,6 +224,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         listenerManager.removeListenerOfClass(PoliticalMapSidebar.class);
         listenerManager.addListener(new PoliticalMapSidebar(), true);
+
+        // The bar's paint and its input are two listeners: the render listener above draws it,
+        // this input listener reads its clicks and hotkeys (a render pass gets no events to
+        // consume). Same transient, remove-then-add contract, so exactly one of each renders.
+        listenerManager.removeListenerOfClass(PoliticalMapSidebarInput.class);
+        listenerManager.addListener(new PoliticalMapSidebarInput(), true);
     }
 
     static void installPoliticalMapTerrain(SectorAPI sector) {

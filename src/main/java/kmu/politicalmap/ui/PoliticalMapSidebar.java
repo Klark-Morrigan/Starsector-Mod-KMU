@@ -6,59 +6,70 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.util.Misc;
 
 import kmlib.color.Colors;
-import kmlib.input.ClickEdgeDetector;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.CampaignMapView;
-import kmlib.starsector.ui.render.UiBoxes;
 
+import kmu.politicalmap.layer.PoliticalMapLayer;
+import kmu.politicalmap.layer.PoliticalMapLayers;
 import kmu.settings.KmuLunaSettings;
 import kmu.util.KmuStrings;
 
 import org.apache.log4j.Logger;
 import org.lazywizard.lazylib.ui.LazyFont;
 import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
-import org.lwjgl.input.Mouse;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.Color;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Draws the political-map overlay's control box on the sector map and reads its one click.
- * The box is a small, non-modal panel anchored to a screen corner or edge with a single
- * "Political Map" tab: selecting the tab shows the overlay, deselecting it hides it.
+ * Draws the political-map layer bar on the sector map: a row of tabs, one per registered
+ * layer, styled like the map's own Sector/System tabs - a black strip with the active tab lit
+ * and its bound key shown in brackets - plus a caption beneath for the active layer's note.
+ * It is the bar's paint only; a click on a tab and the layer hotkeys are read by
+ * {@link PoliticalMapSidebarInput}, since a render pass gets no input events and cannot
+ * consume them.
  *
- * <p>The sector map is a vanilla core-UI tab with no seam to attach a mod panel and no
- * input events to hand one, so the box is drawn in UI coordinates through
- * {@link CampaignUIRenderingListener} and reads its own click by polling the raw mouse in
- * the same render pass - an every-frame script is throttled while the map pauses the
- * campaign, but the render hook keeps firing. Polling in the map's empty margin consumes
- * no event, so the map stays fully interactive behind the box. The box shows only when the
- * overlay does ({@link CampaignMapView#isSectorMapWithStarscapeOff()}), so it never appears
- * where it does not belong.
+ * <p>The sector map is a vanilla core-UI tab with no seam to attach a mod panel, so the bar is
+ * drawn in UI coordinates through {@link CampaignUIRenderingListener} - specifically the
+ * above-tooltips pass, the only one composited after the opaque core-UI map, so nothing the
+ * map draws occludes it. It shows only where the overlay belongs
+ * ({@link CampaignMapView#isSectorMapWithStarscapeOff()}). The bar reads the same
+ * {@link SidebarLayout} placement the input listener hit-tests, so what is drawn and what is
+ * clickable line up.
  */
 public final class PoliticalMapSidebar implements CampaignUIRenderingListener {
     private static final Logger LOG = Global.getLogger(PoliticalMapSidebar.class);
-    private static final String TAB_LABEL_FONT = "insignia15LTaa";
-    private static final float TAB_LABEL_FONT_SIZE = 15f;
-    private static final int LEFT_MOUSE_BUTTON = 0;
-    private static final float BORDER_THICKNESS = 1f;
-    // How much of the box opacity the selected tab strip carries, so the active tab reads
-    // as a lit panel rather than a second opaque block.
-    private static final float SELECTED_TAB_ALPHA_MULT = 0.5f;
 
-    // Cached across instances: the tab label is one static string, so one GL text buffer
-    // serves every sidebar for the run rather than leaking a buffer per save reload.
-    private static DrawableString tabLabel;
-    private static boolean hasTriedFontLoad;
+    private static final String LABEL_FONT = "insignia15LTaa";
+    private static final float TAB_FONT_SIZE = 14f;
+    private static final float CAPTION_FONT_SIZE = 13f;
 
-    private final ClickEdgeDetector clickEdgeDetector = new ClickEdgeDetector();
+    // The bar's own black backdrop, so its labels read over the busy map; the player-colour
+    // accent lights only the active and hovered tabs, keeping the general fill black.
+    private static final Color BACKDROP = Color.BLACK;
 
-    // View-state trace. The box has no error state - when a signal blocks it, it is simply
+    private static final float UNDERLINE_THICKNESS = 2f;
+    private static final float BASELINE_THICKNESS = 1f;
+    // How much of the bar opacity each accent touch carries, so a lit tab reads as a highlight
+    // over the black rather than a second opaque block.
+    private static final float SELECTED_FILL_ALPHA_MULT = 0.30f;
+    private static final float HOVER_FILL_ALPHA_MULT = 0.15f;
+    private static final float DIVIDER_ALPHA_MULT = 0.40f;
+
+    // Cached across instances and reloads: the bar's labels are a handful of static strings, so
+    // one GL text buffer per distinct label serves the whole run rather than leaking a buffer
+    // per save reload. Keyed by font size and text, since a rebound key changes a tab's text.
+    private static final Map<String, DrawableString> TEXT_CACHE = new HashMap<>();
+
+    // View-state trace. The bar has no error state - when a signal blocks it, it is simply
     // absent - so the log is the only place "why hidden" or "drawn where" is answerable.
-    // Deduped on the whole composed line: a steady state is one line, and every change (the
-    // pass first fires, the map tab opens, the filter toggles, the box resolves a rect) is a
-    // fresh one. Null to start, so the very first render pass logs and thereby proves the
-    // listener is registered and the hook fires at all.
+    // Deduped on the whole line: a steady state is one line, every change a fresh one. Null to
+    // start, so the first pass logs and thereby proves the listener is registered and fires.
     private String lastLoggedLine;
 
     @Override
@@ -68,105 +79,169 @@ public final class PoliticalMapSidebar implements CampaignUIRenderingListener {
 
     @Override
     public void renderInUICoordsAboveUIBelowTooltips(ViewportAPI viewport) {
-        // Fires from a panel inside the same tree as the core map screen, so the opaque
-        // map covers anything drawn here. The box draws in the above-tooltips pass instead.
+        // Fires from a panel inside the same tree as the core map screen, so the opaque map
+        // covers anything drawn here. The bar draws in the above-tooltips pass instead.
     }
 
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
         // The only pass composited after the entire map screen (and its tooltips), so it is
-        // the sole layer the opaque core-UI map cannot occlude - the box has to draw here.
-        //
-        // Poll the button every frame, even off the map, so the edge state stays current
-        // and returning to the map mid-hold is not read as a fresh click.
-        var isPress = clickEdgeDetector.detectPress(Mouse.isButtonDown(LEFT_MOUSE_BUTTON));
+        // the sole layer the opaque core-UI map cannot occlude - the bar has to draw here.
         if (!CampaignMapView.isSectorMapWithStarscapeOff()) {
             logViewStateOnChange("hidden; " + CampaignMapView.describeViewState());
             return;
         }
         var settings = Global.getSettings();
-        var placement = SidebarLayout.computePlacement(
-                settings.getScreenWidth(), settings.getScreenHeight(),
-                KmuLunaSettings.getPoliticalMapSidebarAnchor());
+        var placement = SidebarLayout.computePlacement(settings.getScreenWidth(),
+                settings.getScreenHeight(), KmuLunaSettings.getPoliticalMapSidebarAnchor(),
+                PoliticalMapLayers.getLayers());
         var opacity = KmuLunaSettings.getPoliticalMapSidebarBackgroundOpacity();
-        // Logged before the draw, with the resolved rect / screen / opacity, so a box that is
+        // Logged before the draw, with the resolved footprint / screen / opacity, so a bar
         // gated in but never seen is diagnosed from the numbers rather than another run.
         logViewStateOnChange("showing; " + CampaignMapView.describeViewState() + "; screen="
                 + settings.getScreenWidth() + "x" + settings.getScreenHeight()
                 + " box=" + formatRect(placement.box()) + " opacity=" + opacity);
-        var isSelected = PoliticalOverlayToggle.isOverlayEnabled();
-        drawBox(placement, isSelected, opacity);
-        if (isPress && placement.tab().containsPoint(UiCursor.getUiX(), UiCursor.getUiY())) {
-            PoliticalOverlayToggle.toggleOverlayEnabled();
+        drawBar(placement, opacity);
+    }
+
+    private void drawBar(SidebarPlacement placement, float opacity) {
+        // Belt-and-suspenders around the raw GL: the map chrome and tooltips draw after this
+        // pass, so any enable / colour / blend state the bar touches must be restored.
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_COLOR_BUFFER_BIT);
+        var activeLayer = PoliticalMapLayers.getActiveLayer();
+        var accent = Misc.getBasePlayerColor();
+        // Hover reads the cursor in UI coords - the same space the tab rects live in - so the
+        // tab under the pointer lights without an input event.
+        var cursorX = UiCursor.getUiX();
+        var cursorY = UiCursor.getUiY();
+        drawTabFills(placement, activeLayer, accent, cursorX, cursorY, opacity);
+        drawTabDividersAndBaseline(placement, accent, opacity);
+        drawTabLabels(placement, activeLayer, cursorX, cursorY, opacity);
+        drawCaption(placement.caption(), activeLayer, opacity);
+        GL11.glPopAttrib();
+    }
+
+    // Black backdrop under every tab, with an accent wash on the active tab and a fainter one
+    // on whichever tab the cursor is over.
+    private static void drawTabFills(SidebarPlacement placement, PoliticalMapLayer activeLayer,
+            Color accent, float cursorX, float cursorY, float opacity) {
+        for (var tab : placement.tabs()) {
+            var bounds = tab.bounds();
+            Misc.renderQuadAlpha(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
+                    BACKDROP, opacity);
+            var isSelected = tab.layer() == activeLayer;
+            if (isSelected) {
+                Misc.renderQuadAlpha(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
+                        accent, opacity * SELECTED_FILL_ALPHA_MULT);
+            } else if (bounds.containsPoint(cursorX, cursorY)) {
+                Misc.renderQuadAlpha(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
+                        accent, opacity * HOVER_FILL_ALPHA_MULT);
+            }
         }
     }
 
-    // Logs the composed view-state line once per change (see the lastLoggedLine field); the
-    // dedupe keeps a steady state to one line while every real transition prints a fresh one.
+    // A faint baseline grounds the whole tab row, a bright underline caps the active tab
+    // (echoing the map's own tab highlight), and a divider separates each tab from the next.
+    private static void drawTabDividersAndBaseline(SidebarPlacement placement, Color accent,
+            float opacity) {
+        var tabs = placement.tabs();
+        for (var index = 0; index < tabs.size(); index++) {
+            var bounds = tabs.get(index).bounds();
+            Misc.renderQuadAlpha(bounds.x(), bounds.y(), bounds.width(), BASELINE_THICKNESS,
+                    accent, opacity * DIVIDER_ALPHA_MULT);
+            if (index > 0) {
+                Misc.renderQuadAlpha(bounds.x(), bounds.y(), BASELINE_THICKNESS,
+                        bounds.height(), accent, opacity * DIVIDER_ALPHA_MULT);
+            }
+        }
+        for (var tab : placement.tabs()) {
+            if (PoliticalMapLayers.isActive(tab.layer())) {
+                var bounds = tab.bounds();
+                Misc.renderQuadAlpha(bounds.x(), bounds.y(), bounds.width(),
+                        UNDERLINE_THICKNESS, accent, opacity);
+            }
+        }
+    }
+
+    // The tab label reads "Name [K]", bright on the active tab, accent under the cursor, gray
+    // otherwise - so the bar's state and each tab's hotkey read at a glance.
+    private static void drawTabLabels(SidebarPlacement placement, PoliticalMapLayer activeLayer,
+            float cursorX, float cursorY, float opacity) {
+        for (var tab : placement.tabs()) {
+            var bounds = tab.bounds();
+            var label = resolveText(composeTabText(tab.layer()), TAB_FONT_SIZE);
+            if (label == null) {
+                continue;
+            }
+            var isSelected = tab.layer() == activeLayer;
+            var color = isSelected
+                    ? Misc.getBrightPlayerColor()
+                    : bounds.containsPoint(cursorX, cursorY)
+                            ? Misc.getBasePlayerColor()
+                            : Misc.getGrayColor();
+            label.setBaseColor(Colors.scaleAlpha(color, opacity));
+            label.draw(bounds.x() + bounds.width() / 2f, bounds.y() + bounds.height() / 2f);
+        }
+    }
+
+    // The caption band shows only for a layer that carries one (No Layer's "nothing drawn"
+    // note); a layer whose paint speaks for itself leaves the strip blank, not a dead band.
+    private static void drawCaption(Rectangle caption, PoliticalMapLayer activeLayer,
+            float opacity) {
+        var captionKey = activeLayer.getCaptionKey();
+        if (captionKey == null) {
+            return;
+        }
+        Misc.renderQuadAlpha(caption.x(), caption.y(), caption.width(), caption.height(),
+                BACKDROP, opacity);
+        var text = resolveText(KmuStrings.get(captionKey), CAPTION_FONT_SIZE);
+        if (text == null) {
+            return;
+        }
+        text.setBaseColor(Colors.scaleAlpha(Misc.getGrayColor(), opacity));
+        text.draw(caption.x() + caption.width() / 2f, caption.y() + caption.height() / 2f);
+    }
+
+    // Builds a tab's "Name [K]" text: the layer's label plus its current shortcut key, so a
+    // rebound key shows the new letter. The hint is dropped when the keycode names no key.
+    private static String composeTabText(PoliticalMapLayer layer) {
+        var name = KmuStrings.get(layer.getTabLabelKey());
+        var keycode = KmuLunaSettings.getPoliticalMapLayerShortcut(
+                layer.getShortcutSettingKey(), layer.getDefaultShortcutKeycode());
+        var keyName = Keyboard.getKeyName(keycode);
+        return keyName == null ? name : name + "  [" + keyName + "]";
+    }
+
+    // Logs the composed view-state line once per change; the dedupe keeps a steady state to one
+    // line while every real transition prints a fresh one.
     private void logViewStateOnChange(String line) {
         if (line.equals(lastLoggedLine)) {
             return;
         }
         lastLoggedLine = line;
-        LOG.debug("Political map sidebar " + line);
+        LOG.debug("Political map layer bar " + line);
     }
 
     private static String formatRect(Rectangle rect) {
         return "[" + rect.x() + "," + rect.y() + " " + rect.width() + "x" + rect.height() + "]";
     }
 
-    private void drawBox(SidebarPlacement placement, boolean isSelected, float opacity) {
-        // Belt-and-suspenders around the raw GL: the map chrome and tooltips draw after
-        // this pass, so any enable / color / blend state the box touches must be restored.
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_COLOR_BUFFER_BIT);
-        var box = placement.box();
-        var tab = placement.tab();
-        var backdrop = Misc.getDarkPlayerColor();
-        var accent = Misc.getBasePlayerColor();
-        Misc.renderQuadAlpha(box.x(), box.y(), box.width(), box.height(), backdrop, opacity);
-        if (isSelected) {
-            // A filled tab strip reads as the pressed/active tab; deselected it is bare.
-            Misc.renderQuadAlpha(tab.x(), tab.y(), tab.width(), tab.height(), accent,
-                    opacity * SELECTED_TAB_ALPHA_MULT);
+    // Mints a centered drawable string once per (size, text) and reuses it for the run; the
+    // base colour is re-set before each draw, so one buffer serves every frame. Null when the
+    // font face cannot load, in which case the bar draws without that text.
+    private static DrawableString resolveText(String text, float fontSize) {
+        var key = fontSize + "|" + text;
+        var cached = TEXT_CACHE.get(key);
+        if (cached != null) {
+            return cached;
         }
-        UiBoxes.renderBorder(box.x(), box.y(), box.width(), box.height(), BORDER_THICKNESS,
-                accent, opacity);
-        // The seam between the tab strip and the empty body, so the tab reads on its own.
-        Misc.renderQuadAlpha(tab.x(), tab.y(), tab.width(), BORDER_THICKNESS, accent, opacity);
-        drawTabLabel(tab, isSelected, opacity);
-        GL11.glPopAttrib();
-    }
-
-    private static void drawTabLabel(Rectangle tab, boolean isSelected, float opacity) {
-        var label = resolveTabLabel();
-        if (label == null) {
-            return;
-        }
-        // Bright when the overlay is shown, dim when hidden, so the tab's state reads at a
-        // glance; refaded to the box opacity so it dims with the rest of the panel.
-        var color = isSelected ? Misc.getBrightPlayerColor() : Misc.getGrayColor();
-        label.setBaseColor(Colors.scaleAlpha(color, opacity));
-        label.draw(tab.x() + tab.width() / 2f, tab.y() + tab.height() / 2f);
-    }
-
-    // Loads the tab-label font once and mints its drawable string; null when the face
-    // cannot load, in which case the box still draws without a label.
-    private static DrawableString resolveTabLabel() {
-        if (tabLabel != null) {
-            return tabLabel;
-        }
-        if (hasTriedFontLoad) {
-            return null;
-        }
-        hasTriedFontLoad = true;
-        var font = LazyFontCache.loadByBasename(TAB_LABEL_FONT);
+        var font = LazyFontCache.loadByBasename(LABEL_FONT);
         if (font == null) {
             return null;
         }
-        var text = font.createText(KmuStrings.get(KmuStrings.POLITICAL_MAP_SIDEBAR_TAB),
-                Misc.getBrightPlayerColor(), TAB_LABEL_FONT_SIZE);
-        text.setAnchor(LazyFont.TextAnchor.CENTER);
-        tabLabel = text;
-        return tabLabel;
+        var drawable = font.createText(text, Misc.getBrightPlayerColor(), fontSize);
+        drawable.setAnchor(LazyFont.TextAnchor.CENTER);
+        TEXT_CACHE.put(key, drawable);
+        return drawable;
     }
 }

@@ -20,6 +20,8 @@
 
     "dialog_close": "Close",
 
-    "political_map_sidebar_tab": "Political Map"
+    "political_map_tab_no_layer": "No Layer",
+    "political_map_tab_factions": "Factions",
+    "political_map_caption_no_layer": "No map overlay selected."
   }
 }

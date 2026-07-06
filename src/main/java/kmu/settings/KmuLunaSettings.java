@@ -1133,6 +1133,18 @@ public final class KmuLunaSettings {
     }
 
     /**
+     * Resolves a layer tab's shortcut keycode from its LunaLib Keycode field, so the player
+     * can rebind which key jumps to that layer.
+     *
+     * @param settingKey     the LunaLib field id holding the rebound keycode
+     * @param defaultKeycode the LWJGL keycode used when the field is unset or unreadable
+     * @return the LWJGL keycode the layer's tab jumps to
+     */
+    public static int getPoliticalMapLayerShortcut(String settingKey, int defaultKeycode) {
+        return LunaSettingsReader.getInt(MOD_ID, settingKey, defaultKeycode);
+    }
+
+    /**
      * @return whether each cluster label spells its owner's full name or its short
      *         name; the full (long-form) name by default
      */

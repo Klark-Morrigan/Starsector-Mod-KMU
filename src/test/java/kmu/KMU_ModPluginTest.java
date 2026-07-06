@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
 import kmu.politicalmap.ui.PoliticalMapSidebar;
+import kmu.politicalmap.ui.PoliticalMapSidebarInput;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.junit.jupiter.api.Nested;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,8 +46,10 @@ class KMU_ModPluginTest {
 
             KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
 
-            assertThat(listenerManager.addedListener).isInstanceOf(StarsectorMarketUiContextTracker.class);
-            assertThat(listenerManager.addedAsTransient).isTrue();
+            assertThat(listenerManager.addedListeners)
+                    .singleElement()
+                    .isInstanceOf(StarsectorMarketUiContextTracker.class);
+            assertThat(listenerManager.addedTransientFlags).containsExactly(true);
         }
 
         @Test
@@ -54,7 +58,7 @@ class KMU_ModPluginTest {
 
             KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
 
-            assertThat(listenerManager.addedListener).isNull();
+            assertThat(listenerManager.addedListeners).isEmpty();
         }
     }
 
@@ -62,16 +66,21 @@ class KMU_ModPluginTest {
     class InstallPoliticalMapSidebar {
 
         @Test
-        void reinstallsSidebarFreshAsTransient() {
+        void reinstallsBothBarListenersFreshAsTransient() {
             var listenerManager = new RecordingListenerManager(false);
 
             KMU_ModPlugin.installPoliticalMapSidebar(sector(listenerManager));
 
-            // Remove-then-add: clears any registration an older save carried, then adds
-            // the fresh instance transiently so it never enters the save.
-            assertThat(listenerManager.removedListenerClass).isEqualTo(PoliticalMapSidebar.class);
-            assertThat(listenerManager.addedListener).isInstanceOf(PoliticalMapSidebar.class);
-            assertThat(listenerManager.addedAsTransient).isTrue();
+            // Remove-then-add each of the bar's two listeners - the render listener and its
+            // input listener: clears any registration an older save carried, then adds the
+            // fresh instances transiently so neither enters the save.
+            assertThat(listenerManager.removedListenerClasses)
+                    .containsExactly(PoliticalMapSidebar.class, PoliticalMapSidebarInput.class);
+            assertThat(listenerManager.addedListeners)
+                    .hasSize(2)
+                    .hasAtLeastOneElementOfType(PoliticalMapSidebar.class)
+                    .hasAtLeastOneElementOfType(PoliticalMapSidebarInput.class);
+            assertThat(listenerManager.addedTransientFlags).containsExactly(true, true);
         }
 
         @Test
@@ -118,11 +127,12 @@ class KMU_ModPluginTest {
 
     private static final class RecordingListenerManager implements ListenerManagerAPI {
         private final boolean hasTracker;
-        private Object addedListener;
-        // The engine's second addListener parameter means transient (true keeps the
-        // listener out of the save), so the recording mirrors that vocabulary.
-        private boolean addedAsTransient;
-        private Class<?> removedListenerClass;
+        private final List<Object> addedListeners = new ArrayList<>();
+        // Parallel to addedListeners: the engine's second addListener parameter means
+        // transient (true keeps the listener out of the save), so the recording mirrors that
+        // vocabulary. One install can add several listeners, so these are lists, not scalars.
+        private final List<Boolean> addedTransientFlags = new ArrayList<>();
+        private final List<Class<?>> removedListenerClasses = new ArrayList<>();
 
         private RecordingListenerManager(boolean hasTracker) {
             this.hasTracker = hasTracker;
@@ -130,14 +140,14 @@ class KMU_ModPluginTest {
 
         @Override
         public void addListener(Object listener) {
-            addedListener = listener;
-            addedAsTransient = false;
+            addedListeners.add(listener);
+            addedTransientFlags.add(false);
         }
 
         @Override
         public void addListener(Object listener, boolean isTransient) {
-            addedListener = listener;
-            addedAsTransient = isTransient;
+            addedListeners.add(listener);
+            addedTransientFlags.add(isTransient);
         }
 
         @Override
@@ -146,7 +156,7 @@ class KMU_ModPluginTest {
 
         @Override
         public void removeListenerOfClass(Class<?> listenerClass) {
-            removedListenerClass = listenerClass;
+            removedListenerClasses.add(listenerClass);
         }
 
         @Override

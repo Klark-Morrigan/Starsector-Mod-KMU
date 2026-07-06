@@ -31,7 +31,9 @@ public final class KmuStrings {
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE = "condition_manager_tooltip_hidden_title";
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY = "condition_manager_tooltip_hidden_body";
     public static final String DIALOG_CLOSE = "dialog_close";
-    public static final String POLITICAL_MAP_SIDEBAR_TAB = "political_map_sidebar_tab";
+    public static final String POLITICAL_MAP_TAB_NO_LAYER = "political_map_tab_no_layer";
+    public static final String POLITICAL_MAP_TAB_FACTIONS = "political_map_tab_factions";
+    public static final String POLITICAL_MAP_CAPTION_NO_LAYER = "political_map_caption_no_layer";
 
     private KmuStrings() {
     }

@@ -10,12 +10,12 @@ import kmlib.profiling.Timings;
 import kmu.diagnostics.KmuProfiling;
 import kmu.politicalmap.domain.geometry.PoliticalMapGeometryCache;
 import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
+import kmu.politicalmap.layer.PoliticalMapLayers;
 import kmu.politicalmap.refresh.MovingSystems;
 import kmu.politicalmap.refresh.PoliticalMapRefresh;
 import kmu.politicalmap.render.model.ClusterAnchor;
 import kmu.politicalmap.render.model.PoliticalMapDebugDrawables;
 import kmu.politicalmap.render.model.PoliticalMapDrawables;
-import kmu.politicalmap.ui.PoliticalOverlayToggle;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -164,10 +164,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     @Override
     public void renderOnMap(float factor, float alphaMult) {
-        // The overlay's on/off tab lives on the sidebar; deselecting it must hide the
-        // territory. Gate the whole draw (and its rebuild) on that choice, so a hidden
-        // overlay costs only this sector-memory read per frame.
-        if (!PoliticalOverlayToggle.isOverlayEnabled()) {
+        // The faction territory paints only while its layer is the active one on the bar;
+        // any other pick (No Layer, or a future view) hides it. Gate the whole draw (and its
+        // rebuild) on that, so a hidden overlay costs only this sector-memory read per frame.
+        // A layer that paints its own territory later branches here on the active layer.
+        if (!PoliticalMapLayers.isFactionTerritoryActive()) {
             return;
         }
         rebuildIfStale();
