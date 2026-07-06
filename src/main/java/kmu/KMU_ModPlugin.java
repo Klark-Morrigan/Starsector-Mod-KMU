@@ -17,8 +17,6 @@ import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
-import com.thoughtworks.xstream.XStream;
-
 import org.apache.log4j.Logger;
 
 public class KMU_ModPlugin extends BaseModPlugin {
@@ -50,9 +48,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // Bridges the renamed terrain plugin so saves written under its old class name still load.
     // Aliasing the old fully-qualified name to the current class makes XStream resolve that
     // name to FactionsPoliticalMapTerrainPlugin on load; super runs first so this only adds to
-    // whatever the base plugin configures.
+    // whatever the base plugin configures. XStream is fully qualified here because it belongs
+    // to no import group the checkstyle order recognises, and it is the type's only use site.
     @Override
-    public void configureXStream(XStream x) {
+    public void configureXStream(com.thoughtworks.xstream.XStream x) {
         super.configureXStream(x);
         x.alias(LEGACY_TERRAIN_PLUGIN_CLASS, FactionsPoliticalMapTerrainPlugin.class);
     }
