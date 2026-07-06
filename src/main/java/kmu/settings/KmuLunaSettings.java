@@ -95,10 +95,15 @@ public final class KmuLunaSettings {
     private static final String FACTION_NAME_FORMAT_FIELD =
             "kmu_politicalMapFactionNameFormat";
     // Overlay sidebar fields (Political map - visuals tab): the small on-map box carrying
-    // the overlay's on/off tab. Anchor is where the box sits on screen; opacity is its
-    // background translucency.
-    private static final String SIDEBAR_ANCHOR_FIELD =
-            "kmu_politicalMapSidebarAnchor";
+    // the overlay's tabs and controls. Padding places the box from the screen's top-left
+    // corner; border width frames it (0 = no border); opacity is its background
+    // translucency.
+    private static final String SIDEBAR_PADDING_TOP_FIELD =
+            "kmu_politicalMapSidebarPaddingTop";
+    private static final String SIDEBAR_PADDING_LEFT_FIELD =
+            "kmu_politicalMapSidebarPaddingLeft";
+    private static final String SIDEBAR_BORDER_WIDTH_FIELD =
+            "kmu_politicalMapSidebarBorderWidth";
     private static final String SIDEBAR_OPACITY_FIELD =
             "kmu_politicalMapSidebarOpacity";
 
@@ -332,9 +337,13 @@ public final class KmuLunaSettings {
     // On by default: the faction names are the payoff of the merged-territory map, so
     // they show unless the player turns them off.
     private static final boolean DEFAULT_SHOW_FACTION_NAMES = true;
-    // Top-left by default: the least-used corner of the sector map, so the box starts clear
-    // of the systems the player reads. Mirrors the CSV row's defaultValue.
-    private static final SidebarAnchorChoice DEFAULT_SIDEBAR_ANCHOR = SidebarAnchorChoice.TOP_LEFT;
+    // Placement from the screen's top-left corner, pixels. The top padding clears the
+    // sector map's own tab strip; the left padding gives a small margin. Mirror the CSV
+    // rows' defaultValues.
+    private static final int DEFAULT_SIDEBAR_PADDING_TOP = 46;
+    private static final int DEFAULT_SIDEBAR_PADDING_LEFT = 12;
+    // A one-pixel outer border by default; 0 hides it. Mirrors the CSV row's defaultValue.
+    private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;
     // 80% opaque by default: readable over the map without fully masking what is behind it.
     // Stored 0..100 in the CSV, exposed 0..1. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
@@ -1116,14 +1125,30 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return which screen corner or edge midpoint the overlay sidebar box anchors to;
-     *         the top-left corner by default
+     * @return how far down from the top edge of the screen the overlay sidebar box sits,
+     *         in pixels; 46 by default (clearing the sector map's own tab strip)
      */
-    public static SidebarAnchorChoice getPoliticalMapSidebarAnchor() {
-        return SidebarAnchorChoice.fromLabel(
-                LunaSettingsReader.getString(MOD_ID, SIDEBAR_ANCHOR_FIELD,
-                        DEFAULT_SIDEBAR_ANCHOR.getLabel()),
-                DEFAULT_SIDEBAR_ANCHOR);
+    public static int getPoliticalMapSidebarPaddingTop() {
+        return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_PADDING_TOP_FIELD,
+                DEFAULT_SIDEBAR_PADDING_TOP);
+    }
+
+    /**
+     * @return how far in from the left edge of the screen the overlay sidebar box sits,
+     *         in pixels; 12 by default
+     */
+    public static int getPoliticalMapSidebarPaddingLeft() {
+        return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_PADDING_LEFT_FIELD,
+                DEFAULT_SIDEBAR_PADDING_LEFT);
+    }
+
+    /**
+     * @return the line width of the outer border framing the overlay sidebar box, in
+     *         pixels; 1 by default, 0 draws no border
+     */
+    public static int getPoliticalMapSidebarBorderWidth() {
+        return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_BORDER_WIDTH_FIELD,
+                DEFAULT_SIDEBAR_BORDER_WIDTH);
     }
 
     /**
