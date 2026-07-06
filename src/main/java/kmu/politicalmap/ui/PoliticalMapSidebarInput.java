@@ -81,6 +81,11 @@ public final class PoliticalMapSidebarInput implements CampaignInputListener {
         for (var layer : PoliticalMapLayers.getLayers()) {
             var keycode = KmuLunaSettings.getPoliticalMapLayerShortcut(
                     layer.getShortcutSettingKey(), layer.getDefaultShortcutKeycode());
+            // A cleared shortcut is stored as keycode 0 (LWJGL's KEY_NONE); skip it so an
+            // unbound layer never claims a keypress - otherwise a stray 0-valued event could.
+            if (keycode <= 0) {
+                continue;
+            }
             if (event.getEventValue() == keycode) {
                 PoliticalMapLayers.selectLayer(layer);
                 event.consume();

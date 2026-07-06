@@ -203,11 +203,16 @@ public final class PoliticalMapSidebar implements CampaignUIRenderingListener {
     }
 
     // Builds a tab's "Name [K]" text: the layer's label plus its current shortcut key, so a
-    // rebound key shows the new letter. The hint is dropped when the keycode names no key.
+    // rebound key shows the new letter. The hint is dropped when the shortcut names no key -
+    // either an unbound keycode (0, cleared with Escape; LWJGL still names it "NONE") or a
+    // code LWJGL cannot name.
     private static String composeTabText(PoliticalMapLayer layer) {
         var name = KmuStrings.get(layer.getTabLabelKey());
         var keycode = KmuLunaSettings.getPoliticalMapLayerShortcut(
                 layer.getShortcutSettingKey(), layer.getDefaultShortcutKeycode());
+        if (keycode <= 0) {
+            return name;
+        }
         var keyName = Keyboard.getKeyName(keycode);
         return keyName == null ? name : name + "  [" + keyName + "]";
     }
