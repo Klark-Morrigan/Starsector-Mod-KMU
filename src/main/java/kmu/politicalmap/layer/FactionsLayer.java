@@ -7,8 +7,8 @@ import org.lwjgl.input.Keyboard;
 /**
  * The faction-territory view: selecting it paints each system in its dominant faction's
  * colours - the political map proper. This is the layer the terrain plugin keys on
- * ({@link PoliticalMapLayers#isFactionTerritoryActive()}) to draw or stay dark. It shows no
- * caption; the painted map is the whole message.
+ * ({@link PoliticalMapLayers#isFactionTerritoryActive()}) to draw or stay dark. Its tab opens
+ * the political-map control panel ({@link SidebarBodyKind#POLITICAL_MAP_CONTROLS}).
  */
 public final class FactionsLayer implements PoliticalMapLayer {
     // Jumps here on P by default. Mirrors the Keycode default in LunaSettings.csv.
@@ -25,8 +25,8 @@ public final class FactionsLayer implements PoliticalMapLayer {
     }
 
     @Override
-    public String getCaptionKey() {
-        return null;
+    public SidebarBodyKind getBodyKind() {
+        return SidebarBodyKind.POLITICAL_MAP_CONTROLS;
     }
 
     @Override

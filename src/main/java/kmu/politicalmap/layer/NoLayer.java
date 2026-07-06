@@ -7,8 +7,9 @@ import org.lwjgl.input.Keyboard;
 /**
  * The empty view: selecting it paints no overlay, so the sector map reads as vanilla. It is a
  * first-class tab rather than an off state, so the bar always shows what is and is not drawn
- * and the player has an explicit "show nothing" pick. Its caption states plainly that no
- * overlay is up, so the empty map is understood as a choice, not a failure to draw.
+ * and the player has an explicit "show nothing" pick. Its tab opens no body
+ * ({@link SidebarBodyKind#NONE}), so the empty map is understood as a choice, not a failure to
+ * draw.
  */
 public final class NoLayer implements PoliticalMapLayer {
     // Jumps here on N by default. Mirrors the Keycode default in LunaSettings.csv.
@@ -25,8 +26,8 @@ public final class NoLayer implements PoliticalMapLayer {
     }
 
     @Override
-    public String getCaptionKey() {
-        return KmuStrings.POLITICAL_MAP_CAPTION_NO_LAYER;
+    public SidebarBodyKind getBodyKind() {
+        return SidebarBodyKind.NONE;
     }
 
     @Override

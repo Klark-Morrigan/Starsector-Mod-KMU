@@ -9,7 +9,7 @@ package kmu.politicalmap.layer;
  * <p>The framework exists so a new view (Nexerelin alliances is the next planned one) is a
  * matter of adding an implementation and registering it: the bar draws its tab, the input
  * listener hit-tests it, and its hotkey switches to it, all with no change to the UI code.
- * A layer here is a descriptor - id, tab label, caption, hotkey - not a renderer; the
+ * A layer here is a descriptor - id, tab label, body kind, hotkey - not a renderer; the
  * territory paint lives in the terrain plugin, which reads {@link PoliticalMapLayers} to
  * decide whether its view is the active one.
  */
@@ -25,11 +25,11 @@ public interface PoliticalMapLayer {
     String getTabLabelKey();
 
     /**
-     * @return the strings.json key for the caption shown beneath the tabs while this layer
-     *         is active, or {@code null} when the layer shows no caption (its map paint is
-     *         the whole story)
+     * @return which body this layer's tab opens once selected - {@link SidebarBodyKind#NONE}
+     *         for a tab that only switches the map paint, or
+     *         {@link SidebarBodyKind#POLITICAL_MAP_CONTROLS} for the on-map control panel
      */
-    String getCaptionKey();
+    SidebarBodyKind getBodyKind();
 
     /**
      * @return the LWJGL keycode this layer's tab jumps to before the player rebinds it in
