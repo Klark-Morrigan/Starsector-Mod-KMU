@@ -64,6 +64,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * chooses whether the picker offers every market condition or only the planetary
  * ones vanilla treats as hand-placeable; it is on by default, so non-planetary
  * conditions (such as decivilisation) are offered too.
+ *
+ * <p>The "Keybinds" tab holds the overlay's shortcut keys, grouped under a "Map Sidebar"
+ * header: the keycodes that jump the layer bar straight to the No Layer and Factions
+ * views. Each is a LunaLib Keycode control, so the player rebinds it in place or clears
+ * it with Escape (stored as keycode 0, which the input handler and tab caption read as
+ * unbound). They sit apart from the visuals because they are controls, not appearance.
  */
 public final class KmuLunaSettings {
     // KMU's LunaLib settings id (matches data/config/LunaSettings.csv) and the
@@ -1136,9 +1142,13 @@ public final class KmuLunaSettings {
      * Resolves a layer tab's shortcut keycode from its LunaLib Keycode field, so the player
      * can rebind which key jumps to that layer.
      *
+     * <p>A keycode of 0 (LWJGL's {@code KEY_NONE}) means the player cleared the binding
+     * with Escape, so the layer has no shortcut; callers treat that as unbound rather
+     * than a real key.
+     *
      * @param settingKey     the LunaLib field id holding the rebound keycode
      * @param defaultKeycode the LWJGL keycode used when the field is unset or unreadable
-     * @return the LWJGL keycode the layer's tab jumps to
+     * @return the LWJGL keycode the layer's tab jumps to, or 0 when the shortcut is unbound
      */
     public static int getPoliticalMapLayerShortcut(String settingKey, int defaultKeycode) {
         return LunaSettingsReader.getInt(MOD_ID, settingKey, defaultKeycode);
