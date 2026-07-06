@@ -14,14 +14,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * and GL emission live in their own collaborators and are covered there; the emission
  * itself runs only in-engine.
  */
-final class PoliticalMapTerrainPluginTest {
+final class FactionsPoliticalMapTerrainPluginTest {
 
     @Nested
     class GetActiveLayers {
 
         @Test
         void getActiveLayersReturnsEmptyWithoutThrowing() {
-            var plugin = new PoliticalMapTerrainPlugin();
+            var plugin = new FactionsPoliticalMapTerrainPlugin();
 
             assertThatCode(plugin::getActiveLayers).doesNotThrowAnyException();
             assertThat(plugin.getActiveLayers()).isEmpty();

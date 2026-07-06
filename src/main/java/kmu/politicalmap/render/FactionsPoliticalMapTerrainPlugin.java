@@ -27,7 +27,11 @@ import java.util.List;
 /**
  * Terrain plugin that paints the political map's faction territory on the sector (M)
  * map as merged HOI4-style clusters, where adjacent same-faction systems fuse into one
- * solid national region. This class is the terrain adapter and cache coordinator; the
+ * solid national region. It is the Factions layer's renderer: it draws only while that
+ * layer is the active pick on the bar ({@link PoliticalMapLayers#isFactionTerritoryActive()}),
+ * so a future layer that colours the map differently (Nexerelin alliances) is its own
+ * terrain plugin rather than a branch here. This class is the terrain adapter and cache
+ * coordinator; the
  * visual design lives in its collaborators: {@link DrawablesBuilder} shapes the cells
  * and bakes each element's colors, opacities, and widths from the LunaLib "Visuals
  * customisation" settings, {@link IncrementalPoliticsRefresh} folds in per-system
@@ -65,7 +69,7 @@ import java.util.List;
  * XStream skips transient fields and does not run field initialisers - so they are
  * recreated lazily in {@link #rebuildStaleHalves} rather than in a field initialiser.
  */
-public class PoliticalMapTerrainPlugin extends BaseTerrain {
+public class FactionsPoliticalMapTerrainPlugin extends BaseTerrain {
     // Map rendering ignores this (the map calls the map hooks regardless), but
     // BaseTerrain requires the override; large so the terrain is never treated as a
     // tiny point elsewhere.
@@ -80,7 +84,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
             EnumSet.noneOf(CampaignEngineLayers.class);
 
-    private static final Logger LOG = Global.getLogger(PoliticalMapTerrainPlugin.class);
+    private static final Logger LOG = Global.getLogger(FactionsPoliticalMapTerrainPlugin.class);
 
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or
     // lose access. Transient: derived from the sector, record-typed (CellEdge), and kept

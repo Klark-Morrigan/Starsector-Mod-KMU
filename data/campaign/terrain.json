@@ -5,6 +5,6 @@
 	# (the nebulae use the same hook). The type id is serialised into saves;
 	# do not rename it.
 	"kmu_political_terrain":{
-		"plugin":"kmu.politicalmap.render.PoliticalMapTerrainPlugin",
+		"plugin":"kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin",
 	},
 }

@@ -33,11 +33,19 @@ def ratJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/RandomA
 // installed, and NexerelinInvasionListenerInstaller gates the listener behind a
 // mod-enabled check so a Nex-free install never resolves the type.
 def nexJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/ExerelinCore.jar'])
+// XStream backs Starsector's save serialisation. KMU compiles against it to
+// override configureXStream and alias the political-map terrain plugin's former
+// class name, so saves written before the rename still resolve. It ships inside
+// starsector-core (always present with the game), so the game classloader
+// supplies it at runtime - compileOnly. Globbed so a version bump does not break
+// the path.
+def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['xstream-*.jar'])
 
 dependencies {
     compileOnly consoleCommandsJars
     compileOnly ratJars
     compileOnly nexJars
+    compileOnly xstreamJars
     // KMLib is a hard dependency in mod_info.json; Starsector's mod
     // classloader provides the jar at runtime so compileOnly is enough.
     // KMU drives its logging through KMLib's KmLogging, so the LunaLib
@@ -49,6 +57,7 @@ dependencies {
     testCompileOnly consoleCommandsJars
     testCompileOnly ratJars
     testCompileOnly nexJars
+    testCompileOnly xstreamJars
     testCompileOnly files(kmlibJarFile)
     testCompileOnly files(lazyLibJarFile)
     testRuntimeOnly consoleCommandsJars

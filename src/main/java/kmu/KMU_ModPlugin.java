@@ -10,11 +10,14 @@ import kmu.politicalmap.refresh.listeners.PoliticalMapColonizationListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDecivListener;
 import kmu.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
+import kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin;
 import kmu.politicalmap.ui.PoliticalMapSidebar;
 import kmu.politicalmap.ui.PoliticalMapSidebarInput;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
+
+import com.thoughtworks.xstream.XStream;
 
 import org.apache.log4j.Logger;
 
@@ -34,6 +37,24 @@ public class KMU_ModPlugin extends BaseModPlugin {
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU LunaLib settings bindings", exception);
         }
+    }
+
+    // Former class name of the faction-territory terrain plugin, kept as its save
+    // serialised identity. XStream stores the concrete class in the save, so renaming the
+    // class orphaned every existing save (CannotResolveClassException on load). Frozen: it is
+    // written into new saves too via the alias below, so a further rename adds a fresh alias
+    // rather than changing this string.
+    private static final String LEGACY_TERRAIN_PLUGIN_CLASS =
+            "kmu.politicalmap.render.PoliticalMapTerrainPlugin";
+
+    // Bridges the renamed terrain plugin so saves written under its old class name still load.
+    // Aliasing the old fully-qualified name to the current class makes XStream resolve that
+    // name to FactionsPoliticalMapTerrainPlugin on load; super runs first so this only adds to
+    // whatever the base plugin configures.
+    @Override
+    public void configureXStream(XStream x) {
+        super.configureXStream(x);
+        x.alias(LEGACY_TERRAIN_PLUGIN_CLASS, FactionsPoliticalMapTerrainPlugin.class);
     }
 
     // Terrain type registered in data/campaign/terrain.json that hosts the
