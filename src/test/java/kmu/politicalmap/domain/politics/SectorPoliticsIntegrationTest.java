@@ -8,6 +8,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmu.settings.ConcealedBaseScalingChoice;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +30,14 @@ import static org.mockito.Mockito.when;
 class SectorPoliticsIntegrationTest {
     private static final float FULL_STABILITY = 10.0f;
     // The pipeline is exercised through the explicit-rule overloads: the
-    // parameterless entry points read the live LunaLib toggles, which only the
-    // running game provides. Station weighting is off here so these tests pin the
-    // stability rule alone, with the colony-size and station weights at their
-    // identity; the station bonus is covered in KnownMarketFootprints.
+    // parameterless entry points read the live LunaLib settings, which only the
+    // running game provides. Station and patrol weighting are off here so these tests
+    // pin the stability rule alone, with the colony-size weight at its identity and the
+    // colony penalty at a full collapse (the old whole-rating stability behaviour); the
+    // station and patrol bonuses are covered in KnownMarketFootprints.
     private static final DominanceWeighting STABILITY_WEIGHTED =
-            new DominanceWeighting(1.0, true, false, 1.0, 0.5);
+            new DominanceWeighting(1.0, ConcealedBaseScalingChoice.FIXED, 1.0, true, 1.0,
+                    false, 1.0, 0.5, 0.5, false, 0.25, 0.5, 1.0, 0.5);
     private static final Color HEGEMONY_BRIGHT = new Color(120, 160, 200);
     private static final Color TRITACHYON_BRIGHT = new Color(140, 180, 220);
     private static final Color NEUTRAL_BASE = new Color(150, 150, 150);

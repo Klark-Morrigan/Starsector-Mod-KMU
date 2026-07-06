@@ -13,6 +13,7 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
 import kmu.politicalmap.domain.politics.DominanceWeighting;
+import kmu.settings.ConcealedBaseScalingChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,11 +39,13 @@ class PoliticalMapSectorSnapshotTest {
 
     private static final float FULL_STABILITY = 10.0f;
     // The scan is exercised through the explicit-rule overload: the one-argument
-    // entry point reads the live LunaLib toggles, which only the running game
-    // provides. Station weighting is off so the snapshot tests turn on the
-    // stability rule alone, with the colony-size and station weights at their identity.
+    // entry point reads the live LunaLib settings, which only the running game
+    // provides. Station and patrol weighting are off so the snapshot tests turn on the
+    // stability rule alone, with the colony-size weight at its identity and the colony
+    // penalty at a full collapse (the old whole-rating stability behaviour).
     private static final DominanceWeighting STABILITY_WEIGHTED =
-            new DominanceWeighting(1.0, true, false, 1.0, 0.5);
+            new DominanceWeighting(1.0, ConcealedBaseScalingChoice.FIXED, 1.0, true, 1.0,
+                    false, 1.0, 0.5, 0.5, false, 0.25, 0.5, 1.0, 0.5);
 
     @Nested
     class Scan {

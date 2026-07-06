@@ -6,6 +6,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.markets.Markets;
 
+import kmu.settings.ConcealedBaseScalingChoice;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -16,9 +18,11 @@ import java.util.Map;
  * <p>The economy / {@code MarketAPI} half of the ownership pipeline: it applies
  * the "counts as a colony" filter - a market is in only when a faction owns it,
  * it is not a bare planet's condition-only placeholder, and the player knows it
- * exists - and weighs each surviving market for dominance, scaling its size
- * rating by stability when the caller asks for it (the player-facing LunaLib
- * toggle, read upstream so this class stays free of settings access). The
+ * exists - and weighs each surviving market for dominance. A market's weight is the
+ * sum of three factors - its weighted base size (a concealed base counting by its
+ * real size or a fixed token), any attached-station bonus, and any patrol strength -
+ * each cut for low stability by its own penalty (the player-facing LunaLib settings,
+ * read upstream so this class stays free of settings access). The
  * "counts as a colony" filter itself is {@link kmlib.starsector.markets.Markets},
  * so the map's inhabitation read (a plain presence test) and this weighted
  * dominance read share one definition of a known colony. The pure comparison of
@@ -36,14 +40,9 @@ public final class KnownMarketFootprints {
      */
     public static final int DOMINANCE_WEIGHT_SCALE = 1000;
 
-    // A hidden market (vanilla concealed bases like the Galatia Academy) still
-    // marks its system on the political map, but folds into dominance at this
-    // fixed token size rating rather than its real size, so a concealed outpost
-    // can flag presence without ever outweighing an openly held colony.
-    private static final int HIDDEN_MARKET_DOMINANCE_SIZE = 1;
-
-    // The full-worth stability fraction the weight uses when the player has turned
-    // stability weighting off: every market folds in at its whole lifted rating.
+    // The full-worth stability fraction a factor uses when the player has turned
+    // stability weighting off (the master toggle): every factor folds in at its
+    // whole worth, untouched by stability.
     private static final double UNWEIGHTED_STABILITY_FRACTION = 1.0;
 
     private KnownMarketFootprints() {
@@ -114,43 +113,72 @@ public final class KnownMarketFootprints {
         return footprintByFactionId;
     }
 
-    // A market's worth to the dominance rule: its size rating - scaled by the
-    // colony-size weight, lifted by any station bonus - scaled linearly by stability,
-    // rounded onto the fixed-point grid. The base rating is the raw getSize(), or the
-    // fixed token for a hidden market; the colony-size weight multiplies that base (a
-    // hidden base's token included) so the player can dial how much raw size counts.
-    // An attached station adds the station weight in size points (a hidden base gets
-    // a configured fraction of it) after the colony-size weight and before stability
-    // scales the sum, so the station bonus shares in a colony's stability collapse
-    // rather than sitting outside it.
-    // Stability then decides how much of the lifted rating the faction actually
-    // holds - a colony at 0 stability is worth nothing to dominance (it still marks
-    // presence and paints its system when unopposed), at 5 half, at 10 the full
-    // amount - so a destabilised colony holds less of its system than a functioning
-    // one. With stability weighting off, the fraction is a flat 1, so every market
-    // is worth its full lifted rating. The lifted rating rounds once onto the grid
-    // so a fractional weight or hidden bonus lands cleanly and the rule stays exact.
+    // A market's worth to the dominance rule: the sum of its three weight factors -
+    // its weighted base size, any station bonus, and any patrol strength - each cut
+    // for low stability by its own penalty, then rounded once onto the fixed-point
+    // grid. The base rating is the raw getSize(), or - for a concealed base - its real
+    // size or the fixed weight per the concealed-base scaling; the colony-size weight
+    // multiplies that base so the player can dial how much raw size counts. The station
+    // and patrol bonuses add their own size points, read below.
+    // Stability then decides how much of each factor the faction actually holds: with
+    // the master weighting off every factor keeps its full worth, and with it on each
+    // factor is scaled by 1 - penalty * (1 - stabilityFraction), so a factor with a
+    // penalty of 1 is worth nothing at 0 stability, half at 5, and its full amount at
+    // 10, while a factor with a smaller penalty keeps more of its worth as the colony
+    // destabilises. A colony that comes out to nothing on every factor still marks
+    // presence and paints its system when unopposed. The lifted sum rounds once onto
+    // the grid so a fractional weight lands cleanly and the rule stays exact.
     private static int computeDominanceWeight(MarketAPI market, DominanceWeighting weighting) {
-        var baseSize = market.isHidden() ? HIDDEN_MARKET_DOMINANCE_SIZE : market.getSize();
-        var weightedBaseSize = baseSize * weighting.colonySizeWeight();
-        var dominanceSize = weightedBaseSize + computeStationBonus(market, weighting);
-        // A rating that has already come out to nothing (both the colony-size weight
-        // and the station bonus zeroed) is worth zero at any stability, so skip the
-        // stability read entirely - the market still folds into the footprint at zero
+        var weightedBaseSize = computeBaseSize(market, weighting) * weighting.colonySizeWeight();
+        var stationBonus = computeStationBonus(market, weighting);
+        var patrolStrength = computePatrolStrength(market, weighting);
+        // A market whose three factors are all zero is worth zero at any stability, so
+        // skip the stability read entirely - it still folds into the footprint at zero
         // weight, marking presence like any weightless colony.
-        if (dominanceSize <= 0.0) {
+        if (weightedBaseSize <= 0.0 && stationBonus <= 0.0 && patrolStrength <= 0.0) {
             return 0;
         }
-        var stabilityFraction = weighting.isStabilityWeighted()
-                ? Markets.getStabilityFraction(market)
-                : UNWEIGHTED_STABILITY_FRACTION;
-        return (int) Math.round(dominanceSize * stabilityFraction * DOMINANCE_WEIGHT_SCALE);
+        var stabilityFraction = Markets.getStabilityFraction(market);
+        var total = weightedBaseSize
+                        * effectiveFactor(weighting, weighting.normalLowStabilityPenalty(),
+                                stabilityFraction)
+                + stationBonus
+                        * effectiveFactor(weighting, weighting.stationLowStabilityPenalty(),
+                                stabilityFraction)
+                + patrolStrength
+                        * effectiveFactor(weighting, weighting.patrolLowStabilityPenalty(),
+                                stabilityFraction);
+        return (int) Math.round(total * DOMINANCE_WEIGHT_SCALE);
+    }
+
+    // A market's base size rating before the colony-size weight: a visible colony's own
+    // size, or - for a concealed base - its real size under Normal scaling or the fixed
+    // weight under Fixed, so a concealed base can mark presence without its real size
+    // swaying dominance when the player pins it to a token.
+    private static double computeBaseSize(MarketAPI market, DominanceWeighting weighting) {
+        if (market.isHidden()
+                && weighting.concealedBaseScaling() == ConcealedBaseScalingChoice.FIXED) {
+            return weighting.concealedBaseFixedWeight();
+        }
+        return market.getSize();
+    }
+
+    // The fraction of a factor's worth that survives stability: a flat 1 while the
+    // master stability weighting is off, else 1 - penalty * (1 - stabilityFraction), so
+    // a penalty of 1 collapses the factor to nothing at 0 stability and a penalty of 0
+    // leaves it untouched at any stability.
+    private static double effectiveFactor(DominanceWeighting weighting, double lowStabilityPenalty,
+            double stabilityFraction) {
+        if (!weighting.isStabilityWeighted()) {
+            return UNWEIGHTED_STABILITY_FRACTION;
+        }
+        return 1.0 - lowStabilityPenalty * (1.0 - stabilityFraction);
     }
 
     // The station size bonus a market earns before stability scaling: the player-set
     // station weight in size points for an openly held stationed colony, a configured
-    // fraction of that weight for a hidden base (so a concealed fortress reads above a
-    // bare outpost without matching an open stationed colony), or nothing when the
+    // fraction of that weight for a concealed base (so a concealed fortress reads above
+    // a bare outpost without matching an open stationed colony), or nothing when the
     // factor is toggled off, the weight is zero, or the market has no attached station.
     // A zero weight is checked before the connected-entity station scan, so disabling
     // the factor by weight - not just by the toggle - skips that scan too.
@@ -162,5 +190,19 @@ public final class KnownMarketFootprints {
         return market.isHidden()
                 ? weighting.stationWeight() * weighting.stationHiddenMarketRate()
                 : weighting.stationWeight();
+    }
+
+    // The patrol size bonus a market earns before stability scaling: its small, medium,
+    // and large patrol counts each times the player-set weight for that tier, or nothing
+    // when the patrol factor is toggled off. The economy read is skipped while the factor
+    // is off, so a disabled factor costs no dynamic-stat lookups.
+    private static double computePatrolStrength(MarketAPI market, DominanceWeighting weighting) {
+        if (!weighting.isPatrolWeighted()) {
+            return 0.0;
+        }
+        var patrols = Markets.readPatrolCounts(market);
+        return patrols.small() * weighting.patrolSmallWeight()
+                + patrols.medium() * weighting.patrolMediumWeight()
+                + patrols.large() * weighting.patrolLargeWeight();
     }
 }
