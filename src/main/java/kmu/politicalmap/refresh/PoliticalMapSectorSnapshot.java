@@ -54,9 +54,23 @@ public record PoliticalMapSectorSnapshot(int visibilityFingerprint,
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
      *         shell) is absent from the owner map
      */
-    public static PoliticalMapSectorSnapshot scan(SectorAPI sector) {
-        return scan(sector, DominanceWeighting.readFromSettings(),
-                PoliticalMapDevOverrides.readFromSettings());
+    /**
+     * Walks the sector once under dev reveal overrides the caller has already read,
+     * reading the dominance-weighting rules itself. Lets a caller that shares one
+     * override read across several walks (the sector watcher's poll, which drives both
+     * this scan and the motion walk from a single toggle read) pass the overrides in
+     * while leaving weighting - which only this scan needs - encapsulated here.
+     *
+     * @param sector    the sector to scan; null yields an empty snapshot
+     * @param overrides the dev reveal overrides for this pass - show-all-factions folds
+     *                  undiscovered colonies into dominance and inhabitation,
+     *                  force-all-systems admits every system to the drawn set
+     * @return the visibility fingerprint and the dominant owner (by faction id) of each
+     *         owned on-map system
+     */
+    public static PoliticalMapSectorSnapshot scan(SectorAPI sector,
+            PoliticalMapDevOverrides overrides) {
+        return scan(sector, DominanceWeighting.readFromSettings(), overrides);
     }
 
     /**

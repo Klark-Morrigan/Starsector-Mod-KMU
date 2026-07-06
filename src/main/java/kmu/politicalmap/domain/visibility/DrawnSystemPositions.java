@@ -23,18 +23,6 @@ public final class DrawnSystemPositions {
     }
 
     /**
-     * Walks the sector once and records the live {@code {x, y}} position of every
-     * on-map system, keyed by system id, preserving the sector's iteration order.
-     *
-     * @param sector the sector to read; null yields an empty map
-     * @return each drawn system's live hyperspace position; a system with no location
-     *         is skipped, since it has no site to place a cell at
-     */
-    public static Map<String, double[]> collectLivePositions(SectorAPI sector) {
-        return collectLivePositions(sector, PoliticalMapDevOverrides.NONE);
-    }
-
-    /**
      * Walks the sector once under the dev reveal overrides and records the live
      * {@code {x, y}} position of every on-map system, keyed by system id, preserving
      * the sector's iteration order.

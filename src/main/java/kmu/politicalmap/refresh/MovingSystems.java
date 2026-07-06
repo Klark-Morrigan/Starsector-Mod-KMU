@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Points;
 
+import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
 import kmu.politicalmap.domain.visibility.DrawnSystemPositions;
 
 import java.util.LinkedHashMap;
@@ -94,16 +95,27 @@ public final class MovingSystems {
      * Observes every drawn system's live position, republishes the moving set, and
      * reports whether that set changed.
      *
-     * @param sector the sector to walk; null observes nothing and reports no change
+     * <p>Walks the same drawn set the geometry cache builds sites from, so it takes the
+     * pass's dev reveal overrides: a system on the map only because show-all-systems or
+     * show-all-factions revealed it is still observed for motion here, and so is dropped
+     * from the partition when it moves. Without the overrides this walk would see only
+     * the normally-drawn set, and a revealed-but-moving system would seed a drifting cell
+     * that drags its neighbours' borders - the very failure this tracker exists to
+     * prevent.
+     *
+     * @param sector    the sector to walk; null observes nothing and reports no change
+     * @param overrides the pass's dev reveal overrides, matching the set the geometry
+     *                  cache draws, so both agree on which systems are on the map
      * @return true when the moving set gained or lost a member this poll, so the caller
      *         requests a geometry refresh; false while it is steady (including a system
      *         that keeps moving - it is already excluded, so nothing rebuilds)
      */
-    public boolean updateMovingSystems(SectorAPI sector) {
+    public boolean updateMovingSystems(SectorAPI sector, PoliticalMapDevOverrides overrides) {
         if (sector == null) {
             return false;
         }
-        return updateMovingSystems(DrawnSystemPositions.collectLivePositions(sector));
+        return updateMovingSystems(
+                DrawnSystemPositions.collectLivePositions(sector, overrides));
     }
 
     /**

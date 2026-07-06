@@ -4,6 +4,8 @@ import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.util.IntervalUtil;
 
+import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
+
 import org.apache.log4j.Logger;
 
 import java.util.Map;
@@ -94,12 +96,20 @@ public class PoliticalMapSectorWatcher implements EveryFrameScript {
     // an owner-map diff marks just the changed systems stale. The first poll only
     // establishes the baselines.
     private void pollSnapshot() {
-        var snapshot = PoliticalMapSectorSnapshot.scan(Global.getSector());
+        var sector = Global.getSector();
+        // Read the dev reveal toggles once and share them across both walks, so the
+        // snapshot's drawn set and the motion tracker's drawn set agree even if the
+        // player flips a toggle between the two - and, crucially, so the motion walk
+        // observes the same revealed systems the geometry draws, not just the normally
+        // visible ones.
+        var overrides = PoliticalMapDevOverrides.readFromSettings();
+        var snapshot = PoliticalMapSectorSnapshot.scan(sector, overrides);
         // Observe positions every poll so a system that starts or stops moving is
         // taken out of, or returned to, the partition. Only a change to the moving set
         // stales the geometry; a system that keeps moving is already excluded, so it
         // reports no change and never churns the map.
-        var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(Global.getSector());
+        var hasMovingSetChanged =
+                MovingSystems.getInstance().updateMovingSystems(sector, overrides);
         var isFirstPoll = !hasPolled;
         var hasVisibilityChanged =
                 isFirstPoll || snapshot.visibilityFingerprint() != lastVisibilityFingerprint;

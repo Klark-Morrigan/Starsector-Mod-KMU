@@ -3,6 +3,8 @@ package kmu.politicalmap.refresh;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.politicalmap.domain.politics.PoliticalMapDevOverrides;
+
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -138,12 +140,19 @@ final class PoliticalMapSectorWatcherTest {
     private static RefreshOutcome pollThenReadRefreshOutcome(PoliticalMapSectorSnapshot first,
             PoliticalMapSectorSnapshot second, int pollCount) {
         try (MockedStatic<Global> globalMock = mockStatic(Global.class);
+                MockedStatic<PoliticalMapDevOverrides> overridesMock =
+                        mockStatic(PoliticalMapDevOverrides.class);
                 MockedStatic<PoliticalMapSectorSnapshot> snapshotMock =
                         mockStatic(PoliticalMapSectorSnapshot.class)) {
             globalMock.when(Global::getSector).thenReturn(null);
             globalMock.when(() -> Global.getLogger(any(Class.class)))
                     .thenReturn(mock(Logger.class));
-            snapshotMock.when(() -> PoliticalMapSectorSnapshot.scan(any()))
+            // The watcher reads the reveal toggles itself now; stub them to the no-reveal
+            // view so the scan and motion walks resolve the normal drawn set.
+            overridesMock.when(PoliticalMapDevOverrides::readFromSettings)
+                    .thenReturn(PoliticalMapDevOverrides.NONE);
+            snapshotMock.when(() -> PoliticalMapSectorSnapshot.scan(
+                            nullable(SectorAPI.class), any(PoliticalMapDevOverrides.class)))
                     .thenReturn(first, second);
 
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
@@ -167,6 +176,8 @@ final class PoliticalMapSectorWatcherTest {
             PoliticalMapSectorSnapshot first, PoliticalMapSectorSnapshot second,
             boolean movingSetChangedOnSecondPoll, int pollCount) {
         try (MockedStatic<Global> globalMock = mockStatic(Global.class);
+                MockedStatic<PoliticalMapDevOverrides> overridesMock =
+                        mockStatic(PoliticalMapDevOverrides.class);
                 MockedStatic<PoliticalMapSectorSnapshot> snapshotMock =
                         mockStatic(PoliticalMapSectorSnapshot.class);
                 MockedStatic<MovingSystems> movingStaticMock =
@@ -174,14 +185,18 @@ final class PoliticalMapSectorWatcherTest {
             globalMock.when(Global::getSector).thenReturn(null);
             globalMock.when(() -> Global.getLogger(any(Class.class)))
                     .thenReturn(mock(Logger.class));
-            snapshotMock.when(() -> PoliticalMapSectorSnapshot.scan(any()))
+            overridesMock.when(PoliticalMapDevOverrides::readFromSettings)
+                    .thenReturn(PoliticalMapDevOverrides.NONE);
+            snapshotMock.when(() -> PoliticalMapSectorSnapshot.scan(
+                            nullable(SectorAPI.class), any(PoliticalMapDevOverrides.class)))
                     .thenReturn(first, second);
             var movingSystemsMock = mock(MovingSystems.class);
             // nullable(SectorAPI.class), not any(): it matches the null sector the
-            // stubbed Global.getSector() hands the watcher and pins the overload (the
-            // tracker also has a Map-typed updateMovingSystems, so a bare any() is
+            // stubbed Global.getSector() hands the watcher and pins the sector overload
+            // (the tracker also has a Map-typed updateMovingSystems, so a bare any() is
             // ambiguous).
-            when(movingSystemsMock.updateMovingSystems(nullable(SectorAPI.class)))
+            when(movingSystemsMock.updateMovingSystems(nullable(SectorAPI.class),
+                            any(PoliticalMapDevOverrides.class)))
                     .thenReturn(false, movingSetChangedOnSecondPoll);
             movingStaticMock.when(MovingSystems::getInstance).thenReturn(movingSystemsMock);
 
