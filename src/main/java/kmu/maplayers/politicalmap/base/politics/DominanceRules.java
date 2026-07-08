@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import kmu.settings.ConcealedBaseScalingChoice;
+import kmu.settings.HiddenMarketScalingChoice;
 import kmu.settings.KmuLunaSettings;
 
 /**
@@ -23,15 +23,15 @@ import kmu.settings.KmuLunaSettings;
  *
  * @param colonySizeWeight          the multiplier on each market's base size rating
  *                                  - a visible colony's own {@code getSize()} or a
- *                                  concealed base's chosen base size - applied before
+ *                                  hidden market's chosen base size - applied before
  *                                  the station and patrol bonuses are added, so the
  *                                  player can dial how much raw colony size sways a
  *                                  system's dominant faction
- * @param concealedBaseScaling      how a concealed (hidden) base's base size rating
- *                                  is chosen: {@code NORMAL} by its real size like any
- *                                  colony, {@code FIXED} at {@code concealedBaseFixedWeight}
+ * @param hiddenMarketScaling       how a hidden market's base size rating is chosen:
+ *                                  {@code NORMAL} by its real size like any colony,
+ *                                  {@code FIXED} at {@code hiddenMarketFixedWeight}
  *                                  regardless of size
- * @param concealedBaseFixedWeight  the fixed base size rating a concealed base folds
+ * @param hiddenMarketFixedWeight   the fixed base size rating a hidden market folds
  *                                  in at while its scaling is {@code FIXED}, in place of
  *                                  its real size; unused while the scaling is {@code NORMAL}
  * @param isStabilityWeighted       the master switch for stability scaling: when on,
@@ -44,13 +44,13 @@ import kmu.settings.KmuLunaSettings;
  * @param isStationWeighted         whether a market with an attached defensive station
  *                                  gains the station weight in size points
  * @param stationWeight             the size points an attached defensive station adds to
- *                                  a visible colony - a concealed base earns this scaled
+ *                                  a visible colony - a hidden market earns this scaled
  *                                  by {@code stationHiddenMarketRate} - so the player can
  *                                  dial how much a station is worth
  * @param stationHiddenMarketRate   the fraction of the station weight a station on a
- *                                  concealed base earns, so a fortified secret base reads
- *                                  above a bare concealed outpost without matching an
- *                                  openly held stationed colony
+ *                                  hidden market earns, so a fortified secret base reads
+ *                                  above a bare unstationed hidden market without
+ *                                  matching an openly held stationed colony
  * @param stationLowStabilityPenalty how much the station bonus is cut at zero stability,
  *                                  0..1; applied only while stability weighting is on
  * @param isPatrolWeighted          whether the patrols a colony fields add size points
@@ -62,7 +62,7 @@ import kmu.settings.KmuLunaSettings;
  *                                  0..1; applied only while stability weighting is on
  */
 public record DominanceRules(double colonySizeWeight,
-        ConcealedBaseScalingChoice concealedBaseScaling, double concealedBaseFixedWeight,
+        HiddenMarketScalingChoice hiddenMarketScaling, double hiddenMarketFixedWeight,
         boolean isStabilityWeighted, double normalLowStabilityPenalty,
         boolean isStationWeighted, double stationWeight, double stationHiddenMarketRate,
         double stationLowStabilityPenalty,
@@ -83,8 +83,8 @@ public record DominanceRules(double colonySizeWeight,
     public static DominanceRules readFromLunaSettings() {
         return new DominanceRules(
                 KmuLunaSettings.getColonySizeWeight(),
-                KmuLunaSettings.getConcealedBaseScaling(),
-                KmuLunaSettings.getConcealedBaseFixedWeight(),
+                KmuLunaSettings.getHiddenMarketScaling(),
+                KmuLunaSettings.getHiddenMarketFixedWeight(),
                 KmuLunaSettings.shouldWeighDominanceByStability(),
                 KmuLunaSettings.getNormalLowStabilityPenalty(),
                 KmuLunaSettings.shouldWeighDominanceByStation(),

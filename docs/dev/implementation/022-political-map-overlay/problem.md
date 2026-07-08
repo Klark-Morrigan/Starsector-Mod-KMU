@@ -241,12 +241,12 @@ condition-only, feed the footprint - the same visibility filter the cell
 color uses (see [Surfaces and ownership](#surfaces-and-ownership));
 decivilised and abandoned entities are factionless and never participate.
 
-A **hidden** market (vanilla concealed bases like the Galatia Academy) is
+A **hidden** market (vanilla hidden markets like the Galatia Academy) is
 no longer disqualified: once its entity is on the map it still marks its
 system, but it folds in at a fixed token size of 1 at every level above -
 combined size, largest single market, and (if on a planet) planet-size
-sum - so a concealed outpost can flag presence without ever outweighing
-an openly held colony. Discovery is still required: a hidden base on an
+sum - so a hidden market can flag presence without ever outweighing
+an openly held colony. Discovery is still required: a hidden market on an
 as-yet-undiscovered entity stays off the map until the player finds it.
 
 The rule stays pure - it compares plain footprint values with no
@@ -262,14 +262,14 @@ weight before stability scales it or a station lifts it, so the map can be tuned
 between "raw size rules the map" and "size barely matters".
 
 - **The weight.** A market's base size rating - a visible colony's own
-  `getSize()`, or a hidden base's fixed presence token - is multiplied by the
+  `getSize()`, or a hidden market's fixed presence token - is multiplied by the
   weight before any other factor folds in. At 1 (the default) size counts exactly
   as it does without the rule; below 1 the gap between a large and a small colony
   narrows, above 1 it widens, and at 0 raw size drops out entirely - a colony then
   holds a system only through its station bonus, if any.
-- **Hidden bases scale too.** The weight multiplies a concealed base's fixed
+- **Hidden markets scale too.** The weight multiplies a hidden market's fixed
   token the same way it multiplies a visible colony's real size, so the two stay
-  in proportion at every weight. A hidden base never leaks its true size, but the
+  in proportion at every weight. A hidden market never leaks its true size, but the
   player's dial still moves its token presence up and down with everything else.
 - **Order and the fixed-point grid.** The weight is applied to the base rating
   first, then the station bonus is added, then the stability fraction scales the
@@ -343,10 +343,10 @@ stronger presence even at equal size.
   planet, and abandoned hulks that keep the tag after their market dies). No
   industry ids are read - the entity tag captures vanilla and modded stations
   alike.
-- **Hidden markets.** A concealed base earns a configurable fraction of the
+- **Hidden markets.** A hidden market earns a configurable fraction of the
   station weight - `stationWeight * hiddenRate` on its token rating, before
   stability scales the sum - so a fortified secret base reads above a bare
-  concealed outpost without a hidden base ever matching an openly held stationed
+  unstationed hidden market without ever matching an openly held stationed
   colony. The rate defaults to one half.
 - **Fixed-point grid, exact rule unchanged.** The lifted rating folds through
   the same 1000-units-per-size-point grid and rounds once, so a fractional
@@ -357,7 +357,7 @@ stronger presence even at equal size.
   `kmu_politicalMapStationWeighsDominance` ("Political map - domination" tab,
   "Dominance" header), on by default; off drops the bonus and ranks markets by
   stability-weighted size alone. The magnitude is the double
-  `kmu_politicalMapStationWeight` (default 1) and the hidden-base fraction is the
+  `kmu_politicalMapStationWeight` (default 1) and the hidden-market fraction is the
   double `kmu_politicalMapStationHiddenMarketRate` (0..1, default 0.5). All read
   once per resolution pass alongside the stability toggle and colony-size weight
   into one weighting bundle threaded through the footprint read, so a pass resolves
@@ -524,7 +524,7 @@ location culling is the source of truth.
   [Dominance rule](#dominance-rule)).
 - Unit: the footprint read multiplies each market's base size rating by the
   colony-size weight - a doubled weight doubles a visible market's size and a
-  hidden base's token alike, while the flat station point is added after the
+  hidden market's token alike, while the flat station point is added after the
   weight and so is left unscaled (see [Colony size weighting](#colony-size-weighting)).
 - Unit: the footprint read scales each market's weight by stability -
   half stability halves the contribution, stability 0 yields a weightless

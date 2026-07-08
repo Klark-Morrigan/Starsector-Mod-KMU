@@ -52,13 +52,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>The "Political map - domination" tab holds the dominance rules - fields that change the
  * map's political verdicts rather than its styling, which is why they do not sit
  * under "Visuals customisation". They set how heavily a colony's raw size weighs on
- * its system's dominant faction, how a concealed base's size is counted (its real
+ * its system's dominant faction, how a hidden market's size is counted (its real
  * size or a fixed weight), whether (and by how many size points) an attached
- * defensive station lifts a colony (paired with the fraction a concealed base earns),
+ * defensive station lifts a colony (paired with the fraction a hidden market earns),
  * and whether the patrols a colony fields lift it too, weighted by patrol size.
  * Stability weighting is a master toggle over three per-factor low-stability penalties
  * (colony size, station, patrols) that each set how deeply their factor collapses at
- * zero stability. The tab groups the fields under Colony size, Concealed bases,
+ * zero stability. The tab groups the fields under Colony size, Hidden markets,
  * Stability, Orbital stations, and Garrison patrols headers.
  *
  * <p>The "Market conditions" tab holds the condition-picker toggles. Its one field
@@ -156,10 +156,10 @@ public final class KmuLunaSettings {
     // Dominance rules (Political map - domination tab): how the map decides a system's
     // dominant faction. Not styling fields - they change the political verdicts
     // themselves. The colony-size weight multiplies each market's base size rating; a
-    // concealed base takes its base rating from the concealed-base scaling choice
+    // hidden market takes its base rating from the hidden-market scaling choice
     // (its real size, or the fixed weight) rather than a hardcoded token; the station
     // toggle adds the station weight in size points for an attached defensive station,
-    // paired with the fraction of that weight a concealed base earns; the patrol toggle
+    // paired with the fraction of that weight a hidden market earns; the patrol toggle
     // adds a size-point bonus for the small, medium, and large patrols a colony fields.
     // Stability weighting is a master toggle over three per-factor low-stability
     // penalties (colony size, station, patrols), each setting how deeply its factor
@@ -167,10 +167,10 @@ public final class KmuLunaSettings {
     // resolution pass.
     private static final String COLONY_SIZE_WEIGHT_FIELD =
             "kmu_politicalMapColonySizeWeight";
-    private static final String CONCEALED_BASE_SCALING_FIELD =
-            "kmu_politicalMapConcealedBaseScaling";
-    private static final String CONCEALED_BASE_FIXED_WEIGHT_FIELD =
-            "kmu_politicalMapConcealedBaseFixedWeight";
+    private static final String HIDDEN_MARKET_SCALING_FIELD =
+            "kmu_politicalMapHiddenMarketScaling";
+    private static final String HIDDEN_MARKET_FIXED_WEIGHT_FIELD =
+            "kmu_politicalMapHiddenMarketFixedWeight";
     private static final String STABILITY_WEIGHS_DOMINANCE_FIELD =
             "kmu_politicalMapStabilityWeighsDominance";
     private static final String NORMAL_LOW_STABILITY_PENALTY_FIELD =
@@ -386,17 +386,17 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
     // The identity weight by default: raw colony size counts toward dominance as it
     // does without the rule. Below 1 flattens the gap between large and small
-    // colonies, above 1 sharpens it; it scales a concealed base's chosen base size too.
+    // colonies, above 1 sharpens it; it scales a hidden market's chosen base size too.
     private static final double DEFAULT_COLONY_SIZE_WEIGHT = 1.0;
-    // Fixed by default: a concealed base folds in at its fixed weight (below) rather
+    // Fixed by default: a hidden market folds in at its fixed weight (below) rather
     // than its real size, so a large secret base does not outweigh the open colonies
     // around it. Mirrors the CSV row's defaultValue and the labels the radio offers.
-    private static final ConcealedBaseScalingChoice DEFAULT_CONCEALED_BASE_SCALING =
-            ConcealedBaseScalingChoice.FIXED;
-    // One size point by default: a concealed base marks presence as a single size
+    private static final HiddenMarketScalingChoice DEFAULT_HIDDEN_MARKET_SCALING =
+            HiddenMarketScalingChoice.FIXED;
+    // One size point by default: a hidden market marks presence as a single size
     // point while its scaling is Fixed, matching the token the rule used before this
     // became a knob.
-    private static final double DEFAULT_CONCEALED_BASE_FIXED_WEIGHT = 1.0;
+    private static final double DEFAULT_HIDDEN_MARKET_FIXED_WEIGHT = 1.0;
     // On by default: a destabilised colony should hold less of its system than a
     // functioning one; the master toggle exists to opt back into raw-size dominance.
     private static final boolean DEFAULT_STABILITY_WEIGHS_DOMINANCE = true;
@@ -412,8 +412,9 @@ public final class KmuLunaSettings {
     // point toward its system's dominance. Below 1 softens the bonus, above 1
     // sharpens it.
     private static final double DEFAULT_STATION_WEIGHT = 1.0;
-    // A concealed base earns half the station weight, so a fortified secret base reads
-    // as more than a bare concealed outpost without matching an open stationed colony.
+    // A hidden market earns half the station weight, so a fortified secret base reads
+    // as more than a bare unstationed hidden market without matching an open stationed
+    // colony.
     private static final double DEFAULT_STATION_HIDDEN_MARKET_RATE = 0.5;
     // Half collapse by default: the station bonus falls to half its worth at zero
     // stability, so a destabilised fortress keeps some military weight rather than
@@ -707,7 +708,7 @@ public final class KmuLunaSettings {
 
     /**
      * @return the multiplier on each colony's base size rating - a visible market's
-     *         own size, or a concealed base's chosen base size (its real size or the
+     *         own size, or a hidden market's chosen base size (its real size or the
      *         fixed weight) - before the station and patrol bonuses and stability fold
      *         in; 1.0 by default (raw size), below 1 flattens the gap between large and
      *         small colonies and above 1 sharpens it
@@ -718,26 +719,26 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return how a concealed base's base size rating is chosen: NORMAL by its real
-     *         colony size like any colony, or FIXED at the concealed-base fixed weight
+     * @return how a hidden market's base size rating is chosen: NORMAL by its real
+     *         colony size like any colony, or FIXED at the hidden-market fixed weight
      *         regardless of size; FIXED by default so a large secret base does not
      *         outweigh the open colonies around it
      */
-    public static ConcealedBaseScalingChoice getConcealedBaseScaling() {
-        return ConcealedBaseScalingChoice.fromLabel(
-                LunaSettingsReader.getString(MOD_ID, CONCEALED_BASE_SCALING_FIELD,
-                        DEFAULT_CONCEALED_BASE_SCALING.getLabel()),
-                DEFAULT_CONCEALED_BASE_SCALING);
+    public static HiddenMarketScalingChoice getHiddenMarketScaling() {
+        return HiddenMarketScalingChoice.fromLabel(
+                LunaSettingsReader.getString(MOD_ID, HIDDEN_MARKET_SCALING_FIELD,
+                        DEFAULT_HIDDEN_MARKET_SCALING.getLabel()),
+                DEFAULT_HIDDEN_MARKET_SCALING);
     }
 
     /**
-     * @return the fixed size rating a concealed base folds in at while its scaling is
+     * @return the fixed size rating a hidden market folds in at while its scaling is
      *         FIXED, in place of its real size, before the colony size weight and
      *         stability apply; 1.0 by default. Unread while the scaling is NORMAL
      */
-    public static double getConcealedBaseFixedWeight() {
-        return LunaSettingsReader.getDouble(MOD_ID, CONCEALED_BASE_FIXED_WEIGHT_FIELD,
-                DEFAULT_CONCEALED_BASE_FIXED_WEIGHT);
+    public static double getHiddenMarketFixedWeight() {
+        return LunaSettingsReader.getDouble(MOD_ID, HIDDEN_MARKET_FIXED_WEIGHT_FIELD,
+                DEFAULT_HIDDEN_MARKET_FIXED_WEIGHT);
     }
 
     /**
@@ -775,7 +776,7 @@ public final class KmuLunaSettings {
      * @return the size points an attached defensive station adds to a visible colony's
      *         dominance contribution, before its low-stability penalty applies; 1.0 by
      *         default, below 1 softens the station bonus and above 1 sharpens it. A
-     *         concealed base earns this scaled by the concealed-base station fraction
+     *         hidden market earns this scaled by the hidden-market station fraction
      */
     public static double getStationWeight() {
         return LunaSettingsReader.getDouble(MOD_ID, STATION_WEIGHT_FIELD,
@@ -783,9 +784,9 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return the fraction of the station weight a station on a concealed base earns,
-     *         0..1 - so a fortified secret base reads above a bare concealed outpost
-     *         without matching an openly held stationed colony; half by default
+     * @return the fraction of the station weight a station on a hidden market earns,
+     *         0..1 - so a fortified secret base reads above a bare unstationed hidden
+     *         market without matching an openly held stationed colony; half by default
      */
     public static double getStationHiddenMarketRate() {
         return LunaSettingsReader.getDouble(MOD_ID, STATION_HIDDEN_MARKET_RATE_FIELD,

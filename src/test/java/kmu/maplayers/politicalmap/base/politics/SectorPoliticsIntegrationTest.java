@@ -8,7 +8,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.settings.ConcealedBaseScalingChoice;
+import kmu.settings.HiddenMarketScalingChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class SectorPoliticsIntegrationTest {
     // colony penalty at a full collapse (the old whole-rating stability behaviour); the
     // station and patrol bonuses are covered in KnownMarketFootprints.
     private static final DominanceRules STABILITY_WEIGHTED =
-            new DominanceRules(1.0, ConcealedBaseScalingChoice.FIXED, 1.0, true, 1.0,
+            new DominanceRules(1.0, HiddenMarketScalingChoice.FIXED, 1.0, true, 1.0,
                     false, 1.0, 0.5, 0.5, false, 0.25, 0.5, 1.0, 0.5);
     private static final Color HEGEMONY_BRIGHT = new Color(120, 160, 200);
     private static final Color TRITACHYON_BRIGHT = new Color(140, 180, 220);
@@ -110,7 +110,7 @@ class SectorPoliticsIntegrationTest {
 
         @Test
         void resolveDominantOwnerPaintsSystemHoldingOnlyAHiddenMarket() {
-            // A hidden market (vanilla concealed base) still marks its system as
+            // A hidden market (vanilla hidden market) still marks its system as
             // owned once its entity is on the map - it is no longer disqualified.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var sector = sectorWith("hidden-system", List.of(hegemony),
@@ -152,12 +152,12 @@ class SectorPoliticsIntegrationTest {
 
         @Test
         void resolveDominantOwnerExcludesUndiscoveredStation() {
-            // A concealed station - hidden market on a still-discoverable entity,
+            // An undiscovered hidden market on a still-discoverable entity,
             // e.g. Knights of Ludd's Battlestar Libra - is absent from the map
             // until found, so it claims no territory.
             var knights = faction("knights_of_selkie", HEGEMONY_BRIGHT);
             var sector = sectorWith("undiscovered-system", List.of(knights),
-                    concealedStation(knights, 5));
+                    undiscoveredHiddenMarket(knights, 5));
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
                     .doesNotContainKey("undiscovered-system");
@@ -263,16 +263,16 @@ class SectorPoliticsIntegrationTest {
         return market(faction, size, false, false, false);
     }
 
-    // A hidden market (vanilla concealed base) on a discovered entity: it still
+    // A hidden market (vanilla hidden market) on a discovered entity: it still
     // marks its system, but folds into dominance at a token size of 1.
     private static MarketAPI hiddenMarket(FactionAPI faction, int size) {
         return market(faction, size, false, true, false);
     }
 
-    // A concealed station: a hidden market on a still-discoverable entity, the
-    // shape a base wears before the player finds it. Fails both known-market
+    // An undiscovered hidden market on a still-discoverable entity, the
+    // shape a market wears before the player finds it. Fails both known-market
     // arms, so it confers no presence until discovery un-hides or reveals it.
-    private static MarketAPI concealedStation(FactionAPI faction, int size) {
+    private static MarketAPI undiscoveredHiddenMarket(FactionAPI faction, int size) {
         return market(faction, size, false, true, true);
     }
 

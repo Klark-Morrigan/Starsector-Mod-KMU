@@ -12,7 +12,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Stats;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import com.fs.starfarer.api.util.DynamicStatsAPI;
 
-import kmu.settings.ConcealedBaseScalingChoice;
+import kmu.settings.HiddenMarketScalingChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,10 +31,10 @@ import static org.mockito.Mockito.when;
  * Integration coverage for the economy read: {@link KnownMarketFootprints} folding a
  * stubbed system's markets into per-faction footprints through the known-market
  * filter and the dominance-weighting rule. Exercises the filter (condition-only
- * skipped, the discovery / un-hidden gate), the concealed-base scaling (its real size
+ * skipped, the discovery / un-hidden gate), the hidden-market scaling (its real size
  * under Normal, the fixed weight under Fixed), the colony-size weight scaling each base
  * rating, the three weight factors (colony size, the station presence bonus with its
- * hidden-base rate and opt-out, and the patrol strength read from the economy), the
+ * hidden-market rate and opt-out, and the patrol strength read from the economy), the
  * per-factor low-stability penalties under the master stability toggle, and the
  * zero-factor short-circuits that skip the station scan, the patrol read, and the
  * stability read.
@@ -47,14 +47,14 @@ class KnownMarketFootprintsIntegrationTest {
 
     // A fluent builder over the 14-factor DominanceRules, defaulting every field to
     // its CSV default so each test states only the axis it pins. The defaults are:
-    // colony-size weight 1 (raw size), concealed bases Fixed at token weight 1, the
+    // colony-size weight 1 (raw size), hidden markets Fixed at token weight 1, the
     // stability master on with a full (1.0) colony penalty, stations off (weight 1,
     // hidden rate 0.5, penalty 0.5), and patrols off (0.25/0.5/1 tier weights, penalty
     // 0.5).
     private static final class RulesBuilder {
         private double colonySizeWeight = 1.0;
-        private ConcealedBaseScalingChoice concealedScaling = ConcealedBaseScalingChoice.FIXED;
-        private double concealedFixedWeight = 1.0;
+        private HiddenMarketScalingChoice hiddenMarketScaling = HiddenMarketScalingChoice.FIXED;
+        private double hiddenMarketFixedWeight = 1.0;
         private boolean stabilityMaster = true;
         private double normalPenalty = 1.0;
         private boolean stationOn = false;
@@ -72,13 +72,13 @@ class KnownMarketFootprintsIntegrationTest {
             return this;
         }
 
-        private RulesBuilder withConcealedScaling(ConcealedBaseScalingChoice value) {
-            concealedScaling = value;
+        private RulesBuilder withHiddenMarketScaling(HiddenMarketScalingChoice value) {
+            hiddenMarketScaling = value;
             return this;
         }
 
-        private RulesBuilder withConcealedFixedWeight(double value) {
-            concealedFixedWeight = value;
+        private RulesBuilder withHiddenMarketFixedWeight(double value) {
+            hiddenMarketFixedWeight = value;
             return this;
         }
 
@@ -108,7 +108,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         private DominanceRules build() {
-            return new DominanceRules(colonySizeWeight, concealedScaling, concealedFixedWeight,
+            return new DominanceRules(colonySizeWeight, hiddenMarketScaling, hiddenMarketFixedWeight,
                     stabilityMaster, normalPenalty, stationOn, stationWeight, stationHiddenRate,
                     stationPenalty, patrolOn, patrolSmall, patrolMedium, patrolLarge,
                     patrolPenalty);
@@ -220,8 +220,8 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionCountsConcealedBaseAtItsFixedWeightByDefault() {
-            // A concealed base folds in at its fixed token weight of 1 rather than its
+        void readByFactionCountsHiddenMarketAtItsFixedWeightByDefault() {
+            // A hidden market folds in at its fixed token weight of 1 rather than its
             // real size 5, so it flags presence without skewing dominance.
             var sector = sectorWith("hidden-system", hiddenMarket(faction("hegemony"), 5));
 
@@ -233,9 +233,9 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionScalesTheFixedConcealedTokenByStability() {
+        void readByFactionScalesTheFixedHiddenMarketTokenByStability() {
             // The fixed token is a size rating like any other, so the colony penalty
-            // scales it too: a destabilised concealed base marks less presence.
+            // scales it too: a destabilised hidden market marks less presence.
             var sector = sectorWith("hidden-shaky-system",
                     hiddenMarketAtStability(faction("hegemony"), 5, HALF_STABILITY));
 
@@ -247,34 +247,34 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionCountsConcealedBaseByRealSizeUnderNormalScaling() {
-            // Under Normal scaling a concealed base counts by its real size like any
+        void readByFactionCountsHiddenMarketByRealSizeUnderNormalScaling() {
+            // Under Normal scaling a hidden market counts by its real size like any
             // colony: size 5 -> 5 grid units.
             var sector = sectorWith("hidden-system", hiddenMarket(faction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withConcealedScaling(ConcealedBaseScalingChoice.NORMAL).build());
+                    rules().withHiddenMarketScaling(HiddenMarketScalingChoice.NORMAL).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
         }
 
         @Test
-        void readByFactionUsesTheConfiguredFixedConcealedWeight() {
-            // The fixed concealed weight sets the token size a concealed base folds in
-            // at: at weight 2 a concealed base of any real size -> 2 grid units.
+        void readByFactionUsesTheConfiguredFixedHiddenMarketWeight() {
+            // The fixed hidden-market weight sets the token size a hidden market folds in
+            // at: at weight 2 a hidden market of any real size -> 2 grid units.
             var sector = sectorWith("hidden-system", hiddenMarket(faction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withConcealedFixedWeight(2.0).build());
+                    rules().withHiddenMarketFixedWeight(2.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
         }
 
         @Test
-        void readByFactionScalesTheFixedConcealedTokenByTheColonyWeight() {
-            // The colony-size weight scales a concealed base's fixed token of 1 the same
+        void readByFactionScalesTheFixedHiddenMarketTokenByTheColonyWeight() {
+            // The colony-size weight scales a hidden market's fixed token of 1 the same
             // way as any base size: at weight 2, 2 grid units.
             var sector = sectorWith("weighted-hidden-system",
                     hiddenMarket(faction("hegemony"), 5));
@@ -288,10 +288,10 @@ class KnownMarketFootprintsIntegrationTest {
 
         @Test
         void readByFactionExcludesUndiscoveredStation() {
-            // A concealed station (hidden market on a still-discoverable entity) fails
+            // An undiscovered hidden market on a still-discoverable entity fails
             // the known-market gate, so it folds into no footprint.
             var sector = sectorWith("undiscovered-system",
-                    concealedStation(faction("knights_of_selkie"), 5));
+                    undiscoveredHiddenMarket(faction("knights_of_selkie"), 5));
 
             assertThat(KnownMarketFootprints.readByFaction(
                     sector, onlySystem(sector), rules().build())).isEmpty();
@@ -299,11 +299,11 @@ class KnownMarketFootprintsIntegrationTest {
 
         @Test
         void readByFactionIncludesAnUndiscoveredStationWhenIncludingUndiscoveredMarkets() {
-            // The show-all-factions dev reveal drops the known-to-player gate, so a
-            // concealed station folds in at its fixed token size of 1 rather than being
-            // skipped as it is under the normal filter.
+            // The show-all-factions dev reveal drops the known-to-player gate, so an
+            // undiscovered hidden market folds in at its fixed token size of 1 rather
+            // than being skipped as it is under the normal filter.
             var sector = sectorWith("undiscovered-system",
-                    concealedStation(faction("knights_of_selkie"), 5));
+                    undiscoveredHiddenMarket(faction("knights_of_selkie"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
                     sector, onlySystem(sector), rules().build(), true);
@@ -368,8 +368,8 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionGivesAConcealedStationedBaseTheStationPointAtTheHiddenRate() {
-            // A concealed stationed base gets the station weight times the hidden rate on
+        void readByFactionGivesAHiddenStationedMarketTheStationPointAtTheHiddenRate() {
+            // A hidden stationed market gets the station weight times the hidden rate on
             // its token rating of 1, at full stability: (1 + 0.5) size points.
             var sector = sectorWith("hidden-fortress-system",
                     hiddenStationedMarket(faction("hegemony"), 5));
@@ -559,23 +559,23 @@ class KnownMarketFootprintsIntegrationTest {
         return market(faction, size, false, false, false, stability);
     }
 
-    // A concealed base (vanilla hidden market) on a discovered entity: it still marks
-    // its system, but its base rating is chosen by the concealed-base scaling.
+    // A hidden market on a discovered entity: it still marks
+    // its system, but its base rating is chosen by the hidden-market scaling.
     private static MarketAPI hiddenMarket(FactionAPI faction, int size) {
         return market(faction, size, false, true, false, FULL_STABILITY);
     }
 
-    // A concealed base at the given stability, for pinning that its token rating scales
+    // A hidden market at the given stability, for pinning that its token rating scales
     // with stability like any other size rating.
     private static MarketAPI hiddenMarketAtStability(FactionAPI faction, int size,
             float stability) {
         return market(faction, size, false, true, false, stability);
     }
 
-    // A concealed station: a hidden market on a still-discoverable entity, the shape a
-    // base wears before the player finds it. Fails both known-market arms, so it confers
-    // no presence until discovery un-hides or reveals it.
-    private static MarketAPI concealedStation(FactionAPI faction, int size) {
+    // An undiscovered hidden market on a still-discoverable entity, the shape a
+    // market wears before the player finds it. Fails both known-market arms, so it
+    // confers no presence until discovery un-hides or reveals it.
+    private static MarketAPI undiscoveredHiddenMarket(FactionAPI faction, int size) {
         return market(faction, size, false, true, true, FULL_STABILITY);
     }
 
@@ -592,7 +592,7 @@ class KnownMarketFootprintsIntegrationTest {
         return withConnectedEntities(marketAtStability(faction, size, stability), stationEntity());
     }
 
-    // A concealed base that owns a station, for pinning that it earns the station point
+    // A hidden market that owns a station, for pinning that it earns the station point
     // at the hidden rate on its token rating.
     private static MarketAPI hiddenStationedMarket(FactionAPI faction, int size) {
         return withConnectedEntities(hiddenMarket(faction, size), stationEntity());

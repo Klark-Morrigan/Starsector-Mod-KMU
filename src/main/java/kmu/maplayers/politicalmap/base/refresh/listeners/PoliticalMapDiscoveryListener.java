@@ -8,7 +8,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapSectorWatcher;
 
 /**
- * Marks a discovered market's system politics-stale, so a concealed colony or
+ * Marks a discovered market's system politics-stale, so an undiscovered colony or
  * station (e.g. Knights of Ludd's Battlestar Libra) paints its system the moment
  * it is found, not only on reload.
  *

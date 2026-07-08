@@ -6,7 +6,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.markets.Markets;
 
-import kmu.settings.ConcealedBaseScalingChoice;
+import kmu.settings.HiddenMarketScalingChoice;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,7 +19,7 @@ import java.util.Map;
  * the "counts as a colony" filter - a market is in only when a faction owns it,
  * it is not a bare planet's condition-only placeholder, and the player knows it
  * exists - and weighs each surviving market for dominance. A market's weight is the
- * sum of three factors - its weighted base size (a concealed base counting by its
+ * sum of three factors - its weighted base size (a hidden market counting by its
  * real size or a fixed token), any attached-station bonus, and any patrol strength -
  * each cut for low stability by its own penalty (the player-facing LunaLib settings,
  * read upstream so this class stays free of settings access). The
@@ -116,8 +116,8 @@ public final class KnownMarketFootprints {
     // A market's worth to the dominance rule: the sum of its three weight factors -
     // its weighted base size, any station bonus, and any patrol strength - each cut
     // for low stability by its own penalty, then rounded once onto the fixed-point
-    // grid. The base rating is the raw getSize(), or - for a concealed base - its real
-    // size or the fixed weight per the concealed-base scaling; the colony-size weight
+    // grid. The base rating is the raw getSize(), or - for a hidden market - its real
+    // size or the fixed weight per the hidden-market scaling; the colony-size weight
     // multiplies that base so the player can dial how much raw size counts. The station
     // and patrol bonuses add their own size points, read below.
     // Stability then decides how much of each factor the faction actually holds: with
@@ -152,13 +152,13 @@ public final class KnownMarketFootprints {
     }
 
     // A market's base size rating before the colony-size weight: a visible colony's own
-    // size, or - for a concealed base - its real size under Normal scaling or the fixed
-    // weight under Fixed, so a concealed base can mark presence without its real size
+    // size, or - for a hidden market - its real size under Normal scaling or the fixed
+    // weight under Fixed, so a hidden market can mark presence without its real size
     // swaying dominance when the player pins it to a token.
     private static double computeBaseSize(MarketAPI market, DominanceRules rules) {
         if (market.isHidden()
-                && rules.concealedBaseScaling() == ConcealedBaseScalingChoice.FIXED) {
-            return rules.concealedBaseFixedWeight();
+                && rules.hiddenMarketScaling() == HiddenMarketScalingChoice.FIXED) {
+            return rules.hiddenMarketFixedWeight();
         }
         return market.getSize();
     }
@@ -177,7 +177,7 @@ public final class KnownMarketFootprints {
 
     // The station size bonus a market earns before stability scaling: the player-set
     // station weight in size points for an openly held stationed colony, a configured
-    // fraction of that weight for a concealed base (so a concealed fortress reads above
+    // fraction of that weight for a hidden market (so a hidden fortress reads above
     // a bare outpost without matching an open stationed colony), or nothing when the
     // factor is toggled off, the weight is zero, or the market has no attached station.
     // A zero weight is checked before the connected-entity station scan, so disabling

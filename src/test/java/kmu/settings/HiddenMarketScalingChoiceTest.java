@@ -6,21 +6,21 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link ConcealedBaseScalingChoice}: each mode round-trips through its LunaLib
+ * Pins {@link HiddenMarketScalingChoice}: each mode round-trips through its LunaLib
  * Radio label, and an unknown or missing label falls back to the caller's default (a
  * stale config or a read before LunaLib loads must not throw or silently flip the
- * concealed-base scaling mode).
+ * hidden-market scaling mode).
  */
-final class ConcealedBaseScalingChoiceTest {
+final class HiddenMarketScalingChoiceTest {
 
     @Nested
     class FromLabel {
 
         @Test
         void fromLabelReturnsTheChoiceForEachKnownLabel() {
-            for (var choice : ConcealedBaseScalingChoice.values()) {
-                assertThat(ConcealedBaseScalingChoice.fromLabel(choice.getLabel(),
-                        ConcealedBaseScalingChoice.NORMAL)).isEqualTo(choice);
+            for (var choice : HiddenMarketScalingChoice.values()) {
+                assertThat(HiddenMarketScalingChoice.fromLabel(choice.getLabel(),
+                        HiddenMarketScalingChoice.NORMAL)).isEqualTo(choice);
             }
         }
 
@@ -28,16 +28,16 @@ final class ConcealedBaseScalingChoiceTest {
         void fromLabelReturnsTheFallbackForAnUnknownLabel() {
             // A label from an old config (or a typo) matches nothing, so the caller's
             // default stands rather than throwing.
-            assertThat(ConcealedBaseScalingChoice.fromLabel("Scaled",
-                    ConcealedBaseScalingChoice.FIXED)).isEqualTo(ConcealedBaseScalingChoice.FIXED);
+            assertThat(HiddenMarketScalingChoice.fromLabel("Scaled",
+                    HiddenMarketScalingChoice.FIXED)).isEqualTo(HiddenMarketScalingChoice.FIXED);
         }
 
         @Test
         void fromLabelReturnsTheFallbackForNull() {
             // getString returns null before LunaLib has loaded the field; the fallback
             // covers that read.
-            assertThat(ConcealedBaseScalingChoice.fromLabel(null,
-                    ConcealedBaseScalingChoice.FIXED)).isEqualTo(ConcealedBaseScalingChoice.FIXED);
+            assertThat(HiddenMarketScalingChoice.fromLabel(null,
+                    HiddenMarketScalingChoice.FIXED)).isEqualTo(HiddenMarketScalingChoice.FIXED);
         }
     }
 
@@ -46,8 +46,8 @@ final class ConcealedBaseScalingChoiceTest {
 
         @Test
         void getLabelReturnsTheLunaLibOptionLabel() {
-            assertThat(ConcealedBaseScalingChoice.NORMAL.getLabel()).isEqualTo("Normal");
-            assertThat(ConcealedBaseScalingChoice.FIXED.getLabel()).isEqualTo("Fixed");
+            assertThat(HiddenMarketScalingChoice.NORMAL.getLabel()).isEqualTo("Normal");
+            assertThat(HiddenMarketScalingChoice.FIXED.getLabel()).isEqualTo("Fixed");
         }
     }
 }

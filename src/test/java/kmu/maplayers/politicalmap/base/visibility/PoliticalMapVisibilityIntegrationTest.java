@@ -148,7 +148,7 @@ class PoliticalMapVisibilityIntegrationTest {
 
         @Test
         void isInhabitedIsFalseForAnUndiscoveredColonyByDefault() {
-            // A concealed colony fails the normal known-to-player gate, so the system
+            // An undiscovered colony fails the normal known-to-player gate, so the system
             // reads as uninhabited until the reveal is on.
             var system = unreachableSystem("a");
 
@@ -158,7 +158,7 @@ class PoliticalMapVisibilityIntegrationTest {
 
         @Test
         void isInhabitedIsTrueForAnUndiscoveredColonyWhenShowingAllFactions() {
-            // The show-all-factions dev reveal folds the concealed colony in, so the
+            // The show-all-factions dev reveal folds the undiscovered colony in, so the
             // system counts as inhabited and earns a cell.
             var system = unreachableSystem("a");
 
@@ -350,7 +350,7 @@ class PoliticalMapVisibilityIntegrationTest {
         return marketMock;
     }
 
-    // A concealed colony the player has not found: hidden market on a still-
+    // An undiscovered colony the player has not found: hidden market on a still-
     // discoverable entity, so it fails the normal known-to-player gate and confers
     // presence only under the show-all-factions reveal.
     private static MarketAPI undiscoveredColony() {
