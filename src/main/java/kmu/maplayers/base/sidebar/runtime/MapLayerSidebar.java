@@ -83,6 +83,11 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // the first pass logs and thereby proves the listener is registered and fires.
     private String lastLoggedLine;
 
+    // Whether the overlay was on screen last pass, so the transition to off can be caught. The
+    // body controls write their settings through LunaLib's deferred path (live value, batched
+    // disk write), so leaving the overlay is when a map session's edits are flushed to disk.
+    private boolean wasOverlayShowing;
+
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
         // Below the whole campaign UI - under the map screen. Nothing belongs here.
@@ -98,7 +103,15 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
         // The only pass composited after the entire map screen (and its tooltips), so it is the
         // sole layer the opaque core-UI map cannot occlude - the panel has to draw here.
-        if (!CampaignMapView.isSectorMapWithStarscapeOff()) {
+        boolean isOverlayShowing = CampaignMapView.isSectorMapWithStarscapeOff();
+        // On the pass the overlay turns off - the player closed the map or switched on the
+        // starscape - persist the body controls' deferred writes, collapsing the map session's
+        // edits into one disk write.
+        if (wasOverlayShowing && !isOverlayShowing) {
+            KmuLunaSettings.flushPendingWrites();
+        }
+        wasOverlayShowing = isOverlayShowing;
+        if (!isOverlayShowing) {
             logViewStateOnChange("hidden; " + CampaignMapView.describeViewState());
             return;
         }

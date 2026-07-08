@@ -687,7 +687,7 @@ public final class KmuLunaSettings {
      *               or stay hidden ({@link NeutralColorChoice#NONE})
      */
     public static void setUninhabitedBorderColor(NeutralColorChoice choice) {
-        LunaSettingsWriter.putString(MOD_ID, UNINHABITED_BORDER_COLOR_FIELD, choice.getLabel());
+        LunaSettingsWriter.putStringDeferred(MOD_ID, UNINHABITED_BORDER_COLOR_FIELD, choice.getLabel());
     }
 
     /**
@@ -1190,7 +1190,17 @@ public final class KmuLunaSettings {
      * @param choice whether each cluster label spells the owner's full or short name
      */
     public static void setPoliticalMapFactionNameFormat(FactionNameFormatChoice choice) {
-        LunaSettingsWriter.putString(MOD_ID, FACTION_NAME_FORMAT_FIELD, choice.getLabel());
+        LunaSettingsWriter.putStringDeferred(MOD_ID, FACTION_NAME_FORMAT_FIELD, choice.getLabel());
+    }
+
+    /**
+     * Persists any pending sidebar-control writes to disk. The on-map controls write through
+     * LunaLib's deferred path - the value goes live and the map redraws at once, but the file
+     * write batches - so this is called when the player leaves the overlay to land a map
+     * session's edits in one write rather than one per click.
+     */
+    public static void flushPendingWrites() {
+        LunaSettingsWriter.flush(MOD_ID);
     }
 
     /**
