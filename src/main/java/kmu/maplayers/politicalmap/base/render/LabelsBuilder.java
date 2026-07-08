@@ -29,7 +29,7 @@ import java.util.List;
  * fitted footprint by construction and the (costly) placement search runs once. This class
  * adds only the geometry of the stack - each line's own hang point along the block's
  * perpendicular - and the GL strings; it never touches the sector. The label font is the
- * player's pick, loaded and cached by {@link LabelFonts} - the same face whose metrics
+ * fixed face loaded and cached by {@link LabelFonts} - the same face whose metrics
  * sized the boxes - and a face that failed to load leaves the labels empty.
  *
  * <p>The {@link DrawableString}s own GL buffers, so a rebuild disposes the previous list's
@@ -53,7 +53,7 @@ public final class LabelsBuilder {
         if (!KmuLunaSettings.getPoliticalMapShowNames()) {
             return;
         }
-        var resolvedFont = LabelFonts.loadConfiguredFont();
+        var resolvedFont = LabelFonts.loadMapLabelFont();
         if (resolvedFont == null) {
             return;
         }

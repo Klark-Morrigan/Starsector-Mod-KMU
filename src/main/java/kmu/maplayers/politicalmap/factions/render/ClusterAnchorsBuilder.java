@@ -161,11 +161,11 @@ final class ClusterAnchorsBuilder {
     }
 
     // The per-faction name estimators one rebuild fits against: each faction's display
-    // name measured with the configured label font, or the aspect stand-in when the font
+    // name measured with the label font, or the aspect stand-in when the font
     // or the name will not resolve. Cached per faction id because every cluster of a
     // faction shares one name, so its wrap is measured once per rebuild, not per cluster.
     private static Function<String, LabelLengthEstimator> newNameEstimatorResolver(SectorAPI sector) {
-        var font = LabelFonts.loadConfiguredFont();
+        var font = LabelFonts.loadMapLabelFont();
         // Read once per rebuild, like the font: every cluster of a faction spells its
         // name the same way, so the full/short choice is resolved here rather than per
         // faction.

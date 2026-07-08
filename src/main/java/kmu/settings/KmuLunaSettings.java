@@ -88,10 +88,6 @@ public final class KmuLunaSettings {
     // faction map's names today and the alliance layer's names when it lands.
     private static final String SHOW_NAMES_FIELD =
             "kmu_politicalMapShowNames";
-    // The bitmap font faction names render in, chosen from the game's graphics/fonts by
-    // basename; the label renderer resolves the basename to its .fnt path.
-    private static final String FACTION_NAME_FONT_FIELD =
-            "kmu_politicalMapFactionNameFont";
     // Whether each cluster label spells its owner's full name or its short name; the
     // short form fits a tighter cluster at a larger font.
     private static final String FACTION_NAME_FORMAT_FIELD =
@@ -284,7 +280,7 @@ public final class KmuLunaSettings {
             "kmu_politicalMapAnchorBandLineOpacity";
     // Name-fit knobs (Political map - visuals tab, Faction names): a label is a box with
     // girth, sized to the space it sits in and to the owner's actual name - player-facing
-    // appearance, so they live beside the name toggle and font, not among the Dev
+    // appearance, so they live beside the name toggle and format, not among the Dev
     // diagnostics. Min/max font size clamp the per-line height the fit searches (the
     // readability floor and the oversize ceiling); max lines and line spacing let a
     // length-poor cluster wrap the name into a taller-font block instead of shrinking it.
@@ -351,14 +347,6 @@ public final class KmuLunaSettings {
     private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
     private static final int MIN_SIDEBAR_OPACITY_PERCENT = 0;
     private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
-    // The default label font: the highest-resolution antialiased LazyFont face the game
-    // ships (a 42px glyph atlas). A name is stretched far past its atlas resolution to
-    // span a cluster, so the magnified glyphs stay as clean as a bitmap face allows only
-    // when the source atlas is large - hence the biggest one as the default, and why the
-    // radio offers only large antialiased faces. Also the renderer's fallback before
-    // LunaLib has loaded the choice. Kept in step with the CSV row's defaultValue and the
-    // font list the radio offers.
-    private static final String DEFAULT_FACTION_NAME_FONT = "insignia42LTaa";
     // Full names by default: a cluster label spells the owner's long-form name, the
     // richer reading. The short form is opt-in for tighter clusters. Mirrors the CSV
     // row's defaultValue and the label list the radio offers.
@@ -1125,17 +1113,6 @@ public final class KmuLunaSettings {
     public static boolean getPoliticalMapShowNames() {
         return LunaSettingsReader.getBoolean(MOD_ID, SHOW_NAMES_FIELD,
                 DEFAULT_SHOW_NAMES);
-    }
-
-    /**
-     * @return the basename of the {@code graphics/fonts} face the faction names render
-     *         in (e.g. {@code insignia42LTaa}); the label renderer resolves it to the
-     *         {@code .fnt} path. Falls back to the default face before LunaLib has loaded
-     *         the choice
-     */
-    public static String getPoliticalMapFactionNameFont() {
-        return LunaSettingsReader.getString(MOD_ID, FACTION_NAME_FONT_FIELD,
-                DEFAULT_FACTION_NAME_FONT);
     }
 
     /**
