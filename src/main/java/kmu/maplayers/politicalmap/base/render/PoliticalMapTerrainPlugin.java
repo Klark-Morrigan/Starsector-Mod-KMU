@@ -223,7 +223,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 LOG.error("Political map rebuild failed; retrying next frame, "
                         + "keeping last good draw lists", exception);
             }
-            ensureDrawablesNonNull();
+            ensureDrawablesNonNull(view);
         }
     }
 
@@ -373,9 +373,9 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // completing can leave the draw lists null, which the renderer would dereference. An
     // empty placeholder makes the render a harmless no-op until a later frame's retry
     // succeeds.
-    private void ensureDrawablesNonNull() {
+    private void ensureDrawablesNonNull(PoliticalMapView view) {
         if (drawables == null) {
-            drawables = PoliticalMapDrawables.createEmpty();
+            drawables = PoliticalMapDrawables.createEmpty(view);
         }
     }
 

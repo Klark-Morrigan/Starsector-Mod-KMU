@@ -2,9 +2,9 @@ package kmu.maplayers;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.NoLayer;
-import kmu.maplayers.politicalmap.base.FactionsView;
+import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.maplayers.politicalmap.factions.FactionsLayer;
+import kmu.maplayers.politicalmap.factions.FactionsView;
 
 import java.util.List;
 
@@ -29,8 +29,8 @@ public final class MapLayers {
      */
     public static void registerAll() {
         MapLayerRegistry.registerLayers(
-                List.of(NoLayer.INSTANCE, FactionsLayer.INSTANCE), FactionsLayer.INSTANCE);
+                List.of(NoLayer.INSTANCE, PoliticalMapLayer.INSTANCE), PoliticalMapLayer.INSTANCE);
         PoliticalMapViewRegistry.registerViews(
-                List.of(FactionsView.INSTANCE), FactionsView.INSTANCE, FactionsLayer.INSTANCE);
+                List.of(FactionsView.INSTANCE), FactionsView.INSTANCE, PoliticalMapLayer.INSTANCE);
     }
 }

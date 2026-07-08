@@ -1,9 +1,10 @@
-package kmu.maplayers.politicalmap.base;
+package kmu.maplayers.politicalmap.factions;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.util.KmuStrings;

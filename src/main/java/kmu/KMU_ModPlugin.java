@@ -7,6 +7,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.sidebar.runtime.MapLayerSidebar;
 import kmu.maplayers.base.sidebar.runtime.MapLayerSidebarInput;
+import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
+import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapSectorWatcher;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonizationListener;
@@ -89,6 +91,17 @@ public class KMU_ModPlugin extends BaseModPlugin {
             installMarketUiContextTracker(Global.getSector());
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU market UI context tracker", exception);
+        }
+
+        try {
+            // Self-heal pre-rename saves before the terrain reads them: carry a pre-view save's
+            // faction-overlay boolean into the view selection (so an off overlay stays dark), and
+            // rewrite the political-map tab's former "factions" id to its current one (so the stored
+            // active-tab pick tracks the current implementation, no stale value left behind).
+            PoliticalMapViewRegistry.migrateLegacyOverlaySelection();
+            PoliticalMapLayer.migrateLegacyStoredId();
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to migrate KMU political map state", exception);
         }
 
         try {

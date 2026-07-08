@@ -87,6 +87,26 @@ public final class MapLayerRegistry {
         memory.set(ACTIVE_LAYER_KEY, layer.getId());
     }
 
+    /**
+     * Rewrites the stored active pick from a layer's former id to its current one, so a save
+     * written before a layer's id was renamed tracks the current id in place rather than falling
+     * back to the default and leaving the stale id in the save. The mechanism only - the caller
+     * (which owns the concrete rename) supplies the ids, so this framework stays agnostic to which
+     * layers exist. A no-op before the sector exists or when the stored pick is not {@code legacyId}.
+     *
+     * @param legacyId  the id the layer stored before it was renamed
+     * @param currentId the layer's current id to rewrite the stored pick to
+     */
+    public static void migrateStoredLayerId(String legacyId, String currentId) {
+        var memory = SectorMemoryAccess.readSectorMemory();
+        if (memory == null || !memory.contains(ACTIVE_LAYER_KEY)) {
+            return;
+        }
+        if (legacyId.equals(memory.getString(ACTIVE_LAYER_KEY))) {
+            memory.set(ACTIVE_LAYER_KEY, currentId);
+        }
+    }
+
     // Reads the stored layer id, or null when the sector is absent or the key was never
     // written - the caller resolves either to the default.
     private static String readStoredLayerId() {

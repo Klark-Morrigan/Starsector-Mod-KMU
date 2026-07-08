@@ -12,8 +12,11 @@ import org.mockito.MockedStatic;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -118,6 +121,51 @@ final class MapLayerRegistryTest {
                 MapLayerRegistry.selectLayer(firstLayerMock);
 
                 verify(memoryMock).set(ACTIVE_LAYER_KEY, "first");
+            }
+        }
+    }
+
+    @Nested
+    class MigrateStoredLayerId {
+
+        @Test
+        void migrateStoredLayerIdRewritesTheStoredPickWhenItIsTheLegacyId() {
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                linkSectorMemoryTo(globalMock, memoryMock);
+                when(memoryMock.contains(ACTIVE_LAYER_KEY)).thenReturn(true);
+                when(memoryMock.getString(ACTIVE_LAYER_KEY)).thenReturn("old_id");
+
+                MapLayerRegistry.migrateStoredLayerId("old_id", "new_id");
+
+                verify(memoryMock).set(ACTIVE_LAYER_KEY, "new_id");
+            }
+        }
+
+        @Test
+        void migrateStoredLayerIdLeavesAPickThatIsNotTheLegacyId() {
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                linkSectorMemoryTo(globalMock, memoryMock);
+                when(memoryMock.contains(ACTIVE_LAYER_KEY)).thenReturn(true);
+                when(memoryMock.getString(ACTIVE_LAYER_KEY)).thenReturn("some_current_id");
+
+                MapLayerRegistry.migrateStoredLayerId("old_id", "new_id");
+
+                verify(memoryMock, never()).set(anyString(), any());
+            }
+        }
+
+        @Test
+        void migrateStoredLayerIdIsANoOpWithoutAStoredPick() {
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                linkSectorMemoryTo(globalMock, memoryMock);
+                when(memoryMock.contains(ACTIVE_LAYER_KEY)).thenReturn(false);
+
+                MapLayerRegistry.migrateStoredLayerId("old_id", "new_id");
+
+                verify(memoryMock, never()).set(anyString(), any());
             }
         }
     }

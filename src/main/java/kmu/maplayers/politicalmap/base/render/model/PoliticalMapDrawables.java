@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.render.model;
 
-import kmu.maplayers.politicalmap.base.FactionsView;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -79,12 +78,14 @@ public final class PoliticalMapDrawables {
     // An empty placeholder for the render path to fall back on after a failed first
     // build: the two draw lists are empty so the render is a harmless no-op, and the
     // next frame's retry replaces it with a real build before any incremental pass -
-    // which needs the styles - can run, so the null styles here are never read. The
-    // faction view and identity grouping are inert defaults for the same reason.
-    public static PoliticalMapDrawables createEmpty() {
+    // which needs the styles - can run, so the null styles here are never read. It carries
+    // the active view (the one being drawn when the build failed) rather than naming a
+    // concrete view, keeping this model view-agnostic; the identity grouping is an inert
+    // default, never read for the same reason.
+    public static PoliticalMapDrawables createEmpty(PoliticalMapView view) {
         return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
-                null, null, null, null, FactionsView.INSTANCE, OwnershipGrouping.identity());
+                null, null, null, null, view, OwnershipGrouping.identity());
     }
 
     public Map<String, StyledCell> getStyledCellBySystemId() {

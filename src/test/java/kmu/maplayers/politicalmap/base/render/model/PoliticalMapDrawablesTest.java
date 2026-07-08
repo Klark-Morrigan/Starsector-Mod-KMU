@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.model;
 
 import kmlib.starsector.ui.render.UiElementPaint;
 
-import kmu.maplayers.politicalmap.base.FactionsView;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.settings.FactionPaletteChoice;
@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Pins the built map state the renderer paints and the incremental refresh edits:
@@ -34,7 +35,10 @@ final class PoliticalMapDrawablesTest {
 
         @Test
         void createEmptyYieldsAnEmptyNoOpFallback() {
-            var drawables = PoliticalMapDrawables.createEmpty();
+            // A stand-in view so this model test names no concrete view: the drawables only carry
+            // the view for the incremental re-shape to read back, so any PoliticalMapView serves.
+            PoliticalMapView viewMock = mock(PoliticalMapView.class);
+            var drawables = PoliticalMapDrawables.createEmpty(viewMock);
 
             // Both draw lists empty, so the render is a no-op and isEmpty short-circuits
             // the GL state push; the retained inputs are neutral placeholders the next
@@ -89,12 +93,12 @@ final class PoliticalMapDrawablesTest {
             var independentStyle = styleMarked(2);
             var decivilisedStyle = styleMarked(3);
             var uninhabitedStyle = styleMarked(4);
-            var view = FactionsView.INSTANCE;
+            PoliticalMapView viewMock = mock(PoliticalMapView.class);
             var grouping = OwnershipGrouping.identity();
 
             var drawables = new PoliticalMapDrawables(styledCells, territories, owners,
                     decivilised, neutral, factionStyle, independentStyle, decivilisedStyle,
-                    uninhabitedStyle, view, grouping);
+                    uninhabitedStyle, viewMock, grouping);
 
             assertThat(drawables.getStyledCellBySystemId()).isSameAs(styledCells);
             assertThat(drawables.getFactionTerritoryByFactionId()).isSameAs(territories);
@@ -105,7 +109,7 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getIndependentStyle()).isSameAs(independentStyle);
             assertThat(drawables.getDecivilisedStyle()).isSameAs(decivilisedStyle);
             assertThat(drawables.getUninhabitedStyle()).isSameAs(uninhabitedStyle);
-            assertThat(drawables.getView()).isSameAs(view);
+            assertThat(drawables.getView()).isSameAs(viewMock);
             assertThat(drawables.getGrouping()).isSameAs(grouping);
         }
     }
@@ -114,9 +118,10 @@ final class PoliticalMapDrawablesTest {
     // are inert placeholders, since isEmpty reads only the draw lists.
     private static PoliticalMapDrawables drawablesWith(Map<String, StyledCell> styledCells,
             Map<String, FactionTerritory> territories) {
+        PoliticalMapView viewMock = mock(PoliticalMapView.class);
         return new PoliticalMapDrawables(new LinkedHashMap<>(styledCells),
                 new LinkedHashMap<>(territories), new LinkedHashMap<>(), new LinkedHashSet<>(),
-                Color.GRAY, null, null, null, null, FactionsView.INSTANCE,
+                Color.GRAY, null, null, null, null, viewMock,
                 OwnershipGrouping.identity());
     }
 
