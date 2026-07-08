@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.FactionNameFormatChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -36,6 +37,22 @@ final class FactionsViewTest {
             // Every faction is its own bloc, so the pipeline resolves plain faction ownership.
             assertThat(FactionsView.INSTANCE.resolveGrouping())
                     .isSameAs(OwnershipGrouping.identity());
+        }
+    }
+
+    @Nested
+    class GetGroupingRevision {
+
+        @Test
+        void getGroupingRevisionIsInvariantAcrossAllianceChanges() {
+            // The identity grouping never changes in a session, so an alliance forming or
+            // dissolving (which bumps the shared alliance revision) must leave the faction
+            // view's contribution fixed - that is what keeps an alliance change from churning
+            // the faction view.
+            var before = FactionsView.INSTANCE.getGroupingRevision();
+            PoliticalMapRefresh.requestAllianceRefresh();
+
+            assertThat(FactionsView.INSTANCE.getGroupingRevision()).isEqualTo(before);
         }
     }
 

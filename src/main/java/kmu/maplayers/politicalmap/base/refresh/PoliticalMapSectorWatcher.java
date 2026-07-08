@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.util.IntervalUtil;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
 
@@ -36,6 +37,14 @@ import java.util.Map;
  * leaves the cell layout. A system that merely keeps moving changes nothing, since it
  * is already excluded, so a steady drifter never churns the map.
  *
+ * <p>A fourth axis fingerprints the live alliance set (Nex-gated: on a Nex-free install
+ * the fingerprint is a fixed value, so it never fires and no {@code exerelin} class
+ * loads). When alliances form, dissolve, or change members the fingerprint moves, so this
+ * bumps the shared alliance revision - which only the alliances view folds into its
+ * content token, so the faction view never rebuilds for an alliance change. The
+ * fingerprint keys on who is allied and which member leads (the bloc's colour), so a
+ * market-size reshuffle below the lead never churns the map while a colour lead swap does.
+ *
  * <p>Throttled to a few seconds: these transitions are rare, and the map is
  * usually reopened after one, so it need not be instant. The first poll only
  * establishes the baselines. A transient script: pure runtime logic, re-added on
@@ -55,6 +64,7 @@ public class PoliticalMapSectorWatcher implements EveryFrameScript {
     // boolean guards the very first poll establishing both baselines.
     private boolean hasPolled;
     private int lastVisibilityFingerprint;
+    private int lastAllianceFingerprint;
     private Map<String, String> lastOwnerBySystemId = Map.of();
     // One-shot guard: this polls on the campaign thread every few seconds, so a
     // recurring fault would flood the log. The first failure is recorded, the
@@ -132,7 +142,23 @@ public class PoliticalMapSectorWatcher implements EveryFrameScript {
             markChangedOwners(lastOwnerBySystemId, snapshot.ownerBySystemId());
         }
         lastOwnerBySystemId = snapshot.ownerBySystemId();
+        markAllianceSetChange(isFirstPoll);
         hasPolled = true;
+    }
+
+    // Fingerprints the live alliance set and bumps the shared alliance revision when it
+    // moves against the last poll, so the alliances view repaints on a form/dissolve/
+    // transfer. Nex-gated inside computeAllianceFingerprint (a fixed value without Nex), so
+    // a Nex-free install polls a steady token and never bumps. The first poll only seeds the
+    // baseline, matching the other axes.
+    private void markAllianceSetChange(boolean isFirstPoll) {
+        var allianceFingerprint = NexerelinAlliances.computeAllianceFingerprint();
+        if (!isFirstPoll && allianceFingerprint != lastAllianceFingerprint) {
+            LOG.debug("Political map alliance fingerprint changed; old="
+                    + lastAllianceFingerprint + " new=" + allianceFingerprint);
+            PoliticalMapRefresh.requestAllianceRefresh();
+        }
+        lastAllianceFingerprint = allianceFingerprint;
     }
 
     // Marks politics-stale every system whose owner differs between two polls: a

@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.starsector.nexerelin.NexerelinAlliances;
@@ -40,6 +41,14 @@ public final class AlliancesView implements PoliticalMapView {
     public String getSegmentLabelKey() {
         // "Alliances" - this view's segment on the view-selector radio, sibling to the faction one.
         return KmuStrings.POLITICAL_MAP_CTL_ALLIANCES;
+    }
+
+    @Override
+    public int getGroupingRevision() {
+        // The alliance set is live, so this view's live-data revision is the shared alliance
+        // revision the sector watcher bumps when membership moves; folding it into the content
+        // token is what repaints the alliances view on a form/dissolve/transfer without a reload.
+        return PoliticalMapRefresh.getAllianceRevision();
     }
 
     @Override

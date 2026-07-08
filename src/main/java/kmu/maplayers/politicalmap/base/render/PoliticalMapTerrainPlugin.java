@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Terrain plugin that paints the political map on the sector (M) map as merged
@@ -86,11 +87,6 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             EnumSet.noneOf(CampaignEngineLayers.class);
 
     private static final Logger LOG = Global.getLogger(PoliticalMapTerrainPlugin.class);
-
-    // Odd multiplier that folds the active view's identity into the content-revision token
-    // alongside the settings revision, so switching views changes the token and forces a rebuild.
-    // Any odd constant separates the two inputs; 31 is the conventional hash-combine multiplier.
-    private static final int CONTENT_REVISION_VIEW_MIX = 31;
 
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or
     // lose access. Transient: derived from the sector, record-typed (CellEdge), and kept
@@ -385,9 +381,17 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // sector watcher's owner diff caught, marks just its system stale now. The active view
     // is folded in so switching views (their grouping, styling, and labels differ) rebuilds
     // the drawables under the newly-selected view rather than reusing the previous view's.
+    // The view's live-data revision is folded in too, so a change to what the active view
+    // samples - the alliances view's alliance set - rebuilds the drawables even though no
+    // setting moved. The faction view's grouping is static and contributes a constant, so an
+    // alliance change never churns it; the plugin stays view-neutral by reading this off the
+    // view rather than naming the alliance revision itself. Objects.hash is the JDK's standard
+    // 31-multiply fold, so the three inputs separate without a bespoke combine here.
     private static int computeContentRevision(PoliticalMapView view) {
-        return KmuLunaSettings.getSettingsRevision() * CONTENT_REVISION_VIEW_MIX
-                + view.getId().hashCode();
+        return Objects.hash(
+                KmuLunaSettings.getSettingsRevision(),
+                view.getId(),
+                view.getGroupingRevision());
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the

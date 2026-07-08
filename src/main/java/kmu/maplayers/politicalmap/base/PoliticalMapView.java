@@ -39,6 +39,19 @@ public interface PoliticalMapView {
     String getSegmentLabelKey();
 
     /**
+     * A revision counter for the live data this view's grouping is sampled from, folded
+     * into the drawables' content token so a change to that data forces a rebuild even
+     * when no setting moved. The faction view's grouping is static (identity), so it
+     * returns a constant and never triggers a rebuild on its own; the alliances view
+     * returns the live alliance-set revision, so a membership change repaints it. This is
+     * what lets the shared plugin invalidate on alliance changes without naming any
+     * concrete view - each view declares its own live-data revision.
+     *
+     * @return this view's live-data revision; a constant for a view with a static grouping
+     */
+    int getGroupingRevision();
+
+    /**
      * The ownership grouping this view resolves its pass under: identity for the
      * faction view (every faction its own bloc), alliance blocs for the alliances
      * view. Resolved once per rebuild and threaded through the pipeline, so a live set

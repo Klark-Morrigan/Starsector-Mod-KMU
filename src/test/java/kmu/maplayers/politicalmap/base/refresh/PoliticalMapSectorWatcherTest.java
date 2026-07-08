@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
@@ -22,17 +23,22 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link PoliticalMapSectorWatcher}'s routing: it polls the snapshot in one
- * walk and sends each half to its own refresh - a visibility move rebuilds
- * geometry, an owner-map diff marks exactly the changed systems politics-stale
- * (the same set the event listeners feed) - while the first poll only establishes
- * the baselines. Asserts on the real geometry counter's delta and the real stale
- * set rather than mocking {@link PoliticalMapRefresh} (whose logger a static mock
- * would null during class init), stubbing only the snapshot scan across polls.
+ * walk and sends each axis to its own refresh - a visibility or moving-set move
+ * rebuilds geometry, an owner-map diff marks exactly the changed systems
+ * politics-stale (the same set the event listeners feed), and an alliance-fingerprint
+ * move bumps the alliance revision - while the first poll only establishes the
+ * baselines. Asserts on the real geometry and alliance counters' deltas and the real
+ * stale set rather than mocking {@link PoliticalMapRefresh} (whose logger a static mock
+ * would null during class init), stubbing the snapshot scan and the alliance fingerprint
+ * across polls.
  */
 final class PoliticalMapSectorWatcherTest {
     // Comfortably past the 4-5s poll interval, so each advance elapses it and
     // drives exactly one poll.
     private static final float ADVANCE_PAST_POLL_INTERVAL = 10f;
+    // A fixed alliance fingerprint the non-alliance tests hold steady across polls, so the
+    // alliance axis stays quiet while they assert on geometry and ownership.
+    private static final int STEADY_ALLIANCE_FINGERPRINT = 7;
 
     @Nested
     class Advance {
@@ -119,6 +125,35 @@ final class PoliticalMapSectorWatcherTest {
             assertThat(outcome.geometryDelta()).isZero();
             assertThat(outcome.staleSystemIds()).isEmpty();
         }
+
+        @Test
+        void allianceFingerprintChangeRequestsAllianceRefreshOnly() {
+            // An alliance formed, dissolved, or changed members: the fingerprint moved, so
+            // the alliance revision bumps while the geometry and ownership axes stay put.
+            var outcome = pollThenReadRefreshOutcomeWithAllianceFingerprints(11, 22, 2);
+
+            assertThat(outcome.allianceDelta()).isEqualTo(1);
+            assertThat(outcome.geometryDelta()).isZero();
+            assertThat(outcome.staleSystemIds()).isEmpty();
+        }
+
+        @Test
+        void steadyAllianceFingerprintRequestsNoAllianceRefresh() {
+            // The alliance set is unchanged (or Nex is absent, where the fingerprint is a
+            // fixed value), so the alliance revision never advances.
+            var outcome = pollThenReadRefreshOutcomeWithAllianceFingerprints(11, 11, 2);
+
+            assertThat(outcome.allianceDelta()).isZero();
+        }
+
+        @Test
+        void firstPollSeedsTheAllianceBaselineWithoutBumping() {
+            // The first poll only records the fingerprint; there is no prior to diff against,
+            // so it never bumps the alliance revision.
+            var outcome = pollThenReadRefreshOutcomeWithAllianceFingerprints(11, 22, 1);
+
+            assertThat(outcome.allianceDelta()).isZero();
+        }
     }
 
     private static PoliticalMapSectorSnapshot snapshot(int visibilityFingerprint,
@@ -143,7 +178,9 @@ final class PoliticalMapSectorWatcherTest {
                 MockedStatic<PoliticalMapDevOverrides> overridesMock =
                         mockStatic(PoliticalMapDevOverrides.class);
                 MockedStatic<PoliticalMapSectorSnapshot> snapshotMock =
-                        mockStatic(PoliticalMapSectorSnapshot.class)) {
+                        mockStatic(PoliticalMapSectorSnapshot.class);
+                MockedStatic<NexerelinAlliances> alliancesMock =
+                        mockStatic(NexerelinAlliances.class)) {
             globalMock.when(Global::getSector).thenReturn(null);
             globalMock.when(() -> Global.getLogger(any(Class.class)))
                     .thenReturn(mock(Logger.class));
@@ -154,16 +191,12 @@ final class PoliticalMapSectorWatcherTest {
             snapshotMock.when(() -> PoliticalMapSectorSnapshot.scan(
                             nullable(SectorAPI.class), any(PoliticalMapDevOverrides.class)))
                     .thenReturn(first, second);
+            // Hold the alliance fingerprint steady so this run's assertions stay on the
+            // geometry and ownership axes; the alliance axis is exercised separately.
+            alliancesMock.when(NexerelinAlliances::computeAllianceFingerprint)
+                    .thenReturn(STEADY_ALLIANCE_FINGERPRINT);
 
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
-            var geometryBefore = PoliticalMapRefresh.getGeometryRevision();
-            var watcher = new PoliticalMapSectorWatcher();
-            for (var poll = 0; poll < pollCount; poll++) {
-                watcher.advance(ADVANCE_PAST_POLL_INTERVAL);
-            }
-            return new RefreshOutcome(
-                    PoliticalMapRefresh.getGeometryRevision() - geometryBefore,
-                    PoliticalMapRefresh.drainStalePoliticsSystemIds());
+            return runPollsAndReadOutcome(pollCount);
         }
     }
 
@@ -180,6 +213,8 @@ final class PoliticalMapSectorWatcherTest {
                         mockStatic(PoliticalMapDevOverrides.class);
                 MockedStatic<PoliticalMapSectorSnapshot> snapshotMock =
                         mockStatic(PoliticalMapSectorSnapshot.class);
+                MockedStatic<NexerelinAlliances> alliancesMock =
+                        mockStatic(NexerelinAlliances.class);
                 MockedStatic<MovingSystems> movingStaticMock =
                         mockStatic(MovingSystems.class)) {
             globalMock.when(Global::getSector).thenReturn(null);
@@ -190,6 +225,10 @@ final class PoliticalMapSectorWatcherTest {
             snapshotMock.when(() -> PoliticalMapSectorSnapshot.scan(
                             nullable(SectorAPI.class), any(PoliticalMapDevOverrides.class)))
                     .thenReturn(first, second);
+            // Hold the alliance fingerprint steady so this move-focused run leaves the
+            // alliance axis quiet.
+            alliancesMock.when(NexerelinAlliances::computeAllianceFingerprint)
+                    .thenReturn(STEADY_ALLIANCE_FINGERPRINT);
             var movingSystemsMock = mock(MovingSystems.class);
             // nullable(SectorAPI.class), not any(): it matches the null sector the
             // stubbed Global.getSector() hands the watcher and pins the sector overload
@@ -200,18 +239,59 @@ final class PoliticalMapSectorWatcherTest {
                     .thenReturn(false, movingSetChangedOnSecondPoll);
             movingStaticMock.when(MovingSystems::getInstance).thenReturn(movingSystemsMock);
 
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
-            var geometryBefore = PoliticalMapRefresh.getGeometryRevision();
-            var watcher = new PoliticalMapSectorWatcher();
-            for (var poll = 0; poll < pollCount; poll++) {
-                watcher.advance(ADVANCE_PAST_POLL_INTERVAL);
-            }
-            return new RefreshOutcome(
-                    PoliticalMapRefresh.getGeometryRevision() - geometryBefore,
-                    PoliticalMapRefresh.drainStalePoliticsSystemIds());
+            return runPollsAndReadOutcome(pollCount);
         }
     }
 
-    private record RefreshOutcome(int geometryDelta, Set<String> staleSystemIds) {
+    // Advances the alliance fingerprint from first to second across polls with the snapshot
+    // held steady, so only the alliance axis can move: the geometry counter and stale set
+    // must stay put while the alliance revision is what changes (or does not). Leaves
+    // MovingSystems real - a null sector reports a steady moving set - so it never disturbs
+    // the geometry axis.
+    private static RefreshOutcome pollThenReadRefreshOutcomeWithAllianceFingerprints(
+            int firstFingerprint, int secondFingerprint, int pollCount) {
+        try (MockedStatic<Global> globalMock = mockStatic(Global.class);
+                MockedStatic<PoliticalMapDevOverrides> overridesMock =
+                        mockStatic(PoliticalMapDevOverrides.class);
+                MockedStatic<PoliticalMapSectorSnapshot> snapshotMock =
+                        mockStatic(PoliticalMapSectorSnapshot.class);
+                MockedStatic<NexerelinAlliances> alliancesMock =
+                        mockStatic(NexerelinAlliances.class)) {
+            globalMock.when(Global::getSector).thenReturn(null);
+            globalMock.when(() -> Global.getLogger(any(Class.class)))
+                    .thenReturn(mock(Logger.class));
+            overridesMock.when(PoliticalMapDevOverrides::readFromLunaSettings)
+                    .thenReturn(PoliticalMapDevOverrides.NONE);
+            var steady = snapshot(1, "a", "hegemony");
+            snapshotMock.when(() -> PoliticalMapSectorSnapshot.scan(
+                            nullable(SectorAPI.class), any(PoliticalMapDevOverrides.class)))
+                    .thenReturn(steady, steady);
+            alliancesMock.when(NexerelinAlliances::computeAllianceFingerprint)
+                    .thenReturn(firstFingerprint, secondFingerprint);
+
+            return runPollsAndReadOutcome(pollCount);
+        }
+    }
+
+    // Drains any prior stale marks, records the geometry and alliance counters, advances the
+    // watcher pollCount times, and reports how far each counter moved and which systems were
+    // marked politics-stale. Shared by every helper so each configures its stubs then defers
+    // the poll-and-measure here; the counters are read as deltas so a run is isolated from
+    // earlier tests' bumps.
+    private static RefreshOutcome runPollsAndReadOutcome(int pollCount) {
+        PoliticalMapRefresh.drainStalePoliticsSystemIds();
+        var geometryBefore = PoliticalMapRefresh.getGeometryRevision();
+        var allianceBefore = PoliticalMapRefresh.getAllianceRevision();
+        var watcher = new PoliticalMapSectorWatcher();
+        for (var poll = 0; poll < pollCount; poll++) {
+            watcher.advance(ADVANCE_PAST_POLL_INTERVAL);
+        }
+        return new RefreshOutcome(
+                PoliticalMapRefresh.getGeometryRevision() - geometryBefore,
+                PoliticalMapRefresh.getAllianceRevision() - allianceBefore,
+                PoliticalMapRefresh.drainStalePoliticsSystemIds());
+    }
+
+    private record RefreshOutcome(int geometryDelta, int allianceDelta, Set<String> staleSystemIds) {
     }
 }

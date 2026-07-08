@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.FactionNameFormatChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -44,6 +45,21 @@ final class AlliancesViewTest {
         void getIdIsTheFrozenAlliancesId() {
             // Frozen: renaming it silently resets any save that selected this view to the default.
             assertThat(AlliancesView.INSTANCE.getId()).isEqualTo("alliances");
+        }
+    }
+
+    @Nested
+    class GetGroupingRevision {
+
+        @Test
+        void getGroupingRevisionTracksTheAllianceRevision() {
+            // The alliances view's live data is the alliance set, so its contribution must
+            // move with the shared alliance revision - that is what folds a membership change
+            // into the content token and repaints the view without a reload.
+            var before = AlliancesView.INSTANCE.getGroupingRevision();
+            PoliticalMapRefresh.requestAllianceRefresh();
+
+            assertThat(AlliancesView.INSTANCE.getGroupingRevision()).isEqualTo(before + 1);
         }
     }
 

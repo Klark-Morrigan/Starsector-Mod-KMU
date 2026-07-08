@@ -29,6 +29,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * to a single reshape. The whole-map restyle a settings change needs is a separate
  * signal the plugin reads straight from {@code KmuLunaSettings}, not this class.
  *
+ * <p>Alliance membership is a third coarse signal, tracked like the geometry with a
+ * single {@code allianceRevision} counter. Which factions are allied changes only the
+ * alliances view (it fuses allied factions into one bloc), so a bump here is folded into
+ * the drawables' content token by that view alone; the faction view ignores it. The
+ * sector watcher fingerprints the live alliance set each poll and bumps this counter when
+ * that fingerprint moves, so the per-frame path stays an int compare.
+ *
  * <p>A counter and a set rather than direct calls because the producers (a
  * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)
  * are created independently, with no shared owner to wire together. The set is
@@ -39,6 +46,7 @@ public final class PoliticalMapRefresh {
     private static final Logger LOG = Global.getLogger(PoliticalMapRefresh.class);
 
     private static final AtomicInteger geometryRevision = new AtomicInteger();
+    private static final AtomicInteger allianceRevision = new AtomicInteger();
     private static final Set<String> politicsStaleSystemIds = ConcurrentHashMap.newKeySet();
 
     private PoliticalMapRefresh() {
@@ -61,6 +69,27 @@ public final class PoliticalMapRefresh {
         // traced to whether the request was even issued.
         var revision = geometryRevision.incrementAndGet();
         LOG.debug("Political map geometry refresh requested; geometryRevision=" + revision);
+    }
+
+    /**
+     * @return a counter that advances when the live alliance set changes, so the
+     *         alliances view rebuilds its drawables; the faction view does not read it
+     */
+    public static int getAllianceRevision() {
+        return allianceRevision.get();
+    }
+
+    /**
+     * Marks the alliance grouping stale: an alliance formed, dissolved, or gained or
+     * lost a member. Only the alliances view folds this into its content token, so the
+     * faction view is never rebuilt for a change it does not render.
+     */
+    public static void requestAllianceRefresh() {
+        // The seam the sector watcher's alliance-fingerprint diff funnels through, mirroring
+        // requestGeometryRefresh. Logged with the resulting counter so a stale or missing
+        // alliance region can be traced to whether the fingerprint diff even fired.
+        var revision = allianceRevision.incrementAndGet();
+        LOG.debug("Political map alliance refresh requested; allianceRevision=" + revision);
     }
 
     /**
