@@ -4,8 +4,8 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
-import kmu.politicalmap.ui.PoliticalMapSidebar;
-import kmu.politicalmap.ui.PoliticalMapSidebarInput;
+import kmu.maplayers.base.sidebar.runtime.MapLayerSidebar;
+import kmu.maplayers.base.sidebar.runtime.MapLayerSidebarInput;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.junit.jupiter.api.Nested;
@@ -75,11 +75,11 @@ class KMU_ModPluginTest {
             // input listener: clears any registration an older save carried, then adds the
             // fresh instances transiently so neither enters the save.
             assertThat(listenerManager.removedListenerClasses)
-                    .containsExactly(PoliticalMapSidebar.class, PoliticalMapSidebarInput.class);
+                    .containsExactly(MapLayerSidebar.class, MapLayerSidebarInput.class);
             assertThat(listenerManager.addedListeners)
                     .hasSize(2)
-                    .hasAtLeastOneElementOfType(PoliticalMapSidebar.class)
-                    .hasAtLeastOneElementOfType(PoliticalMapSidebarInput.class);
+                    .hasAtLeastOneElementOfType(MapLayerSidebar.class)
+                    .hasAtLeastOneElementOfType(MapLayerSidebarInput.class);
             assertThat(listenerManager.addedTransientFlags).containsExactly(true, true);
         }
 

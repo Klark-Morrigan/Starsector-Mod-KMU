@@ -3,7 +3,7 @@ package kmu.starsector.nexerelin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.politicalmap.refresh.listeners.PoliticalMapMarketTransferListener;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
 
 /**
  * Registers KMU's political-map market-transfer listener only when Nexerelin is

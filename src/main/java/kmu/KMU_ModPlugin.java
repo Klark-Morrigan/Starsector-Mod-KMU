@@ -4,15 +4,16 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.politicalmap.refresh.MovingSystems;
-import kmu.politicalmap.refresh.PoliticalMapSectorWatcher;
-import kmu.politicalmap.refresh.listeners.PoliticalMapColonizationListener;
-import kmu.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
-import kmu.politicalmap.refresh.listeners.PoliticalMapDecivListener;
-import kmu.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
-import kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin;
-import kmu.politicalmap.ui.PoliticalMapSidebar;
-import kmu.politicalmap.ui.PoliticalMapSidebarInput;
+import kmu.maplayers.MapLayers;
+import kmu.maplayers.base.sidebar.runtime.MapLayerSidebar;
+import kmu.maplayers.base.sidebar.runtime.MapLayerSidebarInput;
+import kmu.maplayers.politicalmap.base.refresh.MovingSystems;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapSectorWatcher;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonizationListener;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
+import kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -35,6 +36,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU LunaLib settings bindings", exception);
         }
+
+        // Wire the concrete map layers into the framework registry once per launch, before any
+        // sector map can open. The registry stays agnostic to which views exist; this is the
+        // one place they are named.
+        try {
+            MapLayers.registerAll();
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to register KMU map layers", exception);
+        }
     }
 
     // Former class name of the faction-territory terrain plugin, kept as its save
@@ -45,15 +55,25 @@ public class KMU_ModPlugin extends BaseModPlugin {
     private static final String LEGACY_TERRAIN_PLUGIN_CLASS =
             "kmu.politicalmap.render.PoliticalMapTerrainPlugin";
 
-    // Bridges the renamed terrain plugin so saves written under its old class name still load.
-    // Aliasing the old fully-qualified name to the current class makes XStream resolve that
-    // name to FactionsPoliticalMapTerrainPlugin on load; super runs first so this only adds to
-    // whatever the base plugin configures. XStream is fully qualified here because it belongs
-    // to no import group the checkstyle order recognises, and it is the type's only use site.
+    // The terrain plugin's fully-qualified name before the map-layers package split moved it
+    // under kmu.maplayers. XStream stores the concrete class in the save, so the move orphaned
+    // saves written since the earlier rename (CannotResolveClassException on load) the same way
+    // the first rename did. Frozen for the same reason as the legacy name above: a further move
+    // adds a fresh alias rather than editing this string.
+    private static final String PRE_MAPLAYERS_TERRAIN_PLUGIN_CLASS =
+            "kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin";
+
+    // Bridges every former terrain-plugin class name so saves written under any of them still
+    // load. Aliasing each old fully-qualified name to the current class makes XStream resolve
+    // that name to FactionsPoliticalMapTerrainPlugin on load; super runs first so this only
+    // adds to whatever the base plugin configures. XStream is fully qualified here because it
+    // belongs to no import group the checkstyle order recognises, and it is the type's only use
+    // site.
     @Override
     public void configureXStream(com.thoughtworks.xstream.XStream x) {
         super.configureXStream(x);
         x.alias(LEGACY_TERRAIN_PLUGIN_CLASS, FactionsPoliticalMapTerrainPlugin.class);
+        x.alias(PRE_MAPLAYERS_TERRAIN_PLUGIN_CLASS, FactionsPoliticalMapTerrainPlugin.class);
     }
 
     // Terrain type registered in data/campaign/terrain.json that hosts the
@@ -242,14 +262,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
             return;
         }
 
-        listenerManager.removeListenerOfClass(PoliticalMapSidebar.class);
-        listenerManager.addListener(new PoliticalMapSidebar(), true);
+        listenerManager.removeListenerOfClass(MapLayerSidebar.class);
+        listenerManager.addListener(new MapLayerSidebar(), true);
 
         // The bar's paint and its input are two listeners: the render listener above draws it,
         // this input listener reads its clicks and hotkeys (a render pass gets no events to
         // consume). Same transient, remove-then-add contract, so exactly one of each renders.
-        listenerManager.removeListenerOfClass(PoliticalMapSidebarInput.class);
-        listenerManager.addListener(new PoliticalMapSidebarInput(), true);
+        listenerManager.removeListenerOfClass(MapLayerSidebarInput.class);
+        listenerManager.addListener(new MapLayerSidebarInput(), true);
     }
 
     static void installPoliticalMapTerrain(SectorAPI sector) {

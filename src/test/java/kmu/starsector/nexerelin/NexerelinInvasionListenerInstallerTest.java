@@ -6,7 +6,7 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
-import kmu.politicalmap.refresh.listeners.PoliticalMapMarketTransferListener;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

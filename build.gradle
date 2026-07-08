@@ -21,12 +21,6 @@ def kmlibJarFile = file("${starsectorRoot}/mods/KMLib/jars/KMLib.jar")
 // Resolved via the install root because LazyLib always lives at
 // <starsector>/mods/lw_lazylib, the launcher's expected layout.
 def lazyLibJarFile = file("${starsectorRoot}/mods/lw_lazylib/jars/LazyLib.jar")
-// Random Assortment of Things is an optional runtime dependency. KMU compiles
-// against its Abyssal Fracture type so the access rule can treat the fracture
-// as a means of arrival; the mod classloader supplies the jar at runtime when
-// RAT is installed, and RandomAssortmentOfThingsMatcher gates every use behind
-// a mod-enabled check so a RAT-free install never resolves the type.
-def ratJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/RandomAssortmentofThings.jar'])
 // Nexerelin is an optional runtime dependency. KMU compiles against its
 // InvasionListener so the political map can repaint a colony that changes hands
 // in a Nex war; the mod classloader supplies the jar at runtime when Nex is
@@ -43,7 +37,6 @@ def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['
 
 dependencies {
     compileOnly consoleCommandsJars
-    compileOnly ratJars
     compileOnly nexJars
     compileOnly xstreamJars
     // KMLib is a hard dependency in mod_info.json; Starsector's mod
@@ -55,13 +48,11 @@ dependencies {
     compileOnly files(lazyLibJarFile)
 
     testCompileOnly consoleCommandsJars
-    testCompileOnly ratJars
     testCompileOnly nexJars
     testCompileOnly xstreamJars
     testCompileOnly files(kmlibJarFile)
     testCompileOnly files(lazyLibJarFile)
     testRuntimeOnly consoleCommandsJars
-    testRuntimeOnly ratJars
     testRuntimeOnly nexJars
     testRuntimeOnly files(kmlibJarFile)
     testRuntimeOnly files(lazyLibJarFile)
@@ -89,15 +80,6 @@ tasks.withType(JavaCompile).configureEach {
                     "Could not find LazyLib jar at ${lazyLibJarFile}. " +
                     "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
                     "for compiling KMU's political-map faction labels.")
-        }
-        // RAT is optional at runtime but its Abyssal Fracture type is needed to
-        // compile RandomAssortmentOfThingsMatcher, so the jar must be present
-        // to build even though a player can run KMU without RAT installed.
-        if (ratJars.files.isEmpty()) {
-            throw new GradleException(
-                    "Could not find Random Assortment of Things jar under " +
-                    "${starsectorRoot}/mods/**/jars/RandomAssortmentofThings.jar. " +
-                    "Install RAT for compiling KMU's Abyssal Fracture access integration.")
         }
         // Nex is optional at runtime but its InvasionListener is needed to
         // compile PoliticalMapMarketTransferListener, so the jar must be present

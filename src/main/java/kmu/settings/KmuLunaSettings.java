@@ -81,11 +81,12 @@ public final class KmuLunaSettings {
     private static final String LOGGER_ROOT = "kmu";
     private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
 
-    // Faction-name label field (Political map - visuals tab): whether each contiguous
-    // faction cluster draws its owner's name across it, HOI4-style. On by default - the
-    // names are the point of the merged-territory look, not a diagnostic.
-    private static final String SHOW_FACTION_NAMES_FIELD =
-            "kmu_politicalMapShowFactionNames";
+    // Name-label field (Political map - visuals tab): whether each contiguous cluster
+    // draws its owner's name across it, HOI4-style. On by default - the names are the
+    // point of the merged-territory look, not a diagnostic. Layer-agnostic: gates the
+    // faction map's names today and the alliance layer's names when it lands.
+    private static final String SHOW_NAMES_FIELD =
+            "kmu_politicalMapShowNames";
     // The bitmap font faction names render in, chosen from the game's graphics/fonts by
     // basename; the label renderer resolves the basename to its .fnt path.
     private static final String FACTION_NAME_FONT_FIELD =
@@ -165,7 +166,7 @@ public final class KmuLunaSettings {
     // adds a size-point bonus for the small, medium, and large patrols a colony fields.
     // Stability weighting is a master toggle over three per-factor low-stability
     // penalties (colony size, station, patrols), each setting how deeply its factor
-    // collapses at zero stability. All fold into one DominanceWeighting read once per
+    // collapses at zero stability. All fold into one DominanceRules read once per
     // resolution pass.
     private static final String COLONY_SIZE_WEIGHT_FIELD =
             "kmu_politicalMapColonySizeWeight";
@@ -334,9 +335,9 @@ public final class KmuLunaSettings {
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
     // data/config/LunaSettings.csv and must be kept in step with it.
-    // On by default: the faction names are the payoff of the merged-territory map, so
+    // On by default: the cluster names are the payoff of the merged-territory map, so
     // they show unless the player turns them off.
-    private static final boolean DEFAULT_SHOW_FACTION_NAMES = true;
+    private static final boolean DEFAULT_SHOW_NAMES = true;
     // Placement from the screen's top-left corner, pixels. The top padding clears the
     // sector map's own tab strip; the left padding gives a small margin. Mirror the CSV
     // rows' defaultValues.
@@ -1104,13 +1105,13 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return whether each contiguous faction cluster draws its owner's name across it,
+     * @return whether each contiguous cluster draws its owner's name across it,
      *         HOI4-style; on by default. Independent of the debug anchor overlay - the
      *         two share the placement search but draw under their own toggles
      */
-    public static boolean getPoliticalMapShowFactionNames() {
-        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_FACTION_NAMES_FIELD,
-                DEFAULT_SHOW_FACTION_NAMES);
+    public static boolean getPoliticalMapShowNames() {
+        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_NAMES_FIELD,
+                DEFAULT_SHOW_NAMES);
     }
 
     /**
