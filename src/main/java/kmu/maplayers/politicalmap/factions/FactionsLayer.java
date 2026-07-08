@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.factions;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.sidebar.SidebarControlKind;
 import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.util.KmuStrings;
@@ -12,14 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The faction-territory view: selecting it paints each system in its dominant faction's
- * colours - the political map proper. This is the layer whose overlay state
- * ({@link FactionOverlayState#isFactionTerritoryActive()}) the terrain plugin keys on to draw
- * or stay dark. Its tab opens the political-map control panel: the tab's shared controls plus
- * this layer's own faction-overlay toggle.
+ * The political-map tab: the one tab that hosts the political-map control panel and its
+ * view-selector radio. The faction view is one of the views that radio offers (the only one so
+ * far); which view actually paints, and whether the map is on at all, is the shared
+ * {@link kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry}'s business, not this tab's. Its
+ * body is the tab's view-agnostic sub-options over the view-selector radio.
  */
 public final class FactionsLayer implements MapLayer {
-    /** The one shared instance; the registration and the overlay gate reference this pick. */
+    /** The one shared instance; the tab registration and the view registry's host tab reference it. */
     public static final FactionsLayer INSTANCE = new FactionsLayer();
 
     // Jumps here on P by default. Mirrors the Keycode default in LunaSettings.csv.
@@ -40,15 +39,11 @@ public final class FactionsLayer implements MapLayer {
 
     @Override
     public List<SidebarControlSpec> getBodyControls() {
-        // The tab's shared checkbox and name-format radio, then this layer's own overlay
-        // toggle - lit (cell 0) when the faction paint is on, so no On/Off word is needed.
+        // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
+        // view-selector radio that picks which view paints - one segment per registered view, and
+        // the map's on/off since clicking the lit view deselects it.
         var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls());
-        var toggleState = FactionOverlayState.isFactionOverlayEnabled()
-                ? 0
-                : SidebarControlSpec.NO_SELECTION;
-        controls.add(new SidebarControlSpec(SidebarControlKind.TOGGLE,
-                List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTIONS)), "", toggleState,
-                cellIndex -> FactionOverlayState.toggleFactionOverlay()));
+        controls.add(PoliticalMapBodyControls.buildViewSelector());
         return List.copyOf(controls);
     }
 

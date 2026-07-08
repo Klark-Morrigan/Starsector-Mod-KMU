@@ -1,5 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
+import kmlib.starsector.ui.widgets.RadioAlignment;
+
 import java.util.List;
 
 /**
@@ -22,6 +24,12 @@ import java.util.List;
  * The layout and renderer ignore it (they only measure and draw), so a spec built purely to be laid
  * out carries {@link SidebarControlAction#NONE}.
  *
+ * <p>{@code alignment} and {@code canDeselect} refine a radio and are inert for the other kinds. The
+ * alignment flows a radio's segments horizontally (the default a compact option pair reads best in)
+ * or vertically (a stacked view selector). {@code canDeselect} lets a click on the already-lit
+ * segment turn the whole control off ({@link #NO_SELECTION}) - the view radio's "map off while the
+ * tab stays open" - rather than being inert as a standard always-selected radio's re-pick is.
+ *
  * @param kind          which widget the control is
  * @param labels        the control's own label(s): one for a checkbox or toggle, one per option for
  *                      a radio (in segment order)
@@ -32,16 +40,30 @@ import java.util.List;
  *                      is off and no cell is lit
  * @param action        what a click on the control does, keyed by which cell was hit; the tab
  *                      supplies it, the input listener invokes it, the layout and renderer ignore it
+ * @param alignment     the direction a radio's segments flow; ignored by the other kinds
+ * @param canDeselect   whether a click on a radio's lit segment turns the control off; ignored by
+ *                      the other kinds
  */
 public record SidebarControlSpec(SidebarControlKind kind, List<String> labels,
-        String trailingLabel, int selectedIndex, SidebarControlAction action) {
+        String trailingLabel, int selectedIndex, SidebarControlAction action,
+        RadioAlignment alignment, boolean canDeselect) {
     /** {@code selectedIndex} value meaning the control is off - no cell is lit. */
     public static final int NO_SELECTION = -1;
 
     /**
+     * Builds a horizontal, always-selected control with the given action - the shape a checkbox,
+     * toggle, or a standard option radio (Short/Full) takes. A stacked or deselectable radio uses
+     * the full constructor to set its {@link RadioAlignment} and {@code canDeselect}.
+     */
+    public SidebarControlSpec(SidebarControlKind kind, List<String> labels, String trailingLabel,
+            int selectedIndex, SidebarControlAction action) {
+        this(kind, labels, trailingLabel, selectedIndex, action, RadioAlignment.HORIZONTAL, false);
+    }
+
+    /**
      * Builds a spec with no action, for a layout-only or measurement context (the layout and
-     * renderer never invoke the action). A clickable control uses the full constructor and supplies
-     * its own {@link SidebarControlAction}.
+     * renderer never invoke the action). A clickable control uses a constructor that supplies its
+     * own {@link SidebarControlAction}.
      */
     public SidebarControlSpec(SidebarControlKind kind, List<String> labels, String trailingLabel,
             int selectedIndex) {

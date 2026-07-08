@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
+import kmlib.starsector.ui.widgets.RadioAlignment;
 import kmlib.starsector.ui.widgets.VanillaTabContent;
 import kmlib.testfixtures.starsector.ui.font.LineWidthMeasurerFake;
 
@@ -190,6 +191,65 @@ final class SidebarLayoutTest {
         private SidebarPlacement place(List<SidebarControlSpec> bodyControls) {
             return SidebarLayout.computePlacement(SCREEN_HEIGHT, PADDING_TOP, PADDING_LEFT,
                     BORDER_WIDTH, TABS, bodyControls, measurerFake);
+        }
+    }
+
+    @Nested
+    class VerticalRadio {
+        // A two-option view-selector radio, laid out on its own so the stacked geometry is checked
+        // without the other controls' rows in the way. "Alliances" (9 chars) is the wider option.
+        private static final List<SidebarControlSpec> VERTICAL_BODY = List.of(
+                new SidebarControlSpec(SidebarControlKind.RADIO, List.of("Factions", "Alliances"),
+                        "", SidebarControlSpec.NO_SELECTION, SidebarControlAction.NONE,
+                        RadioAlignment.VERTICAL, true));
+
+        private static final float EXPECTED_ROW_WIDTH =
+                9 * WIDTH_PER_CHAR + SidebarLayout.RADIO_SEGMENT_PADDING;
+
+        @Test
+        void computePlacementStandsAVerticalRadioOneRowTallPerOption() {
+            var radio = place().bodyControls().get(0);
+            // One option-row of height per segment, so a two-option radio is twice a control row.
+            assertThat(radio.bounds().height())
+                    .isCloseTo(2 * SidebarLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
+            assertThat(radio.bounds().width()).isCloseTo(EXPECTED_ROW_WIDTH, within(TOLERANCE));
+        }
+
+        @Test
+        void computePlacementStacksTheSegmentsTopToBottomInOneColumn() {
+            var radio = place().bodyControls().get(0);
+            assertThat(radio.segments()).hasSize(2);
+            var top = radio.segments().get(0);
+            var bottom = radio.segments().get(1);
+            // Every segment shares the row's left edge and full width - a single column.
+            assertThat(top.x()).isCloseTo(radio.bounds().x(), within(TOLERANCE));
+            assertThat(bottom.x()).isCloseTo(radio.bounds().x(), within(TOLERANCE));
+            assertThat(top.width()).isCloseTo(EXPECTED_ROW_WIDTH, within(TOLERANCE));
+            assertThat(bottom.width()).isCloseTo(EXPECTED_ROW_WIDTH, within(TOLERANCE));
+            // Each segment is one control-row tall, the first (Factions) on top of the second.
+            assertThat(top.height()).isCloseTo(SidebarLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
+            assertThat(top.y())
+                    .as("the top segment abuts the bottom segment's upper edge")
+                    .isCloseTo(bottom.y() + bottom.height(), within(TOLERANCE));
+        }
+
+        @Test
+        void computePlacementKeepsEverySegmentWithinTheBody() {
+            var placement = place();
+            var body = placement.body();
+            for (var segment : placement.bodyControls().get(0).segments()) {
+                assertThat(segment.x()).isGreaterThanOrEqualTo(body.x() - TOLERANCE);
+                assertThat(segment.x() + segment.width())
+                        .isLessThanOrEqualTo(body.x() + body.width() + TOLERANCE);
+                assertThat(segment.y()).isGreaterThanOrEqualTo(body.y() - TOLERANCE);
+                assertThat(segment.y() + segment.height())
+                        .isLessThanOrEqualTo(body.y() + body.height() + TOLERANCE);
+            }
+        }
+
+        private SidebarPlacement place() {
+            return SidebarLayout.computePlacement(SCREEN_HEIGHT, PADDING_TOP, PADDING_LEFT,
+                    BORDER_WIDTH, TABS, VERTICAL_BODY, measurerFake);
         }
     }
 }

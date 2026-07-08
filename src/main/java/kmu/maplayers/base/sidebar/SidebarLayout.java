@@ -3,6 +3,7 @@ package kmu.maplayers.base.sidebar;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.layout.RowStack;
+import kmlib.starsector.ui.widgets.RadioAlignment;
 import kmlib.starsector.ui.widgets.RadioRow;
 import kmlib.starsector.ui.widgets.VanillaTab;
 import kmlib.starsector.ui.widgets.VanillaTabContent;
@@ -111,47 +112,65 @@ public final class SidebarLayout {
     }
 
     // Stacks the control rows inside the body inset (via the shared row-stacker), snapping each row
-    // to its control's width and splitting a radio row into its option segments, then sizes the body
-    // to enclose the widest row (a trailing label counts, so the backdrop covers it) plus the inset.
+    // to its control's width and height and splitting a radio row into its option segments, then
+    // sizes the body to enclose the widest row (a trailing label counts, so the backdrop covers it)
+    // plus the inset. A vertical radio stands one option-row taller per segment, so the row heights
+    // vary and the body sums them rather than assuming one height per control.
     private static BodyLayout computeBodyLayout(float contentX, float bodyTopY,
             List<SidebarControlSpec> specs, LineWidthMeasurer measurer) {
         var rowWidths = new ArrayList<Float>(specs.size());
+        var rowHeights = new ArrayList<Float>(specs.size());
         var contentWidth = 0f;
+        var stackedHeight = 0f;
         for (var spec : specs) {
             var rowWidth = measureRowWidth(spec, measurer);
             rowWidths.add(rowWidth);
+            var rowHeight = measureRowHeight(spec);
+            rowHeights.add(rowHeight);
+            stackedHeight += rowHeight;
             contentWidth = Math.max(contentWidth, rowWidth + measureTrailingWidth(spec, measurer));
         }
         var rows = RowStack.layoutRows(contentX + BODY_PADDING, bodyTopY - BODY_PADDING,
-                CONTROL_ROW_HEIGHT, ROW_GAP, rowWidths);
+                ROW_GAP, rowHeights, rowWidths);
 
         var controls = new ArrayList<SidebarControl>(specs.size());
         for (var index = 0; index < specs.size(); index++) {
             var spec = specs.get(index);
             var row = rows.get(index);
             var segments = spec.kind() == SidebarControlKind.RADIO
-                    ? RadioRow.splitIntoSegments(row, spec.labels().size())
+                    ? RadioRow.splitIntoSegments(row, spec.labels().size(), spec.alignment())
                     : List.<Rectangle>of();
             controls.add(new SidebarControl(spec, row, segments));
         }
 
-        var rowCount = specs.size();
         var bodyWidth = contentWidth + 2f * BODY_PADDING;
-        var bodyHeight = 2f * BODY_PADDING + rowCount * CONTROL_ROW_HEIGHT
-                + (rowCount - 1) * ROW_GAP;
+        var bodyHeight = 2f * BODY_PADDING + stackedHeight + (specs.size() - 1) * ROW_GAP;
         var body = new Rectangle(contentX, bodyTopY - bodyHeight, bodyWidth, bodyHeight);
         return new BodyLayout(body, List.copyOf(controls));
     }
 
     // The width of a control's clickable row, snapped to its label(s): a checkbox is its tick box
-    // plus a gap plus its label; a radio is its equal segments; a toggle is its label plus padding.
+    // plus a gap plus its label; a horizontal radio is its equal segments side by side, a vertical
+    // radio is one segment column wide; a toggle is its label plus padding.
     private static float measureRowWidth(SidebarControlSpec spec, LineWidthMeasurer measurer) {
         return switch (spec.kind()) {
             case CHECKBOX -> CONTROL_ROW_HEIGHT + CHECKBOX_LABEL_GAP
                     + measureWidth(measurer, spec.labels().get(0));
-            case RADIO -> spec.labels().size() * measureRadioSegmentWidth(spec, measurer);
+            case RADIO -> spec.alignment() == RadioAlignment.VERTICAL
+                    ? measureRadioSegmentWidth(spec, measurer)
+                    : spec.labels().size() * measureRadioSegmentWidth(spec, measurer);
             case TOGGLE -> measureWidth(measurer, spec.labels().get(0)) + TOGGLE_TEXT_PADDING;
         };
+    }
+
+    // The height of a control's row: one control-row tall for every control except a vertical radio,
+    // which stacks its options and so stands one control-row tall per segment.
+    private static float measureRowHeight(SidebarControlSpec spec) {
+        if (spec.kind() == SidebarControlKind.RADIO
+                && spec.alignment() == RadioAlignment.VERTICAL) {
+            return spec.labels().size() * CONTROL_ROW_HEIGHT;
+        }
+        return CONTROL_ROW_HEIGHT;
     }
 
     // Segments are equal width, so all fit when each is sized to the widest option label plus

@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.settings.FactionNameFormatChoice;
+import kmu.util.KmuStrings;
 
 /**
  * The faction-territory view's render rules: every faction is its own bloc, only
@@ -21,6 +22,20 @@ public final class FactionsView implements PoliticalMapView {
     public static final FactionsView INSTANCE = new FactionsView();
 
     private FactionsView() {
+    }
+
+    @Override
+    public String getId() {
+        // Save-stable identity of the faction view; frozen once shipped, since renaming it resets
+        // a save that selected this view to the default.
+        return "factions";
+    }
+
+    @Override
+    public String getSegmentLabelKey() {
+        // "Factions" - the same label the pre-radio faction toggle carried, now this view's
+        // segment on the view-selector radio.
+        return KmuStrings.POLITICAL_MAP_CTL_FACTIONS;
     }
 
     @Override

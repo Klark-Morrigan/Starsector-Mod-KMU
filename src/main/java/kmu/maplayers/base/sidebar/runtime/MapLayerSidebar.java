@@ -189,12 +189,15 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     }
 
     // The segments framed and the active one washed, each option label centred in its segment, and
-    // the trailing caption (e.g. "Names") after the row at the layout's reserved gap.
+    // the trailing caption (e.g. "Names") after the row at the layout's reserved gap. The segments
+    // flow the way the spec's alignment sets - a horizontal strip or a vertical stack - so the wash
+    // and dividers follow the same flow the layout split the row into.
     private static void drawRadio(SidebarControl control, Color accent, float opacity) {
         var spec = control.spec();
         var bounds = control.bounds();
         var labels = spec.labels();
-        RadioRow.render(bounds, labels.size(), spec.selectedIndex(), accent, accent, opacity);
+        RadioRow.render(bounds, labels.size(), spec.selectedIndex(), spec.alignment(), accent,
+                accent, opacity);
         var segments = control.segments();
         for (var index = 0; index < segments.size() && index < labels.size(); index++) {
             var segment = segments.get(index);

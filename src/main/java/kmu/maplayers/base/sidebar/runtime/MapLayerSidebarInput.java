@@ -128,18 +128,20 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     }
 
     // Fires the control's action if the press lands on an actionable cell, and reports whether it
-    // did. A radio hits by segment, but a press on the already-lit segment is inert: re-picking the
-    // selected option changes nothing, so the widget's findHitElement folds that rule in and reports
-    // no segment for it, firing nothing (the caller still consumes the click). A single-cell checkbox
-    // or toggle hits anywhere on its row, reported as cell 0, and flips on every press. The action's
-    // meaning stays with the tab that supplied it - this only maps the click to a cell.
+    // did. A radio hits by segment over the segments the layout already laid (so the hit rects are
+    // the drawn ones regardless of the flow direction). A standard radio treats a press on the
+    // already-lit segment as inert - re-picking the selected option changes nothing - so
+    // findHitElement folds that rule in and fires nothing. A deselectable radio (the view selector)
+    // instead reads the raw hit so a press on the lit segment reaches its action and turns the
+    // control off. A single-cell checkbox or toggle hits anywhere on its row, reported as cell 0,
+    // and flips on every press. The action's meaning stays with the tab that supplied it - this only
+    // maps the click to a cell.
     private static boolean activateControlIfHit(SidebarControl control, float pointX, float pointY) {
         if (control.spec().kind() == SidebarControlKind.RADIO) {
-            // The row's bounds are the segment span, so bounds + option count reproduce the same
-            // segments the layout laid; the lit segment comes from the spec the tab rebuilt this
-            // frame, so the "already selected" check reads the current selection.
-            var segmentIndex = RadioRow.findHitElement(control.bounds(),
-                    control.spec().labels().size(), control.spec().selectedIndex(), pointX, pointY);
+            var segmentIndex = control.spec().canDeselect()
+                    ? RadioRow.findSegmentIndexAt(control.segments(), pointX, pointY)
+                    : RadioRow.findHitElement(control.segments(), control.spec().selectedIndex(),
+                            pointX, pointY);
             if (segmentIndex == RadioRow.NO_SEGMENT) {
                 return false;
             }

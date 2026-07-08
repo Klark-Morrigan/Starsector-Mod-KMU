@@ -21,6 +21,24 @@ import kmu.settings.FactionNameFormatChoice;
 public interface PoliticalMapView {
 
     /**
+     * This view's stable id - the string the active-view selection serialises into the save and
+     * the view registry resolves a stored pick back to. Frozen once shipped, since renaming it
+     * silently resets a save that selected this view to the default.
+     *
+     * @return the view's save-stable id
+     */
+    String getId();
+
+    /**
+     * The localisation key for this view's label on the view-selector radio - the segment the
+     * player clicks to activate it. A key rather than the resolved string so the segment follows
+     * the player's language and the resolution stays with the view radio that draws it.
+     *
+     * @return the {@code KmuStrings} key for this view's radio-segment label
+     */
+    String getSegmentLabelKey();
+
+    /**
      * The ownership grouping this view resolves its pass under: identity for the
      * faction view (every faction its own bloc), alliance blocs for the alliances
      * view. Resolved once per rebuild and threaded through the pipeline, so a live set

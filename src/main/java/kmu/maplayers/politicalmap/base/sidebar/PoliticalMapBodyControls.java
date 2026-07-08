@@ -1,20 +1,26 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
+import kmlib.starsector.ui.widgets.RadioAlignment;
+
 import kmu.maplayers.base.sidebar.SidebarControlKind;
 import kmu.maplayers.base.sidebar.SidebarControlSpec;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;
 import kmu.util.KmuStrings;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The political-map tab's shared body controls - the ones agnostic to which layer colours the
- * map: the uninhabited-systems checkbox and the Short/Full name-format radio. They read and
- * write the same LunaLib settings a faction or (later) an alliances layer both honour, so the
- * controls live here on the tab rather than on any one layer. A layer composes these with its
- * own layer-specific controls (the factions overlay toggle) to form its full body.
+ * The political-map tab's body controls: the view-selector radio that picks which view paints, and
+ * the view-agnostic sub-options both a faction and a later alliances view honour - the
+ * uninhabited-systems checkbox and the Short/Full name-format radio. The sub-options read and write
+ * the same LunaLib settings every view respects, so they live here on the tab rather than on any one
+ * view; the selector reads the shared {@link PoliticalMapViewRegistry}. The host tab composes these
+ * into its full body.
  *
  * <p>The specs carry resolved display strings and the controls' live lit state, since the layout
  * snaps each control to its measured text and the renderer draws each in its current state; they
@@ -30,9 +36,9 @@ public final class PoliticalMapBodyControls {
     }
 
     /**
-     * @return the tab's layer-agnostic controls, top to bottom: the uninhabited-systems
-     *         checkbox (lit when uninhabited systems draw), then the Short/Full name-format radio
-     *         (its lit segment the active format) with its trailing "Names" label
+     * @return the tab's view-agnostic sub-options, top to bottom: the uninhabited-systems checkbox
+     *         (lit when uninhabited systems draw), then the Short/Full name-format radio (its lit
+     *         segment the active format) with its trailing "Names" label
      */
     public static List<SidebarControlSpec> buildSharedControls() {
         return List.of(
@@ -44,6 +50,36 @@ public final class PoliticalMapBodyControls {
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL)),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAMES),
                         nameFormatRadioState(), PoliticalMapBodyControls::selectNameFormatSegment));
+    }
+
+    /**
+     * The view-selector radio: one stacked segment per registered political-map view, the lit
+     * segment the active view, or none when the map is off. It deselects on a re-pick, so clicking
+     * the lit view turns the overlay off while the tab stays open - the behaviour the old faction
+     * toggle had. With only the faction view registered the radio is one segment, reading as the
+     * political-map on/off.
+     *
+     * @return the vertical, deselectable view-selector radio
+     */
+    public static SidebarControlSpec buildViewSelector() {
+        var labels = new ArrayList<String>();
+        for (var view : PoliticalMapViewRegistry.getViews()) {
+            labels.add(KmuStrings.get(view.getSegmentLabelKey()));
+        }
+        return new SidebarControlSpec(SidebarControlKind.RADIO, List.copyOf(labels), "",
+                PoliticalMapViewRegistry.getSelectedViewIndex(),
+                PoliticalMapBodyControls::selectViewSegment, RadioAlignment.VERTICAL, true);
+    }
+
+    // Toggles the view its clicked segment names - activating it, or turning the map off when it is
+    // already the active view. Any index outside the registered views is ignored, so a stray hit
+    // changes nothing.
+    private static void selectViewSegment(int segmentIndex) {
+        List<PoliticalMapView> views = PoliticalMapViewRegistry.getViews();
+        if (segmentIndex < 0 || segmentIndex >= views.size()) {
+            return;
+        }
+        PoliticalMapViewRegistry.toggleView(views.get(segmentIndex));
     }
 
     // Flips the uninhabited-systems outline on or off: if it currently draws (the neutral colour),
