@@ -41,10 +41,13 @@ public final class FactionsLayer implements MapLayer {
     @Override
     public List<SidebarControlSpec> getBodyControls() {
         // The tab's shared checkbox and name-format radio, then this layer's own overlay
-        // toggle - lit when the faction paint is on, so no On/Off word is needed.
+        // toggle - lit (cell 0) when the faction paint is on, so no On/Off word is needed.
         var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls());
+        var toggleState = FactionOverlayState.isFactionOverlayEnabled()
+                ? 0
+                : SidebarControlSpec.NO_SELECTION;
         controls.add(new SidebarControlSpec(SidebarControlKind.TOGGLE,
-                List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTIONS)), ""));
+                List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTIONS)), "", toggleState));
         return List.copyOf(controls);
     }
 

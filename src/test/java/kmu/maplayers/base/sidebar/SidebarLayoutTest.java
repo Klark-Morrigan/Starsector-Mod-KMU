@@ -39,11 +39,15 @@ final class SidebarLayoutTest {
             new VanillaTabContent("Political Map", "P"));
 
     // A political-map-shaped body, but supplied as generic control specs the way any tab would: a
-    // checkbox, a two-option radio with a trailing caption, and a toggle.
+    // checkbox, a two-option radio with a trailing caption, and a toggle. The layout snaps and
+    // stacks by geometry alone, so each control's lit state is left unset here.
     private static final List<SidebarControlSpec> BODY = List.of(
-            new SidebarControlSpec(SidebarControlKind.CHECKBOX, List.of("Uninhabited systems"), ""),
-            new SidebarControlSpec(SidebarControlKind.RADIO, List.of("Short", "Full"), "Names"),
-            new SidebarControlSpec(SidebarControlKind.TOGGLE, List.of("Factions"), ""));
+            new SidebarControlSpec(SidebarControlKind.CHECKBOX, List.of("Uninhabited systems"), "",
+                    SidebarControlSpec.NO_SELECTION),
+            new SidebarControlSpec(SidebarControlKind.RADIO, List.of("Short", "Full"), "Names",
+                    SidebarControlSpec.NO_SELECTION),
+            new SidebarControlSpec(SidebarControlKind.TOGGLE, List.of("Factions"), "",
+                    SidebarControlSpec.NO_SELECTION));
 
     // Content is inset from the box by the border on every edge.
     private static final float CONTENT_X = PADDING_LEFT + BORDER_WIDTH;

@@ -29,10 +29,11 @@ import java.util.List;
  */
 public final class SidebarLayout {
     // The tab row's height, shared by every tab. The font sizes below are measured (here) and drawn
-    // (by the renderer) at one value each, so a snapped tab width matches the text painted into it.
+    // (by the renderer) at one value each, so a snapped tab width matches the text painted into it;
+    // they are public so the renderer draws at the same size this measured, keeping one source.
     static final float TAB_HEIGHT = 24f;
-    static final double TAB_FONT_SIZE = 15d;
-    static final double BODY_FONT_SIZE = 13d;
+    public static final double TAB_FONT_SIZE = 15d;
+    public static final double BODY_FONT_SIZE = 13d;
 
     // Slack added to each measured tab label so text does not touch the tab edges, and a floor so a
     // very short label still gives a clickable box.
@@ -47,10 +48,11 @@ public final class SidebarLayout {
 
     // Per-control slack: the gap between a checkbox's box and its label, the padding sizing each
     // radio segment past its option label, the gap before a control's trailing label, and the
-    // padding sizing a toggle button past its label.
-    static final float CHECKBOX_LABEL_GAP = 6f;
+    // padding sizing a toggle button past its label. The two label gaps are public so the renderer
+    // places each label at the same offset this reserved for it, keeping one source of the spacing.
+    public static final float CHECKBOX_LABEL_GAP = 6f;
     static final float RADIO_SEGMENT_PADDING = 12f;
-    static final float TRAILING_LABEL_GAP = 6f;
+    public static final float TRAILING_LABEL_GAP = 6f;
     static final float TOGGLE_TEXT_PADDING = 16f;
 
     private SidebarLayout() {
