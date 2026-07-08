@@ -90,7 +90,8 @@ final class IncrementalPoliticsRefresh {
             // labels then rebuild from the re-fitted placements so a renamed or relocated
             // cluster's name follows.
             ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
-                    drawables.getOwnerBySystemId(), sector);
+                    drawables.getOwnerBySystemId(), sector, drawables.getView(),
+                    drawables.getGrouping());
             LabelsBuilder.rebuildLabels(factionLabels, clusterAnchors);
             LOG.debug("Political map politics updated incrementally; stale="
                     + staleSystemIds.size() + " reshapedCells=" + cellsToReshape.size()
@@ -110,7 +111,10 @@ final class IncrementalPoliticsRefresh {
         if (!geometryCache.getCellEdgesBySystemId().containsKey(systemId)) {
             return;
         }
-        var newOwner = SectorPolitics.resolveDominantOwner(sector, systemById.get(systemId));
+        // Re-derive under the grouping the full build resolved this system's owner with,
+        // so a single-system refresh lands the same winning bloc the bulk pass would.
+        var newOwner = SectorPolitics.resolveDominantOwner(sector, systemById.get(systemId),
+                drawables.getGrouping());
         var oldOwner = drawables.getOwnerBySystemId().get(systemId);
         // DominantOwner is a record, so equality covers the faction and its palette: a
         // resize that leaves the same winner leaves the drawing identical.

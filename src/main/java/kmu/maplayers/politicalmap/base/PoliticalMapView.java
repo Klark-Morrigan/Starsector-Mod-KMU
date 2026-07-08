@@ -1,0 +1,59 @@
+package kmu.maplayers.politicalmap.base;
+
+import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.settings.FactionNameFormatChoice;
+
+/**
+ * The three per-view decisions the shared political-map pipeline reads, gathered into
+ * one rules object so each political-map view (faction, alliance, later mixed) supplies
+ * its own grouping, cell styling, and labelling while the pipeline stays written once.
+ *
+ * <p>A view differs from every other only in these three things - how it collapses
+ * factions into blocs, which blocs recede to the muted "independent" style, and what a
+ * bloc's label reads - so lifting them behind this seam makes a new view an added rules
+ * object rather than a fork of the render pipeline. The grouping is resolved once per
+ * pass and handed back into the two per-bloc decisions, so the classifier and the name
+ * resolver stay pure lookups over that one snapshot rather than re-reading a live set
+ * (the alliances view samples Nexerelin) per cell.
+ */
+public interface PoliticalMapView {
+
+    /**
+     * The ownership grouping this view resolves its pass under: identity for the
+     * faction view (every faction its own bloc), alliance blocs for the alliances
+     * view. Resolved once per rebuild and threaded through the pipeline, so a live set
+     * is sampled a single time per pass and every stage keys off the same snapshot.
+     *
+     * @return the grouping that collapses factions into blocs for this pass
+     */
+    OwnershipGrouping resolveGrouping();
+
+    /**
+     * Whether a bloc paints in the muted independent cell style rather than the full
+     * faction style. The faction view styles only independent space this way; the
+     * alliances view styles every non-alliance bloc this way, so the unaligned recede
+     * while alliances stand out in full colour.
+     *
+     * @param blocId   the winning bloc for a system, as resolved under {@code grouping}
+     * @param grouping the grouping this pass resolved, supplied so the test is a pure
+     *                 lookup over the once-sampled snapshot rather than a fresh read
+     * @return true when the bloc takes the independent style
+     */
+    boolean shouldUseIndependentStyle(String blocId, OwnershipGrouping grouping);
+
+    /**
+     * The label a bloc reads under this view: a faction's display name for a faction
+     * bloc, an alliance's name for an alliance bloc. Null when no name resolves, which
+     * the label fit treats as an unresolved name and sizes a stand-in band for instead.
+     *
+     * @param blocId     the winning bloc to name, as resolved under {@code grouping}
+     * @param grouping   the grouping this pass resolved
+     * @param sector     the sector, from which a faction bloc's display name is read
+     * @param nameFormat whether a faction name reads in its short or full form
+     * @return the bloc's display name, or null when none resolves
+     */
+    String resolveName(String blocId, OwnershipGrouping grouping, SectorAPI sector,
+            FactionNameFormatChoice nameFormat);
+}

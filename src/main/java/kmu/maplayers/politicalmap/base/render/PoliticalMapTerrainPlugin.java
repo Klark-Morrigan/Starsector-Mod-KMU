@@ -8,7 +8,9 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.politicalmap.base.FactionsView;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
@@ -85,6 +87,12 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             EnumSet.noneOf(CampaignEngineLayers.class);
 
     private static final Logger LOG = Global.getLogger(PoliticalMapTerrainPlugin.class);
+
+    // The political-map view every rebuild resolves under. Only the faction view exists so
+    // far, so it is fixed here; Step 4's active-view state replaces this constant with the
+    // view the player's radio has selected, letting the alliances view paint through the
+    // same pipeline. TODO: read the active view from the political map's view selection.
+    private static final PoliticalMapView ACTIVE_VIEW = FactionsView.INSTANCE;
 
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or
     // lose access. Transient: derived from the sector, record-typed (CellEdge), and kept
@@ -310,13 +318,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                         geometryCache, Global.getSector());
                 drawables = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                        clusterAnchors, geometryCache, Global.getSector());
+                        clusterAnchors, geometryCache, Global.getSector(), ACTIVE_VIEW);
             } else {
                 drawables = DrawablesBuilder.buildDrawables(
-                        geometryCache, Global.getSector());
+                        geometryCache, Global.getSector(), ACTIVE_VIEW);
                 debugDrawables = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
-                        drawables.getOwnerBySystemId(), Global.getSector());
+                        drawables.getOwnerBySystemId(), Global.getSector(), ACTIVE_VIEW,
+                        drawables.getGrouping());
             }
             // The name labels are minted from the placements just rebuilt (empty when the
             // names toggle is off), keeping them in step with the fills and borders and

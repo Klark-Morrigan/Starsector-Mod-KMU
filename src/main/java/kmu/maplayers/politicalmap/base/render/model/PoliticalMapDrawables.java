@@ -1,6 +1,9 @@
 package kmu.maplayers.politicalmap.base.render.model;
 
+import kmu.maplayers.politicalmap.base.FactionsView;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
@@ -17,14 +20,17 @@ import java.util.Set;
  * <p>The styled-cell and faction-territory maps are the render output - the per-cell
  * seam/outline records and each faction's fill and national border. The rest are
  * retained inputs: the owner-by-system and decivilised-system maps say who holds each
- * system, and the four styles and the neutral color say how each category draws.
+ * system, the four styles and the neutral color say how each category draws, and the
+ * view plus its resolved grouping say how ownership is grouped and which blocs recede to
+ * the independent style - so an incremental re-shape classifies a cell exactly as the
+ * full build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
  * not values: the styled-cell, faction-territory, and owner-by-system maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions an
- * ownership change touched. The styles, the decivilised set, and the neutral color are
- * set once at build and only read after, so an incremental pass re-shapes against the
- * exact inputs the full build baked in.
+ * ownership change touched. The styles, the decivilised set, the neutral color, the
+ * view, and the grouping are set once at build and only read after, so an incremental
+ * pass re-shapes against the exact inputs the full build baked in.
  */
 public final class PoliticalMapDrawables {
     // Render output, mutated in place by the incremental refresh.
@@ -39,6 +45,11 @@ public final class PoliticalMapDrawables {
     private final MapStyle independentStyle;
     private final MapStyle decivilisedStyle;
     private final MapStyle uninhabitedStyle;
+    // The view whose per-bloc style classifier an incremental re-shape reads, and the
+    // grouping snapshot the full build resolved ownership under - held together so the
+    // re-shape classifies a cell against the same view and the same once-sampled grouping.
+    private final PoliticalMapView view;
+    private final OwnershipGrouping grouping;
 
     public PoliticalMapDrawables(
             Map<String, StyledCell> styledCellBySystemId,
@@ -49,7 +60,9 @@ public final class PoliticalMapDrawables {
             MapStyle factionStyle,
             MapStyle independentStyle,
             MapStyle decivilisedStyle,
-            MapStyle uninhabitedStyle) {
+            MapStyle uninhabitedStyle,
+            PoliticalMapView view,
+            OwnershipGrouping grouping) {
         this.styledCellBySystemId = styledCellBySystemId;
         this.factionTerritoryByFactionId = factionTerritoryByFactionId;
         this.ownerBySystemId = ownerBySystemId;
@@ -59,16 +72,19 @@ public final class PoliticalMapDrawables {
         this.independentStyle = independentStyle;
         this.decivilisedStyle = decivilisedStyle;
         this.uninhabitedStyle = uninhabitedStyle;
+        this.view = view;
+        this.grouping = grouping;
     }
 
     // An empty placeholder for the render path to fall back on after a failed first
     // build: the two draw lists are empty so the render is a harmless no-op, and the
     // next frame's retry replaces it with a real build before any incremental pass -
-    // which needs the styles - can run, so the null styles here are never read.
+    // which needs the styles - can run, so the null styles here are never read. The
+    // faction view and identity grouping are inert defaults for the same reason.
     public static PoliticalMapDrawables createEmpty() {
         return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
-                null, null, null, null);
+                null, null, null, null, FactionsView.INSTANCE, OwnershipGrouping.identity());
     }
 
     public Map<String, StyledCell> getStyledCellBySystemId() {
@@ -105,6 +121,14 @@ public final class PoliticalMapDrawables {
 
     public MapStyle getUninhabitedStyle() {
         return uninhabitedStyle;
+    }
+
+    public PoliticalMapView getView() {
+        return view;
+    }
+
+    public OwnershipGrouping getGrouping() {
+        return grouping;
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push

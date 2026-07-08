@@ -2,7 +2,9 @@ package kmu.maplayers.politicalmap.base.render.model;
 
 import kmlib.starsector.ui.render.UiElementPaint;
 
+import kmu.maplayers.politicalmap.base.FactionsView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -21,8 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins the built map state the renderer paints and the incremental refresh edits:
  * that the empty fallback is a harmless no-op the render path can lean on after a failed
  * first build, that {@link PoliticalMapDrawables#isEmpty} tracks either draw list, and
- * that the constructor threads its nine inputs into the matching accessors (four of them
- * same-typed {@link MapStyle} bundles a swap would not otherwise catch).
+ * that the constructor threads its eleven inputs into the matching accessors (four of them
+ * same-typed {@link MapStyle} bundles a swap would not otherwise catch, and the view and
+ * grouping the incremental re-shape classifies against).
  */
 final class PoliticalMapDrawablesTest {
 
@@ -86,10 +89,12 @@ final class PoliticalMapDrawablesTest {
             var independentStyle = styleMarked(2);
             var decivilisedStyle = styleMarked(3);
             var uninhabitedStyle = styleMarked(4);
+            var view = FactionsView.INSTANCE;
+            var grouping = OwnershipGrouping.identity();
 
             var drawables = new PoliticalMapDrawables(styledCells, territories, owners,
                     decivilised, neutral, factionStyle, independentStyle, decivilisedStyle,
-                    uninhabitedStyle);
+                    uninhabitedStyle, view, grouping);
 
             assertThat(drawables.getStyledCellBySystemId()).isSameAs(styledCells);
             assertThat(drawables.getFactionTerritoryByFactionId()).isSameAs(territories);
@@ -100,6 +105,8 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getIndependentStyle()).isSameAs(independentStyle);
             assertThat(drawables.getDecivilisedStyle()).isSameAs(decivilisedStyle);
             assertThat(drawables.getUninhabitedStyle()).isSameAs(uninhabitedStyle);
+            assertThat(drawables.getView()).isSameAs(view);
+            assertThat(drawables.getGrouping()).isSameAs(grouping);
         }
     }
 
@@ -109,7 +116,8 @@ final class PoliticalMapDrawablesTest {
             Map<String, FactionTerritory> territories) {
         return new PoliticalMapDrawables(new LinkedHashMap<>(styledCells),
                 new LinkedHashMap<>(territories), new LinkedHashMap<>(), new LinkedHashSet<>(),
-                Color.GRAY, null, null, null, null);
+                Color.GRAY, null, null, null, null, FactionsView.INSTANCE,
+                OwnershipGrouping.identity());
     }
 
     // A hidden element paint (null color) is enough to stand in wherever a StyledCell or

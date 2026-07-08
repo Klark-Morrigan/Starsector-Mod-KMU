@@ -1,8 +1,6 @@
 package kmu.maplayers.politicalmap.base.render;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
@@ -16,10 +14,12 @@ import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelBoxFitter;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
 import kmu.settings.FactionNameFormatChoice;
@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Fits the label placements: one {@link ClusterAnchor} per contiguous same-faction
@@ -78,24 +79,28 @@ final class ClusterAnchorsBuilder {
     // by the full rebuild and the incremental refresh so an ownership change keeps the
     // placements in step with the fills and borders. Reads the toggles here (not at the
     // call sites) so all paths gate identically; the search's tuning is read here too, so
-    // a settings change re-fits on the rebuild it triggers. The sector supplies each
-    // owner's display name, which the fit sizes the boxes for.
+    // a settings change re-fits on the rebuild it triggers. The active view supplies each
+    // bloc's label (which the fit sizes the boxes for) and the style classifier the label
+    // colour follows, over the grouping snapshot the owner map was resolved under.
     static void rebuildClusterAnchors(List<ClusterAnchor> anchors,
             PoliticalMapGeometryCache geometryCache,
-            Map<String, DominantOwner> ownerBySystemId, SectorAPI sector) {
+            Map<String, DominantOwner> ownerBySystemId, SectorAPI sector,
+            PoliticalMapView view, OwnershipGrouping grouping) {
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowNames()
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }
         // The agnostic clustering and border trace key by grouping id, so hand them each
-        // system's faction id; the owner map is still carried for the per-owner name and colour.
+        // system's bloc id; the owner map is still carried for the per-owner colour.
         var groupKeyBySystemId = DominantOwner.factionIdBySystemId(ownerBySystemId);
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesBySystemId(), groupKeyBySystemId);
         anchors.addAll(computeClusterAnchors(clusters, geometryCache.getCellEdgesBySystemId(),
                 geometryCache.getSiteBySystemId(), ownerBySystemId, groupKeyBySystemId,
-                LabelAnchorSpecification.readFromLunaSettings(), newNameEstimatorResolver(sector)));
+                LabelAnchorSpecification.readFromLunaSettings(),
+                blocId -> view.shouldUseIndependentStyle(blocId, grouping),
+                newNameEstimatorResolver(sector, view, grouping)));
     }
 
     // The rebuild for a path with no owner map at hand - the debug border-tracing view,
@@ -103,13 +108,17 @@ final class ClusterAnchorsBuilder {
     // the sector itself, gated behind the toggle so the economy scan only runs while
     // someone is actually looking at the anchors.
     static void rebuildClusterAnchorsFromSector(List<ClusterAnchor> anchors,
-            PoliticalMapGeometryCache geometryCache, SectorAPI sector) {
+            PoliticalMapGeometryCache geometryCache, SectorAPI sector, PoliticalMapView view) {
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }
+        // Sample the view's grouping once and resolve ownership under it, so the anchors
+        // key off the same snapshot their names and colours are classified against.
+        var grouping = view.resolveGrouping();
         rebuildClusterAnchors(anchors, geometryCache,
-                SectorPolitics.resolveDominantOwnerBySystemId(sector), sector);
+                SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping), sector,
+                view, grouping);
     }
 
     // Fits one label anchor to each contiguous cluster by searching over candidate lines
@@ -120,11 +129,13 @@ final class ClusterAnchorsBuilder {
     // injected resolver, and the name (and its debug dot) draws in the shade the owner's
     // national border resolves to (resolveLabelColor), so the name reads as that border's
     // own colour; the candidate lines use a fixed diagnostic palette instead, painted by
-    // the renderer.
+    // the renderer. The style classifier - the active view's, already bound to the pass's
+    // grouping - decides which of the two outer-border colour choices each cluster follows.
     static List<ClusterAnchor> computeClusterAnchors(List<List<String>> clusters,
             Map<String, List<CellEdge>> edgesBySystemId, Map<String, double[]> siteBySystemId,
             Map<String, DominantOwner> ownerBySystemId, Map<String, String> groupKeyBySystemId,
-            LabelAnchorSpecification spec, Function<String, LabelLengthEstimator> nameEstimatorByFactionId) {
+            LabelAnchorSpecification spec, Predicate<String> usesIndependentStyleByBlocId,
+            Function<String, LabelLengthEstimator> nameEstimatorByFactionId) {
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         for (var memberSystemIds : clusters) {
             var sites = collectClusterSites(memberSystemIds, siteBySystemId);
@@ -136,7 +147,7 @@ final class ClusterAnchorsBuilder {
             var rings = spec.borderTrace().traceRings(memberSystemIds, edgesBySystemId,
                     groupKeyBySystemId);
             anchors.add(searchClusterAnchor(rings, siteBySystemId, axis,
-                    resolveLabelColor(owner, spec), spec,
+                    resolveLabelColor(owner, spec, usesIndependentStyleByBlocId), spec,
                     nameEstimatorByFactionId.apply(owner.factionId())));
         }
         return anchors;
@@ -144,44 +155,48 @@ final class ClusterAnchorsBuilder {
 
     // The colour a cluster's name (and its debug dot) draws in: the shade the owner's
     // national border resolves to, so the name inherits the border's own colour rather
-    // than a fixed bright pick. Independent space and core factions each carry their own
-    // outer-border palette choice, resolved against this owner's two shades by the same
-    // DrawablesBuilder mapping the border itself uses. A hidden border ("No color") still
-    // needs a legible name, so it falls back to the owner's bright primary shade.
-    private static Color resolveLabelColor(DominantOwner owner, LabelAnchorSpecification spec) {
-        var choice = Factions.INDEPENDENT.equals(owner.factionId())
+    // than a fixed bright pick. A bloc drawn in the independent style carries the
+    // independent outer-border choice, every other bloc the faction one, resolved against
+    // this owner's two shades by the same DrawablesBuilder mapping the border itself uses.
+    // A hidden border ("No color") still needs a legible name, so it falls back to the
+    // owner's bright primary shade.
+    private static Color resolveLabelColor(DominantOwner owner, LabelAnchorSpecification spec,
+            Predicate<String> usesIndependentStyleByBlocId) {
+        var choice = usesIndependentStyleByBlocId.test(owner.factionId())
                 ? spec.independentOuterColor() : spec.factionOuterColor();
         var color = DrawablesBuilder.pickPaletteColor(choice, owner.primaryColor(),
                 owner.secondaryColor());
         return color != null ? color : owner.primaryColor();
     }
 
-    // The per-faction name estimators one rebuild fits against: each faction's display
-    // name measured with the label font, or the aspect stand-in when the font
-    // or the name will not resolve. Cached per faction id because every cluster of a
-    // faction shares one name, so its wrap is measured once per rebuild, not per cluster.
-    private static Function<String, LabelLengthEstimator> newNameEstimatorResolver(SectorAPI sector) {
+    // The per-bloc name estimators one rebuild fits against: each bloc's display name
+    // (a faction's under the faction view, an alliance's under the alliances view) as the
+    // active view resolves it, measured with the label font, or the aspect stand-in when
+    // the font or the name will not resolve. Cached per bloc id because every cluster of a
+    // bloc shares one name, so its wrap is measured once per rebuild, not per cluster.
+    private static Function<String, LabelLengthEstimator> newNameEstimatorResolver(
+            SectorAPI sector, PoliticalMapView view, OwnershipGrouping grouping) {
         var font = LabelFonts.loadMapLabelFont();
-        // Read once per rebuild, like the font: every cluster of a faction spells its
-        // name the same way, so the full/short choice is resolved here rather than per
-        // faction.
+        // Read once per rebuild, like the font: every cluster of a bloc spells its name
+        // the same way, so the full/short choice is resolved here rather than per bloc.
         var nameFormat = KmuLunaSettings.getPoliticalMapFactionNameFormat();
-        var estimatorByFactionId = new HashMap<String, LabelLengthEstimator>();
-        return factionId -> estimatorByFactionId.computeIfAbsent(factionId,
-                id -> resolveNameEstimator(sector, font, nameFormat, id));
+        var estimatorByBlocId = new HashMap<String, LabelLengthEstimator>();
+        return blocId -> estimatorByBlocId.computeIfAbsent(blocId,
+                id -> resolveNameEstimator(sector, view, grouping, font, nameFormat, id));
     }
 
-    // One faction's name estimator: font-measured when both the font and a non-blank
-    // display name resolved, the aspect stand-in otherwise (a stand-in fit still sizes
-    // the debug band; it wraps no lines, so no label is minted from it). The name format
-    // picks the owner's long-form name (Full) or its abbreviated name (Short).
-    private static LabelLengthEstimator resolveNameEstimator(SectorAPI sector, LazyFont font,
-            FactionNameFormatChoice nameFormat, String factionId) {
+    // One bloc's name estimator: font-measured when both the font and a non-blank name
+    // resolved, the aspect stand-in otherwise (a stand-in fit still sizes the debug band;
+    // it wraps no lines, so no label is minted from it). The active view resolves the name
+    // for the bloc - a faction id is not always what the label reads (an alliance bloc id
+    // is not a faction id), so the lookup goes through the view, not straight to the sector.
+    private static LabelLengthEstimator resolveNameEstimator(SectorAPI sector,
+            PoliticalMapView view, OwnershipGrouping grouping, LazyFont font,
+            FactionNameFormatChoice nameFormat, String blocId) {
         if (font == null) {
             return new AspectLabelLengthEstimator(FALLBACK_NAME_ASPECT);
         }
-        var faction = sector.getFaction(factionId);
-        var name = faction == null ? null : resolveFactionName(faction, nameFormat);
+        var name = view.resolveName(blocId, grouping, sector, nameFormat);
         if (name == null || name.isBlank()) {
             return new AspectLabelLengthEstimator(FALLBACK_NAME_ASPECT);
         }
@@ -189,16 +204,6 @@ final class ClusterAnchorsBuilder {
         // LineWidthMeasurer port, so the name-measuring estimator stays independent of
         // the font itself.
         return new FontLabelLengthEstimator(new LazyFontMeasurer(font), name);
-    }
-
-    // The owner's name in the player's chosen format: the abbreviated display name for
-    // Short, the long-form name for Full (the default). getDisplayName is a faction's
-    // short name and getDisplayNameLong its full title; both may be blank, which the
-    // caller then treats as an unresolved name and falls back to the aspect stand-in.
-    private static String resolveFactionName(FactionAPI faction, FactionNameFormatChoice nameFormat) {
-        return nameFormat == FactionNameFormatChoice.SHORT
-                ? faction.getDisplayName()
-                : faction.getDisplayNameLong();
     }
 
     // Searches one cluster's candidate lines and assembles its anchor as a fitted label

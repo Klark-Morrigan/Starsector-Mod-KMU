@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.geometry.Polygons;
 import kmlib.opengl.GlVertexRuns;
@@ -13,6 +12,7 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.render.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
@@ -56,17 +56,23 @@ final class DrawablesBuilder {
     // (owned) and outline-only (decivilised/uninhabited) draw lists, baking in each
     // cell's colors, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category, not
-    // per cell.
+    // per cell. The active view supplies the ownership grouping the pass resolves under
+    // and the style classifier each cell reads; both are retained on the drawables so an
+    // incremental re-shape classifies against the same view and grouping snapshot.
     static PoliticalMapDrawables buildDrawables(PoliticalMapGeometryCache geometryCache,
-            SectorAPI sector) {
+            SectorAPI sector, PoliticalMapView view) {
         var profiler = KmuProfiling.getProfiler();
         return profiler.measure("politicalMap.rebuildDrawables", () -> {
+            // Sample the view's grouping once for the whole pass (the alliances view reads
+            // Nexerelin), so every stage keys off one snapshot and the retained copy the
+            // incremental re-shape reads matches the ownership this build resolved.
+            var grouping = view.resolveGrouping();
             // The politics scan walks the whole economy - the priciest content step -
             // so it is profiled and timed on its own, and the owner count logged
             // independent of the profiler's accumulated view.
             var politicsStart = System.nanoTime();
             var ownerBySystemId = profiler.measure("politicalMap.resolvePolitics",
-                    () -> SectorPolitics.resolveDominantOwnerBySystemId(sector));
+                    () -> SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping));
             LOG.debug("Political map politics resolved; ownedSystems=" + ownerBySystemId.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
 
@@ -84,7 +90,8 @@ final class DrawablesBuilder {
                     ownerBySystemId, decivilisedSystemIds,
                     StarsectorFactionColors.resolveNeutralColor(sector),
                     MapStyleReader.readFactionStyle(), MapStyleReader.readIndependentStyle(),
-                    MapStyleReader.readDecivilisedStyle(), MapStyleReader.readUninhabitedStyle());
+                    MapStyleReader.readDecivilisedStyle(), MapStyleReader.readUninhabitedStyle(),
+                    view, grouping);
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
             // geometry clusters by grouping key, so hand it each system's faction id as the
@@ -134,11 +141,13 @@ final class DrawablesBuilder {
         }
         var owner = drawables.getOwnerBySystemId().get(systemId);
         if (owner != null) {
-            // Independent space styles from its own bundle; every other owner is a core
-            // faction. The fill and national border are per cluster from the tessellated
-            // region, so an owned cell contributes only its interior seams here, in its
-            // inner-seam color resolved against the owner's palette.
-            var style = Factions.INDEPENDENT.equals(owner.factionId())
+            // The active view decides which blocs recede to the muted independent bundle;
+            // every other owner takes the full faction style. The fill and national border
+            // are per cluster from the tessellated region, so an owned cell contributes
+            // only its interior seams here, in its inner-seam color resolved against the
+            // owner's palette.
+            var style = drawables.getView()
+                    .shouldUseIndependentStyle(owner.factionId(), drawables.getGrouping())
                     ? drawables.getIndependentStyle()
                     : drawables.getFactionStyle();
             return buildStyledCell(shaped, owner.primaryColor(), owner.secondaryColor(),
@@ -197,7 +206,10 @@ final class DrawablesBuilder {
     static FactionTerritory buildFactionTerritory(PoliticalMapDrawables drawables,
             PoliticalMapGeometryCache geometryCache, String factionId,
             List<String> memberSystemIds) {
-        var style = Factions.INDEPENDENT.equals(factionId)
+        // The grouping key here is a bloc id (a faction id under the faction view), so the
+        // active view classifies its style the same way a per-cell owner is classified.
+        var style = drawables.getView()
+                .shouldUseIndependentStyle(factionId, drawables.getGrouping())
                 ? drawables.getIndependentStyle()
                 : drawables.getFactionStyle();
         // Every system of a faction shares its palette, so any member resolves the same
