@@ -1,10 +1,9 @@
-package kmu.maplayers.politicalmap.factions.render;
+package kmu.maplayers.politicalmap.base.render;
 
 import kmlib.opengl.GlColor;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.render.MapGl;
-import kmu.maplayers.politicalmap.factions.render.model.PoliticalMapDrawables;
+import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 
 import org.lwjgl.opengl.GL11;
 

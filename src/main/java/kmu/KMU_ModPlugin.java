@@ -13,7 +13,7 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonizatio
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
-import kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin;
+import kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -47,33 +47,33 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
     }
 
-    // Former class name of the faction-territory terrain plugin, kept as its save
-    // serialised identity. XStream stores the concrete class in the save, so renaming the
-    // class orphaned every existing save (CannotResolveClassException on load). Frozen: it is
-    // written into new saves too via the alias below, so a further rename adds a fresh alias
-    // rather than changing this string.
+    // The terrain plugin's feature-022 fully-qualified name, before the map-layers carve.
+    // XStream stores the concrete class in the save, so each rename orphaned saves written under
+    // the prior name (CannotResolveClassException on load) until an alias mapped it back. Bridged
+    // read-only below so a save still holding this name loads.
     private static final String LEGACY_TERRAIN_PLUGIN_CLASS =
             "kmu.politicalmap.render.PoliticalMapTerrainPlugin";
 
-    // The terrain plugin's fully-qualified name before the map-layers package split moved it
-    // under kmu.maplayers. XStream stores the concrete class in the save, so the move orphaned
-    // saves written since the earlier rename (CannotResolveClassException on load) the same way
-    // the first rename did. Frozen for the same reason as the legacy name above: a further move
-    // adds a fresh alias rather than editing this string.
-    private static final String PRE_MAPLAYERS_TERRAIN_PLUGIN_CLASS =
-            "kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin";
+    // The terrain plugin's class name after the map-layers carve but before the shared pipeline
+    // moved from the faction package to base.render - bridged read-only for the same reason as
+    // the name above.
+    private static final String FACTION_PACKAGE_TERRAIN_PLUGIN_CLASS =
+            "kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin";
 
-    // Bridges every former terrain-plugin class name so saves written under any of them still
-    // load. Aliasing each old fully-qualified name to the current class makes XStream resolve
-    // that name to FactionsPoliticalMapTerrainPlugin on load; super runs first so this only
-    // adds to whatever the base plugin configures. XStream is fully qualified here because it
-    // belongs to no import group the checkstyle order recognises, and it is the type's only use
-    // site.
+    // Maps every former terrain-plugin class name to the current class so a save written under
+    // any of them still loads, then aliases the live class to itself last so XStream writes new
+    // and re-saved games under the real class name - a re-saved game sheds the historical names
+    // rather than carrying a dead class reference forever. The former-name aliases stay as
+    // read-only bridges for as long as saves predating each rename might still exist. super runs
+    // first so this only adds to what the base plugin configures. XStream is fully qualified here
+    // because it belongs to no import group the checkstyle order recognises, and it is the type's
+    // only use site.
     @Override
     public void configureXStream(com.thoughtworks.xstream.XStream x) {
         super.configureXStream(x);
-        x.alias(LEGACY_TERRAIN_PLUGIN_CLASS, FactionsPoliticalMapTerrainPlugin.class);
-        x.alias(PRE_MAPLAYERS_TERRAIN_PLUGIN_CLASS, FactionsPoliticalMapTerrainPlugin.class);
+        x.alias(LEGACY_TERRAIN_PLUGIN_CLASS, PoliticalMapTerrainPlugin.class);
+        x.alias(FACTION_PACKAGE_TERRAIN_PLUGIN_CLASS, PoliticalMapTerrainPlugin.class);
+        x.alias(PoliticalMapTerrainPlugin.class.getName(), PoliticalMapTerrainPlugin.class);
     }
 
     // Terrain type registered in data/campaign/terrain.json that hosts the

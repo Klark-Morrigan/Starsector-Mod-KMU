@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.factions.render;
+package kmu.maplayers.politicalmap.base.render;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,14 +14,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * and GL emission live in their own collaborators and are covered there; the emission
  * itself runs only in-engine.
  */
-final class FactionsPoliticalMapTerrainPluginTest {
+final class PoliticalMapTerrainPluginTest {
 
     @Nested
     class GetActiveLayers {
 
         @Test
         void getActiveLayersReturnsEmptyWithoutThrowing() {
-            var plugin = new FactionsPoliticalMapTerrainPlugin();
+            var plugin = new PoliticalMapTerrainPlugin();
 
             assertThatCode(plugin::getActiveLayers).doesNotThrowAnyException();
             assertThat(plugin.getActiveLayers()).isEmpty();

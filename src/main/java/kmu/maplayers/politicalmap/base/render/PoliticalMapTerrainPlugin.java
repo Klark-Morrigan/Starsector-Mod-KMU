@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.factions.render;
+package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignEngineLayers;
@@ -12,14 +12,10 @@ import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
-import kmu.maplayers.politicalmap.base.render.ClusterAnchorRenderer;
-import kmu.maplayers.politicalmap.base.render.Label;
-import kmu.maplayers.politicalmap.base.render.LabelRenderer;
-import kmu.maplayers.politicalmap.base.render.LabelsBuilder;
 import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
+import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDebugDrawables;
+import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.factions.FactionOverlayState;
-import kmu.maplayers.politicalmap.factions.render.model.PoliticalMapDebugDrawables;
-import kmu.maplayers.politicalmap.factions.render.model.PoliticalMapDrawables;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -29,13 +25,13 @@ import java.util.EnumSet;
 import java.util.List;
 
 /**
- * Terrain plugin that paints the political map's faction territory on the sector (M)
- * map as merged HOI4-style clusters, where adjacent same-faction systems fuse into one
- * solid national region. It is the Factions layer's renderer: it draws only while that
- * layer is the active pick on the bar ({@link FactionOverlayState#isFactionTerritoryActive()}),
- * so a future layer that colours the map differently (Nexerelin alliances) is its own
- * terrain plugin rather than a branch here. This class is the terrain adapter and cache
- * coordinator; the
+ * Terrain plugin that paints the political map on the sector (M) map as merged
+ * HOI4-style clusters, where adjacent same-grouping systems fuse into one solid
+ * national region. It is the shared political-map terrain surface, living in
+ * {@code base.render} so any political-map view reuses one grouping-agnostic pipeline;
+ * it currently draws only while the faction view is the active pick and switched on
+ * ({@link FactionOverlayState#isFactionTerritoryActive()}). This class is the terrain
+ * adapter and cache coordinator; the
  * visual design lives in its collaborators: {@link DrawablesBuilder} shapes the cells
  * and bakes each element's colors, opacities, and widths from the LunaLib "Visuals
  * customisation" settings, {@link IncrementalPoliticsRefresh} folds in per-system
@@ -73,7 +69,7 @@ import java.util.List;
  * XStream skips transient fields and does not run field initialisers - so they are
  * recreated lazily in {@link #rebuildStaleHalves} rather than in a field initialiser.
  */
-public class FactionsPoliticalMapTerrainPlugin extends BaseTerrain {
+public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // Map rendering ignores this (the map calls the map hooks regardless), but
     // BaseTerrain requires the override; large so the terrain is never treated as a
     // tiny point elsewhere.
@@ -88,7 +84,7 @@ public class FactionsPoliticalMapTerrainPlugin extends BaseTerrain {
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
             EnumSet.noneOf(CampaignEngineLayers.class);
 
-    private static final Logger LOG = Global.getLogger(FactionsPoliticalMapTerrainPlugin.class);
+    private static final Logger LOG = Global.getLogger(PoliticalMapTerrainPlugin.class);
 
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or
     // lose access. Transient: derived from the sector, record-typed (CellEdge), and kept
@@ -172,10 +168,11 @@ public class FactionsPoliticalMapTerrainPlugin extends BaseTerrain {
 
     @Override
     public void renderOnMap(float factor, float alphaMult) {
-        // The faction territory paints only while its layer is the active one on the bar;
-        // any other pick (No Layer, or a future view) hides it. Gate the whole draw (and its
-        // rebuild) on that, so a hidden overlay costs only this sector-memory read per frame.
-        // A layer that paints its own territory later branches here on the active layer.
+        // Paints only while the faction view is the active pick and switched on; any other
+        // pick hides it. Gating the whole draw (and its rebuild) on one sector-memory read
+        // keeps a hidden overlay near-free per frame. TODO: this gate still names the faction
+        // view directly, coupling this shared plugin to the factions package; a view-neutral
+        // active-view state in base removes that so the plugin renders whichever view is active.
         if (!FactionOverlayState.isFactionTerritoryActive()) {
             return;
         }

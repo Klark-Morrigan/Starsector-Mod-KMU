@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.factions.render.model;
+package kmu.maplayers.politicalmap.base.render.model;
 
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 

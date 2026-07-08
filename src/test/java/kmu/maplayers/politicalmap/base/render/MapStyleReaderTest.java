@@ -1,6 +1,6 @@
-package kmu.maplayers.politicalmap.factions.render;
+package kmu.maplayers.politicalmap.base.render;
 
-import kmu.maplayers.politicalmap.factions.render.model.MapStyle;
+import kmu.maplayers.politicalmap.base.render.model.MapStyle;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;

@@ -1,11 +1,10 @@
-package kmu.maplayers.politicalmap.factions.render;
+package kmu.maplayers.politicalmap.base.render;
 
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;

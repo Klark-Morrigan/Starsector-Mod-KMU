@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.factions.render;
+package kmu.maplayers.politicalmap.base.render;
 
 import kmu.settings.FactionPaletteChoice;
 

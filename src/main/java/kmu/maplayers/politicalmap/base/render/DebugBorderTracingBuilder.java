@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.factions.render;
+package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -11,9 +11,7 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.render.BorderSmoothing;
-import kmu.maplayers.politicalmap.base.render.PoliticalMapStyle;
-import kmu.maplayers.politicalmap.factions.render.model.PoliticalMapDebugDrawables;
+import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDebugDrawables;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
