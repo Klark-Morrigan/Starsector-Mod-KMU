@@ -5,6 +5,7 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.Rectangles;
 import kmlib.starsector.ui.map.CampaignMapView;
+import kmlib.starsector.ui.widgets.RadioRow;
 import kmlib.starsector.ui.widgets.VanillaTabStrip;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -126,14 +127,20 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
         }
     }
 
-    // Fires the control's action if the press lands on it, and reports whether it did. A radio hits
-    // by segment (its cells abut and fill the row, so the segment index is the clicked option); a
-    // single-cell checkbox or toggle hits anywhere on its row, reported as cell 0. The action's
+    // Fires the control's action if the press lands on an actionable cell, and reports whether it
+    // did. A radio hits by segment, but a press on the already-lit segment is inert: re-picking the
+    // selected option changes nothing, so the widget's findHitElement folds that rule in and reports
+    // no segment for it, firing nothing (the caller still consumes the click). A single-cell checkbox
+    // or toggle hits anywhere on its row, reported as cell 0, and flips on every press. The action's
     // meaning stays with the tab that supplied it - this only maps the click to a cell.
     private static boolean activateControlIfHit(SidebarControl control, float pointX, float pointY) {
         if (control.spec().kind() == SidebarControlKind.RADIO) {
-            var segmentIndex = Rectangles.findIndexContaining(control.segments(), pointX, pointY);
-            if (segmentIndex == Rectangles.NONE) {
+            // The row's bounds are the segment span, so bounds + option count reproduce the same
+            // segments the layout laid; the lit segment comes from the spec the tab rebuilt this
+            // frame, so the "already selected" check reads the current selection.
+            var segmentIndex = RadioRow.findHitElement(control.bounds(),
+                    control.spec().labels().size(), control.spec().selectedIndex(), pointX, pointY);
+            if (segmentIndex == RadioRow.NO_SEGMENT) {
                 return false;
             }
             control.spec().action().activateCell(segmentIndex);
