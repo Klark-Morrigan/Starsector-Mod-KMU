@@ -1,4 +1,4 @@
-# Planetary Condition Picker Plan
+# Market Condition Manager Plan
 
 ## Index
 
@@ -341,10 +341,10 @@ Implementation:
 - reserve the `kmu` console tag/category for KMU commands;
 - prefix every KMU console command with `kmu_`;
 - name every KMU console command with at least one verb and one noun;
-- add the first command as `kmu_pcp_open`;
+- add the first command as `kmu_mcm_open`;
 - implement the command outside `data/scripts` so Starsector does not try to
   compile it when Console Commands is not active;
-- have `kmu_pcp_open` require campaign/market context, then rely on the
+- have `kmu_mcm_open` require campaign/market context, then rely on the
   shared editor entry point to reject unsupported locations before opening the
   chooser;
 - report wrong context or open failures through Console Commands output instead
@@ -375,10 +375,10 @@ Tests:
 - enable KMU and Console Commands in the Starsector launcher for this smoke
   test;
 - open Console Commands with its configured keybind;
-- run `kmu_pcp_open` while no market context is active and confirm a clear
+- run `kmu_mcm_open` while no market context is active and confirm a clear
   wrong-context/failure message;
-- run `kmu_pcp_open` while a colony or market context is active;
-- run `kmu_pcp_open` from a market opened through an industry
+- run `kmu_mcm_open` while a colony or market context is active;
+- run `kmu_mcm_open` from a market opened through an industry
   construction completion notification and confirm the shared context resolver
   permits the picker when the market supports planetary conditions;
 - add a condition;
@@ -511,7 +511,7 @@ Add the intended in-game button on the relevant market/colony UI surface.
 
 Reason: Console Commands is the developer and smoke-test route, but the feature
 should be discoverable from the market UI. The injected button must be a thin
-adapter over the same editor entry point used by `kmu_pcp_open`.
+adapter over the same editor entry point used by `kmu_mcm_open`.
 
 Implementation:
 
@@ -546,7 +546,7 @@ Tests:
 - open each target market or colony screen in game;
 - confirm the `Planetary Conditions` button appears once;
 - click the button and confirm it opens the same chooser as
-  `kmu_pcp_open`;
+  `kmu_mcm_open`;
 - add a condition;
 - confirm condition color/state updates in the chooser;
 - confirm incompatible conditions remain present after reapply;

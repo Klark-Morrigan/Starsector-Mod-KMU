@@ -1,4 +1,4 @@
-# Planetary Condition Picker
+# Market Condition Manager
 
 ## Index
 

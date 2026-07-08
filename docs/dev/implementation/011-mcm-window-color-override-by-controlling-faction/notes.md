@@ -1,7 +1,7 @@
-# Notes - PCP Window Color Override By Controlling Faction
+# Notes - MCM Window Color Override By Controlling Faction
 
-Partial research pointer for feature 011 (PCP = Planetary Condition
-Picker, feature 010). The goal is to recolour **the whole picker
+Partial research pointer for feature 011 (MCM = Market Condition
+Manager, feature 010). The goal is to recolour **the whole picker
 window** - frame border, title bar, OK / Cancel button row, and the
 interior chrome we paint ourselves - to the controlling faction's
 palette so the player sees at a glance whose market they're editing.

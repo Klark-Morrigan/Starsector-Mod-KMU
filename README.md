@@ -17,7 +17,7 @@ explicit campaign edits from in-game screens.
 
 ## Features
 
-### 1. Planetary Condition Picker (PCP)
+### 1. Market Condition Manager (MCM)
 
 Problem doc:
 [problem.md](docs/dev/implementation/010-add-planetary-condition/problem.md)
@@ -32,13 +32,13 @@ entries not present are darkened. Clicking an absent entry adds that condition t
 the market without removing mutually exclusive or same-group conditions. At this
 stage, any inspected colony can be edited regardless of ownership.
 
-The LunaLib "Market conditions" tab holds a `Show all conditions` toggle. It is
+The LunaLib "Market Condition Manager (MCM)" tab holds a `Show all conditions` toggle. It is
 on by default, so the picker lists every condition, including non-planetary ones
 the game does not normally offer for hand placement (such as decivilisation).
 Turning it off restricts the picker to the planetary conditions vanilla treats
 as hand-placeable.
 
-When Console Commands is enabled, KMU registers `kmu_pcp_open` as an
+When Console Commands is enabled, KMU registers `kmu_mcm_open` as an
 optional developer entry point for the same picker. KMU console commands use the
 `kmu_` prefix and verb-noun names.
 
@@ -46,7 +46,7 @@ optional developer entry point for the same picker. KMU console commands use the
 
 | Mod | Author | Required | Notes |
 |-----|--------|----------|-------|
-| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | LazyWizard | Optional | Enables `kmu_` developer commands (e.g. `kmu_pcp_open`) |
+| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | LazyWizard | Optional | Enables `kmu_` developer commands (e.g. `kmu_mcm_open`) |
 
 ## Versioning
 

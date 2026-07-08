@@ -108,7 +108,7 @@ class KmuConditionEditorEntryPointTest {
                     (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
             assertThat(entryPoint.openForCurrentMarket()).isFalse();
-            assertThat(reports).containsExactly("Failed to open Planetary Condition Menu. / editor failed");
+            assertThat(reports).containsExactly("Failed to open Market Condition Manager. / editor failed");
         }
     }
 
@@ -128,7 +128,7 @@ class KmuConditionEditorEntryPointTest {
             var result = entryPoint.openForCurrentMarketDetailed();
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.OPENED);
-            assertThat(result.getMessage()).isEqualTo("Opened Planetary Condition Menu.");
+            assertThat(result.getMessage()).isEqualTo("Opened Market Condition Manager.");
         }
 
         @Test

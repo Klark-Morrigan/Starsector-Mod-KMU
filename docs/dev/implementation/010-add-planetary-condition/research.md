@@ -1,4 +1,4 @@
-# Planetary Condition Picker Reference
+# Market Condition Manager Reference
 
 Research date: 2026-04-27
 
