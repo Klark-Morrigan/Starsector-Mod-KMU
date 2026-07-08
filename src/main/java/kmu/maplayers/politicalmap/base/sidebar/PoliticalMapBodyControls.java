@@ -4,6 +4,7 @@ import kmu.maplayers.base.sidebar.SidebarControlKind;
 import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.KmuLunaSettings;
+import kmu.settings.NeutralColorChoice;
 import kmu.util.KmuStrings;
 
 import java.util.List;
@@ -37,12 +38,33 @@ public final class PoliticalMapBodyControls {
         return List.of(
                 new SidebarControlSpec(SidebarControlKind.CHECKBOX,
                         List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED)), "",
-                        uninhabitedCheckboxState()),
+                        uninhabitedCheckboxState(), cellIndex -> toggleUninhabitedSystems()),
                 new SidebarControlSpec(SidebarControlKind.RADIO,
                         List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL)),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAMES),
-                        nameFormatRadioState()));
+                        nameFormatRadioState(), PoliticalMapBodyControls::selectNameFormatSegment));
+    }
+
+    // Flips the uninhabited-systems outline on or off: if it currently draws (the neutral colour),
+    // hide it; otherwise draw it. Written back to LunaLib, which fires the settings-changed event so
+    // the settings screen and the live map both follow the sidebar's checkbox.
+    private static void toggleUninhabitedSystems() {
+        var next = KmuLunaSettings.getUninhabitedBorderColor().isDrawn()
+                ? NeutralColorChoice.NONE
+                : NeutralColorChoice.NEUTRAL;
+        KmuLunaSettings.setUninhabitedBorderColor(next);
+    }
+
+    // Writes the name format for the clicked radio segment - Short for segment 0, Full for segment 1
+    // - matching the Short-then-Full segment order the labels are supplied in. Any other index is
+    // ignored, so a stray hit outside the two known segments changes nothing.
+    private static void selectNameFormatSegment(int segmentIndex) {
+        if (segmentIndex == NAME_SHORT_SEGMENT) {
+            KmuLunaSettings.setPoliticalMapFactionNameFormat(FactionNameFormatChoice.SHORT);
+        } else if (segmentIndex == NAME_FULL_SEGMENT) {
+            KmuLunaSettings.setPoliticalMapFactionNameFormat(FactionNameFormatChoice.FULL);
+        }
     }
 
     // The checkbox is lit (cell 0) when uninhabited systems draw their outline - the "Neutral

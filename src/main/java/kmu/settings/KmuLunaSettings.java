@@ -2,6 +2,7 @@ package kmu.settings;
 
 import kmlib.logging.KmLogging;
 import kmlib.settings.LunaSettingsReader;
+import kmlib.settings.LunaSettingsWriter;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -689,6 +690,18 @@ public final class KmuLunaSettings {
     }
 
     /**
+     * Writes the uninhabited-systems outline choice back to LunaLib, so the on-map sidebar's
+     * checkbox drives the same stored value the settings screen's Radio edits and both stay in
+     * step. The field stores the choice's option label (a Radio's stored form).
+     *
+     * @param choice whether uninhabited systems draw their outline ({@link NeutralColorChoice#NEUTRAL})
+     *               or stay hidden ({@link NeutralColorChoice#NONE})
+     */
+    public static void setUninhabitedBorderColor(NeutralColorChoice choice) {
+        LunaSettingsWriter.putString(MOD_ID, UNINHABITED_BORDER_COLOR_FIELD, choice.getLabel());
+    }
+
+    /**
      * @return the outline opacity for uninhabited systems, 0..1
      */
     public static double getUninhabitedBorderOpacity() {
@@ -1189,6 +1202,17 @@ public final class KmuLunaSettings {
                 LunaSettingsReader.getString(MOD_ID, FACTION_NAME_FORMAT_FIELD,
                         DEFAULT_FACTION_NAME_FORMAT.getLabel()),
                 DEFAULT_FACTION_NAME_FORMAT);
+    }
+
+    /**
+     * Writes the cluster-label name format back to LunaLib, so the on-map sidebar's Short/Full
+     * radio drives the same stored value the settings screen's Radio edits and both stay in step.
+     * The field stores the choice's option label (a Radio's stored form).
+     *
+     * @param choice whether each cluster label spells the owner's full or short name
+     */
+    public static void setPoliticalMapFactionNameFormat(FactionNameFormatChoice choice) {
+        LunaSettingsWriter.putString(MOD_ID, FACTION_NAME_FORMAT_FIELD, choice.getLabel());
     }
 
     /**

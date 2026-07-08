@@ -10,8 +10,8 @@ import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
-import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 import org.lazywizard.lazylib.ui.LazyFont;
+import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 
 import java.awt.Color;
 import java.util.ArrayList;

@@ -47,7 +47,8 @@ public final class FactionsLayer implements MapLayer {
                 ? 0
                 : SidebarControlSpec.NO_SELECTION;
         controls.add(new SidebarControlSpec(SidebarControlKind.TOGGLE,
-                List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTIONS)), "", toggleState));
+                List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTIONS)), "", toggleState,
+                cellIndex -> FactionOverlayState.toggleFactionOverlay()));
         return List.copyOf(controls);
     }
 

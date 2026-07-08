@@ -17,6 +17,11 @@ import java.util.List;
  * checkbox and a toggle each have one cell (index 0) that is either lit (on) or {@link
  * #NO_SELECTION}, a radio has one lit cell among its segments.
  *
+ * <p>The {@code action} is the same idea for input: the tab attaches what a click does when it
+ * builds the spec, so the framework input listener acts on a click without learning the meaning.
+ * The layout and renderer ignore it (they only measure and draw), so a spec built purely to be laid
+ * out carries {@link SidebarControlAction#NONE}.
+ *
  * @param kind          which widget the control is
  * @param labels        the control's own label(s): one for a checkbox or toggle, one per option for
  *                      a radio (in segment order)
@@ -25,9 +30,21 @@ import java.util.List;
  * @param selectedIndex the index of the control's lit cell - the active radio segment, or 0 for a
  *                      checked checkbox / a lit toggle - or {@link #NO_SELECTION} when the control
  *                      is off and no cell is lit
+ * @param action        what a click on the control does, keyed by which cell was hit; the tab
+ *                      supplies it, the input listener invokes it, the layout and renderer ignore it
  */
 public record SidebarControlSpec(SidebarControlKind kind, List<String> labels,
-        String trailingLabel, int selectedIndex) {
+        String trailingLabel, int selectedIndex, SidebarControlAction action) {
     /** {@code selectedIndex} value meaning the control is off - no cell is lit. */
     public static final int NO_SELECTION = -1;
+
+    /**
+     * Builds a spec with no action, for a layout-only or measurement context (the layout and
+     * renderer never invoke the action). A clickable control uses the full constructor and supplies
+     * its own {@link SidebarControlAction}.
+     */
+    public SidebarControlSpec(SidebarControlKind kind, List<String> labels, String trailingLabel,
+            int selectedIndex) {
+        this(kind, labels, trailingLabel, selectedIndex, SidebarControlAction.NONE);
+    }
 }

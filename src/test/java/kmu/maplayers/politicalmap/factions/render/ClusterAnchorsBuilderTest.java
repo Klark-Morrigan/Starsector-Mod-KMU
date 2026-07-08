@@ -134,11 +134,11 @@ final class ClusterAnchorsBuilderTest {
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
             assertThat(Math.min(accepted.startX(), accepted.endX()))
-                    .isCloseTo(150f, within(1e-3f));
+                    .isCloseTo(150.0, within(1e-3));
             assertThat(Math.max(accepted.startX(), accepted.endX()))
-                    .isCloseTo(1850f, within(1e-3f));
-            assertThat(accepted.startY()).isCloseTo(500f, within(1e-3f));
-            assertThat(accepted.endY()).isCloseTo(500f, within(1e-3f));
+                    .isCloseTo(1850.0, within(1e-3));
+            assertThat(accepted.startY()).isCloseTo(500.0, within(1e-3));
+            assertThat(accepted.endY()).isCloseTo(500.0, within(1e-3));
         }
 
         @Test
@@ -157,11 +157,11 @@ final class ClusterAnchorsBuilderTest {
             var accepted = anchor.acceptedAxis();
             assertThat(accepted).isNotNull();
             assertThat(Math.min(accepted.startX(), accepted.endX()))
-                    .isCloseTo(150f, within(1e-3f));
+                    .isCloseTo(150.0, within(1e-3));
             assertThat(Math.max(accepted.startX(), accepted.endX()))
-                    .isCloseTo(1850f, within(1e-3f));
-            assertThat(accepted.startY()).isCloseTo(325f, within(1e-3f));
-            assertThat(accepted.endY()).isCloseTo(325f, within(1e-3f));
+                    .isCloseTo(1850.0, within(1e-3));
+            assertThat(accepted.startY()).isCloseTo(325.0, within(1e-3));
+            assertThat(accepted.endY()).isCloseTo(325.0, within(1e-3));
             // The anchor point follows the relocated line, not the sites.
             assertThat(anchor.anchorX()).isCloseTo(1000f, within(1e-3f));
             assertThat(anchor.anchorY()).isCloseTo(325f, within(1e-3f));
@@ -180,9 +180,9 @@ final class ClusterAnchorsBuilderTest {
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
             assertThat(Math.min(accepted.startX(), accepted.endX()))
-                    .isCloseTo(250f, within(1e-3f));
+                    .isCloseTo(250.0, within(1e-3));
             assertThat(Math.max(accepted.startX(), accepted.endX()))
-                    .isCloseTo(1750f, within(1e-3f));
+                    .isCloseTo(1750.0, within(1e-3));
         }
 
         @Test
@@ -199,12 +199,12 @@ final class ClusterAnchorsBuilderTest {
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
-            assertThat(accepted.startX()).isCloseTo(accepted.endX(), within(1e-3f));
-            assertThat(accepted.startX()).isBetween(150f, 350f);
+            assertThat(accepted.startX()).isCloseTo(accepted.endX(), within(1e-3));
+            assertThat(accepted.startX()).isBetween(150.0, 350.0);
             assertThat(Math.min(accepted.startY(), accepted.endY()))
-                    .isCloseTo(150f, within(1e-3f));
+                    .isCloseTo(150.0, within(1e-3));
             assertThat(Math.max(accepted.startY(), accepted.endY()))
-                    .isCloseTo(1850f, within(1e-3f));
+                    .isCloseTo(1850.0, within(1e-3));
         }
 
         @Test
@@ -221,11 +221,11 @@ final class ClusterAnchorsBuilderTest {
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
-            assertThat(accepted.startY()).isCloseTo(accepted.endY(), within(1e-3f));
+            assertThat(accepted.startY()).isCloseTo(accepted.endY(), within(1e-3));
             assertThat(Math.min(accepted.startX(), accepted.endX()))
-                    .isCloseTo(150f, within(1e-3f));
+                    .isCloseTo(150.0, within(1e-3));
             assertThat(Math.max(accepted.startX(), accepted.endX()))
-                    .isCloseTo(1850f, within(1e-3f));
+                    .isCloseTo(1850.0, within(1e-3));
         }
 
         @Test
@@ -261,10 +261,10 @@ final class ClusterAnchorsBuilderTest {
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
-            assertThat(anchor.anchorX())
-                    .isCloseTo((accepted.startX() + accepted.endX()) / 2f, within(1e-3f));
-            assertThat(anchor.anchorY())
-                    .isCloseTo((accepted.startY() + accepted.endY()) / 2f, within(1e-3f));
+            assertThat((double) anchor.anchorX())
+                    .isCloseTo((accepted.startX() + accepted.endX()) / 2, within(1e-3));
+            assertThat((double) anchor.anchorY())
+                    .isCloseTo((accepted.startY() + accepted.endY()) / 2, within(1e-3));
             assertThat(anchor.anchorX()).isCloseTo(1000f, within(1e-3f));
             assertThat(anchor.anchorY()).isCloseTo(500f, within(1e-3f));
         }
@@ -306,11 +306,11 @@ final class ClusterAnchorsBuilderTest {
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
             assertThat(Math.min(accepted.startX(), accepted.endX()))
-                    .isCloseTo(150f, within(1e-3f));
+                    .isCloseTo(150.0, within(1e-3));
             assertThat(Math.max(accepted.startX(), accepted.endX()))
-                    .isCloseTo(1850f, within(1e-3f));
-            assertThat(accepted.startY()).isCloseTo(500f, within(1e-3f));
-            assertThat(accepted.endY()).isCloseTo(500f, within(1e-3f));
+                    .isCloseTo(1850.0, within(1e-3));
+            assertThat(accepted.startY()).isCloseTo(500.0, within(1e-3));
+            assertThat(accepted.endY()).isCloseTo(500.0, within(1e-3));
         }
 
         @Test
@@ -351,11 +351,11 @@ final class ClusterAnchorsBuilderTest {
             var rejected = anchor.rejectedAxis();
             assertThat(rejected).isNotNull();
             assertThat(Math.min(rejected.startX(), rejected.endX()))
-                    .isCloseTo(150f, within(1e-3f));
+                    .isCloseTo(150.0, within(1e-3));
             assertThat(Math.max(rejected.startX(), rejected.endX()))
-                    .isCloseTo(1850f, within(1e-3f));
-            assertThat(rejected.startY()).isCloseTo(500f, within(1e-3f));
-            assertThat(rejected.endY()).isCloseTo(500f, within(1e-3f));
+                    .isCloseTo(1850.0, within(1e-3));
+            assertThat(rejected.startY()).isCloseTo(500.0, within(1e-3));
+            assertThat(rejected.endY()).isCloseTo(500.0, within(1e-3));
         }
 
         @Test
@@ -372,7 +372,7 @@ final class ClusterAnchorsBuilderTest {
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
             assertThat(accepted).isNotNull();
-            assertThat(accepted.startY()).isCloseTo(accepted.endY(), within(1e-3f));
+            assertThat(accepted.startY()).isCloseTo(accepted.endY(), within(1e-3));
             var unbiased = anchor.unbiasedAxis();
             assertThat(unbiased).isNotNull();
             var unbiasedLength = Math.hypot(unbiased.endX() - unbiased.startX(),
@@ -506,7 +506,7 @@ final class ClusterAnchorsBuilderTest {
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNotNull();
-            assertThat(anchor.acceptedAxis().startY()).isCloseTo(500f, within(1f));
+            assertThat(anchor.acceptedAxis().startY()).isCloseTo(500.0, within(1.0));
             // Girth capped just under the 700-tall region, never crossing the border.
             assertThat(anchor.thickness()).isGreaterThan(600f);
             assertThat(anchor.thickness()).isLessThanOrEqualTo(700f);

@@ -8,8 +8,6 @@ import com.fs.starfarer.api.util.Misc;
 import kmlib.color.Colors;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.font.LazyFontCache;
-import kmlib.starsector.ui.font.LazyFontMeasurer;
-import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.widgets.BorderedBox;
@@ -17,27 +15,23 @@ import kmlib.starsector.ui.widgets.Checkbox;
 import kmlib.starsector.ui.widgets.RadioRow;
 import kmlib.starsector.ui.widgets.ToggleButton;
 import kmlib.starsector.ui.widgets.VanillaTabColors;
-import kmlib.starsector.ui.widgets.VanillaTabContent;
 import kmlib.starsector.ui.widgets.VanillaTabStrip;
 import kmlib.text.KmlibStrings;
 
-import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarControl;
 import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.maplayers.base.sidebar.SidebarLayout;
 import kmu.maplayers.base.sidebar.SidebarPlacement;
 import kmu.settings.KmuLunaSettings;
-import kmu.util.KmuStrings;
 
 import org.apache.log4j.Logger;
 import org.lazywizard.lazylib.ui.LazyFont;
 import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,28 +45,25 @@ import java.util.Map;
  *
  * <p>The panel is composed from the reusable KMLib raw-GL widgets (a {@link BorderedBox} frame, a
  * {@link VanillaTabStrip} header, and the {@link Checkbox}/{@link RadioRow}/{@link ToggleButton}
- * body controls), so this class owns only the wiring: which layers become tabs, which tab is
- * selected, where the cursor hovers, and drawing each body control in the live state its spec
- * carries. It stays agnostic to what any control means - a control's lit state rides along in its
- * {@link SidebarControlSpec}, so this draws a faction toggle or a future alliances control the same
- * way without knowing either.
+ * body controls), so this class owns only the paint wiring: which tab is selected, where the cursor
+ * hovers, and drawing each body control in the live state its spec carries. It stays agnostic to
+ * what any control means - a control's lit state rides along in its {@link SidebarControlSpec}, so
+ * this draws a faction toggle or a future alliances control the same way without knowing either.
  *
  * <p>The sector map is a vanilla core-UI tab with no seam to attach a mod panel, so the sidebar is
  * drawn in UI coordinates through {@link CampaignUIRenderingListener} - specifically the
  * above-tooltips pass, the only one composited after the opaque core-UI map, so nothing the map
  * draws occludes it. It shows only where the overlay belongs
- * ({@link CampaignMapView#isSectorMapWithStarscapeOff()}). The panel reads the same
- * {@link SidebarLayout} placement the input listener hit-tests, so what is drawn and what is
+ * ({@link CampaignMapView#isSectorMapWithStarscapeOff()}). The panel draws the
+ * {@link LiveSidebarPlacement} the input listener also hit-tests, so what is drawn and what is
  * clickable line up. Every draw scales its alpha by one opacity, so lowering it fades the whole
  * panel - border, tab chrome, labels, and body controls alike - not just the text.
  */
 public final class MapLayerSidebar implements CampaignUIRenderingListener {
     private static final Logger LOG = Global.getLogger(MapLayerSidebar.class);
 
-    // The tabs read in the sector map's own orbitron face - the AA orbitron atlas vanilla uses for
-    // its map tabs, scaled to the tab size - while the body keeps the insignia body face. Both are
-    // graphics/fonts basenames the font cache resolves to a loadable path.
-    private static final String TAB_FONT = "orbitron20aa";
+    // The body face: the insignia body font, a graphics/fonts basename the font cache resolves to a
+    // loadable path. The tab face is the resolver's, since it both measures and draws the tabs.
     private static final String BODY_FONT = "insignia15LTaa";
 
     // The whole panel's backdrop: the bordered box fills its footprint with this, and the tab strip
@@ -111,28 +102,31 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
             logViewStateOnChange("hidden; " + CampaignMapView.describeViewState());
             return;
         }
-        // The layout snaps tabs to their measured text, so it needs the tab font; without it the
-        // panel cannot lay out and simply stays absent, logged once like any other hidden reason.
-        var measurer = loadTabMeasurer();
-        if (measurer == null) {
-            logViewStateOnChange("hidden; tab font '" + TAB_FONT + "' unavailable");
+        // The same placement the input listener hit-tests, resolved from one source so the drawn
+        // box and the clickable box line up. Null means the tab font could not load - the layout
+        // snaps tabs to measured text and cannot run without it - so the panel stays absent, logged
+        // once like any other hidden reason.
+        var placement = LiveSidebarPlacement.resolveCurrentPlacement();
+        if (placement == null) {
+            logViewStateOnChange("hidden; tab font '" + LiveSidebarPlacement.TAB_FONT
+                    + "' unavailable");
             return;
         }
         var settings = Global.getSettings();
-        var layers = MapLayerRegistry.getLayers();
-        var activeLayer = MapLayerRegistry.getActiveLayer();
         var borderWidth = KmuLunaSettings.getPoliticalMapSidebarBorderWidth();
-        var placement = SidebarLayout.computePlacement(settings.getScreenHeight(),
-                KmuLunaSettings.getPoliticalMapSidebarPaddingTop(),
-                KmuLunaSettings.getPoliticalMapSidebarPaddingLeft(), borderWidth,
-                buildTabContents(layers), activeLayer.getBodyControls(), measurer);
         var opacity = KmuLunaSettings.getPoliticalMapSidebarBackgroundOpacity();
         // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated
         // in but never seen is diagnosed from the numbers rather than another run.
         logViewStateOnChange("showing; " + CampaignMapView.describeViewState() + "; screen="
                 + settings.getScreenWidth() + "x" + settings.getScreenHeight()
                 + " box=" + formatRect(placement.box()) + " opacity=" + opacity);
-        drawSidebar(placement, layers.indexOf(activeLayer), borderWidth, opacity);
+        drawSidebar(placement, selectedTabIndex(), borderWidth, opacity);
+    }
+
+    // The active layer's position in the registry order the tabs are laid out in, so the selected
+    // tab the strip lights matches the active pick.
+    private static int selectedTabIndex() {
+        return MapLayerRegistry.getLayers().indexOf(MapLayerRegistry.getActiveLayer());
     }
 
     private void drawSidebar(SidebarPlacement placement, int selectedIndex, float borderWidth,
@@ -149,33 +143,10 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         var hoveredIndex = VanillaTabStrip.findTabIndexAt(placement.tabs(), UiCursor.getUiX(),
                 UiCursor.getUiY());
         VanillaTabStrip.render(placement.tabs(), selectedIndex, hoveredIndex,
-                VanillaTabColors.mapTabs(), TAB_FONT, SidebarLayout.TAB_FONT_SIZE, opacity);
+                VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT,
+                SidebarLayout.TAB_FONT_SIZE, opacity);
         drawBodyControls(placement.bodyControls(), accent, opacity);
         GL11.glPopAttrib();
-    }
-
-    // Turns each layer into a tab's content: its label and the display name of its current
-    // shortcut key, which the strip paints in gold. Registry order, so the selected/hovered index
-    // and the input listener's hit-test all index the same row.
-    private static List<VanillaTabContent> buildTabContents(List<MapLayer> layers) {
-        var contents = new ArrayList<VanillaTabContent>(layers.size());
-        for (var layer : layers) {
-            contents.add(new VanillaTabContent(KmuStrings.get(layer.getTabLabelKey()),
-                    resolveShortcutName(layer)));
-        }
-        return contents;
-    }
-
-    // The display name of a layer's shortcut key, or null when it has none - an unbound keycode (0,
-    // cleared with Escape; LWJGL still names it "NONE") or a code LWJGL cannot name. A null/blank
-    // shortcut leaves the tab label alone.
-    private static String resolveShortcutName(MapLayer layer) {
-        var keycode = KmuLunaSettings.getPoliticalMapLayerShortcut(
-                layer.getShortcutSettingKey(), layer.getDefaultShortcutKeycode());
-        if (keycode <= 0) {
-            return null;
-        }
-        return Keyboard.getKeyName(keycode);
     }
 
     // Draws each body control with its KMLib widget in the lit state its spec carries, then the
@@ -255,18 +226,6 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
 
     private static float centerY(Rectangle bounds) {
         return bounds.y() + bounds.height() / 2f;
-    }
-
-    // The tab font wrapped as a width measurer, or null when it cannot load. One measurer serves
-    // both the tab and body snapping in the layout: body labels drawn in the narrower insignia face
-    // fit inside boxes snapped to this face, so the body reads correctly and only the tabs, drawn
-    // in this same face, need it to match exactly.
-    private static LineWidthMeasurer loadTabMeasurer() {
-        var font = LazyFontCache.loadByBasename(TAB_FONT);
-        if (font == null) {
-            return null;
-        }
-        return new LazyFontMeasurer(font);
     }
 
     // Mints a body drawable once per (size, text) and reuses it for the run; the base colour is
