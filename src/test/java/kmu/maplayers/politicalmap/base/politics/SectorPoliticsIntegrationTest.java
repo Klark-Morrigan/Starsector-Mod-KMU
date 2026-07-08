@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -204,6 +205,44 @@ class SectorPoliticsIntegrationTest {
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
                     .containsEntry("discovered-system",
                             new DominantOwner("knights_of_selkie", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
+        }
+
+        @Test
+        void resolveDominantOwnerReproducesFactionOwnerMapUnderIdentityGrouping() {
+            // The identity grouping makes every faction its own bloc, so the winner
+            // and palette are the plain faction owner - byte-for-byte the faction view.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = sectorWith("owned-system", List.of(hegemony, tritachyon),
+                    visibleMarket(hegemony, 5), visibleMarket(tritachyon, 3));
+
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(
+                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
+                    .containsEntry("owned-system",
+                            new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
+        }
+
+        @Test
+        void resolveDominantOwnerSumsAlliedColoniesPastLargerLoneRivalUnderAllianceGrouping() {
+            // Two small allied colonies (weight 2 each) sum to 4 under the alliance
+            // grouping, outweighing a lone rival's larger single colony (weight 3)
+            // that beats either ally alone. The cell carries the alliance bloc id and
+            // paints in the alliance's dominant member's (hegemony's) palette.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
+            var persean = faction("persean", NEUTRAL_BASE);
+            var sector = sectorWith("contested-system", List.of(hegemony, tritachyon, persean),
+                    visibleMarket(hegemony, 2), visibleMarket(tritachyon, 2),
+                    visibleMarket(persean, 3));
+            var grouping = new OwnershipGrouping(
+                    Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
+                    Map.of("alliance-1", "hegemony"),
+                    Map.of("alliance-1", "Allied Powers"));
+
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(
+                    sector, STABILITY_WEIGHTED, false, grouping))
+                    .containsEntry("contested-system",
+                            new DominantOwner("alliance-1", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
     }
 

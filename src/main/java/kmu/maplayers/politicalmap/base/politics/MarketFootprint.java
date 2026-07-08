@@ -37,4 +37,26 @@ public record MarketFootprint(int totalWeight, int largestMarketWeight, int plan
                 Math.max(largestMarketWeight, marketWeight),
                 isPlanetMarket ? planetWeight + marketWeight : planetWeight);
     }
+
+    /**
+     * Folds another owner's footprint into this one, combining two already-reduced
+     * footprints as a bloc.
+     *
+     * <p>Merging is exactly folding the other footprint's markets in without
+     * re-reading them: the combined weight and planet weight sum, while the heaviest
+     * single market is the larger of the two - a bloc's biggest market is the bigger
+     * of its members' biggest, not their sum. This is how a grouping collapses an
+     * alliance's member factions into one footprint the dominance rule ranks as a
+     * unit; folding {@link #EMPTY} in leaves a footprint unchanged, so a lone-faction
+     * bloc under the identity grouping is untouched.
+     *
+     * @param other the other owner's footprint to combine into this one
+     * @return a new footprint holding both owners' markets
+     */
+    public MarketFootprint merge(MarketFootprint other) {
+        return new MarketFootprint(
+                totalWeight + other.totalWeight(),
+                Math.max(largestMarketWeight, other.largestMarketWeight()),
+                planetWeight + other.planetWeight());
+    }
 }
