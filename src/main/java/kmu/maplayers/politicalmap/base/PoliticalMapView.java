@@ -75,6 +75,22 @@ public interface PoliticalMapView {
     boolean shouldUseIndependentStyle(String blocId, OwnershipGrouping grouping);
 
     /**
+     * How a bloc's fills, borders, and name are dimmed or recoloured before the pipeline
+     * paints it, applied uniformly wherever the style classification is read. The faction
+     * view never adjusts a bloc ({@link BlocStyleAdjustment#NONE}); the alliances view dims
+     * and/or desaturates every non-alliance bloc when the player has asked it to, leaving
+     * alliances untouched. Resolving it here lets the pipeline apply the two knobs without
+     * knowing why a view wanted them, mirroring the {@link #shouldUseIndependentStyle} seam.
+     *
+     * @param blocId   the winning bloc for a system, as resolved under {@code grouping}
+     * @param grouping the grouping this pass resolved, so the decision is a pure lookup over
+     *                 the once-sampled snapshot rather than a fresh read
+     * @return the per-bloc styling adjustment; {@link BlocStyleAdjustment#NONE} to draw the
+     *         bloc exactly as classified
+     */
+    BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, OwnershipGrouping grouping);
+
+    /**
      * The label a bloc reads under this view: a faction's display name for a faction
      * bloc, an alliance's name for an alliance bloc. Null when no name resolves, which
      * the label fit treats as an unresolved name and sizes a stand-in band for instead.

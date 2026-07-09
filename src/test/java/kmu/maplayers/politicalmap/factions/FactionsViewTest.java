@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
@@ -69,6 +70,20 @@ final class FactionsViewTest {
         void shouldUseIndependentStyleIsFalseForACoreFaction() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
                     "hegemony", ANY_GROUPING)).isFalse();
+        }
+    }
+
+    @Nested
+    class ResolveBlocStyleAdjustment {
+
+        @Test
+        void resolveBlocStyleAdjustmentIsNoneForAnyBloc() {
+            // The faction view adjusts no bloc - a core faction and independent space alike
+            // draw exactly as classified, so the pipeline has nothing to dim or recolour.
+            assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment("hegemony", ANY_GROUPING))
+                    .isEqualTo(BlocStyleAdjustment.NONE);
+            assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
+                    Factions.INDEPENDENT, ANY_GROUPING)).isEqualTo(BlocStyleAdjustment.NONE);
         }
     }
 

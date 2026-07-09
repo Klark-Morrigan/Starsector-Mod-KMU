@@ -160,6 +160,17 @@ public final class KmuLunaSettings {
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
             "kmu_politicalMapUninhabitedBorderWidth";
 
+    // Alliance styling settings (Political map - visuals tab): the two settings-screen knobs
+    // supplementary to the alliances view's sidebar toggles. The muted-opacity modifier is how
+    // far Mute dims a non-allied bloc's borders, fills, and name as a fraction of normal opacity;
+    // the desaturation profile is which colour Desaturate recolours a non-allied bloc to. The
+    // toggles themselves are sidebar-only per-save choices (sector memory), not LunaLib fields,
+    // since every LunaLib field would render on a settings tab.
+    private static final String ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD =
+            "kmu_politicalMapAllianceMutedOpacityModifier";
+    private static final String DESATURATION_PROFILE_FIELD =
+            "kmu_politicalMapDesaturationProfile";
+
     // Dominance rules (Political map - domination tab): how the map decides a system's
     // dominant faction. Not styling fields - they change the political verdicts
     // themselves. The colony-size weight multiplies each market's base size rating; a
@@ -395,6 +406,12 @@ public final class KmuLunaSettings {
             NeutralColorChoice.NONE;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
+    // Half strength by default: Mute dims a non-allied bloc to half its normal opacity.
+    private static final double DEFAULT_ALLIANCE_MUTED_OPACITY_MODIFIER = 0.5;
+    // Independent by default: a desaturated non-allied bloc reads as independent-held space, the
+    // least surprising "no colour of its own" look. Mirrors the CSV row's defaultValue.
+    private static final DesaturationProfileChoice DEFAULT_DESATURATION_PROFILE =
+            DesaturationProfileChoice.INDEPENDENT;
     // The identity weight by default: raw colony size counts toward dominance as it
     // does without the rule. Below 1 flattens the gap between large and small
     // colonies, above 1 sharpens it; it scales a hidden market's chosen base size too.
@@ -737,6 +754,31 @@ public final class KmuLunaSettings {
     public static double getUninhabitedBorderWidth() {
         return LunaSettingsReader.getDouble(MOD_ID, UNINHABITED_BORDER_WIDTH_FIELD,
                 DEFAULT_UNINHABITED_BORDER_WIDTH);
+    }
+
+    /**
+     * @return the fraction of its normal opacity a non-allied bloc's borders, fills, and name
+     *         draw at while Mute non-allied factions is on in the alliances view, 0..1: 0.5
+     *         halves them, 0 hides them, 1 leaves them unchanged; 0.5 by default. Unread while
+     *         the sidebar Mute toggle is off. Supplementary to that sidebar-only toggle
+     */
+    public static double getPoliticalMapAllianceMutedOpacityModifier() {
+        return LunaSettingsReader.getDouble(MOD_ID, ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD,
+                DEFAULT_ALLIANCE_MUTED_OPACITY_MODIFIER);
+    }
+
+    /**
+     * @return which colour the alliances view recolours a non-allied faction to while the
+     *         sidebar Desaturate toggle is on: INDEPENDENT for the Independent faction's own two
+     *         shades (so the bloc reads as independent-held space), NEUTRAL for the flat neutral
+     *         grey; INDEPENDENT by default. The render pipeline resolves this once per pass; the
+     *         view flags only whether a bloc desaturates, never which colour
+     */
+    public static DesaturationProfileChoice getPoliticalMapDesaturationProfile() {
+        return DesaturationProfileChoice.fromLabel(
+                LunaSettingsReader.getString(MOD_ID, DESATURATION_PROFILE_FIELD,
+                        DEFAULT_DESATURATION_PROFILE.getLabel()),
+                DEFAULT_DESATURATION_PROFILE);
     }
 
     /**

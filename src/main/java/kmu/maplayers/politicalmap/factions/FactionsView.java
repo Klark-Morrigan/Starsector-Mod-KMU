@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.settings.FactionNameFormatChoice;
@@ -62,6 +63,13 @@ public final class FactionsView implements PoliticalMapView {
         // Only independent space is drawn muted; every other faction paints in the full
         // faction style. The grouping is identity here, so the bloc id is the faction id.
         return Factions.INDEPENDENT.equals(blocId);
+    }
+
+    @Override
+    public BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, OwnershipGrouping grouping) {
+        // The faction view dims or recolours no bloc - every faction paints exactly as its
+        // style classification says, so there is nothing for the pipeline to adjust.
+        return BlocStyleAdjustment.NONE;
     }
 
     @Override

@@ -6,9 +6,11 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.FactionNameFormatChoice;
+import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -98,6 +100,98 @@ final class AlliancesViewTest {
     }
 
     @Nested
+    class ResolveBlocStyleAdjustment {
+
+        // A distinct, non-default modifier reading so a test that expects it to flow through is
+        // not satisfied by the fallback value.
+        private static final double MUTED_MODIFIER = 0.3;
+
+        @Test
+        void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocRegardlessOfSettings() {
+            // An alliance keeps its full colour even with both recede toggles on, so the
+            // preferences can never dim or desaturate it.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                            mockStatic(AllianceStylePreferences.class);
+                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubAllianceStyle(preferencesMock, settingsMock, true, MUTED_MODIFIER, true);
+
+                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                        "rebel_pact", ALLIANCE_GROUPING)).isEqualTo(BlocStyleAdjustment.NONE);
+            }
+        }
+
+        @Test
+        void resolveBlocStyleAdjustmentMutesOnlyWhenOnlyMuteIsSet() {
+            // Mute alone dims by the modifier and keeps the colour, so a non-allied bloc
+            // recedes without a palette change.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                            mockStatic(AllianceStylePreferences.class);
+                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubAllianceStyle(preferencesMock, settingsMock, true, MUTED_MODIFIER, false);
+
+                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                        "hegemony", ALLIANCE_GROUPING))
+                        .isEqualTo(new BlocStyleAdjustment(MUTED_MODIFIER, false));
+            }
+        }
+
+        @Test
+        void resolveBlocStyleAdjustmentDesaturatesOnlyWhenOnlyDesaturateIsSet() {
+            // Desaturate alone recolours at full opacity, so the modifier is left unread.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                            mockStatic(AllianceStylePreferences.class);
+                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubAllianceStyle(preferencesMock, settingsMock, false, MUTED_MODIFIER, true);
+
+                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                        "hegemony", ALLIANCE_GROUPING))
+                        .isEqualTo(new BlocStyleAdjustment(1.0, true));
+            }
+        }
+
+        @Test
+        void resolveBlocStyleAdjustmentBothMutesAndDesaturatesWhenBothAreSet() {
+            // The two knobs combine: a non-allied bloc dims and recolours at once.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                            mockStatic(AllianceStylePreferences.class);
+                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubAllianceStyle(preferencesMock, settingsMock, true, MUTED_MODIFIER, true);
+
+                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                        "hegemony", ALLIANCE_GROUPING))
+                        .isEqualTo(new BlocStyleAdjustment(MUTED_MODIFIER, true));
+            }
+        }
+
+        @Test
+        void resolveBlocStyleAdjustmentIsNoneWhenNeitherIsSet() {
+            // Both toggles off is the identity adjustment, so today's look is preserved.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                            mockStatic(AllianceStylePreferences.class);
+                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubAllianceStyle(preferencesMock, settingsMock, false, MUTED_MODIFIER, false);
+
+                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                        "hegemony", ALLIANCE_GROUPING)).isEqualTo(BlocStyleAdjustment.NONE);
+            }
+        }
+
+        @Test
+        void resolveBlocStyleAdjustmentTracksTheMutedModifierValue() {
+            // The muted multiplier is the modifier reading, not a constant, so a different
+            // modifier value flows straight through to the adjustment.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                            mockStatic(AllianceStylePreferences.class);
+                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubAllianceStyle(preferencesMock, settingsMock, true, 0.72, false);
+
+                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                        "hegemony", ALLIANCE_GROUPING).opacityMultiplier()).isEqualTo(0.72);
+            }
+        }
+    }
+
+    @Nested
     class ResolveName {
 
         @Test
@@ -121,6 +215,16 @@ final class AlliancesViewTest {
             assertThat(AlliancesView.INSTANCE.resolveName("hegemony", ALLIANCE_GROUPING, sectorMock,
                     FactionNameFormatChoice.FULL)).isEqualTo("The Hegemony");
         }
+    }
+
+    private static void stubAllianceStyle(MockedStatic<AllianceStylePreferences> preferencesMock,
+            MockedStatic<KmuLunaSettings> settingsMock, boolean isMuted, double mutedModifier,
+            boolean shouldDesaturate) {
+        preferencesMock.when(AllianceStylePreferences::isNonAlliedMuted).thenReturn(isMuted);
+        preferencesMock.when(AllianceStylePreferences::isNonAlliedDesaturated)
+                .thenReturn(shouldDesaturate);
+        settingsMock.when(KmuLunaSettings::getPoliticalMapAllianceMutedOpacityModifier)
+                .thenReturn(mutedModifier);
     }
 
     private static void stubNexEnabled(MockedStatic<Global> globalMock, boolean isEnabled) {
