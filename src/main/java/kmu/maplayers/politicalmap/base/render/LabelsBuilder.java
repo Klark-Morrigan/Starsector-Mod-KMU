@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.color.Colors;
 import kmlib.math.geometry.Segment;
 import kmlib.profiling.Timings;
 
@@ -58,17 +57,13 @@ public final class LabelsBuilder {
         if (resolvedFont == null) {
             return;
         }
-        // The global name opacity fades every name uniformly; read once per rebuild next to
-        // the font load and folded into each planned line's baked colour below, so the mint
-        // needs no settings read of its own.
-        var nameOpacity = KmuLunaSettings.getPoliticalMapNameOpacity();
         var buildStart = System.nanoTime();
         KmuProfiling.getProfiler().measure("politicalMap.buildLabels", () -> {
             // The plan step (each line's text, colour, hang point, slant, and font size)
             // is pure computation; only the mint below touches GL, so the stacking
             // geometry stays a self-contained calculation apart from GL resource creation.
             for (var plan : planLabels(anchors,
-                    KmuLunaSettings.getPoliticalMapNameLineSpacing(), nameOpacity)) {
+                    KmuLunaSettings.getPoliticalMapNameLineSpacing())) {
                 var text = resolvedFont.createText(plan.text(), plan.color(),
                         plan.fontHeight());
                 text.setAnchor(LazyFont.TextAnchor.CENTER);
@@ -100,20 +95,15 @@ public final class LabelsBuilder {
     // stacked along the accepted line's perpendicular at the given line-spacing multiple,
     // centred on the anchor, first line on the upper side so the block reads top-down.
     // The slant is folded upright first, so the stacking normal is taken from the
-    // direction the text actually reads in. The owner colour is faded by the global name
-    // opacity here so the baked base colour already carries the fade uniformly for every
-    // line; the renderer's per-frame zoom fade then composes on top. Pure - no GL, no font,
-    // no sector.
-    public static List<LabelPlan> planLabels(List<ClusterAnchor> anchors, double lineSpacing,
-            double nameOpacity) {
+    // direction the text actually reads in. Pure - no GL, no font, no sector.
+    public static List<LabelPlan> planLabels(List<ClusterAnchor> anchors, double lineSpacing) {
         var plans = new ArrayList<LabelPlan>(anchors.size());
         for (var anchor : anchors) {
             if (anchor.acceptedAxis() == null || anchor.nameLines().isEmpty()) {
                 continue;
             }
             var slantDegrees = computeSlantDegrees(anchor.acceptedAxis());
-            var color = Colors.scaleAlpha(anchor.color(), (float) nameOpacity);
-            planBlockLines(plans, anchor, color, slantDegrees, lineSpacing);
+            planBlockLines(plans, anchor, slantDegrees, lineSpacing);
         }
         return plans;
     }
@@ -133,7 +123,7 @@ public final class LabelsBuilder {
     // from first to last centre plus one line height is exactly the band thickness the
     // fit reserved, so the block fills the fitted box.
     private static void planBlockLines(List<LabelPlan> plans, ClusterAnchor anchor,
-            Color color, float slantDegrees, double lineSpacing) {
+            float slantDegrees, double lineSpacing) {
         var lines = anchor.nameLines();
         var slantRadians = Math.toRadians(slantDegrees);
         // The unit perpendicular on the reading direction's upper side: for an upright
@@ -145,7 +135,7 @@ public final class LabelsBuilder {
             // Offsets run from +((L-1)/2)*step for the first line down to its negative
             // for the last, symmetric about the anchor.
             var offset = ((lines.size() - 1) / 2f - lineIndex) * lineStep;
-            plans.add(new LabelPlan(lines.get(lineIndex), color,
+            plans.add(new LabelPlan(lines.get(lineIndex), anchor.color(),
                     anchor.anchorX() + upX * offset, anchor.anchorY() + upY * offset,
                     slantDegrees, anchor.fontHeight()));
         }

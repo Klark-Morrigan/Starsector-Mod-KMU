@@ -28,9 +28,6 @@ final class LabelsBuilderTest {
     // The stack geometry the multi-line tests compute by hand.
     private static final float FONT_HEIGHT = 100f;
     private static final double LINE_SPACING = 1.15;
-    // The geometry tests exercise the placement, not the fade, so they plan at full
-    // opacity where scaleAlpha is the identity and the owner colour survives unchanged.
-    private static final double FULL_OPACITY = 1.0;
 
     @Nested
     class PlanLabels {
@@ -40,7 +37,7 @@ final class LabelsBuilderTest {
             var anchors = List.of(acceptedAnchor(List.of("Persean League"), 100f, 200f,
                     new Segment(0f, 200f, 200f, 200f)));
 
-            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING, FULL_OPACITY);
+            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING);
 
             assertThat(plans).singleElement().satisfies(plan -> {
                 assertThat(plan.text()).isEqualTo("Persean League");
@@ -55,7 +52,7 @@ final class LabelsBuilderTest {
             var anchors = List.of(acceptedAnchor(List.of("Persean League"), 100f, 200f,
                     new Segment(0f, 200f, 200f, 200f)));
 
-            var plan = LabelsBuilder.planLabels(anchors, LINE_SPACING, FULL_OPACITY).get(0);
+            var plan = LabelsBuilder.planLabels(anchors, LINE_SPACING).get(0);
 
             assertThat(plan.hangX()).isEqualTo(100f);
             assertThat(plan.hangY()).isEqualTo(200f);
@@ -69,7 +66,7 @@ final class LabelsBuilderTest {
             var anchors = List.of(acceptedAnchor(List.of("Persean", "League"), 100f, 200f,
                     new Segment(0f, 200f, 200f, 200f)));
 
-            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING, FULL_OPACITY);
+            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING);
 
             assertThat(plans).hasSize(2);
             var halfStep = FONT_HEIGHT * (float) LINE_SPACING / 2f;
@@ -88,7 +85,7 @@ final class LabelsBuilderTest {
             var anchors = List.of(acceptedAnchor(List.of("Persean", "League"), 100f, 200f,
                     new Segment(0f, 100f, 200f, 300f)));
 
-            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING, FULL_OPACITY);
+            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING);
 
             var halfStep = FONT_HEIGHT * (float) LINE_SPACING / 2f;
             var component = halfStep * (float) (Math.sqrt(2.0) / 2.0);
@@ -104,7 +101,7 @@ final class LabelsBuilderTest {
             var anchors = List.of(acceptedAnchor(List.of("Persean League"), 50f, 50f,
                     new Segment(0f, 0f, 100f, 100f)));
 
-            var plan = LabelsBuilder.planLabels(anchors, LINE_SPACING, FULL_OPACITY).get(0);
+            var plan = LabelsBuilder.planLabels(anchors, LINE_SPACING).get(0);
 
             assertThat(plan.slantDegrees()).isCloseTo(45f, within(1e-3f));
         }
@@ -118,7 +115,7 @@ final class LabelsBuilderTest {
             var anchors = List.of(acceptedAnchor(List.of("Persean", "League"), 100f, 200f,
                     new Segment(200f, 200f, 0f, 200f)));
 
-            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING, FULL_OPACITY);
+            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING);
 
             assertThat(plans.get(0).slantDegrees()).isCloseTo(0f, within(1e-3f));
             assertThat(plans.get(0).hangY()).isGreaterThan(plans.get(1).hangY());
@@ -130,7 +127,7 @@ final class LabelsBuilderTest {
             // gets no name rather than an empty box.
             var anchors = List.of(collapsedAnchor(100f, 200f));
 
-            assertThat(LabelsBuilder.planLabels(anchors, LINE_SPACING, FULL_OPACITY)).isEmpty();
+            assertThat(LabelsBuilder.planLabels(anchors, LINE_SPACING)).isEmpty();
         }
 
         @Test
@@ -141,36 +138,7 @@ final class LabelsBuilderTest {
             var anchors = List.of(acceptedAnchor(List.of(), 100f, 200f,
                     new Segment(0f, 200f, 200f, 200f)));
 
-            assertThat(LabelsBuilder.planLabels(anchors, LINE_SPACING, FULL_OPACITY)).isEmpty();
-        }
-
-        @Test
-        void planLabelsFadesEachLineColorByTheNameOpacity() {
-            // The global name opacity scales the owner colour's alpha into the baked plan
-            // colour, leaving its RGB alone, so every name recedes uniformly.
-            var anchors = List.of(acceptedAnchor(List.of("Persean League"), 100f, 200f,
-                    new Segment(0f, 200f, 200f, 200f)));
-
-            var plan = LabelsBuilder.planLabels(anchors, LINE_SPACING, 0.5).get(0);
-
-            assertThat(plan.color().getAlpha())
-                    .isEqualTo(Math.round(OWNER_COLOR.getAlpha() * 0.5f));
-            assertThat(plan.color().getRed()).isEqualTo(OWNER_COLOR.getRed());
-            assertThat(plan.color().getGreen()).isEqualTo(OWNER_COLOR.getGreen());
-            assertThat(plan.color().getBlue()).isEqualTo(OWNER_COLOR.getBlue());
-        }
-
-        @Test
-        void planLabelsStillPlansAtZeroOpacitySoTheRendererCulls() {
-            // Zero opacity bakes a fully transparent colour but still plans the line; the
-            // renderer culls an all-transparent frame rather than the builder dropping it.
-            var anchors = List.of(acceptedAnchor(List.of("Persean League"), 100f, 200f,
-                    new Segment(0f, 200f, 200f, 200f)));
-
-            var plans = LabelsBuilder.planLabels(anchors, LINE_SPACING, 0.0);
-
-            assertThat(plans).singleElement()
-                    .satisfies(plan -> assertThat(plan.color().getAlpha()).isZero());
+            assertThat(LabelsBuilder.planLabels(anchors, LINE_SPACING)).isEmpty();
         }
     }
 

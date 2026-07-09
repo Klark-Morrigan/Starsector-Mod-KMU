@@ -105,7 +105,10 @@ public final class KmuLunaSettings {
     private static final String SIDEBAR_OPACITY_FIELD =
             "kmu_politicalMapSidebarOpacity";
 
-    // Faction (core-faction cluster) style fields.
+    // Faction (core-faction cluster) style fields. Name opacity fades this group's cluster
+    // names, applied where the name colour is resolved so the faction group can recede its
+    // own names without touching independent space's. A fade, not a fit knob - it dims the
+    // name colour without touching the box the fit sized.
     private static final String FACTION_OUTER_BORDER_COLOR_FIELD =
             "kmu_politicalMapFactionOuterBorderColor";
     private static final String FACTION_OUTER_BORDER_OPACITY_FIELD =
@@ -120,8 +123,10 @@ public final class KmuLunaSettings {
             "kmu_politicalMapFactionInnerBorderWidth";
     private static final String FACTION_FILL_COLOR_FIELD = "kmu_politicalMapFactionFillColor";
     private static final String FACTION_FILL_OPACITY_FIELD = "kmu_politicalMapFactionFillOpacity";
+    private static final String FACTION_NAME_OPACITY_FIELD = "kmu_politicalMapFactionNameOpacity";
 
-    // Independent (independent-held cluster) style fields, the same shape as faction.
+    // Independent (independent-held cluster) style fields, the same shape as faction (its
+    // name opacity fades only the independent group's names).
     private static final String INDEPENDENT_OUTER_BORDER_COLOR_FIELD =
             "kmu_politicalMapIndependentOuterBorderColor";
     private static final String INDEPENDENT_OUTER_BORDER_OPACITY_FIELD =
@@ -138,6 +143,8 @@ public final class KmuLunaSettings {
             "kmu_politicalMapIndependentFillColor";
     private static final String INDEPENDENT_FILL_OPACITY_FIELD =
             "kmu_politicalMapIndependentFillOpacity";
+    private static final String INDEPENDENT_NAME_OPACITY_FIELD =
+            "kmu_politicalMapIndependentNameOpacity";
 
     // Decivilised and uninhabited (factionless outline) style fields.
     private static final String DECIVILISED_BORDER_COLOR_FIELD =
@@ -292,12 +299,6 @@ public final class KmuLunaSettings {
             "kmu_politicalMapNameMaxLines";
     private static final String NAME_LINE_SPACING_FIELD =
             "kmu_politicalMapNameLineSpacing";
-    // Global name opacity (Political map - visuals tab, Faction names): a single fade over
-    // every cluster name, all views and all groups of systems, applied where the labels are
-    // minted. A fade, not a fit knob - it recedes the whole name layer behind the fills and
-    // borders without touching the box the fit sized.
-    private static final String NAME_OPACITY_FIELD =
-            "kmu_politicalMapNameOpacity";
     // Reveal overrides (Dev tab): two toggles that widen what the map draws for
     // inspection, each bypassing a normal gate. Show-all-factions drops the
     // known-to-player footprint filter so undiscovered colonies count toward
@@ -369,6 +370,8 @@ public final class KmuLunaSettings {
     private static final FactionPaletteChoice DEFAULT_FACTION_FILL_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_FILL_OPACITY = 0.4;
+    // Fully opaque by default: faction names draw at full colour strength unless faded.
+    private static final double DEFAULT_FACTION_NAME_OPACITY = 1.0;
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_OUTER_BORDER_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_OUTER_BORDER_OPACITY = 0.5;
@@ -380,6 +383,8 @@ public final class KmuLunaSettings {
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_FILL_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.2;
+    // Fully opaque by default: independent names draw at full colour strength unless faded.
+    private static final double DEFAULT_INDEPENDENT_NAME_OPACITY = 1.0;
     private static final NeutralColorChoice DEFAULT_DECIVILISED_BORDER_COLOR =
             NeutralColorChoice.NEUTRAL;
     private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.35;
@@ -470,9 +475,6 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_NAME_MAX_FONT_SIZE = 1200.0;
     private static final int DEFAULT_NAME_MAX_LINES = 3;
     private static final double DEFAULT_NAME_LINE_SPACING = 1.15;
-    // Fully opaque by default: names draw at their owner's full colour strength unless
-    // the player fades them.
-    private static final double DEFAULT_NAME_OPACITY = 1.0;
     private static final double DEFAULT_ANCHOR_BAND_OPACITY = 0.35;
     private static final double DEFAULT_ANCHOR_BAND_LINE_OPACITY = 0.9;
     // Both reveal overrides off by default: the map draws exactly what the normal
@@ -583,6 +585,17 @@ public final class KmuLunaSettings {
     }
 
     /**
+     * @return the opacity a faction cluster's name draws at, 0..1, a fraction of its
+     *         owner's colour: 1 draws faction names at full strength, lower fades only the
+     *         faction group's names, leaving independent space's names untouched. The
+     *         per-frame map-zoom fade the renderer applies still composes on top of this
+     */
+    public static double getFactionNameOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, FACTION_NAME_OPACITY_FIELD,
+                DEFAULT_FACTION_NAME_OPACITY);
+    }
+
+    /**
      * @return which independent palette color the outer (national) border draws
      *         in, or NONE to hide it; the primary (bright) color by default
      */
@@ -650,6 +663,17 @@ public final class KmuLunaSettings {
     public static double getIndependentFillOpacity() {
         return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_FILL_OPACITY_FIELD,
                 DEFAULT_INDEPENDENT_FILL_OPACITY);
+    }
+
+    /**
+     * @return the opacity an independent-held cluster's name draws at, 0..1, a fraction of
+     *         its owner's colour: 1 draws independent names at full strength, lower fades
+     *         only the independent group's names, leaving faction names untouched. The
+     *         per-frame map-zoom fade the renderer applies still composes on top of this
+     */
+    public static double getIndependentNameOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_NAME_OPACITY_FIELD,
+                DEFAULT_INDEPENDENT_NAME_OPACITY);
     }
 
     /**
@@ -1093,17 +1117,6 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapNameLineSpacing() {
         return LunaSettingsReader.getDouble(MOD_ID, NAME_LINE_SPACING_FIELD,
                 DEFAULT_NAME_LINE_SPACING);
-    }
-
-    /**
-     * @return the global opacity every cluster name draws at, 0..1, a fraction of its
-     *         owner's colour: 1 draws each name at full strength, lower fades all names
-     *         uniformly across every view and group of systems. The per-frame map-zoom
-     *         fade the renderer applies still composes on top of this
-     */
-    public static double getPoliticalMapNameOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, NAME_OPACITY_FIELD,
-                DEFAULT_NAME_OPACITY);
     }
 
     /**

@@ -500,6 +500,63 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
+        void computeClusterAnchorsFadesAFactionNameByTheFactionNameOpacity() {
+            // A faction-styled bloc takes the faction group's name opacity: half fades the
+            // resolved PRIMARY shade's alpha to half, leaving its RGB (and the dot's) intact.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
+                            0.5, 1.0),
+                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+
+            assertThat(anchors.get(0).color().getAlpha())
+                    .isEqualTo(Math.round(PRIMARY.getAlpha() * 0.5f));
+            assertThat(anchors.get(0).color().getRed()).isEqualTo(PRIMARY.getRed());
+        }
+
+        @Test
+        void computeClusterAnchorsLeavesAFactionNameUntouchedByTheIndependentNameOpacity() {
+            // The independent group's opacity fades only independent names: a faction-styled
+            // bloc is unaffected even when independent opacity is dimmed, so the two groups
+            // fade independently.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
+                            1.0, 0.5),
+                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+
+            assertThat(anchors.get(0).color()).isEqualTo(PRIMARY);
+        }
+
+        @Test
+        void computeClusterAnchorsFadesAnIndependentStyledNameByTheIndependentNameOpacity() {
+            // An independent-styled bloc takes the independent group's opacity: half fades
+            // its resolved shade's alpha to half, while the faction opacity (full here) has
+            // no say over it.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
+                            1.0, 0.5),
+                    EVERY_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+
+            assertThat(anchors.get(0).color().getAlpha())
+                    .isEqualTo(Math.round(PRIMARY.getAlpha() * 0.5f));
+            assertThat(anchors.get(0).color().getRed()).isEqualTo(PRIMARY.getRed());
+        }
+
+        @Test
         void computeClusterAnchorsResolvesTheNameEstimatorByTheOwningFactionId() {
             // The estimator injected per faction is what the fit sizes against and what
             // wraps the label's lines, so the resolver must be asked with the cluster's
@@ -652,6 +709,9 @@ final class ClusterAnchorsBuilderTest {
         private static final double AMPLE_MAX_FONT_SIZE = 2000.0;
         private static final int ONE_LINE = 1;
         private static final double FLUSH_LINES = 1.0;
+        // Full opacity for both groups: scaleAlpha is the identity, so the geometry and
+        // colour tests read the owner's shade unfaded; the opacity tests override it.
+        private static final double FULL_OPACITY = 1.0;
 
         // A per-faction estimator resolver that hands every cluster the same aspect
         // stand-in - the name-estimator seam the line- and band-fit tests size against.
@@ -703,7 +763,8 @@ final class ClusterAnchorsBuilderTest {
                     iconClearance, directionCount, offsetCount, verticalPenaltyStrength,
                     verticalPenaltyExponent, 0.0, showRejectedAxis, showUnbiasedAxis,
                     nameMinFontSize, nameMaxFontSize, nameMaxLines, nameLineSpacing,
-                    FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY);
+                    FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
+                    FULL_OPACITY, FULL_OPACITY);
         }
 
         // A slender single-line tuning whose faction outer-border colour choice the label
@@ -719,10 +780,21 @@ final class ClusterAnchorsBuilderTest {
         // the classifier picks the right one.
         private static ClusterAnchorsBuilder.LabelAnchorSpecification outerColorSpec(
                 FactionPaletteChoice factionOuterColor, FactionPaletteChoice independentOuterColor) {
+            return nameOpacitySpec(factionOuterColor, independentOuterColor,
+                    FULL_OPACITY, FULL_OPACITY);
+        }
+
+        // The same slender single-line tuning with both outer-border colour choices and
+        // both per-group name opacities set, so a fade test can dim one group's names and
+        // prove the classifier applies the right group's opacity to the resolved colour.
+        private static ClusterAnchorsBuilder.LabelAnchorSpecification nameOpacitySpec(
+                FactionPaletteChoice factionOuterColor, FactionPaletteChoice independentOuterColor,
+                double factionNameOpacity, double independentNameOpacity) {
             return new ClusterAnchorsBuilder.LabelAnchorSpecification(
                     new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT), 0.0, 0.0, 3, 1, 0.0, 2.0,
                     0.0, false, false, NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE, ONE_LINE,
-                    FLUSH_LINES, factionOuterColor, independentOuterColor);
+                    FLUSH_LINES, factionOuterColor, independentOuterColor,
+                    factionNameOpacity, independentNameOpacity);
         }
 
         // One square cell's CCW edges (bottom, right, top, left), each tagged with the

@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.color.Colors;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PrincipalAxis;
@@ -159,14 +160,20 @@ final class ClusterAnchorsBuilder {
     // independent outer-border choice, every other bloc the faction one, resolved against
     // this owner's two shades by the same DrawablesBuilder mapping the border itself uses.
     // A hidden border ("No color") still needs a legible name, so it falls back to the
-    // owner's bright primary shade.
+    // owner's bright primary shade. The same faction-vs-independent split then picks the
+    // group's name opacity and fades the resolved colour by it, so each group's names
+    // recede on their own (the debug dot, sharing this colour, dims with them).
     private static Color resolveLabelColor(DominantOwner owner, LabelAnchorSpecification spec,
             Predicate<String> usesIndependentStyleByBlocId) {
-        var choice = usesIndependentStyleByBlocId.test(owner.factionId())
+        var usesIndependentStyle = usesIndependentStyleByBlocId.test(owner.factionId());
+        var choice = usesIndependentStyle
                 ? spec.independentOuterColor() : spec.factionOuterColor();
         var color = DrawablesBuilder.pickPaletteColor(choice, owner.primaryColor(),
                 owner.secondaryColor());
-        return color != null ? color : owner.primaryColor();
+        var resolved = color != null ? color : owner.primaryColor();
+        var opacity = usesIndependentStyle
+                ? spec.independentNameOpacity() : spec.factionNameOpacity();
+        return Colors.scaleAlpha(resolved, (float) opacity);
     }
 
     // The per-bloc name estimators one rebuild fits against: each bloc's display name
@@ -463,21 +470,27 @@ final class ClusterAnchorsBuilder {
      *                               owner's palette
      * @param independentOuterColor  the outer-border palette choice independent space's
      *                               name inherits its colour from
+     * @param factionNameOpacity     the opacity a faction cluster's name draws at, 0..1,
+     *                               fading only the faction group's names
+     * @param independentNameOpacity the opacity an independent-held cluster's name draws
+     *                               at, 0..1, fading only the independent group's names
      */
     record LabelAnchorSpecification(PoliticalBorderTrace borderTrace, double endInsetDistance, double iconClearance,
             int directionCount, int offsetCount, double verticalPenaltyStrength,
             double verticalPenaltyExponent, double maxSlantDegrees, boolean showRejectedAxis,
             boolean showUnbiasedAxis, double nameMinFontSize, double nameMaxFontSize,
             int nameMaxLines, double nameLineSpacing, FactionPaletteChoice factionOuterColor,
-            FactionPaletteChoice independentOuterColor) {
+            FactionPaletteChoice independentOuterColor, double factionNameOpacity,
+            double independentNameOpacity) {
 
         // Reads the live tuning: the anchor knobs from the Dev "Label anchors" section,
         // the name-fit knobs from the visuals "Faction names" section, the same two
         // outer-border colour choices the national border reads (so the name inherits the
-        // border's colour), plus the same border trace the national border renders with.
-        // The end-inset multiple is resolved against the fixed border channel here, so the
-        // search works in plain distances. The two diagnostic-line toggles ride along so
-        // the search only builds the extra candidates while someone is looking at them.
+        // border's colour) and the two per-group name opacities beside them, plus the same
+        // border trace the national border renders with. The end-inset multiple is resolved
+        // against the fixed border channel here, so the search works in plain distances. The
+        // two diagnostic-line toggles ride along so the search only builds the extra
+        // candidates while someone is looking at them.
         static LabelAnchorSpecification readFromLunaSettings() {
             return new LabelAnchorSpecification(
                     PoliticalBorderTrace.readFromLunaSettings(),
@@ -496,7 +509,9 @@ final class ClusterAnchorsBuilder {
                     KmuLunaSettings.getPoliticalMapNameMaxLines(),
                     KmuLunaSettings.getPoliticalMapNameLineSpacing(),
                     KmuLunaSettings.getFactionOuterBorderColor(),
-                    KmuLunaSettings.getIndependentOuterBorderColor());
+                    KmuLunaSettings.getIndependentOuterBorderColor(),
+                    KmuLunaSettings.getFactionNameOpacity(),
+                    KmuLunaSettings.getIndependentNameOpacity());
         }
     }
 }
