@@ -292,6 +292,12 @@ public final class KmuLunaSettings {
             "kmu_politicalMapNameMaxLines";
     private static final String NAME_LINE_SPACING_FIELD =
             "kmu_politicalMapNameLineSpacing";
+    // Global name opacity (Political map - visuals tab, Faction names): a single fade over
+    // every cluster name, all views and all groups of systems, applied where the labels are
+    // minted. A fade, not a fit knob - it recedes the whole name layer behind the fills and
+    // borders without touching the box the fit sized.
+    private static final String NAME_OPACITY_FIELD =
+            "kmu_politicalMapNameOpacity";
     // Reveal overrides (Dev tab): two toggles that widen what the map draws for
     // inspection, each bypassing a normal gate. Show-all-factions drops the
     // known-to-player footprint filter so undiscovered colonies count toward
@@ -464,6 +470,9 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_NAME_MAX_FONT_SIZE = 1200.0;
     private static final int DEFAULT_NAME_MAX_LINES = 3;
     private static final double DEFAULT_NAME_LINE_SPACING = 1.15;
+    // Fully opaque by default: names draw at their owner's full colour strength unless
+    // the player fades them.
+    private static final double DEFAULT_NAME_OPACITY = 1.0;
     private static final double DEFAULT_ANCHOR_BAND_OPACITY = 0.35;
     private static final double DEFAULT_ANCHOR_BAND_LINE_OPACITY = 0.9;
     // Both reveal overrides off by default: the map draws exactly what the normal
@@ -1084,6 +1093,17 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapNameLineSpacing() {
         return LunaSettingsReader.getDouble(MOD_ID, NAME_LINE_SPACING_FIELD,
                 DEFAULT_NAME_LINE_SPACING);
+    }
+
+    /**
+     * @return the global opacity every cluster name draws at, 0..1, a fraction of its
+     *         owner's colour: 1 draws each name at full strength, lower fades all names
+     *         uniformly across every view and group of systems. The per-frame map-zoom
+     *         fade the renderer applies still composes on top of this
+     */
+    public static double getPoliticalMapNameOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, NAME_OPACITY_FIELD,
+                DEFAULT_NAME_OPACITY);
     }
 
     /**
