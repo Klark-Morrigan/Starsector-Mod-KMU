@@ -36,7 +36,7 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_UNINHABITED = "political_map_ctl_uninhabited";
     public static final String POLITICAL_MAP_CTL_NAME_SHORT = "political_map_ctl_name_short";
     public static final String POLITICAL_MAP_CTL_NAME_FULL = "political_map_ctl_name_full";
-    public static final String POLITICAL_MAP_CTL_NAMES = "political_map_ctl_names";
+    public static final String POLITICAL_MAP_CTL_FACTION_NAMES = "political_map_ctl_faction_names";
     public static final String POLITICAL_MAP_CTL_FACTIONS = "political_map_ctl_factions";
     public static final String POLITICAL_MAP_CTL_ALLIANCES = "political_map_ctl_alliances";
 

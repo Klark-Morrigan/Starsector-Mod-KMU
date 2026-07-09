@@ -48,7 +48,7 @@ public final class PoliticalMapBodyControls {
                 new SidebarControlSpec(SidebarControlKind.RADIO,
                         List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL)),
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAMES),
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES),
                         nameFormatRadioState(), PoliticalMapBodyControls::selectNameFormatSegment));
     }
 
