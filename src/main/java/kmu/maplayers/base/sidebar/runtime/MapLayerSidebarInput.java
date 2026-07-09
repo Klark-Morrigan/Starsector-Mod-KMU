@@ -3,11 +3,13 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
-import kmlib.math.geometry.Rectangles;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.widgets.RadioRow;
-import kmlib.starsector.ui.widgets.VanillaTabStrip;
+import kmlib.starsector.ui.widgets.TabPanel;
+import kmlib.starsector.ui.widgets.TabPanelHotkeys;
+import kmlib.starsector.ui.widgets.TabStrip;
 
+import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarControl;
@@ -15,6 +17,7 @@ import kmu.maplayers.base.sidebar.SidebarControlKind;
 import kmu.maplayers.base.sidebar.SidebarPlacement;
 import kmu.settings.KmuLunaSettings;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -78,22 +81,29 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     }
 
     // Switches to the layer whose bound key was pressed and consumes the event, so the key
-    // does not also trigger a campaign binding sharing it.
+    // does not also trigger a campaign binding sharing it. The pure key-to-tab mapping (skipping
+    // unbound layers) is the reusable panel binder; KMU owns only where the keycodes come from
+    // (the layer settings) and what selecting means (the layer registry).
     private static void switchToBoundLayer(InputEventAPI event) {
-        for (var layer : MapLayerRegistry.getLayers()) {
-            var keycode = KmuLunaSettings.getPoliticalMapLayerShortcut(
-                    layer.getShortcutSettingKey(), layer.getDefaultShortcutKeycode());
-            // A cleared shortcut is stored as keycode 0 (LWJGL's KEY_NONE); skip it so an
-            // unbound layer never claims a keypress - otherwise a stray 0-valued event could.
-            if (keycode <= 0) {
-                continue;
-            }
-            if (event.getEventValue() == keycode) {
-                MapLayerRegistry.selectLayer(layer);
-                event.consume();
-                return;
-            }
+        var layers = MapLayerRegistry.getLayers();
+        var tabIndex = TabPanelHotkeys.findTabForKey(event.getEventValue(), layerKeycodes(layers));
+        if (tabIndex == TabStrip.NO_TAB) {
+            return;
         }
+        MapLayerRegistry.selectLayer(layers.get(tabIndex));
+        event.consume();
+    }
+
+    // Each layer's bound keycode in registry order, so a matched index maps back to its layer. A
+    // cleared shortcut reads as 0 (LWJGL's KEY_NONE); the binder treats a non-positive keycode as
+    // unbound and never matches it.
+    private static List<Integer> layerKeycodes(List<MapLayer> layers) {
+        var keycodes = new ArrayList<Integer>(layers.size());
+        for (var layer : layers) {
+            keycodes.add(KmuLunaSettings.getPoliticalMapLayerShortcut(
+                    layer.getShortcutSettingKey(), layer.getDefaultShortcutKeycode()));
+        }
+        return keycodes;
     }
 
     // Consumes any pointer event over the drawn footprint, acting on a left press that lands on a
@@ -102,7 +112,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // map, and consuming the whole box keeps the map from hovering a star or reading the bar as empty
     // margin under the cursor.
     private static void handlePointerOverBar(InputEventAPI event, SidebarPlacement placement) {
-        if (!placement.box().containsPoint(event.getX(), event.getY())) {
+        if (!TabPanel.containsPoint(placement.panel(), event.getX(), event.getY())) {
             return;
         }
         if (event.isLMBDownEvent()) {
@@ -115,8 +125,8 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // body control fires its action. A press on the border or blank body falls through to neither and
     // only consumes (handled by the caller), so empty chrome swallows the click without acting.
     private static void actOnLeftPress(SidebarPlacement placement, float pointX, float pointY) {
-        var tabIndex = VanillaTabStrip.findTabIndexAt(placement.tabs(), pointX, pointY);
-        if (tabIndex != Rectangles.NONE) {
+        var tabIndex = TabPanel.findTabIndexAt(placement.panel(), pointX, pointY);
+        if (tabIndex != TabStrip.NO_TAB) {
             MapLayerRegistry.selectLayer(MapLayerRegistry.getLayers().get(tabIndex));
             return;
         }

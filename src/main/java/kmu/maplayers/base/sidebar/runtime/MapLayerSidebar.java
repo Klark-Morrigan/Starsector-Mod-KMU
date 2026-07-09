@@ -10,12 +10,11 @@ import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.CampaignMapView;
-import kmlib.starsector.ui.widgets.BorderedBox;
 import kmlib.starsector.ui.widgets.Checkbox;
 import kmlib.starsector.ui.widgets.RadioRow;
+import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.starsector.ui.widgets.ToggleButton;
 import kmlib.starsector.ui.widgets.VanillaTabColors;
-import kmlib.starsector.ui.widgets.VanillaTabStrip;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -43,11 +42,11 @@ import java.util.Map;
  * layer hotkeys, and a click on a body control are read by {@link MapLayerSidebarInput}, since a
  * render pass gets no input events and cannot consume them.
  *
- * <p>The panel is composed from the reusable KMLib raw-GL widgets (a {@link BorderedBox} frame, a
- * {@link VanillaTabStrip} header, and the {@link Checkbox}/{@link RadioRow}/{@link ToggleButton}
- * body controls), so this class owns only the paint wiring: which tab is selected, where the cursor
- * hovers, and drawing each body control in the live state its spec carries. It stays agnostic to
- * what any control means - a control's lit state rides along in its {@link SidebarControlSpec}, so
+ * <p>The frame and header are the reusable KMLib {@link TabPanel} (a bordered frame over a
+ * vanilla-styled tab strip); the body controls are the KMLib {@link Checkbox}/{@link RadioRow}/{@link
+ * ToggleButton} widgets. So this class owns only the paint wiring: which tab is selected, where the
+ * cursor hovers, and drawing each body control in the live state its spec carries. It stays agnostic
+ * to what any control means - a control's lit state rides along in its {@link SidebarControlSpec}, so
  * this draws a faction toggle or a future alliances control the same way without knowing either.
  *
  * <p>The sector map is a vanilla core-UI tab with no seam to attach a mod panel, so the sidebar is
@@ -145,18 +144,20 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     private void drawSidebar(SidebarPlacement placement, int selectedIndex, float borderWidth,
             float opacity) {
         // Belt-and-suspenders around the raw GL: the map chrome and tooltips draw after this
-        // pass, so any enable / colour / blend state the panel touches must be restored.
+        // pass, so any enable / colour / blend state the panel touches must be restored. The whole
+        // draw - the panel's frame and header plus the body controls below - shares this one save,
+        // since the panel widget leaves GL state to its consumer.
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_COLOR_BUFFER_BIT);
         var accent = Misc.getBasePlayerColor();
-        // The bordered frame under everything: a black fill over the whole footprint and, when a
-        // width is set, an accent stroke on its edge, both faded by the one opacity.
-        BorderedBox.render(placement.box(), borderWidth, PANEL_FILL, accent, opacity);
         // Hover reads the cursor in UI coords - the same space the tab rects live in - so the tab
         // under the pointer lights without an input event.
-        var hoveredIndex = VanillaTabStrip.findTabIndexAt(placement.tabs(), UiCursor.getUiX(),
+        var hoveredIndex = TabPanel.findTabIndexAt(placement.panel(), UiCursor.getUiX(),
                 UiCursor.getUiY());
-        VanillaTabStrip.render(placement.tabs(), selectedIndex, hoveredIndex,
-                VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT,
+        // The reusable panel paints its own chrome: the bordered frame (black fill, accent stroke)
+        // and the vanilla-styled tab header, all faded by the one opacity. The body controls are
+        // KMU's and drawn below.
+        TabPanel.render(placement.panel(), borderWidth, PANEL_FILL, accent, selectedIndex,
+                hoveredIndex, VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT,
                 SidebarLayout.TAB_FONT_SIZE, opacity);
         drawBodyControls(placement.bodyControls(), accent, opacity);
         GL11.glPopAttrib();

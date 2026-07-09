@@ -5,28 +5,27 @@ import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.layout.RowStack;
 import kmlib.starsector.ui.widgets.RadioAlignment;
 import kmlib.starsector.ui.widgets.RadioRow;
-import kmlib.starsector.ui.widgets.VanillaTab;
+import kmlib.starsector.ui.widgets.TabPanel;
+import kmlib.starsector.ui.widgets.TabPanelBodySize;
 import kmlib.starsector.ui.widgets.VanillaTabContent;
-import kmlib.starsector.ui.widgets.VanillaTabStrip;
 import kmlib.text.KmlibStrings;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Lays out the sidebar: a text-snapped tab row inside an outer border, placed by an explicit padding
- * from the screen's top-left, over a control body the active tab fills with whatever controls it
- * carries. The sector map exposes no panel seam, so the sidebar is drawn in raw GL and hit-tested by
- * hand; this computes every rectangle once as a pure function of its inputs so the renderer and the
- * input listener share one placement and draw exactly what the player clicks.
+ * Turns the active tab's controls into the sidebar's laid-out rectangles. The frame, tab row, and
+ * body-region geometry is the reusable KMLib {@link TabPanel} (an outer border wrapping a
+ * vanilla-styled tab strip over a framed body); this class supplies only what is KMU - which
+ * controls the body carries and how each snaps to its label - so the political map is just one tab's
+ * body and another tab plugs in without touching the frame math.
  *
- * <p>The body is generic: it stacks whatever {@link SidebarControlSpec}s the caller hands it (empty
- * for a tab with no body), so the political map is just one tab's controls and another tab plugs in
- * without changing this. UI coordinates throughout (origin bottom-left, y grows up): the box's top
- * edge sits {@code paddingTop} below the screen top and its left edge {@code paddingLeft} in from
- * the left, the border frames the whole footprint, the tab row caps the content, and the body hangs
- * beneath. Text snapping runs through the injected {@link LineWidthMeasurer}, so the layout depends
- * on a width measurement rather than a concrete font and stays a pure computation.
+ * <p>It measures how large the body must be, hands that size to the panel, then lays each control
+ * into the body rectangle the panel frames. Computing it once as a pure function of its inputs lets
+ * the renderer and the input listener share one placement, so what is drawn is exactly what the
+ * player clicks. UI coordinates throughout (origin bottom-left, y grows up); text snapping runs
+ * through the injected {@link LineWidthMeasurer}, so the layout depends on a width measurement
+ * rather than a concrete font and stays a pure computation.
  */
 public final class SidebarLayout {
     // The tab row's height, shared by every tab. The font sizes below are measured (here) and drawn
@@ -61,9 +60,9 @@ public final class SidebarLayout {
 
     /**
      * Lays the sidebar out for the current screen height, padding, border, tabs, and body controls.
-     * The box is pinned by its top-left ({@code paddingLeft} in, {@code paddingTop} down); screen
-     * width plays no part, since the box grows rightward and downward from that corner rather than
-     * anchoring to the far edges. An empty {@code bodyControls} leaves the tab row with no body.
+     * The panel frames the tab row and (when the active tab carries controls) a body sized to hold
+     * them; this then places each control inside that framed body. An empty {@code bodyControls}
+     * leaves the tab row with no body.
      *
      * @param screenHeight  the UI-coordinate screen height, giving the top edge to hang from
      * @param paddingTop    pixels from the screen top to the box's top edge
@@ -77,47 +76,28 @@ public final class SidebarLayout {
     public static SidebarPlacement computePlacement(float screenHeight, int paddingTop,
             int paddingLeft, int borderWidth, List<VanillaTabContent> tabContents,
             List<SidebarControlSpec> bodyControls, LineWidthMeasurer measurer) {
-        var boxTopY = screenHeight - paddingTop;
-        // Content is inset by the border on every edge, so the tab row and body clear the stroke.
-        var contentX = paddingLeft + (float) borderWidth;
-        var contentTopY = boxTopY - borderWidth;
-
-        var tabs = VanillaTabStrip.layoutTabs(contentX, contentTopY, TAB_HEIGHT, TAB_TEXT_PADDING,
-                MIN_TAB_WIDTH, TAB_FONT_SIZE, tabContents, measurer);
-        var tabRowWidth = measureTabRowWidth(tabs, contentX);
-        var tabRowBottomY = contentTopY - TAB_HEIGHT;
-
-        var bodyLayout = bodyControls.isEmpty()
-                ? new BodyLayout(new Rectangle(contentX, tabRowBottomY, 0f, 0f), List.of())
-                : computeBodyLayout(contentX, tabRowBottomY, bodyControls, measurer);
-
-        // The box is as wide as the wider of the tab row and the body, and as tall as the tab row
-        // plus the body, all wrapped by the border.
-        var contentWidth = Math.max(tabRowWidth, bodyLayout.body().width());
-        var contentHeight = TAB_HEIGHT + bodyLayout.body().height();
-        var boxWidth = contentWidth + 2f * borderWidth;
-        var boxHeight = contentHeight + 2f * borderWidth;
-        var box = new Rectangle(paddingLeft, boxTopY - boxHeight, boxWidth, boxHeight);
-        return new SidebarPlacement(box, bodyLayout.body(), tabs, bodyLayout.controls());
+        // Measure the body first so the panel can size the box around both the tab row and the body;
+        // the measured row dimensions are reused to place each control once the body is framed.
+        var body = measureBody(bodyControls, measurer);
+        var placement = TabPanel.layout(screenHeight, paddingTop, paddingLeft, borderWidth,
+                TAB_HEIGHT, TAB_TEXT_PADDING, MIN_TAB_WIDTH, TAB_FONT_SIZE, tabContents, body.size(),
+                measurer);
+        var controls = layoutControls(placement.body(), bodyControls, body.rowHeights(),
+                body.rowWidths());
+        return new SidebarPlacement(placement, controls);
     }
 
-    // The tab row spans from the content's left edge to the right edge of the last tab; an empty row
-    // is zero wide.
-    private static float measureTabRowWidth(List<VanillaTab> tabs, float contentX) {
-        if (tabs.isEmpty()) {
-            return 0f;
+    // Measures each control row's width and height and the body footprint that holds them: the body
+    // is as wide as the widest row (a trailing label counts, so the backdrop covers it) plus the
+    // inset, and as tall as the stacked rows plus their gaps and the inset. Empty controls give the
+    // absent body size, so a bodyless tab reserves nothing. A vertical radio stands one option-row
+    // taller per segment, so the row heights vary and the body sums them rather than assuming one
+    // height per control.
+    private static BodyMeasurement measureBody(List<SidebarControlSpec> specs,
+            LineWidthMeasurer measurer) {
+        if (specs.isEmpty()) {
+            return new BodyMeasurement(TabPanelBodySize.NONE, List.of(), List.of());
         }
-        var last = tabs.get(tabs.size() - 1).bounds();
-        return last.x() + last.width() - contentX;
-    }
-
-    // Stacks the control rows inside the body inset (via the shared row-stacker), snapping each row
-    // to its control's width and height and splitting a radio row into its option segments, then
-    // sizes the body to enclose the widest row (a trailing label counts, so the backdrop covers it)
-    // plus the inset. A vertical radio stands one option-row taller per segment, so the row heights
-    // vary and the body sums them rather than assuming one height per control.
-    private static BodyLayout computeBodyLayout(float contentX, float bodyTopY,
-            List<SidebarControlSpec> specs, LineWidthMeasurer measurer) {
         var rowWidths = new ArrayList<Float>(specs.size());
         var rowHeights = new ArrayList<Float>(specs.size());
         var contentWidth = 0f;
@@ -130,9 +110,25 @@ public final class SidebarLayout {
             stackedHeight += rowHeight;
             contentWidth = Math.max(contentWidth, rowWidth + measureTrailingWidth(spec, measurer));
         }
-        var rows = RowStack.layoutRows(contentX + BODY_PADDING, bodyTopY - BODY_PADDING,
-                ROW_GAP, rowHeights, rowWidths);
+        var bodyWidth = contentWidth + 2f * BODY_PADDING;
+        var bodyHeight = 2f * BODY_PADDING + stackedHeight + (specs.size() - 1) * ROW_GAP;
+        return new BodyMeasurement(new TabPanelBodySize(bodyWidth, bodyHeight),
+                List.copyOf(rowWidths), List.copyOf(rowHeights));
+    }
 
+    // Stacks each control row inside the framed body (via the shared row-stacker, starting from the
+    // body's top-left plus the inset), snapping each row to its measured width and height and
+    // splitting a radio row into its option segments so the hit rects are the drawn ones. The body
+    // rectangle the panel framed carries the same top-left the measurement assumed, so the controls
+    // land exactly under the tabs.
+    private static List<SidebarControl> layoutControls(Rectangle body,
+            List<SidebarControlSpec> specs, List<Float> rowHeights, List<Float> rowWidths) {
+        if (specs.isEmpty()) {
+            return List.of();
+        }
+        var bodyTopY = body.y() + body.height();
+        var rows = RowStack.layoutRows(body.x() + BODY_PADDING, bodyTopY - BODY_PADDING,
+                ROW_GAP, rowHeights, rowWidths);
         var controls = new ArrayList<SidebarControl>(specs.size());
         for (var index = 0; index < specs.size(); index++) {
             var spec = specs.get(index);
@@ -142,11 +138,7 @@ public final class SidebarLayout {
                     : List.<Rectangle>of();
             controls.add(new SidebarControl(spec, row, segments));
         }
-
-        var bodyWidth = contentWidth + 2f * BODY_PADDING;
-        var bodyHeight = 2f * BODY_PADDING + stackedHeight + (specs.size() - 1) * ROW_GAP;
-        var body = new Rectangle(contentX, bodyTopY - bodyHeight, bodyWidth, bodyHeight);
-        return new BodyLayout(body, List.copyOf(controls));
+        return List.copyOf(controls);
     }
 
     // The width of a control's clickable row, snapped to its label(s): a checkbox is its tick box
@@ -196,8 +188,9 @@ public final class SidebarLayout {
         return (float) measurer.measureLineWidth(text, BODY_FONT_SIZE);
     }
 
-    // The body's own footprint and the controls within it, returned together so the caller can size
-    // the box to the body and hand the controls straight to the placement.
-    private record BodyLayout(Rectangle body, List<SidebarControl> controls) {
+    // The body's measured footprint and the per-row dimensions behind it, returned together so the
+    // size feeds the panel and the same row dimensions place the controls without measuring twice.
+    private record BodyMeasurement(TabPanelBodySize size, List<Float> rowWidths,
+            List<Float> rowHeights) {
     }
 }

@@ -1,21 +1,45 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.widgets.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.VanillaTab;
 
 import java.util.List;
 
 /**
- * The laid-out rectangles of one sidebar frame: the outer {@code box} spanning the whole
- * footprint (border and all), the {@code body} panel beneath the tabs, one {@link VanillaTab} per
- * registered layer, and the {@link SidebarControl}s inside the body. All are in UI coordinates, so
- * the renderer draws them and the input listener hit-tests them without conversion.
+ * One laid-out sidebar frame: the reusable {@link TabPanelPlacement} carrying the panel's outer
+ * box, tab row, and framed body rectangle, paired with the {@link SidebarControl}s KMU laid inside
+ * that body. All rectangles are in UI coordinates, so the renderer draws them and the input listener
+ * hit-tests them without conversion.
  *
- * <p>{@code tabs} carries only geometry and display content, not the layer each selects: the tabs
- * are laid out in registry order, so a hit index maps back to its layer through that same order.
- * {@code body} is a zero-size rectangle and {@code bodyControls} is empty when the active tab
- * opens no body, so a bodyless tab reserves no dead click zone beneath the tab row.
+ * <p>The panel geometry is the KMLib chrome and the controls are KMU's, kept side by side so a
+ * caller reaches the frame through {@link #panel()} (for {@link kmlib.starsector.ui.widgets.TabPanel}
+ * render and hit-test) and the controls through {@link #bodyControls()}. The {@link #box()},
+ * {@link #tabs()}, and {@link #body()} shortcuts read straight off the panel, so a bodyless tab (an
+ * empty {@code bodyControls} and a zero-size body) reserves no dead click zone beneath the tab row.
+ *
+ * @param panel        the frame, tab row, and body rectangle from the reusable panel
+ * @param bodyControls the controls KMU laid inside the body, top to bottom (empty for no body)
  */
-public record SidebarPlacement(Rectangle box, Rectangle body, List<VanillaTab> tabs,
-        List<SidebarControl> bodyControls) {
+public record SidebarPlacement(TabPanelPlacement panel, List<SidebarControl> bodyControls) {
+    /**
+     * @return the panel's full footprint, border included
+     */
+    public Rectangle box() {
+        return panel.box();
+    }
+
+    /**
+     * @return the laid-out tabs, in registry order, so a hit index maps back to its layer
+     */
+    public List<VanillaTab> tabs() {
+        return panel.tabs();
+    }
+
+    /**
+     * @return the framed body rectangle, zero-size when the active tab opens no body
+     */
+    public Rectangle body() {
+        return panel.body();
+    }
 }
