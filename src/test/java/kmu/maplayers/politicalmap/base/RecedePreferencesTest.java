@@ -12,8 +12,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,10 +29,16 @@ import static org.mockito.Mockito.when;
  */
 final class RecedePreferencesTest {
     // The save-serialised keys, pinned as literals: renaming one resets every existing save's choice
-    // to off, so a change must break this test first. Spelled for the alliances view that first
-    // shipped them - a frozen save-compat id, not a description.
-    private static final String MUTE_KEY = "$kmu_political_alliance_mute_non_allied";
-    private static final String DESATURATE_KEY = "$kmu_political_alliance_desaturate_non_allied";
+    // to off, so a change must break this test first.
+    private static final String MUTE_KEY = "$kmu_political_recede_mute";
+    private static final String DESATURATE_KEY = "$kmu_political_recede_desaturate";
+
+    // The keys the toggles shipped under while the recede lived in the alliances view; migrateLegacyKeys
+    // carries a pre-rename save's choice from these to the current keys. Pinned so a change to either
+    // side of the migration breaks here rather than silently orphaning old saves.
+    private static final String LEGACY_MUTE_KEY = "$kmu_political_alliance_mute_non_allied";
+    private static final String LEGACY_DESATURATE_KEY =
+            "$kmu_political_alliance_desaturate_non_allied";
 
     // A distinct, non-default modifier reading so a test that expects it to flow through is not
     // satisfied by the fallback value.
@@ -239,6 +248,108 @@ final class RecedePreferencesTest {
 
                 assertThat(RecedePreferences.resolveRecedeAdjustment().opacityMultiplier())
                         .isEqualTo(0.72);
+            }
+        }
+    }
+
+    @Nested
+    class MigrateLegacyKeys {
+
+        @Test
+        void migrateLegacyKeysCarriesTheStoredMuteChoiceToTheCurrentKeyAndDropsTheLegacyKey() {
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(LEGACY_MUTE_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(LEGACY_MUTE_KEY)).thenReturn(true);
+
+                RecedePreferences.migrateLegacyKeys();
+
+                verify(memoryMock).set(MUTE_KEY, true);
+                verify(memoryMock).unset(LEGACY_MUTE_KEY);
+            }
+        }
+
+        @Test
+        void migrateLegacyKeysCarriesTheStoredDesaturateChoiceToTheCurrentKeyAndDropsTheLegacyKey() {
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(LEGACY_DESATURATE_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(LEGACY_DESATURATE_KEY)).thenReturn(true);
+
+                RecedePreferences.migrateLegacyKeys();
+
+                verify(memoryMock).set(DESATURATE_KEY, true);
+                verify(memoryMock).unset(LEGACY_DESATURATE_KEY);
+            }
+        }
+
+        @Test
+        void migrateLegacyKeysCarriesAStoredOffChoiceToo() {
+            // The migration gates on the key's presence, not its value, so a stored-off legacy choice
+            // carries its false into the current key rather than being read as an absent key.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(LEGACY_MUTE_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(LEGACY_MUTE_KEY)).thenReturn(false);
+
+                RecedePreferences.migrateLegacyKeys();
+
+                verify(memoryMock).set(MUTE_KEY, false);
+                verify(memoryMock).unset(LEGACY_MUTE_KEY);
+            }
+        }
+
+        @Test
+        void migrateLegacyKeysWritesNothingWhenNoLegacyKeyIsStored() {
+            // A save written after the rename holds no legacy key, so there is nothing to carry and
+            // the current keys are left exactly as they are.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+
+                RecedePreferences.migrateLegacyKeys();
+
+                verify(memoryMock, never()).set(anyString(), anyBoolean());
+                verify(memoryMock, never()).unset(anyString());
+            }
+        }
+
+        @Test
+        void migrateLegacyKeysDoesNotOverwriteACurrentChoice() {
+            // Once the current key holds a value the migration steps aside, so a choice made after
+            // the rename is never clobbered by a stale legacy key that somehow lingers alongside it.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(MUTE_KEY)).thenReturn(true);
+                when(memoryMock.contains(LEGACY_MUTE_KEY)).thenReturn(true);
+
+                RecedePreferences.migrateLegacyKeys();
+
+                verify(memoryMock, never()).set(anyString(), anyBoolean());
+                verify(memoryMock, never()).unset(anyString());
+            }
+        }
+
+        @Test
+        void migrateLegacyKeysIsANoOpBeforeTheSectorExists() {
+            // No sector means no save to migrate, so the call returns after the read without ever
+            // touching a memory that is not there.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
+
+                RecedePreferences.migrateLegacyKeys();
+
+                memoryAccessMock.verify(SectorMemoryAccess::readSectorMemory);
             }
         }
     }

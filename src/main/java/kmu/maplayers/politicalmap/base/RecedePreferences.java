@@ -26,12 +26,17 @@ import kmu.settings.KmuLunaSettings;
  */
 public final class RecedePreferences {
     // Save-serialised keys for the two toggles; frozen once shipped, since renaming one silently
-    // resets every existing save's choice to off. Spelled for the alliances view that first shipped
-    // them - the spelling is a save-compat id, not a description, so it stays put now the toggles
-    // are shared. Absent until the player first flips the matching sidebar checkbox, which the read
-    // then reports as off.
-    private static final String MUTE_KEY = "$kmu_political_alliance_mute_non_allied";
-    private static final String DESATURATE_KEY = "$kmu_political_alliance_desaturate_non_allied";
+    // resets every existing save's choice to off. Absent until the player first flips the matching
+    // sidebar checkbox, which the read then reports as off.
+    private static final String MUTE_KEY = "$kmu_political_recede_mute";
+    private static final String DESATURATE_KEY = "$kmu_political_recede_desaturate";
+
+    // The keys these two shipped under while the recede lived only in the alliances view. A
+    // pre-rename save still holds these, so migrateLegacyKeys carries each stored choice into the
+    // current key once on load and sheds the dead key rather than letting the toggle silently reset.
+    private static final String LEGACY_MUTE_KEY = "$kmu_political_alliance_mute_non_allied";
+    private static final String LEGACY_DESATURATE_KEY =
+            "$kmu_political_alliance_desaturate_non_allied";
 
     private RecedePreferences() {
     }
@@ -91,6 +96,22 @@ public final class RecedePreferences {
         return new BlocStyleAdjustment(opacityMultiplier, isDesaturated());
     }
 
+    /**
+     * Carries each toggle's pre-rename stored choice into its current key and sheds the dead key -
+     * the self-heal for saves written while the recede lived only in the alliances view, under the
+     * old key spelling. A no-op before the sector exists, and per key a no-op once the current key
+     * holds a value (already migrated, or the player has since flipped the toggle) or when no legacy
+     * key is stored. Call once on game load.
+     */
+    public static void migrateLegacyKeys() {
+        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
+        if (memory == null) {
+            return;
+        }
+        migrateLegacyKey(memory, LEGACY_MUTE_KEY, MUTE_KEY);
+        migrateLegacyKey(memory, LEGACY_DESATURATE_KEY, DESATURATE_KEY);
+    }
+
     // Reads a toggle from sector memory, false before the sector exists (no save to read) or when
     // the key was never written - the original un-receded look either way. MemoryAPI.getBoolean
     // already returns false for an absent key, so the null-sector guard is the only extra check.
@@ -111,5 +132,18 @@ public final class RecedePreferences {
         }
         memory.set(key, value);
         PoliticalMapRefresh.requestRecedeStyleRefresh();
+    }
+
+    // Carries one toggle's stored boolean from its legacy key to its current key, then unsets the
+    // legacy key so the migration runs once and nothing stale lingers. Skips when the current key
+    // already holds a value (already migrated, or a fresh choice not to overwrite) or when the
+    // legacy key was never written. contains is the presence gate, not getBoolean, so a stored
+    // false migrates as faithfully as a stored true.
+    private static void migrateLegacyKey(MemoryAPI memory, String legacyKey, String currentKey) {
+        if (memory.contains(currentKey) || !memory.contains(legacyKey)) {
+            return;
+        }
+        memory.set(currentKey, memory.getBoolean(legacyKey));
+        memory.unset(legacyKey);
     }
 }
