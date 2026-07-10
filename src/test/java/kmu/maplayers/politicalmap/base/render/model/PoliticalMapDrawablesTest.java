@@ -24,7 +24,7 @@ import static org.mockito.Mockito.mock;
  * Pins the built map state the renderer paints and the incremental refresh edits:
  * that the empty fallback is a harmless no-op the render path can lean on after a failed
  * first build, that {@link PoliticalMapDrawables#isEmpty} tracks either draw list, and
- * that the constructor threads its eleven inputs into the matching accessors (four of them
+ * that the constructor threads its twelve inputs into the matching accessors (four of them
  * same-typed {@link MapStyle} bundles a swap would not otherwise catch, and the view and
  * grouping the incremental re-shape classifies against).
  */
@@ -49,6 +49,8 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getOwnerBySystemId()).isEmpty();
             assertThat(drawables.getDecivilisedSystemIds()).isEmpty();
             assertThat(drawables.getNeutralColor()).isEqualTo(Color.GRAY);
+            assertThat(drawables.getDesaturationPalette())
+                    .isEqualTo(new DesaturationPalette(Color.GRAY, Color.GRAY));
         }
     }
 
@@ -87,6 +89,7 @@ final class PoliticalMapDrawablesTest {
             Map<String, DominantOwner> owners = new LinkedHashMap<>();
             Set<String> decivilised = new LinkedHashSet<>();
             var neutral = Color.CYAN;
+            var desaturationPalette = new DesaturationPalette(Color.MAGENTA, Color.ORANGE);
             // Four distinct instances so a swapped style field is caught by identity, not
             // just by the shared MapStyle type the compiler would accept either way.
             var factionStyle = styleMarked(1);
@@ -97,14 +100,15 @@ final class PoliticalMapDrawablesTest {
             var grouping = OwnershipGrouping.identity();
 
             var drawables = new PoliticalMapDrawables(styledCells, territories, owners,
-                    decivilised, neutral, factionStyle, independentStyle, decivilisedStyle,
-                    uninhabitedStyle, viewMock, grouping);
+                    decivilised, neutral, desaturationPalette, factionStyle, independentStyle,
+                    decivilisedStyle, uninhabitedStyle, viewMock, grouping);
 
             assertThat(drawables.getStyledCellBySystemId()).isSameAs(styledCells);
             assertThat(drawables.getFactionTerritoryByFactionId()).isSameAs(territories);
             assertThat(drawables.getOwnerBySystemId()).isSameAs(owners);
             assertThat(drawables.getDecivilisedSystemIds()).isSameAs(decivilised);
             assertThat(drawables.getNeutralColor()).isSameAs(neutral);
+            assertThat(drawables.getDesaturationPalette()).isSameAs(desaturationPalette);
             assertThat(drawables.getFactionStyle()).isSameAs(factionStyle);
             assertThat(drawables.getIndependentStyle()).isSameAs(independentStyle);
             assertThat(drawables.getDecivilisedStyle()).isSameAs(decivilisedStyle);
@@ -121,7 +125,7 @@ final class PoliticalMapDrawablesTest {
         PoliticalMapView viewMock = mock(PoliticalMapView.class);
         return new PoliticalMapDrawables(new LinkedHashMap<>(styledCells),
                 new LinkedHashMap<>(territories), new LinkedHashMap<>(), new LinkedHashSet<>(),
-                Color.GRAY, null, null, null, null, viewMock,
+                Color.GRAY, null, null, null, null, null, viewMock,
                 OwnershipGrouping.identity());
     }
 

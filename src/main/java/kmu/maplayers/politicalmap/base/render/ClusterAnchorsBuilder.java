@@ -9,12 +9,14 @@ import kmlib.math.geometry.PrincipalAxis;
 import kmlib.math.geometry.RegionChord;
 import kmlib.math.geometry.Segment;
 import kmlib.math.solving.Picks;
+import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelBoxFitter;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
@@ -23,6 +25,7 @@ import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
+import kmu.maplayers.politicalmap.base.render.model.DesaturationPalette;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
@@ -97,10 +100,17 @@ final class ClusterAnchorsBuilder {
         var groupKeyBySystemId = DominantOwner.factionIdBySystemId(ownerBySystemId);
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesBySystemId(), groupKeyBySystemId);
+        // The desaturation palette is resolved the same way DrawablesBuilder resolves it
+        // for the production draw lists, so a desaturated bloc's name matches its recolored
+        // fill and border exactly.
+        var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
+        var desaturationPalette = DrawablesBuilder.resolveDesaturationPalette(
+                KmuLunaSettings.getPoliticalMapDesaturationProfile(), sector, neutralColor);
         anchors.addAll(computeClusterAnchors(clusters, geometryCache.getCellEdgesBySystemId(),
                 geometryCache.getSiteBySystemId(), ownerBySystemId, groupKeyBySystemId,
                 LabelAnchorSpecification.readFromLunaSettings(),
                 blocId -> view.shouldUseIndependentStyle(blocId, grouping),
+                newBlocStyleAdjustmentResolver(view, grouping), desaturationPalette,
                 newNameEstimatorResolver(sector, view, grouping)));
     }
 
@@ -136,6 +146,8 @@ final class ClusterAnchorsBuilder {
             Map<String, List<CellEdge>> edgesBySystemId, Map<String, double[]> siteBySystemId,
             Map<String, DominantOwner> ownerBySystemId, Map<String, String> groupKeyBySystemId,
             LabelAnchorSpecification spec, Predicate<String> usesIndependentStyleByBlocId,
+            Function<String, BlocStyleAdjustment> blocStyleAdjustmentByBlocId,
+            DesaturationPalette desaturationPalette,
             Function<String, LabelLengthEstimator> nameEstimatorByFactionId) {
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         for (var memberSystemIds : clusters) {
@@ -147,9 +159,11 @@ final class ClusterAnchorsBuilder {
             var axis = resolveClusterAxis(memberSystemIds, edgesBySystemId, sites);
             var rings = spec.borderTrace().traceRings(memberSystemIds, edgesBySystemId,
                     groupKeyBySystemId);
+            var adjustment = blocStyleAdjustmentByBlocId.apply(owner.factionId());
             anchors.add(searchClusterAnchor(rings, siteBySystemId, axis,
-                    resolveLabelColor(owner, spec, usesIndependentStyleByBlocId), spec,
-                    nameEstimatorByFactionId.apply(owner.factionId())));
+                    resolveLabelColor(owner, spec, usesIndependentStyleByBlocId, adjustment,
+                            desaturationPalette),
+                    spec, nameEstimatorByFactionId.apply(owner.factionId())));
         }
         return anchors;
     }
@@ -158,22 +172,39 @@ final class ClusterAnchorsBuilder {
     // national border resolves to, so the name inherits the border's own colour rather
     // than a fixed bright pick. A bloc drawn in the independent style carries the
     // independent outer-border choice, every other bloc the faction one, resolved against
-    // this owner's two shades by the same DrawablesBuilder mapping the border itself uses.
-    // A hidden border ("No color") still needs a legible name, so it falls back to the
-    // owner's bright primary shade. The same faction-vs-independent split then picks the
-    // group's name opacity and fades the resolved colour by it, so each group's names
-    // recede on their own (the debug dot, sharing this colour, dims with them).
+    // this bloc's two shades - the owner's own palette, or the pass's shared desaturation
+    // palette when the adjustment desaturates this bloc - by the same DrawablesBuilder
+    // mapping the border itself uses. A hidden border ("No color") still needs a legible
+    // name, so it falls back to the resolved primary shade. The same faction-vs-independent
+    // split then picks the group's name opacity, further scaled by the adjustment's opacity
+    // multiplier, and fades the resolved colour by the product (the debug dot, sharing this
+    // colour, dims and recolours with the name).
     private static Color resolveLabelColor(DominantOwner owner, LabelAnchorSpecification spec,
-            Predicate<String> usesIndependentStyleByBlocId) {
+            Predicate<String> usesIndependentStyleByBlocId, BlocStyleAdjustment adjustment,
+            DesaturationPalette desaturationPalette) {
         var usesIndependentStyle = usesIndependentStyleByBlocId.test(owner.factionId());
         var choice = usesIndependentStyle
                 ? spec.independentOuterColor() : spec.factionOuterColor();
-        var color = DrawablesBuilder.pickPaletteColor(choice, owner.primaryColor(),
-                owner.secondaryColor());
-        var resolved = color != null ? color : owner.primaryColor();
-        var opacity = usesIndependentStyle
-                ? spec.independentNameOpacity() : spec.factionNameOpacity();
+        var primaryColor = adjustment.desaturate()
+                ? desaturationPalette.primaryColor() : owner.primaryColor();
+        var secondaryColor = adjustment.desaturate()
+                ? desaturationPalette.secondaryColor() : owner.secondaryColor();
+        var color = DrawablesBuilder.pickPaletteColor(choice, primaryColor, secondaryColor);
+        var resolved = color != null ? color : primaryColor;
+        var opacity = (usesIndependentStyle
+                ? spec.independentNameOpacity() : spec.factionNameOpacity())
+                * adjustment.opacityMultiplier();
         return Colors.scaleAlpha(resolved, (float) opacity);
+    }
+
+    // The per-bloc style adjustments one rebuild applies: each bloc's Mute/Desaturate
+    // decision as the active view resolves it, cached per bloc id like the name estimator
+    // resolver below, since every cluster of a bloc shares one adjustment.
+    private static Function<String, BlocStyleAdjustment> newBlocStyleAdjustmentResolver(
+            PoliticalMapView view, OwnershipGrouping grouping) {
+        var adjustmentByBlocId = new HashMap<String, BlocStyleAdjustment>();
+        return blocId -> adjustmentByBlocId.computeIfAbsent(blocId,
+                id -> view.resolveBlocStyleAdjustment(id, grouping));
     }
 
     // The per-bloc name estimators one rebuild fits against: each bloc's display name

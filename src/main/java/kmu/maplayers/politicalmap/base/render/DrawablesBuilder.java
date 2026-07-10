@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.geometry.Polygons;
 import kmlib.opengl.GlVertexRuns;
@@ -12,16 +13,19 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.render.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.model.DesaturationPalette;
 import kmu.maplayers.politicalmap.base.render.model.FactionTerritory;
 import kmu.maplayers.politicalmap.base.render.model.MapStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.base.render.model.StyledCell;
+import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
@@ -82,13 +86,16 @@ final class DrawablesBuilder {
             LOG.debug("Political map decivilised scan; systems=" + decivilisedSystemIds.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - decivilisedStart));
 
-            // One style bundle per category and the shared neutral color, held on the
-            // drawables so the incremental refresh re-shapes cells against the same
-            // inputs this pass used.
+            // One style bundle per category, the shared neutral color, and the desaturation
+            // palette the profile setting resolves to, held on the drawables so the
+            // incremental refresh re-shapes cells against the same inputs this pass used.
+            var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
+            var desaturationPalette = resolveDesaturationPalette(
+                    KmuLunaSettings.getPoliticalMapDesaturationProfile(), sector, neutralColor);
             var drawables = new PoliticalMapDrawables(
                     new LinkedHashMap<>(), new LinkedHashMap<>(),
                     ownerBySystemId, decivilisedSystemIds,
-                    StarsectorFactionColors.resolveNeutralColor(sector),
+                    neutralColor, desaturationPalette,
                     MapStyleReader.readFactionStyle(), MapStyleReader.readIndependentStyle(),
                     MapStyleReader.readDecivilisedStyle(), MapStyleReader.readUninhabitedStyle(),
                     view, grouping);
@@ -150,12 +157,23 @@ final class DrawablesBuilder {
                     .shouldUseIndependentStyle(owner.factionId(), drawables.getGrouping())
                     ? drawables.getIndependentStyle()
                     : drawables.getFactionStyle();
-            return buildStyledCell(shaped, owner.primaryColor(), owner.secondaryColor(),
-                    style, false);
+            // The view's per-bloc adjustment dims and/or recolours an owned cell before it
+            // draws: desaturating swaps the owner's own palette for the pass's shared
+            // desaturation palette, and the opacity multiplier scales every seam alpha on
+            // top of the style's own opacities.
+            var adjustment = drawables.getView()
+                    .resolveBlocStyleAdjustment(owner.factionId(), drawables.getGrouping());
+            var primaryColor = adjustment.desaturate()
+                    ? drawables.getDesaturationPalette().primaryColor() : owner.primaryColor();
+            var secondaryColor = adjustment.desaturate()
+                    ? drawables.getDesaturationPalette().secondaryColor() : owner.secondaryColor();
+            return buildStyledCell(shaped, primaryColor, secondaryColor, style, false,
+                    adjustment.opacityMultiplier());
         }
         // Factionless: decivilised or (otherwise) uninhabited. Its style fills neither
         // palette slot, so both resolve to the shared neutral color and only its
-        // per-cell outline draws; drop it when that outline is "No color".
+        // per-cell outline draws; drop it when that outline is "No color". Factionless
+        // cells are not blocs the view classifies, so they never carry an adjustment.
         var style = drawables.getDecivilisedSystemIds().contains(systemId)
                 ? drawables.getDecivilisedStyle()
                 : drawables.getUninhabitedStyle();
@@ -163,7 +181,8 @@ final class DrawablesBuilder {
             return null;
         }
         var neutralColor = drawables.getNeutralColor();
-        return buildStyledCell(shaped, neutralColor, neutralColor, style, true);
+        return buildStyledCell(shaped, neutralColor, neutralColor, style, true,
+                BlocStyleAdjustment.NONE.opacityMultiplier());
     }
 
     // Builds every owned faction's territory into the drawables, keyed by faction id.
@@ -212,13 +231,19 @@ final class DrawablesBuilder {
                 .shouldUseIndependentStyle(factionId, drawables.getGrouping())
                 ? drawables.getIndependentStyle()
                 : drawables.getFactionStyle();
+        // The view's per-bloc adjustment applies here exactly as it does per cell: a
+        // desaturated bloc's fill and border swap to the pass's shared desaturation
+        // palette instead of its own two shades.
+        var adjustment = drawables.getView().resolveBlocStyleAdjustment(factionId, drawables.getGrouping());
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
         var palette = drawables.getOwnerBySystemId().get(memberSystemIds.get(0));
-        var fillColor = pickPaletteColor(
-                style.fillColor(), palette.primaryColor(), palette.secondaryColor());
-        var borderColor = pickPaletteColor(
-                style.outerColor(), palette.primaryColor(), palette.secondaryColor());
+        var primaryColor = adjustment.desaturate()
+                ? drawables.getDesaturationPalette().primaryColor() : palette.primaryColor();
+        var secondaryColor = adjustment.desaturate()
+                ? drawables.getDesaturationPalette().secondaryColor() : palette.secondaryColor();
+        var fillColor = pickPaletteColor(style.fillColor(), primaryColor, secondaryColor);
+        var borderColor = pickPaletteColor(style.outerColor(), primaryColor, secondaryColor);
         if (fillColor == null && borderColor == null) {
             return null;
         }
@@ -252,8 +277,11 @@ final class DrawablesBuilder {
             }
         }
         return new FactionTerritory(fillTriangles,
-                new UiElementPaint(fillColor, (float) style.fillOpacity()), borderRuns,
-                new UiElementPaint(borderColor, (float) style.outerOpacity()),
+                new UiElementPaint(fillColor,
+                        (float) (style.fillOpacity() * adjustment.opacityMultiplier())),
+                borderRuns,
+                new UiElementPaint(borderColor,
+                        (float) (style.outerOpacity() * adjustment.opacityMultiplier())),
                 (float) style.outerWidth());
     }
 
@@ -266,9 +294,12 @@ final class DrawablesBuilder {
     // same corner settings and gate the cluster borders use, so a lone dead system reads
     // as smoothly as a cluster when rounding is on and stays a sharp Voronoi cell when it
     // is off. Each color resolves against the two palette shades, null for a "No color"
-    // choice, so the draw pass skips it.
+    // choice, so the draw pass skips it. Every seam's opacity is scaled by
+    // {@code opacityMultiplier}, the caller's resolved per-bloc adjustment (1.0 - no
+    // change - for a factionless cell, which carries no adjustment).
     private static StyledCell buildStyledCell(ShapedCell shaped, Color primaryColor,
-            Color secondaryColor, MapStyle style, boolean perCellFillAndBorder) {
+            Color secondaryColor, MapStyle style, boolean perCellFillAndBorder,
+            double opacityMultiplier) {
         // Gate the corner rounding outside the round call: on rounds this cell's outline
         // in step with the cluster borders, off leaves its raw inset outline.
         var outline = shaped.fillPolygon();
@@ -287,15 +318,15 @@ final class DrawablesBuilder {
                         perCellFillAndBorder
                                 ? pickPaletteColor(style.fillColor(), primaryColor, secondaryColor)
                                 : null,
-                        (float) style.fillOpacity()),
+                        (float) (style.fillOpacity() * opacityMultiplier)),
                 new UiElementPaint(
                         perCellFillAndBorder
                                 ? pickPaletteColor(style.outerColor(), primaryColor, secondaryColor)
                                 : null,
-                        (float) style.outerOpacity()),
+                        (float) (style.outerOpacity() * opacityMultiplier)),
                 new UiElementPaint(
                         pickPaletteColor(style.innerColor(), primaryColor, secondaryColor),
-                        (float) style.innerOpacity()),
+                        (float) (style.innerOpacity() * opacityMultiplier)),
                 (float) style.outerWidth(), (float) style.innerWidth());
     }
 
@@ -320,6 +351,25 @@ final class DrawablesBuilder {
             case PRIMARY -> primaryColor;
             case SECONDARY -> secondaryColor;
             case NONE -> null;
+        };
+    }
+
+    // Resolves the desaturation palette a desaturated bloc recolours to, from the given
+    // profile: Independent forges the Independent faction's own two shades (the same pair
+    // a real independent owner's DominantOwner carries), so a desaturated bloc reads
+    // exactly as independent-held space; Neutral is the shared neutral color in both
+    // slots, the flat gray unowned space draws in. Takes the profile and the neutral color
+    // as parameters (rather than reading KmuLunaSettings itself) so the mapping is a pure,
+    // unit-testable lookup; buildDrawables reads the live setting once per pass and hands
+    // it in.
+    static DesaturationPalette resolveDesaturationPalette(DesaturationProfileChoice profile,
+            SectorAPI sector, Color neutralColor) {
+        return switch (profile) {
+            case INDEPENDENT -> {
+                var independent = StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);
+                yield new DesaturationPalette(independent.primaryColor(), independent.secondaryColor());
+            }
+            case NEUTRAL -> new DesaturationPalette(neutralColor, neutralColor);
         };
     }
 }

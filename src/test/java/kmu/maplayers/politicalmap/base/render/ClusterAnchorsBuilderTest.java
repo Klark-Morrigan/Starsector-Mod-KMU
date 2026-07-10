@@ -3,8 +3,10 @@ package kmu.maplayers.politicalmap.base.render;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.model.DesaturationPalette;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -63,6 +65,16 @@ final class ClusterAnchorsBuilderTest {
         // The opposite pole: every bloc recedes to the independent style, so the label
         // follows the independent outer-border choice - the classifier's other branch.
         private static final Predicate<String> EVERY_BLOC_USES_INDEPENDENT_STYLE = blocId -> true;
+        // The identity adjustment for every bloc, so the line-fit, band-fit, and colour
+        // tests above exercise none of the Step 3 muting/desaturating behaviour - only the
+        // dedicated adjustment tests below vary it.
+        private static final Function<String, BlocStyleAdjustment> NO_ADJUSTMENT =
+                blocId -> BlocStyleAdjustment.NONE;
+        // A garish, easily-recognised pair that no test asserts on directly: with
+        // NO_ADJUSTMENT every bloc, no test ever reads this palette, so a real one is never
+        // required.
+        private static final DesaturationPalette UNUSED_PALETTE =
+                new DesaturationPalette(Color.MAGENTA, Color.MAGENTA);
 
         // Two 1000-unit cells side by side: the cluster spans x 0..2000, y 0..1000, so
         // the border rings inset to x 150..1850, y 150..850 and a horizontal line is the
@@ -138,7 +150,8 @@ final class ClusterAnchorsBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -161,7 +174,8 @@ final class ClusterAnchorsBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 150.0, 3, 3, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -186,7 +200,8 @@ final class ClusterAnchorsBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(100.0, 0.0, 3, 1, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -207,7 +222,8 @@ final class ClusterAnchorsBuilderTest {
                     THIN_COLUMN_SITES, THIN_COLUMN_OWNERS,
                     DominantOwner.factionIdBySystemId(THIN_COLUMN_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -230,7 +246,8 @@ final class ClusterAnchorsBuilderTest {
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -251,7 +268,8 @@ final class ClusterAnchorsBuilderTest {
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -272,7 +290,8 @@ final class ClusterAnchorsBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -295,7 +314,8 @@ final class ClusterAnchorsBuilderTest {
                     BOOT_SITES, BOOT_OWNERS,
                     DominantOwner.factionIdBySystemId(BOOT_OWNERS),
                     spec(0.0, 0.0, 3, 5, 0.5, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -317,7 +337,8 @@ final class ClusterAnchorsBuilderTest {
                     Map.of("A", FACTION_F),
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors).hasSize(1);
             var accepted = anchors.get(0).acceptedAxis();
@@ -341,7 +362,8 @@ final class ClusterAnchorsBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(1000.0, 0.0, 3, 3, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();
@@ -363,7 +385,8 @@ final class ClusterAnchorsBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(1000.0, 0.0, 3, 1, 0.0, 2.0, true, false),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();
@@ -387,7 +410,8 @@ final class ClusterAnchorsBuilderTest {
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0, false, true),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -410,7 +434,8 @@ final class ClusterAnchorsBuilderTest {
                     THIN_COLUMN_SITES, THIN_COLUMN_OWNERS,
                     DominantOwner.factionIdBySystemId(THIN_COLUMN_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0, false, true),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors.get(0).unbiasedAxis()).isNull();
         }
@@ -424,7 +449,8 @@ final class ClusterAnchorsBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             var anchor = anchors.get(0);
             assertThat(anchor.anchorX()).isCloseTo(1000f, within(1e-4f));
@@ -443,7 +469,8 @@ final class ClusterAnchorsBuilderTest {
                     Map.of("A", FACTION_F),
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     outerColorSpec(FactionPaletteChoice.PRIMARY),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors.get(0).color()).isEqualTo(PRIMARY);
         }
@@ -459,7 +486,8 @@ final class ClusterAnchorsBuilderTest {
                     Map.of("A", FACTION_F),
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     outerColorSpec(FactionPaletteChoice.SECONDARY),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors.get(0).color()).isEqualTo(SECONDARY);
         }
@@ -475,7 +503,8 @@ final class ClusterAnchorsBuilderTest {
                     Map.of("A", FACTION_F),
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     outerColorSpec(FactionPaletteChoice.NONE),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors.get(0).color()).isEqualTo(PRIMARY);
         }
@@ -494,7 +523,8 @@ final class ClusterAnchorsBuilderTest {
                     Map.of("A", FACTION_F),
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     outerColorSpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.SECONDARY),
-                    EVERY_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    EVERY_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors.get(0).color()).isEqualTo(SECONDARY);
         }
@@ -511,7 +541,8 @@ final class ClusterAnchorsBuilderTest {
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             0.5, 1.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors.get(0).color().getAlpha())
                     .isEqualTo(Math.round(PRIMARY.getAlpha() * 0.5f));
@@ -531,7 +562,8 @@ final class ClusterAnchorsBuilderTest {
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             1.0, 0.5),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors.get(0).color()).isEqualTo(PRIMARY);
         }
@@ -549,11 +581,72 @@ final class ClusterAnchorsBuilderTest {
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             1.0, 0.5),
-                    EVERY_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    EVERY_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors.get(0).color().getAlpha())
                     .isEqualTo(Math.round(PRIMARY.getAlpha() * 0.5f));
             assertThat(anchors.get(0).color().getRed()).isEqualTo(PRIMARY.getRed());
+        }
+
+        @Test
+        void computeClusterAnchorsMutesTheLabelAlphaForABlocWithAMutedAdjustment() {
+            // A bloc's adjustment dims its label on top of the (full) name opacity: half
+            // fades the resolved shade's alpha to half and leaves its RGB intact - the same
+            // fold Step 3 applies wherever the style classifier is read.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    spec(0.0, 0.0, 3, 1, 0.0, 2.0),
+                    NO_BLOC_USES_INDEPENDENT_STYLE,
+                    blocId -> new BlocStyleAdjustment(0.5, false), UNUSED_PALETTE,
+                    slenderNameEstimators());
+
+            assertThat(anchors.get(0).color().getAlpha())
+                    .isEqualTo(Math.round(PRIMARY.getAlpha() * 0.5f));
+            assertThat(anchors.get(0).color().getRed()).isEqualTo(PRIMARY.getRed());
+        }
+
+        @Test
+        void computeClusterAnchorsDesaturatesTheLabelToThePassPaletteForADesaturatedBloc() {
+            // A desaturated bloc's label follows the pass's shared desaturation palette
+            // instead of the owner's own shades, at full alpha since mute is off here.
+            var desaturationPalette = new DesaturationPalette(Color.GREEN, Color.YELLOW);
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    spec(0.0, 0.0, 3, 1, 0.0, 2.0),
+                    NO_BLOC_USES_INDEPENDENT_STYLE,
+                    blocId -> new BlocStyleAdjustment(1.0, true), desaturationPalette,
+                    slenderNameEstimators());
+
+            assertThat(anchors.get(0).color()).isEqualTo(Color.GREEN);
+        }
+
+        @Test
+        void computeClusterAnchorsLeavesAnUnadjustedBlocsLabelUntouchedRegardlessOfThePalette() {
+            // A bloc the resolver maps to NONE - an alliance, in the real view - draws
+            // unmuted and undesaturated no matter what the pass's palette holds, since the
+            // adjustment (not the palette alone) gates whether either applies.
+            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    spec(0.0, 0.0, 3, 1, 0.0, 2.0),
+                    NO_BLOC_USES_INDEPENDENT_STYLE,
+                    blocId -> BlocStyleAdjustment.NONE,
+                    new DesaturationPalette(Color.GREEN, Color.YELLOW),
+                    slenderNameEstimators());
+
+            assertThat(anchors.get(0).color()).isEqualTo(PRIMARY);
         }
 
         @Test
@@ -571,7 +664,7 @@ final class ClusterAnchorsBuilderTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0), NO_BLOC_USES_INDEPENDENT_STYLE,
-                    recordingResolver);
+                    NO_ADJUSTMENT, UNUSED_PALETTE, recordingResolver);
 
             assertThat(askedFactionIds).containsExactly("F");
         }
@@ -586,7 +679,8 @@ final class ClusterAnchorsBuilderTest {
                     Map.of("A", FACTION_F),
                     DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, slenderNameEstimators());
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    slenderNameEstimators());
 
             assertThat(anchors).isEmpty();
         }
@@ -605,7 +699,8 @@ final class ClusterAnchorsBuilderTest {
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 2000.0, 1, 1.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, aspectNameEstimators(1.0));
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    aspectNameEstimators(1.0));
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNotNull();
@@ -631,7 +726,8 @@ final class ClusterAnchorsBuilderTest {
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 3, 1.15),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, aspectNameEstimators(6.0));
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    aspectNameEstimators(6.0));
 
             assertThat(anchors.get(0).lineCount()).isEqualTo(2);
             assertThat(anchors.get(0).thickness()).isGreaterThan(0f);
@@ -651,7 +747,8 @@ final class ClusterAnchorsBuilderTest {
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 3, 1.15),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, factionId -> nameEstimatorFake);
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    factionId -> nameEstimatorFake);
 
             var anchor = anchors.get(0);
             assertThat(anchor.nameLines()).containsExactly("Line 1", "Line 2");
@@ -670,7 +767,8 @@ final class ClusterAnchorsBuilderTest {
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 1, 1.15),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, aspectNameEstimators(6.0));
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    aspectNameEstimators(6.0));
 
             assertThat(anchors.get(0).lineCount()).isEqualTo(1);
         }
@@ -686,7 +784,8 @@ final class ClusterAnchorsBuilderTest {
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             3000.0, 4000.0, 1, 1.0),
-                    NO_BLOC_USES_INDEPENDENT_STYLE, aspectNameEstimators(6.0));
+                    NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
+                    aspectNameEstimators(6.0));
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();

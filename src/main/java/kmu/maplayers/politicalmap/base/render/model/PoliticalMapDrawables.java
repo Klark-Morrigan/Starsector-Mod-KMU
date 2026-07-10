@@ -19,10 +19,11 @@ import java.util.Set;
  * <p>The styled-cell and faction-territory maps are the render output - the per-cell
  * seam/outline records and each faction's fill and national border. The rest are
  * retained inputs: the owner-by-system and decivilised-system maps say who holds each
- * system, the four styles and the neutral color say how each category draws, and the
- * view plus its resolved grouping say how ownership is grouped and which blocs recede to
- * the independent style - so an incremental re-shape classifies a cell exactly as the
- * full build did.
+ * system, the four styles and the neutral color say how each category draws, the
+ * desaturation palette says what a desaturated bloc recolours to, and the view plus its
+ * resolved grouping say how ownership is grouped and which blocs recede to the
+ * independent style - so an incremental re-shape classifies a cell exactly as the full
+ * build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
  * not values: the styled-cell, faction-territory, and owner-by-system maps are mutated
@@ -40,6 +41,7 @@ public final class PoliticalMapDrawables {
     private final Map<String, DominantOwner> ownerBySystemId;
     private final Set<String> decivilisedSystemIds;
     private final Color neutralColor;
+    private final DesaturationPalette desaturationPalette;
     private final MapStyle factionStyle;
     private final MapStyle independentStyle;
     private final MapStyle decivilisedStyle;
@@ -56,6 +58,7 @@ public final class PoliticalMapDrawables {
             Map<String, DominantOwner> ownerBySystemId,
             Set<String> decivilisedSystemIds,
             Color neutralColor,
+            DesaturationPalette desaturationPalette,
             MapStyle factionStyle,
             MapStyle independentStyle,
             MapStyle decivilisedStyle,
@@ -67,6 +70,7 @@ public final class PoliticalMapDrawables {
         this.ownerBySystemId = ownerBySystemId;
         this.decivilisedSystemIds = decivilisedSystemIds;
         this.neutralColor = neutralColor;
+        this.desaturationPalette = desaturationPalette;
         this.factionStyle = factionStyle;
         this.independentStyle = independentStyle;
         this.decivilisedStyle = decivilisedStyle;
@@ -80,11 +84,12 @@ public final class PoliticalMapDrawables {
     // next frame's retry replaces it with a real build before any incremental pass -
     // which needs the styles - can run, so the null styles here are never read. It carries
     // the active view (the one being drawn when the build failed) rather than naming a
-    // concrete view, keeping this model view-agnostic; the identity grouping is an inert
-    // default, never read for the same reason.
+    // concrete view, keeping this model view-agnostic; the identity grouping and the
+    // gray-paired desaturation palette are inert defaults, never read for the same reason.
     public static PoliticalMapDrawables createEmpty(PoliticalMapView view) {
         return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
+                new DesaturationPalette(Color.GRAY, Color.GRAY),
                 null, null, null, null, view, OwnershipGrouping.identity());
     }
 
@@ -106,6 +111,10 @@ public final class PoliticalMapDrawables {
 
     public Color getNeutralColor() {
         return neutralColor;
+    }
+
+    public DesaturationPalette getDesaturationPalette() {
+        return desaturationPalette;
     }
 
     public MapStyle getFactionStyle() {
