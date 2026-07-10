@@ -36,13 +36,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * sector watcher fingerprints the live alliance set each poll and bumps this counter when
  * that fingerprint moves, so the per-frame path stays an int compare.
  *
- * <p>How the alliances view recedes its non-allied ground - the per-save Mute/Desaturate
- * toggles - is a fourth coarse signal, tracked with a single {@code allianceStyleRevision}
- * counter. Those toggles are sidebar-only sector-memory state, not LunaLib fields, so a flip
- * does not bump {@code settingsRevision}; instead the toggle's setter bumps this counter and
- * the alliances view folds it into its content token, so a flip repaints the overlay live.
- * Like the alliance revision, only the alliances view reads it - a non-allied recede changes
- * nothing the faction view draws.
+ * <p>How a view recedes its background ground - the shared per-save Mute/Desaturate toggles -
+ * is a fourth coarse signal, tracked with a single {@code recedeStyleRevision} counter. Those
+ * toggles are sidebar-only sector-memory state, not LunaLib fields, so a flip does not bump
+ * {@code settingsRevision}; instead the toggle's setter bumps this counter and every view that
+ * recedes ground folds it into its content token, so a flip repaints the overlay live. A view
+ * that draws no receded ground ignores it, exactly as it ignores a change it does not render.
  *
  * <p>A counter and a set rather than direct calls because the producers (a
  * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)
@@ -55,7 +54,7 @@ public final class PoliticalMapRefresh {
 
     private static final AtomicInteger geometryRevision = new AtomicInteger();
     private static final AtomicInteger allianceRevision = new AtomicInteger();
-    private static final AtomicInteger allianceStyleRevision = new AtomicInteger();
+    private static final AtomicInteger recedeStyleRevision = new AtomicInteger();
     private static final Set<String> politicsStaleSystemIds = ConcurrentHashMap.newKeySet();
 
     private PoliticalMapRefresh() {
@@ -102,27 +101,27 @@ public final class PoliticalMapRefresh {
     }
 
     /**
-     * @return a counter that advances when a non-allied recede toggle (Mute or Desaturate)
-     *         flips, so the alliances view rebuilds its drawables; the faction view does not
-     *         read it
+     * @return a counter that advances when a recede toggle (Mute or Desaturate) flips, so every
+     *         view that recedes ground rebuilds its drawables; a view drawing no receded ground
+     *         does not read it
      */
-    public static int getAllianceStyleRevision() {
-        return allianceStyleRevision.get();
+    public static int getRecedeStyleRevision() {
+        return recedeStyleRevision.get();
     }
 
     /**
-     * Marks the non-allied recede styling stale: the player flipped the alliances view's Mute or
-     * Desaturate toggle. Only the alliances view folds this into its content token, so the faction
-     * view is never rebuilt for a toggle it does not honour. This is the live-invalidation seam the
-     * toggles use in place of {@code settingsRevision}, since they are sidebar-only sector-memory
-     * state rather than LunaLib fields.
+     * Marks the recede styling stale: the player flipped a view's Mute or Desaturate toggle. Only a
+     * view that recedes ground folds this into its content token, so a view drawing no receded
+     * ground is never rebuilt for a toggle it does not honour. This is the live-invalidation seam
+     * the toggles use in place of {@code settingsRevision}, since they are sidebar-only
+     * sector-memory state rather than LunaLib fields.
      */
-    public static void requestAllianceStyleRefresh() {
+    public static void requestRecedeStyleRefresh() {
         // The seam the Mute/Desaturate setters funnel through, mirroring requestAllianceRefresh.
         // Logged with the resulting counter so a toggle that failed to repaint can be traced to
         // whether the request was even issued.
-        var revision = allianceStyleRevision.incrementAndGet();
-        LOG.debug("Political map alliance style refresh requested; allianceStyleRevision="
+        var revision = recedeStyleRevision.incrementAndGet();
+        LOG.debug("Political map recede style refresh requested; recedeStyleRevision="
                 + revision);
     }
 

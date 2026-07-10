@@ -2,21 +2,17 @@ package kmu.maplayers.politicalmap.alliances;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.util.KmuStrings;
 
 import java.util.List;
 
 /**
- * The alliances view's own body controls: a caption line and the two checkboxes that decide how the
- * view recedes every faction outside an alliance - {@code Non-allied factions are  [ ] Muted  [ ]
- * Desaturated}. They live in the alliances package, beside the view that owns them, since they are
- * meaningful only under it; {@link PoliticalMapBodyControls} stays the view-agnostic shared
- * sub-options every view honours.
- *
- * <p>Each checkbox reads its lit state live from {@link AllianceStylePreferences} when the spec is
- * built (specs are rebuilt each frame), so a flip - whether from this checkbox or a reload of the
- * save's stored choice - shows at once; its action flips the matching per-save toggle, which
- * persists the choice and repaints the overlay.
+ * The alliances view's recede adapter: the shared {@link RecedeControl} placed under the caption
+ * {@code Non-allied factions are}, so the view recedes every faction outside an alliance through the
+ * same Mute/Desaturate toggles every other context uses. It lives in the alliances package, beside
+ * the view that owns it, because the caption - which ground this view recedes - is the view's own
+ * choice; the checkboxes and their wiring belong to the shared control.
  */
 public final class AllianceBodyControls {
 
@@ -24,31 +20,12 @@ public final class AllianceBodyControls {
     }
 
     /**
-     * @return the alliances view's controls, top to bottom: the {@code Non-allied factions are}
-     *         caption, the Mute checkbox (lit when non-allied factions are dimmed), and the
-     *         Desaturate checkbox (lit when they are recoloured to the desaturation profile)
+     * @return the alliances view's recede control captioned {@code Non-allied factions are}: the
+     *         Mute checkbox (lit when non-allied factions are dimmed) and the Desaturate checkbox
+     *         (lit when they are recoloured to the desaturation profile)
      */
     public static List<ControlSpec> buildControls() {
-        return List.of(
-                ControlSpec.createLabel(
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION)),
-                ControlSpec.createCheckbox(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED),
-                        AllianceStylePreferences.isNonAlliedMuted(),
-                        cellIndex -> toggleNonAlliedMuted()),
-                ControlSpec.createCheckbox(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED),
-                        AllianceStylePreferences.isNonAlliedDesaturated(),
-                        cellIndex -> toggleNonAlliedDesaturated()));
-    }
-
-    // Flips the Mute toggle to the opposite of its current state, so the checkbox is a plain on/off.
-    // The setter persists the choice and requests the overlay repaint.
-    private static void toggleNonAlliedMuted() {
-        AllianceStylePreferences.setNonAlliedMuted(!AllianceStylePreferences.isNonAlliedMuted());
-    }
-
-    // Flips the Desaturate toggle to the opposite of its current state, matching the Mute checkbox.
-    private static void toggleNonAlliedDesaturated() {
-        AllianceStylePreferences.setNonAlliedDesaturated(
-                !AllianceStylePreferences.isNonAlliedDesaturated());
+        return RecedeControl.buildControls(
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION));
     }
 }

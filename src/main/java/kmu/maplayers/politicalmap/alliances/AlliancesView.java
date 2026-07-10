@@ -8,11 +8,11 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.settings.FactionNameFormatChoice;
-import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 
@@ -60,13 +60,13 @@ public final class AlliancesView implements PoliticalMapView {
     public int getContentRevision() {
         // This view's rebuild is driven by two live inputs, composed into one fingerprint the content
         // token reads: the alliance set (the sector watcher bumps its revision when membership moves,
-        // repainting on a form/dissolve/transfer) and the non-allied recede toggles (their setter
-        // bumps the style revision on a Mute/Desaturate flip, since those sidebar-only toggles never
+        // repainting on a form/dissolve/transfer) and the shared recede toggles (their setter bumps
+        // the recede-style revision on a Mute/Desaturate flip, since those sidebar-only toggles never
         // move settingsRevision). Composing them means a third live input later is one more source
         // here, not a wider contract; a change to any shifts the fingerprint and forces a rebuild.
         return Fingerprints.compute(
                 PoliticalMapRefresh::getAllianceRevision,
-                PoliticalMapRefresh::getAllianceStyleRevision);
+                PoliticalMapRefresh::getRecedeStyleRevision);
     }
 
     @Override
@@ -87,25 +87,20 @@ public final class AlliancesView implements PoliticalMapView {
         // stands out. Muting never swaps the bundle; it only dims the active style via the opacity
         // modifier, so a lone faction with both toggles off reads exactly as the faction view.
         return Factions.INDEPENDENT.equals(blocId)
-                || (!grouping.isAlliance(blocId) && AllianceStylePreferences.isNonAlliedDesaturated());
+                || (!grouping.isAlliance(blocId) && RecedePreferences.isDesaturated());
     }
 
     @Override
     public BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, OwnershipGrouping grouping) {
-        // An alliance keeps its full colour; only a non-alliance bloc recedes, and then only as
-        // far as the player's Mute/Desaturate choices ask. Sampling the per-save toggles and the
-        // modifier here (like the grouping already samples Nex) keeps the pipeline a pure applier
-        // that never names an alliance. Mute scales opacity by the modifier value, not a constant,
-        // so 0 hides a non-allied bloc and 1 leaves it untouched.
+        // An alliance keeps its full colour; only a non-alliance bloc recedes. The view owns just
+        // that gate - how far a receded bloc dims or desaturates is the shared recede's decision, so
+        // a non-allied faction takes the same adjustment every receding context applies. Keeping the
+        // gate here (like the grouping already samples Nex) leaves the pipeline a pure applier that
+        // never names an alliance.
         if (grouping.isAlliance(blocId)) {
             return BlocStyleAdjustment.NONE;
         }
-        boolean isMuted = AllianceStylePreferences.isNonAlliedMuted();
-        boolean shouldDesaturate = AllianceStylePreferences.isNonAlliedDesaturated();
-        double opacityMultiplier = isMuted
-                ? KmuLunaSettings.getPoliticalMapAllianceMutedOpacityModifier()
-                : 1.0;
-        return new BlocStyleAdjustment(opacityMultiplier, shouldDesaturate);
+        return RecedePreferences.resolveRecedeAdjustment();
     }
 
     @Override
