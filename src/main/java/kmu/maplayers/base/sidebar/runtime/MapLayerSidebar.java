@@ -13,8 +13,8 @@ import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.widgets.Checkbox;
 import kmlib.starsector.ui.widgets.RadioRow;
 import kmlib.starsector.ui.widgets.TabPanel;
-import kmlib.starsector.ui.widgets.ToggleButton;
-import kmlib.starsector.ui.widgets.VanillaTabColors;
+import kmlib.starsector.ui.render.gl.ToggleButton;
+import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;

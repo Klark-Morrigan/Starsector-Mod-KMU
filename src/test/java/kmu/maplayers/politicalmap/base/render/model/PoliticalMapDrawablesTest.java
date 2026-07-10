@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.model;
 
 import kmlib.starsector.factions.FactionPalette;
-import kmlib.starsector.ui.render.UiElementPaint;
+import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;

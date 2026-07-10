@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
-import kmlib.starsector.ui.widgets.RadioAlignment;
+import kmlib.starsector.ui.controls.RadioAlignment;
 
 import kmu.maplayers.base.sidebar.SidebarControlKind;
 import kmu.maplayers.base.sidebar.SidebarControlSpec;

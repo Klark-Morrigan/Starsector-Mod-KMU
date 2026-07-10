@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.model;
 
-import kmlib.starsector.ui.render.UiElementPaint;
+import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import java.util.List;
 

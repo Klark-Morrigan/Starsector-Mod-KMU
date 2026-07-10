@@ -2,7 +2,7 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
-import kmlib.starsector.ui.widgets.RadioAlignment;
+import kmlib.starsector.ui.controls.RadioAlignment;
 import kmlib.starsector.ui.widgets.VanillaTabContent;
 import kmlib.testfixtures.starsector.ui.font.LineWidthMeasurerFake;
 

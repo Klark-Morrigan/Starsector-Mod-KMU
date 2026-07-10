@@ -9,7 +9,7 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.graphics.StarsectorSprites;
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.render.UiBoxes;
+import kmlib.starsector.ui.render.gl.UiBoxes;
 
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;

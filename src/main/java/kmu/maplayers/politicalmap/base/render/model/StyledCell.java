@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.model;
 
-import kmlib.starsector.ui.render.UiElementPaint;
+import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 /**
  * A cell ready to draw: its flattened fill polygon and its national-border and
