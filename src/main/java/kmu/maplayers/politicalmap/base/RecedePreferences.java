@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
+import kmlib.starsector.memory.SectorMemoryFlag;
 
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.KmuLunaSettings;
@@ -38,6 +39,13 @@ public final class RecedePreferences {
     private static final String LEGACY_DESATURATE_KEY =
             "$kmu_political_alliance_desaturate_non_allied";
 
+    // The two toggles' sector-memory slots, keyed by the frozen ids above and defaulting off so an
+    // untouched save reads as un-receded. The legacy-key self-heal below still touches memory through
+    // a single handle, so it keeps its own access rather than routing through these.
+    private static final SectorMemoryFlag muteFlag = new SectorMemoryFlag(MUTE_KEY, false);
+    private static final SectorMemoryFlag desaturateFlag =
+            new SectorMemoryFlag(DESATURATE_KEY, false);
+
     private RecedePreferences() {
     }
 
@@ -46,7 +54,7 @@ public final class RecedePreferences {
      *         or when the toggle was never set
      */
     public static boolean isMuted() {
-        return readToggle(MUTE_KEY);
+        return muteFlag.isSet();
     }
 
     /**
@@ -54,7 +62,7 @@ public final class RecedePreferences {
      *         exists or when the toggle was never set
      */
     public static boolean isDesaturated() {
-        return readToggle(DESATURATE_KEY);
+        return desaturateFlag.isSet();
     }
 
     /**
@@ -64,7 +72,13 @@ public final class RecedePreferences {
      * @param isMuted the new Mute state, as the sidebar checkbox reads it
      */
     public static void setMuted(boolean isMuted) {
-        writeToggle(MUTE_KEY, isMuted);
+        // Repaint only on a real write: before the sector exists the flag no-ops and reports no
+        // write, so nothing bumps a revision no overlay would read. The refresh stands in for
+        // settingsRevision, which these sidebar-only toggles never move since they are not LunaLib
+        // fields.
+        if (muteFlag.set(isMuted)) {
+            PoliticalMapRefresh.requestRecedeStyleRefresh();
+        }
     }
 
     /**
@@ -74,7 +88,9 @@ public final class RecedePreferences {
      * @param shouldDesaturate the new Desaturate state, as the sidebar checkbox reads it
      */
     public static void setDesaturated(boolean shouldDesaturate) {
-        writeToggle(DESATURATE_KEY, shouldDesaturate);
+        if (desaturateFlag.set(shouldDesaturate)) {
+            PoliticalMapRefresh.requestRecedeStyleRefresh();
+        }
     }
 
     /**
@@ -110,28 +126,6 @@ public final class RecedePreferences {
         }
         migrateLegacyKey(memory, LEGACY_MUTE_KEY, MUTE_KEY);
         migrateLegacyKey(memory, LEGACY_DESATURATE_KEY, DESATURATE_KEY);
-    }
-
-    // Reads a toggle from sector memory, false before the sector exists (no save to read) or when
-    // the key was never written - the original un-receded look either way. MemoryAPI.getBoolean
-    // already returns false for an absent key, so the null-sector guard is the only extra check.
-    private static boolean readToggle(String key) {
-        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
-        return memory != null && memory.getBoolean(key);
-    }
-
-    // Persists a toggle to sector memory and requests a style refresh so every view that recedes
-    // ground rebuilds its drawables with the new choice. A no-op before the sector exists (no save
-    // to write into, nothing painting to repaint). The value is written permanently - it is per-save
-    // state that must survive reload - and the refresh stands in for settingsRevision, which these
-    // sidebar-only toggles never bump since they are not LunaLib fields.
-    private static void writeToggle(String key, boolean value) {
-        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null) {
-            return;
-        }
-        memory.set(key, value);
-        PoliticalMapRefresh.requestRecedeStyleRefresh();
     }
 
     // Carries one toggle's stored boolean from its legacy key to its current key, then unsets the

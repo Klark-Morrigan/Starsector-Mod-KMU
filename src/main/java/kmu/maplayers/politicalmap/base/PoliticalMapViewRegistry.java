@@ -1,8 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
-import com.fs.starfarer.api.campaign.rules.MemoryAPI;
-
 import kmlib.starsector.memory.SectorMemoryAccess;
+import kmlib.starsector.memory.SectorMemoryString;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -45,6 +44,12 @@ public final class PoliticalMapViewRegistry {
     // The stored value meaning "no view paints" - the map is off while the political-map tab stays
     // open. Empty because no view id is empty, so it never collides with a real pick.
     private static final String OFF_SELECTION = "";
+
+    // The active-view pick's sector-memory slot, keyed by the frozen id above; reads resolve an
+    // absent key to null (the caller then falls to the default). The legacy-overlay self-heal below
+    // still touches memory through a single handle, so it keeps its own access.
+    private static final SectorMemoryString activeViewSelection =
+            new SectorMemoryString(ACTIVE_VIEW_KEY);
 
     // The registered views, in radio-segment order, the pick an untouched save resolves to, and the
     // tab that hosts the view radio. Empty until a composition root registers them at startup,
@@ -104,7 +109,7 @@ public final class PoliticalMapViewRegistry {
      *         an older build no longer registered; null when the off sentinel is stored
      */
     public static PoliticalMapView getSelectedView() {
-        var storedId = readStoredViewId();
+        var storedId = activeViewSelection.get();
         if (storedId == null) {
             return defaultView;
         }
@@ -162,20 +167,6 @@ public final class PoliticalMapViewRegistry {
 
     // Writes the active-view selection to sector memory, or does nothing before the sector exists.
     private static void writeSelection(String selection) {
-        var memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null) {
-            return;
-        }
-        memory.set(ACTIVE_VIEW_KEY, selection);
-    }
-
-    // Reads the stored view id (or the off sentinel), or null when the sector is absent or the key
-    // was never written - the caller resolves either to the default.
-    private static String readStoredViewId() {
-        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || !memory.contains(ACTIVE_VIEW_KEY)) {
-            return null;
-        }
-        return memory.getString(ACTIVE_VIEW_KEY);
+        activeViewSelection.set(selection);
     }
 }

@@ -53,6 +53,7 @@ final class RecedePreferencesTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(MUTE_KEY)).thenReturn(true);
                 when(memoryMock.getBoolean(MUTE_KEY)).thenReturn(true);
 
                 assertThat(RecedePreferences.isMuted()).isTrue();
@@ -80,6 +81,7 @@ final class RecedePreferencesTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(DESATURATE_KEY)).thenReturn(true);
                 when(memoryMock.getBoolean(DESATURATE_KEY)).thenReturn(true);
 
                 assertThat(RecedePreferences.isDesaturated()).isTrue();
@@ -361,6 +363,10 @@ final class RecedePreferencesTest {
             boolean shouldDesaturate) {
         var memoryMock = mock(MemoryAPI.class);
         memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+        // isSet gates on the key being present, so a stored value is contains=true plus its boolean;
+        // this pins both toggles present so getBoolean is what the read reflects.
+        when(memoryMock.contains(MUTE_KEY)).thenReturn(true);
+        when(memoryMock.contains(DESATURATE_KEY)).thenReturn(true);
         when(memoryMock.getBoolean(MUTE_KEY)).thenReturn(isMuted);
         when(memoryMock.getBoolean(DESATURATE_KEY)).thenReturn(shouldDesaturate);
         settingsMock.when(KmuLunaSettings::getPoliticalMapAllianceMutedOpacityModifier)

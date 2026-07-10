@@ -1,8 +1,6 @@
 package kmu.maplayers.politicalmap.base.refresh;
 
-import com.fs.starfarer.api.campaign.rules.MemoryAPI;
-
-import kmlib.starsector.memory.SectorMemoryAccess;
+import kmlib.starsector.memory.SectorMemoryString;
 
 import java.util.function.Predicate;
 
@@ -23,13 +21,15 @@ import java.util.function.Predicate;
  *
  * <p>A pick or a clear bumps {@link PoliticalMapRefresh#requestFilterRefresh()} so the overlay
  * repaints live, standing in for the {@code settingsRevision} bump these sidebar-only changes never
- * make.
+ * make. The bump is gated on the store actually landing, so a call before the sector exists (or a
+ * clear with nothing selected) neither writes nor repaints.
  */
 public final class FilterSelection {
     // Save-serialised id of the spotlighted bloc; frozen once shipped, since renaming it silently
     // drops every existing save's filter choice back to none. Absent until the player first picks a
     // bloc, which the read reports as no filter.
-    private static final String SELECTED_BLOC_KEY = "$kmu_political_filter_bloc";
+    private static final SectorMemoryString selectedBloc =
+            new SectorMemoryString("$kmu_political_filter_bloc");
 
     private FilterSelection() {
     }
@@ -39,11 +39,7 @@ public final class FilterSelection {
      *         state) - also null before a save exists, since there is nothing to have picked yet
      */
     public static String getSelectedBlocId() {
-        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || !memory.contains(SELECTED_BLOC_KEY)) {
-            return null;
-        }
-        return memory.getString(SELECTED_BLOC_KEY);
+        return selectedBloc.get();
     }
 
     /**
@@ -51,7 +47,7 @@ public final class FilterSelection {
      *         the filter branch rather than the normal un-filtered pass
      */
     public static boolean hasSelection() {
-        return getSelectedBlocId() != null;
+        return selectedBloc.isSet();
     }
 
     /**
@@ -62,12 +58,9 @@ public final class FilterSelection {
      * @param blocId the stable id of the bloc to filter to (a faction id or an alliance id)
      */
     public static void selectBloc(String blocId) {
-        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null) {
-            return;
+        if (selectedBloc.set(blocId)) {
+            PoliticalMapRefresh.requestFilterRefresh();
         }
-        memory.set(SELECTED_BLOC_KEY, blocId);
-        PoliticalMapRefresh.requestFilterRefresh();
     }
 
     /**
@@ -76,32 +69,26 @@ public final class FilterSelection {
      * selected - nothing to unset and nothing to repaint.
      */
     public static void clearSelection() {
-        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || !memory.contains(SELECTED_BLOC_KEY)) {
-            return;
+        if (selectedBloc.clear()) {
+            PoliticalMapRefresh.requestFilterRefresh();
         }
-        memory.unset(SELECTED_BLOC_KEY);
-        PoliticalMapRefresh.requestFilterRefresh();
     }
 
     /**
      * Clears the filter when the stored bloc is no longer selectable - the self-heal for a save whose
      * spotlighted faction was removed or whose alliance dissolved between sessions, so a dangling id
      * never spotlights a bloc that is not on the map. A no-op when no bloc is stored or the stored id
-     * is still selectable. The clear here mutates memory directly and skips the refresh request:
-     * this runs on load before the overlay paints, so there is nothing yet to invalidate. Call once
-     * on game load, once a source of the currently-selectable bloc ids exists.
+     * is still selectable. Runs on load before the overlay paints, so it clears without a refresh
+     * request - there is nothing yet to invalidate. Call once on game load, once a source of the
+     * currently-selectable bloc ids exists.
      *
      * @param isBlocSelectable reports whether a stored bloc id is still a selectable bloc under the
      *                         active view's visibility gate
      */
     public static void healStaleSelection(Predicate<String> isBlocSelectable) {
-        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || !memory.contains(SELECTED_BLOC_KEY)) {
-            return;
-        }
-        if (!isBlocSelectable.test(memory.getString(SELECTED_BLOC_KEY))) {
-            memory.unset(SELECTED_BLOC_KEY);
+        String selectedBlocId = selectedBloc.get();
+        if (selectedBlocId != null && !isBlocSelectable.test(selectedBlocId)) {
+            selectedBloc.clear();
         }
     }
 }
