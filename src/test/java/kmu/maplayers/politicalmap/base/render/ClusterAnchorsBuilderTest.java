@@ -1,12 +1,12 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.maplayers.politicalmap.base.render.model.DesaturationPalette;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -73,8 +73,8 @@ final class ClusterAnchorsBuilderTest {
         // A garish, easily-recognised pair that no test asserts on directly: with
         // NO_ADJUSTMENT every bloc, no test ever reads this palette, so a real one is never
         // required.
-        private static final DesaturationPalette UNUSED_PALETTE =
-                new DesaturationPalette(Color.MAGENTA, Color.MAGENTA);
+        private static final FactionPalette UNUSED_PALETTE =
+                new FactionPalette(Color.MAGENTA, Color.MAGENTA);
 
         // Two 1000-unit cells side by side: the cluster spans x 0..2000, y 0..1000, so
         // the border rings inset to x 150..1850, y 150..850 and a horizontal line is the
@@ -614,7 +614,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsDesaturatesTheLabelToThePassPaletteForADesaturatedBloc() {
             // A desaturated bloc's label follows the pass's shared desaturation palette
             // instead of the owner's own shades, at full alpha since mute is off here.
-            var desaturationPalette = new DesaturationPalette(Color.GREEN, Color.YELLOW);
+            var desaturationPalette = new FactionPalette(Color.GREEN, Color.YELLOW);
             var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
@@ -643,7 +643,7 @@ final class ClusterAnchorsBuilderTest {
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE,
                     blocId -> BlocStyleAdjustment.NONE,
-                    new DesaturationPalette(Color.GREEN, Color.YELLOW),
+                    new FactionPalette(Color.GREEN, Color.YELLOW),
                     slenderNameEstimators());
 
             assertThat(anchors.get(0).color()).isEqualTo(PRIMARY);

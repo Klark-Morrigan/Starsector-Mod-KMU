@@ -9,6 +9,7 @@ import kmlib.testfixtures.starsector.ui.font.LineWidthMeasurerFake;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -177,6 +178,33 @@ final class SidebarLayoutTest {
             // The tab row is wider than the control body here, so the box tracks the tab row.
             var box = place(BODY).box();
             assertThat(box.width()).isCloseTo(TAB_ROW_WIDTH + 2f * BORDER_WIDTH, within(TOLERANCE));
+        }
+
+        @Test
+        void computePlacementGrowsTheBodyDownwardWhenAViewAppendsAControl() {
+            // A view contributing its own control appends one row beneath the shared body, the way
+            // the selected political-map view's controls trail the selector.
+            var basePlacement = place(BODY);
+            var appended = new ArrayList<>(BODY);
+            appended.add(new SidebarControlSpec(SidebarControlKind.CHECKBOX, List.of("Muted"), "",
+                    SidebarControlSpec.NO_SELECTION));
+            var grownPlacement = place(List.copyOf(appended));
+
+            // The extra row makes the body taller by exactly one control row plus its leading gap.
+            assertThat(grownPlacement.body().height())
+                    .isCloseTo(basePlacement.body().height()
+                            + SidebarLayout.CONTROL_ROW_HEIGHT + SidebarLayout.ROW_GAP,
+                            within(TOLERANCE));
+            // Growth is downward: the body's top edge, and so everything above it, does not move.
+            assertThat(grownPlacement.body().y() + grownPlacement.body().height())
+                    .as("the body top edge is fixed; the extra row extends the bottom")
+                    .isCloseTo(basePlacement.body().y() + basePlacement.body().height(),
+                            within(TOLERANCE));
+            var baseFirstRow = basePlacement.bodyControls().get(0).bounds();
+            var grownFirstRow = grownPlacement.bodyControls().get(0).bounds();
+            assertThat(grownFirstRow.y() + grownFirstRow.height())
+                    .as("the first control row is unshifted by an appended row below it")
+                    .isCloseTo(baseFirstRow.y() + baseFirstRow.height(), within(TOLERANCE));
         }
 
         private void assertRectWithin(Rectangle inner, Rectangle outer) {

@@ -9,6 +9,7 @@ import kmlib.math.geometry.PrincipalAxis;
 import kmlib.math.geometry.RegionChord;
 import kmlib.math.geometry.Segment;
 import kmlib.math.solving.Picks;
+import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
@@ -25,7 +26,6 @@ import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
-import kmu.maplayers.politicalmap.base.render.model.DesaturationPalette;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
@@ -147,7 +147,7 @@ final class ClusterAnchorsBuilder {
             Map<String, DominantOwner> ownerBySystemId, Map<String, String> groupKeyBySystemId,
             LabelAnchorSpecification spec, Predicate<String> usesIndependentStyleByBlocId,
             Function<String, BlocStyleAdjustment> blocStyleAdjustmentByBlocId,
-            DesaturationPalette desaturationPalette,
+            FactionPalette desaturationPalette,
             Function<String, LabelLengthEstimator> nameEstimatorByFactionId) {
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         for (var memberSystemIds : clusters) {
@@ -181,7 +181,7 @@ final class ClusterAnchorsBuilder {
     // colour, dims and recolours with the name).
     private static Color resolveLabelColor(DominantOwner owner, LabelAnchorSpecification spec,
             Predicate<String> usesIndependentStyleByBlocId, BlocStyleAdjustment adjustment,
-            DesaturationPalette desaturationPalette) {
+            FactionPalette desaturationPalette) {
         var usesIndependentStyle = usesIndependentStyleByBlocId.test(owner.factionId());
         var choice = usesIndependentStyle
                 ? spec.independentOuterColor() : spec.factionOuterColor();

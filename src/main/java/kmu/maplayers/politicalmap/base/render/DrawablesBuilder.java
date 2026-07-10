@@ -21,7 +21,6 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.render.model.DesaturationPalette;
 import kmu.maplayers.politicalmap.base.render.model.FactionTerritory;
 import kmu.maplayers.politicalmap.base.render.model.MapStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
@@ -236,13 +235,12 @@ final class DrawablesBuilder {
         var adjustment = drawables.getView().resolveBlocStyleAdjustment(factionId, drawables.getGrouping());
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
-        var palette = drawables.getOwnerBySystemId().get(memberSystemIds.get(0));
-        var primaryColor = adjustment.desaturate()
-                ? drawables.getDesaturationPalette().primaryColor() : palette.primaryColor();
-        var secondaryColor = adjustment.desaturate()
-                ? drawables.getDesaturationPalette().secondaryColor() : palette.secondaryColor();
-        var fillColor = pickPaletteColor(style.fillColor(), primaryColor, secondaryColor);
-        var borderColor = pickPaletteColor(style.outerColor(), primaryColor, secondaryColor);
+        var owner = drawables.getOwnerBySystemId().get(memberSystemIds.get(0));
+        var palette = resolveEffectivePalette(adjustment, owner, drawables.getDesaturationPalette());
+        var fillColor = pickPaletteColor(
+                style.fillColor(), palette.primaryColor(), palette.secondaryColor());
+        var borderColor = pickPaletteColor(
+                style.outerColor(), palette.primaryColor(), palette.secondaryColor());
         if (fillColor == null && borderColor == null) {
             return null;
         }
@@ -373,14 +371,11 @@ final class DrawablesBuilder {
     // as parameters (rather than reading KmuLunaSettings itself) so the mapping is a pure,
     // unit-testable lookup; buildDrawables reads the live setting once per pass and hands
     // it in.
-    static DesaturationPalette resolveDesaturationPalette(DesaturationProfileChoice profile,
+    static FactionPalette resolveDesaturationPalette(DesaturationProfileChoice profile,
             SectorAPI sector, Color neutralColor) {
         return switch (profile) {
-            case INDEPENDENT -> {
-                var independent = StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);
-                yield new DesaturationPalette(independent.primaryColor(), independent.secondaryColor());
-            }
-            case NEUTRAL -> new DesaturationPalette(neutralColor, neutralColor);
+            case INDEPENDENT -> StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);
+            case NEUTRAL -> new FactionPalette(neutralColor, neutralColor);
         };
     }
 }

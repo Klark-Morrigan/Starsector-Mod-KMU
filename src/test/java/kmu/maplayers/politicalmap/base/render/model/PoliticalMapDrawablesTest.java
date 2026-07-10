@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.model;
 
+import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.render.UiElementPaint;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -50,7 +51,7 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getDecivilisedSystemIds()).isEmpty();
             assertThat(drawables.getNeutralColor()).isEqualTo(Color.GRAY);
             assertThat(drawables.getDesaturationPalette())
-                    .isEqualTo(new DesaturationPalette(Color.GRAY, Color.GRAY));
+                    .isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
         }
     }
 
@@ -89,7 +90,7 @@ final class PoliticalMapDrawablesTest {
             Map<String, DominantOwner> owners = new LinkedHashMap<>();
             Set<String> decivilised = new LinkedHashSet<>();
             var neutral = Color.CYAN;
-            var desaturationPalette = new DesaturationPalette(Color.MAGENTA, Color.ORANGE);
+            var desaturationPalette = new FactionPalette(Color.MAGENTA, Color.ORANGE);
             // Four distinct instances so a swapped style field is caught by identity, not
             // just by the shared MapStyle type the compiler would accept either way.
             var factionStyle = styleMarked(1);

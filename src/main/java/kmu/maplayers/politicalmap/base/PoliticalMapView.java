@@ -2,8 +2,11 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.settings.FactionNameFormatChoice;
+
+import java.util.List;
 
 /**
  * The three per-view decisions the shared political-map pipeline reads, gathered into
@@ -103,4 +106,18 @@ public interface PoliticalMapView {
      */
     String resolveName(String blocId, OwnershipGrouping grouping, SectorAPI sector,
             FactionNameFormatChoice nameFormat);
+
+    /**
+     * The body controls this view contributes to the political-map tab, appended beneath the shared
+     * sub-options and the view selector while this view is the selected one. A view that adds no
+     * controls of its own returns an empty list (the default), so the body carries only the shared
+     * rows; the alliances view returns its Mute/Desaturate checkboxes so those show solely under it.
+     * The sidebar body grows downward to fit whatever rows a view adds, so a view opts into its own
+     * controls without any layout knowing which view asked.
+     *
+     * @return this view's own body controls, top to bottom; empty when the view adds none
+     */
+    default List<SidebarControlSpec> getViewBodyControls() {
+        return List.of();
+    }
 }

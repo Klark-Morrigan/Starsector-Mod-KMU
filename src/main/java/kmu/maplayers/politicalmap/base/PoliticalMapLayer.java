@@ -68,6 +68,15 @@ public final class PoliticalMapLayer implements MapLayer {
         // the map's on/off since clicking the lit view deselects it.
         var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls());
         controls.add(PoliticalMapBodyControls.buildViewSelector());
+        // Finally the selected view's own controls, so the body shows widgets specific to the active
+        // view (the alliances view's Mute/Desaturate checkboxes) and the layout grows downward to
+        // fit them. Use the selected view - the one the radio lights while the tab is up - not the
+        // active view, since getBodyControls is only reached for the active tab. No view selected
+        // means the map is off, so there is nothing to append.
+        var selectedView = PoliticalMapViewRegistry.getSelectedView();
+        if (selectedView != null) {
+            controls.addAll(selectedView.getViewBodyControls());
+        }
         return List.copyOf(controls);
     }
 

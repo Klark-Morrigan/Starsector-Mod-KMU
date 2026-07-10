@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.model;
 
+import kmlib.starsector.factions.FactionPalette;
+
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -41,7 +43,7 @@ public final class PoliticalMapDrawables {
     private final Map<String, DominantOwner> ownerBySystemId;
     private final Set<String> decivilisedSystemIds;
     private final Color neutralColor;
-    private final DesaturationPalette desaturationPalette;
+    private final FactionPalette desaturationPalette;
     private final MapStyle factionStyle;
     private final MapStyle independentStyle;
     private final MapStyle decivilisedStyle;
@@ -58,7 +60,7 @@ public final class PoliticalMapDrawables {
             Map<String, DominantOwner> ownerBySystemId,
             Set<String> decivilisedSystemIds,
             Color neutralColor,
-            DesaturationPalette desaturationPalette,
+            FactionPalette desaturationPalette,
             MapStyle factionStyle,
             MapStyle independentStyle,
             MapStyle decivilisedStyle,
@@ -89,7 +91,7 @@ public final class PoliticalMapDrawables {
     public static PoliticalMapDrawables createEmpty(PoliticalMapView view) {
         return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
-                new DesaturationPalette(Color.GRAY, Color.GRAY),
+                new FactionPalette(Color.GRAY, Color.GRAY),
                 null, null, null, null, view, OwnershipGrouping.identity());
     }
 
@@ -113,7 +115,7 @@ public final class PoliticalMapDrawables {
         return neutralColor;
     }
 
-    public DesaturationPalette getDesaturationPalette() {
+    public FactionPalette getDesaturationPalette() {
         return desaturationPalette;
     }
 

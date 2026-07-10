@@ -4,12 +4,13 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.factions.FactionPalette;
+
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.render.model.DesaturationPalette;
 import kmu.maplayers.politicalmap.base.render.model.MapStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.settings.DesaturationProfileChoice;
@@ -80,7 +81,7 @@ final class DrawablesBuilderTest {
             var palette = DrawablesBuilder.resolveDesaturationPalette(
                     DesaturationProfileChoice.INDEPENDENT, sectorMock, Color.GRAY);
 
-            assertThat(palette).isEqualTo(new DesaturationPalette(Color.GREEN, Color.YELLOW));
+            assertThat(palette).isEqualTo(new FactionPalette(Color.GREEN, Color.YELLOW));
         }
 
         @Test
@@ -89,7 +90,7 @@ final class DrawablesBuilderTest {
             var palette = DrawablesBuilder.resolveDesaturationPalette(
                     DesaturationProfileChoice.NEUTRAL, mock(SectorAPI.class), Color.GRAY);
 
-            assertThat(palette).isEqualTo(new DesaturationPalette(Color.GRAY, Color.GRAY));
+            assertThat(palette).isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
         }
     }
 
@@ -166,7 +167,7 @@ final class DrawablesBuilderTest {
         private static PoliticalMapDrawables drawablesWith(PoliticalMapView viewMock) {
             return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                     Map.of(SYSTEM_ID, OWNER), Set.of(), Color.GRAY,
-                    new DesaturationPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
                     STYLE, STYLE, STYLE, STYLE, viewMock, OwnershipGrouping.identity());
         }
 
