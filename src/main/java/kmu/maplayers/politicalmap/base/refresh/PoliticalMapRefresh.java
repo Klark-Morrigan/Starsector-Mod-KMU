@@ -43,6 +43,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * recedes ground folds it into its content token, so a flip repaints the overlay live. A view
  * that draws no receded ground ignores it, exactly as it ignores a change it does not render.
  *
+ * <p>Which bloc the filter spotlights is a fifth coarse signal, tracked with a single
+ * {@code filterRevision} counter. The selected bloc is sidebar-only sector-memory state like the
+ * recede toggles, so picking or clearing it never bumps {@code settingsRevision}; instead the
+ * selection's setter bumps this counter. Unlike the alliance and recede signals this one is folded
+ * into the content token at the pipeline level rather than by any single view, since the filter is a
+ * mode orthogonal to the active view (either view can be filtered), so a bump repaints the overlay
+ * under whichever view is up without each view naming the filter.
+ *
  * <p>A counter and a set rather than direct calls because the producers (a
  * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)
  * are created independently, with no shared owner to wire together. The set is
@@ -55,6 +63,7 @@ public final class PoliticalMapRefresh {
     private static final AtomicInteger geometryRevision = new AtomicInteger();
     private static final AtomicInteger allianceRevision = new AtomicInteger();
     private static final AtomicInteger recedeStyleRevision = new AtomicInteger();
+    private static final AtomicInteger filterRevision = new AtomicInteger();
     private static final Set<String> politicsStaleSystemIds = ConcurrentHashMap.newKeySet();
 
     private PoliticalMapRefresh() {
@@ -123,6 +132,30 @@ public final class PoliticalMapRefresh {
         var revision = recedeStyleRevision.incrementAndGet();
         LOG.debug("Political map recede style refresh requested; recedeStyleRevision="
                 + revision);
+    }
+
+    /**
+     * @return a counter that advances when the filter's selected bloc changes or is cleared, so the
+     *         overlay rebuilds its drawables; folded into the content token at the pipeline level,
+     *         since the filter is a mode either view can be under rather than a single view's concern
+     */
+    public static int getFilterRevision() {
+        return filterRevision.get();
+    }
+
+    /**
+     * Marks the filter selection stale: the player picked a different bloc to spotlight or cleared
+     * the filter. Folded into the content token at the pipeline level - the filter is orthogonal to
+     * the active view, so the bump repaints under whichever view is up without any view naming it.
+     * This is the live-invalidation seam the selection uses in place of {@code settingsRevision},
+     * since the selected bloc is sidebar-only sector-memory state rather than a LunaLib field.
+     */
+    public static void requestFilterRefresh() {
+        // The seam the filter selection's setter funnels through, mirroring requestRecedeStyleRefresh.
+        // Logged with the resulting counter so a selection that failed to repaint can be traced to
+        // whether the request was even issued.
+        var revision = filterRevision.incrementAndGet();
+        LOG.debug("Political map filter refresh requested; filterRevision=" + revision);
     }
 
     /**
