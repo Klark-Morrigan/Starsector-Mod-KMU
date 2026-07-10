@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import kmlib.starsector.memory.SectorMemoryAccess;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 
 /**
  * The two per-save toggles that decide how the alliances view recedes the factions outside
@@ -48,11 +49,46 @@ public final class AllianceStylePreferences {
         return readToggle(DESATURATE_NON_ALLIED_KEY);
     }
 
+    /**
+     * Sets whether the alliances view dims every non-allied faction, persisting the choice in this
+     * save and repainting the overlay so the flip shows at once.
+     *
+     * @param isMuted the new Mute state, as the sidebar checkbox reads it
+     */
+    public static void setNonAlliedMuted(boolean isMuted) {
+        writeToggle(MUTE_NON_ALLIED_KEY, isMuted);
+    }
+
+    /**
+     * Sets whether the alliances view recolours every non-allied faction to the desaturation
+     * profile, persisting the choice in this save and repainting the overlay so the flip shows at
+     * once.
+     *
+     * @param shouldDesaturate the new Desaturate state, as the sidebar checkbox reads it
+     */
+    public static void setNonAlliedDesaturated(boolean shouldDesaturate) {
+        writeToggle(DESATURATE_NON_ALLIED_KEY, shouldDesaturate);
+    }
+
     // Reads a toggle from sector memory, false before the sector exists (no save to read) or when
     // the key was never written - the original un-receded look either way. MemoryAPI.getBoolean
     // already returns false for an absent key, so the null-sector guard is the only extra check.
     private static boolean readToggle(String key) {
         MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
         return memory != null && memory.getBoolean(key);
+    }
+
+    // Persists a toggle to sector memory and requests a style refresh so the alliances view rebuilds
+    // its drawables with the new choice. A no-op before the sector exists (no save to write into, and
+    // nothing painting to repaint). The value is written permanently - it is per-save state that must
+    // survive reload - and the refresh stands in for settingsRevision, which these sidebar-only
+    // toggles never bump since they are not LunaLib fields.
+    private static void writeToggle(String key, boolean value) {
+        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
+        if (memory == null) {
+            return;
+        }
+        memory.set(key, value);
+        PoliticalMapRefresh.requestAllianceStyleRefresh();
     }
 }

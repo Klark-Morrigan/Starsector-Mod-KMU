@@ -39,6 +39,9 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_FACTION_NAMES = "political_map_ctl_faction_names";
     public static final String POLITICAL_MAP_CTL_FACTIONS = "political_map_ctl_factions";
     public static final String POLITICAL_MAP_CTL_ALLIANCES = "political_map_ctl_alliances";
+    public static final String POLITICAL_MAP_CTL_NON_ALLIED_CAPTION = "political_map_ctl_non_allied_caption";
+    public static final String POLITICAL_MAP_CTL_MUTED = "political_map_ctl_muted";
+    public static final String POLITICAL_MAP_CTL_DESATURATED = "political_map_ctl_desaturated";
 
     private KmuStrings() {
     }

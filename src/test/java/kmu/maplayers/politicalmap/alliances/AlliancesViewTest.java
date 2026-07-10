@@ -54,14 +54,25 @@ final class AlliancesViewTest {
     class GetGroupingRevision {
 
         @Test
-        void getGroupingRevisionTracksTheAllianceRevision() {
-            // The alliances view's live data is the alliance set, so its contribution must
-            // move with the shared alliance revision - that is what folds a membership change
-            // into the content token and repaints the view without a reload.
+        void getGroupingRevisionShiftsWhenTheAllianceRevisionMoves() {
+            // The alliance set is one of the view's live inputs, so a membership change must shift
+            // the revision - that is what folds it into the content token and repaints the view
+            // without a reload.
             var before = AlliancesView.INSTANCE.getGroupingRevision();
             PoliticalMapRefresh.requestAllianceRefresh();
 
-            assertThat(AlliancesView.INSTANCE.getGroupingRevision()).isEqualTo(before + 1);
+            assertThat(AlliancesView.INSTANCE.getGroupingRevision()).isNotEqualTo(before);
+        }
+
+        @Test
+        void getGroupingRevisionShiftsWhenTheAllianceStyleRevisionMoves() {
+            // A Mute/Desaturate flip is the view's other live input: those sidebar-only toggles
+            // never move settingsRevision, so the style revision must fold in here for a flip to
+            // repaint the overlay live.
+            var before = AlliancesView.INSTANCE.getGroupingRevision();
+            PoliticalMapRefresh.requestAllianceStyleRefresh();
+
+            assertThat(AlliancesView.INSTANCE.getGroupingRevision()).isNotEqualTo(before);
         }
     }
 

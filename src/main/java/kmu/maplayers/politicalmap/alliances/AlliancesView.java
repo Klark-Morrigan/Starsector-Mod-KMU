@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.alliances;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -11,6 +12,9 @@ import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
+
+import java.util.List;
+import java.util.Objects;
 
 /**
  * The alliances view's render rules: allied factions fuse into one bloc per alliance so an
@@ -47,10 +51,15 @@ public final class AlliancesView implements PoliticalMapView {
 
     @Override
     public int getGroupingRevision() {
-        // The alliance set is live, so this view's live-data revision is the shared alliance
-        // revision the sector watcher bumps when membership moves; folding it into the content
-        // token is what repaints the alliances view on a form/dissolve/transfer without a reload.
-        return PoliticalMapRefresh.getAllianceRevision();
+        // This view's rebuild is driven by two live inputs, folded into one revision the content
+        // token reads: the alliance set (the sector watcher bumps its revision when membership
+        // moves, repainting on a form/dissolve/transfer) and the non-allied recede toggles (their
+        // setter bumps the style revision on a Mute/Desaturate flip, since those sidebar-only
+        // toggles never move settingsRevision). Objects.hash separates the two so a change to either
+        // shifts the token and forces a rebuild.
+        return Objects.hash(
+                PoliticalMapRefresh.getAllianceRevision(),
+                PoliticalMapRefresh.getAllianceStyleRevision());
     }
 
     @Override
@@ -95,5 +104,13 @@ public final class AlliancesView implements PoliticalMapView {
         // A non-alliance bloc is a lone faction, named exactly as the faction view names it, so the
         // two views can never drift on how a plain faction's label reads.
         return FactionsView.INSTANCE.resolveName(blocId, grouping, sector, nameFormat);
+    }
+
+    @Override
+    public List<SidebarControlSpec> getViewBodyControls() {
+        // The Mute/Desaturate checkboxes belong only to this view, so they show solely while it is
+        // selected; keeping them behind AllianceBodyControls keeps every alliance-only control in the
+        // alliances package with the view that owns them.
+        return AllianceBodyControls.buildControls();
     }
 }
