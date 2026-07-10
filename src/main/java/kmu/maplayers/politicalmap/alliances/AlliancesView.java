@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.alliances;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.ui.controls.ControlSpec;
@@ -19,10 +20,15 @@ import java.util.List;
 
 /**
  * The alliances view's render rules: allied factions fuse into one bloc per alliance so an
- * alliance reads as a single coloured, named region, while every unaligned faction and
- * neutral recedes to the muted independent style yet keeps its own border and name. It
- * exists so the shared pipeline can paint alliances without knowing anything about them -
- * the view supplies only the grouping, the recede test, and the label.
+ * alliance reads as a single coloured, named region, while every unaligned faction keeps its
+ * own border and name. Two orthogonal knobs recede a non-allied faction: Mute dims its opacity
+ * by the muted modifier while leaving its faction style and colours intact, and Desaturate makes
+ * it adopt the whole independent style - the independent fill/border opacities and widths plus
+ * the desaturation palette - so it reads as independent ground rather than an independent colour
+ * over faction opacities. With both off it paints exactly as the faction view draws it, so a lone
+ * faction reads identically in both views and only the allied factions differ between the two. It
+ * exists so the shared pipeline can paint alliances without knowing anything about them - the view
+ * supplies only the grouping, the recede test, and the label.
  *
  * <p>The grouping is sampled live from Nexerelin, which is why the view is registered only
  * when Nex is present. It names no {@code exerelin.*} type of its own: {@link NexerelinAlliances}
@@ -72,9 +78,16 @@ public final class AlliancesView implements PoliticalMapView {
 
     @Override
     public boolean shouldUseIndependentStyle(String blocId, OwnershipGrouping grouping) {
-        // Only alliances paint in full faction colour; every lone faction and neutral recedes to the
-        // muted independent style, so the alliances stand out against a common muted ground.
-        return !grouping.isAlliance(blocId);
+        // Genuine independent space always takes the independent style, exactly as the faction view
+        // classifies it. A non-allied faction takes it too while Desaturate is on: desaturation
+        // means "read as independent ground", so the bloc must adopt the whole independent style -
+        // its independent fill/border opacities and widths, paired with the desaturation palette in
+        // resolveBlocStyleAdjustment - and not sit at faction opacities with only an independent
+        // recolour painted over them. An alliance always paints in the full faction style so it
+        // stands out. Muting never swaps the bundle; it only dims the active style via the opacity
+        // modifier, so a lone faction with both toggles off reads exactly as the faction view.
+        return Factions.INDEPENDENT.equals(blocId)
+                || (!grouping.isAlliance(blocId) && AllianceStylePreferences.isNonAlliedDesaturated());
     }
 
     @Override

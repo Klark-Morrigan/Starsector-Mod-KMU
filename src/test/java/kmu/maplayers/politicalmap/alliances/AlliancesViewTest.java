@@ -5,6 +5,7 @@ import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -25,8 +26,10 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the alliances view's render rules: an alliance bloc paints in full colour and reads its
- * alliance name, while every non-alliance bloc recedes to the muted independent style and is named
- * exactly as the faction view would name that lone faction. The grouping is sampled from Nexerelin,
+ * alliance name, while a non-allied faction keeps its own faction style until Desaturate makes it
+ * adopt the independent style bundle; Mute only dims the active style via the opacity modifier. A
+ * non-allied faction is named exactly as the faction view would name that lone faction. The grouping
+ * is sampled from Nexerelin,
  * so its resolution is pinned only for the Nex-absent fallback here; a live alliance set is the
  * in-game test's concern.
  */
@@ -96,17 +99,53 @@ final class AlliancesViewTest {
     class ShouldUseIndependentStyle {
 
         @Test
-        void shouldUseIndependentStyleIsFalseForAnAllianceBloc() {
-            // Alliances keep the full faction style so they stand out.
+        void shouldUseIndependentStyleIsTrueForIndependentSpace() {
+            // Genuine independent space always takes the independent style, exactly as the faction
+            // view classifies it - short-circuiting before the Desaturate toggle is even read.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "rebel_pact", ALLIANCE_GROUPING)).isFalse();
+                    Factions.INDEPENDENT, ALLIANCE_GROUPING)).isTrue();
         }
 
         @Test
-        void shouldUseIndependentStyleIsTrueForALoneFaction() {
-            // Every non-alliance bloc recedes to the muted independent style.
-            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ALLIANCE_GROUPING)).isTrue();
+        void shouldUseIndependentStyleIsFalseForAnAllianceBlocEvenWhenDesaturated() {
+            // An alliance always paints in the full faction style, no matter the Desaturate toggle.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                    mockStatic(AllianceStylePreferences.class)) {
+                preferencesMock.when(AllianceStylePreferences::isNonAlliedDesaturated)
+                        .thenReturn(true);
+
+                assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
+                        "rebel_pact", ALLIANCE_GROUPING)).isFalse();
+            }
+        }
+
+        @Test
+        void shouldUseIndependentStyleIsFalseForALoneFactionWhenNotDesaturated() {
+            // With Desaturate off a non-allied faction keeps its own faction style, so it reads
+            // exactly as the faction view draws it; muting only dims that style, never swaps the
+            // bundle, so only the allied factions differ across the two views.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                    mockStatic(AllianceStylePreferences.class)) {
+                preferencesMock.when(AllianceStylePreferences::isNonAlliedDesaturated)
+                        .thenReturn(false);
+
+                assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
+                        "hegemony", ALLIANCE_GROUPING)).isFalse();
+            }
+        }
+
+        @Test
+        void shouldUseIndependentStyleIsTrueForALoneFactionWhenDesaturated() {
+            // Desaturate makes a non-allied faction adopt the whole independent style - its
+            // independent opacities and widths, not just an independent recolour over faction ones.
+            try (MockedStatic<AllianceStylePreferences> preferencesMock =
+                    mockStatic(AllianceStylePreferences.class)) {
+                preferencesMock.when(AllianceStylePreferences::isNonAlliedDesaturated)
+                        .thenReturn(true);
+
+                assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
+                        "hegemony", ALLIANCE_GROUPING)).isTrue();
+            }
         }
     }
 
