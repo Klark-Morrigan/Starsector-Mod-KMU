@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -294,6 +295,72 @@ class SectorPoliticsIntegrationTest {
         }
     }
 
+    @Nested
+    class ResolveVisiblyWeightedBlocIds {
+
+        @Test
+        void resolveVisiblyWeightedBlocIdsListsABlocHoldingMarketsInSeveralSystemsOnce() {
+            // A bloc's footprint accumulates across systems rather than overwriting, so a faction
+            // present in two systems is one selectable option, not two.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var sector = sectorWithSystems(List.of(hegemony),
+                    systemMarkets("system-a", visibleMarket(hegemony, 5)),
+                    systemMarkets("system-b", visibleMarket(hegemony, 3)));
+
+            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
+                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
+                    .containsExactly("hegemony");
+        }
+
+        @Test
+        void resolveVisiblyWeightedBlocIdsListsAnAllianceAsOneBlocNotItsMembers() {
+            // The alliance grouping folds allied members into one bloc, so the alliance is gated as a
+            // single unit and its members never surface as separate options.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = sectorWithSystems(List.of(hegemony, tritachyon),
+                    systemMarkets("system-a", visibleMarket(hegemony, 2)),
+                    systemMarkets("system-b", visibleMarket(tritachyon, 3)));
+            var grouping = new OwnershipGrouping(
+                    Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
+                    Map.of("alliance-1", "hegemony"),
+                    Map.of("alliance-1", "Allied Powers"));
+
+            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
+                    sector, STABILITY_WEIGHTED, false, grouping)).containsExactly("alliance-1");
+        }
+
+        @Test
+        void resolveVisiblyWeightedBlocIdsExcludesAWeightlessBloc() {
+            // A size-0 colony marks presence but carries no weight, so the > 0 gate drops it - a bloc
+            // is offered only when spotlighting it would highlight something.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var sector = sectorWithSystems(List.of(hegemony),
+                    systemMarkets("weightless-system", visibleMarket(hegemony, 0)));
+
+            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
+                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity())).isEmpty();
+        }
+
+        @Test
+        void resolveVisiblyWeightedBlocIdsSkipsConditionOnlyMarkets() {
+            // A bare rock's condition-only market is no colony, so it never marks a bloc's presence -
+            // matching the ownership pass, so a bloc is selectable exactly when it could paint.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var sector = sectorWithSystems(List.of(hegemony),
+                    systemMarkets("bare-system", market(hegemony, 6, true, false, false)));
+
+            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
+                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity())).isEmpty();
+        }
+
+        @Test
+        void resolveVisiblyWeightedBlocIdsIsEmptyForNullSector() {
+            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
+                    null, STABILITY_WEIGHTED, false, OwnershipGrouping.identity())).isEmpty();
+        }
+    }
+
     private static StarSystemAPI onlySystem(SectorAPI sector) {
         return sector.getStarSystems().get(0);
     }
@@ -380,6 +447,37 @@ class SectorPoliticsIntegrationTest {
 
         var sectorMock = mock(SectorAPI.class);
         when(sectorMock.getStarSystems()).thenReturn(List.of(systemMock));
+        when(sectorMock.getEconomy()).thenReturn(economyMock);
+        for (var faction : factions) {
+            when(sectorMock.getFaction(faction.getId())).thenReturn(faction);
+        }
+        return sectorMock;
+    }
+
+    // One system's id paired with the markets its economy holds, so a multi-system
+    // sector can be wired for the sector-wide accumulation the single-system sectorWith
+    // cannot express.
+    private record SystemMarkets(String id, List<MarketAPI> markets) {
+    }
+
+    private static SystemMarkets systemMarkets(String id, MarketAPI... markets) {
+        return new SystemMarkets(id, List.of(markets));
+    }
+
+    // Wires a sector spanning several systems, each with its own markets, so a bloc's
+    // footprint accumulates across the sector rather than within one system.
+    private static SectorAPI sectorWithSystems(List<FactionAPI> factions, SystemMarkets... systems) {
+        var economyMock = mock(EconomyAPI.class);
+        var systemMocks = new ArrayList<StarSystemAPI>();
+        for (var system : systems) {
+            var systemMock = mock(StarSystemAPI.class);
+            when(systemMock.getId()).thenReturn(system.id());
+            when(economyMock.getMarkets(systemMock)).thenReturn(system.markets());
+            systemMocks.add(systemMock);
+        }
+
+        var sectorMock = mock(SectorAPI.class);
+        when(sectorMock.getStarSystems()).thenReturn(systemMocks);
         when(sectorMock.getEconomy()).thenReturn(economyMock);
         for (var faction : factions) {
             when(sectorMock.getFaction(faction.getId())).thenReturn(faction);

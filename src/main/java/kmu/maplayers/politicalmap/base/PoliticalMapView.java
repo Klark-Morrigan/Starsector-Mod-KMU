@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.settings.FactionNameFormatChoice;
 
@@ -109,6 +110,46 @@ public interface PoliticalMapView {
      */
     String resolveName(String blocId, OwnershipGrouping grouping, SectorAPI sector,
             FactionNameFormatChoice nameFormat);
+
+    /**
+     * The blocs the filter picker offers under this view: factions with a visible weighted market
+     * under the factions view, current alliances under the alliances view. Each carries the id the
+     * filter stores, its picker label, and (for a faction) its crest. The list is what the picker
+     * draws and what {@link kmu.maplayers.politicalmap.base.refresh.FilterSelection} heals a stale
+     * saved selection against, so a bloc that is no longer here is no longer spotlightable.
+     *
+     * <p>Only blocs that hold a positive-weight visible market qualify - the same visibility gate the
+     * ownership pass reads, so a bloc is selectable exactly when it could paint territory. The view
+     * supplies its own grouping and name resolver; there is no new per-bloc seam, so a view decides
+     * which of its blocs are targets (every faction, or only the alliance blocs) inside its own
+     * implementation. The convenience overload reads the player's live dominance and dev-reveal
+     * toggles so a caller with no pass of its own need not thread them.
+     *
+     * @param sector                       the sector whose economy the visibility gate reads; null
+     *                                     yields an empty list
+     * @param rules                        the dominance-weighting rules for this read, so selectable
+     *                                     blocs are gated under the same rule the map paints under
+     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
+     *                                     visibility (the "show all factions" dev reveal); false
+     *                                     applies the normal known-to-player filter
+     * @return the selectable blocs, in the order the economy walk surfaces them; empty when no bloc
+     *         holds a visible weighted market
+     */
+    List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector, DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets);
+
+    /**
+     * The selectable blocs under this view, gated by the player's current dominance and dev-reveal
+     * settings - the live entry the picker and the stale-selection heal call, so neither has to read
+     * the toggles a running pass would already hold.
+     *
+     * @param sector the sector whose economy the visibility gate reads; null yields an empty list
+     * @return the selectable blocs under the player's live settings; empty when none qualify
+     */
+    default List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector) {
+        return resolveSelectableBlocs(sector, DominanceRules.readFromLunaSettings(),
+                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions());
+    }
 
     /**
      * The body controls this view contributes to the political-map tab, appended beneath the shared

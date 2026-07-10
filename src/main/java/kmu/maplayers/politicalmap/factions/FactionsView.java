@@ -8,9 +8,15 @@ import kmlib.math.hashing.Fingerprints;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.util.KmuStrings;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The faction-territory view's render rules: every faction is its own bloc, only
@@ -77,6 +83,28 @@ public final class FactionsView implements PoliticalMapView {
         // in the player's chosen form; a faction that will not resolve carries no name.
         var faction = sector.getFaction(blocId);
         return faction == null ? null : resolveFactionName(faction, nameFormat);
+    }
+
+    @Override
+    public List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector, DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets) {
+        // Under identity every faction is its own bloc, so every visibly weighted bloc is a
+        // selectable target - the view maps each straight to an option, leaving the > 0 gate to
+        // the shared bloc-id read both views draw from.
+        var grouping = resolveGrouping();
+        var selectableBlocs = new ArrayList<SelectableBloc>();
+        for (var blocId : SectorPolitics.resolveVisiblyWeightedBlocIds(
+                sector, rules, shouldIncludeUndiscoveredMarkets, grouping)) {
+            var faction = sector.getFaction(blocId);
+            // The crest is the picker row's icon; a faction with no authored crest simply draws its
+            // name alone, so a null path is a valid option rather than a dropped one.
+            var crestSpritePath = faction == null ? null : faction.getCrest();
+            // The picker labels a faction by its short name regardless of the map's name-format
+            // setting, so a long-form map label never widens the sidebar's option rows.
+            var displayName = resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT);
+            selectableBlocs.add(new SelectableBloc(blocId, displayName, crestSpritePath));
+        }
+        return selectableBlocs;
     }
 
     // The faction's name in the player's chosen format: the abbreviated display name for

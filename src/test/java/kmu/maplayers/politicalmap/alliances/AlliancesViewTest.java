@@ -9,7 +9,10 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
+import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.FactionNameFormatChoice;
 
@@ -17,11 +20,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -203,6 +211,37 @@ final class AlliancesViewTest {
 
             assertThat(AlliancesView.INSTANCE.resolveName("hegemony", ALLIANCE_GROUPING, sectorMock,
                     FactionNameFormatChoice.FULL)).isEqualTo("The Hegemony");
+        }
+    }
+
+    @Nested
+    class ResolveSelectableBlocs {
+
+        // The rules are forwarded to the (mocked) visibility gate, so their value never reaches
+        // assertion here - any rules stand in where the seam demands them.
+        private static final DominanceRules ANY_RULES =
+                new DominanceRules(1.0, null, 1.0, false, 1.0, false, 1.0, 0.5, 0.5,
+                        false, 0.25, 0.5, 1.0, 0.5);
+
+        @Test
+        void resolveSelectableBlocsOffersOnlyAllianceBlocsNamedFromTheGrouping() {
+            // Under the alliances view only an alliance is a filter target: a visibly weighted lone
+            // faction is dropped, and the alliance option reads its name off the grouping and carries
+            // no crest of its own. resolveGrouping samples Nex live, so it is stubbed to the alliance
+            // grouping the (mocked) visibility gate is keyed against; the > 0 gate itself is the
+            // shared bloc-id read's job, so both blocs arrive already visibly weighted.
+            var view = spy(AlliancesView.INSTANCE);
+            doReturn(ALLIANCE_GROUPING).when(view).resolveGrouping();
+            var sectorMock = mock(SectorAPI.class);
+
+            try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
+                politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
+                        any(), any(), anyBoolean(), any()))
+                        .thenReturn(List.of("rebel_pact", "hegemony"));
+
+                assertThat(view.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
+                        .containsExactly(new SelectableBloc("rebel_pact", "Rebel Pact", null));
+            }
         }
     }
 

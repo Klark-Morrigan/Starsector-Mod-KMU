@@ -9,13 +9,17 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
+import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -113,6 +117,28 @@ public final class AlliancesView implements PoliticalMapView {
         // A non-alliance bloc is a lone faction, named exactly as the faction view names it, so the
         // two views can never drift on how a plain faction's label reads.
         return FactionsView.INSTANCE.resolveName(blocId, grouping, sector, nameFormat);
+    }
+
+    @Override
+    public List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector, DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets) {
+        // Under this view only alliances are filter targets - a lone faction is not spotlightable
+        // here, matching the view's role of grouping ownership by alliance. The alliance grouping
+        // folds each alliance's members into one bloc, so the shared visibility gate already ranks an
+        // alliance as a unit; the view just drops the visibly weighted blocs that are lone factions.
+        var grouping = resolveGrouping();
+        var selectableBlocs = new ArrayList<SelectableBloc>();
+        for (var blocId : SectorPolitics.resolveVisiblyWeightedBlocIds(
+                sector, rules, shouldIncludeUndiscoveredMarkets, grouping)) {
+            if (!grouping.isAlliance(blocId)) {
+                continue;
+            }
+            // An alliance has no crest of its own, so the picker row draws its name alone; the name
+            // comes from the grouping via resolveName, so the format argument never matters here.
+            var displayName = resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT);
+            selectableBlocs.add(new SelectableBloc(blocId, displayName, null));
+        }
+        return selectableBlocs;
     }
 
     @Override

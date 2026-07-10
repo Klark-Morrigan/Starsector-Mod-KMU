@@ -6,15 +6,24 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.FactionNameFormatChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -121,6 +130,71 @@ final class FactionsViewTest {
 
             assertThat(FactionsView.INSTANCE.resolveName("ghost", ANY_GROUPING, sectorMock,
                     FactionNameFormatChoice.FULL)).isNull();
+        }
+    }
+
+    @Nested
+    class ResolveSelectableBlocs {
+
+        // The rules are forwarded to the (mocked) visibility gate, so their value never reaches
+        // assertion here - any rules stand in where the seam demands them.
+        private static final DominanceRules ANY_RULES =
+                new DominanceRules(1.0, null, 1.0, false, 1.0, false, 1.0, 0.5, 0.5,
+                        false, 0.25, 0.5, 1.0, 0.5);
+
+        @Test
+        void resolveSelectableBlocsCarriesEachVisibleFactionsCrestAndShortName() {
+            // Every visibly weighted faction becomes an option carrying its crest and short name, so
+            // the option reads exactly as the picker row will draw it. The > 0 gate is the shared
+            // bloc-id read's job, stubbed here to a single visible faction.
+            var sectorMock = mock(SectorAPI.class);
+            var hegemonyMock = mock(FactionAPI.class);
+            when(sectorMock.getFaction("hegemony")).thenReturn(hegemonyMock);
+            when(hegemonyMock.getCrest()).thenReturn("graphics/hegemony_crest.png");
+            when(hegemonyMock.getDisplayName()).thenReturn("Hegemony");
+
+            try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
+                politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
+                        any(), any(), anyBoolean(), any())).thenReturn(List.of("hegemony"));
+
+                assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
+                        .containsExactly(new SelectableBloc(
+                                "hegemony", "Hegemony", "graphics/hegemony_crest.png"));
+            }
+        }
+
+        @Test
+        void resolveSelectableBlocsKeepsAFactionWithNoCrestAsANullCrestOption() {
+            // A faction with no authored crest is still selectable - its option just carries a null
+            // crest path and the row draws its name alone, rather than being dropped.
+            var sectorMock = mock(SectorAPI.class);
+            var factionMock = mock(FactionAPI.class);
+            when(sectorMock.getFaction("luddic_path")).thenReturn(factionMock);
+            when(factionMock.getCrest()).thenReturn(null);
+            when(factionMock.getDisplayName()).thenReturn("Path");
+
+            try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
+                politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
+                        any(), any(), anyBoolean(), any())).thenReturn(List.of("luddic_path"));
+
+                assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
+                        .containsExactly(new SelectableBloc("luddic_path", "Path", null));
+            }
+        }
+
+        @Test
+        void resolveSelectableBlocsIsEmptyWhenNoBlocIsVisiblyWeighted() {
+            // With no visibly weighted bloc the picker offers no options and a stale saved selection
+            // heals to none.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
+                politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
+                        any(), any(), anyBoolean(), any())).thenReturn(List.of());
+
+                assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
+                        .isEmpty();
+            }
         }
     }
 }
