@@ -173,6 +173,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
                 case CHECKBOX -> drawCheckbox(control, accent, opacity);
                 case RADIO -> drawRadio(control, accent, opacity);
                 case TOGGLE -> drawToggle(control, accent, opacity);
+                case LABEL -> drawLabelRow(control, opacity);
             }
         }
     }
@@ -220,6 +221,14 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         ToggleButton.render(bounds, isLit(spec), accent, accent, opacity);
         drawBodyLabel(spec.labels().get(0), bounds.x() + bounds.width() / 2f, centerY(bounds),
                 LazyFont.TextAnchor.CENTER, opacity);
+    }
+
+    // A caption row: only its text, left-aligned at the row's left edge and vertically centred, with
+    // no widget chrome - it heads the controls below it and is never clicked.
+    private static void drawLabelRow(SidebarControl control, float opacity) {
+        var bounds = control.bounds();
+        drawBodyLabel(control.spec().labels().get(0), bounds.x(), centerY(bounds),
+                LazyFont.TextAnchor.CENTER_LEFT, opacity);
     }
 
     // A single-cell control (checkbox, toggle) is lit when its one cell (index 0) is the selected

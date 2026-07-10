@@ -15,5 +15,8 @@ public enum SidebarControlKind {
     RADIO,
 
     /** A single button that lights when on; the button is the hit target. */
-    TOGGLE
+    TOGGLE,
+
+    /** A text-only caption row, drawn but never clicked - it carries no hit target. */
+    LABEL
 }

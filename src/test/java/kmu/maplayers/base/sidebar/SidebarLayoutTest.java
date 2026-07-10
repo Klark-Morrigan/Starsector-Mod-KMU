@@ -280,4 +280,34 @@ final class SidebarLayoutTest {
                     BORDER_WIDTH, TABS, VERTICAL_BODY, measurerFake);
         }
     }
+
+    @Nested
+    class LabelRow {
+        // A caption row on its own, so the label's plain-text geometry is checked without other
+        // controls' rows in the way. The caption heads the alliances view's two checkboxes.
+        private static final String CAPTION = "Non-allied factions are";
+        private static final List<SidebarControlSpec> LABEL_BODY =
+                List.of(SidebarControlSpec.createLabel(CAPTION));
+
+        @Test
+        void computePlacementSnapsALabelRowToItsMeasuredText() {
+            var label = place().bodyControls().get(0);
+            // A caption has no widget chrome, so its row is exactly its text width and one row tall.
+            assertThat(label.bounds().width())
+                    .isCloseTo(CAPTION.length() * WIDTH_PER_CHAR, within(TOLERANCE));
+            assertThat(label.bounds().height())
+                    .isCloseTo(SidebarLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
+        }
+
+        @Test
+        void computePlacementLeavesALabelRowWithoutSegments() {
+            assertThat(place().bodyControls().get(0).segments())
+                    .as("a caption is never clicked, so it splits into no hit segments").isEmpty();
+        }
+
+        private SidebarPlacement place() {
+            return SidebarLayout.computePlacement(SCREEN_HEIGHT, PADDING_TOP, PADDING_LEFT,
+                    BORDER_WIDTH, TABS, LABEL_BODY, measurerFake);
+        }
+    }
 }

@@ -144,9 +144,14 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // findHitElement folds that rule in and fires nothing. A deselectable radio (the view selector)
     // instead reads the raw hit so a press on the lit segment reaches its action and turns the
     // control off. A single-cell checkbox or toggle hits anywhere on its row, reported as cell 0,
-    // and flips on every press. The action's meaning stays with the tab that supplied it - this only
-    // maps the click to a cell.
-    private static boolean activateControlIfHit(SidebarControl control, float pointX, float pointY) {
+    // and flips on every press. A caption label is not a hit target and is skipped. The action's
+    // meaning stays with the tab that supplied it - this only maps the click to a cell.
+    static boolean activateControlIfHit(SidebarControl control, float pointX, float pointY) {
+        // A caption row is drawn but not clickable, so a press over it hits nothing and falls through
+        // to let the loop try the controls below - never consuming a click as if it acted.
+        if (control.spec().kind() == SidebarControlKind.LABEL) {
+            return false;
+        }
         if (control.spec().kind() == SidebarControlKind.RADIO) {
             var segmentIndex = control.spec().canDeselect()
                     ? RadioRow.findSegmentIndexAt(control.segments(), pointX, pointY)

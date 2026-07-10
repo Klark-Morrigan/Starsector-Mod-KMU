@@ -69,4 +69,14 @@ public record SidebarControlSpec(SidebarControlKind kind, List<String> labels,
             int selectedIndex) {
         this(kind, labels, trailingLabel, selectedIndex, SidebarControlAction.NONE);
     }
+
+    /**
+     * Builds a caption row: a {@link SidebarControlKind#LABEL} carrying its text as its single
+     * label, with no lit cell and no action, since a caption is drawn but never clicked. Composing
+     * it here keeps the LABEL shape - text in the first label, {@link #NO_SELECTION}, {@link
+     * SidebarControlAction#NONE} - in one place for any tab that heads its controls with a caption.
+     */
+    public static SidebarControlSpec createLabel(String text) {
+        return new SidebarControlSpec(SidebarControlKind.LABEL, List.of(text), "", NO_SELECTION);
+    }
 }

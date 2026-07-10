@@ -141,9 +141,10 @@ public final class SidebarLayout {
         return List.copyOf(controls);
     }
 
-    // The width of a control's clickable row, snapped to its label(s): a checkbox is its tick box
-    // plus a gap plus its label; a horizontal radio is its equal segments side by side, a vertical
-    // radio is one segment column wide; a toggle is its label plus padding.
+    // The width of a control's row, snapped to its label(s): a checkbox is its tick box plus a gap
+    // plus its label; a horizontal radio is its equal segments side by side, a vertical radio is one
+    // segment column wide; a toggle is its label plus padding; a label is just its measured text,
+    // since it has no widget chrome around it.
     private static float measureRowWidth(SidebarControlSpec spec, LineWidthMeasurer measurer) {
         return switch (spec.kind()) {
             case CHECKBOX -> CONTROL_ROW_HEIGHT + CHECKBOX_LABEL_GAP
@@ -152,6 +153,7 @@ public final class SidebarLayout {
                     ? measureRadioSegmentWidth(spec, measurer)
                     : spec.labels().size() * measureRadioSegmentWidth(spec, measurer);
             case TOGGLE -> measureWidth(measurer, spec.labels().get(0)) + TOGGLE_TEXT_PADDING;
+            case LABEL -> measureWidth(measurer, spec.labels().get(0));
         };
     }
 
