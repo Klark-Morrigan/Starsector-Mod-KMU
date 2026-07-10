@@ -1,6 +1,6 @@
 package kmu.maplayers.base.layer;
 
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
+import kmlib.starsector.ui.controls.ControlSpec;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public interface MapLayer {
      *         layer describes its controls, so a new view supplies its own body without the
      *         bar hard-coding one per layer.
      */
-    List<SidebarControlSpec> getBodyControls();
+    List<ControlSpec> getBodyControls();
 
     /**
      * @return the LWJGL keycode this layer's tab jumps to before the player rebinds it in

@@ -42,18 +42,18 @@ final class FactionsViewTest {
     }
 
     @Nested
-    class GetGroupingRevision {
+    class GetContentRevision {
 
         @Test
-        void getGroupingRevisionIsInvariantAcrossAllianceChanges() {
+        void getContentRevisionIsInvariantAcrossAllianceChanges() {
             // The identity grouping never changes in a session, so an alliance forming or
             // dissolving (which bumps the shared alliance revision) must leave the faction
             // view's contribution fixed - that is what keeps an alliance change from churning
             // the faction view.
-            var before = FactionsView.INSTANCE.getGroupingRevision();
+            var before = FactionsView.INSTANCE.getContentRevision();
             PoliticalMapRefresh.requestAllianceRefresh();
 
-            assertThat(FactionsView.INSTANCE.getGroupingRevision()).isEqualTo(before);
+            assertThat(FactionsView.INSTANCE.getContentRevision()).isEqualTo(before);
         }
     }
 

@@ -3,6 +3,8 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.starsector.ui.controls.Control;
+import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.widgets.RadioRow;
 import kmlib.starsector.ui.widgets.TabPanel;
@@ -12,8 +14,6 @@ import kmlib.starsector.ui.widgets.TabStrip;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
-import kmu.maplayers.base.sidebar.SidebarControl;
-import kmu.maplayers.base.sidebar.SidebarControlKind;
 import kmu.maplayers.base.sidebar.SidebarPlacement;
 import kmu.settings.KmuLunaSettings;
 
@@ -32,7 +32,7 @@ import java.util.List;
  * <p>It hit-tests the same {@link LiveSidebarPlacement} the renderer draws, so the rectangles it
  * reads are the rectangles the player sees. It stays agnostic to what a body control means: a click
  * resolves to a control and a cell, and the control's own {@link
- * kmu.maplayers.base.sidebar.SidebarControlAction} - supplied by the tab that built it - does the
+ * kmlib.starsector.ui.controls.ControlAction} - supplied by the tab that built it - does the
  * rest, so this dispatches a faction toggle or a future alliances control the same way. It only
  * acts on the sector map with the starscape filter off, where the bar shows, so its keys and clicks
  * are inert everywhere else.
@@ -146,13 +146,13 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // control off. A single-cell checkbox or toggle hits anywhere on its row, reported as cell 0,
     // and flips on every press. A caption label is not a hit target and is skipped. The action's
     // meaning stays with the tab that supplied it - this only maps the click to a cell.
-    static boolean activateControlIfHit(SidebarControl control, float pointX, float pointY) {
+    static boolean activateControlIfHit(Control control, float pointX, float pointY) {
         // A caption row is drawn but not clickable, so a press over it hits nothing and falls through
         // to let the loop try the controls below - never consuming a click as if it acted.
-        if (control.spec().kind() == SidebarControlKind.LABEL) {
+        if (control.spec().kind() == ControlKind.LABEL) {
             return false;
         }
-        if (control.spec().kind() == SidebarControlKind.RADIO) {
+        if (control.spec().kind() == ControlKind.RADIO) {
             var segmentIndex = control.spec().canDeselect()
                     ? RadioRow.findSegmentIndexAt(control.segments(), pointX, pointY)
                     : RadioRow.findHitElement(control.segments(), control.spec().selectedIndex(),

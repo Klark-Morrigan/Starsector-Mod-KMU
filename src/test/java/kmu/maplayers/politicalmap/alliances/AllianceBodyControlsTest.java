@@ -1,7 +1,8 @@
 package kmu.maplayers.politicalmap.alliances;
 
-import kmu.maplayers.base.sidebar.SidebarControlKind;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
+import kmlib.starsector.ui.controls.ControlKind;
+import kmlib.starsector.ui.controls.ControlSpec;
+
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.Nested;
@@ -37,9 +38,9 @@ final class AllianceBodyControlsTest {
                 var caption = AllianceBodyControls.buildControls().get(CAPTION);
 
                 // A caption is a text-only LABEL - drawn but never clicked, so it carries no lit cell.
-                assertThat(caption.kind()).isEqualTo(SidebarControlKind.LABEL);
+                assertThat(caption.kind()).isEqualTo(ControlKind.LABEL);
                 assertThat(caption.labels()).containsExactly("Non-allied factions are");
-                assertThat(caption.selectedIndex()).isEqualTo(SidebarControlSpec.NO_SELECTION);
+                assertThat(caption.selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 
@@ -54,10 +55,10 @@ final class AllianceBodyControlsTest {
 
                 var controls = AllianceBodyControls.buildControls();
 
-                assertThat(controls.get(MUTE_CHECKBOX).kind()).isEqualTo(SidebarControlKind.CHECKBOX);
+                assertThat(controls.get(MUTE_CHECKBOX).kind()).isEqualTo(ControlKind.CHECKBOX);
                 assertThat(controls.get(MUTE_CHECKBOX).labels()).containsExactly("Muted");
                 assertThat(controls.get(DESATURATE_CHECKBOX).kind())
-                        .isEqualTo(SidebarControlKind.CHECKBOX);
+                        .isEqualTo(ControlKind.CHECKBOX);
                 assertThat(controls.get(DESATURATE_CHECKBOX).labels()).containsExactly("Desaturated");
             }
         }
@@ -86,7 +87,7 @@ final class AllianceBodyControlsTest {
                 preferencesMock.when(AllianceStylePreferences::isNonAlliedMuted).thenReturn(false);
 
                 assertThat(AllianceBodyControls.buildControls().get(MUTE_CHECKBOX).selectedIndex())
-                        .isEqualTo(SidebarControlSpec.NO_SELECTION);
+                        .isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 
@@ -114,7 +115,7 @@ final class AllianceBodyControlsTest {
                         .thenReturn(false);
 
                 assertThat(AllianceBodyControls.buildControls().get(DESATURATE_CHECKBOX)
-                        .selectedIndex()).isEqualTo(SidebarControlSpec.NO_SELECTION);
+                        .selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 

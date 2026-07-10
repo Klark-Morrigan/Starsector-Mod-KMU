@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.alliances;
 
-import kmu.maplayers.base.sidebar.SidebarControlKind;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
+import kmlib.starsector.ui.controls.ControlSpec;
+
 import kmu.util.KmuStrings;
 
 import java.util.List;
@@ -28,16 +28,16 @@ public final class AllianceBodyControls {
      *         caption, the Mute checkbox (lit when non-allied factions are dimmed), and the
      *         Desaturate checkbox (lit when they are recoloured to the desaturation profile)
      */
-    public static List<SidebarControlSpec> buildControls() {
+    public static List<ControlSpec> buildControls() {
         return List.of(
-                SidebarControlSpec.createLabel(
+                ControlSpec.createLabel(
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION)),
-                new SidebarControlSpec(SidebarControlKind.CHECKBOX,
-                        List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED)), "",
-                        mutedCheckboxState(), cellIndex -> toggleNonAlliedMuted()),
-                new SidebarControlSpec(SidebarControlKind.CHECKBOX,
-                        List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED)), "",
-                        desaturatedCheckboxState(), cellIndex -> toggleNonAlliedDesaturated()));
+                ControlSpec.createCheckbox(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED),
+                        AllianceStylePreferences.isNonAlliedMuted(),
+                        cellIndex -> toggleNonAlliedMuted()),
+                ControlSpec.createCheckbox(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED),
+                        AllianceStylePreferences.isNonAlliedDesaturated(),
+                        cellIndex -> toggleNonAlliedDesaturated()));
     }
 
     // Flips the Mute toggle to the opposite of its current state, so the checkbox is a plain on/off.
@@ -50,18 +50,5 @@ public final class AllianceBodyControls {
     private static void toggleNonAlliedDesaturated() {
         AllianceStylePreferences.setNonAlliedDesaturated(
                 !AllianceStylePreferences.isNonAlliedDesaturated());
-    }
-
-    // The Mute checkbox is lit (cell 0) when non-allied factions are dimmed, off otherwise - a
-    // single-cell control is either its one lit cell or NO_SELECTION.
-    private static int mutedCheckboxState() {
-        return AllianceStylePreferences.isNonAlliedMuted() ? 0 : SidebarControlSpec.NO_SELECTION;
-    }
-
-    // The Desaturate checkbox is lit (cell 0) when non-allied factions are recoloured, off otherwise.
-    private static int desaturatedCheckboxState() {
-        return AllianceStylePreferences.isNonAlliedDesaturated()
-                ? 0
-                : SidebarControlSpec.NO_SELECTION;
     }
 }

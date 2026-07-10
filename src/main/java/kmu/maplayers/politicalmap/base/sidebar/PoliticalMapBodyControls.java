@@ -1,9 +1,9 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
+import kmlib.starsector.ui.controls.ControlKind;
+import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.RadioAlignment;
 
-import kmu.maplayers.base.sidebar.SidebarControlKind;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.settings.FactionNameFormatChoice;
@@ -40,12 +40,13 @@ public final class PoliticalMapBodyControls {
      *         (lit when uninhabited systems draw), then the Short/Full name-format radio (its lit
      *         segment the active format) with its trailing "Names" label
      */
-    public static List<SidebarControlSpec> buildSharedControls() {
+    public static List<ControlSpec> buildSharedControls() {
         return List.of(
-                new SidebarControlSpec(SidebarControlKind.CHECKBOX,
-                        List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED)), "",
-                        uninhabitedCheckboxState(), cellIndex -> toggleUninhabitedSystems()),
-                new SidebarControlSpec(SidebarControlKind.RADIO,
+                ControlSpec.createCheckbox(
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
+                        KmuLunaSettings.getUninhabitedBorderColor().isDrawn(),
+                        cellIndex -> toggleUninhabitedSystems()),
+                new ControlSpec(ControlKind.RADIO,
                         List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL)),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES),
@@ -61,12 +62,12 @@ public final class PoliticalMapBodyControls {
      *
      * @return the vertical, deselectable view-selector radio
      */
-    public static SidebarControlSpec buildViewSelector() {
+    public static ControlSpec buildViewSelector() {
         var labels = new ArrayList<String>();
         for (var view : PoliticalMapViewRegistry.getViews()) {
             labels.add(KmuStrings.get(view.getSegmentLabelKey()));
         }
-        return new SidebarControlSpec(SidebarControlKind.RADIO, List.copyOf(labels), "",
+        return new ControlSpec(ControlKind.RADIO, List.copyOf(labels), "",
                 PoliticalMapViewRegistry.getSelectedViewIndex(),
                 PoliticalMapBodyControls::selectViewSegment, RadioAlignment.VERTICAL, true);
     }
@@ -101,14 +102,6 @@ public final class PoliticalMapBodyControls {
         } else if (segmentIndex == NAME_FULL_SEGMENT) {
             KmuLunaSettings.setPoliticalMapFactionNameFormat(FactionNameFormatChoice.FULL);
         }
-    }
-
-    // The checkbox is lit (cell 0) when uninhabited systems draw their outline - the "Neutral
-    // color" choice - and off when they are hidden.
-    private static int uninhabitedCheckboxState() {
-        return KmuLunaSettings.getUninhabitedBorderColor().isDrawn()
-                ? 0
-                : SidebarControlSpec.NO_SELECTION;
     }
 
     // The radio lights the segment for the active name format, matching the Short-then-Full

@@ -1,8 +1,9 @@
 package kmu.maplayers.politicalmap.base;
 
+import kmlib.starsector.ui.controls.ControlSpec;
+
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.util.KmuStrings;
 
@@ -62,7 +63,7 @@ public final class PoliticalMapLayer implements MapLayer {
     }
 
     @Override
-    public List<SidebarControlSpec> getBodyControls() {
+    public List<ControlSpec> getBodyControls() {
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
         // view-selector radio that picks which view paints - one segment per registered view, and
         // the map's on/off since clicking the lit view deselects it.

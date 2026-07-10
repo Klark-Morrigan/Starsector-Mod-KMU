@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.math.hashing.Fingerprints;
+
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -19,12 +21,6 @@ import kmu.util.KmuStrings;
  * and its two per-bloc decisions read the bloc id as a plain faction id.
  */
 public final class FactionsView implements PoliticalMapView {
-
-    // The faction grouping is identity - every faction is its own bloc - and that never
-    // changes in a session, so this view's live-data revision is a fixed value. An
-    // alliance change (which only the alliances view renders) can therefore never churn
-    // the faction view's content token.
-    private static final int STATIC_GROUPING_REVISION = 0;
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final FactionsView INSTANCE = new FactionsView();
@@ -47,9 +43,11 @@ public final class FactionsView implements PoliticalMapView {
     }
 
     @Override
-    public int getGroupingRevision() {
-        // Identity grouping never changes in a session, so the token contribution is fixed.
-        return STATIC_GROUPING_REVISION;
+    public int getContentRevision() {
+        // The faction view samples nothing live - its grouping is identity and never changes in a
+        // session - so it folds no sources and returns the fixed no-source constant. An alliance
+        // change (which only the alliances view renders) therefore never churns the faction view.
+        return Fingerprints.compute();
     }
 
     @Override

@@ -7,20 +7,23 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.color.Colors;
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.controls.Control;
+import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.input.UiCursor;
+import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.map.CampaignMapView;
-import kmlib.starsector.ui.widgets.Checkbox;
-import kmlib.starsector.ui.widgets.RadioRow;
-import kmlib.starsector.ui.widgets.TabPanel;
+import kmlib.starsector.ui.render.gl.CheckboxRenderer;
+import kmlib.starsector.ui.render.gl.RadioRowRenderer;
+import kmlib.starsector.ui.render.gl.TabPanelRenderer;
 import kmlib.starsector.ui.render.gl.ToggleButton;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
+import kmlib.starsector.ui.widgets.Checkbox;
+import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
-import kmu.maplayers.base.sidebar.SidebarControl;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.maplayers.base.sidebar.SidebarLayout;
 import kmu.maplayers.base.sidebar.SidebarPlacement;
 import kmu.settings.KmuLunaSettings;
@@ -46,7 +49,7 @@ import java.util.Map;
  * vanilla-styled tab strip); the body controls are the KMLib {@link Checkbox}/{@link RadioRow}/{@link
  * ToggleButton} widgets. So this class owns only the paint wiring: which tab is selected, where the
  * cursor hovers, and drawing each body control in the live state its spec carries. It stays agnostic
- * to what any control means - a control's lit state rides along in its {@link SidebarControlSpec}, so
+ * to what any control means - a control's lit state rides along in its {@link ControlSpec}, so
  * this draws a faction toggle or a future alliances control the same way without knowing either.
  *
  * <p>The sector map is a vanilla core-UI tab with no seam to attach a mod panel, so the sidebar is
@@ -156,7 +159,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         // The reusable panel paints its own chrome: the bordered frame (black fill, accent stroke)
         // and the vanilla-styled tab header, all faded by the one opacity. The body controls are
         // KMU's and drawn below.
-        TabPanel.render(placement.panel(), borderWidth, PANEL_FILL, accent, selectedIndex,
+        TabPanelRenderer.render(placement.panel(), borderWidth, PANEL_FILL, accent, selectedIndex,
                 hoveredIndex, VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT,
                 SidebarLayout.TAB_FONT_SIZE, opacity);
         drawBodyControls(placement.bodyControls(), accent, opacity);
@@ -166,7 +169,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // Draws each body control with its KMLib widget in the lit state its spec carries, then the
     // control's label(s) in white over it. The kind names the widget; the meaning stays with the
     // tab that supplied the spec, so this draws any tab's body without learning what it does.
-    private static void drawBodyControls(List<SidebarControl> controls, Color accent,
+    private static void drawBodyControls(List<Control> controls, Color accent,
             float opacity) {
         for (var control : controls) {
             switch (control.spec().kind()) {
@@ -180,12 +183,12 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
 
     // A tick box lit when the spec's cell is selected, then its label to the right at the same gap
     // the layout reserved, so the label sits exactly in the space snapped for it.
-    private static void drawCheckbox(SidebarControl control, Color accent, float opacity) {
+    private static void drawCheckbox(Control control, Color accent, float opacity) {
         var spec = control.spec();
         var bounds = control.bounds();
-        Checkbox.render(bounds, isLit(spec), accent, Misc.getBrightPlayerColor(), opacity);
+        CheckboxRenderer.render(bounds, isLit(spec), accent, Misc.getBrightPlayerColor(), opacity);
         var box = Checkbox.computeTickBox(bounds);
-        var labelX = box.x() + box.width() + SidebarLayout.CHECKBOX_LABEL_GAP;
+        var labelX = box.x() + box.width() + ControlStripLayout.CHECKBOX_LABEL_GAP;
         drawBodyLabel(spec.labels().get(0), labelX, centerY(bounds),
                 LazyFont.TextAnchor.CENTER_LEFT, opacity);
     }
@@ -194,11 +197,11 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // the trailing caption (e.g. "Names") after the row at the layout's reserved gap. The segments
     // flow the way the spec's alignment sets - a horizontal strip or a vertical stack - so the wash
     // and dividers follow the same flow the layout split the row into.
-    private static void drawRadio(SidebarControl control, Color accent, float opacity) {
+    private static void drawRadio(Control control, Color accent, float opacity) {
         var spec = control.spec();
         var bounds = control.bounds();
         var labels = spec.labels();
-        RadioRow.render(bounds, labels.size(), spec.selectedIndex(), spec.alignment(), accent,
+        RadioRowRenderer.render(bounds, labels.size(), spec.selectedIndex(), spec.alignment(), accent,
                 accent, opacity);
         var segments = control.segments();
         for (var index = 0; index < segments.size() && index < labels.size(); index++) {
@@ -207,7 +210,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
                     LazyFont.TextAnchor.CENTER, opacity);
         }
         if (KmlibStrings.hasText(spec.trailingLabel())) {
-            var trailingX = bounds.x() + bounds.width() + SidebarLayout.TRAILING_LABEL_GAP;
+            var trailingX = bounds.x() + bounds.width() + ControlStripLayout.TRAILING_LABEL_GAP;
             drawBodyLabel(spec.trailingLabel(), trailingX, centerY(bounds),
                     LazyFont.TextAnchor.CENTER_LEFT, opacity);
         }
@@ -215,7 +218,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
 
     // A single button washed when the spec's cell is lit, its label centred in it - the lit state
     // is the on/off signal, so the label carries no On/Off word.
-    private static void drawToggle(SidebarControl control, Color accent, float opacity) {
+    private static void drawToggle(Control control, Color accent, float opacity) {
         var spec = control.spec();
         var bounds = control.bounds();
         ToggleButton.render(bounds, isLit(spec), accent, accent, opacity);
@@ -225,7 +228,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
 
     // A caption row: only its text, left-aligned at the row's left edge and vertically centred, with
     // no widget chrome - it heads the controls below it and is never clicked.
-    private static void drawLabelRow(SidebarControl control, float opacity) {
+    private static void drawLabelRow(Control control, float opacity) {
         var bounds = control.bounds();
         drawBodyLabel(control.spec().labels().get(0), bounds.x(), centerY(bounds),
                 LazyFont.TextAnchor.CENTER_LEFT, opacity);
@@ -233,8 +236,8 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
 
     // A single-cell control (checkbox, toggle) is lit when its one cell (index 0) is the selected
     // one; NO_SELECTION means off.
-    private static boolean isLit(SidebarControlSpec spec) {
-        return spec.selectedIndex() != SidebarControlSpec.NO_SELECTION;
+    private static boolean isLit(ControlSpec spec) {
+        return spec.selectedIndex() != ControlSpec.NO_SELECTION;
     }
 
     // Draws one body label in white, faded by opacity, at the given anchor. Skipped silently when
@@ -258,7 +261,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // re-set before each draw, so one buffer serves every frame. Null when the font face cannot
     // load, in which case the control draws without that text.
     private static DrawableString resolveBodyText(String text) {
-        var key = SidebarLayout.BODY_FONT_SIZE + "|" + text;
+        var key = ControlStripLayout.BODY_FONT_SIZE + "|" + text;
         var cached = BODY_TEXT_CACHE.get(key);
         if (cached != null) {
             return cached;
@@ -267,7 +270,8 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         if (font == null) {
             return null;
         }
-        var drawable = font.createText(text, Misc.getTextColor(), (float) SidebarLayout.BODY_FONT_SIZE);
+        var drawable = font.createText(text, Misc.getTextColor(),
+                (float) ControlStripLayout.BODY_FONT_SIZE);
         BODY_TEXT_CACHE.put(key, drawable);
         return drawable;
     }

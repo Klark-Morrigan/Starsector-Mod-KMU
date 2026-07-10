@@ -1,6 +1,7 @@
 package kmu.maplayers.base.layer;
 
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
+import kmlib.starsector.ui.controls.ControlSpec;
+
 import kmu.util.KmuStrings;
 
 import org.lwjgl.input.Keyboard;
@@ -34,7 +35,7 @@ public final class NoLayer implements MapLayer {
     }
 
     @Override
-    public List<SidebarControlSpec> getBodyControls() {
+    public List<ControlSpec> getBodyControls() {
         // The empty view opens no control panel: its tab only clears the map paint.
         return List.of();
     }

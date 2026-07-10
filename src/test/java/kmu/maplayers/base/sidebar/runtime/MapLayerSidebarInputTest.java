@@ -1,11 +1,10 @@
 package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.math.geometry.Rectangle;
-
-import kmu.maplayers.base.sidebar.SidebarControl;
-import kmu.maplayers.base.sidebar.SidebarControlAction;
-import kmu.maplayers.base.sidebar.SidebarControlKind;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
+import kmlib.starsector.ui.controls.Control;
+import kmlib.starsector.ui.controls.ControlAction;
+import kmlib.starsector.ui.controls.ControlKind;
+import kmlib.starsector.ui.controls.ControlSpec;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,7 +30,7 @@ final class MapLayerSidebarInputTest {
             // A caption row with a recording action, so a hit that fired it would be caught; the
             // production caption carries no action, but pinning the skip proves the label is passed
             // over before any action is reached.
-            var label = buildControl(SidebarControlKind.LABEL, "Non-allied", cell -> fired[0] = true);
+            var label = buildControl(ControlKind.LABEL, "Non-allied", cell -> fired[0] = true);
             var acted = MapLayerSidebarInput.activateControlIfHit(label, ROW.x() + ROW.width() / 2f,
                     ROW.y() + ROW.height() / 2f);
             assertThat(acted).as("a caption is not a hit target").isFalse();
@@ -41,7 +40,7 @@ final class MapLayerSidebarInputTest {
         @Test
         void activateControlIfHitFiresACheckboxHitAnywhereOnItsRow() {
             var firedCell = new int[]{-1};
-            var checkbox = buildControl(SidebarControlKind.CHECKBOX, "Muted", cell -> firedCell[0] = cell);
+            var checkbox = buildControl(ControlKind.CHECKBOX, "Muted", cell -> firedCell[0] = cell);
             var acted = MapLayerSidebarInput.activateControlIfHit(checkbox, ROW.x() + ROW.width() / 2f,
                     ROW.y() + ROW.height() / 2f);
             assertThat(acted).isTrue();
@@ -50,7 +49,7 @@ final class MapLayerSidebarInputTest {
 
         @Test
         void activateControlIfHitReportsNoHitForAPressOutsideACheckboxRow() {
-            var checkbox = buildControl(SidebarControlKind.CHECKBOX, "Muted", SidebarControlAction.NONE);
+            var checkbox = buildControl(ControlKind.CHECKBOX, "Muted", ControlAction.NONE);
             var acted = MapLayerSidebarInput.activateControlIfHit(checkbox, ROW.x() - 10f,
                     ROW.y() + ROW.height() / 2f);
             assertThat(acted).isFalse();
@@ -59,9 +58,9 @@ final class MapLayerSidebarInputTest {
 
     // A single-row control occupying ROW, so each test states only the kind, label, and action that
     // distinguish its case rather than repeating the spec-and-bounds construction.
-    private static SidebarControl buildControl(SidebarControlKind kind, String label,
-            SidebarControlAction action) {
-        return new SidebarControl(new SidebarControlSpec(kind, List.of(label), "",
-                SidebarControlSpec.NO_SELECTION, action), ROW, List.of());
+    private static Control buildControl(ControlKind kind, String label,
+            ControlAction action) {
+        return new Control(new ControlSpec(kind, List.of(label), "",
+                ControlSpec.NO_SELECTION, action), ROW, List.of());
     }
 }

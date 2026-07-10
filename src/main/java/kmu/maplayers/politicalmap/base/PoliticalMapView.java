@@ -2,7 +2,8 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
+import kmlib.starsector.ui.controls.ControlSpec;
+
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.settings.FactionNameFormatChoice;
 
@@ -42,17 +43,19 @@ public interface PoliticalMapView {
     String getSegmentLabelKey();
 
     /**
-     * A revision counter for the live data this view's grouping is sampled from, folded
-     * into the drawables' content token so a change to that data forces a rebuild even
-     * when no setting moved. The faction view's grouping is static (identity), so it
-     * returns a constant and never triggers a rebuild on its own; the alliances view
-     * returns the live alliance-set revision, so a membership change repaints it. This is
-     * what lets the shared plugin invalidate on alliance changes without naming any
-     * concrete view - each view declares its own live-data revision.
+     * A revision fingerprint folding every live input this view samples, folded into the
+     * drawables' content token so a change to any of them forces a rebuild even when no
+     * setting moved. A view composes it from its own sources ({@link
+     * kmlib.math.hashing.Fingerprints#compute}), so its number of live inputs can grow
+     * without widening this contract: the faction view samples nothing live and returns a constant,
+     * never triggering a rebuild on its own; the alliances view folds the live alliance-set
+     * revision and its non-allied recede toggles, so either a membership change or a toggle
+     * flip repaints it. This is what lets the shared plugin invalidate on a view's live data
+     * without naming any concrete view - each view declares its own fingerprint.
      *
-     * @return this view's live-data revision; a constant for a view with a static grouping
+     * @return this view's content fingerprint; a constant for a view with no live inputs
      */
-    int getGroupingRevision();
+    int getContentRevision();
 
     /**
      * The ownership grouping this view resolves its pass under: identity for the
@@ -117,7 +120,7 @@ public interface PoliticalMapView {
      *
      * @return this view's own body controls, top to bottom; empty when the view adds none
      */
-    default List<SidebarControlSpec> getViewBodyControls() {
+    default List<ControlSpec> getViewBodyControls() {
         return List.of();
     }
 }

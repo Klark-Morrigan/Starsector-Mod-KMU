@@ -1,6 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.controls.Control;
 import kmlib.starsector.ui.widgets.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.VanillaTab;
 
@@ -8,7 +9,7 @@ import java.util.List;
 
 /**
  * One laid-out sidebar frame: the reusable {@link TabPanelPlacement} carrying the panel's outer
- * box, tab row, and framed body rectangle, paired with the {@link SidebarControl}s KMU laid inside
+ * box, tab row, and framed body rectangle, paired with the {@link Control}s KMU laid inside
  * that body. All rectangles are in UI coordinates, so the renderer draws them and the input listener
  * hit-tests them without conversion.
  *
@@ -21,7 +22,7 @@ import java.util.List;
  * @param panel        the frame, tab row, and body rectangle from the reusable panel
  * @param bodyControls the controls KMU laid inside the body, top to bottom (empty for no body)
  */
-public record SidebarPlacement(TabPanelPlacement panel, List<SidebarControl> bodyControls) {
+public record SidebarPlacement(TabPanelPlacement panel, List<Control> bodyControls) {
     /**
      * @return the panel's full footprint, border included
      */

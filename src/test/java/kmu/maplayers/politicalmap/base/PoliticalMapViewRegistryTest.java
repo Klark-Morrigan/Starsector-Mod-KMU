@@ -4,9 +4,10 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
+import kmlib.starsector.ui.controls.ControlSpec;
+
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -142,7 +143,7 @@ final class PoliticalMapViewRegistryTest {
                 when(memoryMock.getString(ACTIVE_VIEW_KEY)).thenReturn("");
 
                 assertThat(PoliticalMapViewRegistry.getSelectedViewIndex())
-                        .isEqualTo(SidebarControlSpec.NO_SELECTION);
+                        .isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
     }

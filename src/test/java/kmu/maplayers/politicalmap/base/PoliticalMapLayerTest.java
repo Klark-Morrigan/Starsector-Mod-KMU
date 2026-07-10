@@ -4,10 +4,11 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
+import kmlib.starsector.ui.controls.ControlKind;
+import kmlib.starsector.ui.controls.ControlSpec;
+
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.sidebar.SidebarControlKind;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 
 import org.junit.jupiter.api.Nested;
@@ -35,12 +36,12 @@ final class PoliticalMapLayerTest {
 
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
     // order without depending on the real shared controls or selector contents.
-    private static final SidebarControlSpec SHARED_MARKER = new SidebarControlSpec(
-            SidebarControlKind.CHECKBOX, List.of("shared"), "", SidebarControlSpec.NO_SELECTION);
-    private static final SidebarControlSpec SELECTOR_MARKER = new SidebarControlSpec(
-            SidebarControlKind.RADIO, List.of("selector"), "", SidebarControlSpec.NO_SELECTION);
-    private static final SidebarControlSpec VIEW_MARKER = new SidebarControlSpec(
-            SidebarControlKind.CHECKBOX, List.of("view"), "", SidebarControlSpec.NO_SELECTION);
+    private static final ControlSpec SHARED_MARKER = new ControlSpec(
+            ControlKind.CHECKBOX, List.of("shared"), "", ControlSpec.NO_SELECTION);
+    private static final ControlSpec SELECTOR_MARKER = new ControlSpec(
+            ControlKind.RADIO, List.of("selector"), "", ControlSpec.NO_SELECTION);
+    private static final ControlSpec VIEW_MARKER = new ControlSpec(
+            ControlKind.CHECKBOX, List.of("view"), "", ControlSpec.NO_SELECTION);
 
     private final PoliticalMapView viewWithControlsMock = mock(PoliticalMapView.class);
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);

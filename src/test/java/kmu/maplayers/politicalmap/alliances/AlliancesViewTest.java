@@ -51,28 +51,28 @@ final class AlliancesViewTest {
     }
 
     @Nested
-    class GetGroupingRevision {
+    class GetContentRevision {
 
         @Test
-        void getGroupingRevisionShiftsWhenTheAllianceRevisionMoves() {
+        void getContentRevisionShiftsWhenTheAllianceRevisionMoves() {
             // The alliance set is one of the view's live inputs, so a membership change must shift
             // the revision - that is what folds it into the content token and repaints the view
             // without a reload.
-            var before = AlliancesView.INSTANCE.getGroupingRevision();
+            var before = AlliancesView.INSTANCE.getContentRevision();
             PoliticalMapRefresh.requestAllianceRefresh();
 
-            assertThat(AlliancesView.INSTANCE.getGroupingRevision()).isNotEqualTo(before);
+            assertThat(AlliancesView.INSTANCE.getContentRevision()).isNotEqualTo(before);
         }
 
         @Test
-        void getGroupingRevisionShiftsWhenTheAllianceStyleRevisionMoves() {
+        void getContentRevisionShiftsWhenTheAllianceStyleRevisionMoves() {
             // A Mute/Desaturate flip is the view's other live input: those sidebar-only toggles
             // never move settingsRevision, so the style revision must fold in here for a flip to
             // repaint the overlay live.
-            var before = AlliancesView.INSTANCE.getGroupingRevision();
+            var before = AlliancesView.INSTANCE.getContentRevision();
             PoliticalMapRefresh.requestAllianceStyleRefresh();
 
-            assertThat(AlliancesView.INSTANCE.getGroupingRevision()).isNotEqualTo(before);
+            assertThat(AlliancesView.INSTANCE.getContentRevision()).isNotEqualTo(before);
         }
     }
 

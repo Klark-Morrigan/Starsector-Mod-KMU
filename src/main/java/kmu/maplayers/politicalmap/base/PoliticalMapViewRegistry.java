@@ -3,10 +3,10 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
+import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
 
 import java.util.List;
 
@@ -123,14 +123,14 @@ public final class PoliticalMapViewRegistry {
 
     /**
      * @return the index of the selected view in {@link #getViews()} - the radio's lit segment - or
-     *         {@link kmu.maplayers.base.sidebar.SidebarControlSpec#NO_SELECTION} when off
+     *         {@link kmlib.starsector.ui.controls.ControlSpec#NO_SELECTION} when off
      */
     public static int getSelectedViewIndex() {
         var selected = getSelectedView();
         // Off resolves to no view, which an immutable view list cannot be asked to index (it
         // rejects null), so the off state maps straight to the radio's no-selection sentinel.
         if (selected == null) {
-            return SidebarControlSpec.NO_SELECTION;
+            return ControlSpec.NO_SELECTION;
         }
         return orderedViews.indexOf(selected);
     }

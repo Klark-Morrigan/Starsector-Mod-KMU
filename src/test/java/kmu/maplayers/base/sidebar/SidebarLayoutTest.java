@@ -1,8 +1,12 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.ui.font.LineWidthMeasurer;
+import kmlib.starsector.ui.controls.ControlAction;
+import kmlib.starsector.ui.controls.ControlKind;
+import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.RadioAlignment;
+import kmlib.starsector.ui.font.LineWidthMeasurer;
+import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.widgets.VanillaTabContent;
 import kmlib.testfixtures.starsector.ui.font.LineWidthMeasurerFake;
 
@@ -43,13 +47,13 @@ final class SidebarLayoutTest {
     // A political-map-shaped body, but supplied as generic control specs the way any tab would: a
     // checkbox, a two-option radio with a trailing caption, and a toggle. The layout snaps and
     // stacks by geometry alone, so each control's lit state is left unset here.
-    private static final List<SidebarControlSpec> BODY = List.of(
-            new SidebarControlSpec(SidebarControlKind.CHECKBOX, List.of("Uninhabited systems"), "",
-                    SidebarControlSpec.NO_SELECTION),
-            new SidebarControlSpec(SidebarControlKind.RADIO, List.of("Short", "Full"), "Names",
-                    SidebarControlSpec.NO_SELECTION),
-            new SidebarControlSpec(SidebarControlKind.TOGGLE, List.of("Factions"), "",
-                    SidebarControlSpec.NO_SELECTION));
+    private static final List<ControlSpec> BODY = List.of(
+            new ControlSpec(ControlKind.CHECKBOX, List.of("Uninhabited systems"), "",
+                    ControlSpec.NO_SELECTION),
+            new ControlSpec(ControlKind.RADIO, List.of("Short", "Full"), "Names",
+                    ControlSpec.NO_SELECTION),
+            new ControlSpec(ControlKind.TOGGLE, List.of("Factions"), "",
+                    ControlSpec.NO_SELECTION));
 
     // Content is inset from the box by the border on every edge.
     private static final float CONTENT_X = PADDING_LEFT + BORDER_WIDTH;
@@ -121,20 +125,20 @@ final class SidebarLayoutTest {
         void computePlacementStacksTheBodyControlsAsAColumnBeneathTheTabRow() {
             var controls = place(BODY).bodyControls();
             assertThat(controls).extracting(control -> control.spec().kind()).containsExactly(
-                    SidebarControlKind.CHECKBOX,
-                    SidebarControlKind.RADIO,
-                    SidebarControlKind.TOGGLE);
+                    ControlKind.CHECKBOX,
+                    ControlKind.RADIO,
+                    ControlKind.TOGGLE);
 
-            var rowsLeft = CONTENT_X + SidebarLayout.BODY_PADDING;
+            var rowsLeft = CONTENT_X + ControlStripLayout.BODY_PADDING;
             var checkbox = controls.get(0).bounds();
             // "Uninhabited systems" is 19 characters; the row is the tick box, a gap, then the label.
-            var expectedCheckboxWidth = SidebarLayout.CONTROL_ROW_HEIGHT
-                    + SidebarLayout.CHECKBOX_LABEL_GAP + 19 * WIDTH_PER_CHAR;
+            var expectedCheckboxWidth = ControlStripLayout.CONTROL_ROW_HEIGHT
+                    + ControlStripLayout.CHECKBOX_LABEL_GAP + 19 * WIDTH_PER_CHAR;
             assertThat(checkbox.x()).isCloseTo(rowsLeft, within(TOLERANCE));
             assertThat(checkbox.width()).isCloseTo(expectedCheckboxWidth, within(TOLERANCE));
             assertThat(checkbox.y() + checkbox.height())
                     .as("the first control row hangs one body inset below the tab row")
-                    .isCloseTo(TAB_ROW_BOTTOM_Y - SidebarLayout.BODY_PADDING, within(TOLERANCE));
+                    .isCloseTo(TAB_ROW_BOTTOM_Y - ControlStripLayout.BODY_PADDING, within(TOLERANCE));
         }
 
         @Test
@@ -143,10 +147,9 @@ final class SidebarLayoutTest {
             assertThat(radio.segments()).hasSize(2);
             var shortSegment = radio.segments().get(0);
             var fullSegment = radio.segments().get(1);
-            // Segments are sized to the wider option ("Short", 5 chars) plus the segment padding.
-            var expectedSegmentWidth = 5 * WIDTH_PER_CHAR + SidebarLayout.RADIO_SEGMENT_PADDING;
-            assertThat(shortSegment.width()).isCloseTo(expectedSegmentWidth, within(TOLERANCE));
-            assertThat(fullSegment.width()).isCloseTo(expectedSegmentWidth, within(TOLERANCE));
+            // The two segments are equal width and abut; the exact segment sizing is the control
+            // strip's concern, pinned in ControlStripLayoutTest.
+            assertThat(fullSegment.width()).isCloseTo(shortSegment.width(), within(TOLERANCE));
             assertThat(fullSegment.x())
                     .as("the full segment abuts the right edge of the short segment")
                     .isCloseTo(shortSegment.x() + shortSegment.width(), within(TOLERANCE));
@@ -186,14 +189,14 @@ final class SidebarLayoutTest {
             // the selected political-map view's controls trail the selector.
             var basePlacement = place(BODY);
             var appended = new ArrayList<>(BODY);
-            appended.add(new SidebarControlSpec(SidebarControlKind.CHECKBOX, List.of("Muted"), "",
-                    SidebarControlSpec.NO_SELECTION));
+            appended.add(new ControlSpec(ControlKind.CHECKBOX, List.of("Muted"), "",
+                    ControlSpec.NO_SELECTION));
             var grownPlacement = place(List.copyOf(appended));
 
             // The extra row makes the body taller by exactly one control row plus its leading gap.
             assertThat(grownPlacement.body().height())
                     .isCloseTo(basePlacement.body().height()
-                            + SidebarLayout.CONTROL_ROW_HEIGHT + SidebarLayout.ROW_GAP,
+                            + ControlStripLayout.CONTROL_ROW_HEIGHT + ControlStripLayout.ROW_GAP,
                             within(TOLERANCE));
             // Growth is downward: the body's top edge, and so everything above it, does not move.
             assertThat(grownPlacement.body().y() + grownPlacement.body().height())
@@ -216,7 +219,7 @@ final class SidebarLayoutTest {
                     .isLessThanOrEqualTo(outer.y() + outer.height() + TOLERANCE);
         }
 
-        private SidebarPlacement place(List<SidebarControlSpec> bodyControls) {
+        private SidebarPlacement place(List<ControlSpec> bodyControls) {
             return SidebarLayout.computePlacement(SCREEN_HEIGHT, PADDING_TOP, PADDING_LEFT,
                     BORDER_WIDTH, TABS, bodyControls, measurerFake);
         }
@@ -226,21 +229,18 @@ final class SidebarLayoutTest {
     class VerticalRadio {
         // A two-option view-selector radio, laid out on its own so the stacked geometry is checked
         // without the other controls' rows in the way. "Alliances" (9 chars) is the wider option.
-        private static final List<SidebarControlSpec> VERTICAL_BODY = List.of(
-                new SidebarControlSpec(SidebarControlKind.RADIO, List.of("Factions", "Alliances"),
-                        "", SidebarControlSpec.NO_SELECTION, SidebarControlAction.NONE,
+        private static final List<ControlSpec> VERTICAL_BODY = List.of(
+                new ControlSpec(ControlKind.RADIO, List.of("Factions", "Alliances"),
+                        "", ControlSpec.NO_SELECTION, ControlAction.NONE,
                         RadioAlignment.VERTICAL, true));
-
-        private static final float EXPECTED_ROW_WIDTH =
-                9 * WIDTH_PER_CHAR + SidebarLayout.RADIO_SEGMENT_PADDING;
 
         @Test
         void computePlacementStandsAVerticalRadioOneRowTallPerOption() {
             var radio = place().bodyControls().get(0);
-            // One option-row of height per segment, so a two-option radio is twice a control row.
+            // One option-row of height per segment, so a two-option radio is twice a control row. The
+            // exact row width is the control strip's concern, pinned in ControlStripLayoutTest.
             assertThat(radio.bounds().height())
-                    .isCloseTo(2 * SidebarLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
-            assertThat(radio.bounds().width()).isCloseTo(EXPECTED_ROW_WIDTH, within(TOLERANCE));
+                    .isCloseTo(2 * ControlStripLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
         }
 
         @Test
@@ -252,10 +252,10 @@ final class SidebarLayoutTest {
             // Every segment shares the row's left edge and full width - a single column.
             assertThat(top.x()).isCloseTo(radio.bounds().x(), within(TOLERANCE));
             assertThat(bottom.x()).isCloseTo(radio.bounds().x(), within(TOLERANCE));
-            assertThat(top.width()).isCloseTo(EXPECTED_ROW_WIDTH, within(TOLERANCE));
-            assertThat(bottom.width()).isCloseTo(EXPECTED_ROW_WIDTH, within(TOLERANCE));
+            assertThat(top.width()).isCloseTo(radio.bounds().width(), within(TOLERANCE));
+            assertThat(bottom.width()).isCloseTo(radio.bounds().width(), within(TOLERANCE));
             // Each segment is one control-row tall, the first (Factions) on top of the second.
-            assertThat(top.height()).isCloseTo(SidebarLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
+            assertThat(top.height()).isCloseTo(ControlStripLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
             assertThat(top.y())
                     .as("the top segment abuts the bottom segment's upper edge")
                     .isCloseTo(bottom.y() + bottom.height(), within(TOLERANCE));
@@ -286,8 +286,8 @@ final class SidebarLayoutTest {
         // A caption row on its own, so the label's plain-text geometry is checked without other
         // controls' rows in the way. The caption heads the alliances view's two checkboxes.
         private static final String CAPTION = "Non-allied factions are";
-        private static final List<SidebarControlSpec> LABEL_BODY =
-                List.of(SidebarControlSpec.createLabel(CAPTION));
+        private static final List<ControlSpec> LABEL_BODY =
+                List.of(ControlSpec.createLabel(CAPTION));
 
         @Test
         void computePlacementSnapsALabelRowToItsMeasuredText() {
@@ -296,7 +296,7 @@ final class SidebarLayoutTest {
             assertThat(label.bounds().width())
                     .isCloseTo(CAPTION.length() * WIDTH_PER_CHAR, within(TOLERANCE));
             assertThat(label.bounds().height())
-                    .isCloseTo(SidebarLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
+                    .isCloseTo(ControlStripLayout.CONTROL_ROW_HEIGHT, within(TOLERANCE));
         }
 
         @Test

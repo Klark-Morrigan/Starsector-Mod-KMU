@@ -2,7 +2,9 @@ package kmu.maplayers.politicalmap.alliances;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.sidebar.SidebarControlSpec;
+import kmlib.math.hashing.Fingerprints;
+import kmlib.starsector.ui.controls.ControlSpec;
+
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -14,7 +16,6 @@ import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * The alliances view's render rules: allied factions fuse into one bloc per alliance so an
@@ -50,16 +51,16 @@ public final class AlliancesView implements PoliticalMapView {
     }
 
     @Override
-    public int getGroupingRevision() {
-        // This view's rebuild is driven by two live inputs, folded into one revision the content
-        // token reads: the alliance set (the sector watcher bumps its revision when membership
-        // moves, repainting on a form/dissolve/transfer) and the non-allied recede toggles (their
-        // setter bumps the style revision on a Mute/Desaturate flip, since those sidebar-only
-        // toggles never move settingsRevision). Objects.hash separates the two so a change to either
-        // shifts the token and forces a rebuild.
-        return Objects.hash(
-                PoliticalMapRefresh.getAllianceRevision(),
-                PoliticalMapRefresh.getAllianceStyleRevision());
+    public int getContentRevision() {
+        // This view's rebuild is driven by two live inputs, composed into one fingerprint the content
+        // token reads: the alliance set (the sector watcher bumps its revision when membership moves,
+        // repainting on a form/dissolve/transfer) and the non-allied recede toggles (their setter
+        // bumps the style revision on a Mute/Desaturate flip, since those sidebar-only toggles never
+        // move settingsRevision). Composing them means a third live input later is one more source
+        // here, not a wider contract; a change to any shifts the fingerprint and forces a rebuild.
+        return Fingerprints.compute(
+                PoliticalMapRefresh::getAllianceRevision,
+                PoliticalMapRefresh::getAllianceStyleRevision);
     }
 
     @Override
@@ -107,7 +108,7 @@ public final class AlliancesView implements PoliticalMapView {
     }
 
     @Override
-    public List<SidebarControlSpec> getViewBodyControls() {
+    public List<ControlSpec> getViewBodyControls() {
         // The Mute/Desaturate checkboxes belong only to this view, so they show solely while it is
         // selected; keeping them behind AllianceBodyControls keeps every alliance-only control in the
         // alliances package with the view that owns them.
