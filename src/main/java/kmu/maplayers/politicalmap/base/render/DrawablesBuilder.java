@@ -8,6 +8,7 @@ import kmlib.math.geometry.Polygons;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
+import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.render.UiElementPaint;
@@ -163,12 +164,10 @@ final class DrawablesBuilder {
             // top of the style's own opacities.
             var adjustment = drawables.getView()
                     .resolveBlocStyleAdjustment(owner.factionId(), drawables.getGrouping());
-            var primaryColor = adjustment.desaturate()
-                    ? drawables.getDesaturationPalette().primaryColor() : owner.primaryColor();
-            var secondaryColor = adjustment.desaturate()
-                    ? drawables.getDesaturationPalette().secondaryColor() : owner.secondaryColor();
-            return buildStyledCell(shaped, primaryColor, secondaryColor, style, false,
-                    adjustment.opacityMultiplier());
+            var palette = resolveEffectivePalette(adjustment, owner,
+                    drawables.getDesaturationPalette());
+            return buildStyledCell(shaped, palette.primaryColor(), palette.secondaryColor(),
+                    style, false, adjustment.opacityMultiplier());
         }
         // Factionless: decivilised or (otherwise) uninhabited. Its style fills neither
         // palette slot, so both resolve to the shared neutral color and only its
@@ -340,6 +339,18 @@ final class DrawablesBuilder {
                 KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
                 KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
                 KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians());
+    }
+
+    // The two shades a bloc actually paints in under its style adjustment: its owner's own
+    // bright and dark shades normally, or the pass's shared desaturation palette when the
+    // adjustment desaturates the bloc. The single home for the "desaturate swaps the
+    // palette" rule, so a cell's seams, a faction's fill and border, and the bloc's name
+    // all recolour off one decision rather than three copies of it.
+    static FactionPalette resolveEffectivePalette(BlocStyleAdjustment adjustment,
+            DominantOwner owner, FactionPalette desaturationPalette) {
+        return adjustment.desaturate()
+                ? desaturationPalette
+                : new FactionPalette(owner.primaryColor(), owner.secondaryColor());
     }
 
     // Picks the palette shade the player pointed an element at: the secondary (dark)
