@@ -276,21 +276,38 @@ public final class SectorPolitics {
         if (dominantBlocId == null) {
             return null;
         }
-        // The bloc paints in a real faction's palette: itself for a lone faction
-        // bloc, the alliance's dominant member for an alliance bloc. Resolving the
-        // colour faction here keeps the bloc id - which for an alliance is not a
-        // faction id - out of the FactionAPI lookup.
-        var faction = sector.getFaction(grouping.resolveColorFactionId(dominantBlocId));
+        return resolveBlocOwner(sector, grouping, dominantBlocId);
+    }
+
+    /**
+     * Colours a bloc into a render-ready {@link DominantOwner}: the bloc's id paired with
+     * the two shades it paints in.
+     *
+     * <p>The bloc paints in a real faction's palette - itself for a lone faction bloc, the
+     * alliance's dominant member for an alliance bloc - so resolving the colour faction here
+     * keeps the bloc id, which for an alliance is not a faction id, out of the
+     * {@code FactionAPI} lookup. The two palette slots are that faction's own authored UI
+     * shades: the bright colour as primary and the dark colour as secondary, each specified
+     * directly in the {@code .faction} file, so a map element pointed at either stays true to
+     * the palette; which element uses which is the player's choice, made downstream in the
+     * render layer.
+     *
+     * <p>Shared with the filter's presence resolver ({@link FilteredPolitics}), which reuses
+     * the selected bloc's palette under its own synthetic key. Returns null when the colour
+     * faction does not resolve, which drops the system as unowned.
+     *
+     * @param sector   the sector whose {@code FactionAPI} palette is read
+     * @param grouping the grouping that names the bloc's colour faction
+     * @param blocId   the bloc to colour, carried on the returned owner as its id
+     * @return the render-ready owner, or null when the colour faction does not resolve
+     */
+    static DominantOwner resolveBlocOwner(
+            SectorAPI sector, OwnershipGrouping grouping, String blocId) {
+        var faction = sector.getFaction(grouping.resolveColorFactionId(blocId));
         if (faction == null) {
             return null;
         }
-        // The two palette slots are the faction's own authored UI shades: the
-        // bright color as primary and the dark color as secondary. Each .faction
-        // file specifies both directly, so a map element pointed at either stays
-        // true to the faction palette. Which element uses which is the player's
-        // choice, made downstream in the render layer.
-        return new DominantOwner(dominantBlocId,
-                faction.getBrightUIColor(), faction.getDarkUIColor());
+        return new DominantOwner(blocId, faction.getBrightUIColor(), faction.getDarkUIColor());
     }
 
     /**
@@ -361,7 +378,9 @@ public final class SectorPolitics {
     // members rank as one summed unit. Under the identity grouping every faction is
     // its own bloc and the merge folds each footprint into EMPTY, leaving the per-
     // faction map's values unchanged, so the winning bloc equals today's winner.
-    private static Map<String, MarketFootprint> regroupByBloc(
+    // Shared with the filter's presence resolver, which regroups a system's footprints
+    // the same way before judging where the selected bloc is present.
+    static Map<String, MarketFootprint> regroupByBloc(
             Map<String, MarketFootprint> footprintByFactionId, OwnershipGrouping grouping) {
         var footprintByBlocId = new LinkedHashMap<String, MarketFootprint>();
         for (var entry : footprintByFactionId.entrySet()) {

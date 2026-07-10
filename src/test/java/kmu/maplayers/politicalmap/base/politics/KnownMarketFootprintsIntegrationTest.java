@@ -1,10 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.combat.StatBonus;
 import com.fs.starfarer.api.fleet.MutableMarketStatsAPI;
@@ -17,10 +14,17 @@ import kmu.settings.HiddenMarketScalingChoice;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.politics.KnownMarketFootprints.DOMINANCE_WEIGHT_SCALE;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.faction;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.hiddenMarket;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.market;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.marketAtStability;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.onlySystem;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWith;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.undiscoveredHiddenMarket;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.visibleMarket;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -546,37 +550,11 @@ class KnownMarketFootprintsIntegrationTest {
         }
     }
 
-    private static StarSystemAPI onlySystem(SectorAPI sector) {
-        return sector.getStarSystems().get(0);
-    }
-
-    private static MarketAPI visibleMarket(FactionAPI faction, int size) {
-        return market(faction, size, false, false, false, FULL_STABILITY);
-    }
-
-    // A visible owned market at the given stability, the shape the penalty tests vary.
-    private static MarketAPI marketAtStability(FactionAPI faction, int size, float stability) {
-        return market(faction, size, false, false, false, stability);
-    }
-
-    // A hidden market on a discovered entity: it still marks
-    // its system, but its base rating is chosen by the hidden-market scaling.
-    private static MarketAPI hiddenMarket(FactionAPI faction, int size) {
-        return market(faction, size, false, true, false, FULL_STABILITY);
-    }
-
     // A hidden market at the given stability, for pinning that its token rating scales
     // with stability like any other size rating.
     private static MarketAPI hiddenMarketAtStability(FactionAPI faction, int size,
             float stability) {
         return market(faction, size, false, true, false, stability);
-    }
-
-    // An undiscovered hidden market on a still-discoverable entity, the shape a
-    // market wears before the player finds it. Fails both known-market arms, so it
-    // confers no presence until discovery un-hides or reveals it.
-    private static MarketAPI undiscoveredHiddenMarket(FactionAPI faction, int size) {
-        return market(faction, size, false, true, true, FULL_STABILITY);
     }
 
     // A visible owned market that owns an attached defensive station - a "station"-tagged
@@ -667,37 +645,4 @@ class KnownMarketFootprintsIntegrationTest {
         return entityMock;
     }
 
-    private static MarketAPI market(FactionAPI faction, int size, boolean isConditionOnly,
-            boolean isHidden, boolean isUndiscovered, float stability) {
-        var entityMock = mock(SectorEntityToken.class);
-        when(entityMock.isDiscoverable()).thenReturn(isUndiscovered);
-        var marketMock = mock(MarketAPI.class);
-        when(marketMock.getFaction()).thenReturn(faction);
-        when(marketMock.getSize()).thenReturn(size);
-        when(marketMock.getStabilityValue()).thenReturn(stability);
-        when(marketMock.isPlanetConditionMarketOnly()).thenReturn(isConditionOnly);
-        when(marketMock.isHidden()).thenReturn(isHidden);
-        when(marketMock.getPrimaryEntity()).thenReturn(entityMock);
-        return marketMock;
-    }
-
-    private static FactionAPI faction(String id) {
-        var factionMock = mock(FactionAPI.class);
-        when(factionMock.getId()).thenReturn(id);
-        return factionMock;
-    }
-
-    // Wires a sector with one system whose economy holds the given markets. No faction
-    // palette or neutral faction is stubbed: the footprint read keys on each market's
-    // own faction id and never resolves colors.
-    private static SectorAPI sectorWith(String systemId, MarketAPI... markets) {
-        var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getId()).thenReturn(systemId);
-        var economyMock = mock(EconomyAPI.class);
-        when(economyMock.getMarkets(systemMock)).thenReturn(List.of(markets));
-        var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getStarSystems()).thenReturn(List.of(systemMock));
-        when(sectorMock.getEconomy()).thenReturn(economyMock);
-        return sectorMock;
-    }
 }
