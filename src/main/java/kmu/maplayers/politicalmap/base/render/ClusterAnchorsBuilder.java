@@ -185,12 +185,13 @@ final class ClusterAnchorsBuilder {
         var usesIndependentStyle = usesIndependentStyleByBlocId.test(owner.factionId());
         var choice = usesIndependentStyle
                 ? spec.independentOuterColor() : spec.factionOuterColor();
-        var primaryColor = adjustment.desaturate()
-                ? desaturationPalette.primaryColor() : owner.primaryColor();
-        var secondaryColor = adjustment.desaturate()
-                ? desaturationPalette.secondaryColor() : owner.secondaryColor();
-        var color = DrawablesBuilder.pickPaletteColor(choice, primaryColor, secondaryColor);
-        var resolved = color != null ? color : primaryColor;
+        // The name resolves against the same two shades the border does, off the one
+        // "desaturate swaps the palette" decision DrawablesBuilder owns - so the name can
+        // never drift from the fill and border it labels.
+        var palette = DrawablesBuilder.resolveEffectivePalette(adjustment, owner, desaturationPalette);
+        var color = DrawablesBuilder.pickPaletteColor(
+                choice, palette.primaryColor(), palette.secondaryColor());
+        var resolved = color != null ? color : palette.primaryColor();
         var opacity = (usesIndependentStyle
                 ? spec.independentNameOpacity() : spec.factionNameOpacity())
                 * adjustment.opacityMultiplier();
