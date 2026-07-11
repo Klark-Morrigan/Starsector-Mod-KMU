@@ -34,10 +34,11 @@ import static org.assertj.core.api.Assertions.within;
  * pin the underlying line geometry; the band-fit tests give the name real girth to pin
  * that a fat band stays inside the border, that a square cluster wraps the name into two
  * lines to spend spare girth, that the line cap forbids stacking, and that a band too
- * thick to fit collapses to the dot. The builder's settings-fed rebuild entry points
- * (and their font and faction-name resolution) only resolve in-engine.
+ * thick to fit collapses to the dot. The colour and name a cluster draws in arrive injected
+ * (resolved by {@link ClusterLabelStyling}), so the colour tests here pin what the search
+ * carries onto the anchor; the settings-fed rebuild driver only resolves in-engine.
  */
-final class ClusterAnchorsBuilderTest {
+final class ClusterAnchorPlacementTest {
 
     // Two distinct shades so the anchor marker's bright pick can be told apart from the
     // dark counterpart.
@@ -145,7 +146,7 @@ final class ClusterAnchorsBuilderTest {
             // No icon keep-out and no end margin, so the winning horizontal line is the
             // full interior span: it reaches the inset border rings (x 150..1850) - past
             // the sites, but never out of the border.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -169,7 +170,7 @@ final class ClusterAnchorsBuilderTest {
             // clears the parallel offsets at y=325 and y=675 (175 away). Rather than
             // shrink the centred line to a stub between the icons, the search slides the
             // whole line off-centre to the first clear offset and keeps its full length.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -195,7 +196,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsPullsEachEndInwardByTheEndInset() {
             // The 100-unit end inset pulls the winning horizontal span (x 150..1850) in
             // from both ends, leaving the border gap a name needs on each side.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -217,7 +218,7 @@ final class ClusterAnchorsBuilderTest {
             // width-limited to a short chord and only the vertical line runs the full
             // 1700-unit height. Even with the penalty docking the vertical line by half,
             // its length wins - a genuinely tall cluster stays vertical.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), THIN_COLUMN_EDGES,
                     THIN_COLUMN_SITES, THIN_COLUMN_OWNERS,
                     DominantOwner.factionIdBySystemId(THIN_COLUMN_OWNERS),
@@ -241,7 +242,7 @@ final class ClusterAnchorsBuilderTest {
             // 1700 units even though the site cloud is strung vertically. The penalty
             // docks the vertical line by half and leaves the horizontal one whole, so the
             // accepted line runs horizontal against the cloud's own axis.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
@@ -263,7 +264,7 @@ final class ClusterAnchorsBuilderTest {
             // With the penalty off the search reduces to the pure longest line. In the
             // square cluster that is a diagonal through the centre (1700 / sin 60 ~ 1963),
             // longer than either axis-aligned 1700 chord, so a slanted line wins.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
@@ -285,7 +286,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsPlacesTheAnchorDotAtTheAcceptedLineMidpoint() {
             // The centred horizontal winner spans x 150..1850 at y 500, so its midpoint -
             // the dot and the label's hang-point - is (1000, 500).
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -309,7 +310,7 @@ final class ClusterAnchorsBuilderTest {
             // a line through it would clip only the 700-unit left arm. The offset sweep
             // instead reaches the bottom arm and returns a chord nearly three cells long -
             // the payoff of freeing the line from the centroid.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D", "E")), BOOT_EDGES,
                     BOOT_SITES, BOOT_OWNERS,
                     DominantOwner.factionIdBySystemId(BOOT_OWNERS),
@@ -329,7 +330,7 @@ final class ClusterAnchorsBuilderTest {
             // One site has no spread of its own, so its cell's own 2000x1000 shape feeds a
             // horizontal principal-axis candidate; the search lands the full interior span
             // (x 150..1850) - a single-system cluster still carries a real line.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", rectangleCellEdges(0, 0, 2 * CELL_SIDE, CELL_SIDE,
                             null, null, null, null)),
@@ -357,7 +358,7 @@ final class ClusterAnchorsBuilderTest {
             // chord: no candidate survives, so the anchor is just the dot at the site
             // centroid (1000, 500) - no lines, no name, no font. With the diagnostic
             // toggles off it carries no lines.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -380,7 +381,7 @@ final class ClusterAnchorsBuilderTest {
             // Same no-room collapse, but with the rejected-axis toggle on: the best
             // candidate the search had - the full pre-inset clear span (x 150..1850) -
             // comes back for the red line, showing how close the cluster came.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -405,7 +406,7 @@ final class ClusterAnchorsBuilderTest {
             // In the square cluster the penalty accepts the horizontal 1700 line while the
             // pure longest line is the ~1963 diagonal. With the unbiased toggle on, that
             // diagonal rides along for the yellow comparison.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
@@ -429,7 +430,7 @@ final class ClusterAnchorsBuilderTest {
             // In the tall thin column the longest line is also the accepted one (vertical
             // wins on length even penalised), so the pure-longest line coincides with the
             // accepted line and no separate yellow line is built.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), THIN_COLUMN_EDGES,
                     THIN_COLUMN_SITES, THIN_COLUMN_OWNERS,
                     DominantOwner.factionIdBySystemId(THIN_COLUMN_OWNERS),
@@ -444,7 +445,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsCollapsesToTheDotWhenNoBorderRingTraces() {
             // Members with no cell edges yield no border ring to clip against, so there is
             // nothing to prove a line interior - the dot at the site centroid only.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), Map.of(),
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -462,7 +463,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsColorsTheLabelWithThePrimaryShadeWhenTheOuterBorderIsPrimary() {
             // The default outer-border choice is the bright primary shade, so the name
             // (and its debug dot) inherits it - RED here.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -479,7 +480,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsInheritsTheSecondaryShadeWhenTheOuterBorderIsSecondary() {
             // Point the outer border at the secondary (dark) shade and the name follows
             // it - BLUE - so the label reads as the border's own colour, not a fixed pick.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -496,7 +497,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsFallsBackToThePrimaryShadeWhenTheOuterBorderIsHidden() {
             // A hidden outer border ("No color") resolves to no colour, but a name still
             // needs one, so it falls back to the bright primary shade rather than vanishing.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -516,7 +517,7 @@ final class ClusterAnchorsBuilderTest {
             // the label inherits the independent choice (SECONDARY -> BLUE) even though the
             // faction choice differs (PRIMARY) - the seam the alliances view drives in Step 5,
             // where lone factions and neutrals take the independent style.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -533,7 +534,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsFadesAFactionNameByTheFactionNameOpacity() {
             // A faction-styled bloc takes the faction group's name opacity: half fades the
             // resolved PRIMARY shade's alpha to half, leaving its RGB (and the dot's) intact.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -554,7 +555,7 @@ final class ClusterAnchorsBuilderTest {
             // The independent group's opacity fades only independent names: a faction-styled
             // bloc is unaffected even when independent opacity is dimmed, so the two groups
             // fade independently.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -573,7 +574,7 @@ final class ClusterAnchorsBuilderTest {
             // An independent-styled bloc takes the independent group's opacity: half fades
             // its resolved shade's alpha to half, while the faction opacity (full here) has
             // no say over it.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -594,7 +595,7 @@ final class ClusterAnchorsBuilderTest {
             // A bloc's adjustment dims its label on top of the (full) name opacity: half
             // fades the resolved shade's alpha to half and leaves its RGB intact - the same
             // fold Step 3 applies wherever the style classifier is read.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -615,7 +616,7 @@ final class ClusterAnchorsBuilderTest {
             // A desaturated bloc's label follows the pass's shared desaturation palette
             // instead of the owner's own shades, at full alpha since mute is off here.
             var desaturationPalette = new FactionPalette(Color.GREEN, Color.YELLOW);
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -634,7 +635,7 @@ final class ClusterAnchorsBuilderTest {
             // A bloc the resolver maps to NONE - an alliance, in the real view - draws
             // unmuted and undesaturated no matter what the pass's palette holds, since the
             // adjustment (not the palette alone) gates whether either applies.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -658,7 +659,7 @@ final class ClusterAnchorsBuilderTest {
             // RGB, since the label additionally fades its alpha by the name opacity the fill omits.
             var recede = new BlocStyleAdjustment(0.5, true);
             var desaturationPalette = new FactionPalette(Color.GREEN, Color.YELLOW);
-            var labelColor = ClusterAnchorsBuilder.computeClusterAnchors(
+            var labelColor = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")),
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
@@ -688,7 +689,7 @@ final class ClusterAnchorsBuilderTest {
                 askedFactionIds.add(factionId);
                 return new AspectLabelLengthEstimator(SLENDER_ASPECT);
             };
-            ClusterAnchorsBuilder.computeClusterAnchors(
+            ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -702,7 +703,7 @@ final class ClusterAnchorsBuilderTest {
         void computeClusterAnchorsSkipsAClusterWhoseSitesAreAllMissing() {
             // A cluster whose members have no site (none in the site map) has no point
             // cloud to fit, so it contributes no anchor rather than an empty fit.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A")), Map.of(),
                     Map.of(),
                     Map.of("A", FACTION_F),
@@ -722,7 +723,7 @@ final class ClusterAnchorsBuilderTest {
             // the whole band, centreline give or take half its girth, stays within
             // y 150..850. The thin centreline of the line fit hid this; the band makes the
             // "too close to the border" case explicit and keeps it inside.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
                     DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
@@ -749,7 +750,7 @@ final class ClusterAnchorsBuilderTest {
             // spare girth, so the two-line box carries a strictly taller font and the fit
             // chooses it over one line and over three (which the region's girth cannot make
             // taller).
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
@@ -770,7 +771,7 @@ final class ClusterAnchorsBuilderTest {
             // lines -
             // so the label draws exactly the block the fit sized.
             var nameEstimatorFake = new LabelLengthEstimatorFake(6.0);
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
@@ -790,7 +791,7 @@ final class ClusterAnchorsBuilderTest {
             // The same square that would prefer two lines is held to one when the line cap
             // is one, so the name stays a single line at the smaller font the cap forces -
             // the knob that lets a caller forbid stacking.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
@@ -807,7 +808,7 @@ final class ClusterAnchorsBuilderTest {
             // A minimum font taller than the 1700 the square holds cannot sit anywhere
             // - no placement can prove even the thinnest required band interior - so the fit
             // collapses to the site-centroid dot, the same fallback a no-room line takes.
-            var anchors = ClusterAnchorsBuilder.computeClusterAnchors(
+            var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
                     DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
@@ -855,7 +856,7 @@ final class ClusterAnchorsBuilderTest {
         // A tuning with the fixture's border-trace pair baked in, sized for the slender
         // single-line band that reduces the fit to a line, and both diagnostic toggles
         // off, so each line-fit test names only the search knobs it exercises.
-        private static ClusterAnchorsBuilder.LabelAnchorSpecification spec(double endInsetDistance,
+        private static LabelAnchorSpecification spec(double endInsetDistance,
                 double iconClearance, int directionCount, int offsetCount,
                 double verticalPenaltyStrength, double verticalPenaltyExponent) {
             return spec(endInsetDistance, iconClearance, directionCount, offsetCount,
@@ -864,7 +865,7 @@ final class ClusterAnchorsBuilderTest {
 
         // The full line-fit tuning, for the tests that also exercise the rejected- and
         // unbiased-axis diagnostics; still the slender single-line band.
-        private static ClusterAnchorsBuilder.LabelAnchorSpecification spec(double endInsetDistance,
+        private static LabelAnchorSpecification spec(double endInsetDistance,
                 double iconClearance, int directionCount, int offsetCount,
                 double verticalPenaltyStrength, double verticalPenaltyExponent,
                 boolean showRejectedAxis, boolean showUnbiasedAxis) {
@@ -881,12 +882,12 @@ final class ClusterAnchorsBuilderTest {
         // on its own in LabelSlantPreferenceTest. Both outer-border colour choices default
         // to PRIMARY, so the geometry tests read the owner's bright shade; the colour tests
         // override them via outerColorSpec.
-        private static ClusterAnchorsBuilder.LabelAnchorSpecification bandSpec(double endInsetDistance,
+        private static LabelAnchorSpecification bandSpec(double endInsetDistance,
                 double iconClearance, int directionCount, int offsetCount,
                 double verticalPenaltyStrength, double verticalPenaltyExponent,
                 boolean showRejectedAxis, boolean showUnbiasedAxis, double nameMinFontSize,
                 double nameMaxFontSize, int nameMaxLines, double nameLineSpacing) {
-            return new ClusterAnchorsBuilder.LabelAnchorSpecification(
+            return new LabelAnchorSpecification(
                     new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT), endInsetDistance,
                     iconClearance, directionCount, offsetCount, verticalPenaltyStrength,
                     verticalPenaltyExponent, 0.0, showRejectedAxis, showUnbiasedAxis,
@@ -898,7 +899,7 @@ final class ClusterAnchorsBuilderTest {
         // A slender single-line tuning whose faction outer-border colour choice the label
         // inherits, for the faction-styled colour tests; independent's choice is fixed to
         // PRIMARY since those tests classify the owner as faction-styled.
-        private static ClusterAnchorsBuilder.LabelAnchorSpecification outerColorSpec(
+        private static LabelAnchorSpecification outerColorSpec(
                 FactionPaletteChoice factionOuterColor) {
             return outerColorSpec(factionOuterColor, FactionPaletteChoice.PRIMARY);
         }
@@ -906,7 +907,7 @@ final class ClusterAnchorsBuilderTest {
         // The same slender tuning with both outer-border colour choices set, so a colour
         // test can point the faction and independent branches at different shades and prove
         // the classifier picks the right one.
-        private static ClusterAnchorsBuilder.LabelAnchorSpecification outerColorSpec(
+        private static LabelAnchorSpecification outerColorSpec(
                 FactionPaletteChoice factionOuterColor, FactionPaletteChoice independentOuterColor) {
             return nameOpacitySpec(factionOuterColor, independentOuterColor,
                     FULL_OPACITY, FULL_OPACITY);
@@ -915,10 +916,10 @@ final class ClusterAnchorsBuilderTest {
         // The same slender single-line tuning with both outer-border colour choices and
         // both per-group name opacities set, so a fade test can dim one group's names and
         // prove the classifier applies the right group's opacity to the resolved colour.
-        private static ClusterAnchorsBuilder.LabelAnchorSpecification nameOpacitySpec(
+        private static LabelAnchorSpecification nameOpacitySpec(
                 FactionPaletteChoice factionOuterColor, FactionPaletteChoice independentOuterColor,
                 double factionNameOpacity, double independentNameOpacity) {
-            return new ClusterAnchorsBuilder.LabelAnchorSpecification(
+            return new LabelAnchorSpecification(
                     new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT), 0.0, 0.0, 3, 1, 0.0, 2.0,
                     0.0, false, false, NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE, ONE_LINE,
                     FLUSH_LINES, factionOuterColor, independentOuterColor,
