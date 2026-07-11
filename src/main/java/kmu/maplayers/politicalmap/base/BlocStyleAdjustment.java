@@ -26,4 +26,23 @@ public record BlocStyleAdjustment(double opacityMultiplier, boolean desaturate) 
      * classified. The value every view returns for a bloc it neither dims nor recolours.
      */
     public static final BlocStyleAdjustment NONE = new BlocStyleAdjustment(1.0, false);
+
+    /**
+     * Unions this recede with another so a bloc that recedes for more than one reason - non-spotlit
+     * under a filter, non-allied under the alliances view, or an independent's own recede - dims and
+     * desaturates once rather than compounding. Composing them multiplicatively would over-dim a
+     * bloc every extra reason applies (each opacity multiplier stacking on the last); the union
+     * instead takes the strongest mute (the smallest opacity multiplier) and the OR of desaturate,
+     * so folding a reason in a second time is idempotent. The single home for "combine two recedes",
+     * so every path that stacks them - the filter over the view, the view over an independent - reads
+     * one rule.
+     *
+     * @param other the other recede to fold in
+     * @return the combined recede: the smaller opacity multiplier, desaturate if either desaturates
+     */
+    public BlocStyleAdjustment mergeRecede(BlocStyleAdjustment other) {
+        return new BlocStyleAdjustment(
+                Math.min(opacityMultiplier, other.opacityMultiplier),
+                desaturate || other.desaturate);
+    }
 }

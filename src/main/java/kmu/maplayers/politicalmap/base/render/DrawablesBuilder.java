@@ -322,27 +322,40 @@ final class DrawablesBuilder {
     // The style choice a bloc draws under this pass, as a view-agnostic (independent-style?,
     // adjustment) pair the fill path and the label path both resolve from - the single decision
     // that keeps a bloc's name in step with its fill and border. Off filter it is the active
-    // view's own call: its independent-recede test and per-bloc adjustment. Under filter those
-    // view seams are bypassed - the spotlighted bloc draws at full faction strength (NONE) and
-    // every other bloc takes the pass's shared recede over the faction style (independent-style
-    // false), so the filter mode, not the view, styles each bloc.
+    // view's own call: its independent-recede test and per-bloc adjustment.
+    //
+    // Under filter only the ADJUSTMENT is filter-driven; the base-style decision stays the view's,
+    // so independent-held space keeps its independent style rather than snapping to the faction
+    // style the moment a filter turns on - independent styling reads one source of truth in both
+    // modes. The spotlighted bloc is the sole exception: it draws untouched at full faction
+    // strength (NONE, faction style), so its synthetic key never inherits the view's independent
+    // test (which an alliances-view desaturate would otherwise trip). Every other bloc unions the
+    // view's own recede with the pass's shared recede, so a bloc receded by both never mutes twice.
     static BlocStyleDecision resolveBlocStyleDecision(boolean isFiltering, String blocId,
             PoliticalMapView view, OwnershipGrouping grouping,
             BlocStyleAdjustment recedeAdjustment) {
         if (isFiltering) {
-            return new BlocStyleDecision(false, resolveFilterAdjustment(
-                    FilteredPolitics.isSpotlitBloc(blocId), recedeAdjustment));
+            var isSpotlit = FilteredPolitics.isSpotlitBloc(blocId);
+            return new BlocStyleDecision(
+                    !isSpotlit && view.shouldUseIndependentStyle(blocId, grouping),
+                    resolveFilterAdjustment(isSpotlit,
+                            view.resolveBlocStyleAdjustment(blocId, grouping), recedeAdjustment));
         }
         return new BlocStyleDecision(view.shouldUseIndependentStyle(blocId, grouping),
                 view.resolveBlocStyleAdjustment(blocId, grouping));
     }
 
     // The filter-mode adjustment a bloc takes: the spotlighted bloc draws untouched (NONE), every
-    // other bloc takes the pass's shared recede, so the sector fades to a muted background the
-    // spotlight reads against. Pure over the two inputs so the rule pins without geometry.
+    // other bloc unions its view-decided recede with the pass's shared recede so the sector fades
+    // to a muted background the spotlight reads against. The union (strongest mute, either
+    // desaturate) applies once, so a bloc the view already recedes - a non-allied faction under the
+    // alliances view - does not mute a second time when the filter recedes it too. Pure over its
+    // inputs so the rule pins without geometry.
     static BlocStyleAdjustment resolveFilterAdjustment(boolean isSpotlit,
-            BlocStyleAdjustment recedeAdjustment) {
-        return isSpotlit ? BlocStyleAdjustment.NONE : recedeAdjustment;
+            BlocStyleAdjustment viewAdjustment, BlocStyleAdjustment recedeAdjustment) {
+        return isSpotlit
+                ? BlocStyleAdjustment.NONE
+                : viewAdjustment.mergeRecede(recedeAdjustment);
     }
 
     // The fill primitive a territory paints in: the filter's contested cluster (present but

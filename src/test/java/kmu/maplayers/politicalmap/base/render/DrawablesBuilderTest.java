@@ -111,18 +111,33 @@ final class DrawablesBuilderTest {
         @Test
         void resolveFilterAdjustmentLeavesTheSpotlightedBlocUntouched() {
             // The spotlighted bloc draws at full strength however the recede is set, so it stands
-            // out against the muted background.
-            assertThat(DrawablesBuilder.resolveFilterAdjustment(true, new BlocStyleAdjustment(0.3, true)))
+            // out against the muted background - neither the view's own adjustment nor the shared
+            // recede touches it.
+            assertThat(DrawablesBuilder.resolveFilterAdjustment(true,
+                    new BlocStyleAdjustment(0.9, false), new BlocStyleAdjustment(0.3, true)))
                     .isEqualTo(BlocStyleAdjustment.NONE);
         }
 
         @Test
-        void resolveFilterAdjustmentRecedesEveryOtherBloc() {
-            // A non-spotlighted bloc takes the pass's shared recede, so the sector fades to a muted
-            // background the spotlight reads against.
+        void resolveFilterAdjustmentRecedesEveryOtherBlocByTheSharedRecede() {
+            // A non-spotlighted bloc the view does not adjust takes the pass's shared recede whole,
+            // so the sector fades to a muted background the spotlight reads against.
             var recede = new BlocStyleAdjustment(0.3, true);
 
-            assertThat(DrawablesBuilder.resolveFilterAdjustment(false, recede)).isSameAs(recede);
+            assertThat(DrawablesBuilder.resolveFilterAdjustment(false, BlocStyleAdjustment.NONE, recede))
+                    .isEqualTo(recede);
+        }
+
+        @Test
+        void resolveFilterAdjustmentUnionsTheViewRecedeWithTheSharedRecede() {
+            // A bloc the view already recedes (a non-allied faction under the alliances view) and the
+            // filter also recedes takes the union - strongest mute, either desaturate - applied once,
+            // so it never mutes twice by compounding the two multipliers.
+            var viewRecede = new BlocStyleAdjustment(0.5, false);
+            var sharedRecede = new BlocStyleAdjustment(0.3, true);
+
+            assertThat(DrawablesBuilder.resolveFilterAdjustment(false, viewRecede, sharedRecede))
+                    .isEqualTo(new BlocStyleAdjustment(0.3, true));
         }
     }
 
@@ -146,19 +161,32 @@ final class DrawablesBuilderTest {
     class ResolveBlocStyleDecision {
 
         @Test
-        void resolveBlocStyleDecisionRecedesANonSpotlitBlocToTheFactionStyleUnderFilter() {
-            // The single decision the fills and the labels both read, so pinning it here pins
-            // both. Under a filter the view's seams are bypassed: a real (non-spotlit) bloc never
-            // takes the independent style and recedes by the pass's shared recede, so a receded
-            // name cannot drift from its receded fill. The view stub would say otherwise if asked,
-            // so the result proves the filter, not the view, decided.
-            var recede = new BlocStyleAdjustment(0.3, true);
+        void resolveBlocStyleDecisionKeepsTheViewsIndependentStyleForANonSpotlitBlocUnderFilter() {
+            // The single decision the fills and the labels both read, so pinning it here pins both.
+            // Under a filter only the ADJUSTMENT is filter-driven; the base-style decision stays the
+            // view's, so independent-held space keeps its independent style rather than snapping to
+            // the faction style when a filter turns on. The stub says independent, so a true result
+            // proves the filter left the view's base-style call live.
+            var decision = DrawablesBuilder.resolveBlocStyleDecision(true, "independent",
+                    viewMockDeciding(true, BlocStyleAdjustment.NONE),
+                    OwnershipGrouping.identity(), new BlocStyleAdjustment(0.3, true));
+
+            assertThat(decision.usesIndependentStyle()).isTrue();
+        }
+
+        @Test
+        void resolveBlocStyleDecisionUnionsTheViewRecedeWithTheSharedRecedeUnderFilter() {
+            // A non-spotlit bloc the view already recedes (a non-allied faction under the alliances
+            // view) and the filter recedes too takes the union - strongest mute, either desaturate -
+            // once, so a receded name still cannot drift from its receded fill and neither mutes
+            // twice by compounding the two multipliers.
+            var viewRecede = new BlocStyleAdjustment(0.5, false);
+            var sharedRecede = new BlocStyleAdjustment(0.3, true);
             var decision = DrawablesBuilder.resolveBlocStyleDecision(true, "hegemony",
-                    viewMockDeciding(true, new BlocStyleAdjustment(0.9, false)),
-                    OwnershipGrouping.identity(), recede);
+                    viewMockDeciding(false, viewRecede), OwnershipGrouping.identity(), sharedRecede);
 
             assertThat(decision.usesIndependentStyle()).isFalse();
-            assertThat(decision.adjustment()).isSameAs(recede);
+            assertThat(decision.adjustment()).isEqualTo(new BlocStyleAdjustment(0.3, true));
         }
 
         @Test
