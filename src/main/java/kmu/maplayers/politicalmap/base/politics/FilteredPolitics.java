@@ -6,7 +6,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Resolves who paints each star system while the filter spotlights one bloc, keeping the
@@ -15,29 +17,49 @@ import java.util.Map;
  * <p>The presence-aware sibling of {@link SectorPolitics}: the normal pass collapses each
  * system to its single dominant owner and discards the losers, which would erase the
  * spotlighted bloc from every system a rival holds. Filter mode instead keeps the selected
- * bloc wherever it is present - drawn solid where it dominates and "contested" (hatched
- * downstream) where it is present but dominated - while every other system keeps its real
- * dominant owner, flagged to recede so the spotlight reads against a muted background.
+ * bloc wherever it is present - drawn solid where it dominates and hatched where it is present
+ * but dominated - while every other system keeps its real dominant owner, flagged to recede so
+ * the spotlight reads against a muted background.
  *
- * <p>The selected bloc's two states are carried as synthetic group keys distinct from any
- * faction id, so the agnostic geometry ({@code CellShaper}, {@code SystemClusters}, and the
- * border trace) clusters the solid systems into one territory and the contested systems into
- * another with no awareness of the filter, and the render layer reads the selected bloc's own
- * palette straight off the {@link DominantOwner}. Both synthetic keys stay internal to this
- * class: callers ask {@link #isSpotlitBloc} and {@link #isContestedBloc} rather than matching
- * the raw strings, and everything not spotlit recedes.
+ * <p>The spotlighted bloc's whole footprint - the systems it dominates and the systems it is
+ * merely present in - carries one synthetic group key distinct from any faction id, so the
+ * agnostic geometry ({@code CellShaper}, {@code SystemClusters}, and the border trace) fuses
+ * the whole footprint into a single territory outlined by one frontier, with no awareness of
+ * the filter. Which of those systems are contested is reported apart from the key, in
+ * {@link FilteredOwnership#contestedSystemIds()}, so the render layer can split the fill per
+ * cell (solid where it dominates, hatched where contested) inside that one frontier rather than
+ * fracturing the footprint into two separately-bordered clusters. The synthetic key stays
+ * internal to this class: callers ask {@link #isSpotlitBloc} rather than matching the raw
+ * string, and everything not spotlit recedes.
  */
 public final class FilteredPolitics {
 
-    // The selected bloc's two synthetic group keys: one for the systems it dominates (drawn
-    // solid) and one for the systems it is merely present in (drawn hatched downstream). The
-    // "$" sentinel prefix cannot occur in a real faction or alliance id, so the geometry
-    // clusters each set on its own without ever colliding with a rival's key. Internal to this
-    // class - callers read the two is-* helpers rather than the raw strings.
-    private static final String SPOTLIT_DOMINANT_KEY = "$kmu_filter_spotlit_dominant";
-    private static final String SPOTLIT_CONTESTED_KEY = "$kmu_filter_spotlit_contested";
+    // The spotlighted bloc's single synthetic group key, carried by every system it is present
+    // in - dominated or not - so the geometry fuses its whole footprint into one bordered
+    // territory. The "$" sentinel prefix cannot occur in a real faction or alliance id, so the
+    // key never collides with a rival's. Internal to this class - callers read isSpotlitBloc
+    // rather than the raw string; contested-vs-dominant is reported separately, not by key.
+    private static final String SPOTLIT_KEY = "$kmu_filter_spotlit";
 
     private FilteredPolitics() {
+    }
+
+    /**
+     * The presence-aware ownership one filter pass resolves: the owner keyed by system, plus the
+     * subset of the spotlighted bloc's systems it is present in but does not dominate.
+     *
+     * <p>The whole spotlit footprint keys to one synthetic {@code SPOTLIT_KEY} in
+     * {@code ownerBySystemId} so the geometry traces one frontier over it; {@code contestedSystemIds}
+     * is how the render layer then splits that footprint's fill per cell - solid where the bloc
+     * dominates, hatched where it is merely present - without the key having to fracture the
+     * cluster. A contested id is always a spotlit id; a dominant spotlit id is simply absent from
+     * the set. Off filter (no selection, or an empty sector) both are empty.
+     *
+     * @param ownerBySystemId    the presence-aware owner per owned system
+     * @param contestedSystemIds the spotlit systems the bloc is present in but does not dominate
+     */
+    public record FilteredOwnership(Map<String, DominantOwner> ownerBySystemId,
+            Set<String> contestedSystemIds) {
     }
 
     /**
@@ -83,93 +105,84 @@ public final class FilteredPolitics {
     }
 
     /**
-     * Whether a group key is the spotlighted bloc - either of its two synthetic keys, the solid
-     * and the contested clusters - which the render layer draws at full strength while every
-     * other key recedes. The single question the filter branch asks to decide recede, so the
-     * synthetic encoding stays private to this class.
+     * Whether a group key is the spotlighted bloc's synthetic key - carried by every system the
+     * bloc is present in, which the render layer draws at full strength while every other key
+     * recedes. The single question the filter branch asks to decide recede, so the synthetic
+     * encoding stays private to this class.
      *
      * @param blocId the group key a resolved owner carries
-     * @return true when the key is one of the spotlighted bloc's two synthetic keys
+     * @return true when the key is the spotlighted bloc's synthetic key
      */
     public static boolean isSpotlitBloc(String blocId) {
-        return SPOTLIT_DOMINANT_KEY.equals(blocId) || SPOTLIT_CONTESTED_KEY.equals(blocId);
+        return SPOTLIT_KEY.equals(blocId);
     }
 
     /**
-     * Whether a group key is the spotlighted bloc's contested cluster - the systems it is
-     * present in but does not dominate - which the render layer draws hatched rather than solid.
-     *
-     * @param blocId the group key a resolved owner carries
-     * @return true when the key is the contested (present-but-dominated) synthetic key
-     */
-    public static boolean isContestedBloc(String blocId) {
-        return SPOTLIT_CONTESTED_KEY.equals(blocId);
-    }
-
-    /**
-     * Builds the presence-aware owner for every inhabited system under the player's live
+     * Builds the presence-aware ownership for every inhabited system under the player's live
      * settings - the entry the filter branch of the render pipeline calls in place of
      * {@link SectorPolitics#resolveDominantOwnerBySystemId} while a bloc is spotlighted.
      *
-     * @param sector         the sector whose economy is read; null yields an empty map
+     * @param sector         the sector whose economy is read; null yields empty ownership
      * @param grouping       the active view's grouping, sampled once for the whole pass
-     * @param selectedBlocId the spotlighted bloc's id; null yields an empty map (no filter)
-     * @return the presence-aware owner keyed by system id
+     * @param selectedBlocId the spotlighted bloc's id; null yields empty ownership (no filter)
+     * @return the presence-aware ownership: the owner per system and the contested spotlit systems
      */
-    public static Map<String, DominantOwner> resolveOwnerBySystemId(
+    public static FilteredOwnership resolveFilteredOwnership(
             SectorAPI sector, OwnershipGrouping grouping, String selectedBlocId) {
-        return resolveOwnerBySystemId(sector, DominanceRules.readFromLunaSettings(),
+        return resolveFilteredOwnership(sector, DominanceRules.readFromLunaSettings(),
                 PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(),
                 grouping, selectedBlocId);
     }
 
     /**
-     * Builds the presence-aware owner for every inhabited system under an explicit weighting
-     * rule and grouping, for a caller that has already read the player's toggles for the pass.
+     * Builds the presence-aware ownership under an explicit weighting rule and grouping, for a
+     * caller that has already read the player's toggles for the pass.
      *
      * <p>Mirrors {@link SectorPolitics#resolveDominantOwnerBySystemId} system for system: each
-     * inhabited system resolves to one {@link DominantOwner} the geometry clusters by, but the
-     * selected bloc's systems carry a synthetic key (and its palette) instead of the real
-     * winner, so the bloc survives where it loses. A system with no owned markets is absent from
-     * the map, exactly as in the normal pass.
+     * inhabited system resolves to one {@link DominantOwner} the geometry clusters by, but every
+     * system the selected bloc is present in carries the one spotlit key (and the bloc's palette)
+     * instead of the real winner, so the bloc survives where it loses and its whole footprint
+     * fuses into one territory. A present-but-dominated system is additionally recorded in the
+     * returned contested set, the only place the dominant/contested split lives now that both
+     * share a key. A system with no owned markets is absent, exactly as in the normal pass.
      *
-     * @param sector                       the sector whose economy is read; null yields an empty
-     *                                     map
+     * @param sector                       the sector whose economy is read; null yields empty
+     *                                     ownership
      * @param rules                        the dominance-weighting rules for this pass
      * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count (the dev
      *                                     reveal); false applies the normal known-to-player
      *                                     filter
      * @param grouping                     the active view's grouping that collapses factions into
      *                                     blocs before dominance is compared
-     * @param selectedBlocId               the spotlighted bloc's id; null yields an empty map
-     * @return the presence-aware owner keyed by system id; a system with no owned market is
-     *         absent
+     * @param selectedBlocId               the spotlighted bloc's id; null yields empty ownership
+     * @return the presence-aware ownership: the owner per system and the contested spotlit systems
      */
-    public static Map<String, DominantOwner> resolveOwnerBySystemId(
+    public static FilteredOwnership resolveFilteredOwnership(
             SectorAPI sector, DominanceRules rules, boolean shouldIncludeUndiscoveredMarkets,
             OwnershipGrouping grouping, String selectedBlocId) {
         var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
+        var contestedSystemIds = new LinkedHashSet<String>();
         if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
-            return ownerBySystemId;
+            return new FilteredOwnership(ownerBySystemId, contestedSystemIds);
         }
         for (var system : sector.getStarSystems()) {
-            var owner = resolveOwner(sector, system, rules,
-                    shouldIncludeUndiscoveredMarkets, grouping, selectedBlocId);
+            var owner = resolveOwner(sector, system, rules, shouldIncludeUndiscoveredMarkets,
+                    grouping, selectedBlocId, contestedSystemIds);
             if (owner != null) {
                 ownerBySystemId.put(system.getId(), owner);
             }
         }
-        return ownerBySystemId;
+        return new FilteredOwnership(ownerBySystemId, contestedSystemIds);
     }
 
-    // Resolves one system's presence-aware owner: the selected bloc under a synthetic key where
-    // it is present (solid when it dominates, contested when it does not), otherwise the
-    // system's real dominant owner unchanged (flagged to recede by the caller, which sees a
-    // key isSpotlitBloc rejects). Reads and regroups the footprints once and shares them with
-    // both the classification and the real-owner fallback.
+    // Resolves one system's presence-aware owner: the selected bloc under the spotlit key where
+    // it is present (recording the system as contested when it is present but dominated),
+    // otherwise the system's real dominant owner unchanged (flagged to recede by the caller,
+    // which sees a key isSpotlitBloc rejects). Reads and regroups the footprints once and shares
+    // them with both the classification and the real-owner fallback.
     private static DominantOwner resolveOwner(SectorAPI sector, StarSystemAPI system,
             DominanceRules rules, boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping, String selectedBlocId) {
+            OwnershipGrouping grouping, String selectedBlocId, Set<String> contestedSystemIds) {
         var footprintByBlocId = SectorPolitics.regroupByBloc(
                 KnownMarketFootprints.readByFaction(sector, system, rules,
                         shouldIncludeUndiscoveredMarkets), grouping);
@@ -177,27 +190,31 @@ public final class FilteredPolitics {
         if (presence == SelectedBlocPresence.ABSENT) {
             return resolveRealOwner(sector, grouping, footprintByBlocId);
         }
-        var syntheticKey = presence == SelectedBlocPresence.DOMINATES
-                ? SPOTLIT_DOMINANT_KEY
-                : SPOTLIT_CONTESTED_KEY;
-        var spotlit = resolveSpotlitOwner(sector, grouping, selectedBlocId, syntheticKey);
+        var spotlit = resolveSpotlitOwner(sector, grouping, selectedBlocId);
         // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
         // case where it vanished mid-session, so the system still draws (as its real receded
-        // owner) rather than dropping off the map.
-        return spotlit != null ? spotlit : resolveRealOwner(sector, grouping, footprintByBlocId);
+        // owner) rather than dropping off the map - and a system that fell back is not spotlit,
+        // so it is not recorded contested.
+        if (spotlit == null) {
+            return resolveRealOwner(sector, grouping, footprintByBlocId);
+        }
+        if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
+            contestedSystemIds.add(system.getId());
+        }
+        return spotlit;
     }
 
-    // The selected bloc under a synthetic key: the bloc's real palette (its own for a faction,
-    // its dominant member's for an alliance) rekeyed onto the synthetic solid/contested key, so
-    // the cell paints in the selected bloc's colours while clustering as one of the two spotlit
-    // territories. Null when the bloc's colour faction does not resolve.
+    // The selected bloc under the spotlit key: the bloc's real palette (its own for a faction,
+    // its dominant member's for an alliance) rekeyed onto the one synthetic key, so the cell
+    // paints in the selected bloc's colours while clustering into the single spotlit territory.
+    // Null when the bloc's colour faction does not resolve.
     private static DominantOwner resolveSpotlitOwner(SectorAPI sector, OwnershipGrouping grouping,
-            String selectedBlocId, String syntheticKey) {
+            String selectedBlocId) {
         var paletteOwner = SectorPolitics.resolveBlocOwner(sector, grouping, selectedBlocId);
         if (paletteOwner == null) {
             return null;
         }
-        return new DominantOwner(syntheticKey,
+        return new DominantOwner(SPOTLIT_KEY,
                 paletteOwner.primaryColor(), paletteOwner.secondaryColor());
     }
 

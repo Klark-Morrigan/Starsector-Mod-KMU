@@ -12,10 +12,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins {@link FilteredPolitics}'s pure rules on hand-built footprints: the three-way presence
- * classification that decides how a spotlighted bloc draws in each system, and the two group-key
- * helpers the render layer reads to tell a spotlit cell from a receding one. The presence-aware
- * owner assembly - synthetic keys, palette reuse, and the real-owner fallback - reads the live
- * economy, so it is covered in {@link FilteredPoliticsIntegrationTest}.
+ * classification that decides how a spotlighted bloc draws in each system, and the group-key
+ * helper the render layer reads to tell a spotlit cell from a receding one. The presence-aware
+ * owner assembly - the synthetic key, palette reuse, the contested set, and the real-owner
+ * fallback - reads the live economy, so it is covered in {@link FilteredPoliticsIntegrationTest}.
  */
 class FilteredPoliticsTest {
 
@@ -78,19 +78,9 @@ class FilteredPoliticsTest {
 
         @Test
         void returnsFalseForARealFactionId() {
-            // The synthetic keys use a sentinel a real id cannot carry, so no faction is ever
+            // The synthetic key uses a sentinel a real id cannot carry, so no faction is ever
             // mistaken for the spotlighted bloc and wrongly kept at full strength.
             assertThat(FilteredPolitics.isSpotlitBloc("hegemony")).isFalse();
-        }
-    }
-
-    @Nested
-    class IsContestedBloc {
-
-        @Test
-        void returnsFalseForARealFactionId() {
-            // A real owner is never drawn hatched; only the selected bloc's contested cluster is.
-            assertThat(FilteredPolitics.isContestedBloc("hegemony")).isFalse();
         }
     }
 

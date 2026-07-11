@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render;
 import kmlib.opengl.GlColor;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.render.model.FillStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 
 import org.lwjgl.opengl.GL11;
@@ -61,10 +60,11 @@ final class PoliticalMapRenderer {
     // its opacity. The fill is the cluster's rounded region pre-tessellated into a
     // triangle soup, so a concave cluster (or one with an enclave) fills correctly and
     // exactly matches the stroked border. A hidden fill (UiElementPaint.isHidden) is
-    // skipped, its geometry kept to shape its neighbours but never emitted. The filter's
-    // contested cluster carries HATCHED: it paints its pre-clipped diagonal hatch lines in
-    // place of the solid triangles, in the same colour and opacity, so it reads as "mine
-    // but contested" without a second draw list.
+    // skipped, its geometry kept to shape its neighbours but never emitted. The spotlighted
+    // bloc splits its one footprint into both runs at once - solid triangles where it
+    // dominates and pre-clipped diagonal hatch lines where it is contested, in the same colour
+    // and opacity - so its contested pocket reads as "mine but contested" within one frontier;
+    // every other territory carries an empty hatch run and paints only its triangles.
     private static void drawFills(PoliticalMapDrawables drawables, float factor, float alphaMult) {
         for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
             var fill = territory.fill();
@@ -72,11 +72,8 @@ final class PoliticalMapRenderer {
                 continue;
             }
             GlColor.set(fill.color(), alphaMult * fill.alpha());
-            if (territory.fillStyle() == FillStyle.HATCHED) {
-                MapGl.drawVertexRun(GL11.GL_LINES, territory.hatchSegments(), factor);
-            } else {
-                MapGl.drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
-            }
+            MapGl.drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
+            MapGl.drawVertexRun(GL11.GL_LINES, territory.hatchSegments(), factor);
         }
     }
 
@@ -101,6 +98,19 @@ final class PoliticalMapRenderer {
             GL11.glLineWidth(cell.innerWidth());
             GlColor.set(inner.color(), alphaMult * inner.alpha());
             MapGl.drawVertexRun(GL11.GL_LINES, cell.interiorEdges(), factor);
+        }
+        // The spotlit footprint's solid<->hatched transition seam, drawn with the interior seams
+        // (beneath the national borders) so the frontier still dominates where they meet. Its run
+        // is empty for every non-spotlit territory, and its paint is hidden there too, so this is a
+        // no-op off filter.
+        for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
+            var transitionSeam = territory.transitionSeam();
+            if (transitionSeam.isHidden()) {
+                continue;
+            }
+            GL11.glLineWidth(territory.transitionSeamWidth());
+            GlColor.set(transitionSeam.color(), alphaMult * transitionSeam.alpha());
+            MapGl.drawVertexRun(GL11.GL_LINES, territory.transitionSeams(), factor);
         }
         for (var cell : drawables.getStyledCellBySystemId().values()) {
             var outer = cell.outer();

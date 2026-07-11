@@ -67,6 +67,11 @@ public final class PoliticalMapDrawables {
     // rebuild recede and name exactly as the full build did.
     private final String selectedBlocId;
     private final BlocStyleAdjustment recedeAdjustment;
+    // The spotlit systems the bloc is present in but does not dominate. The whole spotlit
+    // footprint shares one group key so its border traces as one frontier, so this set is the
+    // only record of which of those systems are contested - the faction builder reads it to split
+    // the footprint's fill per cell (solid where it dominates, hatched here). Empty off filter.
+    private final Set<String> contestedSystemIds;
 
     public PoliticalMapDrawables(
             Map<String, StyledCell> styledCellBySystemId,
@@ -82,7 +87,8 @@ public final class PoliticalMapDrawables {
             PoliticalMapView view,
             OwnershipGrouping grouping,
             String selectedBlocId,
-            BlocStyleAdjustment recedeAdjustment) {
+            BlocStyleAdjustment recedeAdjustment,
+            Set<String> contestedSystemIds) {
         this.styledCellBySystemId = styledCellBySystemId;
         this.factionTerritoryByFactionId = factionTerritoryByFactionId;
         this.ownerBySystemId = ownerBySystemId;
@@ -97,6 +103,7 @@ public final class PoliticalMapDrawables {
         this.grouping = grouping;
         this.selectedBlocId = selectedBlocId;
         this.recedeAdjustment = recedeAdjustment;
+        this.contestedSystemIds = contestedSystemIds;
     }
 
     // An empty placeholder for the render path to fall back on after a failed first
@@ -111,7 +118,7 @@ public final class PoliticalMapDrawables {
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
                 new FactionPalette(Color.GRAY, Color.GRAY),
                 null, null, null, null, view, OwnershipGrouping.identity(),
-                null, BlocStyleAdjustment.NONE);
+                null, BlocStyleAdjustment.NONE, new LinkedHashSet<>());
     }
 
     public Map<String, StyledCell> getStyledCellBySystemId() {
@@ -178,6 +185,13 @@ public final class PoliticalMapDrawables {
     // filter, so a bloc no filter recedes draws untouched.
     public BlocStyleAdjustment getRecedeAdjustment() {
         return recedeAdjustment;
+    }
+
+    // The spotlit systems the bloc is present in but does not dominate, so the faction builder
+    // hatches their cells inside the one spotlit frontier while the dominated cells fill solid.
+    // Empty off filter.
+    public Set<String> getContestedSystemIds() {
+        return contestedSystemIds;
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push

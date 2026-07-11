@@ -58,6 +58,7 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getSelectedBlocId()).isNull();
             assertThat(drawables.isFiltering()).isFalse();
             assertThat(drawables.getRecedeAdjustment()).isEqualTo(BlocStyleAdjustment.NONE);
+            assertThat(drawables.getContestedSystemIds()).isEmpty();
         }
     }
 
@@ -110,11 +111,13 @@ final class PoliticalMapDrawablesTest {
             // A non-null selected bloc so the filter snapshot is caught by value and isFiltering()
             // reads true off it.
             var selectedBlocId = "selected-bloc";
+            // A distinct contested set so a swapped filter-snapshot field is caught by identity.
+            Set<String> contested = new LinkedHashSet<>(Set.of("contested-system"));
 
             var drawables = new PoliticalMapDrawables(styledCells, territories, owners,
                     decivilised, neutral, desaturationPalette, factionStyle, independentStyle,
                     decivilisedStyle, uninhabitedStyle, viewMock, grouping, selectedBlocId,
-                    recedeAdjustment);
+                    recedeAdjustment, contested);
 
             assertThat(drawables.getStyledCellBySystemId()).isSameAs(styledCells);
             assertThat(drawables.getFactionTerritoryByFactionId()).isSameAs(territories);
@@ -131,6 +134,7 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getSelectedBlocId()).isEqualTo(selectedBlocId);
             assertThat(drawables.isFiltering()).isTrue();
             assertThat(drawables.getRecedeAdjustment()).isSameAs(recedeAdjustment);
+            assertThat(drawables.getContestedSystemIds()).isSameAs(contested);
         }
     }
 
@@ -142,7 +146,7 @@ final class PoliticalMapDrawablesTest {
         return new PoliticalMapDrawables(new LinkedHashMap<>(styledCells),
                 new LinkedHashMap<>(territories), new LinkedHashMap<>(), new LinkedHashSet<>(),
                 Color.GRAY, null, null, null, null, null, viewMock,
-                OwnershipGrouping.identity(), null, BlocStyleAdjustment.NONE);
+                OwnershipGrouping.identity(), null, BlocStyleAdjustment.NONE, new LinkedHashSet<>());
     }
 
     // A hidden element paint (null color) is enough to stand in wherever a StyledCell or
@@ -157,8 +161,8 @@ final class PoliticalMapDrawablesTest {
     }
 
     private static FactionTerritory anyFactionTerritory() {
-        return new FactionTerritory(new float[0], hiddenPaint(), FillStyle.SOLID,
-                new float[0], List.of(), hiddenPaint(), 0f);
+        return new FactionTerritory(new float[0], new float[0], hiddenPaint(),
+                new float[0], hiddenPaint(), 0f, List.of(), hiddenPaint(), 0f);
     }
 
     // A MapStyle whose opacities and widths carry one marker value, so four otherwise

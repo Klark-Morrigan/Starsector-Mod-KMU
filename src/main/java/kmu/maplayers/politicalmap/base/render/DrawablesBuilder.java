@@ -18,6 +18,7 @@ import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
+import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
@@ -27,7 +28,6 @@ import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.model.FactionTerritory;
-import kmu.maplayers.politicalmap.base.render.model.FillStyle;
 import kmu.maplayers.politicalmap.base.render.model.MapStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.base.render.model.StyledCell;
@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Turns the raw cached cells and the current sector ownership into the political
@@ -85,14 +86,20 @@ final class DrawablesBuilder {
             var isFiltering = selectedBlocId != null;
             // The politics scan walks the whole economy - the priciest content step -
             // so it is profiled and timed on its own, and the owner count logged
-            // independent of the profiler's accumulated view.
+            // independent of the profiler's accumulated view. Under a filter it also reports
+            // which spotlit systems are contested, since the whole spotlit footprint shares one
+            // key and that set is the only record of the dominant/contested split.
             var politicsStart = System.nanoTime();
-            var ownerBySystemId = profiler.measure("politicalMap.resolvePolitics",
+            var filtered = profiler.measure("politicalMap.resolvePolitics",
                     () -> isFiltering
-                            ? FilteredPolitics.resolveOwnerBySystemId(sector, grouping, selectedBlocId)
-                            : SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping));
+                            ? FilteredPolitics.resolveFilteredOwnership(sector, grouping, selectedBlocId)
+                            : new FilteredPolitics.FilteredOwnership(
+                                    SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping),
+                                    Set.of()));
+            var ownerBySystemId = filtered.ownerBySystemId();
+            var contestedSystemIds = filtered.contestedSystemIds();
             LOG.debug("Political map politics resolved; ownedSystems=" + ownerBySystemId.size()
-                    + " filtering=" + isFiltering
+                    + " filtering=" + isFiltering + " contested=" + contestedSystemIds.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
 
             var decivilisedStart = System.nanoTime();
@@ -118,7 +125,7 @@ final class DrawablesBuilder {
                     neutralColor, desaturationPalette,
                     MapStyleReader.readFactionStyle(), MapStyleReader.readIndependentStyle(),
                     MapStyleReader.readDecivilisedStyle(), MapStyleReader.readUninhabitedStyle(),
-                    view, grouping, selectedBlocId, recedeAdjustment);
+                    view, grouping, selectedBlocId, recedeAdjustment, contestedSystemIds);
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
             // geometry clusters by grouping key, so hand it each system's faction id as the
@@ -142,7 +149,7 @@ final class DrawablesBuilder {
             // chaining, smoothing, and tessellating every faction's outline is comparable
             // in cost to shaping the cells.
             profiler.measure("politicalMap.buildFactionTerritories",
-                    () -> buildAllFactionTerritories(drawables, geometryCache));
+                    () -> buildAllFactionTerritories(drawables, geometryCache, shapedCells));
 
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
                     + " styledCells=" + drawables.getStyledCellBySystemId().size()
@@ -168,6 +175,15 @@ final class DrawablesBuilder {
         }
         var owner = drawables.getOwnerBySystemId().get(systemId);
         if (owner != null) {
+            // The spotlighted bloc paints its whole footprint from one territory: the solid and
+            // hatched fills, the single frontier, and the solid<->hatched transition seam all live
+            // on the FactionTerritory. Its cells' same-style internal seams fuse away, so a spotlit
+            // cell contributes nothing here (its only per-cell element would be those vanished
+            // seams). Every other bloc - real owners receding under the filter, or all of them off
+            // filter - keeps its normal interior seams.
+            if (FilteredPolitics.isSpotlitBloc(owner.factionId())) {
+                return null;
+            }
             // The base style and per-bloc adjustment come from the pass's styling resolver -
             // the active view off filter, the spotlight rules under one. The adjustment dims
             // and/or recolours the cell: desaturating swaps the owner's own palette for the
@@ -198,12 +214,14 @@ final class DrawablesBuilder {
 
     // Builds every owned faction's territory into the drawables, keyed by faction id.
     // Each faction is independent - its cluster(s) trace only its own cells - so the
-    // incremental refresh rebuilds one faction's entry without touching the rest.
+    // incremental refresh rebuilds one faction's entry without touching the rest. The
+    // already-shaped cells are handed along so the spotlit fill split reuses them rather
+    // than re-shaping (the incremental refresh, never a spotlit build, passes none).
     private static void buildAllFactionTerritories(PoliticalMapDrawables drawables,
-            PoliticalMapGeometryCache geometryCache) {
+            PoliticalMapGeometryCache geometryCache, Map<String, ShapedCell> shapedCellBySystemId) {
         for (var faction : groupOwnedSystemsByFaction(drawables.getOwnerBySystemId()).entrySet()) {
             var territory = buildFactionTerritory(drawables, geometryCache,
-                    faction.getKey(), faction.getValue());
+                    faction.getKey(), faction.getValue(), shapedCellBySystemId);
             if (territory != null) {
                 drawables.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
             }
@@ -235,7 +253,7 @@ final class DrawablesBuilder {
     // faction has no fill and no border color, or no borderable geometry.
     static FactionTerritory buildFactionTerritory(PoliticalMapDrawables drawables,
             PoliticalMapGeometryCache geometryCache, String factionId,
-            List<String> memberSystemIds) {
+            List<String> memberSystemIds, Map<String, ShapedCell> shapedCellBySystemId) {
         // The grouping key here is a bloc id (a faction id under the faction view, or one of the
         // filter's synthetic spotlight keys), so its style and per-bloc adjustment come from the
         // same styling resolver a per-cell owner does. A desaturated bloc's fill and border swap
@@ -243,9 +261,10 @@ final class DrawablesBuilder {
         var styling = resolveBlocStyling(drawables, factionId);
         var style = styling.style();
         var adjustment = styling.adjustment();
-        // The filter's contested cluster (present but dominated) hatches; every other territory
-        // fills solid. A real owner is never contested, so an un-filtered pass is always solid.
-        var fillStyle = resolveFillStyle(FilteredPolitics.isContestedBloc(factionId));
+        // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
+        // one key, so it clusters into this single territory outlined by one frontier, then splits
+        // its fill per cell below. Every other territory fills solid as one region.
+        var isSpotlit = FilteredPolitics.isSpotlitBloc(factionId);
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
         var owner = drawables.getOwnerBySystemId().get(memberSystemIds.get(0));
@@ -277,32 +296,131 @@ final class DrawablesBuilder {
         if (KmuLunaSettings.shouldRoundBorderCorners()) {
             borderLoops = BorderSmoothing.roundBorderCorners(borderLoops);
         }
-        var fillTriangles = fillColor == null
-                ? GlVertexRuns.NO_VERTICES
-                : PolygonTessellator.tessellateToTriangles(borderLoops);
-        // The contested cluster paints as diagonal hatch instead of a solid fill, so its lines
-        // are clipped to the same tessellated region here (once at build time, read off the live
-        // Dev-tab knobs) rather than re-derived per frame. Every solid territory keeps none.
-        var hatchSegments = fillStyle == FillStyle.HATCHED
-                ? Hatching.computeHatchSegments(fillTriangles,
-                        KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
-                        KmuLunaSettings.getPoliticalMapHatchSpacing())
-                : GlVertexRuns.NO_VERTICES;
+        // The spotlit footprint splits its fill per cell inside its one frontier - solid where the
+        // bloc dominates, hatched where it is merely present - so the two states read apart without
+        // the border fracturing. Every other territory fills its whole region solid, tessellated
+        // from the same smoothed loops the border strokes so fill and border match exactly.
+        var fill = isSpotlit
+                ? computeSpotlitFill(drawables, geometryCache, memberSystemIds,
+                        shapedCellBySystemId, fillColor)
+                : new TerritoryFill(fillColor == null
+                        ? GlVertexRuns.NO_VERTICES
+                        : PolygonTessellator.tessellateToTriangles(borderLoops),
+                        GlVertexRuns.NO_VERTICES, GlVertexRuns.NO_VERTICES);
         var borderRuns = new ArrayList<float[]>();
         if (borderColor != null) {
             for (var loop : PolygonTessellator.tessellateToBoundaryLoops(borderLoops)) {
                 borderRuns.add(GlVertexRuns.flattenVertices(loop));
             }
         }
-        return new FactionTerritory(fillTriangles,
+        // The transition seam strokes the solid<->hatched boundary in the bloc's secondary shade at
+        // the inner-seam width, reusing the inner-seam element so the contested pocket reads as a
+        // bounded region; it is null-coloured (hidden) for every non-spotlit territory.
+        return new FactionTerritory(fill.solidTriangles(), fill.hatchSegments(),
                 new UiElementPaint(fillColor,
                         (float) (style.fillOpacity() * adjustment.opacityMultiplier())),
-                fillStyle,
-                hatchSegments,
+                fill.transitionSeams(),
+                new UiElementPaint(isSpotlit ? palette.secondaryColor() : null,
+                        (float) (style.innerOpacity() * adjustment.opacityMultiplier())),
+                (float) style.innerWidth(),
                 borderRuns,
                 new UiElementPaint(borderColor,
                         (float) (style.outerOpacity() * adjustment.opacityMultiplier())),
                 (float) style.outerWidth());
+    }
+
+    // Splits the spotlit footprint's fill per cell: the systems the bloc dominates tessellate into
+    // the solid triangle soup, the contested systems into their own soup the hatch generator then
+    // clips diagonal lines to, and the edges between the two become the transition seam. Each cell
+    // is tessellated on its own inset shape - the very shape the pass already built, reused here
+    // rather than re-shaped. Same-key neighbours leave their shared edge on the true cell border,
+    // so adjacent same-state cells' fills meet exactly and read as fused, and a dominated cell
+    // meets a contested one along the raw edge the seam then strokes. A "No color" fill draws
+    // neither region, but the seam still bounds the (invisible) pocket.
+    private static TerritoryFill computeSpotlitFill(PoliticalMapDrawables drawables,
+            PoliticalMapGeometryCache geometryCache, List<String> memberSystemIds,
+            Map<String, ShapedCell> shapedCellBySystemId, Color fillColor) {
+        var contestedSystemIds = drawables.getContestedSystemIds();
+        var transitionSeams = computeTransitionSeams(memberSystemIds, contestedSystemIds,
+                geometryCache.getCellEdgesBySystemId());
+        if (fillColor == null) {
+            return new TerritoryFill(GlVertexRuns.NO_VERTICES, GlVertexRuns.NO_VERTICES,
+                    transitionSeams);
+        }
+        var solidRuns = new ArrayList<float[]>();
+        var contestedRuns = new ArrayList<float[]>();
+        for (var systemId : memberSystemIds) {
+            var cellTriangles = tessellateMemberCell(shapedCellBySystemId.get(systemId));
+            (contestedSystemIds.contains(systemId) ? contestedRuns : solidRuns).add(cellTriangles);
+        }
+        var hatchSegments = Hatching.computeHatchSegments(concatenateRuns(contestedRuns),
+                KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
+                KmuLunaSettings.getPoliticalMapHatchSpacing());
+        return new TerritoryFill(concatenateRuns(solidRuns), hatchSegments, transitionSeams);
+    }
+
+    // Tessellates one spotlit member's already-shaped inset cell into a GL_TRIANGLES soup, so the
+    // footprint's fill is the union of its cells rather than one region cut from the traced rings -
+    // which lets the dominant and contested cells fill in separate soups. Empty when the cell was
+    // not shaped (absent) or the inset consumed it (an empty fill polygon).
+    private static float[] tessellateMemberCell(ShapedCell shaped) {
+        if (shaped == null || shaped.fillPolygon().isEmpty()) {
+            return GlVertexRuns.NO_VERTICES;
+        }
+        return PolygonTessellator.tessellateToTriangles(List.of(shaped.fillPolygon()));
+    }
+
+    // The edges between a dominant and a contested spotlit cell, as a GL_LINES run. Walks each
+    // dominant member (so every transition edge is collected once, from the dominant side) and
+    // keeps the edges whose neighbour is a contested spotlit system. These same-key edges are not
+    // inset, so they sit on the true cell border where the solid and hatched fills meet - exactly
+    // where the seam should stroke.
+    static float[] computeTransitionSeams(List<String> memberSystemIds,
+            Set<String> contestedSystemIds, Map<String, List<CellEdge>> edgesBySystemId) {
+        var coordinates = new ArrayList<Float>();
+        for (var systemId : memberSystemIds) {
+            if (contestedSystemIds.contains(systemId)) {
+                continue;
+            }
+            var edges = edgesBySystemId.get(systemId);
+            if (edges == null) {
+                continue;
+            }
+            for (var edge : edges) {
+                if (edge.neighbourSystemId() != null
+                        && contestedSystemIds.contains(edge.neighbourSystemId())) {
+                    coordinates.add((float) edge.x1());
+                    coordinates.add((float) edge.y1());
+                    coordinates.add((float) edge.x2());
+                    coordinates.add((float) edge.y2());
+                }
+            }
+        }
+        return GlVertexRuns.packFloats(coordinates);
+    }
+
+    // Concatenates a list of GL vertex runs into one run, since a triangle soup is order-agnostic:
+    // separate cells tessellate independently and their soups append into the footprint's fill.
+    private static float[] concatenateRuns(List<float[]> runs) {
+        var total = 0;
+        for (var run : runs) {
+            total += run.length;
+        }
+        var concatenated = new float[total];
+        var offset = 0;
+        for (var run : runs) {
+            System.arraycopy(run, 0, concatenated, offset, run.length);
+            offset += run.length;
+        }
+        return concatenated;
+    }
+
+    // The spotlit footprint's fill split into its two painted regions plus the seam between them:
+    // the solid triangle soup for the dominated cells, the hatch GL_LINES for the contested cells,
+    // and the transition GL_LINES where they meet. A non-spotlit territory carries only its solid
+    // region, the other two empty.
+    private record TerritoryFill(float[] solidTriangles, float[] hatchSegments,
+            float[] transitionSeams) {
     }
 
     // The base style and per-bloc adjustment a bloc draws under this pass, shared by the per-cell
@@ -356,12 +474,6 @@ final class DrawablesBuilder {
         return isSpotlit
                 ? BlocStyleAdjustment.NONE
                 : viewAdjustment.mergeRecede(recedeAdjustment);
-    }
-
-    // The fill primitive a territory paints in: the filter's contested cluster (present but
-    // dominated) hatches, every other territory fills solid.
-    static FillStyle resolveFillStyle(boolean isContested) {
-        return isContested ? FillStyle.HATCHED : FillStyle.SOLID;
     }
 
     // Builds one cell's per-cell draw record: its interior seams always, plus - only

@@ -341,8 +341,11 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // changes a colony resize marked, re-shaping only those systems and their
         // neighbours over the standing drawables. The static debug overlay has no draw
         // lists to patch, so its staleness is drained instead - it refreshes on the next
-        // full rebuild (any settings or geometry change).
-        if (drawables != null) {
+        // full rebuild (any settings or geometry change). Under a filter the incremental
+        // re-shape is bypassed too: it re-derives owners through the normal (non-filter)
+        // politics, which would overwrite the spotlit keys and corrupt the spotlight, so a
+        // filtered map defers ownership changes to the next full rebuild instead.
+        if (drawables != null && !drawables.isFiltering()) {
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(drawables, clusterAnchors,
                     factionLabels, geometryCache);
         } else {

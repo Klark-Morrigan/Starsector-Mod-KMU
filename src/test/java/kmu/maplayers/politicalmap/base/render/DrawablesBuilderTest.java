@@ -8,10 +8,10 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.render.model.FillStyle;
 import kmu.maplayers.politicalmap.base.render.model.MapStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.settings.DesaturationProfileChoice;
@@ -142,22 +142,6 @@ final class DrawablesBuilderTest {
     }
 
     @Nested
-    class ResolveFillStyle {
-
-        @Test
-        void resolveFillStyleHatchesTheContestedCluster() {
-            // The spotlighted bloc's present-but-dominated cluster hatches, reading as "mine, but
-            // contested".
-            assertThat(DrawablesBuilder.resolveFillStyle(true)).isEqualTo(FillStyle.HATCHED);
-        }
-
-        @Test
-        void resolveFillStyleFillsEveryOtherTerritorySolid() {
-            assertThat(DrawablesBuilder.resolveFillStyle(false)).isEqualTo(FillStyle.SOLID);
-        }
-    }
-
-    @Nested
     class ResolveBlocStyleDecision {
 
         @Test
@@ -200,6 +184,52 @@ final class DrawablesBuilderTest {
 
             assertThat(decision.usesIndependentStyle()).isTrue();
             assertThat(decision.adjustment()).isSameAs(adjustment);
+        }
+    }
+
+    @Nested
+    class ComputeTransitionSeams {
+
+        @Test
+        void emitsOnlyTheEdgeFromADominantCellToAContestedNeighbour() {
+            // The seam marks where a solid (dominated) cell meets a hatched (contested) one. A
+            // dominant->contested edge is the transition; a dominant->dominant edge fuses and a
+            // frontier edge (null neighbour) is the footprint's outer border, neither a seam.
+            var dominantEdges = List.of(
+                    new CellEdge(0, 0, 10, 0, "con"),
+                    new CellEdge(10, 0, 10, 10, "dom2"),
+                    new CellEdge(10, 10, 0, 0, null));
+            // The contested cell's own edge back to the dominant one, to prove the walk collects
+            // the transition once from the dominant side rather than twice.
+            var contestedEdges = List.of(new CellEdge(10, 0, 0, 0, "dom"));
+
+            var seams = DrawablesBuilder.computeTransitionSeams(List.of("dom", "con"),
+                    Set.of("con"), Map.of("dom", dominantEdges, "con", contestedEdges));
+
+            assertThat(seams).containsExactly(0f, 0f, 10f, 0f);
+        }
+
+        @Test
+        void ignoresANeighbourThatIsNotContested() {
+            // A dominant neighbour (fused) and a non-spotlit receded rival both leave the spotlit
+            // interior seamless; only a contested neighbour bounds the pocket.
+            var dominantEdges = List.of(
+                    new CellEdge(0, 0, 10, 0, "dom2"),
+                    new CellEdge(10, 0, 20, 0, "receded-rival"));
+
+            var seams = DrawablesBuilder.computeTransitionSeams(List.of("dom"),
+                    Set.of("con"), Map.of("dom", dominantEdges));
+
+            assertThat(seams).isEmpty();
+        }
+
+        @Test
+        void skipsAMemberWithNoCellEdges() {
+            // A member absent from the edge map (no cell) contributes no seam rather than throwing.
+            var seams = DrawablesBuilder.computeTransitionSeams(List.of("dom"),
+                    Set.of("con"), Map.of());
+
+            assertThat(seams).isEmpty();
         }
     }
 
@@ -307,7 +337,7 @@ final class DrawablesBuilderTest {
                     Map.of(SYSTEM_ID, OWNER), Set.of(), Color.GRAY,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
                     STYLE, STYLE, STYLE, STYLE, viewMock, OwnershipGrouping.identity(),
-                    isFiltering ? "selected-bloc" : null, recede);
+                    isFiltering ? "selected-bloc" : null, recede, Set.of());
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

@@ -111,10 +111,10 @@ final class ClusterLabelStyling {
                         resolveNameBlocId(isFiltering, id, selectedBlocId)));
     }
 
-    // The bloc id whose name a cluster's label reads: the selected bloc under a filter's synthetic
-    // spotlight key (the view cannot name a synthetic id), the group key itself otherwise. Both
-    // spotlight clusters - solid and contested - resolve to the selected bloc's name, so each
-    // still carries its own per-cluster label rather than collapsing into one.
+    // The bloc id whose name a cluster's label reads: the selected bloc under the filter's synthetic
+    // spotlight key (the view cannot name a synthetic id), the group key itself otherwise. The whole
+    // spotlit footprint shares one key, so each disjoint spotlit cluster still carries its own
+    // per-cluster label spelling the selected bloc's name.
     private static String resolveNameBlocId(boolean isFiltering, String blocId,
             String selectedBlocId) {
         return isFiltering && FilteredPolitics.isSpotlitBloc(blocId) ? selectedBlocId : blocId;
