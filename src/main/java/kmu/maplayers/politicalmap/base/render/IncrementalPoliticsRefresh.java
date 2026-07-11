@@ -91,7 +91,8 @@ final class IncrementalPoliticsRefresh {
             // cluster's name follows.
             ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
                     drawables.getOwnerBySystemId(), sector, drawables.getView(),
-                    drawables.getGrouping());
+                    drawables.getGrouping(), drawables.isFiltering(),
+                    drawables.getRecedeAdjustment(), drawables.getSelectedBlocId());
             LabelsBuilder.rebuildLabels(factionLabels, clusterAnchors);
             LOG.debug("Political map politics updated incrementally; stale="
                     + staleSystemIds.size() + " reshapedCells=" + cellsToReshape.size()

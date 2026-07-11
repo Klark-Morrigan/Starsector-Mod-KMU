@@ -44,6 +44,16 @@ final class DrawablesBuilderTest {
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
 
+    // A view stub answering both per-bloc style seams with fixed values, so a test can prove
+    // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
+    private static PoliticalMapView viewMockDeciding(boolean usesIndependentStyle,
+            BlocStyleAdjustment adjustment) {
+        var viewMock = mock(PoliticalMapView.class);
+        when(viewMock.shouldUseIndependentStyle(any(), any())).thenReturn(usesIndependentStyle);
+        when(viewMock.resolveBlocStyleAdjustment(any(), any())).thenReturn(adjustment);
+        return viewMock;
+    }
+
     @Nested
     class PickPaletteColor {
 
@@ -133,6 +143,39 @@ final class DrawablesBuilderTest {
     }
 
     @Nested
+    class ResolveBlocStyleDecision {
+
+        @Test
+        void resolveBlocStyleDecisionRecedesANonSpotlitBlocToTheFactionStyleUnderFilter() {
+            // The single decision the fills and the labels both read, so pinning it here pins
+            // both. Under a filter the view's seams are bypassed: a real (non-spotlit) bloc never
+            // takes the independent style and recedes by the pass's shared recede, so a receded
+            // name cannot drift from its receded fill. The view stub would say otherwise if asked,
+            // so the result proves the filter, not the view, decided.
+            var recede = new BlocStyleAdjustment(0.3, true);
+            var decision = DrawablesBuilder.resolveBlocStyleDecision(true, "hegemony",
+                    viewMockDeciding(true, new BlocStyleAdjustment(0.9, false)),
+                    OwnershipGrouping.identity(), recede);
+
+            assertThat(decision.usesIndependentStyle()).isFalse();
+            assertThat(decision.adjustment()).isSameAs(recede);
+        }
+
+        @Test
+        void resolveBlocStyleDecisionDelegatesToTheViewOffFilter() {
+            // Off filter the decision is the active view's own call, unchanged: its independent-
+            // recede test and its per-bloc adjustment, so a normal pass styles exactly as before.
+            var adjustment = new BlocStyleAdjustment(0.5, true);
+            var decision = DrawablesBuilder.resolveBlocStyleDecision(false, "pirates",
+                    viewMockDeciding(true, adjustment), OwnershipGrouping.identity(),
+                    BlocStyleAdjustment.NONE);
+
+            assertThat(decision.usesIndependentStyle()).isTrue();
+            assertThat(decision.adjustment()).isSameAs(adjustment);
+        }
+    }
+
+    @Nested
     class BuildStyledCellForSystem {
 
         private static final String SYSTEM_ID = "hegemony-system";
@@ -196,10 +239,7 @@ final class DrawablesBuilderTest {
         // returns the given adjustment for any bloc, so each test names only the
         // adjustment it exercises.
         private static PoliticalMapView viewMockAdjusting(BlocStyleAdjustment adjustment) {
-            var viewMock = mock(PoliticalMapView.class);
-            when(viewMock.shouldUseIndependentStyle(any(), any())).thenReturn(false);
-            when(viewMock.resolveBlocStyleAdjustment(any(), any())).thenReturn(adjustment);
-            return viewMock;
+            return viewMockDeciding(false, adjustment);
         }
 
         @Test
@@ -233,11 +273,13 @@ final class DrawablesBuilderTest {
         // only the view stub, whether the pass filters, and the recede it applies vary.
         private static PoliticalMapDrawables drawablesWith(PoliticalMapView viewMock,
                 boolean isFiltering, BlocStyleAdjustment recede) {
+            // A filtered pass carries the selected bloc's id; the fixture's owner is never that
+            // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
             return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                     Map.of(SYSTEM_ID, OWNER), Set.of(), Color.GRAY,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
                     STYLE, STYLE, STYLE, STYLE, viewMock, OwnershipGrouping.identity(),
-                    isFiltering, recede);
+                    isFiltering ? "selected-bloc" : null, recede);
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

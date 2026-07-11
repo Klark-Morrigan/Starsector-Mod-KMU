@@ -35,11 +35,12 @@ import java.util.Set;
  * view, and the grouping are set once at build and only read after, so an incremental
  * pass re-shapes against the exact inputs the full build baked in.
  *
- * <p>The filter snapshot rides along the same way: {@code isFiltering} says the build took the
- * spotlight branch, and {@code recedeAdjustment} is the styling every non-spotlighted bloc takes
- * this pass (resolved once from the shared recede toggles). A re-shape reads them back so a
- * filtered cell recedes exactly as the full build did; off filter they are the inert defaults
- * (not filtering, {@link BlocStyleAdjustment#NONE}).
+ * <p>The filter snapshot rides along the same way: {@code selectedBlocId} is the spotlighted
+ * bloc's id (null off filter, and {@link #isFiltering} derives from it), and
+ * {@code recedeAdjustment} is the styling every non-spotlighted bloc takes this pass (resolved
+ * once from the shared recede toggles). A re-shape and the label rebuild read them back so a
+ * filtered cell recedes and a spotlight cluster names itself exactly as the full build did; off
+ * filter they are the inert defaults (null, {@link BlocStyleAdjustment#NONE}).
  */
 public final class PoliticalMapDrawables {
     // Render output, mutated in place by the incremental refresh.
@@ -60,10 +61,11 @@ public final class PoliticalMapDrawables {
     // re-shape classifies a cell against the same view and the same once-sampled grouping.
     private final PoliticalMapView view;
     private final OwnershipGrouping grouping;
-    // The filter snapshot: whether this build spotlights a bloc, and the styling every
-    // non-spotlighted bloc recedes to (resolved once from the shared recede toggles). Both
-    // inert off filter, so a normal build behaves exactly as before.
-    private final boolean isFiltering;
+    // The filter snapshot: the spotlighted bloc's id (null off filter, so isFiltering() derives
+    // from it), and the styling every non-spotlighted bloc recedes to (resolved once from the
+    // shared recede toggles, inert off filter). Held so an incremental re-shape and the label
+    // rebuild recede and name exactly as the full build did.
+    private final String selectedBlocId;
     private final BlocStyleAdjustment recedeAdjustment;
 
     public PoliticalMapDrawables(
@@ -79,7 +81,7 @@ public final class PoliticalMapDrawables {
             MapStyle uninhabitedStyle,
             PoliticalMapView view,
             OwnershipGrouping grouping,
-            boolean isFiltering,
+            String selectedBlocId,
             BlocStyleAdjustment recedeAdjustment) {
         this.styledCellBySystemId = styledCellBySystemId;
         this.factionTerritoryByFactionId = factionTerritoryByFactionId;
@@ -93,7 +95,7 @@ public final class PoliticalMapDrawables {
         this.uninhabitedStyle = uninhabitedStyle;
         this.view = view;
         this.grouping = grouping;
-        this.isFiltering = isFiltering;
+        this.selectedBlocId = selectedBlocId;
         this.recedeAdjustment = recedeAdjustment;
     }
 
@@ -109,7 +111,7 @@ public final class PoliticalMapDrawables {
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
                 new FactionPalette(Color.GRAY, Color.GRAY),
                 null, null, null, null, view, OwnershipGrouping.identity(),
-                false, BlocStyleAdjustment.NONE);
+                null, BlocStyleAdjustment.NONE);
     }
 
     public Map<String, StyledCell> getStyledCellBySystemId() {
@@ -160,10 +162,16 @@ public final class PoliticalMapDrawables {
         return grouping;
     }
 
-    // Whether this build spotlights a bloc, so the shared cell and faction builders bypass the
-    // view's per-bloc styling seams and let the filter mode style each bloc instead.
+    // Whether this build spotlights a bloc - it does exactly when a bloc id was selected, so the
+    // shared cell and faction builders bypass the view's per-bloc styling seams for the filter's.
     public boolean isFiltering() {
-        return isFiltering;
+        return selectedBlocId != null;
+    }
+
+    // The spotlighted bloc's id this build recedes the rest of the sector around, or null off
+    // filter; the label rebuild resolves the filter's synthetic spotlight keys back to its name.
+    public String getSelectedBlocId() {
+        return selectedBlocId;
     }
 
     // The styling every non-spotlighted bloc recedes to this pass; BlocStyleAdjustment.NONE off

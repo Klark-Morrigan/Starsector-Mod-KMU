@@ -650,6 +650,35 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
+        void computeClusterAnchorsGivesAFilterRecededLabelTheSameRecededPaletteItsFillTakes() {
+            // Under a filter a non-spotlit bloc recedes: its label must follow the pass's shared
+            // desaturation palette - the exact palette DrawablesBuilder recolours its fill to for
+            // the same recede - so the receded name never drifts from the receded fill. The recede
+            // both mutes and desaturates, as a real filter recede can; the colour comparison reads
+            // RGB, since the label additionally fades its alpha by the name opacity the fill omits.
+            var recede = new BlocStyleAdjustment(0.5, true);
+            var desaturationPalette = new FactionPalette(Color.GREEN, Color.YELLOW);
+            var labelColor = ClusterAnchorsBuilder.computeClusterAnchors(
+                    List.of(List.of("A")),
+                    Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
+                    Map.of("A", new double[] {500, 500}),
+                    Map.of("A", FACTION_F),
+                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    spec(0.0, 0.0, 3, 1, 0.0, 2.0),
+                    NO_BLOC_USES_INDEPENDENT_STYLE, blocId -> recede, desaturationPalette,
+                    slenderNameEstimators()).get(0).color();
+
+            // The shade DrawablesBuilder resolves the same bloc's fill to under the same recede.
+            var fillShade = DrawablesBuilder
+                    .resolveEffectivePalette(recede, FACTION_F, desaturationPalette).primaryColor();
+            assertThat(labelColor.getRed()).isEqualTo(fillShade.getRed());
+            assertThat(labelColor.getGreen()).isEqualTo(fillShade.getGreen());
+            assertThat(labelColor.getBlue()).isEqualTo(fillShade.getBlue());
+            // And genuinely receded, not the owner's own bright shade.
+            assertThat(labelColor.getGreen()).isNotEqualTo(PRIMARY.getGreen());
+        }
+
+        @Test
         void computeClusterAnchorsResolvesTheNameEstimatorByTheOwningFactionId() {
             // The estimator injected per faction is what the fit sizes against and what
             // wraps the label's lines, so the resolver must be asked with the cluster's

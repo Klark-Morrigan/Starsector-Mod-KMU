@@ -321,7 +321,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                 debugDrawables = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
                         drawables.getOwnerBySystemId(), Global.getSector(), view,
-                        drawables.getGrouping());
+                        drawables.getGrouping(), drawables.isFiltering(),
+                        drawables.getRecedeAdjustment(), drawables.getSelectedBlocId());
             }
             // The name labels are minted from the placements just rebuilt (empty when the
             // names toggle is off), keeping them in step with the fills and borders and

@@ -53,7 +53,9 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getNeutralColor()).isEqualTo(Color.GRAY);
             assertThat(drawables.getDesaturationPalette())
                     .isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
-            // The empty fallback is never a filtered build, so it recedes nothing.
+            // The empty fallback is never a filtered build, so it selects no bloc and recedes
+            // nothing.
+            assertThat(drawables.getSelectedBlocId()).isNull();
             assertThat(drawables.isFiltering()).isFalse();
             assertThat(drawables.getRecedeAdjustment()).isEqualTo(BlocStyleAdjustment.NONE);
         }
@@ -105,10 +107,14 @@ final class PoliticalMapDrawablesTest {
             var grouping = OwnershipGrouping.identity();
             // A distinct, non-identity adjustment so a swapped recede field is caught by value.
             var recedeAdjustment = new BlocStyleAdjustment(0.25, true);
+            // A non-null selected bloc so the filter snapshot is caught by value and isFiltering()
+            // reads true off it.
+            var selectedBlocId = "selected-bloc";
 
             var drawables = new PoliticalMapDrawables(styledCells, territories, owners,
                     decivilised, neutral, desaturationPalette, factionStyle, independentStyle,
-                    decivilisedStyle, uninhabitedStyle, viewMock, grouping, true, recedeAdjustment);
+                    decivilisedStyle, uninhabitedStyle, viewMock, grouping, selectedBlocId,
+                    recedeAdjustment);
 
             assertThat(drawables.getStyledCellBySystemId()).isSameAs(styledCells);
             assertThat(drawables.getFactionTerritoryByFactionId()).isSameAs(territories);
@@ -122,6 +128,7 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getUninhabitedStyle()).isSameAs(uninhabitedStyle);
             assertThat(drawables.getView()).isSameAs(viewMock);
             assertThat(drawables.getGrouping()).isSameAs(grouping);
+            assertThat(drawables.getSelectedBlocId()).isEqualTo(selectedBlocId);
             assertThat(drawables.isFiltering()).isTrue();
             assertThat(drawables.getRecedeAdjustment()).isSameAs(recedeAdjustment);
         }
@@ -135,7 +142,7 @@ final class PoliticalMapDrawablesTest {
         return new PoliticalMapDrawables(new LinkedHashMap<>(styledCells),
                 new LinkedHashMap<>(territories), new LinkedHashMap<>(), new LinkedHashSet<>(),
                 Color.GRAY, null, null, null, null, null, viewMock,
-                OwnershipGrouping.identity(), false, BlocStyleAdjustment.NONE);
+                OwnershipGrouping.identity(), null, BlocStyleAdjustment.NONE);
     }
 
     // A hidden element paint (null color) is enough to stand in wherever a StyledCell or

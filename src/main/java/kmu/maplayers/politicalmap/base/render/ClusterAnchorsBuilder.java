@@ -23,6 +23,7 @@ import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
@@ -85,18 +86,24 @@ final class ClusterAnchorsBuilder {
     // call sites) so all paths gate identically; the search's tuning is read here too, so
     // a settings change re-fits on the rebuild it triggers. The active view supplies each
     // bloc's label (which the fit sizes the boxes for) and the style classifier the label
-    // colour follows, over the grouping snapshot the owner map was resolved under.
+    // colour follows, over the grouping snapshot the owner map was resolved under. Under a
+    // filter the label styling follows the same shared decision the fills do - receding every
+    // non-spotlit bloc, leaving the spotlit one full - and the synthetic spotlight keys resolve
+    // to the selected bloc's name, since the view cannot name a synthetic id.
     static void rebuildClusterAnchors(List<ClusterAnchor> anchors,
             PoliticalMapGeometryCache geometryCache,
             Map<String, DominantOwner> ownerBySystemId, SectorAPI sector,
-            PoliticalMapView view, OwnershipGrouping grouping) {
+            PoliticalMapView view, OwnershipGrouping grouping, boolean isFiltering,
+            BlocStyleAdjustment recedeAdjustment, String selectedBlocId) {
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowNames()
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }
         // The agnostic clustering and border trace key by grouping id, so hand them each
-        // system's bloc id; the owner map is still carried for the per-owner colour.
+        // system's bloc id; the owner map is still carried for the per-owner colour. Under a
+        // filter that key is a synthetic spotlight key, so the solid and contested clusters
+        // trace as their own territories exactly as the fills do.
         var groupKeyBySystemId = DominantOwner.factionIdBySystemId(ownerBySystemId);
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesBySystemId(), groupKeyBySystemId);
@@ -106,12 +113,19 @@ final class ClusterAnchorsBuilder {
         var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
         var desaturationPalette = DrawablesBuilder.resolveDesaturationPalette(
                 KmuLunaSettings.getPoliticalMapDesaturationProfile(), sector, neutralColor);
+        // The style decision every label follows is the same one the fills read
+        // (DrawablesBuilder.resolveBlocStyleDecision), cached per bloc since its two label
+        // consumers - the independent-style test and the adjustment - both read it: under a
+        // filter it recedes every non-spotlit bloc and leaves the spotlit one full, so a receded
+        // name matches its receded fill and a spotlit name stays full, the drift a filter opens.
+        var styleDecisionByBlocId = newBlocStyleDecisionResolver(
+                isFiltering, view, grouping, recedeAdjustment);
         anchors.addAll(computeClusterAnchors(clusters, geometryCache.getCellEdgesBySystemId(),
                 geometryCache.getSiteBySystemId(), ownerBySystemId, groupKeyBySystemId,
                 LabelAnchorSpecification.readFromLunaSettings(),
-                blocId -> view.shouldUseIndependentStyle(blocId, grouping),
-                newBlocStyleAdjustmentResolver(view, grouping), desaturationPalette,
-                newNameEstimatorResolver(sector, view, grouping)));
+                blocId -> styleDecisionByBlocId.apply(blocId).usesIndependentStyle(),
+                blocId -> styleDecisionByBlocId.apply(blocId).adjustment(), desaturationPalette,
+                newNameEstimatorResolver(sector, view, grouping, isFiltering, selectedBlocId)));
     }
 
     // The rebuild for a path with no owner map at hand - the debug border-tracing view,
@@ -127,9 +141,11 @@ final class ClusterAnchorsBuilder {
         // Sample the view's grouping once and resolve ownership under it, so the anchors
         // key off the same snapshot their names and colours are classified against.
         var grouping = view.resolveGrouping();
+        // The debug border-tracing path never filters - it resolves real dominant owners from the
+        // sector - so it recedes nothing and names no synthetic spotlight key.
         rebuildClusterAnchors(anchors, geometryCache,
                 SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping), sector,
-                view, grouping);
+                view, grouping, false, BlocStyleAdjustment.NONE, null);
     }
 
     // Fits one label anchor to each contiguous cluster by searching over candidate lines
@@ -198,14 +214,17 @@ final class ClusterAnchorsBuilder {
         return Colors.scaleAlpha(resolved, (float) opacity);
     }
 
-    // The per-bloc style adjustments one rebuild applies: each bloc's Mute/Desaturate
-    // decision as the active view resolves it, cached per bloc id like the name estimator
-    // resolver below, since every cluster of a bloc shares one adjustment.
-    private static Function<String, BlocStyleAdjustment> newBlocStyleAdjustmentResolver(
-            PoliticalMapView view, OwnershipGrouping grouping) {
-        var adjustmentByBlocId = new HashMap<String, BlocStyleAdjustment>();
-        return blocId -> adjustmentByBlocId.computeIfAbsent(blocId,
-                id -> view.resolveBlocStyleAdjustment(id, grouping));
+    // The per-bloc style decisions one rebuild applies: each bloc's independent-style and
+    // adjustment call as the shared resolver makes it (the active view's off filter, the filter
+    // rules under one), cached per bloc id like the name estimator resolver below, since every
+    // cluster of a bloc shares one decision and the two label lambdas both read it.
+    private static Function<String, DrawablesBuilder.BlocStyleDecision> newBlocStyleDecisionResolver(
+            boolean isFiltering, PoliticalMapView view, OwnershipGrouping grouping,
+            BlocStyleAdjustment recedeAdjustment) {
+        var decisionByBlocId = new HashMap<String, DrawablesBuilder.BlocStyleDecision>();
+        return blocId -> decisionByBlocId.computeIfAbsent(blocId,
+                id -> DrawablesBuilder.resolveBlocStyleDecision(
+                        isFiltering, id, view, grouping, recedeAdjustment));
     }
 
     // The per-bloc name estimators one rebuild fits against: each bloc's display name
@@ -214,14 +233,25 @@ final class ClusterAnchorsBuilder {
     // the font or the name will not resolve. Cached per bloc id because every cluster of a
     // bloc shares one name, so its wrap is measured once per rebuild, not per cluster.
     private static Function<String, LabelLengthEstimator> newNameEstimatorResolver(
-            SectorAPI sector, PoliticalMapView view, OwnershipGrouping grouping) {
+            SectorAPI sector, PoliticalMapView view, OwnershipGrouping grouping,
+            boolean isFiltering, String selectedBlocId) {
         var font = LabelFonts.loadMapLabelFont();
         // Read once per rebuild, like the font: every cluster of a bloc spells its name
         // the same way, so the full/short choice is resolved here rather than per bloc.
         var nameFormat = KmuLunaSettings.getPoliticalMapFactionNameFormat();
         var estimatorByBlocId = new HashMap<String, LabelLengthEstimator>();
         return blocId -> estimatorByBlocId.computeIfAbsent(blocId,
-                id -> resolveNameEstimator(sector, view, grouping, font, nameFormat, id));
+                id -> resolveNameEstimator(sector, view, grouping, font, nameFormat,
+                        resolveNameBlocId(isFiltering, id, selectedBlocId)));
+    }
+
+    // The bloc id whose name a cluster's label reads: the selected bloc under a filter's synthetic
+    // spotlight key (the view cannot name a synthetic id), the group key itself otherwise. Both
+    // spotlight clusters - solid and contested - resolve to the selected bloc's name, so each
+    // still carries its own per-cluster label rather than collapsing into one.
+    private static String resolveNameBlocId(boolean isFiltering, String blocId,
+            String selectedBlocId) {
+        return isFiltering && FilteredPolitics.isSpotlitBloc(blocId) ? selectedBlocId : blocId;
     }
 
     // One bloc's name estimator: font-measured when both the font and a non-blank name

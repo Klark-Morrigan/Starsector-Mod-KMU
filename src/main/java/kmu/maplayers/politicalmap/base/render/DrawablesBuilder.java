@@ -23,6 +23,7 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.model.FactionTerritory;
@@ -117,7 +118,7 @@ final class DrawablesBuilder {
                     neutralColor, desaturationPalette,
                     MapStyleReader.readFactionStyle(), MapStyleReader.readIndependentStyle(),
                     MapStyleReader.readDecivilisedStyle(), MapStyleReader.readUninhabitedStyle(),
-                    view, grouping, isFiltering, recedeAdjustment);
+                    view, grouping, selectedBlocId, recedeAdjustment);
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
             // geometry clusters by grouping key, so hand it each system's faction id as the
@@ -305,24 +306,35 @@ final class DrawablesBuilder {
     }
 
     // The base style and per-bloc adjustment a bloc draws under this pass, shared by the per-cell
-    // and per-faction builders so both style a bloc identically. Off filter it is the active
-    // view's own decision - its independent-recede test and per-bloc adjustment. Under filter
-    // those view seams are bypassed: the spotlighted bloc draws at full faction strength (NONE)
-    // and every other bloc takes the pass's shared recede, so the filter mode - not the view -
-    // styles each bloc, and a receded bloc reads over the full faction style rather than the
-    // muted independent one.
+    // and per-faction builders so both style a bloc identically. Maps the shared style decision -
+    // the same call the label path reads, so a bloc's name never drifts from its fill - onto this
+    // pass's two concrete styles: the independent style when the decision recedes a bloc to it,
+    // the faction style otherwise.
     private static BlocStyling resolveBlocStyling(PoliticalMapDrawables drawables, String blocId) {
-        if (drawables.isFiltering()) {
-            var adjustment = resolveFilterAdjustment(FilteredPolitics.isSpotlitBloc(blocId),
-                    drawables.getRecedeAdjustment());
-            return new BlocStyling(drawables.getFactionStyle(), adjustment);
-        }
-        var view = drawables.getView();
-        var style = view.shouldUseIndependentStyle(blocId, drawables.getGrouping())
+        var decision = resolveBlocStyleDecision(drawables.isFiltering(), blocId,
+                drawables.getView(), drawables.getGrouping(), drawables.getRecedeAdjustment());
+        var style = decision.usesIndependentStyle()
                 ? drawables.getIndependentStyle()
                 : drawables.getFactionStyle();
-        return new BlocStyling(style,
-                view.resolveBlocStyleAdjustment(blocId, drawables.getGrouping()));
+        return new BlocStyling(style, decision.adjustment());
+    }
+
+    // The style choice a bloc draws under this pass, as a view-agnostic (independent-style?,
+    // adjustment) pair the fill path and the label path both resolve from - the single decision
+    // that keeps a bloc's name in step with its fill and border. Off filter it is the active
+    // view's own call: its independent-recede test and per-bloc adjustment. Under filter those
+    // view seams are bypassed - the spotlighted bloc draws at full faction strength (NONE) and
+    // every other bloc takes the pass's shared recede over the faction style (independent-style
+    // false), so the filter mode, not the view, styles each bloc.
+    static BlocStyleDecision resolveBlocStyleDecision(boolean isFiltering, String blocId,
+            PoliticalMapView view, OwnershipGrouping grouping,
+            BlocStyleAdjustment recedeAdjustment) {
+        if (isFiltering) {
+            return new BlocStyleDecision(false, resolveFilterAdjustment(
+                    FilteredPolitics.isSpotlitBloc(blocId), recedeAdjustment));
+        }
+        return new BlocStyleDecision(view.shouldUseIndependentStyle(blocId, grouping),
+                view.resolveBlocStyleAdjustment(blocId, grouping));
     }
 
     // The filter-mode adjustment a bloc takes: the spotlighted bloc draws untouched (NONE), every
@@ -439,5 +451,11 @@ final class DrawablesBuilder {
     // The base style plus per-bloc adjustment a bloc draws under, resolved once and read by both
     // the fill and border and the interior seams so they never diverge.
     private record BlocStyling(MapStyle style, BlocStyleAdjustment adjustment) {
+    }
+
+    // The view-agnostic style decision the fill and label paths share: whether a bloc recedes to
+    // the independent style, and its per-bloc adjustment. Free of the concrete MapStyle so the
+    // label path - which needs only the boolean, not a resolved style - reads the very same call.
+    record BlocStyleDecision(boolean usesIndependentStyle, BlocStyleAdjustment adjustment) {
     }
 }
