@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import kmlib.opengl.GlColor;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.politicalmap.base.render.model.FillStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 
 import org.lwjgl.opengl.GL11;
@@ -60,7 +61,10 @@ final class PoliticalMapRenderer {
     // its opacity. The fill is the cluster's rounded region pre-tessellated into a
     // triangle soup, so a concave cluster (or one with an enclave) fills correctly and
     // exactly matches the stroked border. A hidden fill (UiElementPaint.isHidden) is
-    // skipped, its geometry kept to shape its neighbours but never emitted.
+    // skipped, its geometry kept to shape its neighbours but never emitted. The filter's
+    // contested cluster carries HATCHED: it paints its pre-clipped diagonal hatch lines in
+    // place of the solid triangles, in the same colour and opacity, so it reads as "mine
+    // but contested" without a second draw list.
     private static void drawFills(PoliticalMapDrawables drawables, float factor, float alphaMult) {
         for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
             var fill = territory.fill();
@@ -68,7 +72,11 @@ final class PoliticalMapRenderer {
                 continue;
             }
             GlColor.set(fill.color(), alphaMult * fill.alpha());
-            MapGl.drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
+            if (territory.fillStyle() == FillStyle.HATCHED) {
+                MapGl.drawVertexRun(GL11.GL_LINES, territory.hatchSegments(), factor);
+            } else {
+                MapGl.drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
+            }
         }
     }
 

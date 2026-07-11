@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.geometry.Polygons;
 import kmlib.opengl.GlVertexRuns;
+import kmlib.opengl.Hatching;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.FactionPalette;
@@ -278,6 +279,14 @@ final class DrawablesBuilder {
         var fillTriangles = fillColor == null
                 ? GlVertexRuns.NO_VERTICES
                 : PolygonTessellator.tessellateToTriangles(borderLoops);
+        // The contested cluster paints as diagonal hatch instead of a solid fill, so its lines
+        // are clipped to the same tessellated region here (once at build time, read off the live
+        // Dev-tab knobs) rather than re-derived per frame. Every solid territory keeps none.
+        var hatchSegments = fillStyle == FillStyle.HATCHED
+                ? Hatching.computeHatchSegments(fillTriangles,
+                        KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
+                        KmuLunaSettings.getPoliticalMapHatchSpacing())
+                : GlVertexRuns.NO_VERTICES;
         var borderRuns = new ArrayList<float[]>();
         if (borderColor != null) {
             for (var loop : PolygonTessellator.tessellateToBoundaryLoops(borderLoops)) {
@@ -288,6 +297,7 @@ final class DrawablesBuilder {
                 new UiElementPaint(fillColor,
                         (float) (style.fillOpacity() * adjustment.opacityMultiplier())),
                 fillStyle,
+                hatchSegments,
                 borderRuns,
                 new UiElementPaint(borderColor,
                         (float) (style.outerOpacity() * adjustment.opacityMultiplier())),

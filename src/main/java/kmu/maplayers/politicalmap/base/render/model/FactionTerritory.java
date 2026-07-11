@@ -16,8 +16,14 @@ import java.util.List;
  *
  * <p>{@code fillStyle} says how that fill region is painted - {@link FillStyle#SOLID} for every
  * territory but the political-map filter's contested cluster, which is {@link FillStyle#HATCHED}.
- * The border stays solid either way; only the interior differs.
+ * The border stays solid either way; only the interior differs. {@code hatchSegments} is that
+ * hatch as a {@code GL_LINES} run ([x, y, x, y, ...]), the diagonal lines clipped to the fill
+ * region and baked once at build time so the per-frame draw only strides them; it is empty for a
+ * {@link FillStyle#SOLID} territory, which paints its {@code fillTriangles} instead. Both carry
+ * the same {@link #fill} colour and opacity, so a hatched cluster reads in the spotlighted bloc's
+ * palette exactly as a solid one would.
  */
 public record FactionTerritory(float[] fillTriangles, UiElementPaint fill, FillStyle fillStyle,
-        List<float[]> borderLoops, UiElementPaint border, float borderWidth) {
+        float[] hatchSegments, List<float[]> borderLoops, UiElementPaint border,
+        float borderWidth) {
 }

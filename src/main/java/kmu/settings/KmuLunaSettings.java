@@ -264,6 +264,16 @@ public final class KmuLunaSettings {
             "kmu_politicalMapBorderCornerSegments";
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
             "kmu_politicalMapBorderChamferAngle";
+    // Hatch fill (Dev tab): the diagonal line pattern that fills the filter's contested
+    // cluster - the spotlighted bloc's present-but-dominated systems - so it reads as
+    // "mine, but contested" against the solid cluster it holds outright. Only that one
+    // territory hatches; spacing is the perpendicular gap between lines in world units and
+    // angle their direction in degrees off horizontal. Both feed the drawables rebuild, so
+    // a change repaints the hatch live.
+    private static final String HATCH_SPACING_FIELD =
+            "kmu_politicalMapHatchSpacing";
+    private static final String HATCH_ANGLE_FIELD =
+            "kmu_politicalMapHatchAngle";
     // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor search -
     // the straight line a faction name will sit on, chosen by scoring many candidate
     // lines swept across the cluster (a fan of directions times a family of parallel
@@ -477,6 +487,10 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
+    // Hatch-fill knobs, mirroring the CSV defaults: ~10 lines across a default-reach cell,
+    // laid on a 45-degree diagonal.
+    private static final double DEFAULT_HATCH_SPACING = 400.0;
+    private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
     // Label-anchor search knobs.
     private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
     private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
@@ -975,6 +989,25 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapBorderChamferAngleRadians() {
         return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, BORDER_CHAMFER_ANGLE_FIELD,
                 DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES));
+    }
+
+    /**
+     * @return the perpendicular gap between the diagonal hatch lines filling the filter's
+     *         contested cluster, in world units; lower packs the hatch denser, higher opens
+     *         it up
+     */
+    public static double getPoliticalMapHatchSpacing() {
+        return LunaSettingsReader.getDouble(MOD_ID, HATCH_SPACING_FIELD, DEFAULT_HATCH_SPACING);
+    }
+
+    /**
+     * @return the direction the contested-cluster hatch lines run, in radians (the setting
+     *         is authored in degrees off horizontal and converted here, since the hatch math
+     *         works in radians)
+     */
+    public static double getPoliticalMapHatchAngleRadians() {
+        return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, HATCH_ANGLE_FIELD,
+                DEFAULT_HATCH_ANGLE_DEGREES));
     }
 
     /**
