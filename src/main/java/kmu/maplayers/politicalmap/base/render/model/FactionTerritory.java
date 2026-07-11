@@ -13,7 +13,11 @@ import java.util.List;
  * self-crossing resolved away. Each {@link UiElementPaint} carries that element's color
  * and opacity and reports whether it is hidden, so the draw pass skips what shows
  * nothing.
+ *
+ * <p>{@code fillStyle} says how that fill region is painted - {@link FillStyle#SOLID} for every
+ * territory but the political-map filter's contested cluster, which is {@link FillStyle#HATCHED}.
+ * The border stays solid either way; only the interior differs.
  */
-public record FactionTerritory(float[] fillTriangles, UiElementPaint fill,
+public record FactionTerritory(float[] fillTriangles, UiElementPaint fill, FillStyle fillStyle,
         List<float[]> borderLoops, UiElementPaint border, float borderWidth) {
 }

@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.model;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -25,9 +26,9 @@ import static org.mockito.Mockito.mock;
  * Pins the built map state the renderer paints and the incremental refresh edits:
  * that the empty fallback is a harmless no-op the render path can lean on after a failed
  * first build, that {@link PoliticalMapDrawables#isEmpty} tracks either draw list, and
- * that the constructor threads its twelve inputs into the matching accessors (four of them
- * same-typed {@link MapStyle} bundles a swap would not otherwise catch, and the view and
- * grouping the incremental re-shape classifies against).
+ * that the constructor threads its inputs into the matching accessors (four of them
+ * same-typed {@link MapStyle} bundles a swap would not otherwise catch, the view and
+ * grouping the incremental re-shape classifies against, and the filter snapshot it recedes by).
  */
 final class PoliticalMapDrawablesTest {
 
@@ -52,6 +53,9 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getNeutralColor()).isEqualTo(Color.GRAY);
             assertThat(drawables.getDesaturationPalette())
                     .isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
+            // The empty fallback is never a filtered build, so it recedes nothing.
+            assertThat(drawables.isFiltering()).isFalse();
+            assertThat(drawables.getRecedeAdjustment()).isEqualTo(BlocStyleAdjustment.NONE);
         }
     }
 
@@ -99,10 +103,12 @@ final class PoliticalMapDrawablesTest {
             var uninhabitedStyle = styleMarked(4);
             PoliticalMapView viewMock = mock(PoliticalMapView.class);
             var grouping = OwnershipGrouping.identity();
+            // A distinct, non-identity adjustment so a swapped recede field is caught by value.
+            var recedeAdjustment = new BlocStyleAdjustment(0.25, true);
 
             var drawables = new PoliticalMapDrawables(styledCells, territories, owners,
                     decivilised, neutral, desaturationPalette, factionStyle, independentStyle,
-                    decivilisedStyle, uninhabitedStyle, viewMock, grouping);
+                    decivilisedStyle, uninhabitedStyle, viewMock, grouping, true, recedeAdjustment);
 
             assertThat(drawables.getStyledCellBySystemId()).isSameAs(styledCells);
             assertThat(drawables.getFactionTerritoryByFactionId()).isSameAs(territories);
@@ -116,6 +122,8 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getUninhabitedStyle()).isSameAs(uninhabitedStyle);
             assertThat(drawables.getView()).isSameAs(viewMock);
             assertThat(drawables.getGrouping()).isSameAs(grouping);
+            assertThat(drawables.isFiltering()).isTrue();
+            assertThat(drawables.getRecedeAdjustment()).isSameAs(recedeAdjustment);
         }
     }
 
@@ -127,7 +135,7 @@ final class PoliticalMapDrawablesTest {
         return new PoliticalMapDrawables(new LinkedHashMap<>(styledCells),
                 new LinkedHashMap<>(territories), new LinkedHashMap<>(), new LinkedHashSet<>(),
                 Color.GRAY, null, null, null, null, null, viewMock,
-                OwnershipGrouping.identity());
+                OwnershipGrouping.identity(), false, BlocStyleAdjustment.NONE);
     }
 
     // A hidden element paint (null color) is enough to stand in wherever a StyledCell or
@@ -142,7 +150,8 @@ final class PoliticalMapDrawablesTest {
     }
 
     private static FactionTerritory anyFactionTerritory() {
-        return new FactionTerritory(new float[0], hiddenPaint(), List.of(), hiddenPaint(), 0f);
+        return new FactionTerritory(new float[0], hiddenPaint(), FillStyle.SOLID,
+                List.of(), hiddenPaint(), 0f);
     }
 
     // A MapStyle whose opacities and widths carry one marker value, so four otherwise

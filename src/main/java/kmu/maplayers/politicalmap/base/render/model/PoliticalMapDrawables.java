@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render.model;
 
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -33,6 +34,12 @@ import java.util.Set;
  * ownership change touched. The styles, the decivilised set, the neutral color, the
  * view, and the grouping are set once at build and only read after, so an incremental
  * pass re-shapes against the exact inputs the full build baked in.
+ *
+ * <p>The filter snapshot rides along the same way: {@code isFiltering} says the build took the
+ * spotlight branch, and {@code recedeAdjustment} is the styling every non-spotlighted bloc takes
+ * this pass (resolved once from the shared recede toggles). A re-shape reads them back so a
+ * filtered cell recedes exactly as the full build did; off filter they are the inert defaults
+ * (not filtering, {@link BlocStyleAdjustment#NONE}).
  */
 public final class PoliticalMapDrawables {
     // Render output, mutated in place by the incremental refresh.
@@ -53,6 +60,11 @@ public final class PoliticalMapDrawables {
     // re-shape classifies a cell against the same view and the same once-sampled grouping.
     private final PoliticalMapView view;
     private final OwnershipGrouping grouping;
+    // The filter snapshot: whether this build spotlights a bloc, and the styling every
+    // non-spotlighted bloc recedes to (resolved once from the shared recede toggles). Both
+    // inert off filter, so a normal build behaves exactly as before.
+    private final boolean isFiltering;
+    private final BlocStyleAdjustment recedeAdjustment;
 
     public PoliticalMapDrawables(
             Map<String, StyledCell> styledCellBySystemId,
@@ -66,7 +78,9 @@ public final class PoliticalMapDrawables {
             MapStyle decivilisedStyle,
             MapStyle uninhabitedStyle,
             PoliticalMapView view,
-            OwnershipGrouping grouping) {
+            OwnershipGrouping grouping,
+            boolean isFiltering,
+            BlocStyleAdjustment recedeAdjustment) {
         this.styledCellBySystemId = styledCellBySystemId;
         this.factionTerritoryByFactionId = factionTerritoryByFactionId;
         this.ownerBySystemId = ownerBySystemId;
@@ -79,6 +93,8 @@ public final class PoliticalMapDrawables {
         this.uninhabitedStyle = uninhabitedStyle;
         this.view = view;
         this.grouping = grouping;
+        this.isFiltering = isFiltering;
+        this.recedeAdjustment = recedeAdjustment;
     }
 
     // An empty placeholder for the render path to fall back on after a failed first
@@ -92,7 +108,8 @@ public final class PoliticalMapDrawables {
         return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
                 new FactionPalette(Color.GRAY, Color.GRAY),
-                null, null, null, null, view, OwnershipGrouping.identity());
+                null, null, null, null, view, OwnershipGrouping.identity(),
+                false, BlocStyleAdjustment.NONE);
     }
 
     public Map<String, StyledCell> getStyledCellBySystemId() {
@@ -141,6 +158,18 @@ public final class PoliticalMapDrawables {
 
     public OwnershipGrouping getGrouping() {
         return grouping;
+    }
+
+    // Whether this build spotlights a bloc, so the shared cell and faction builders bypass the
+    // view's per-bloc styling seams and let the filter mode style each bloc instead.
+    public boolean isFiltering() {
+        return isFiltering;
+    }
+
+    // The styling every non-spotlighted bloc recedes to this pass; BlocStyleAdjustment.NONE off
+    // filter, so a bloc no filter recedes draws untouched.
+    public BlocStyleAdjustment getRecedeAdjustment() {
+        return recedeAdjustment;
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push

@@ -11,6 +11,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.render.model.FillStyle;
 import kmu.maplayers.politicalmap.base.render.model.MapStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.settings.DesaturationProfileChoice;
@@ -95,6 +96,43 @@ final class DrawablesBuilderTest {
     }
 
     @Nested
+    class ResolveFilterAdjustment {
+
+        @Test
+        void resolveFilterAdjustmentLeavesTheSpotlightedBlocUntouched() {
+            // The spotlighted bloc draws at full strength however the recede is set, so it stands
+            // out against the muted background.
+            assertThat(DrawablesBuilder.resolveFilterAdjustment(true, new BlocStyleAdjustment(0.3, true)))
+                    .isEqualTo(BlocStyleAdjustment.NONE);
+        }
+
+        @Test
+        void resolveFilterAdjustmentRecedesEveryOtherBloc() {
+            // A non-spotlighted bloc takes the pass's shared recede, so the sector fades to a muted
+            // background the spotlight reads against.
+            var recede = new BlocStyleAdjustment(0.3, true);
+
+            assertThat(DrawablesBuilder.resolveFilterAdjustment(false, recede)).isSameAs(recede);
+        }
+    }
+
+    @Nested
+    class ResolveFillStyle {
+
+        @Test
+        void resolveFillStyleHatchesTheContestedCluster() {
+            // The spotlighted bloc's present-but-dominated cluster hatches, reading as "mine, but
+            // contested".
+            assertThat(DrawablesBuilder.resolveFillStyle(true)).isEqualTo(FillStyle.HATCHED);
+        }
+
+        @Test
+        void resolveFillStyleFillsEveryOtherTerritorySolid() {
+            assertThat(DrawablesBuilder.resolveFillStyle(false)).isEqualTo(FillStyle.SOLID);
+        }
+    }
+
+    @Nested
     class BuildStyledCellForSystem {
 
         private static final String SYSTEM_ID = "hegemony-system";
@@ -164,11 +202,42 @@ final class DrawablesBuilderTest {
             return viewMock;
         }
 
+        @Test
+        void buildStyledCellForSystemRecedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
+            // Under an active filter the view's per-bloc seams are bypassed: a real (non-spotlit)
+            // owner takes the pass's shared recede, not whatever the view would have said. The view
+            // stub returns the identity adjustment, so seeing the recede applied proves the filter,
+            // not the view, styled the cell.
+            var styled = DrawablesBuilder.buildStyledCellForSystem(
+                    filteringDrawablesWith(new BlocStyleAdjustment(0.5, true)),
+                    SYSTEM_ID, ownedCell());
+
+            assertThat(styled.inner().color()).isEqualTo(DESATURATED_SECONDARY);
+            assertThat(styled.inner().alpha()).isEqualTo(0.5f);
+        }
+
+        // An un-filtered pass over one owned system, styled by the given view stub - the backdrop
+        // the view-driven adjustment tests read.
         private static PoliticalMapDrawables drawablesWith(PoliticalMapView viewMock) {
+            return drawablesWith(viewMock, false, BlocStyleAdjustment.NONE);
+        }
+
+        // A filtered pass whose recede is the given adjustment, backed by a view stub that would
+        // return the identity adjustment if consulted - so a recede in the output can only have
+        // come from the filter mode bypassing the view.
+        private static PoliticalMapDrawables filteringDrawablesWith(BlocStyleAdjustment recede) {
+            return drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE), true, recede);
+        }
+
+        // The one owned system every adjustment test shares over a fixed style/palette backdrop;
+        // only the view stub, whether the pass filters, and the recede it applies vary.
+        private static PoliticalMapDrawables drawablesWith(PoliticalMapView viewMock,
+                boolean isFiltering, BlocStyleAdjustment recede) {
             return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                     Map.of(SYSTEM_ID, OWNER), Set.of(), Color.GRAY,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                    STYLE, STYLE, STYLE, STYLE, viewMock, OwnershipGrouping.identity());
+                    STYLE, STYLE, STYLE, STYLE, viewMock, OwnershipGrouping.identity(),
+                    isFiltering, recede);
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

@@ -16,12 +16,16 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.model.FactionTerritory;
+import kmu.maplayers.politicalmap.base.render.model.FillStyle;
 import kmu.maplayers.politicalmap.base.render.model.MapStyle;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.base.render.model.StyledCell;
@@ -71,13 +75,22 @@ final class DrawablesBuilder {
             // Nexerelin), so every stage keys off one snapshot and the retained copy the
             // incremental re-shape reads matches the ownership this build resolved.
             var grouping = view.resolveGrouping();
+            // A spotlighted bloc switches the pass to the presence-aware resolver: it keeps the
+            // selected bloc visible everywhere it owns a market (solid where it wins, contested
+            // elsewhere) instead of collapsing every system to its lone winner. Read once so the
+            // whole pass keys off one snapshot, exactly like the grouping.
+            var selectedBlocId = FilterSelection.getSelectedBlocId();
+            var isFiltering = selectedBlocId != null;
             // The politics scan walks the whole economy - the priciest content step -
             // so it is profiled and timed on its own, and the owner count logged
             // independent of the profiler's accumulated view.
             var politicsStart = System.nanoTime();
             var ownerBySystemId = profiler.measure("politicalMap.resolvePolitics",
-                    () -> SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping));
+                    () -> isFiltering
+                            ? FilteredPolitics.resolveOwnerBySystemId(sector, grouping, selectedBlocId)
+                            : SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping));
             LOG.debug("Political map politics resolved; ownedSystems=" + ownerBySystemId.size()
+                    + " filtering=" + isFiltering
                     + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
 
             var decivilisedStart = System.nanoTime();
@@ -92,13 +105,18 @@ final class DrawablesBuilder {
             var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
             var desaturationPalette = resolveDesaturationPalette(
                     KmuLunaSettings.getPoliticalMapDesaturationProfile(), sector, neutralColor);
+            // The styling every non-spotlighted bloc recedes to, resolved once from the shared
+            // recede toggles; the identity adjustment off filter, so a normal pass touches no bloc.
+            var recedeAdjustment = isFiltering
+                    ? RecedePreferences.resolveRecedeAdjustment()
+                    : BlocStyleAdjustment.NONE;
             var drawables = new PoliticalMapDrawables(
                     new LinkedHashMap<>(), new LinkedHashMap<>(),
                     ownerBySystemId, decivilisedSystemIds,
                     neutralColor, desaturationPalette,
                     MapStyleReader.readFactionStyle(), MapStyleReader.readIndependentStyle(),
                     MapStyleReader.readDecivilisedStyle(), MapStyleReader.readUninhabitedStyle(),
-                    view, grouping);
+                    view, grouping, isFiltering, recedeAdjustment);
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
             // geometry clusters by grouping key, so hand it each system's faction id as the
@@ -148,25 +166,18 @@ final class DrawablesBuilder {
         }
         var owner = drawables.getOwnerBySystemId().get(systemId);
         if (owner != null) {
-            // The active view decides which blocs recede to the muted independent bundle;
-            // every other owner takes the full faction style. The fill and national border
-            // are per cluster from the tessellated region, so an owned cell contributes
-            // only its interior seams here, in its inner-seam color resolved against the
-            // owner's palette.
-            var style = drawables.getView()
-                    .shouldUseIndependentStyle(owner.factionId(), drawables.getGrouping())
-                    ? drawables.getIndependentStyle()
-                    : drawables.getFactionStyle();
-            // The view's per-bloc adjustment dims and/or recolours an owned cell before it
-            // draws: desaturating swaps the owner's own palette for the pass's shared
-            // desaturation palette, and the opacity multiplier scales every seam alpha on
-            // top of the style's own opacities.
-            var adjustment = drawables.getView()
-                    .resolveBlocStyleAdjustment(owner.factionId(), drawables.getGrouping());
-            var palette = resolveEffectivePalette(adjustment, owner,
+            // The base style and per-bloc adjustment come from the pass's styling resolver -
+            // the active view off filter, the spotlight rules under one. The adjustment dims
+            // and/or recolours the cell: desaturating swaps the owner's own palette for the
+            // pass's shared desaturation palette, and the opacity multiplier scales every seam
+            // alpha on top of the style's own opacities. The fill and national border are per
+            // cluster from the tessellated region, so an owned cell contributes only its
+            // interior seams here.
+            var styling = resolveBlocStyling(drawables, owner.factionId());
+            var palette = resolveEffectivePalette(styling.adjustment(), owner,
                     drawables.getDesaturationPalette());
             return buildStyledCell(shaped, palette.primaryColor(), palette.secondaryColor(),
-                    style, false, adjustment.opacityMultiplier());
+                    styling.style(), false, styling.adjustment().opacityMultiplier());
         }
         // Factionless: decivilised or (otherwise) uninhabited. Its style fills neither
         // palette slot, so both resolve to the shared neutral color and only its
@@ -223,16 +234,16 @@ final class DrawablesBuilder {
     static FactionTerritory buildFactionTerritory(PoliticalMapDrawables drawables,
             PoliticalMapGeometryCache geometryCache, String factionId,
             List<String> memberSystemIds) {
-        // The grouping key here is a bloc id (a faction id under the faction view), so the
-        // active view classifies its style the same way a per-cell owner is classified.
-        var style = drawables.getView()
-                .shouldUseIndependentStyle(factionId, drawables.getGrouping())
-                ? drawables.getIndependentStyle()
-                : drawables.getFactionStyle();
-        // The view's per-bloc adjustment applies here exactly as it does per cell: a
-        // desaturated bloc's fill and border swap to the pass's shared desaturation
-        // palette instead of its own two shades.
-        var adjustment = drawables.getView().resolveBlocStyleAdjustment(factionId, drawables.getGrouping());
+        // The grouping key here is a bloc id (a faction id under the faction view, or one of the
+        // filter's synthetic spotlight keys), so its style and per-bloc adjustment come from the
+        // same styling resolver a per-cell owner does. A desaturated bloc's fill and border swap
+        // to the pass's shared desaturation palette instead of its own two shades.
+        var styling = resolveBlocStyling(drawables, factionId);
+        var style = styling.style();
+        var adjustment = styling.adjustment();
+        // The filter's contested cluster (present but dominated) hatches; every other territory
+        // fills solid. A real owner is never contested, so an un-filtered pass is always solid.
+        var fillStyle = resolveFillStyle(FilteredPolitics.isContestedBloc(factionId));
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
         var owner = drawables.getOwnerBySystemId().get(memberSystemIds.get(0));
@@ -276,10 +287,46 @@ final class DrawablesBuilder {
         return new FactionTerritory(fillTriangles,
                 new UiElementPaint(fillColor,
                         (float) (style.fillOpacity() * adjustment.opacityMultiplier())),
+                fillStyle,
                 borderRuns,
                 new UiElementPaint(borderColor,
                         (float) (style.outerOpacity() * adjustment.opacityMultiplier())),
                 (float) style.outerWidth());
+    }
+
+    // The base style and per-bloc adjustment a bloc draws under this pass, shared by the per-cell
+    // and per-faction builders so both style a bloc identically. Off filter it is the active
+    // view's own decision - its independent-recede test and per-bloc adjustment. Under filter
+    // those view seams are bypassed: the spotlighted bloc draws at full faction strength (NONE)
+    // and every other bloc takes the pass's shared recede, so the filter mode - not the view -
+    // styles each bloc, and a receded bloc reads over the full faction style rather than the
+    // muted independent one.
+    private static BlocStyling resolveBlocStyling(PoliticalMapDrawables drawables, String blocId) {
+        if (drawables.isFiltering()) {
+            var adjustment = resolveFilterAdjustment(FilteredPolitics.isSpotlitBloc(blocId),
+                    drawables.getRecedeAdjustment());
+            return new BlocStyling(drawables.getFactionStyle(), adjustment);
+        }
+        var view = drawables.getView();
+        var style = view.shouldUseIndependentStyle(blocId, drawables.getGrouping())
+                ? drawables.getIndependentStyle()
+                : drawables.getFactionStyle();
+        return new BlocStyling(style,
+                view.resolveBlocStyleAdjustment(blocId, drawables.getGrouping()));
+    }
+
+    // The filter-mode adjustment a bloc takes: the spotlighted bloc draws untouched (NONE), every
+    // other bloc takes the pass's shared recede, so the sector fades to a muted background the
+    // spotlight reads against. Pure over the two inputs so the rule pins without geometry.
+    static BlocStyleAdjustment resolveFilterAdjustment(boolean isSpotlit,
+            BlocStyleAdjustment recedeAdjustment) {
+        return isSpotlit ? BlocStyleAdjustment.NONE : recedeAdjustment;
+    }
+
+    // The fill primitive a territory paints in: the filter's contested cluster (present but
+    // dominated) hatches, every other territory fills solid.
+    static FillStyle resolveFillStyle(boolean isContested) {
+        return isContested ? FillStyle.HATCHED : FillStyle.SOLID;
     }
 
     // Builds one cell's per-cell draw record: its interior seams always, plus - only
@@ -377,5 +424,10 @@ final class DrawablesBuilder {
             case INDEPENDENT -> StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);
             case NEUTRAL -> new FactionPalette(neutralColor, neutralColor);
         };
+    }
+
+    // The base style plus per-bloc adjustment a bloc draws under, resolved once and read by both
+    // the fill and border and the interior seams so they never diverge.
+    private record BlocStyling(MapStyle style, BlocStyleAdjustment adjustment) {
     }
 }
