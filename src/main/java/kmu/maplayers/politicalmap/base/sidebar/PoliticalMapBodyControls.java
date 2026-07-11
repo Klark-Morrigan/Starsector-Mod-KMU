@@ -6,6 +6,7 @@ import kmlib.starsector.ui.controls.RadioAlignment;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
+import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;
@@ -74,13 +75,22 @@ public final class PoliticalMapBodyControls {
 
     // Toggles the view its clicked segment names - activating it, or turning the map off when it is
     // already the active view. Any index outside the registered views is ignored, so a stray hit
-    // changes nothing.
+    // changes nothing. Switching from one view to a different one clears the filter: a stored bloc id
+    // is a faction id under the factions view and an alliance id under the alliances view, so it must
+    // never be read under the other view's grouping. Turning the map off (re-picking the lit view) or
+    // on from off leaves any filter intact - the selection persists across the map being toggled off,
+    // and the load heal, not this, judges a persisted filter against whichever view is up next.
     private static void selectViewSegment(int segmentIndex) {
         List<PoliticalMapView> views = PoliticalMapViewRegistry.getViews();
         if (segmentIndex < 0 || segmentIndex >= views.size()) {
             return;
         }
+        var previousView = PoliticalMapViewRegistry.getSelectedView();
         PoliticalMapViewRegistry.toggleView(views.get(segmentIndex));
+        var nextView = PoliticalMapViewRegistry.getSelectedView();
+        if (previousView != null && nextView != null && previousView != nextView) {
+            FilterSelection.clearSelection();
+        }
     }
 
     // Flips the uninhabited-systems outline on or off: if it currently draws (the neutral colour),

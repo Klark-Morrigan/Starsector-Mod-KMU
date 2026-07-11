@@ -1,9 +1,13 @@
 package kmu.maplayers.politicalmap.base;
 
+import com.fs.starfarer.api.Global;
+
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
+import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.util.KmuStrings;
 
@@ -69,13 +73,19 @@ public final class PoliticalMapLayer implements MapLayer {
         // the map's on/off since clicking the lit view deselects it.
         var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls());
         controls.add(PoliticalMapBodyControls.buildViewSelector());
-        // Finally the selected view's own controls, so the body shows widgets specific to the active
-        // view (the alliances view's Mute/Desaturate checkboxes) and the layout grows downward to
-        // fit them. Use the selected view - the one the radio lights while the tab is up - not the
-        // active view, since getBodyControls is only reached for the active tab. No view selected
-        // means the map is off, so there is nothing to append.
+        // Then the spotlight picker and the selected view's own controls, so the body shows the
+        // filter list plus any widgets specific to the active view (the alliances view's
+        // Mute/Desaturate checkboxes) and the layout grows downward to fit them. Use the selected
+        // view - the one the radio lights while the tab is up - not the active view, since
+        // getBodyControls is only reached for the active tab. No view selected means the map is off,
+        // so there is nothing to append.
         var selectedView = PoliticalMapViewRegistry.getSelectedView();
         if (selectedView != null) {
+            // The picker lists the selected view's own selectable blocs under the player's live
+            // dominance and dev-reveal settings; empty (no visible bloc) contributes no picker.
+            controls.addAll(FilterPickerControl.buildControls(
+                    selectedView.resolveSelectableBlocs(Global.getSector()),
+                    FilterSelection.getSelectedBlocId()));
             controls.addAll(selectedView.getViewBodyControls());
         }
         return List.copyOf(controls);

@@ -152,6 +152,9 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
         if (control.spec().kind() == ControlKind.LABEL) {
             return false;
         }
+        // A radio hits by segment over the segments the layout laid - the icon-list picker included,
+        // since it is a deselectable vertical radio and shares the same segment hit-test. canDeselect
+        // then selects raw-hit vs already-lit handling.
         if (control.spec().kind() == ControlKind.RADIO) {
             var segmentIndex = control.spec().canDeselect()
                     ? RadioRow.findSegmentIndexAt(control.segments(), pointX, pointY)

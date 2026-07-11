@@ -9,6 +9,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 
 import org.junit.jupiter.api.Nested;
@@ -18,16 +19,18 @@ import org.mockito.MockedStatic;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins how the political-map tab composes its body: the shared sub-options, then the view-selector
- * radio, then the selected view's own controls appended beneath - so a view shows widgets specific
- * to it (the alliances view's Mute/Desaturate checkboxes) while the tab itself names no concrete
- * view. The shared controls and the selector are stubbed to sentinels so this pins the composition
- * order alone, not what those two pieces contain.
+ * radio, then the spotlight picker, then the selected view's own controls appended beneath - so a
+ * view shows the filter list plus widgets specific to it (the alliances view's Mute/Desaturate
+ * checkboxes) while the tab itself names no concrete view. The shared controls, the selector, and the
+ * picker are stubbed to sentinels so this pins the composition order alone, not what those pieces
+ * contain.
  */
 final class PoliticalMapLayerTest {
     // The frozen sector-memory key the active-view selection serialises under, pinned as a literal so
@@ -42,6 +45,8 @@ final class PoliticalMapLayerTest {
             ControlKind.RADIO, List.of("selector"), "", ControlSpec.NO_SELECTION);
     private static final ControlSpec VIEW_MARKER = new ControlSpec(
             ControlKind.CHECKBOX, List.of("view"), "", ControlSpec.NO_SELECTION);
+    private static final ControlSpec PICKER_MARKER = new ControlSpec(
+            ControlKind.RADIO, List.of("picker"), "", ControlSpec.NO_SELECTION);
 
     private final PoliticalMapView viewWithControlsMock = mock(PoliticalMapView.class);
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);
@@ -63,6 +68,27 @@ final class PoliticalMapLayerTest {
                 var body = PoliticalMapLayer.INSTANCE.getBodyControls();
 
                 assertThat(body).containsExactly(SHARED_MARKER, SELECTOR_MARKER, VIEW_MARKER);
+            }
+        }
+
+        @Test
+        void getBodyControlsPlacesTheSpotlightPickerBetweenTheSelectorAndTheViewControls() {
+            when(viewWithControlsMock.getViewBodyControls()).thenReturn(List.of(VIEW_MARKER));
+            registerDefaultView(viewWithControlsMock);
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
+                    MockedStatic<PoliticalMapBodyControls> controlsMock =
+                            mockStatic(PoliticalMapBodyControls.class);
+                    MockedStatic<FilterPickerControl> pickerMock =
+                            mockStatic(FilterPickerControl.class)) {
+                globalMock.when(Global::getSector).thenReturn(null);
+                stubSharedControlsAndSelector(controlsMock);
+                pickerMock.when(() -> FilterPickerControl.buildControls(any(), any()))
+                        .thenReturn(List.of(PICKER_MARKER));
+
+                var body = PoliticalMapLayer.INSTANCE.getBodyControls();
+
+                assertThat(body)
+                        .containsExactly(SHARED_MARKER, SELECTOR_MARKER, PICKER_MARKER, VIEW_MARKER);
             }
         }
 

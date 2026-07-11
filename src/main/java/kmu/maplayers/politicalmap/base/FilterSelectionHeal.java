@@ -1,0 +1,48 @@
+package kmu.maplayers.politicalmap.base;
+
+import com.fs.starfarer.api.Global;
+
+import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
+
+import java.util.HashSet;
+
+/**
+ * Heals a loaded save's spotlight selection against the view that is active in it: the glue that binds
+ * {@link FilterSelection#healStaleSelection}'s pure "clear if not selectable" rule to a concrete
+ * source of which blocs are selectable now. {@link FilterSelection} stays ignorant of views (it takes
+ * only a predicate); this supplies that predicate from the active view's {@link
+ * PoliticalMapView#resolveSelectableBlocs}, so a faction removed or an alliance dissolved between
+ * sessions clears the dangling filter instead of spotlighting a bloc no longer on the map.
+ *
+ * <p>Only heals while a view is selected. A filter may persist while the political map is toggled off,
+ * and with no active view there is no grouping to judge which blocs are selectable - a faction id
+ * would be meaningless under an alliance read and vice versa - so a persisted filter is left intact
+ * until a view is up to validate it. It lives in {@code base} beside the view registry it reads,
+ * since resolving "the active view and its selectable blocs" is a view concern the refresh-package
+ * {@link FilterSelection} deliberately does not carry.
+ */
+public final class FilterSelectionHeal {
+
+    private FilterSelectionHeal() {
+    }
+
+    /**
+     * Clears the stored spotlight selection when the active view no longer offers it, a no-op when no
+     * view is selected or the stored bloc is still selectable. Runs on game load, before the overlay
+     * paints, so it clears without requesting a refresh - there is nothing yet to invalidate. Reads
+     * the live sector and the player's current dominance and dev-reveal settings, the same gate the
+     * picker lists blocs under, so a bloc is healed away exactly when it would no longer appear in the
+     * picker.
+     */
+    public static void healStaleSelectionAgainstActiveView() {
+        var view = PoliticalMapViewRegistry.getSelectedView();
+        if (view == null) {
+            return;
+        }
+        var selectableBlocIds = new HashSet<String>();
+        for (var bloc : view.resolveSelectableBlocs(Global.getSector())) {
+            selectableBlocIds.add(bloc.blocId());
+        }
+        FilterSelection.healStaleSelection(selectableBlocIds::contains);
+    }
+}

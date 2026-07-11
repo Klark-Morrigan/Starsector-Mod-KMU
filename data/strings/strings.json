@@ -31,6 +31,8 @@
     "political_map_ctl_alliances": "Alliances",
     "political_map_ctl_non_allied_caption": "Non-allied factions are",
     "political_map_ctl_muted": "Muted",
-    "political_map_ctl_desaturated": "Desaturated"
+    "political_map_ctl_desaturated": "Desaturated",
+    "political_map_ctl_spotlight": "Spotlight",
+    "political_map_ctl_filter_recede_caption": "Rest of the sector is"
   }
 }

@@ -386,13 +386,17 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // samples - the alliances view's alliance set or its recede toggles - rebuilds the drawables even
     // though no setting moved. The faction view samples nothing live and contributes a constant, so an
     // alliance change never churns it; the plugin stays view-neutral by reading this off the view
-    // rather than naming the alliance revision itself. Objects.hash is the JDK's standard 31-multiply
-    // fold, so the three inputs separate without a bespoke combine here.
+    // rather than naming the alliance revision itself. The filter revision is folded in at this
+    // pipeline level rather than through any view, since the filter is a mode either view can be
+    // under: a pick or a clear bumps it and rebuilds the drawables under whichever view is up, with
+    // no view naming the filter. Objects.hash is the JDK's standard 31-multiply fold, so the inputs
+    // separate without a bespoke combine here.
     private static int computeContentRevision(PoliticalMapView view) {
         return Objects.hash(
                 KmuLunaSettings.getSettingsRevision(),
                 view.getId(),
-                view.getContentRevision());
+                view.getContentRevision(),
+                PoliticalMapRefresh.getFilterRevision());
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the

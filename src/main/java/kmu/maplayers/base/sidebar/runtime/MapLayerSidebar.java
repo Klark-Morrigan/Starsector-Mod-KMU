@@ -14,11 +14,13 @@ import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.render.gl.CheckboxRenderer;
+import kmlib.starsector.ui.render.gl.IconRadioListRenderer;
 import kmlib.starsector.ui.render.gl.RadioRowRenderer;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
 import kmlib.starsector.ui.render.gl.ToggleButton;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.widgets.Checkbox;
+import kmlib.starsector.ui.widgets.IconLabelRow;
 import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.text.KmlibStrings;
 
@@ -193,11 +195,16 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
                 LazyFont.TextAnchor.CENTER_LEFT, opacity);
     }
 
-    // The segments framed and the active one washed, each option label centred in its segment, and
-    // the trailing caption (e.g. "Names") after the row at the layout's reserved gap. The segments
-    // flow the way the spec's alignment sets - a horizontal strip or a vertical stack - so the wash
-    // and dividers follow the same flow the layout split the row into.
+    // A radio group: the segments framed and the active one washed, then its labels. An icon-list
+    // radio (non-empty icon paths, the spotlight picker) draws the crests and left-anchors its names
+    // past them; a plain radio centres each name in its segment and appends its trailing caption
+    // (e.g. "Names"). The segments flow the way the spec's alignment sets - a horizontal strip or a
+    // vertical stack - so the wash and dividers follow the same flow the layout split the row into.
     private static void drawRadio(Control control, Color accent, float opacity) {
+        if (!control.spec().iconPaths().isEmpty()) {
+            drawIconRadio(control, accent, opacity);
+            return;
+        }
         var spec = control.spec();
         var bounds = control.bounds();
         var labels = spec.labels();
@@ -212,6 +219,27 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         if (KmlibStrings.hasText(spec.trailingLabel())) {
             var trailingX = bounds.x() + bounds.width() + ControlStripLayout.TRAILING_LABEL_GAP;
             drawBodyLabel(spec.trailingLabel(), trailingX, centerY(bounds),
+                    LazyFont.TextAnchor.CENTER_LEFT, opacity);
+        }
+    }
+
+    // The spotlight picker: a vertical radio whose options each show a crest at the row's left and
+    // their name to the right of it. The list chrome and the icons are the KMLib widget's; the labels
+    // are drawn here in the body face at the same left-anchor the widget reserves past each icon, so
+    // an icon-less option (an alliance, a crestless faction) reads as a plain name.
+    private static void drawIconRadio(Control control, Color accent, float opacity) {
+        var spec = control.spec();
+        var bounds = control.bounds();
+        IconRadioListRenderer.render(bounds, spec.iconPaths(), spec.selectedIndex(), accent, accent,
+                opacity);
+        var segments = control.segments();
+        var labels = spec.labels();
+        for (var index = 0; index < segments.size() && index < labels.size(); index++) {
+            var segment = segments.get(index);
+            // The label starts past the icon when the option carries one, or at the row's left inset
+            // when it does not - the same has-icon rule the layout sized the row with.
+            var labelX = IconLabelRow.computeLabelAnchorX(segment, spec.hasIconAt(index));
+            drawBodyLabel(labels.get(index), labelX, centerY(segment),
                     LazyFont.TextAnchor.CENTER_LEFT, opacity);
         }
     }
