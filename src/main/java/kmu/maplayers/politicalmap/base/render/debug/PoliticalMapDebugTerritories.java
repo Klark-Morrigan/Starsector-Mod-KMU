@@ -1,11 +1,13 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.debug;
 
 import java.util.List;
 
 /**
  * The debug border-tracing overlay's draw lists: each smoothing stage's border loops as
  * flattened GL_LINE_LOOP runs, kept apart so the renderer can color and layer them. Built
- * in place of the normal {@link PoliticalMapTerritories} while the debug toggle is on.
+ * in place of the normal
+ * {@link kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories} while the
+ * debug toggle is on.
  *
  * <p>{@code baseLoops} is the traced border before smoothing (the resolved inset
  * envelope); {@code despikedLoops} the same after spike sanding, and {@code roundedLoops}

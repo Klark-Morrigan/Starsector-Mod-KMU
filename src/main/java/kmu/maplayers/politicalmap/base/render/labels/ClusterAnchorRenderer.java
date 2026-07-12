@@ -8,7 +8,6 @@ import kmlib.opengl.GlLines;
 import kmlib.opengl.GlQuads;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.render.DiagnosticPalette;
 import kmu.settings.KmuLunaSettings;
 
 import org.lwjgl.opengl.GL11;

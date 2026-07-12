@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.debug;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -48,7 +48,7 @@ import java.util.Set;
  * normal render applies - one draws only when its category's outline color is not "No
  * color" - so the overlay does not flood the map with every uninhabited system's cell.
  */
-final class DebugBorderTracingBuilder {
+public final class DebugBorderTracingBuilder {
     // Builds only; never instantiated.
     private DebugBorderTracingBuilder() {
     }
@@ -56,8 +56,8 @@ final class DebugBorderTracingBuilder {
     // Resolves ownership from the sector and traces every owned cluster (plus the drawn
     // factionless cells) into the three stage lists. Independent of the production
     // drawables, so the plugin builds this instead of them in debug mode, not alongside.
-    static PoliticalMapDebugTerritories buildDebugDrawables(PoliticalMapGeometryCache geometryCache,
-            SectorAPI sector) {
+    public static PoliticalMapDebugTerritories buildDebugDrawables(
+            PoliticalMapGeometryCache geometryCache, SectorAPI sector) {
         var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
         // The agnostic geometry clusters by grouping key, so key by each system's faction id.
         var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
