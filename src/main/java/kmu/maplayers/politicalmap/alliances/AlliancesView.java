@@ -124,12 +124,14 @@ public final class AlliancesView implements PoliticalMapView {
             boolean shouldIncludeUndiscoveredMarkets) {
         // Under this view only alliances are filter targets - a lone faction is not spotlightable
         // here, matching the view's role of grouping ownership by alliance. The alliance grouping
-        // folds each alliance's members into one bloc, so the shared visibility gate already ranks an
-        // alliance as a unit; the view just drops the visibly weighted blocs that are lone factions.
+        // folds each alliance's members into one bloc, so the shared stats read already ranks an
+        // alliance as a unit; the view just drops the present blocs that are lone factions and
+        // carries each surviving alliance's stats onto its option for the picker to sort and label by.
         var grouping = resolveGrouping();
         var selectableBlocs = new ArrayList<SelectableBloc>();
-        for (var blocId : SectorPolitics.resolveVisiblyWeightedBlocIds(
-                sector, rules, shouldIncludeUndiscoveredMarkets, grouping)) {
+        for (var entry : SectorPolitics.aggregateBlocStats(
+                sector, rules, shouldIncludeUndiscoveredMarkets, grouping).entrySet()) {
+            var blocId = entry.getKey();
             if (!grouping.isAlliance(blocId)) {
                 continue;
             }
@@ -142,7 +144,8 @@ public final class AlliancesView implements PoliticalMapView {
             // The name comes from the grouping via resolveName, so the format argument never
             // matters here.
             var displayName = resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT);
-            selectableBlocs.add(new SelectableBloc(blocId, displayName, crestSpritePath));
+            selectableBlocs.add(new SelectableBloc(blocId, displayName, crestSpritePath,
+                    entry.getValue()));
         }
         return selectableBlocs;
     }

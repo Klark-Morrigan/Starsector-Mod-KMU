@@ -10,6 +10,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -20,7 +21,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -217,19 +217,24 @@ final class AlliancesViewTest {
     @Nested
     class ResolveSelectableBlocs {
 
-        // The rules are forwarded to the (mocked) visibility gate, so their value never reaches
-        // assertion here - any rules stand in where the seam demands them.
+        // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
+        // here - any rules stand in where the seam demands them.
         private static final DominanceRules ANY_RULES =
                 new DominanceRules(1.0, null, 1.0, false, 1.0, false, 1.0, 0.5, 0.5,
                         false, 0.25, 0.5, 1.0, 0.5);
 
+        // The view forwards a surviving alliance's stats onto its option verbatim, so any stats value
+        // stands in - these arbitrary numbers are only asserted to survive the pass unchanged.
+        private static final BlocStats ANY_STATS = new BlocStats(4, 3, 8000, 12);
+
         @Test
-        void resolveSelectableBlocsOffersOnlyAllianceBlocsCrestedFromTheLeadMember() {
-            // Under the alliances view only an alliance is a filter target: a visibly weighted lone
-            // faction is dropped, and the alliance option reads its name off the grouping and carries
-            // its lead (colour) member's crest. resolveGrouping samples Nex live, so it is stubbed to
-            // the alliance grouping the (mocked) visibility gate is keyed against; the > 0 gate itself
-            // is the shared bloc-id read's job, so both blocs arrive already visibly weighted.
+        void resolveSelectableBlocsOffersOnlyAllianceBlocsCrestedFromTheLeadMemberWithStats() {
+            // Under the alliances view only an alliance is a filter target: a present lone faction is
+            // dropped, and the alliance option reads its name off the grouping, carries its lead
+            // (colour) member's crest, and forwards the stats the shared read computed for it.
+            // resolveGrouping samples Nex live, so it is stubbed to the alliance grouping the (mocked)
+            // stats read is keyed against; the presence gate is the shared read's job, so both blocs
+            // arrive already present.
             var view = spy(AlliancesView.INSTANCE);
             doReturn(ALLIANCE_GROUPING).when(view).resolveGrouping();
             var sectorMock = mock(SectorAPI.class);
@@ -240,13 +245,13 @@ final class AlliancesViewTest {
             when(leadFactionMock.getCrest()).thenReturn("graphics/rebels_crest.png");
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
+                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(
                         any(), any(), anyBoolean(), any()))
-                        .thenReturn(List.of("rebel_pact", "hegemony"));
+                        .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", BlocStats.EMPTY));
 
                 assertThat(view.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
                         .containsExactly(new SelectableBloc(
-                                "rebel_pact", "Rebel Pact", "graphics/rebels_crest.png"));
+                                "rebel_pact", "Rebel Pact", "graphics/rebels_crest.png", ANY_STATS));
             }
         }
     }

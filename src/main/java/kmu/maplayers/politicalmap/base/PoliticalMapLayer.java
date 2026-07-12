@@ -9,6 +9,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
+import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
 import kmu.util.KmuStrings;
 
 import org.lwjgl.input.Keyboard;
@@ -82,9 +83,11 @@ public final class PoliticalMapLayer implements MapLayer {
         var selectedView = PoliticalMapViewRegistry.getSelectedView();
         if (selectedView != null) {
             // The picker lists the selected view's own selectable blocs under the player's live
-            // dominance and dev-reveal settings; empty (no visible bloc) contributes no picker.
+            // dominance and dev-reveal settings; empty (no present bloc) contributes no picker. Read
+            // through the memo so this per-frame body build reads a cached list rather than re-walking
+            // the economy every frame the map is open.
             controls.addAll(FilterPickerControl.buildControls(
-                    selectedView.resolveSelectableBlocs(Global.getSector()),
+                    SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
                     FilterSelection.getSelectedBlocId()));
             controls.addAll(selectedView.getViewBodyControls());
         }

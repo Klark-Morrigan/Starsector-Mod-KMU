@@ -27,6 +27,7 @@ import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.syste
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.undiscoveredHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.visibleMarket;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -294,26 +295,46 @@ class SectorPoliticsIntegrationTest {
     }
 
     @Nested
-    class ResolveVisiblyWeightedBlocIds {
+    class AggregateBlocStats {
 
         @Test
-        void resolveVisiblyWeightedBlocIdsListsABlocHoldingMarketsInSeveralSystemsOnce() {
-            // A bloc's footprint accumulates across systems rather than overwriting, so a faction
-            // present in two systems is one selectable option, not two.
+        void aggregateBlocStatsAccumulatesABlocsMetricsAcrossSeveralSystems() {
+            // A bloc's metrics accumulate across systems rather than overwriting: a faction present in
+            // two systems it dominates counts two dominations, two presences, and sums both its
+            // dominance weight and its raw colony size - one option, whole-sector totals.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var sector = sectorWithSystems(List.of(hegemony),
                     systemMarkets("system-a", visibleMarket(hegemony, 5)),
                     systemMarkets("system-b", visibleMarket(hegemony, 3)));
 
-            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
+            // At full stability each size point is worth DOMINANCE_WEIGHT_SCALE (1000), so score sums
+            // to (5 + 3) * 1000 and market size to the raw 5 + 3.
+            assertThat(SectorPolitics.aggregateBlocStats(
                     sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
-                    .containsExactly("hegemony");
+                    .containsExactly(entry("hegemony", new BlocStats(2, 2, 8000, 8)));
         }
 
         @Test
-        void resolveVisiblyWeightedBlocIdsListsAnAllianceAsOneBlocNotItsMembers() {
-            // The alliance grouping folds allied members into one bloc, so the alliance is gated as a
-            // single unit and its members never surface as separate options.
+        void aggregateBlocStatsCountsDominationOnlyForTheSystemWinner() {
+            // Two factions share a system: the heavier is its one dominant owner, so it alone takes a
+            // domination count while both take a presence - the metric that tells "wins" from "holds".
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = sectorWith("owned-system",
+                    visibleMarket(hegemony, 5), visibleMarket(tritachyon, 3));
+
+            assertThat(SectorPolitics.aggregateBlocStats(
+                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
+                    .containsExactly(
+                            entry("hegemony", new BlocStats(1, 1, 5000, 5)),
+                            entry("tritachyon", new BlocStats(0, 1, 3000, 3)));
+        }
+
+        @Test
+        void aggregateBlocStatsFoldsAnAlliancesMembersIntoOneBloc() {
+            // The alliance grouping folds allied members into one bloc, so the alliance's metrics are
+            // its members' summed - one unit's domination, presence, score, and size, never its
+            // members surfacing apart.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
             var sector = sectorWithSystems(List.of(hegemony, tritachyon),
@@ -324,37 +345,40 @@ class SectorPoliticsIntegrationTest {
                     Map.of("alliance-1", "hegemony"),
                     Map.of("alliance-1", "Allied Powers"));
 
-            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
-                    sector, STABILITY_WEIGHTED, false, grouping)).containsExactly("alliance-1");
+            assertThat(SectorPolitics.aggregateBlocStats(sector, STABILITY_WEIGHTED, false, grouping))
+                    .containsExactly(entry("alliance-1", new BlocStats(2, 2, 5000, 5)));
         }
 
         @Test
-        void resolveVisiblyWeightedBlocIdsExcludesAWeightlessBloc() {
-            // A size-0 colony marks presence but carries no weight, so the > 0 gate drops it - a bloc
-            // is offered only when spotlighting it would highlight something.
+        void aggregateBlocStatsOffersAPresentButWeightlessBloc() {
+            // A size-0 colony marks presence and, unopposed, dominates its system while carrying no
+            // weight - so the bloc appears with a domination and a presence but a zero score. Presence,
+            // not weight, is the selectable gate: a bloc holding paintable territory is offered even
+            // when spotlighting it highlights ground worth nothing.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var sector = sectorWithSystems(List.of(hegemony),
                     systemMarkets("weightless-system", visibleMarket(hegemony, 0)));
 
-            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
-                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity())).isEmpty();
+            assertThat(SectorPolitics.aggregateBlocStats(
+                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
+                    .containsExactly(entry("hegemony", new BlocStats(1, 1, 0, 0)));
         }
 
         @Test
-        void resolveVisiblyWeightedBlocIdsSkipsConditionOnlyMarkets() {
+        void aggregateBlocStatsSkipsConditionOnlyMarkets() {
             // A bare rock's condition-only market is no colony, so it never marks a bloc's presence -
-            // matching the ownership pass, so a bloc is selectable exactly when it could paint.
+            // matching the ownership pass, so a bloc is offered exactly when it could paint.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var sector = sectorWithSystems(List.of(hegemony),
                     systemMarkets("bare-system", market(hegemony, 6, true, false, false)));
 
-            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
+            assertThat(SectorPolitics.aggregateBlocStats(
                     sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity())).isEmpty();
         }
 
         @Test
-        void resolveVisiblyWeightedBlocIdsIsEmptyForNullSector() {
-            assertThat(SectorPolitics.resolveVisiblyWeightedBlocIds(
+        void aggregateBlocStatsIsEmptyForNullSector() {
+            assertThat(SectorPolitics.aggregateBlocStats(
                     null, STABILITY_WEIGHTED, false, OwnershipGrouping.identity())).isEmpty();
         }
     }

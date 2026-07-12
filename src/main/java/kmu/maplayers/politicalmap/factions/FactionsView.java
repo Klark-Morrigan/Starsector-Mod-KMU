@@ -88,13 +88,15 @@ public final class FactionsView implements PoliticalMapView {
     @Override
     public List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector, DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
-        // Under identity every faction is its own bloc, so every visibly weighted bloc is a
-        // selectable target - the view maps each straight to an option, leaving the > 0 gate to
-        // the shared bloc-id read both views draw from.
+        // Under identity every faction is its own bloc, so every present bloc is a selectable target -
+        // the view maps each straight to an option, leaving the presence gate (a bloc appears in the
+        // stats exactly when it holds a market somewhere) to the shared stats read both views draw
+        // from, and carrying that bloc's stats onto the option for the picker to sort and label by.
         var grouping = resolveGrouping();
         var selectableBlocs = new ArrayList<SelectableBloc>();
-        for (var blocId : SectorPolitics.resolveVisiblyWeightedBlocIds(
-                sector, rules, shouldIncludeUndiscoveredMarkets, grouping)) {
+        for (var entry : SectorPolitics.aggregateBlocStats(
+                sector, rules, shouldIncludeUndiscoveredMarkets, grouping).entrySet()) {
+            var blocId = entry.getKey();
             var faction = sector.getFaction(blocId);
             // The crest is the picker row's icon; a faction with no authored crest simply draws its
             // name alone, so a null path is a valid option rather than a dropped one.
@@ -102,7 +104,8 @@ public final class FactionsView implements PoliticalMapView {
             // The picker labels a faction by its short name regardless of the map's name-format
             // setting, so a long-form map label never widens the sidebar's option rows.
             var displayName = resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT);
-            selectableBlocs.add(new SelectableBloc(blocId, displayName, crestSpritePath));
+            selectableBlocs.add(new SelectableBloc(blocId, displayName, crestSpritePath,
+                    entry.getValue()));
         }
         return selectableBlocs;
     }

@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -136,17 +137,21 @@ final class FactionsViewTest {
     @Nested
     class ResolveSelectableBlocs {
 
-        // The rules are forwarded to the (mocked) visibility gate, so their value never reaches
-        // assertion here - any rules stand in where the seam demands them.
+        // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
+        // here - any rules stand in where the seam demands them.
         private static final DominanceRules ANY_RULES =
                 new DominanceRules(1.0, null, 1.0, false, 1.0, false, 1.0, 0.5, 0.5,
                         false, 0.25, 0.5, 1.0, 0.5);
 
+        // The view forwards a present bloc's stats onto its option verbatim, so any stats value
+        // stands in - these arbitrary numbers are only asserted to survive the pass unchanged.
+        private static final BlocStats ANY_STATS = new BlocStats(3, 2, 5000, 7);
+
         @Test
-        void resolveSelectableBlocsCarriesEachVisibleFactionsCrestAndShortName() {
-            // Every visibly weighted faction becomes an option carrying its crest and short name, so
-            // the option reads exactly as the picker row will draw it. The > 0 gate is the shared
-            // bloc-id read's job, stubbed here to a single visible faction.
+        void resolveSelectableBlocsCarriesEachPresentFactionsCrestShortNameAndStats() {
+            // Every present faction becomes an option carrying its crest, short name, and the stats the
+            // shared read computed for it, so the option reads exactly as the picker row will draw and
+            // sort it. The presence gate is the shared stats read's job, stubbed here to one faction.
             var sectorMock = mock(SectorAPI.class);
             var hegemonyMock = mock(FactionAPI.class);
             when(sectorMock.getFaction("hegemony")).thenReturn(hegemonyMock);
@@ -154,12 +159,12 @@ final class FactionsViewTest {
             when(hegemonyMock.getDisplayName()).thenReturn("Hegemony");
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
-                        any(), any(), anyBoolean(), any())).thenReturn(List.of("hegemony"));
+                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(
+                        any(), any(), anyBoolean(), any())).thenReturn(Map.of("hegemony", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
                         .containsExactly(new SelectableBloc(
-                                "hegemony", "Hegemony", "graphics/hegemony_crest.png"));
+                                "hegemony", "Hegemony", "graphics/hegemony_crest.png", ANY_STATS));
             }
         }
 
@@ -174,23 +179,24 @@ final class FactionsViewTest {
             when(factionMock.getDisplayName()).thenReturn("Path");
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
-                        any(), any(), anyBoolean(), any())).thenReturn(List.of("luddic_path"));
+                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(
+                        any(), any(), anyBoolean(), any()))
+                        .thenReturn(Map.of("luddic_path", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
-                        .containsExactly(new SelectableBloc("luddic_path", "Path", null));
+                        .containsExactly(new SelectableBloc("luddic_path", "Path", null, ANY_STATS));
             }
         }
 
         @Test
-        void resolveSelectableBlocsIsEmptyWhenNoBlocIsVisiblyWeighted() {
-            // With no visibly weighted bloc the picker offers no options and a stale saved selection
-            // heals to none.
+        void resolveSelectableBlocsIsEmptyWhenNoBlocIsPresent() {
+            // With no present bloc the picker offers no options and a stale saved selection heals to
+            // none.
             var sectorMock = mock(SectorAPI.class);
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
-                        any(), any(), anyBoolean(), any())).thenReturn(List.of());
+                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(
+                        any(), any(), anyBoolean(), any())).thenReturn(Map.of());
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
                         .isEmpty();

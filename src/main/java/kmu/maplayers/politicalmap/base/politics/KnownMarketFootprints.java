@@ -94,7 +94,42 @@ public final class KnownMarketFootprints {
     public static Map<String, MarketFootprint> readByFaction(
             SectorAPI sector, StarSystemAPI system, DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
+        // The dominance-only projection of the fuller contribution read: a footprint-only caller
+        // (the dominance resolve, the watcher's diff) drops the raw market size the picker's stats
+        // need, so both share the one market walk and colony filter rather than defining a second.
         var footprintByFactionId = new LinkedHashMap<String, MarketFootprint>();
+        for (var entry : readContributionsByFaction(
+                sector, system, rules, shouldIncludeUndiscoveredMarkets).entrySet()) {
+            footprintByFactionId.put(entry.getKey(), entry.getValue().footprint());
+        }
+        return footprintByFactionId;
+    }
+
+    /**
+     * Folds each faction's markets in one system into its {@link FactionMarketContribution} - the
+     * dominance footprint plus the raw summed colony size the picker's market-size metric reads -
+     * from a single walk of the system's markets under the one "counts as a colony" filter.
+     *
+     * <p>The read {@link #readByFaction} projects down to when only the footprint is wanted, and the
+     * picker's stats aggregation reads whole to also see raw market size. Keeping both concerns on
+     * one walk means the colony filter and the weight read are defined once, not duplicated per
+     * caller.
+     *
+     * @param sector                       the sector whose economy is read; assumed non-null with a
+     *                                     non-null economy, which the callers guard before delegating
+     * @param system                       the system whose markets are folded
+     * @param rules                        the dominance-weighting rules for this pass, read once per
+     *                                     pass by the caller so a whole pass resolves under one rule
+     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered still
+     *                                     folds in (the "show all factions" dev reveal); false applies
+     *                                     the normal known-to-player filter
+     * @return each faction's contribution in the system, keyed by faction id; empty when the system
+     *         holds no folded market
+     */
+    static Map<String, FactionMarketContribution> readContributionsByFaction(
+            SectorAPI sector, StarSystemAPI system, DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets) {
+        var contributionByFactionId = new LinkedHashMap<String, FactionMarketContribution>();
         for (var market : sector.getEconomy().getMarkets(system)) {
             if (!Markets.isOwnedColony(market)) {
                 continue;
@@ -106,11 +141,12 @@ public final class KnownMarketFootprints {
             // getPlanetEntity() is non-null for a market on a planet and null
             // for one on a station; the rule prefers planets at an exact tie.
             var isPlanetMarket = market.getPlanetEntity() != null;
-            var footprint = footprintByFactionId.getOrDefault(factionId, MarketFootprint.EMPTY);
-            footprintByFactionId.put(factionId, footprint.addMarket(
-                    computeDominanceWeight(market, rules), isPlanetMarket));
+            var contribution = contributionByFactionId.getOrDefault(
+                    factionId, FactionMarketContribution.EMPTY);
+            contributionByFactionId.put(factionId, contribution.addMarket(
+                    computeDominanceWeight(market, rules), isPlanetMarket, market.getSize()));
         }
-        return footprintByFactionId;
+        return contributionByFactionId;
     }
 
     // A market's worth to the dominance rule: the sum of its three weight factors -

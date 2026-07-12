@@ -143,8 +143,15 @@ final class PoliticalMapLayerTest {
     }
 
     // Registers the one view as both the sole registered view and the default, with a host tab the
-    // layer registry treats as active, so a sector-less read resolves this view as selected.
+    // layer registry treats as active, so a sector-less read resolves this view as selected. Also
+    // stubs the view's identity and empty selectable-bloc list, since the body build now reads its
+    // picker options through the memo (keyed on the view id and its content revision) rather than off
+    // the view directly - an empty list contributes no picker, keeping these composition assertions
+    // about where the picker sits, not what it holds.
     private static void registerDefaultView(PoliticalMapView view) {
+        when(view.getId()).thenReturn("selected-view");
+        when(view.getContentRevision()).thenReturn(0);
+        when(view.resolveSelectableBlocs(any())).thenReturn(List.of());
         var hostTabMock = mock(MapLayer.class);
         when(hostTabMock.getId()).thenReturn("host");
         PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);

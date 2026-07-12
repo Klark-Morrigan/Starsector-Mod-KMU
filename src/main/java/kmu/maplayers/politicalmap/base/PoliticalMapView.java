@@ -118,12 +118,14 @@ public interface PoliticalMapView {
      * draws and what {@link kmu.maplayers.politicalmap.base.refresh.FilterSelection} heals a stale
      * saved selection against, so a bloc that is no longer here is no longer spotlightable.
      *
-     * <p>Only blocs that hold a positive-weight visible market qualify - the same visibility gate the
-     * ownership pass reads, so a bloc is selectable exactly when it could paint territory. The view
-     * supplies its own grouping and name resolver; there is no new per-bloc seam, so a view decides
-     * which of its blocs are targets (every faction, or only the alliance blocs) inside its own
-     * implementation. The convenience overload reads the player's live dominance and dev-reveal
-     * toggles so a caller with no pass of its own need not thread them.
+     * <p>Only blocs present somewhere qualify - a bloc holding a visible market in at least one system
+     * (the {@code presence > 0} gate the shared stats read applies), so a bloc is selectable exactly
+     * when it holds territory it could paint. The view supplies its own grouping and name resolver;
+     * there is no new per-bloc seam, so a view decides which of its blocs are targets (every faction,
+     * or only the alliance blocs) inside its own implementation. Each option carries that bloc's
+     * whole-sector stats for the picker to sort and label by. The convenience overload reads the
+     * player's live dominance and dev-reveal toggles so a caller with no pass of its own need not
+     * thread them.
      *
      * @param sector                       the sector whose economy the visibility gate reads; null
      *                                     yields an empty list
