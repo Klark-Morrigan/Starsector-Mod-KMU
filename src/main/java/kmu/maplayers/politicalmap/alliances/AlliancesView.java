@@ -133,10 +133,16 @@ public final class AlliancesView implements PoliticalMapView {
             if (!grouping.isAlliance(blocId)) {
                 continue;
             }
-            // An alliance has no crest of its own, so the picker row draws its name alone; the name
-            // comes from the grouping via resolveName, so the format argument never matters here.
+            // An alliance paints in its lead member's palette, so its picker row carries that
+            // member's crest and reads like a faction row rather than a blank one.
+            // resolveColorFactionId names the colour (lead) faction; a member with no authored
+            // crest leaves the row to draw its name alone, so a null path is a valid option.
+            var colorFaction = sector.getFaction(grouping.resolveColorFactionId(blocId));
+            var crestSpritePath = colorFaction == null ? null : colorFaction.getCrest();
+            // The name comes from the grouping via resolveName, so the format argument never
+            // matters here.
             var displayName = resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT);
-            selectableBlocs.add(new SelectableBloc(blocId, displayName, null));
+            selectableBlocs.add(new SelectableBloc(blocId, displayName, crestSpritePath));
         }
         return selectableBlocs;
     }

@@ -224,15 +224,20 @@ final class AlliancesViewTest {
                         false, 0.25, 0.5, 1.0, 0.5);
 
         @Test
-        void resolveSelectableBlocsOffersOnlyAllianceBlocsNamedFromTheGrouping() {
+        void resolveSelectableBlocsOffersOnlyAllianceBlocsCrestedFromTheLeadMember() {
             // Under the alliances view only an alliance is a filter target: a visibly weighted lone
             // faction is dropped, and the alliance option reads its name off the grouping and carries
-            // no crest of its own. resolveGrouping samples Nex live, so it is stubbed to the alliance
-            // grouping the (mocked) visibility gate is keyed against; the > 0 gate itself is the
-            // shared bloc-id read's job, so both blocs arrive already visibly weighted.
+            // its lead (colour) member's crest. resolveGrouping samples Nex live, so it is stubbed to
+            // the alliance grouping the (mocked) visibility gate is keyed against; the > 0 gate itself
+            // is the shared bloc-id read's job, so both blocs arrive already visibly weighted.
             var view = spy(AlliancesView.INSTANCE);
             doReturn(ALLIANCE_GROUPING).when(view).resolveGrouping();
             var sectorMock = mock(SectorAPI.class);
+            // "rebels" is rebel_pact's colour faction in ALLIANCE_GROUPING, so its crest is the one
+            // the alliance row draws.
+            var leadFactionMock = mock(FactionAPI.class);
+            when(sectorMock.getFaction("rebels")).thenReturn(leadFactionMock);
+            when(leadFactionMock.getCrest()).thenReturn("graphics/rebels_crest.png");
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
                 politicsMock.when(() -> SectorPolitics.resolveVisiblyWeightedBlocIds(
@@ -240,7 +245,8 @@ final class AlliancesViewTest {
                         .thenReturn(List.of("rebel_pact", "hegemony"));
 
                 assertThat(view.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
-                        .containsExactly(new SelectableBloc("rebel_pact", "Rebel Pact", null));
+                        .containsExactly(new SelectableBloc(
+                                "rebel_pact", "Rebel Pact", "graphics/rebels_crest.png"));
             }
         }
     }
