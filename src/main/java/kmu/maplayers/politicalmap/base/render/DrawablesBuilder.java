@@ -319,6 +319,7 @@ final class DrawablesBuilder {
         return new FactionTerritory(fill.solidTriangles(), fill.hatchSegments(),
                 new UiElementPaint(fillColor,
                         (float) (style.fillOpacity() * adjustment.opacityMultiplier())),
+                (float) KmuLunaSettings.getPoliticalMapHatchWidth(),
                 fill.transitionSeams(),
                 new UiElementPaint(isSpotlit ? palette.secondaryColor() : null,
                         (float) (style.innerOpacity() * adjustment.opacityMultiplier())),

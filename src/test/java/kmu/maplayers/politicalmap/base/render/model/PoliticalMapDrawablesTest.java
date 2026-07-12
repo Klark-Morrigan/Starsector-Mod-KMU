@@ -161,7 +161,7 @@ final class PoliticalMapDrawablesTest {
     }
 
     private static FactionTerritory anyFactionTerritory() {
-        return new FactionTerritory(new float[0], new float[0], hiddenPaint(),
+        return new FactionTerritory(new float[0], new float[0], hiddenPaint(), 0f,
                 new float[0], hiddenPaint(), 0f, List.of(), hiddenPaint(), 0f);
     }
 

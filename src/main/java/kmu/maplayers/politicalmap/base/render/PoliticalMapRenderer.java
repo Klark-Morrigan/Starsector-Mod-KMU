@@ -73,6 +73,11 @@ final class PoliticalMapRenderer {
             }
             GlColor.set(fill.color(), alphaMult * fill.alpha());
             MapGl.drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
+            // The hatch fills the contested pocket in the fill colour but strokes as GL_LINES, so
+            // its own pixel width tunes the contested texture apart from the solid fill. Set before
+            // the run since the triangle soup above is width-agnostic; a no-op for the empty runs
+            // every non-spotlit territory carries.
+            GL11.glLineWidth(territory.hatchWidth());
             MapGl.drawVertexRun(GL11.GL_LINES, territory.hatchSegments(), factor);
         }
     }

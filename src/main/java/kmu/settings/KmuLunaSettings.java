@@ -267,13 +267,15 @@ public final class KmuLunaSettings {
     // Hatch fill (Dev tab): the diagonal line pattern that fills the filter's contested
     // cluster - the spotlighted bloc's present-but-dominated systems - so it reads as
     // "mine, but contested" against the solid cluster it holds outright. Only that one
-    // territory hatches; spacing is the perpendicular gap between lines in world units and
-    // angle their direction in degrees off horizontal. Both feed the drawables rebuild, so
-    // a change repaints the hatch live.
+    // territory hatches; spacing is the perpendicular gap between lines in world units,
+    // angle their direction in degrees off horizontal, and width the pixel stroke of each
+    // line. All three feed the drawables rebuild, so a change repaints the hatch live.
     private static final String HATCH_SPACING_FIELD =
             "kmu_politicalMapHatchSpacing";
     private static final String HATCH_ANGLE_FIELD =
             "kmu_politicalMapHatchAngle";
+    private static final String HATCH_WIDTH_FIELD =
+            "kmu_politicalMapHatchWidth";
     // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor search -
     // the straight line a faction name will sit on, chosen by scoring many candidate
     // lines swept across the cluster (a fan of directions times a family of parallel
@@ -488,9 +490,10 @@ public final class KmuLunaSettings {
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
     // Hatch-fill knobs, mirroring the CSV defaults: ~10 lines across a default-reach cell,
-    // laid on a 45-degree diagonal.
+    // laid on a 45-degree diagonal at a hairline stroke.
     private static final double DEFAULT_HATCH_SPACING = 400.0;
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
+    private static final double DEFAULT_HATCH_WIDTH = 1.0;
     // Label-anchor search knobs.
     private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
     private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
@@ -1008,6 +1011,14 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapHatchAngleRadians() {
         return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, HATCH_ANGLE_FIELD,
                 DEFAULT_HATCH_ANGLE_DEGREES));
+    }
+
+    /**
+     * @return the line width the contested-cluster hatch strokes at, in pixels; higher makes the
+     *         contested texture read heavier without touching the solid fill or the line spacing
+     */
+    public static double getPoliticalMapHatchWidth() {
+        return LunaSettingsReader.getDouble(MOD_ID, HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH);
     }
 
     /**

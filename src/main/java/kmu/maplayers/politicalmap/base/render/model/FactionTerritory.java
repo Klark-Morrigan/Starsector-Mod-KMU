@@ -20,7 +20,9 @@ import java.util.List;
  * covers the systems it is merely present in (hatched, reading as "mine but contested"). Every
  * other territory sets {@code hatchSegments} empty and paints only its solid triangles. The two
  * fills tile the footprint inside one frontier, so its border stays a single continuous outline
- * either way.
+ * either way. {@code hatchWidth} is the line width the hatch strokes at, in pixels, so the
+ * contested texture can be tuned apart from the solid fill; it is carried on every territory but
+ * only bites where {@code hatchSegments} is non-empty.
  *
  * <p>{@code transitionSeams} marks where the solid and hatched fills meet inside that footprint,
  * as a {@code GL_LINES} run stroked in {@code transitionSeam}'s (secondary-shade) colour and
@@ -29,6 +31,7 @@ import java.util.List;
  * spotlit footprint with no contested systems.
  */
 public record FactionTerritory(float[] fillTriangles, float[] hatchSegments, UiElementPaint fill,
-        float[] transitionSeams, UiElementPaint transitionSeam, float transitionSeamWidth,
-        List<float[]> borderLoops, UiElementPaint border, float borderWidth) {
+        float hatchWidth, float[] transitionSeams, UiElementPaint transitionSeam,
+        float transitionSeamWidth, List<float[]> borderLoops, UiElementPaint border,
+        float borderWidth) {
 }
