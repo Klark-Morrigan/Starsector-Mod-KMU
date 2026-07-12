@@ -22,7 +22,8 @@ import java.util.Set;
  * <p>The styled-cell and faction-territory maps are the render output - the per-cell
  * seam/outline records and each faction's fill and national border. The rest are
  * retained inputs: the owner-by-system and decivilised-system maps say who holds each
- * system, the four styles and the neutral color say how each category draws, the
+ * system, the {@link RenderStyle} theme (its global tier plus each category's style) and
+ * the neutral color say how each category draws, the
  * desaturation palette says what a desaturated bloc recolours to, and the view plus its
  * resolved grouping say how ownership is grouped and which blocs recede to the
  * independent style - so an incremental re-shape classifies a cell exactly as the full
@@ -31,7 +32,7 @@ import java.util.Set;
  * <p>A plain class rather than a record because three of its fields are mutable state,
  * not values: the styled-cell, faction-territory, and owner-by-system maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions an
- * ownership change touched. The styles, the decivilised set, the neutral color, the
+ * ownership change touched. The theme, the decivilised set, the neutral color, the
  * view, and the grouping are set once at build and only read after, so an incremental
  * pass re-shapes against the exact inputs the full build baked in.
  *
@@ -52,10 +53,10 @@ public final class PoliticalMapDrawables {
     private final Set<String> decivilisedSystemIds;
     private final Color neutralColor;
     private final FactionPalette desaturationPalette;
-    private final MapStyle factionStyle;
-    private final MapStyle independentStyle;
-    private final MapStyle decivilisedStyle;
-    private final MapStyle uninhabitedStyle;
+    // The whole theme: the global tier plus one style per category. One value in place of
+    // the four separate category-style fields, so the builders index it by MapCategory and
+    // read the global tier (hatch, smoothing) off it too.
+    private final RenderStyle renderStyle;
     // The view whose per-bloc style classifier an incremental re-shape reads, and the
     // grouping snapshot the full build resolved ownership under - held together so the
     // re-shape classifies a cell against the same view and the same once-sampled grouping.
@@ -80,10 +81,7 @@ public final class PoliticalMapDrawables {
             Set<String> decivilisedSystemIds,
             Color neutralColor,
             FactionPalette desaturationPalette,
-            MapStyle factionStyle,
-            MapStyle independentStyle,
-            MapStyle decivilisedStyle,
-            MapStyle uninhabitedStyle,
+            RenderStyle renderStyle,
             PoliticalMapView view,
             OwnershipGrouping grouping,
             String selectedBlocId,
@@ -95,10 +93,7 @@ public final class PoliticalMapDrawables {
         this.decivilisedSystemIds = decivilisedSystemIds;
         this.neutralColor = neutralColor;
         this.desaturationPalette = desaturationPalette;
-        this.factionStyle = factionStyle;
-        this.independentStyle = independentStyle;
-        this.decivilisedStyle = decivilisedStyle;
-        this.uninhabitedStyle = uninhabitedStyle;
+        this.renderStyle = renderStyle;
         this.view = view;
         this.grouping = grouping;
         this.selectedBlocId = selectedBlocId;
@@ -109,7 +104,8 @@ public final class PoliticalMapDrawables {
     // An empty placeholder for the render path to fall back on after a failed first
     // build: the two draw lists are empty so the render is a harmless no-op, and the
     // next frame's retry replaces it with a real build before any incremental pass -
-    // which needs the styles - can run, so the null styles here are never read. It carries
+    // which needs the theme - can run, so the null theme here is never read (the render
+    // path skips an empty overlay before it would read the global tier). It carries
     // the active view (the one being drawn when the build failed) rather than naming a
     // concrete view, keeping this model view-agnostic; the identity grouping and the
     // gray-paired desaturation palette are inert defaults, never read for the same reason.
@@ -117,7 +113,7 @@ public final class PoliticalMapDrawables {
         return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
                 new FactionPalette(Color.GRAY, Color.GRAY),
-                null, null, null, null, view, OwnershipGrouping.identity(),
+                null, view, OwnershipGrouping.identity(),
                 null, BlocStyleAdjustment.NONE, new LinkedHashSet<>());
     }
 
@@ -145,20 +141,20 @@ public final class PoliticalMapDrawables {
         return desaturationPalette;
     }
 
-    public MapStyle getFactionStyle() {
-        return factionStyle;
+    public RenderStyle getRenderStyle() {
+        return renderStyle;
     }
 
-    public MapStyle getIndependentStyle() {
-        return independentStyle;
+    // The sector-wide tier (hatch, border smoothing, desaturation profile), read by the
+    // renderer and the builders so a global knob resolves once off the theme.
+    public GlobalStyle getGlobalStyle() {
+        return renderStyle.global();
     }
 
-    public MapStyle getDecivilisedStyle() {
-        return decivilisedStyle;
-    }
-
-    public MapStyle getUninhabitedStyle() {
-        return uninhabitedStyle;
+    // The style for one category, the per-category tier the cascade folds over the global
+    // tier when a cell or territory of that category is built.
+    public CategoryStyle getCategoryStyle(MapCategory category) {
+        return renderStyle.categoryStyle(category);
     }
 
     public PoliticalMapView getView() {

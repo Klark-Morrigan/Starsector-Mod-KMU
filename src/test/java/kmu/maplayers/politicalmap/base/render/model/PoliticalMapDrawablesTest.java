@@ -7,12 +7,14 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,9 +28,10 @@ import static org.mockito.Mockito.mock;
  * Pins the built map state the renderer paints and the incremental refresh edits:
  * that the empty fallback is a harmless no-op the render path can lean on after a failed
  * first build, that {@link PoliticalMapDrawables#isEmpty} tracks either draw list, and
- * that the constructor threads its inputs into the matching accessors (four of them
- * same-typed {@link MapStyle} bundles a swap would not otherwise catch, the view and
- * grouping the incremental re-shape classifies against, and the filter snapshot it recedes by).
+ * that the constructor threads its inputs into the matching accessors (the {@link RenderStyle}
+ * theme, whose global tier and four same-typed category bundles a swap would not otherwise catch,
+ * the view and grouping the incremental re-shape classifies against, and the filter snapshot it
+ * recedes by).
  */
 final class PoliticalMapDrawablesTest {
 
@@ -98,12 +101,22 @@ final class PoliticalMapDrawablesTest {
             Set<String> decivilised = new LinkedHashSet<>();
             var neutral = Color.CYAN;
             var desaturationPalette = new FactionPalette(Color.MAGENTA, Color.ORANGE);
-            // Four distinct instances so a swapped style field is caught by identity, not
-            // just by the shared MapStyle type the compiler would accept either way.
+            // Four distinct category instances plus a distinct global tier, all wrapped in one
+            // theme, so a swapped style slot is caught by identity, not just by the shared
+            // CategoryStyle type the compiler would accept either way.
             var factionStyle = styleMarked(1);
             var independentStyle = styleMarked(2);
             var decivilisedStyle = styleMarked(3);
             var uninhabitedStyle = styleMarked(4);
+            Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
+            categories.put(MapCategory.FACTION, factionStyle);
+            categories.put(MapCategory.INDEPENDENT, independentStyle);
+            categories.put(MapCategory.DECIVILISED, decivilisedStyle);
+            categories.put(MapCategory.UNINHABITED, uninhabitedStyle);
+            var globalStyle = new GlobalStyle(new HatchStyle(5, 5, 5),
+                    new BorderSmoothingStyle(true, true, 5, 5, 5),
+                    DesaturationProfileChoice.INDEPENDENT);
+            var renderStyle = new RenderStyle(globalStyle, categories);
             PoliticalMapView viewMock = mock(PoliticalMapView.class);
             var grouping = OwnershipGrouping.identity();
             // A distinct, non-identity adjustment so a swapped recede field is caught by value.
@@ -115,9 +128,8 @@ final class PoliticalMapDrawablesTest {
             Set<String> contested = new LinkedHashSet<>(Set.of("contested-system"));
 
             var drawables = new PoliticalMapDrawables(styledCells, territories, owners,
-                    decivilised, neutral, desaturationPalette, factionStyle, independentStyle,
-                    decivilisedStyle, uninhabitedStyle, viewMock, grouping, selectedBlocId,
-                    recedeAdjustment, contested);
+                    decivilised, neutral, desaturationPalette, renderStyle, viewMock, grouping,
+                    selectedBlocId, recedeAdjustment, contested);
 
             assertThat(drawables.getStyledCellBySystemId()).isSameAs(styledCells);
             assertThat(drawables.getFactionTerritoryByFactionId()).isSameAs(territories);
@@ -125,10 +137,15 @@ final class PoliticalMapDrawablesTest {
             assertThat(drawables.getDecivilisedSystemIds()).isSameAs(decivilised);
             assertThat(drawables.getNeutralColor()).isSameAs(neutral);
             assertThat(drawables.getDesaturationPalette()).isSameAs(desaturationPalette);
-            assertThat(drawables.getFactionStyle()).isSameAs(factionStyle);
-            assertThat(drawables.getIndependentStyle()).isSameAs(independentStyle);
-            assertThat(drawables.getDecivilisedStyle()).isSameAs(decivilisedStyle);
-            assertThat(drawables.getUninhabitedStyle()).isSameAs(uninhabitedStyle);
+            assertThat(drawables.getRenderStyle()).isSameAs(renderStyle);
+            assertThat(drawables.getGlobalStyle()).isSameAs(globalStyle);
+            assertThat(drawables.getCategoryStyle(MapCategory.FACTION)).isSameAs(factionStyle);
+            assertThat(drawables.getCategoryStyle(MapCategory.INDEPENDENT))
+                    .isSameAs(independentStyle);
+            assertThat(drawables.getCategoryStyle(MapCategory.DECIVILISED))
+                    .isSameAs(decivilisedStyle);
+            assertThat(drawables.getCategoryStyle(MapCategory.UNINHABITED))
+                    .isSameAs(uninhabitedStyle);
             assertThat(drawables.getView()).isSameAs(viewMock);
             assertThat(drawables.getGrouping()).isSameAs(grouping);
             assertThat(drawables.getSelectedBlocId()).isEqualTo(selectedBlocId);
@@ -145,7 +162,7 @@ final class PoliticalMapDrawablesTest {
         PoliticalMapView viewMock = mock(PoliticalMapView.class);
         return new PoliticalMapDrawables(new LinkedHashMap<>(styledCells),
                 new LinkedHashMap<>(territories), new LinkedHashMap<>(), new LinkedHashSet<>(),
-                Color.GRAY, null, null, null, null, null, viewMock,
+                Color.GRAY, null, null, viewMock,
                 OwnershipGrouping.identity(), null, BlocStyleAdjustment.NONE, new LinkedHashSet<>());
     }
 
@@ -161,14 +178,14 @@ final class PoliticalMapDrawablesTest {
     }
 
     private static FactionTerritory anyFactionTerritory() {
-        return new FactionTerritory(new float[0], new float[0], hiddenPaint(), 0f,
+        return new FactionTerritory(new float[0], new float[0], hiddenPaint(),
                 new float[0], hiddenPaint(), 0f, List.of(), hiddenPaint(), 0f);
     }
 
-    // A MapStyle whose opacities and widths carry one marker value, so four otherwise
+    // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
     // interchangeable style bundles are distinct instances.
-    private static MapStyle styleMarked(double marker) {
-        return new MapStyle(FactionPaletteChoice.PRIMARY, marker,
+    private static CategoryStyle styleMarked(double marker) {
+        return new CategoryStyle(FactionPaletteChoice.PRIMARY, marker,
                 FactionPaletteChoice.PRIMARY, marker, marker,
                 FactionPaletteChoice.PRIMARY, marker, marker);
     }

@@ -103,8 +103,8 @@ final class DebugBorderTracingBuilder {
     private static void addFactionlessOutlines(PoliticalMapGeometryCache geometryCache,
             Map<String, String> groupKeyBySystemId, Set<String> decivilisedSystemIds,
             boolean isRoundingOn, List<float[]> baseLoops, List<float[]> roundedLoops) {
-        var decivilisedStyle = MapStyleReader.readDecivilisedStyle();
-        var uninhabitedStyle = MapStyleReader.readUninhabitedStyle();
+        var decivilisedStyle = RenderStyleReader.readDecivilisedStyle();
+        var uninhabitedStyle = RenderStyleReader.readUninhabitedStyle();
         for (var entry : geometryCache.getCellEdgesBySystemId().entrySet()) {
             if (groupKeyBySystemId.containsKey(entry.getKey())) {
                 continue;

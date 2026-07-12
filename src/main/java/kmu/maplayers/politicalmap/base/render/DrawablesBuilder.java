@@ -27,13 +27,14 @@ import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
+import kmu.maplayers.politicalmap.base.render.model.BorderSmoothingStyle;
+import kmu.maplayers.politicalmap.base.render.model.CategoryStyle;
 import kmu.maplayers.politicalmap.base.render.model.FactionTerritory;
-import kmu.maplayers.politicalmap.base.render.model.MapStyle;
+import kmu.maplayers.politicalmap.base.render.model.MapCategory;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.base.render.model.StyledCell;
 import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
-import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
 
@@ -108,12 +109,14 @@ final class DrawablesBuilder {
             LOG.debug("Political map decivilised scan; systems=" + decivilisedSystemIds.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - decivilisedStart));
 
-            // One style bundle per category, the shared neutral color, and the desaturation
-            // palette the profile setting resolves to, held on the drawables so the
-            // incremental refresh re-shapes cells against the same inputs this pass used.
+            // The whole theme - the global tier plus one style per category - read once here
+            // through the single reader seam, plus the shared neutral color and the desaturation
+            // palette the profile resolves to. Held on the drawables so the incremental refresh
+            // re-shapes cells against the same snapshot this pass used.
+            var renderStyle = RenderStyleReader.readRenderStyle();
             var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
             var desaturationPalette = resolveDesaturationPalette(
-                    KmuLunaSettings.getPoliticalMapDesaturationProfile(), sector, neutralColor);
+                    renderStyle.global().desaturationProfile(), sector, neutralColor);
             // The styling every non-spotlighted bloc recedes to, resolved once from the shared
             // recede toggles; the identity adjustment off filter, so a normal pass touches no bloc.
             var recedeAdjustment = isFiltering
@@ -122,9 +125,7 @@ final class DrawablesBuilder {
             var drawables = new PoliticalMapDrawables(
                     new LinkedHashMap<>(), new LinkedHashMap<>(),
                     ownerBySystemId, decivilisedSystemIds,
-                    neutralColor, desaturationPalette,
-                    MapStyleReader.readFactionStyle(), MapStyleReader.readIndependentStyle(),
-                    MapStyleReader.readDecivilisedStyle(), MapStyleReader.readUninhabitedStyle(),
+                    neutralColor, desaturationPalette, renderStyle,
                     view, grouping, selectedBlocId, recedeAdjustment, contestedSystemIds);
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
@@ -195,21 +196,23 @@ final class DrawablesBuilder {
             var palette = resolveEffectivePalette(styling.adjustment(), owner,
                     drawables.getDesaturationPalette());
             return buildStyledCell(shaped, palette.primaryColor(), palette.secondaryColor(),
-                    styling.style(), false, styling.adjustment().opacityMultiplier());
+                    styling.style(), false, styling.adjustment().opacityMultiplier(),
+                    drawables.getGlobalStyle().borderSmoothing());
         }
         // Factionless: decivilised or (otherwise) uninhabited. Its style fills neither
         // palette slot, so both resolve to the shared neutral color and only its
         // per-cell outline draws; drop it when that outline is "No color". Factionless
         // cells are not blocs the view classifies, so they never carry an adjustment.
         var style = drawables.getDecivilisedSystemIds().contains(systemId)
-                ? drawables.getDecivilisedStyle()
-                : drawables.getUninhabitedStyle();
+                ? drawables.getCategoryStyle(MapCategory.DECIVILISED)
+                : drawables.getCategoryStyle(MapCategory.UNINHABITED);
         if (style.outerColor() == FactionPaletteChoice.NONE) {
             return null;
         }
         var neutralColor = drawables.getNeutralColor();
         return buildStyledCell(shaped, neutralColor, neutralColor, style, true,
-                BlocStyleAdjustment.NONE.opacityMultiplier());
+                BlocStyleAdjustment.NONE.opacityMultiplier(),
+                drawables.getGlobalStyle().borderSmoothing());
     }
 
     // Builds every owned faction's territory into the drawables, keyed by faction id.
@@ -290,10 +293,11 @@ final class DrawablesBuilder {
         // Fill and border are the same loops (triangulated vs its boundary loops), so
         // they match exactly whichever passes ran.
         var borderLoops = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
-        if (KmuLunaSettings.shouldSandBorderSpikes()) {
+        var borderSmoothing = drawables.getGlobalStyle().borderSmoothing();
+        if (borderSmoothing.shouldSandSpikes()) {
             borderLoops = BorderSmoothing.sandBorderSpikes(borderLoops);
         }
-        if (KmuLunaSettings.shouldRoundBorderCorners()) {
+        if (borderSmoothing.shouldRoundCorners()) {
             borderLoops = BorderSmoothing.roundBorderCorners(borderLoops);
         }
         // The spotlit footprint splits its fill per cell inside its one frontier - solid where the
@@ -319,7 +323,6 @@ final class DrawablesBuilder {
         return new FactionTerritory(fill.solidTriangles(), fill.hatchSegments(),
                 new UiElementPaint(fillColor,
                         (float) (style.fillOpacity() * adjustment.opacityMultiplier())),
-                (float) KmuLunaSettings.getPoliticalMapHatchWidth(),
                 fill.transitionSeams(),
                 new UiElementPaint(isSpotlit ? palette.secondaryColor() : null,
                         (float) (style.innerOpacity() * adjustment.opacityMultiplier())),
@@ -354,9 +357,9 @@ final class DrawablesBuilder {
             var cellTriangles = tessellateMemberCell(shapedCellBySystemId.get(systemId));
             (contestedSystemIds.contains(systemId) ? contestedRuns : solidRuns).add(cellTriangles);
         }
+        var hatch = drawables.getGlobalStyle().hatch();
         var hatchSegments = Hatching.computeHatchSegments(concatenateRuns(contestedRuns),
-                KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
-                KmuLunaSettings.getPoliticalMapHatchSpacing());
+                hatch.angleRadians(), hatch.spacing());
         return new TerritoryFill(concatenateRuns(solidRuns), hatchSegments, transitionSeams);
     }
 
@@ -433,8 +436,8 @@ final class DrawablesBuilder {
         var decision = resolveBlocStyleDecision(drawables.isFiltering(), blocId,
                 drawables.getView(), drawables.getGrouping(), drawables.getRecedeAdjustment());
         var style = decision.usesIndependentStyle()
-                ? drawables.getIndependentStyle()
-                : drawables.getFactionStyle();
+                ? drawables.getCategoryStyle(MapCategory.INDEPENDENT)
+                : drawables.getCategoryStyle(MapCategory.FACTION);
         return new BlocStyling(style, decision.adjustment());
     }
 
@@ -490,13 +493,13 @@ final class DrawablesBuilder {
     // {@code opacityMultiplier}, the caller's resolved per-bloc adjustment (1.0 - no
     // change - for a factionless cell, which carries no adjustment).
     private static StyledCell buildStyledCell(ShapedCell shaped, Color primaryColor,
-            Color secondaryColor, MapStyle style, boolean perCellFillAndBorder,
-            double opacityMultiplier) {
+            Color secondaryColor, CategoryStyle style, boolean perCellFillAndBorder,
+            double opacityMultiplier, BorderSmoothingStyle borderSmoothing) {
         // Gate the corner rounding outside the round call: on rounds this cell's outline
         // in step with the cluster borders, off leaves its raw inset outline.
         var outline = shaped.fillPolygon();
-        if (perCellFillAndBorder && KmuLunaSettings.shouldRoundBorderCorners()) {
-            outline = roundCellOutline(shaped);
+        if (perCellFillAndBorder && borderSmoothing.shouldRoundCorners()) {
+            outline = roundCellOutline(shaped, borderSmoothing);
         }
         return new StyledCell(
                 perCellFillAndBorder
@@ -527,11 +530,12 @@ final class DrawablesBuilder {
     // convex inset polygon (all its edges are national border), so it needs no chaining
     // or envelope resolve - only the corner rounding. The caller gates this on the
     // corner-rounding switch.
-    private static List<double[]> roundCellOutline(ShapedCell shaped) {
+    private static List<double[]> roundCellOutline(ShapedCell shaped,
+            BorderSmoothingStyle borderSmoothing) {
         return Polygons.roundCorners(shaped.fillPolygon(),
-                KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
-                KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
-                KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians());
+                borderSmoothing.cornerRadius(),
+                borderSmoothing.cornerSegments(),
+                borderSmoothing.chamferAngleRadians());
     }
 
     // The two shades a bloc actually paints in under its style adjustment: its owner's own
@@ -576,11 +580,11 @@ final class DrawablesBuilder {
 
     // The base style plus per-bloc adjustment a bloc draws under, resolved once and read by both
     // the fill and border and the interior seams so they never diverge.
-    private record BlocStyling(MapStyle style, BlocStyleAdjustment adjustment) {
+    private record BlocStyling(CategoryStyle style, BlocStyleAdjustment adjustment) {
     }
 
     // The view-agnostic style decision the fill and label paths share: whether a bloc recedes to
-    // the independent style, and its per-bloc adjustment. Free of the concrete MapStyle so the
+    // the independent style, and its per-bloc adjustment. Free of the concrete CategoryStyle so the
     // label path - which needs only the boolean, not a resolved style - reads the very same call.
     record BlocStyleDecision(boolean usesIndependentStyle, BlocStyleAdjustment adjustment) {
     }

@@ -12,8 +12,13 @@ import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.render.model.MapStyle;
+import kmu.maplayers.politicalmap.base.render.model.BorderSmoothingStyle;
+import kmu.maplayers.politicalmap.base.render.model.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.model.GlobalStyle;
+import kmu.maplayers.politicalmap.base.render.model.HatchStyle;
+import kmu.maplayers.politicalmap.base.render.model.MapCategory;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
+import kmu.maplayers.politicalmap.base.render.model.RenderStyle;
 import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 
@@ -21,6 +26,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -246,7 +252,7 @@ final class DrawablesBuilderTest {
         // An owned cell's fill and national border are per cluster (in FactionTerritory),
         // so fill and outer are "No color" here and only inner - the interior seam -
         // resolves a real color, the one slot these tests can observe.
-        private static final MapStyle STYLE = new MapStyle(
+        private static final CategoryStyle STYLE = new CategoryStyle(
                 FactionPaletteChoice.NONE, 1.0,
                 FactionPaletteChoice.NONE, 1.0, 3.0,
                 FactionPaletteChoice.SECONDARY, 1.0, 1.0);
@@ -336,8 +342,22 @@ final class DrawablesBuilderTest {
             return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
                     Map.of(SYSTEM_ID, OWNER), Set.of(), Color.GRAY,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                    STYLE, STYLE, STYLE, STYLE, viewMock, OwnershipGrouping.identity(),
+                    renderStyleWithEveryCategory(STYLE), viewMock, OwnershipGrouping.identity(),
                     isFiltering ? "selected-bloc" : null, recede, Set.of());
+        }
+
+        // Wraps one category style into a full theme with all four categories set to it and an
+        // inert global tier, so this owned-cell fixture reads its style off the drawables the way
+        // production does. The owned-cell path never rounds a per-cell outline or hatches, so the
+        // global tier's smoothing and hatch values are never read here.
+        private static RenderStyle renderStyleWithEveryCategory(CategoryStyle style) {
+            Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
+            for (var category : MapCategory.values()) {
+                categories.put(category, style);
+            }
+            return new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
+                    new BorderSmoothingStyle(false, false, 0, 0, 0),
+                    DesaturationProfileChoice.INDEPENDENT), categories);
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

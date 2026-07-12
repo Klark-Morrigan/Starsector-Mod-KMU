@@ -66,6 +66,12 @@ final class PoliticalMapRenderer {
     // and opacity - so its contested pocket reads as "mine but contested" within one frontier;
     // every other territory carries an empty hatch run and paints only its triangles.
     private static void drawFills(PoliticalMapDrawables drawables, float factor, float alphaMult) {
+        // The hatch fills the contested pocket in the fill colour but strokes as GL_LINES, so its
+        // own pixel width tunes the contested texture apart from the solid fill. The width is
+        // sector-wide, so set it once here off the theme's global tier rather than per territory;
+        // the triangle soups below are width-agnostic, and only the one spotlit territory carries a
+        // non-empty hatch run.
+        GL11.glLineWidth((float) drawables.getGlobalStyle().hatch().width());
         for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
             var fill = territory.fill();
             if (fill.isHidden()) {
@@ -73,11 +79,6 @@ final class PoliticalMapRenderer {
             }
             GlColor.set(fill.color(), alphaMult * fill.alpha());
             MapGl.drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
-            // The hatch fills the contested pocket in the fill colour but strokes as GL_LINES, so
-            // its own pixel width tunes the contested texture apart from the solid fill. Set before
-            // the run since the triangle soup above is width-agnostic; a no-op for the empty runs
-            // every non-spotlit territory carries.
-            GL11.glLineWidth(territory.hatchWidth());
             MapGl.drawVertexRun(GL11.GL_LINES, territory.hatchSegments(), factor);
         }
     }
