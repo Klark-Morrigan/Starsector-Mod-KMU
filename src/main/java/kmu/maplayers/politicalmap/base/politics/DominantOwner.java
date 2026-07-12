@@ -1,7 +1,9 @@
 package kmu.maplayers.politicalmap.base.politics;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,21 +26,8 @@ import java.util.Map;
 public record DominantOwner(String factionId, Color primaryColor, Color secondaryColor) {
 
     /**
-     * The faction id of a possibly-absent owner: {@code owner}'s id, or null when
-     * {@code owner} is null. The single null-safe read the political-map geometry
-     * classifies edges through, so an unowned cell and one held by no faction read
-     * alike without each caller repeating the null guard.
-     *
-     * @param owner the owner to read, or null for an unowned system
-     * @return the owner's faction id, or null when there is no owner
-     */
-    public static String factionIdOf(DominantOwner owner) {
-        return owner == null ? null : owner.factionId();
-    }
-
-    /**
-     * The per-system grouping key the political-map geometry clusters by: each system's
-     * dominant-faction id. Adapts the faction ownership map to the opaque
+     * Maps each owned system to its dominant-faction id - the per-system grouping key the
+     * political-map geometry clusters by. Adapts the faction ownership map to the opaque
      * {@code Map<String, String>} the agnostic geometry ({@code CellShaper},
      * {@code SystemClusters}, {@code SystemClusterBorders}, {@code PoliticalBorderTrace}) fuses on, so
      * the faction layer supplies "who owns this" while the geometry stays ignorant of factions.
@@ -46,12 +35,32 @@ public record DominantOwner(String factionId, Color primaryColor, Color secondar
      * @param ownerBySystemId the dominant owner per owned system
      * @return each system's faction id, in the map's iteration order
      */
-    public static Map<String, String> factionIdBySystemId(
+    public static Map<String, String> mapFactionIdBySystemId(
             Map<String, DominantOwner> ownerBySystemId) {
         var keyBySystemId = new LinkedHashMap<String, String>();
         for (var entry : ownerBySystemId.entrySet()) {
             keyBySystemId.put(entry.getKey(), entry.getValue().factionId());
         }
         return keyBySystemId;
+    }
+
+    /**
+     * Inverts the ownership map into each faction's member systems, so every faction's
+     * cluster(s) can be traced from its own members. Takes the owner map rather than any
+     * render state, so the production build, the incremental refresh, and the debug overlay -
+     * which resolves owners without building draw lists - all group the same way.
+     *
+     * @param ownerBySystemId the dominant owner per owned system
+     * @return each faction id mapped to its owned system ids, in the map's iteration order
+     */
+    public static Map<String, List<String>> groupSystemIdsByFactionId(
+            Map<String, DominantOwner> ownerBySystemId) {
+        var systemIdsByFactionId = new LinkedHashMap<String, List<String>>();
+        for (var entry : ownerBySystemId.entrySet()) {
+            systemIdsByFactionId
+                    .computeIfAbsent(entry.getValue().factionId(), factionId -> new ArrayList<>())
+                    .add(entry.getKey());
+        }
+        return systemIdsByFactionId;
     }
 }

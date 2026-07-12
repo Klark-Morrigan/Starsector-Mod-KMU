@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
@@ -8,7 +8,7 @@ import kmlib.opengl.GlLines;
 import kmlib.opengl.GlQuads;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
+import kmu.maplayers.politicalmap.base.render.DiagnosticPalette;
 import kmu.settings.KmuLunaSettings;
 
 import org.lwjgl.opengl.GL11;
@@ -21,7 +21,8 @@ import java.util.function.Function;
  * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's anchor
  * dot plus its accepted, rejected, and unbiased label lines.
  *
- * <p>Its own renderer, apart from {@link PoliticalMapRenderer}, because the anchors are
+ * <p>Its own renderer, apart from {@link kmu.maplayers.politicalmap.base.render.PoliticalMapRenderer},
+ * because the anchors are
  * an independent overlay: the terrain plugin draws them after whichever base view is
  * live - the normal political map or the debug border-tracing overlay - so turning
  * border tracing on never hides them. Pure GL emission over an already-built anchor

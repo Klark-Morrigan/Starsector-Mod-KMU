@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -58,7 +58,7 @@ final class ClusterLabelStyling {
     // than a fixed bright pick. A bloc drawn in the independent style carries the
     // independent outer-border choice, every other bloc the faction one, resolved against
     // this bloc's two shades - the owner's own palette, or the pass's shared desaturation
-    // palette when the adjustment desaturates this bloc - by the same DrawablesBuilder
+    // palette when the adjustment desaturates this bloc - by the same MapPalettes
     // mapping the border itself uses. A hidden border ("No color") still needs a legible
     // name, so it falls back to the resolved primary shade. The same faction-vs-independent
     // split then picks the group's name opacity, further scaled by the adjustment's opacity
@@ -71,7 +71,7 @@ final class ClusterLabelStyling {
         var choice = usesIndependentStyle
                 ? spec.independentOuterColor() : spec.factionOuterColor();
         // The name resolves against the same two shades the border does, off the one
-        // "desaturate swaps the palette" decision DrawablesBuilder owns - so the name can
+        // "desaturate swaps the palette" decision MapPalettes owns - so the name can
         // never drift from the fill and border it labels.
         var palette = MapPalettes.resolveEffectivePalette(adjustment, owner, desaturationPalette);
         var color = MapPalettes.pickPaletteColor(

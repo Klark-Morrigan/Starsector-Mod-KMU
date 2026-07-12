@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import com.fs.starfarer.api.Global;
 
@@ -6,7 +6,6 @@ import kmlib.math.geometry.Segment;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;

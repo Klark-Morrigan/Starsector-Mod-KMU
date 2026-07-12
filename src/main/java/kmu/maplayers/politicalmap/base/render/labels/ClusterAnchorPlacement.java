@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
@@ -13,7 +13,6 @@ import kmlib.starsector.ui.label.LabelLengthEstimator;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
 
 import java.awt.Color;
 import java.util.ArrayList;

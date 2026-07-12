@@ -11,7 +11,8 @@ import org.lwjgl.opengl.GL11;
  * Paints the political map's pre-built draw lists on the sector (M) map: the faction
  * fills first, then the interior seams, factionless outlines, and national borders
  * over them. The debug cluster anchors are not drawn here: they are an independent
- * overlay ({@link ClusterAnchorRenderer}) the terrain plugin layers over whichever
+ * overlay ({@link kmu.maplayers.politicalmap.base.render.labels.ClusterAnchorRenderer}) the terrain
+ * plugin layers over whichever
  * base view is live.
  *
  * <p>This is pure GL emission over an already-baked {@link PoliticalMapDrawables} - it

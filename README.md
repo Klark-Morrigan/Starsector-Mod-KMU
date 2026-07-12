@@ -22,6 +22,8 @@ This is a small Starsector utility and quality of life mod.
 
 - [Render style layer](src/main/java/kmu/maplayers/politicalmap/base/render/style/README.md)
   - how the overlay turns player settings into each territory's colours, widths, and fill.
+- [Cluster-name overlay](src/main/java/kmu/maplayers/politicalmap/base/render/labels/README.md)
+  - how faction names are placed over the map and drawn.
 
 ## Dependencies
 

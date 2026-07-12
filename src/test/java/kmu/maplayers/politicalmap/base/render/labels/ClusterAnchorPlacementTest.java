@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
@@ -7,6 +7,7 @@ import kmlib.starsector.ui.label.LabelLengthEstimator;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.settings.FactionPaletteChoice;
 
@@ -150,7 +151,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -174,7 +175,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 150.0, 3, 3, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -200,7 +201,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(100.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -222,7 +223,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), THIN_COLUMN_EDGES,
                     THIN_COLUMN_SITES, THIN_COLUMN_OWNERS,
-                    DominantOwner.factionIdBySystemId(THIN_COLUMN_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(THIN_COLUMN_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -246,7 +247,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_OWNERS,
-                    DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(SQUARE_GRID_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -268,7 +269,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
-                    DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(SQUARE_GRID_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -290,7 +291,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -314,7 +315,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D", "E")), BOOT_EDGES,
                     BOOT_SITES, BOOT_OWNERS,
-                    DominantOwner.factionIdBySystemId(BOOT_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(BOOT_OWNERS),
                     spec(0.0, 0.0, 3, 5, 0.5, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -337,7 +338,7 @@ final class ClusterAnchorPlacementTest {
                             null, null, null, null)),
                     Map.of("A", new double[] {1000, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -362,7 +363,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(1000.0, 0.0, 3, 3, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -385,7 +386,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(1000.0, 0.0, 3, 1, 0.0, 2.0, true, false),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -410,7 +411,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_OWNERS,
-                    DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(SQUARE_GRID_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0, false, true),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -434,7 +435,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), THIN_COLUMN_EDGES,
                     THIN_COLUMN_SITES, THIN_COLUMN_OWNERS,
-                    DominantOwner.factionIdBySystemId(THIN_COLUMN_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(THIN_COLUMN_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0, false, true),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -449,7 +450,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), Map.of(),
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 0.0, 3, 3, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -469,7 +470,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     outerColorSpec(FactionPaletteChoice.PRIMARY),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -486,7 +487,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     outerColorSpec(FactionPaletteChoice.SECONDARY),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -503,7 +504,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     outerColorSpec(FactionPaletteChoice.NONE),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -523,7 +524,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     outerColorSpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.SECONDARY),
                     EVERY_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -540,7 +541,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             0.5, 1.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
@@ -561,7 +562,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             1.0, 0.5),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
@@ -580,7 +581,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     nameOpacitySpec(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             1.0, 0.5),
                     EVERY_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
@@ -601,7 +602,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE,
                     blocId -> new BlocStyleAdjustment(0.5, false), UNUSED_PALETTE,
@@ -622,7 +623,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE,
                     blocId -> new BlocStyleAdjustment(1.0, true), desaturationPalette,
@@ -641,7 +642,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE,
                     blocId -> BlocStyleAdjustment.NONE,
@@ -665,7 +666,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", squareCellEdges(0, 0, null, null, null, null)),
                     Map.of("A", new double[] {500, 500}),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, blocId -> recede, desaturationPalette,
                     slenderNameEstimators()).get(0).color();
@@ -693,7 +694,7 @@ final class ClusterAnchorPlacementTest {
             ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0), NO_BLOC_USES_INDEPENDENT_STYLE,
                     NO_ADJUSTMENT, UNUSED_PALETTE, recordingResolver);
 
@@ -708,7 +709,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A")), Map.of(),
                     Map.of(),
                     Map.of("A", FACTION_F),
-                    DominantOwner.factionIdBySystemId(Map.of("A", FACTION_F)),
+                    DominantOwner.mapFactionIdBySystemId(Map.of("A", FACTION_F)),
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
                     slenderNameEstimators());
@@ -727,7 +728,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_OWNERS,
-                    DominantOwner.factionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(HORIZONTAL_PAIR_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 2000.0, 1, 1.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
@@ -754,7 +755,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
-                    DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(SQUARE_GRID_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 3, 1.15),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
@@ -775,7 +776,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
-                    DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(SQUARE_GRID_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 3, 1.15),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
@@ -795,7 +796,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
-                    DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(SQUARE_GRID_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 1, 1.15),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,
@@ -812,7 +813,7 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_OWNERS,
-                    DominantOwner.factionIdBySystemId(SQUARE_GRID_OWNERS),
+                    DominantOwner.mapFactionIdBySystemId(SQUARE_GRID_OWNERS),
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             3000.0, 4000.0, 1, 1.0),
                     NO_BLOC_USES_INDEPENDENT_STYLE, NO_ADJUSTMENT, UNUSED_PALETTE,

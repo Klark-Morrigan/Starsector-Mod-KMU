@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 

@@ -132,7 +132,7 @@ final class DrawablesBuilder {
             // geometry clusters by grouping key, so hand it each system's faction id as the
             // key. Cells consumed by the inset (fewer than three vertices left) drop out.
             var shapeStart = System.nanoTime();
-            var groupKeyBySystemId = DominantOwner.factionIdBySystemId(ownerBySystemId);
+            var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
             var shapedCells = profiler.measure("politicalMap.shapeCells",
                     () -> CellShaper.shapeCells(geometryCache.getCellEdgesBySystemId(),
                             groupKeyBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE));
@@ -222,28 +222,14 @@ final class DrawablesBuilder {
     // than re-shaping (the incremental refresh, never a spotlit build, passes none).
     private static void buildAllFactionTerritories(PoliticalMapDrawables drawables,
             PoliticalMapGeometryCache geometryCache, Map<String, ShapedCell> shapedCellBySystemId) {
-        for (var faction : groupOwnedSystemsByFaction(drawables.getOwnerBySystemId()).entrySet()) {
+        for (var faction
+                : DominantOwner.groupSystemIdsByFactionId(drawables.getOwnerBySystemId()).entrySet()) {
             var territory = buildFactionTerritory(drawables, geometryCache,
                     faction.getKey(), faction.getValue(), shapedCellBySystemId);
             if (territory != null) {
                 drawables.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
             }
         }
-    }
-
-    // Groups the currently owned systems by their faction id, so each faction's
-    // cluster(s) are traced from its own members. Takes the owner map rather than the whole
-    // drawables so the debug overlay - which resolves owners without building any draw
-    // lists - can group the same way the production build does.
-    static Map<String, List<String>> groupOwnedSystemsByFaction(
-            Map<String, DominantOwner> ownerBySystemId) {
-        var systemsByFaction = new LinkedHashMap<String, List<String>>();
-        for (var entry : ownerBySystemId.entrySet()) {
-            systemsByFaction
-                    .computeIfAbsent(entry.getValue().factionId(), factionId -> new ArrayList<>())
-                    .add(entry.getKey());
-        }
-        return systemsByFaction;
     }
 
     // Builds one faction's fill and national border from its border rings,
@@ -282,7 +268,7 @@ final class DrawablesBuilder {
         }
         var insetRings = PoliticalBorderTrace.readFromLunaSettings().traceRings(memberSystemIds,
                 geometryCache.getCellEdgesBySystemId(),
-                DominantOwner.factionIdBySystemId(drawables.getOwnerBySystemId()));
+                DominantOwner.mapFactionIdBySystemId(drawables.getOwnerBySystemId()));
         if (insetRings.isEmpty()) {
             return null;
         }

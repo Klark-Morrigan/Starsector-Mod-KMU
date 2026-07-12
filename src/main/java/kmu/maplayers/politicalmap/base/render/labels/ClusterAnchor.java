@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.model;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import kmlib.math.geometry.Segment;
 

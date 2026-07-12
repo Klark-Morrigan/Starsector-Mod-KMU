@@ -1,8 +1,6 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import kmlib.math.geometry.Segment;
-
-import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

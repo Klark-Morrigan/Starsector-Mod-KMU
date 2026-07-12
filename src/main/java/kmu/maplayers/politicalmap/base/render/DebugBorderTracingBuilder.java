@@ -59,7 +59,7 @@ final class DebugBorderTracingBuilder {
             SectorAPI sector) {
         var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
         // The agnostic geometry clusters by grouping key, so key by each system's faction id.
-        var groupKeyBySystemId = DominantOwner.factionIdBySystemId(ownerBySystemId);
+        var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
         var decivilisedSystemIds = DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector);
         var weldTolerance = KmuLunaSettings.getPoliticalMapBorderWeldTolerance();
         var miterLimit = KmuLunaSettings.getPoliticalMapBorderMiterLimit();
@@ -69,7 +69,7 @@ final class DebugBorderTracingBuilder {
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
         for (var memberSystemIds
-                : DrawablesBuilder.groupOwnedSystemsByFaction(ownerBySystemId).values()) {
+                : DominantOwner.groupSystemIdsByFactionId(ownerBySystemId).values()) {
             var insetRings = SystemClusterBorders.traceBorderRings(memberSystemIds,
                     geometryCache.getCellEdgesBySystemId(), groupKeyBySystemId,
                     PoliticalMapStyle.BORDER_INSET_DISTANCE, weldTolerance, miterLimit);

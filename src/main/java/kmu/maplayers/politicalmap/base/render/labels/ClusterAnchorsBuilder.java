@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.labels;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -12,7 +12,6 @@ import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.KmuLunaSettings;
@@ -31,13 +30,14 @@ import java.util.Map;
  * filter rules under one), {@link ClusterAnchorPlacement} runs the pure geometric search over
  * injected data, and {@link LabelAnchorSpecification} carries the tuning both read.
  *
- * <p>Apart from {@link DrawablesBuilder} because the anchors are an independent overlay, not
+ * <p>Apart from {@link kmu.maplayers.politicalmap.base.render.DrawablesBuilder} because the anchors
+ * are an independent overlay, not
  * part of the production draw lists: they draw over the normal render and the debug
  * border-tracing overlay alike, so they cannot live inside either view's build. The overlay
  * list is owned by the terrain plugin and rebuilt in place here, whichever base view a rebuild
  * produced.
  */
-final class ClusterAnchorsBuilder {
+public final class ClusterAnchorsBuilder {
 
     // Drives only; never instantiated.
     private ClusterAnchorsBuilder() {
@@ -58,7 +58,7 @@ final class ClusterAnchorsBuilder {
     // filter the label styling follows the same shared decision the fills do - receding every
     // non-spotlit bloc, leaving the spotlit one full - and the synthetic spotlight keys resolve
     // to the selected bloc's name, since the view cannot name a synthetic id.
-    static void rebuildClusterAnchors(List<ClusterAnchor> anchors,
+    public static void rebuildClusterAnchors(List<ClusterAnchor> anchors,
             PoliticalMapGeometryCache geometryCache,
             Map<String, DominantOwner> ownerBySystemId, SectorAPI sector,
             FactionPalette desaturationPalette,
@@ -73,7 +73,7 @@ final class ClusterAnchorsBuilder {
         // system's bloc id; the owner map is still carried for the per-owner colour. Under a
         // filter that key is a synthetic spotlight key, so the solid and contested clusters
         // trace as their own territories exactly as the fills do.
-        var groupKeyBySystemId = DominantOwner.factionIdBySystemId(ownerBySystemId);
+        var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesBySystemId(), groupKeyBySystemId);
         // The desaturation palette is handed in already resolved - off the production build's
@@ -99,7 +99,7 @@ final class ClusterAnchorsBuilder {
     // which builds no production draw lists to borrow one from. Resolves ownership from
     // the sector itself, gated behind the toggle so the economy scan only runs while
     // someone is actually looking at the anchors.
-    static void rebuildClusterAnchorsFromSector(List<ClusterAnchor> anchors,
+    public static void rebuildClusterAnchorsFromSector(List<ClusterAnchor> anchors,
             PoliticalMapGeometryCache geometryCache, SectorAPI sector, PoliticalMapView view) {
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {

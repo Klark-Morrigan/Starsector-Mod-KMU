@@ -10,7 +10,10 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
-import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
+import kmu.maplayers.politicalmap.base.render.labels.ClusterAnchor;
+import kmu.maplayers.politicalmap.base.render.labels.ClusterAnchorsBuilder;
+import kmu.maplayers.politicalmap.base.render.labels.Label;
+import kmu.maplayers.politicalmap.base.render.labels.LabelsBuilder;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 
@@ -79,7 +82,7 @@ final class IncrementalPoliticsRefresh {
             // Only the old and new owners' territories can have changed shape; every
             // other faction's rings trace unchanged cells, so they are left as-is.
             var systemsByFaction =
-                    DrawablesBuilder.groupOwnedSystemsByFaction(drawables.getOwnerBySystemId());
+                    DominantOwner.groupSystemIdsByFactionId(drawables.getOwnerBySystemId());
             for (var factionId : affectedFactionIds) {
                 rebuildFactionTerritoryInPlace(drawables, geometryCache, factionId,
                         systemsByFaction.get(factionId));
@@ -179,7 +182,7 @@ final class IncrementalPoliticsRefresh {
         var owner = drawables.getOwnerBySystemId().get(systemId);
         var ownerFactionId = owner == null ? null : owner.factionId();
         var shaped = CellShaper.shapeCell(edges, ownerFactionId,
-                DominantOwner.factionIdBySystemId(drawables.getOwnerBySystemId()),
+                DominantOwner.mapFactionIdBySystemId(drawables.getOwnerBySystemId()),
                 PoliticalMapStyle.BORDER_INSET_DISTANCE);
         var styled = DrawablesBuilder.buildStyledCellForSystem(drawables, systemId, shaped);
         if (styled == null) {
