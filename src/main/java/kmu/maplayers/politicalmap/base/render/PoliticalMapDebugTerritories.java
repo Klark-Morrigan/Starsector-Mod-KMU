@@ -1,11 +1,11 @@
-package kmu.maplayers.politicalmap.base.render.model;
+package kmu.maplayers.politicalmap.base.render;
 
 import java.util.List;
 
 /**
  * The debug border-tracing overlay's draw lists: each smoothing stage's border loops as
  * flattened GL_LINE_LOOP runs, kept apart so the renderer can color and layer them. Built
- * in place of the normal {@link PoliticalMapDrawables} while the debug toggle is on.
+ * in place of the normal {@link PoliticalMapTerritories} while the debug toggle is on.
  *
  * <p>{@code baseLoops} is the traced border before smoothing (the resolved inset
  * envelope); {@code despikedLoops} the same after spike sanding, and {@code roundedLoops}
@@ -13,7 +13,7 @@ import java.util.List;
  * smoothing gates - so an empty stage means that pass was off and the renderer skips it.
  * Each run is a flat [x, y, x, y, ...] ring in world coordinates.
  */
-public record PoliticalMapDebugDrawables(List<float[]> baseLoops, List<float[]> despikedLoops,
+public record PoliticalMapDebugTerritories(List<float[]> baseLoops, List<float[]> despikedLoops,
         List<float[]> roundedLoops) {
     // True when no stage has any loop, so the renderer can skip the GL state push entirely.
     public boolean isEmpty() {

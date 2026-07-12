@@ -14,8 +14,9 @@ import kmu.maplayers.politicalmap.base.render.labels.ClusterAnchor;
 import kmu.maplayers.politicalmap.base.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.Label;
 import kmu.maplayers.politicalmap.base.render.labels.LabelsBuilder;
-import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
+import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 
 import org.apache.log4j.Logger;
 
@@ -34,7 +35,7 @@ import java.util.Set;
  * <p>A resize that does not flip a system's owner costs just the re-derivation; a flip
  * re-shapes the ring of cells around it (each neighbour's shared edge flips between a
  * same-faction seam and a national border) and rebuilds the two factions' territories
- * (the old owner's and the new one's) through the same {@link DrawablesBuilder}
+ * (the old owner's and the new one's) through the same {@link TerritoryBuilder}
  * primitives a full rebuild uses, so the incremental result matches a full rebuild.
  */
 final class IncrementalPoliticsRefresh {
@@ -45,12 +46,12 @@ final class IncrementalPoliticsRefresh {
     }
 
     // Drains the systems a colony resize marked stale and folds their ownership changes
-    // into the standing drawables, the placements, and the name labels. The stale drain
+    // into the standing territories, the placements, and the name labels. The stale drain
     // runs first, so a frame with nothing marked returns before touching the sector - the
     // cheap per-frame path. The placement and label lists ride along because they are the
-    // plugin's own overlays, not part of the drawables, yet must track the same ownership
+    // plugin's own overlays, not part of the territories, yet must track the same ownership
     // the cells do.
-    static void applyStalePoliticsUpdates(PoliticalMapDrawables drawables,
+    static void applyStalePoliticsUpdates(PoliticalMapTerritories territories,
             List<ClusterAnchor> clusterAnchors, List<Label> factionLabels,
             PoliticalMapGeometryCache geometryCache) {
         var staleSystemIds = PoliticalMapRefresh.drainStalePoliticsSystemIds();
@@ -65,7 +66,7 @@ final class IncrementalPoliticsRefresh {
             // Re-derive every marked system first, so re-shaping below reads a fully
             // updated owner map even when two adjacent systems flipped in one batch.
             for (var systemId : staleSystemIds) {
-                rederiveSystemOwner(drawables, geometryCache, sector, systemById, systemId,
+                rederiveSystemOwner(territories, geometryCache, sector, systemById, systemId,
                         cellsToReshape, affectedFactionIds);
             }
             if (affectedFactionIds.isEmpty()) {
@@ -77,14 +78,14 @@ final class IncrementalPoliticsRefresh {
                 return;
             }
             for (var cellId : cellsToReshape) {
-                reshapeCellInPlace(drawables, geometryCache, cellId);
+                reshapeCellInPlace(territories, geometryCache, cellId);
             }
             // Only the old and new owners' territories can have changed shape; every
             // other faction's rings trace unchanged cells, so they are left as-is.
             var systemsByFaction =
-                    DominantOwner.groupSystemIdsByFactionId(drawables.getOwnerBySystemId());
+                    DominantOwner.groupSystemIdsByFactionId(territories.getOwnerBySystemId());
             for (var factionId : affectedFactionIds) {
-                rebuildFactionTerritoryInPlace(drawables, geometryCache, factionId,
+                rebuildFactionTerritoryInPlace(territories, geometryCache, factionId,
                         systemsByFaction.get(factionId));
             }
             // A flip can split or merge clusters (a lost system severs one, a gained
@@ -94,9 +95,9 @@ final class IncrementalPoliticsRefresh {
             // labels then rebuild from the re-fitted placements so a renamed or relocated
             // cluster's name follows.
             ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
-                    drawables.getOwnerBySystemId(), sector, drawables.getDesaturationPalette(),
-                    drawables.getView(), drawables.getGrouping(), drawables.isFiltering(),
-                    drawables.getRecedeAdjustment(), drawables.getSelectedBlocId());
+                    territories.getOwnerBySystemId(), sector, territories.getDesaturationPalette(),
+                    territories.getView(), territories.getGrouping(), territories.isFiltering(),
+                    territories.getRecedeAdjustment(), territories.getSelectedBlocId());
             LabelsBuilder.rebuildLabels(factionLabels, clusterAnchors);
             LOG.debug("Political map politics updated incrementally; stale="
                     + staleSystemIds.size() + " reshapedCells=" + cellsToReshape.size()
@@ -109,7 +110,7 @@ final class IncrementalPoliticsRefresh {
     // same-faction seam and a national border) and the factions whose territory must
     // rebuild (the old and new owner). A system with no cell seeds no drawing, so it is
     // skipped: a resize changes ownership over existing cells, never map membership.
-    private static void rederiveSystemOwner(PoliticalMapDrawables drawables,
+    private static void rederiveSystemOwner(PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache, SectorAPI sector,
             Map<String, StarSystemAPI> systemById, String systemId, Set<String> cellsToReshape,
             Set<String> affectedFactionIds) {
@@ -119,17 +120,17 @@ final class IncrementalPoliticsRefresh {
         // Re-derive under the grouping the full build resolved this system's owner with,
         // so a single-system refresh lands the same winning bloc the bulk pass would.
         var newOwner = SectorPolitics.resolveDominantOwner(sector, systemById.get(systemId),
-                drawables.getGrouping());
-        var oldOwner = drawables.getOwnerBySystemId().get(systemId);
+                territories.getGrouping());
+        var oldOwner = territories.getOwnerBySystemId().get(systemId);
         // DominantOwner is a record, so equality covers the faction and its palette: a
         // resize that leaves the same winner leaves the drawing identical.
         if (Objects.equals(oldOwner, newOwner)) {
             return;
         }
         if (newOwner == null) {
-            drawables.getOwnerBySystemId().remove(systemId);
+            territories.getOwnerBySystemId().remove(systemId);
         } else {
-            drawables.getOwnerBySystemId().put(systemId, newOwner);
+            territories.getOwnerBySystemId().put(systemId, newOwner);
         }
         if (oldOwner != null) {
             affectedFactionIds.add(oldOwner.factionId());
@@ -172,30 +173,30 @@ final class IncrementalPoliticsRefresh {
     // Re-shapes one cell against the now-updated owners and replaces its draw record, or
     // drops it when the cell contributes nothing (inset-collapsed, or factionless with a
     // "No color" outline).
-    private static void reshapeCellInPlace(PoliticalMapDrawables drawables,
+    private static void reshapeCellInPlace(PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache, String systemId) {
         var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
         if (edges == null) {
-            drawables.getStyledCellBySystemId().remove(systemId);
+            territories.getStyledCellBySystemId().remove(systemId);
             return;
         }
-        var owner = drawables.getOwnerBySystemId().get(systemId);
+        var owner = territories.getOwnerBySystemId().get(systemId);
         var ownerFactionId = owner == null ? null : owner.factionId();
         var shaped = CellShaper.shapeCell(edges, ownerFactionId,
-                DominantOwner.mapFactionIdBySystemId(drawables.getOwnerBySystemId()),
+                DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()),
                 PoliticalMapStyle.BORDER_INSET_DISTANCE);
-        var styled = DrawablesBuilder.buildStyledCellForSystem(drawables, systemId, shaped);
+        var styled = TerritoryBuilder.buildStyledCellForSystem(territories, systemId, shaped);
         if (styled == null) {
-            drawables.getStyledCellBySystemId().remove(systemId);
+            territories.getStyledCellBySystemId().remove(systemId);
         } else {
-            drawables.getStyledCellBySystemId().put(systemId, styled);
+            territories.getStyledCellBySystemId().put(systemId, styled);
         }
     }
 
     // Rebuilds (or drops) one faction's territory entry from its current members. A
     // faction that lost its last member, or whose cluster no longer yields drawable
     // geometry, is removed so its fill and border stop drawing.
-    private static void rebuildFactionTerritoryInPlace(PoliticalMapDrawables drawables,
+    private static void rebuildFactionTerritoryInPlace(PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache, String factionId,
             List<String> memberSystemIds) {
         // No shaped-cell map: the incremental refresh is bypassed while a filter is active (it
@@ -203,12 +204,12 @@ final class IncrementalPoliticsRefresh {
         // territory whose fill reads the shaped cells - and passes none.
         var territory = memberSystemIds == null || memberSystemIds.isEmpty()
                 ? null
-                : DrawablesBuilder.buildFactionTerritory(drawables, geometryCache, factionId,
+                : TerritoryBuilder.buildFactionTerritory(territories, geometryCache, factionId,
                         memberSystemIds, Map.of());
         if (territory == null) {
-            drawables.getFactionTerritoryByFactionId().remove(factionId);
+            territories.getFactionTerritoryByFactionId().remove(factionId);
         } else {
-            drawables.getFactionTerritoryByFactionId().put(factionId, territory);
+            territories.getFactionTerritoryByFactionId().put(factionId, territory);
         }
     }
 }

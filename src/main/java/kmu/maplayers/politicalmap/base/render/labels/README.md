@@ -32,6 +32,6 @@ on. Both read the anchors the placement produced rather than recomputing them.
 
 The *colours and names* a label draws in come from `render.style` (`MapPalettes` and the shared
 style decision), so a name matches the fill it labels by construction. The *fills and borders* this
-overlay sits over are built and drawn elsewhere (`render.DrawablesBuilder`,
-`render.PoliticalMapRenderer`); the anchor search clips against the same border trace the fills use
-(`render.PoliticalBorderTrace`), so the name stays inside the outline the player sees.
+overlay sits over are built and drawn elsewhere (`render.territories.TerritoryBuilder`,
+`render.territories.TerritoryRenderer`); the anchor search clips against the same border trace the
+fills use (`render.PoliticalBorderTrace`), so the name stays inside the outline the player sees.

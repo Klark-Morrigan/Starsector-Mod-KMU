@@ -7,7 +7,7 @@ import java.awt.Color;
 /**
  * One drawn line of a cluster name: a cached {@link DrawableString} plus where and how it
  * hangs on the map. Built from a
- * {@link kmu.maplayers.politicalmap.base.render.model.ClusterAnchor}'s accepted placement - a
+ * {@link ClusterAnchor}'s accepted placement - a
  * multi-line name mints one of these per wrapped line, each hung at its own point (stacked
  * perpendicular to the accepted line, centred as a block on the anchor) with the shared
  * slant - so the block sits inside the border, clear of icons, leaning along the cluster's

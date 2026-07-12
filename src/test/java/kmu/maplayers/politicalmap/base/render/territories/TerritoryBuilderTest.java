@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.starsector.factions.FactionPalette;
 
@@ -8,7 +8,6 @@ import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
 import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
@@ -43,7 +42,7 @@ import static org.mockito.Mockito.when;
  * only resolve in-engine, and the cluster-anchor fit is pinned by
  * {@link kmu.maplayers.politicalmap.base.render.labels.ClusterAnchorsBuilder}.
  */
-final class DrawablesBuilderTest {
+final class TerritoryBuilderTest {
 
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
     // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
@@ -71,7 +70,7 @@ final class DrawablesBuilderTest {
             // the transition once from the dominant side rather than twice.
             var contestedEdges = List.of(new CellEdge(10, 0, 0, 0, "dom"));
 
-            var seams = DrawablesBuilder.computeTransitionSeams(List.of("dom", "con"),
+            var seams = TerritoryBuilder.computeTransitionSeams(List.of("dom", "con"),
                     Set.of("con"), Map.of("dom", dominantEdges, "con", contestedEdges));
 
             assertThat(seams).containsExactly(0f, 0f, 10f, 0f);
@@ -85,7 +84,7 @@ final class DrawablesBuilderTest {
                     new CellEdge(0, 0, 10, 0, "dom2"),
                     new CellEdge(10, 0, 20, 0, "receded-rival"));
 
-            var seams = DrawablesBuilder.computeTransitionSeams(List.of("dom"),
+            var seams = TerritoryBuilder.computeTransitionSeams(List.of("dom"),
                     Set.of("con"), Map.of("dom", dominantEdges));
 
             assertThat(seams).isEmpty();
@@ -94,7 +93,7 @@ final class DrawablesBuilderTest {
         @Test
         void skipsAMemberWithNoCellEdges() {
             // A member absent from the edge map (no cell) contributes no seam rather than throwing.
-            var seams = DrawablesBuilder.computeTransitionSeams(List.of("dom"),
+            var seams = TerritoryBuilder.computeTransitionSeams(List.of("dom"),
                     Set.of("con"), Map.of());
 
             assertThat(seams).isEmpty();
@@ -121,7 +120,7 @@ final class DrawablesBuilderTest {
 
         @Test
         void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheOwnerPaletteWhenNotDesaturated() {
-            var styled = DrawablesBuilder.buildStyledCellForSystem(
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, false))),
                     SYSTEM_ID, ownedCell());
 
@@ -131,7 +130,7 @@ final class DrawablesBuilderTest {
 
         @Test
         void buildStyledCellForSystemDesaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
-            var styled = DrawablesBuilder.buildStyledCellForSystem(
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(1.0, true))),
                     SYSTEM_ID, ownedCell());
 
@@ -141,7 +140,7 @@ final class DrawablesBuilderTest {
 
         @Test
         void buildStyledCellForSystemMutesAndDesaturatesTogetherWhenBothAreSet() {
-            var styled = DrawablesBuilder.buildStyledCellForSystem(
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, true))),
                     SYSTEM_ID, ownedCell());
 
@@ -153,7 +152,7 @@ final class DrawablesBuilderTest {
         void buildStyledCellForSystemReproducesCurrentOutputForTheNoneAdjustment() {
             // Regression pin: the identity adjustment leaves the owner's own palette and
             // the style's own opacity untouched, exactly as before Step 3.
-            var styled = DrawablesBuilder.buildStyledCellForSystem(
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
                     SYSTEM_ID, ownedCell());
 
@@ -174,7 +173,7 @@ final class DrawablesBuilderTest {
             // owner takes the pass's shared recede, not whatever the view would have said. The view
             // stub returns the identity adjustment, so seeing the recede applied proves the filter,
             // not the view, styled the cell.
-            var styled = DrawablesBuilder.buildStyledCellForSystem(
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
                     filteringDrawablesWith(new BlocStyleAdjustment(0.5, true)),
                     SYSTEM_ID, ownedCell());
 
@@ -184,24 +183,24 @@ final class DrawablesBuilderTest {
 
         // An un-filtered pass over one owned system, styled by the given view stub - the backdrop
         // the view-driven adjustment tests read.
-        private static PoliticalMapDrawables drawablesWith(PoliticalMapView viewMock) {
+        private static PoliticalMapTerritories drawablesWith(PoliticalMapView viewMock) {
             return drawablesWith(viewMock, false, BlocStyleAdjustment.NONE);
         }
 
         // A filtered pass whose recede is the given adjustment, backed by a view stub that would
         // return the identity adjustment if consulted - so a recede in the output can only have
         // come from the filter mode bypassing the view.
-        private static PoliticalMapDrawables filteringDrawablesWith(BlocStyleAdjustment recede) {
+        private static PoliticalMapTerritories filteringDrawablesWith(BlocStyleAdjustment recede) {
             return drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE), true, recede);
         }
 
         // The one owned system every adjustment test shares over a fixed style/palette backdrop;
         // only the view stub, whether the pass filters, and the recede it applies vary.
-        private static PoliticalMapDrawables drawablesWith(PoliticalMapView viewMock,
+        private static PoliticalMapTerritories drawablesWith(PoliticalMapView viewMock,
                 boolean isFiltering, BlocStyleAdjustment recede) {
             // A filtered pass carries the selected bloc's id; the fixture's owner is never that
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
-            return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
+            return new PoliticalMapTerritories(new LinkedHashMap<>(), new LinkedHashMap<>(),
                     Map.of(SYSTEM_ID, OWNER), Set.of(), Color.GRAY,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
                     renderStyleWithEveryCategory(STYLE), viewMock, OwnershipGrouping.identity(),
@@ -209,7 +208,7 @@ final class DrawablesBuilderTest {
         }
 
         // Wraps one category style into a full theme with all four categories set to it and an
-        // inert global tier, so this owned-cell fixture reads its style off the drawables the way
+        // inert global tier, so this owned-cell fixture reads its style off the territories the way
         // production does. The owned-cell path never rounds a per-cell outline or hatches, so the
         // global tier's smoothing and hatch values are never read here.
         private static RenderStyle renderStyleWithEveryCategory(CategoryStyle style) {

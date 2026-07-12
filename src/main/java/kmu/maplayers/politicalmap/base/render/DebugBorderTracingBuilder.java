@@ -11,9 +11,9 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDebugDrawables;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
+import kmu.maplayers.politicalmap.base.render.territories.BorderSmoothing;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
@@ -33,7 +33,8 @@ import java.util.Set;
  * runs is the same one the normal build would have - the normal build is skipped in debug
  * mode - so it is no extra cost, just done here instead.
  *
- * <p>It traces the same inset rings the production {@link DrawablesBuilder} does and runs
+ * <p>It traces the same inset rings the production
+ * {@link kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder} does and runs
  * them through the shared {@link BorderSmoothing} passes, keeping the result after each
  * stage rather than only the final one. The two smoothing gates are honored exactly as in
  * production: a stage is captured only when its pass ran, and sanding (when on) feeds
@@ -55,7 +56,7 @@ final class DebugBorderTracingBuilder {
     // Resolves ownership from the sector and traces every owned cluster (plus the drawn
     // factionless cells) into the three stage lists. Independent of the production
     // drawables, so the plugin builds this instead of them in debug mode, not alongside.
-    static PoliticalMapDebugDrawables buildDebugDrawables(PoliticalMapGeometryCache geometryCache,
+    static PoliticalMapDebugTerritories buildDebugDrawables(PoliticalMapGeometryCache geometryCache,
             SectorAPI sector) {
         var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
         // The agnostic geometry clusters by grouping key, so key by each system's faction id.
@@ -93,7 +94,7 @@ final class DebugBorderTracingBuilder {
         }
         addFactionlessOutlines(geometryCache, groupKeyBySystemId, decivilisedSystemIds,
                 isRoundingOn, baseLoops, roundedLoops);
-        return new PoliticalMapDebugDrawables(baseLoops, despikedLoops, roundedLoops);
+        return new PoliticalMapDebugTerritories(baseLoops, despikedLoops, roundedLoops);
     }
 
     // Appends each drawn factionless cell's outline as a base loop and, when rounding is

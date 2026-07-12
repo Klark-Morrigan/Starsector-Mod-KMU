@@ -2,8 +2,6 @@ package kmu.maplayers.politicalmap.base.render;
 
 import kmlib.opengl.GlColor;
 
-import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDebugDrawables;
-
 import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
@@ -16,13 +14,13 @@ import java.util.List;
  * the rounded border in green - each stage present only when its pass ran, so the layering
  * mirrors the two smoothing gates.
  *
- * <p>Static because, unlike the production {@link PoliticalMapRenderer} (which pairs with
+ * <p>Static because, unlike the production {@link TerritoryRenderer} (which pairs with
  * {@link IncrementalPoliticsRefresh} to fold ownership changes into its draw lists in
  * place), this overlay has no incremental path: a colony flip rebuilds the whole overlay,
  * so nothing here updates a subset of it between full rebuilds.
  *
- * <p>Pure GL emission over an already-built {@link PoliticalMapDebugDrawables}, the debug
- * analogue of {@link PoliticalMapRenderer}; the terrain plugin swaps to this renderer while
+ * <p>Pure GL emission over an already-built {@link PoliticalMapDebugTerritories}, the debug
+ * analogue of {@link TerritoryRenderer}; the terrain plugin swaps to this renderer while
  * the debug toggle is on. Line widths taper from base to rounded so an inner stage rings
  * out from under the one drawn over it rather than being fully hidden.
  */
@@ -41,7 +39,7 @@ final class PoliticalMapStaticDebugRenderer {
 
     // Draws the whole debug overlay for one map frame, in the same below-UI pass and
     // isolated GL state the normal render uses. An empty overlay skips the push entirely.
-    static void renderOnMap(PoliticalMapDebugDrawables debug, float factor, float alphaMult) {
+    static void renderOnMap(PoliticalMapDebugTerritories debug, float factor, float alphaMult) {
         if (debug.isEmpty()) {
             return;
         }

@@ -655,7 +655,7 @@ final class ClusterAnchorPlacementTest {
         @Test
         void computeClusterAnchorsGivesAFilterRecededLabelTheSameRecededPaletteItsFillTakes() {
             // Under a filter a non-spotlit bloc recedes: its label must follow the pass's shared
-            // desaturation palette - the exact palette DrawablesBuilder recolours its fill to for
+            // desaturation palette - the exact palette TerritoryBuilder recolours its fill to for
             // the same recede - so the receded name never drifts from the receded fill. The recede
             // both mutes and desaturates, as a real filter recede can; the colour comparison reads
             // RGB, since the label additionally fades its alpha by the name opacity the fill omits.

@@ -30,7 +30,7 @@ import java.util.Map;
  * filter rules under one), {@link ClusterAnchorPlacement} runs the pure geometric search over
  * injected data, and {@link LabelAnchorSpecification} carries the tuning both read.
  *
- * <p>Apart from {@link kmu.maplayers.politicalmap.base.render.DrawablesBuilder} because the anchors
+ * <p>Apart from {@link kmu.maplayers.politicalmap.base.render.TerritoryBuilder} because the anchors
  * are an independent overlay, not
  * part of the production draw lists: they draw over the normal render and the debug
  * border-tracing overlay alike, so they cannot live inside either view's build. The overlay

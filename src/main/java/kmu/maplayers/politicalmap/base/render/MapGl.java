@@ -6,7 +6,7 @@ import org.lwjgl.opengl.GL11;
 
 /**
  * The shared GL emission the map renderers stride their vertex runs with, so the
- * production {@link PoliticalMapRenderer} and the debug {@link PoliticalMapStaticDebugRenderer}
+ * production {@link TerritoryRenderer} and the debug {@link PoliticalMapStaticDebugRenderer}
  * pack and read a run identically - both walk it at {@link GlVertexRuns#FLOATS_PER_VERTEX}
  * per vertex - rather than each carrying its own copy of the loop.
  */

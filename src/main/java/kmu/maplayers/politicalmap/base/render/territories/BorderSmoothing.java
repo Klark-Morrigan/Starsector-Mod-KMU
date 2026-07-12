@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.math.geometry.Polygons;
 
@@ -9,8 +9,8 @@ import java.util.List;
 
 /**
  * The two national-border smoothing passes, shared by the production
- * {@link DrawablesBuilder} and the debug {@link DebugBorderTracingBuilder} so both smooth
- * identical geometry from one source.
+ * {@link TerritoryBuilder} and the debug border-tracing builder (in the parent
+ * {@code render} package) so both smooth identical geometry from one source.
  *
  * <p>Each pass is honest mechanism - it always does what its name says. The on/off
  * decision is the two Dev-tab gates, and it lives at each caller's call site, not here, so

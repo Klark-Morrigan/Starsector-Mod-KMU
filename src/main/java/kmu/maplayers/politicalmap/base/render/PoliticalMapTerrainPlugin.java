@@ -20,8 +20,9 @@ import kmu.maplayers.politicalmap.base.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.Label;
 import kmu.maplayers.politicalmap.base.render.labels.LabelRenderer;
 import kmu.maplayers.politicalmap.base.render.labels.LabelsBuilder;
-import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDebugDrawables;
-import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
+import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
+import kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -39,10 +40,10 @@ import java.util.Objects;
  * it draws whichever view {@link PoliticalMapViewRegistry#getActiveView()} reports, or
  * stays dark when none is active. This class is the terrain
  * adapter and cache coordinator; the
- * visual design lives in its collaborators: {@link DrawablesBuilder} shapes the cells
+ * visual design lives in its collaborators: {@link TerritoryBuilder} shapes the cells
  * and bakes each element's colors, opacities, and widths from the LunaLib "Visuals
  * customisation" settings, {@link IncrementalPoliticsRefresh} folds in per-system
- * ownership changes, and {@link PoliticalMapRenderer} emits the GL. While the "debug
+ * ownership changes, and {@link TerritoryRenderer} emits the GL. While the "debug
  * border tracing" dev toggle is on, {@link DebugBorderTracingBuilder} and
  * {@link PoliticalMapStaticDebugRenderer} replace the normal build and render with a
  * layered view of the border-smoothing pipeline's stages. The debug cluster anchors are
@@ -62,7 +63,7 @@ import java.util.Objects;
  * raw cells are built once and cached; they are reseeded only when the reachable-
  * system set changes, the frontier-resolution setting changes (that count seeds every
  * cell), or a dev reveal override flips (each changes which systems seed a cell). The
- * drawables are rebuilt in full only when KMU's LunaLib settings change
+ * territories are rebuilt in full only when KMU's LunaLib settings change
  * (detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsRevision()}) or when the geometry itself was
  * rebuilt; between those, a colony resize marks just its own system stale and drives an
@@ -70,7 +71,7 @@ import java.util.Objects;
  * live, and the per-frame path is otherwise a couple of int compares, never a per-frame
  * economy scan.
  *
- * <p>The geometry cache and drawables are {@code transient}: they are derived from the
+ * <p>The geometry cache and territories are {@code transient}: they are derived from the
  * sector and rebuilt each session, and they hold record types XStream cannot serialise,
  * so they must never enter the save. A save-restored plugin comes back with them null -
  * XStream skips transient fields and does not run field initialisers - so they are
@@ -103,14 +104,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // The built draw lists plus the ownership and style inputs an incremental re-shape
     // needs. Transient for the same reasons as the geometry cache: derived each session,
     // record-typed, kept out of the save. Null until the first build this session.
-    private transient PoliticalMapDrawables drawables;
+    private transient PoliticalMapTerritories territories;
 
-    // The debug border-tracing overlay, built instead of the drawables above while the
+    // The debug border-tracing overlay, built instead of the territories above while the
     // "debug border tracing" dev toggle is on - exactly one of the two is non-null, and it
     // is the one rendered. The toggle is a KMU setting, so flipping it bumps the settings
     // generation and forces the content rebuild that swaps which view is built. Transient
-    // for the same reasons as the drawables above.
-    private transient PoliticalMapDebugDrawables debugDrawables;
+    // for the same reasons as the territories above.
+    private transient PoliticalMapDebugTerritories debugDrawables;
 
     // The cluster-label placements, owned here rather than by either view above so they
     // draw over whichever is live - turning border tracing on must not hide them. Empty
@@ -126,7 +127,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     // The revisions each half of the cache was built against. Geometry rebuilds when
     // the reachable-system set changes or the frontier resolution setting changes (it
-    // reseeds every cell); the drawables rebuild on a content change (settings) or
+    // reseeds every cell); the territories rebuild on a content change (settings) or
     // whenever the geometry itself was rebuilt. Start at -1 so the first render builds
     // both, and so any real segment count differs from the seed.
     private int lastGeometryRevision = -1;
@@ -190,7 +191,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         if (debugDrawables != null) {
             PoliticalMapStaticDebugRenderer.renderOnMap(debugDrawables, factor, alphaMult);
         } else {
-            PoliticalMapRenderer.renderOnMap(drawables, factor, alphaMult);
+            TerritoryRenderer.renderOnMap(territories, factor, alphaMult);
         }
         // The anchor overlay layers over whichever base view just drew - it is
         // independent of the swap above, so the two debug toggles compose. Gated on its own
@@ -208,8 +209,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     // Rebuilds only the stale half of the cache. The expensive cell geometry is rebuilt
     // only when the reachable-system set changes (a gate activating, a jump point
-    // established); the cheap drawables are rebuilt on a content change (settings) or
-    // whenever the geometry was just rebuilt (the drawables reference the new cells).
+    // established); the cheap territories are rebuilt on a content change (settings) or
+    // whenever the geometry was just rebuilt (the territories reference the new cells).
     // The per-frame path is otherwise just comparing a couple of ints.
     private void rebuildIfStale(PoliticalMapView view) {
         // Guarded because renderOnMap runs every frame the map is open: a rebuild fault
@@ -231,12 +232,12 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // Rebuilds only the stale half of the cache, advancing each cached revision only
     // after its rebuild completes so a thrown rebuild is retried next frame. Builds under the
     // active view's rules, so a view switch (folded into the content revision) rebuilds the
-    // drawables under the newly-selected view.
+    // territories under the newly-selected view.
     private void rebuildStaleHalves(PoliticalMapView view) {
         // A plugin restored from a save comes back with its transient caches null:
         // XStream skips transient fields and does not run field initialisers. Bring the
         // geometry cache back and seed the revision to -1 so the geometry - and through
-        // the rebuiltCells flag, the drawables - rebuild from scratch this frame,
+        // the rebuiltCells flag, the territories - rebuild from scratch this frame,
         // regardless of how the restored revision and the reset static counter happen to
         // line up.
         if (geometryCache == null) {
@@ -293,7 +294,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
         // TODO: when only geometry changed (rebuiltCells), reshape just the cells
         // PoliticalMapGeometryCache rebuilt - the system that gained or lost access and
-        // every cell it touches - rather than the full drawables rebuild below. Have
+        // every cell it touches - rather than the full territories rebuild below. Have
         // updateFromSector report its affected-cell set and drive a targeted reshape
         // from it, the geometry-side analogue of applyStalePoliticsUpdates.
 
@@ -304,7 +305,7 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // and skip the build, leaving both views null for renderOnMap to dereference. The
         // both-null check forces the build regardless of how the counters line up.
         var contentRevision = computeContentRevision(view);
-        if (rebuiltCells || (drawables == null && debugDrawables == null)
+        if (rebuiltCells || (territories == null && debugDrawables == null)
                 || contentRevision != lastContentRevision) {
             var drawablesStart = System.nanoTime();
             // Build one view or the other, never both: the debug overlay replaces the
@@ -317,18 +318,18 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             if (KmuLunaSettings.shouldTraceBordersForDebug()) {
                 debugDrawables = DebugBorderTracingBuilder.buildDebugDrawables(
                         geometryCache, Global.getSector());
-                drawables = null;
+                territories = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                         clusterAnchors, geometryCache, Global.getSector(), view);
             } else {
-                drawables = DrawablesBuilder.buildDrawables(
+                territories = TerritoryBuilder.buildTerritories(
                         geometryCache, Global.getSector(), view);
                 debugDrawables = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
-                        drawables.getOwnerBySystemId(), Global.getSector(),
-                        drawables.getDesaturationPalette(), view,
-                        drawables.getGrouping(), drawables.isFiltering(),
-                        drawables.getRecedeAdjustment(), drawables.getSelectedBlocId());
+                        territories.getOwnerBySystemId(), Global.getSector(),
+                        territories.getDesaturationPalette(), view,
+                        territories.getGrouping(), territories.isFiltering(),
+                        territories.getRecedeAdjustment(), territories.getSelectedBlocId());
             }
             // The name labels are minted from the placements just rebuilt (empty when the
             // names toggle is off), keeping them in step with the fills and borders and
@@ -345,14 +346,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
         // No full rebuild this frame. In the normal view, fold in any per-system ownership
         // changes a colony resize marked, re-shaping only those systems and their
-        // neighbours over the standing drawables. The static debug overlay has no draw
+        // neighbours over the standing territories. The static debug overlay has no draw
         // lists to patch, so its staleness is drained instead - it refreshes on the next
         // full rebuild (any settings or geometry change). Under a filter the incremental
         // re-shape is bypassed too: it re-derives owners through the normal (non-filter)
         // politics, which would overwrite the spotlit keys and corrupt the spotlight, so a
         // filtered map defers ownership changes to the next full rebuild instead.
-        if (drawables != null && !drawables.isFiltering()) {
-            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(drawables, clusterAnchors,
+        if (territories != null && !territories.isFiltering()) {
+            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(territories, clusterAnchors,
                     factionLabels, geometryCache);
         } else {
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
@@ -369,8 +370,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         }
         var builtCounts = debugDrawables != null
                 ? "debugBaseLoops=" + debugDrawables.baseLoops().size()
-                : "styledCells=" + drawables.getStyledCellBySystemId().size();
-        LOG.debug("Political map drawables rebuilt; contentRevision=" + contentRevision
+                : "styledCells=" + territories.getStyledCellBySystemId().size();
+        LOG.debug("Political map territories rebuilt; contentRevision=" + contentRevision
                 + " " + builtCounts + " geometryRebuilt=" + rebuiltCells
                 + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
     }
@@ -380,24 +381,24 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // empty placeholder makes the render a harmless no-op until a later frame's retry
     // succeeds.
     private void ensureDrawablesNonNull(PoliticalMapView view) {
-        if (drawables == null) {
-            drawables = PoliticalMapDrawables.createEmpty(view);
+        if (territories == null) {
+            territories = PoliticalMapTerritories.createEmpty(view);
         }
     }
 
-    // The drawables-staleness token: a settings change restyles every cell over the
-    // fixed geometry, so a settings-revision bump forces a full drawables rebuild.
+    // The territories-staleness token: a settings change restyles every cell over the
+    // fixed geometry, so a settings-revision bump forces a full territories rebuild.
     // Ownership changes no longer feed this - a resized colony, or a system the
     // sector watcher's owner diff caught, marks just its system stale now. The active view
     // is folded in so switching views (their grouping, styling, and labels differ) rebuilds
-    // the drawables under the newly-selected view rather than reusing the previous view's.
+    // the territories under the newly-selected view rather than reusing the previous view's.
     // The view's content fingerprint is folded in too, so a change to any live input the active view
-    // samples - the alliances view's alliance set or its recede toggles - rebuilds the drawables even
+    // samples - the alliances view's alliance set or its recede toggles - rebuilds the territories even
     // though no setting moved. The faction view samples nothing live and contributes a constant, so an
     // alliance change never churns it; the plugin stays view-neutral by reading this off the view
     // rather than naming the alliance revision itself. The filter revision is folded in at this
     // pipeline level rather than through any view, since the filter is a mode either view can be
-    // under: a pick or a clear bumps it and rebuilds the drawables under whichever view is up, with
+    // under: a pick or a clear bumps it and rebuilds the territories under whichever view is up, with
     // no view naming the filter. Objects.hash is the JDK's standard 31-multiply fold, so the inputs
     // separate without a bespoke combine here.
     private static int computeContentRevision(PoliticalMapView view) {
@@ -431,10 +432,10 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         }
         hasLoggedFirstRender = true;
         // Report whichever view is live: the normal draw lists, or the debug overlay when
-        // it has replaced them (drawables is null in debug mode).
+        // it has replaced them (territories is null in debug mode).
         var builtCounts = debugDrawables != null
                 ? "debugBaseLoops=" + debugDrawables.baseLoops().size()
-                : "styledCells=" + drawables.getStyledCellBySystemId().size();
+                : "styledCells=" + territories.getStyledCellBySystemId().size();
         LOG.debug("Political map render renderOnMap fired: " + builtCounts
                 + " factor=" + factor + " alphaMult=" + alphaMult);
     }

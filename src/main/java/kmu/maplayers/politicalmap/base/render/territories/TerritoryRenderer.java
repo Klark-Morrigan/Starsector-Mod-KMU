@@ -1,9 +1,9 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.opengl.GlColor;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
+import kmu.maplayers.politicalmap.base.render.MapGl;
 
 import org.lwjgl.opengl.GL11;
 
@@ -15,26 +15,27 @@ import org.lwjgl.opengl.GL11;
  * plugin layers over whichever
  * base view is live.
  *
- * <p>This is pure GL emission over an already-baked {@link PoliticalMapDrawables} - it
+ * <p>This is pure GL emission over an already-baked {@link PoliticalMapTerritories} - it
  * scales each world coordinate into map space and strokes/fills the flattened vertex
  * runs, with no knowledge of settings, caches, or how the runs were shaped. The map
  * widget has already applied the map's pan and centering to the GL matrix, so only the
  * scale is applied here.
  */
-final class PoliticalMapRenderer {
+public final class TerritoryRenderer {
     // Emits only; never instantiated.
-    private PoliticalMapRenderer() {
+    private TerritoryRenderer() {
     }
 
     // Draws the whole overlay for one map frame. Drawn in the below-UI map pass so
     // system and constellation names stay on top; a state push/pop isolates the blend
     // and line settings from the rest of the map render. An empty overlay skips the
     // push entirely.
-    static void renderOnMap(PoliticalMapDrawables drawables, float factor, float alphaMult) {
+    public static void renderOnMap(PoliticalMapTerritories territories, float factor,
+            float alphaMult) {
         // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would
         // emit every run at zero effective alpha - all cost, nothing on screen - so the
         // whole GL pass is skipped, not just left to blend away.
-        if (drawables.isEmpty() || alphaMult <= 0f) {
+        if (territories.isEmpty() || alphaMult <= 0f) {
             return;
         }
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT
@@ -49,9 +50,9 @@ final class PoliticalMapRenderer {
         // accumulated view is affordable here, never a per-frame log line.
         var profiler = KmuProfiling.getProfiler();
         profiler.measure("politicalMap.render", () -> {
-            profiler.measure("politicalMap.render.fills", () -> drawFills(drawables, factor, alphaMult));
+            profiler.measure("politicalMap.render.fills", () -> drawFills(territories, factor, alphaMult));
             profiler.measure("politicalMap.render.borders",
-                    () -> drawBorders(drawables, factor, alphaMult));
+                    () -> drawBorders(territories, factor, alphaMult));
         });
 
         GL11.glPopAttrib();
@@ -66,14 +67,14 @@ final class PoliticalMapRenderer {
     // dominates and pre-clipped diagonal hatch lines where it is contested, in the same colour
     // and opacity - so its contested pocket reads as "mine but contested" within one frontier;
     // every other territory carries an empty hatch run and paints only its triangles.
-    private static void drawFills(PoliticalMapDrawables drawables, float factor, float alphaMult) {
+    private static void drawFills(PoliticalMapTerritories territories, float factor, float alphaMult) {
         // The hatch fills the contested pocket in the fill colour but strokes as GL_LINES, so its
         // own pixel width tunes the contested texture apart from the solid fill. The width is
         // sector-wide, so set it once here off the theme's global tier rather than per territory;
         // the triangle soups below are width-agnostic, and only the one spotlit territory carries a
         // non-empty hatch run.
-        GL11.glLineWidth((float) drawables.getGlobalStyle().hatch().width());
-        for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
+        GL11.glLineWidth((float) territories.getGlobalStyle().hatch().width());
+        for (var territory : territories.getFactionTerritoryByFactionId().values()) {
             var fill = territory.fill();
             if (fill.isHidden()) {
                 continue;
@@ -92,12 +93,12 @@ final class PoliticalMapRenderer {
     // cluster's national border is its border ring (in factionTerritories), so the
     // per-cell outline only carries factionless cells; an owned cell contributes only its
     // seams and a factionless cell only its outline.
-    private static void drawBorders(PoliticalMapDrawables drawables, float factor,
+    private static void drawBorders(PoliticalMapTerritories territories, float factor,
             float alphaMult) {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        for (var cell : drawables.getStyledCellBySystemId().values()) {
+        for (var cell : territories.getStyledCellBySystemId().values()) {
             var inner = cell.inner();
             if (inner.isHidden()) {
                 continue;
@@ -110,7 +111,7 @@ final class PoliticalMapRenderer {
         // (beneath the national borders) so the frontier still dominates where they meet. Its run
         // is empty for every non-spotlit territory, and its paint is hidden there too, so this is a
         // no-op off filter.
-        for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
+        for (var territory : territories.getFactionTerritoryByFactionId().values()) {
             var transitionSeam = territory.transitionSeam();
             if (transitionSeam.isHidden()) {
                 continue;
@@ -119,7 +120,7 @@ final class PoliticalMapRenderer {
             GlColor.set(transitionSeam.color(), alphaMult * transitionSeam.alpha());
             MapGl.drawVertexRun(GL11.GL_LINES, territory.transitionSeams(), factor);
         }
-        for (var cell : drawables.getStyledCellBySystemId().values()) {
+        for (var cell : territories.getStyledCellBySystemId().values()) {
             var outer = cell.outer();
             if (outer.isHidden()) {
                 continue;
@@ -130,7 +131,7 @@ final class PoliticalMapRenderer {
         }
         // Each border ring is a closed rounded loop, so it strokes as one continuous
         // GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
-        for (var territory : drawables.getFactionTerritoryByFactionId().values()) {
+        for (var territory : territories.getFactionTerritoryByFactionId().values()) {
             var border = territory.border();
             if (border.isHidden()) {
                 continue;

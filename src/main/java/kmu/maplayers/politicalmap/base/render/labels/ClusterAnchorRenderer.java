@@ -21,7 +21,7 @@ import java.util.function.Function;
  * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's anchor
  * dot plus its accepted, rejected, and unbiased label lines.
  *
- * <p>Its own renderer, apart from {@link kmu.maplayers.politicalmap.base.render.PoliticalMapRenderer},
+ * <p>Its own renderer, apart from {@link kmu.maplayers.politicalmap.base.render.TerritoryRenderer},
  * because the anchors are
  * an independent overlay: the terrain plugin draws them after whichever base view is
  * live - the normal political map or the debug border-tracing overlay - so turning

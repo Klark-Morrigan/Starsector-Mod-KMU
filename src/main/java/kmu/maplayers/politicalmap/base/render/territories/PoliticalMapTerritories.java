@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.model;
+package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.starsector.factions.FactionPalette;
 
@@ -47,7 +47,7 @@ import java.util.Set;
  * filtered cell recedes and a spotlight cluster names itself exactly as the full build did; off
  * filter they are the inert defaults (null, {@link BlocStyleAdjustment#NONE}).
  */
-public final class PoliticalMapDrawables {
+public final class PoliticalMapTerritories {
     // Render output, mutated in place by the incremental refresh.
     private final Map<String, StyledCell> styledCellBySystemId;
     private final Map<String, FactionTerritory> factionTerritoryByFactionId;
@@ -78,7 +78,7 @@ public final class PoliticalMapDrawables {
     // the footprint's fill per cell (solid where it dominates, hatched here). Empty off filter.
     private final Set<String> contestedSystemIds;
 
-    public PoliticalMapDrawables(
+    public PoliticalMapTerritories(
             Map<String, StyledCell> styledCellBySystemId,
             Map<String, FactionTerritory> factionTerritoryByFactionId,
             Map<String, DominantOwner> ownerBySystemId,
@@ -113,8 +113,8 @@ public final class PoliticalMapDrawables {
     // the active view (the one being drawn when the build failed) rather than naming a
     // concrete view, keeping this model view-agnostic; the identity grouping and the
     // gray-paired desaturation palette are inert defaults, never read for the same reason.
-    public static PoliticalMapDrawables createEmpty(PoliticalMapView view) {
-        return new PoliticalMapDrawables(new LinkedHashMap<>(), new LinkedHashMap<>(),
+    public static PoliticalMapTerritories createEmpty(PoliticalMapView view) {
+        return new PoliticalMapTerritories(new LinkedHashMap<>(), new LinkedHashMap<>(),
                 new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
                 new FactionPalette(Color.GRAY, Color.GRAY),
                 null, view, OwnershipGrouping.identity(),
