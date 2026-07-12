@@ -33,4 +33,18 @@ record FactionMarketContribution(MarketFootprint footprint, int marketSize) {
                 footprint.addMarket(marketWeight, isPlanetMarket),
                 this.marketSize + marketSize);
     }
+
+    /**
+     * Folds another contribution into this one, combining two already-reduced contributions as a
+     * bloc: the footprints merge as the dominance rule expects and the raw market sizes sum. This is
+     * how the grouping collapses an alliance's member factions into the alliance's one contribution.
+     *
+     * @param other the other contribution to combine into this one
+     * @return a new contribution holding both
+     */
+    FactionMarketContribution merge(FactionMarketContribution other) {
+        return new FactionMarketContribution(
+                footprint.merge(other.footprint()),
+                marketSize + other.marketSize());
+    }
 }

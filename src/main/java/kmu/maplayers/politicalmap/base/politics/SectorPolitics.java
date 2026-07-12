@@ -7,6 +7,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BinaryOperator;
 
 /**
  * Resolves which faction owns each star system and in which colors that owner
@@ -269,7 +270,8 @@ public final class SectorPolitics {
         }
         var footprintByFactionId = KnownMarketFootprints.readByFaction(sector, system,
                 rules, shouldIncludeUndiscoveredMarkets);
-        var footprintByBlocId = regroupByBloc(footprintByFactionId, grouping);
+        var footprintByBlocId = regroupByBloc(footprintByFactionId, grouping,
+                MarketFootprint.EMPTY, MarketFootprint::merge);
         var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId);
         if (dominantBlocId == null) {
             return null;
@@ -356,40 +358,51 @@ public final class SectorPolitics {
     private static void accumulateSystemStats(Map<String, BlocStats> statsByBlocId, SectorAPI sector,
             StarSystemAPI system, DominanceRules rules, boolean shouldIncludeUndiscoveredMarkets,
             OwnershipGrouping grouping) {
-        var footprintByBlocId = new LinkedHashMap<String, MarketFootprint>();
-        var marketSizeByBlocId = new LinkedHashMap<String, Integer>();
-        for (var entry : KnownMarketFootprints.readContributionsByFaction(
-                sector, system, rules, shouldIncludeUndiscoveredMarkets).entrySet()) {
-            var blocId = grouping.resolveBlocId(entry.getKey());
-            footprintByBlocId.merge(blocId, entry.getValue().footprint(), MarketFootprint::merge);
-            marketSizeByBlocId.merge(blocId, entry.getValue().marketSize(), Integer::sum);
-        }
+        // One regroup folds the footprint and the raw market size together (a bloc holding markets in
+        // several systems, or an alliance's members, accumulates rather than overwrites), then the
+        // dominance rule reads the footprint half of each bloc's folded contribution.
+        var contributionByBlocId = regroupByBloc(
+                KnownMarketFootprints.readContributionsByFaction(
+                        sector, system, rules, shouldIncludeUndiscoveredMarkets),
+                grouping, FactionMarketContribution.EMPTY, FactionMarketContribution::merge);
         // The one winner among the system's present blocs; null only when no bloc is present here,
         // in which case the loop below has nothing to fold and the system contributes no stats.
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId);
-        for (var blocId : footprintByBlocId.keySet()) {
+        var dominantBlocId = SystemDominance.resolveDominantFactionId(
+                extractFootprints(contributionByBlocId));
+        for (var entry : contributionByBlocId.entrySet()) {
+            var blocId = entry.getKey();
             var stats = statsByBlocId.getOrDefault(blocId, BlocStats.EMPTY);
             statsByBlocId.put(blocId, stats.addSystem(blocId.equals(dominantBlocId),
-                    footprintByBlocId.get(blocId).totalWeight(), marketSizeByBlocId.get(blocId)));
+                    entry.getValue().footprint().totalWeight(), entry.getValue().marketSize()));
         }
     }
 
-    // Collapses the per-faction footprints into per-bloc footprints under the
-    // grouping: each faction's footprint merges into its bloc's, so an alliance's
-    // members rank as one summed unit. Under the identity grouping every faction is
-    // its own bloc and the merge folds each footprint into EMPTY, leaving the per-
-    // faction map's values unchanged, so the winning bloc equals today's winner.
-    // Shared with the filter's presence resolver, which regroups a system's footprints
-    // the same way before judging where the selected bloc is present.
-    static Map<String, MarketFootprint> regroupByBloc(
-            Map<String, MarketFootprint> footprintByFactionId, OwnershipGrouping grouping) {
+    // The footprint half of each bloc's folded contribution, so the dominance rule - which ranks
+    // footprints alone - reads them without the raw market size the stats pass also carries.
+    private static Map<String, MarketFootprint> extractFootprints(
+            Map<String, FactionMarketContribution> contributionByBlocId) {
         var footprintByBlocId = new LinkedHashMap<String, MarketFootprint>();
-        for (var entry : footprintByFactionId.entrySet()) {
-            var blocId = grouping.resolveBlocId(entry.getKey());
-            var merged = footprintByBlocId.getOrDefault(blocId, MarketFootprint.EMPTY)
-                    .merge(entry.getValue());
-            footprintByBlocId.put(blocId, merged);
+        for (var entry : contributionByBlocId.entrySet()) {
+            footprintByBlocId.put(entry.getKey(), entry.getValue().footprint());
         }
         return footprintByBlocId;
+    }
+
+    // Collapses the per-faction values into per-bloc values under the grouping: each faction's value
+    // merges into its bloc's, so an alliance's members fold into one summed unit. Under the identity
+    // grouping every faction is its own bloc and each value merges into the identity, leaving the
+    // per-faction values unchanged, so the winning bloc equals today's winner. Generic over the
+    // folded value so the dominance-only footprint regroup (the render's owner map, the filter's
+    // presence resolver) and the picker's fuller footprint-plus-market-size regroup share one fold
+    // rather than two copies of the same grouping idiom.
+    static <T> Map<String, T> regroupByBloc(Map<String, T> valueByFactionId,
+            OwnershipGrouping grouping, T identity, BinaryOperator<T> merge) {
+        var valueByBlocId = new LinkedHashMap<String, T>();
+        for (var entry : valueByFactionId.entrySet()) {
+            var blocId = grouping.resolveBlocId(entry.getKey());
+            valueByBlocId.put(blocId,
+                    merge.apply(valueByBlocId.getOrDefault(blocId, identity), entry.getValue()));
+        }
+        return valueByBlocId;
     }
 }

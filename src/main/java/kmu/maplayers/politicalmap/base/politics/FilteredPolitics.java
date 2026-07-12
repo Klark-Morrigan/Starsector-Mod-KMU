@@ -185,7 +185,8 @@ public final class FilteredPolitics {
             OwnershipGrouping grouping, String selectedBlocId, Set<String> contestedSystemIds) {
         var footprintByBlocId = SectorPolitics.regroupByBloc(
                 KnownMarketFootprints.readByFaction(sector, system, rules,
-                        shouldIncludeUndiscoveredMarkets), grouping);
+                        shouldIncludeUndiscoveredMarkets),
+                grouping, MarketFootprint.EMPTY, MarketFootprint::merge);
         var presence = classifySelectedBlocPresence(footprintByBlocId, selectedBlocId);
         if (presence == SelectedBlocPresence.ABSENT) {
             return resolveRealOwner(sector, grouping, footprintByBlocId);
