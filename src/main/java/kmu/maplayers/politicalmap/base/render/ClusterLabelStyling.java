@@ -74,10 +74,11 @@ final class ClusterLabelStyling {
         var color = DrawablesBuilder.pickPaletteColor(
                 choice, palette.primaryColor(), palette.secondaryColor());
         var resolved = color != null ? color : palette.primaryColor();
-        var opacity = (usesIndependentStyle
-                ? spec.independentNameOpacity() : spec.factionNameOpacity())
-                * adjustment.opacityMultiplier();
-        return Colors.scaleAlpha(resolved, (float) opacity);
+        // The name mutes through the same one rule the fill and border do, so a receded name
+        // dims in lockstep with the space it labels.
+        var mutedOpacity = adjustment.muteOpacity(usesIndependentStyle
+                ? spec.independentNameOpacity() : spec.factionNameOpacity());
+        return Colors.scaleAlpha(resolved, mutedOpacity);
     }
 
     // The per-bloc style decisions one rebuild applies: each bloc's independent-style and

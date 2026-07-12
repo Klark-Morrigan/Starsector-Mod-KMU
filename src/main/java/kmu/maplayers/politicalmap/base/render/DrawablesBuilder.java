@@ -196,7 +196,7 @@ final class DrawablesBuilder {
             var palette = resolveEffectivePalette(styling.adjustment(), owner,
                     drawables.getDesaturationPalette());
             return buildStyledCell(shaped, palette.primaryColor(), palette.secondaryColor(),
-                    styling.style(), false, styling.adjustment().opacityMultiplier(),
+                    styling.style(), false, styling.adjustment(),
                     drawables.getGlobalStyle().borderSmoothing());
         }
         // Factionless: decivilised or (otherwise) uninhabited. Its style fills neither
@@ -211,7 +211,7 @@ final class DrawablesBuilder {
         }
         var neutralColor = drawables.getNeutralColor();
         return buildStyledCell(shaped, neutralColor, neutralColor, style, true,
-                BlocStyleAdjustment.NONE.opacityMultiplier(),
+                BlocStyleAdjustment.NONE,
                 drawables.getGlobalStyle().borderSmoothing());
     }
 
@@ -321,15 +321,13 @@ final class DrawablesBuilder {
         // the inner-seam width, reusing the inner-seam element so the contested pocket reads as a
         // bounded region; it is null-coloured (hidden) for every non-spotlit territory.
         return new FactionTerritory(fill.solidTriangles(), fill.hatchSegments(),
-                new UiElementPaint(fillColor,
-                        (float) (style.fillOpacity() * adjustment.opacityMultiplier())),
+                new UiElementPaint(fillColor, adjustment.muteOpacity(style.fillOpacity())),
                 fill.transitionSeams(),
                 new UiElementPaint(isSpotlit ? palette.secondaryColor() : null,
-                        (float) (style.innerOpacity() * adjustment.opacityMultiplier())),
+                        adjustment.muteOpacity(style.innerOpacity())),
                 (float) style.innerWidth(),
                 borderRuns,
-                new UiElementPaint(borderColor,
-                        (float) (style.outerOpacity() * adjustment.opacityMultiplier())),
+                new UiElementPaint(borderColor, adjustment.muteOpacity(style.outerOpacity())),
                 (float) style.outerWidth());
     }
 
@@ -489,12 +487,12 @@ final class DrawablesBuilder {
     // same corner settings and gate the cluster borders use, so a lone dead system reads
     // as smoothly as a cluster when rounding is on and stays a sharp Voronoi cell when it
     // is off. Each color resolves against the two palette shades, null for a "No color"
-    // choice, so the draw pass skips it. Every seam's opacity is scaled by
-    // {@code opacityMultiplier}, the caller's resolved per-bloc adjustment (1.0 - no
-    // change - for a factionless cell, which carries no adjustment).
+    // choice, so the draw pass skips it. Every seam's opacity is muted by the caller's
+    // resolved per-bloc {@code adjustment} through its one muteOpacity rule (BlocStyleAdjustment.NONE
+    // for a factionless cell, which carries no adjustment, so its opacity passes unchanged).
     private static StyledCell buildStyledCell(ShapedCell shaped, Color primaryColor,
             Color secondaryColor, CategoryStyle style, boolean perCellFillAndBorder,
-            double opacityMultiplier, BorderSmoothingStyle borderSmoothing) {
+            BlocStyleAdjustment adjustment, BorderSmoothingStyle borderSmoothing) {
         // Gate the corner rounding outside the round call: on rounds this cell's outline
         // in step with the cluster borders, off leaves its raw inset outline.
         var outline = shaped.fillPolygon();
@@ -513,15 +511,15 @@ final class DrawablesBuilder {
                         perCellFillAndBorder
                                 ? pickPaletteColor(style.fillColor(), primaryColor, secondaryColor)
                                 : null,
-                        (float) (style.fillOpacity() * opacityMultiplier)),
+                        adjustment.muteOpacity(style.fillOpacity())),
                 new UiElementPaint(
                         perCellFillAndBorder
                                 ? pickPaletteColor(style.outerColor(), primaryColor, secondaryColor)
                                 : null,
-                        (float) (style.outerOpacity() * opacityMultiplier)),
+                        adjustment.muteOpacity(style.outerOpacity())),
                 new UiElementPaint(
                         pickPaletteColor(style.innerColor(), primaryColor, secondaryColor),
-                        (float) (style.innerOpacity() * opacityMultiplier)),
+                        adjustment.muteOpacity(style.innerOpacity())),
                 (float) style.outerWidth(), (float) style.innerWidth());
     }
 

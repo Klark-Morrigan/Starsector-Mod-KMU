@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.factions.StarsectorFactionColors;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
@@ -58,6 +59,7 @@ final class ClusterAnchorsBuilder {
     static void rebuildClusterAnchors(List<ClusterAnchor> anchors,
             PoliticalMapGeometryCache geometryCache,
             Map<String, DominantOwner> ownerBySystemId, SectorAPI sector,
+            FactionPalette desaturationPalette,
             PoliticalMapView view, OwnershipGrouping grouping, boolean isFiltering,
             BlocStyleAdjustment recedeAdjustment, String selectedBlocId) {
         anchors.clear();
@@ -72,12 +74,9 @@ final class ClusterAnchorsBuilder {
         var groupKeyBySystemId = DominantOwner.factionIdBySystemId(ownerBySystemId);
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesBySystemId(), groupKeyBySystemId);
-        // The desaturation palette is resolved the same way DrawablesBuilder resolves it
-        // for the production draw lists, so a desaturated bloc's name matches its recolored
-        // fill and border exactly.
-        var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
-        var desaturationPalette = DrawablesBuilder.resolveDesaturationPalette(
-                KmuLunaSettings.getPoliticalMapDesaturationProfile(), sector, neutralColor);
+        // The desaturation palette is handed in already resolved - off the production build's
+        // drawables, or by the debug path from the same profile seam - so a desaturated bloc's
+        // name matches its recolored fill and border exactly without re-reading the profile here.
         // The style decision every label follows is the same one the fills read
         // (DrawablesBuilder.resolveBlocStyleDecision), cached per bloc since its two label
         // consumers - the independent-style test and the adjustment - both read it: under a
@@ -107,10 +106,16 @@ final class ClusterAnchorsBuilder {
         // Sample the view's grouping once and resolve ownership under it, so the anchors
         // key off the same snapshot their names and colours are classified against.
         var grouping = view.resolveGrouping();
+        // This path builds no drawables to borrow the palette from, so resolve it here - through
+        // the same profile seam the theme reads, so the debug names desaturate exactly as production
+        // does and the profile setting still has a single reader.
+        var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
+        var desaturationPalette = DrawablesBuilder.resolveDesaturationPalette(
+                RenderStyleReader.readGlobalStyle().desaturationProfile(), sector, neutralColor);
         // The debug border-tracing path never filters - it resolves real dominant owners from the
         // sector - so it recedes nothing and names no synthetic spotlight key.
         rebuildClusterAnchors(anchors, geometryCache,
                 SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping), sector,
-                view, grouping, false, BlocStyleAdjustment.NONE, null);
+                desaturationPalette, view, grouping, false, BlocStyleAdjustment.NONE, null);
     }
 }

@@ -320,7 +320,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
                         geometryCache, Global.getSector(), view);
                 debugDrawables = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
-                        drawables.getOwnerBySystemId(), Global.getSector(), view,
+                        drawables.getOwnerBySystemId(), Global.getSector(),
+                        drawables.getDesaturationPalette(), view,
                         drawables.getGrouping(), drawables.isFiltering(),
                         drawables.getRecedeAdjustment(), drawables.getSelectedBlocId());
             }

@@ -45,4 +45,16 @@ public record BlocStyleAdjustment(double opacityMultiplier, boolean desaturate) 
                 Math.min(opacityMultiplier, other.opacityMultiplier),
                 desaturate || other.desaturate);
     }
+
+    /**
+     * Applies this adjustment's mute to one element's base opacity - the single home for "muting
+     * scales opacity", so a bloc's fill, borders, seams, and name all dim by the one rule rather
+     * than each site multiplying by hand. {@link #NONE}'s 1.0 multiplier returns the base unchanged.
+     *
+     * @param baseOpacity the element's own opacity before muting, from its style
+     * @return the muted opacity as a float, ready for the GL paint
+     */
+    public float muteOpacity(double baseOpacity) {
+        return (float) (baseOpacity * opacityMultiplier);
+    }
 }
