@@ -14,6 +14,7 @@ import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.render.gl.CheckboxRenderer;
+import kmlib.starsector.ui.render.gl.DividerRenderer;
 import kmlib.starsector.ui.render.gl.IconRadioListRenderer;
 import kmlib.starsector.ui.render.gl.RadioRowRenderer;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
@@ -179,6 +180,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
                 case RADIO -> drawRadio(control, accent, opacity);
                 case TOGGLE -> drawToggle(control, accent, opacity);
                 case LABEL -> drawLabelRow(control, opacity);
+                case DIVIDER -> drawDivider(control, accent, opacity);
             }
         }
     }
@@ -252,6 +254,12 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         ToggleButton.render(bounds, isLit(spec), accent, accent, opacity);
         drawBodyLabel(spec.labels().get(0), bounds.x() + bounds.width() / 2f, centerY(bounds),
                 LazyFont.TextAnchor.CENTER, opacity);
+    }
+
+    // A divider row: a single hairline centred across the row in the panel accent, parting one run of
+    // controls from the next - it heads a section like a caption but carries no text and no hit target.
+    private static void drawDivider(Control control, Color accent, float opacity) {
+        DividerRenderer.render(control.bounds(), accent, opacity);
     }
 
     // A caption row: only its text, left-aligned at the row's left edge and vertically centred, with

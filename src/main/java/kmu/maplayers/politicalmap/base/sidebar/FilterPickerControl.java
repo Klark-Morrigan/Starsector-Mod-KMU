@@ -10,18 +10,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The spotlight picker's body controls: a caption, the vertical icon-radio list of selectable blocs,
- * and - only while a bloc is spotlighted - the shared recede control that sets how the rest of the
- * sector fades behind it. It turns the active view's {@link SelectableBloc} options into one clickable
- * list and wires each click straight to {@link FilterSelection}, so picking a row spotlights that bloc
- * and re-picking the lit row clears the filter. It draws the same list under either view; which blocs
- * the list holds is the view's decision, read before this is called, so this names no concrete view.
+ * The spotlight picker's body controls, top to bottom: a rule heading the block, then - only while a
+ * bloc is spotlighted - the shared recede control that sets how the rest of the sector fades behind
+ * it, then the vertical icon-radio list of selectable blocs. It turns the active view's {@link
+ * SelectableBloc} options into one clickable list and wires each click straight to {@link
+ * FilterSelection}, so picking a row spotlights that bloc and re-picking the lit row clears the
+ * filter. It draws the same list under either view; which blocs the list holds is the view's
+ * decision, read before this is called, so this names no concrete view.
  *
- * <p>The recede control rides under the list rather than beside it because recede only does anything
- * while a bloc is spotlighted (with none selected the map draws exactly as un-filtered), so it is
- * shown solely then and hidden otherwise. It is the same reusable {@link RecedeControl} the alliances
- * view places under its own caption, bound to the one shared toggle set, so a flip here and a flip
- * there move the same recede.
+ * <p>The rule parts the view-level controls above (the view selector) from the picker below, marking
+ * the section a caption string used to. The recede control only does anything while a bloc is
+ * spotlighted (with none selected the map draws exactly as un-filtered), so it is shown solely then
+ * and hidden otherwise, and it rides above the list so the "rest of the sector" knobs sit by the rule
+ * that opens the section. It is the same reusable {@link RecedeControl} the alliances view places
+ * under its own caption, bound to the one shared toggle set, so a flip here and a flip there move the
+ * same recede.
  */
 public final class FilterPickerControl {
 
@@ -29,11 +32,11 @@ public final class FilterPickerControl {
     }
 
     /**
-     * Builds the picker block for the current view's selectable blocs and filter selection: the
-     * caption, the icon-radio list (its lit row the spotlighted bloc, or none when the stored id is
-     * not among these blocs), and the recede control when a bloc is spotlighted. Returns an empty
-     * list when there are no selectable blocs, so a view with nothing to spotlight contributes no
-     * picker rather than an empty list widget.
+     * Builds the picker block for the current view's selectable blocs and filter selection, top to
+     * bottom: the section rule, the recede control when a bloc is spotlighted, then the icon-radio
+     * list (its lit row the spotlighted bloc, or none when the stored id is not among these blocs).
+     * Returns an empty list when there are no selectable blocs, so a view with nothing to spotlight
+     * contributes no picker rather than an empty list widget.
      *
      * @param blocs          the selectable blocs under the active view, in the order they list
      * @param selectedBlocId the currently spotlighted bloc's id, or null when no filter is active
@@ -46,15 +49,18 @@ public final class FilterPickerControl {
         }
         var selectedIndex = resolveSelectedIndex(blocs, selectedBlocId);
         var controls = new ArrayList<ControlSpec>();
-        controls.add(ControlSpec.createLabel(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_SPOTLIGHT)));
-        controls.add(ControlSpec.createIconRadioList(resolveLabels(blocs), resolveIconPaths(blocs),
-                selectedIndex, cellIndex -> pickBloc(blocs, selectedIndex, cellIndex)));
+        // A rule heads the block, parting the view-level controls above from the picker below - the
+        // section break a caption used to mark, now carrying no text.
+        controls.add(ControlSpec.createDivider());
         // The recede control only bites while a bloc is spotlighted, so it shows solely then - with
-        // no filter the sector is drawn normally and there is nothing to recede.
+        // no filter the sector is drawn normally and there is nothing to recede. It rides above the
+        // list so the "rest of the sector" knobs sit next to the divider that opens the section.
         if (selectedBlocId != null) {
             controls.addAll(RecedeControl.buildControls(
                     KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION)));
         }
+        controls.add(ControlSpec.createIconRadioList(resolveLabels(blocs), resolveIconPaths(blocs),
+                selectedIndex, cellIndex -> pickBloc(blocs, selectedIndex, cellIndex)));
         return List.copyOf(controls);
     }
 

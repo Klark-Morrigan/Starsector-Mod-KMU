@@ -147,9 +147,12 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // and flips on every press. A caption label is not a hit target and is skipped. The action's
     // meaning stays with the tab that supplied it - this only maps the click to a cell.
     static boolean activateControlIfHit(Control control, float pointX, float pointY) {
-        // A caption row is drawn but not clickable, so a press over it hits nothing and falls through
-        // to let the loop try the controls below - never consuming a click as if it acted.
-        if (control.spec().kind() == ControlKind.LABEL) {
+        // A caption row and a divider are drawn but not clickable, so a press over either hits nothing
+        // and falls through to let the loop try the controls below - never consuming a click as if it
+        // acted. The divider matters here because it spans the whole body width: without this guard a
+        // press anywhere on its row would be swallowed on its inert action.
+        if (control.spec().kind() == ControlKind.LABEL
+                || control.spec().kind() == ControlKind.DIVIDER) {
             return false;
         }
         // A radio hits by segment over the segments the layout laid - the icon-list picker included,

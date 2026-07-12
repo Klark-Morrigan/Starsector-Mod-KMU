@@ -19,11 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the spotlight picker's body controls: a caption, the vertical icon-radio list of selectable
- * blocs, and - only while a bloc is spotlighted - the shared recede control. Also pins the click
- * wiring: an unlit option spotlights its bloc, the lit option clears the filter. Strings, the recede
- * preferences, and the filter selection are stubbed so this pins the picker's shape and wiring alone,
- * not how a string resolves or how the selection persists.
+ * Pins the spotlight picker's body controls, top to bottom: a section rule, the shared recede control
+ * only while a bloc is spotlighted, and the vertical icon-radio list of selectable blocs. Also pins
+ * the click wiring: an unlit option spotlights its bloc, the lit option clears the filter. Strings,
+ * the recede preferences, and the filter selection are stubbed so this pins the picker's shape and
+ * wiring alone, not how a string resolves or how the selection persists.
  */
 final class FilterPickerControlTest {
     // The two blocs the picker lists in every test: a crested faction and a crestless one (an
@@ -34,9 +34,10 @@ final class FilterPickerControlTest {
             new SelectableBloc("free_traders", "Free Traders", null);
     private static final List<SelectableBloc> BLOCS = List.of(HEGEMONY, TRADERS);
 
-    // The fixed cell positions the picker builds in, so a test names the row it inspects.
-    private static final int CAPTION = 0;
-    private static final int PICKER = 1;
+    // The section rule always heads the block. The list is always the last row - its offset shifts by
+    // the recede rows when a bloc is spotlighted - so tests read it from the tail rather than a fixed
+    // index.
+    private static final int DIVIDER = 0;
 
     @Nested
     class BuildControls {
@@ -51,14 +52,15 @@ final class FilterPickerControlTest {
         }
 
         @Test
-        void buildControlsHeadsWithTheSpotlightCaption() {
+        void buildControlsHeadsWithADivider() {
+            // The section rule replaces the old caption string: it heads the block with no text,
+            // parting the view-level controls above from the picker below.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var caption = FilterPickerControl.buildControls(BLOCS, null).get(CAPTION);
+                var divider = FilterPickerControl.buildControls(BLOCS, null).get(DIVIDER);
 
-                assertThat(caption.kind()).isEqualTo(ControlKind.LABEL);
-                assertThat(caption.labels()).containsExactly("Spotlight");
+                assertThat(divider.kind()).isEqualTo(ControlKind.DIVIDER);
             }
         }
 
@@ -67,7 +69,7 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = FilterPickerControl.buildControls(BLOCS, null).get(PICKER);
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null));
 
                 assertThat(picker.kind()).isEqualTo(ControlKind.RADIO);
                 assertThat(picker.alignment()).isEqualTo(RadioAlignment.VERTICAL);
@@ -87,7 +89,7 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
                 var nameless = new SelectableBloc("ghost", null, null);
 
-                var picker = FilterPickerControl.buildControls(List.of(nameless), null).get(PICKER);
+                var picker = pickerOf(FilterPickerControl.buildControls(List.of(nameless), null));
 
                 assertThat(picker.labels()).containsExactly("");
             }
@@ -98,7 +100,7 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = FilterPickerControl.buildControls(BLOCS, "free_traders").get(PICKER);
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, "free_traders"));
 
                 assertThat(picker.selectedIndex()).isEqualTo(1);
             }
@@ -111,7 +113,7 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = FilterPickerControl.buildControls(BLOCS, "vanished").get(PICKER);
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, "vanished"));
 
                 assertThat(picker.selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
             }
@@ -120,7 +122,7 @@ final class FilterPickerControlTest {
         @Test
         void buildControlsOmitsTheRecedeControlWhenNoBlocIsSpotlighted() {
             // With no filter the sector draws normally, so there is nothing to recede - the block is
-            // just the caption and the list.
+            // just the divider and the list.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
@@ -129,9 +131,10 @@ final class FilterPickerControlTest {
         }
 
         @Test
-        void buildControlsAppendsTheRecedeControlWhenABlocIsSpotlighted() {
-            // While filtering the recede control rides under the list: its caption then the Mute and
-            // Desaturate checkboxes, so the block is caption + list + three recede rows.
+        void buildControlsInsertsTheRecedeControlAboveTheListWhenABlocIsSpotlighted() {
+            // While filtering the recede control rides between the divider and the list: its caption
+            // then the Mute and Desaturate checkboxes, so the block is divider + three recede rows +
+            // list.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<RecedePreferences> preferencesMock =
                             mockStatic(RecedePreferences.class)) {
@@ -140,10 +143,11 @@ final class FilterPickerControlTest {
                 var controls = FilterPickerControl.buildControls(BLOCS, "hegemony");
 
                 assertThat(controls).hasSize(5);
-                assertThat(controls.get(2).kind()).isEqualTo(ControlKind.LABEL);
-                assertThat(controls.get(2).labels()).containsExactly("Rest of the sector is");
+                assertThat(controls.get(1).kind()).isEqualTo(ControlKind.LABEL);
+                assertThat(controls.get(1).labels()).containsExactly("Rest of the sector is");
+                assertThat(controls.get(2).kind()).isEqualTo(ControlKind.CHECKBOX);
                 assertThat(controls.get(3).kind()).isEqualTo(ControlKind.CHECKBOX);
-                assertThat(controls.get(4).kind()).isEqualTo(ControlKind.CHECKBOX);
+                assertThat(controls.get(4).kind()).isEqualTo(ControlKind.RADIO);
             }
         }
     }
@@ -157,7 +161,7 @@ final class FilterPickerControlTest {
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = FilterPickerControl.buildControls(BLOCS, null).get(PICKER);
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null));
 
                 picker.action().activateCell(0);
 
@@ -175,7 +179,7 @@ final class FilterPickerControlTest {
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = FilterPickerControl.buildControls(BLOCS, "hegemony").get(PICKER);
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, "hegemony"));
 
                 picker.action().activateCell(0);
 
@@ -191,7 +195,7 @@ final class FilterPickerControlTest {
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = FilterPickerControl.buildControls(BLOCS, "hegemony").get(PICKER);
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, "hegemony"));
 
                 picker.action().activateCell(1);
 
@@ -200,12 +204,16 @@ final class FilterPickerControlTest {
         }
     }
 
+    // The picker list is always the block's last row, so a test reads it from the tail rather than a
+    // fixed index that would shift with the recede rows.
+    private static ControlSpec pickerOf(List<ControlSpec> controls) {
+        return controls.get(controls.size() - 1);
+    }
+
     // Stubs the caption strings the picker heads its rows with, so the assertions read the wiring
     // without the live strings table. The recede checkbox labels are only reached in tests that mock
     // RecedePreferences, which stub them there.
     private static void stubCaptions(MockedStatic<KmuStrings> stringsMock) {
-        stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_SPOTLIGHT))
-                .thenReturn("Spotlight");
         stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))
                 .thenReturn("Rest of the sector is");
         stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED)).thenReturn("Muted");

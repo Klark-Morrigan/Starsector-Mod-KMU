@@ -42,7 +42,6 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_NON_ALLIED_CAPTION = "political_map_ctl_non_allied_caption";
     public static final String POLITICAL_MAP_CTL_MUTED = "political_map_ctl_muted";
     public static final String POLITICAL_MAP_CTL_DESATURATED = "political_map_ctl_desaturated";
-    public static final String POLITICAL_MAP_CTL_SPOTLIGHT = "political_map_ctl_spotlight";
     public static final String POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION = "political_map_ctl_filter_recede_caption";
 
     private KmuStrings() {
