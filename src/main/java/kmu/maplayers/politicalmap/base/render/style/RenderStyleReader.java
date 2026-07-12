@@ -1,11 +1,5 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.politicalmap.base.render.model.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.render.model.CategoryStyle;
-import kmu.maplayers.politicalmap.base.render.model.GlobalStyle;
-import kmu.maplayers.politicalmap.base.render.model.HatchStyle;
-import kmu.maplayers.politicalmap.base.render.model.MapCategory;
-import kmu.maplayers.politicalmap.base.render.model.RenderStyle;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;
@@ -25,7 +19,7 @@ import java.util.Map;
  * carry only an outline, so their bundles set fill and inner seam to "No color" and draw a
  * single border in the shared neutral color.
  */
-final class RenderStyleReader {
+public final class RenderStyleReader {
 
     // Reads only settings; never instantiated.
     private RenderStyleReader() {
@@ -33,7 +27,7 @@ final class RenderStyleReader {
 
     // Reads the global tier and all four category styles into one theme, so the build loop
     // and every incremental re-shape draw from a single already-read snapshot.
-    static RenderStyle readRenderStyle() {
+    public static RenderStyle readRenderStyle() {
         Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
         categories.put(MapCategory.FACTION, readFactionStyle());
         categories.put(MapCategory.INDEPENDENT, readIndependentStyle());
@@ -46,7 +40,7 @@ final class RenderStyleReader {
     // national-border smoothing, and the desaturation profile a receded bloc recolours to.
     // The hatch angle is authored in degrees and converted to radians at the reader so the
     // hatch math downstream stays in radians.
-    static GlobalStyle readGlobalStyle() {
+    public static GlobalStyle readGlobalStyle() {
         return new GlobalStyle(
                 new HatchStyle(
                         KmuLunaSettings.getPoliticalMapHatchSpacing(),
@@ -63,7 +57,7 @@ final class RenderStyleReader {
 
     // Reads each owned category's eight style settings into one bundle, so the build
     // loop applies them per cluster without eight lookups each.
-    static CategoryStyle readFactionStyle() {
+    public static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
                 KmuLunaSettings.getFactionFillColor(), KmuLunaSettings.getFactionFillOpacity(),
                 KmuLunaSettings.getFactionOuterBorderColor(),
@@ -74,7 +68,7 @@ final class RenderStyleReader {
                 KmuLunaSettings.getFactionInnerBorderWidth());
     }
 
-    static CategoryStyle readIndependentStyle() {
+    public static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
                 KmuLunaSettings.getIndependentFillColor(),
                 KmuLunaSettings.getIndependentFillOpacity(),
@@ -89,13 +83,13 @@ final class RenderStyleReader {
     // A factionless category resolves to the same style with no fill and no inner
     // seam - only its single outline draws, in the neutral color both palette slots
     // will carry, or "No color" to hide it.
-    static CategoryStyle readDecivilisedStyle() {
+    public static CategoryStyle readDecivilisedStyle() {
         return neutralStyle(KmuLunaSettings.getDecivilisedBorderColor(),
                 KmuLunaSettings.getDecivilisedBorderOpacity(),
                 KmuLunaSettings.getDecivilisedBorderWidth());
     }
 
-    static CategoryStyle readUninhabitedStyle() {
+    public static CategoryStyle readUninhabitedStyle() {
         return neutralStyle(KmuLunaSettings.getUninhabitedBorderColor(),
                 KmuLunaSettings.getUninhabitedBorderOpacity(),
                 KmuLunaSettings.getUninhabitedBorderWidth());

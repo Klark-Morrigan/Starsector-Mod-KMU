@@ -1,54 +1,41 @@
 # Klark Morrigan's Utilities
 
+This is a small Starsector utility and quality of life mod.
+
 ## Index
 
-- [Purpose](#purpose)
 - [Features](#features)
+  - [Map layers](#map-layers)
+    - [Political map](#political-map)
 - [Dependencies](#dependencies)
-- [Versioning](#versioning)
-- [Build And Release](#build-and-release)
-- [Local linting](#local-linting)
-- [Documentation Status](#documentation-status)
-
-## Purpose
-
-Klark Morrigan's Utilities is a small Starsector utility mod for making direct,
-explicit campaign edits from in-game screens.
+- [For developers](#for-developers)
+  - [Versioning](#versioning)
+  - [Build And Release](#build-and-release)
+  - [Local linting](#local-linting)
+  - [Documentation Status](#documentation-status)
 
 ## Features
 
-### 1. Market Condition Manager (MCM)
+### Map layers
 
-Problem doc:
-[problem.md](docs/dev/implementation/010-add-planetary-condition/problem.md)
+#### Political map
 
-Plan doc:
-[plan.md](docs/dev/implementation/010-add-planetary-condition/plan.md)
-
-The planned first feature is a `Planetary Conditions` picker for an active
-colony market. The picker opens every market condition as a clickable entry with
-a tooltip. Entries already on the planet use the player's normal UI color;
-entries not present are darkened. Clicking an absent entry adds that condition to
-the market without removing mutually exclusive or same-group conditions. At this
-stage, any inspected colony can be edited regardless of ownership.
-
-The LunaLib "Market Condition Manager (MCM)" tab holds a `Show all conditions` toggle. It is
-on by default, so the picker lists every condition, including non-planetary ones
-the game does not normally offer for hand placement (such as decivilisation).
-Turning it off restricts the picker to the planetary conditions vanilla treats
-as hand-placeable.
-
-When Console Commands is enabled, KMU registers `kmu_mcm_open` as an
-optional developer entry point for the same picker. KMU console commands use the
-`kmu_` prefix and verb-noun names.
+- [Render style layer](src/main/java/kmu/maplayers/politicalmap/base/render/style/README.md)
+  - how the overlay turns player settings into each territory's colours, widths, and fill.
 
 ## Dependencies
 
 | Mod | Author | Required | Notes |
 |-----|--------|----------|-------|
+| Klark Morrigan's Library (KMLib) | Klark Morrigan | Required | Shared library; version pinned in `mod_info.json` |
+| [LunaLib](https://fractalsoftworks.com/forum/index.php?topic=25658) | Lukas04 | Required | Settings framework backing KMU's configuration tabs |
+| [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=5444) | LazyWizard | Required | Utility library |
 | [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | LazyWizard | Optional | Enables `kmu_` developer commands (e.g. `kmu_mcm_open`) |
+| [Nexerelin](https://fractalsoftworks.com/forum/index.php?topic=9175) | Histidine | Optional | Adds the alliances view to the political map |
 
-## Versioning
+## For developers
+
+### Versioning
 
 KMU follows the consumer-mod rules in
 [KMLib's versioning policy](https://github.com/<owner>/KMLib/blob/main/docs/dev/versioning.md).
@@ -56,7 +43,7 @@ In short: MAJOR for save-breaking changes, MINOR for save-safe new features,
 PATCH for fixes and tweaks. The same policy defines how KMU pins the KMLib
 dependency in both `mod_info.json` and `.github/workflows/*.yml`.
 
-## Build And Release
+### Build And Release
 
 KMU is built with Gradle using the local Starsector install as a compile-only
 API source. Production code targets Java 17 to match the bundled runtime.
@@ -71,7 +58,7 @@ Local build commands:
 The Gradle wrapper is the supported local and CI build path. Pass the install
 root via `STARSECTOR_HOME` or `-PstarsectorRoot=<path>`.
 
-## Local linting
+### Local linting
 
 Two delegating CI workflows lint the repo's non-Gradle surface on every pull
 request: [ci-yaml.yml](.github/workflows/ci-yaml.yml) calls Common-Automation's
@@ -115,7 +102,7 @@ the `check-sh-executable` gate stays green.
 `gradlew` to LF, `*.bat` and `gradlew.bat` to CRLF - and leaves binary / data
 assets to git's own detection.
 
-## Documentation Status
+### Documentation Status
 
 Development docs live under `docs/dev`. Package-level Mermaid diagrams live
 beside the Java packages they describe under `src/main/java/kmu`, with shared

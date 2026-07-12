@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 
 import org.apache.log4j.Logger;
 

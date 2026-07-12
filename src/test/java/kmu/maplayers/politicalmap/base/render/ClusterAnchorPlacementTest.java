@@ -7,6 +7,7 @@ import kmlib.starsector.ui.label.LabelLengthEstimator;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -669,8 +670,8 @@ final class ClusterAnchorPlacementTest {
                     NO_BLOC_USES_INDEPENDENT_STYLE, blocId -> recede, desaturationPalette,
                     slenderNameEstimators()).get(0).color();
 
-            // The shade DrawablesBuilder resolves the same bloc's fill to under the same recede.
-            var fillShade = DrawablesBuilder
+            // The shade MapPalettes resolves the same bloc's fill to under the same recede.
+            var fillShade = MapPalettes
                     .resolveEffectivePalette(recede, FACTION_F, desaturationPalette).primaryColor();
             assertThat(labelColor.getRed()).isEqualTo(fillShade.getRed());
             assertThat(labelColor.getGreen()).isEqualTo(fillShade.getGreen());

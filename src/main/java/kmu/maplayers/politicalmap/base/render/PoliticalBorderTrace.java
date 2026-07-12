@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.Collection;

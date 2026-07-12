@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.style;
 
 /**
  * The fixed geometry of the political map overlay - what is not player-tunable.

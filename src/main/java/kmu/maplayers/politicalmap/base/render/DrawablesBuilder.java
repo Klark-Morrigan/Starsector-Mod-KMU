@@ -2,14 +2,12 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.geometry.Polygons;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.Hatching;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
@@ -24,16 +22,18 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
-import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
-import kmu.maplayers.politicalmap.base.render.model.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.render.model.CategoryStyle;
 import kmu.maplayers.politicalmap.base.render.model.FactionTerritory;
-import kmu.maplayers.politicalmap.base.render.model.MapCategory;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
 import kmu.maplayers.politicalmap.base.render.model.StyledCell;
-import kmu.settings.DesaturationProfileChoice;
+import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
+import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
+import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.MapCategory;
+import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
+import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.FactionPaletteChoice;
 
 import org.apache.log4j.Logger;
@@ -115,7 +115,7 @@ final class DrawablesBuilder {
             // re-shapes cells against the same snapshot this pass used.
             var renderStyle = RenderStyleReader.readRenderStyle();
             var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
-            var desaturationPalette = resolveDesaturationPalette(
+            var desaturationPalette = MapPalettes.resolveDesaturationPalette(
                     renderStyle.global().desaturationProfile(), sector, neutralColor);
             // The styling every non-spotlighted bloc recedes to, resolved once from the shared
             // recede toggles; the identity adjustment off filter, so a normal pass touches no bloc.
@@ -193,7 +193,7 @@ final class DrawablesBuilder {
             // cluster from the tessellated region, so an owned cell contributes only its
             // interior seams here.
             var styling = resolveBlocStyling(drawables, owner.factionId());
-            var palette = resolveEffectivePalette(styling.adjustment(), owner,
+            var palette = MapPalettes.resolveEffectivePalette(styling.adjustment(), owner,
                     drawables.getDesaturationPalette());
             return buildStyledCell(shaped, palette.primaryColor(), palette.secondaryColor(),
                     styling.style(), false, styling.adjustment(),
@@ -271,10 +271,11 @@ final class DrawablesBuilder {
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
         var owner = drawables.getOwnerBySystemId().get(memberSystemIds.get(0));
-        var palette = resolveEffectivePalette(adjustment, owner, drawables.getDesaturationPalette());
-        var fillColor = pickPaletteColor(
+        var palette = MapPalettes.resolveEffectivePalette(adjustment, owner,
+                drawables.getDesaturationPalette());
+        var fillColor = MapPalettes.pickPaletteColor(
                 style.fillColor(), palette.primaryColor(), palette.secondaryColor());
-        var borderColor = pickPaletteColor(
+        var borderColor = MapPalettes.pickPaletteColor(
                 style.outerColor(), palette.primaryColor(), palette.secondaryColor());
         if (fillColor == null && borderColor == null) {
             return null;
@@ -431,51 +432,12 @@ final class DrawablesBuilder {
     // pass's two concrete styles: the independent style when the decision recedes a bloc to it,
     // the faction style otherwise.
     private static BlocStyling resolveBlocStyling(PoliticalMapDrawables drawables, String blocId) {
-        var decision = resolveBlocStyleDecision(drawables.isFiltering(), blocId,
+        var decision = BlocStyleResolver.resolveBlocStyleDecision(drawables.isFiltering(), blocId,
                 drawables.getView(), drawables.getGrouping(), drawables.getRecedeAdjustment());
         var style = decision.usesIndependentStyle()
                 ? drawables.getCategoryStyle(MapCategory.INDEPENDENT)
                 : drawables.getCategoryStyle(MapCategory.FACTION);
         return new BlocStyling(style, decision.adjustment());
-    }
-
-    // The style choice a bloc draws under this pass, as a view-agnostic (independent-style?,
-    // adjustment) pair the fill path and the label path both resolve from - the single decision
-    // that keeps a bloc's name in step with its fill and border. Off filter it is the active
-    // view's own call: its independent-recede test and per-bloc adjustment.
-    //
-    // Under filter only the ADJUSTMENT is filter-driven; the base-style decision stays the view's,
-    // so independent-held space keeps its independent style rather than snapping to the faction
-    // style the moment a filter turns on - independent styling reads one source of truth in both
-    // modes. The spotlighted bloc is the sole exception: it draws untouched at full faction
-    // strength (NONE, faction style), so its synthetic key never inherits the view's independent
-    // test (which an alliances-view desaturate would otherwise trip). Every other bloc unions the
-    // view's own recede with the pass's shared recede, so a bloc receded by both never mutes twice.
-    static BlocStyleDecision resolveBlocStyleDecision(boolean isFiltering, String blocId,
-            PoliticalMapView view, OwnershipGrouping grouping,
-            BlocStyleAdjustment recedeAdjustment) {
-        if (isFiltering) {
-            var isSpotlit = FilteredPolitics.isSpotlitBloc(blocId);
-            return new BlocStyleDecision(
-                    !isSpotlit && view.shouldUseIndependentStyle(blocId, grouping),
-                    resolveFilterAdjustment(isSpotlit,
-                            view.resolveBlocStyleAdjustment(blocId, grouping), recedeAdjustment));
-        }
-        return new BlocStyleDecision(view.shouldUseIndependentStyle(blocId, grouping),
-                view.resolveBlocStyleAdjustment(blocId, grouping));
-    }
-
-    // The filter-mode adjustment a bloc takes: the spotlighted bloc draws untouched (NONE), every
-    // other bloc unions its view-decided recede with the pass's shared recede so the sector fades
-    // to a muted background the spotlight reads against. The union (strongest mute, either
-    // desaturate) applies once, so a bloc the view already recedes - a non-allied faction under the
-    // alliances view - does not mute a second time when the filter recedes it too. Pure over its
-    // inputs so the rule pins without geometry.
-    static BlocStyleAdjustment resolveFilterAdjustment(boolean isSpotlit,
-            BlocStyleAdjustment viewAdjustment, BlocStyleAdjustment recedeAdjustment) {
-        return isSpotlit
-                ? BlocStyleAdjustment.NONE
-                : viewAdjustment.mergeRecede(recedeAdjustment);
     }
 
     // Builds one cell's per-cell draw record: its interior seams always, plus - only
@@ -509,16 +471,19 @@ final class DrawablesBuilder {
                 VertexRuns.flattenEdgesOfClass(shaped, false),
                 new UiElementPaint(
                         perCellFillAndBorder
-                                ? pickPaletteColor(style.fillColor(), primaryColor, secondaryColor)
+                                ? MapPalettes.pickPaletteColor(style.fillColor(), primaryColor,
+                                        secondaryColor)
                                 : null,
                         adjustment.muteOpacity(style.fillOpacity())),
                 new UiElementPaint(
                         perCellFillAndBorder
-                                ? pickPaletteColor(style.outerColor(), primaryColor, secondaryColor)
+                                ? MapPalettes.pickPaletteColor(style.outerColor(), primaryColor,
+                                        secondaryColor)
                                 : null,
                         adjustment.muteOpacity(style.outerOpacity())),
                 new UiElementPaint(
-                        pickPaletteColor(style.innerColor(), primaryColor, secondaryColor),
+                        MapPalettes.pickPaletteColor(style.innerColor(), primaryColor,
+                                secondaryColor),
                         adjustment.muteOpacity(style.innerOpacity())),
                 (float) style.outerWidth(), (float) style.innerWidth());
     }
@@ -536,54 +501,8 @@ final class DrawablesBuilder {
                 borderSmoothing.chamferAngleRadians());
     }
 
-    // The two shades a bloc actually paints in under its style adjustment: its owner's own
-    // bright and dark shades normally, or the pass's shared desaturation palette when the
-    // adjustment desaturates the bloc. The single home for the "desaturate swaps the
-    // palette" rule, so a cell's seams, a faction's fill and border, and the bloc's name
-    // all recolour off one decision rather than three copies of it.
-    static FactionPalette resolveEffectivePalette(BlocStyleAdjustment adjustment,
-            DominantOwner owner, FactionPalette desaturationPalette) {
-        return adjustment.desaturate()
-                ? desaturationPalette
-                : new FactionPalette(owner.primaryColor(), owner.secondaryColor());
-    }
-
-    // Picks the palette shade the player pointed an element at: the secondary (dark)
-    // shade for a SECONDARY choice, the primary (bright) shade for a PRIMARY choice, or
-    // null for NONE ("No color") so the caller skips that element.
-    static Color pickPaletteColor(FactionPaletteChoice choice, Color primaryColor,
-            Color secondaryColor) {
-        return switch (choice) {
-            case PRIMARY -> primaryColor;
-            case SECONDARY -> secondaryColor;
-            case NONE -> null;
-        };
-    }
-
-    // Resolves the desaturation palette a desaturated bloc recolours to, from the given
-    // profile: Independent forges the Independent faction's own two shades (the same pair
-    // a real independent owner's DominantOwner carries), so a desaturated bloc reads
-    // exactly as independent-held space; Neutral is the shared neutral color in both
-    // slots, the flat gray unowned space draws in. Takes the profile and the neutral color
-    // as parameters (rather than reading KmuLunaSettings itself) so the mapping is a pure,
-    // unit-testable lookup; buildDrawables reads the live setting once per pass and hands
-    // it in.
-    static FactionPalette resolveDesaturationPalette(DesaturationProfileChoice profile,
-            SectorAPI sector, Color neutralColor) {
-        return switch (profile) {
-            case INDEPENDENT -> StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);
-            case NEUTRAL -> new FactionPalette(neutralColor, neutralColor);
-        };
-    }
-
     // The base style plus per-bloc adjustment a bloc draws under, resolved once and read by both
     // the fill and border and the interior seams so they never diverge.
     private record BlocStyling(CategoryStyle style, BlocStyleAdjustment adjustment) {
-    }
-
-    // The view-agnostic style decision the fill and label paths share: whether a bloc recedes to
-    // the independent style, and its per-bloc adjustment. Free of the concrete CategoryStyle so the
-    // label path - which needs only the boolean, not a resolved style - reads the very same call.
-    record BlocStyleDecision(boolean usesIndependentStyle, BlocStyleAdjustment adjustment) {
     }
 }

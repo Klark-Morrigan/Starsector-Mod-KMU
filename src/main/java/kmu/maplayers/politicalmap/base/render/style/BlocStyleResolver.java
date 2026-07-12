@@ -1,0 +1,64 @@
+package kmu.maplayers.politicalmap.base.render.style;
+
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+
+/**
+ * Resolves the shared per-bloc style decision - whether a bloc recedes to the independent
+ * style and the adjustment it draws under - that both the fills and the cluster-name labels
+ * read, so a bloc's name never drifts from its fill. The one home for the "who recedes, and
+ * how, this pass" rule; the concrete {@link CategoryStyle} it maps to is picked by the caller
+ * that has the theme, keeping this decision view-agnostic and style-free.
+ */
+public final class BlocStyleResolver {
+
+    // Resolves only; never instantiated.
+    private BlocStyleResolver() {
+    }
+
+    /**
+     * The style choice a bloc draws under this pass, as a view-agnostic (independent-style?,
+     * adjustment) pair the fill path and the label path both resolve from - the single decision
+     * that keeps a bloc's name in step with its fill and border. Off filter it is the active
+     * view's own call: its independent-recede test and per-bloc adjustment.
+     *
+     * <p>Under filter only the ADJUSTMENT is filter-driven; the base-style decision stays the
+     * view's, so independent-held space keeps its independent style rather than snapping to the
+     * faction style the moment a filter turns on - independent styling reads one source of truth
+     * in both modes. The spotlighted bloc is the sole exception: it draws untouched at full
+     * faction strength (NONE, faction style), so its synthetic key never inherits the view's
+     * independent test (which an alliances-view desaturate would otherwise trip). Every other bloc
+     * unions the view's own recede with the pass's shared recede, so a bloc receded by both never
+     * mutes twice.
+     */
+    public static BlocStyleDecision resolveBlocStyleDecision(boolean isFiltering, String blocId,
+            PoliticalMapView view, OwnershipGrouping grouping,
+            BlocStyleAdjustment recedeAdjustment) {
+        if (isFiltering) {
+            var isSpotlit = FilteredPolitics.isSpotlitBloc(blocId);
+            return new BlocStyleDecision(
+                    !isSpotlit && view.shouldUseIndependentStyle(blocId, grouping),
+                    resolveFilterAdjustment(isSpotlit,
+                            view.resolveBlocStyleAdjustment(blocId, grouping), recedeAdjustment));
+        }
+        return new BlocStyleDecision(view.shouldUseIndependentStyle(blocId, grouping),
+                view.resolveBlocStyleAdjustment(blocId, grouping));
+    }
+
+    /**
+     * The filter-mode adjustment a bloc takes: the spotlighted bloc draws untouched (NONE), every
+     * other bloc unions its view-decided recede with the pass's shared recede so the sector fades
+     * to a muted background the spotlight reads against. The union (strongest mute, either
+     * desaturate) applies once, so a bloc the view already recedes - a non-allied faction under
+     * the alliances view - does not mute a second time when the filter recedes it too. Pure over
+     * its inputs so the rule pins without geometry.
+     */
+    public static BlocStyleAdjustment resolveFilterAdjustment(boolean isSpotlit,
+            BlocStyleAdjustment viewAdjustment, BlocStyleAdjustment recedeAdjustment) {
+        return isSpotlit
+                ? BlocStyleAdjustment.NONE
+                : viewAdjustment.mergeRecede(recedeAdjustment);
+    }
+}

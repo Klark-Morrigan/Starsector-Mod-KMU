@@ -13,6 +13,8 @@ import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.model.ClusterAnchor;
+import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
+import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.List;
@@ -78,7 +80,7 @@ final class ClusterAnchorsBuilder {
         // drawables, or by the debug path from the same profile seam - so a desaturated bloc's
         // name matches its recolored fill and border exactly without re-reading the profile here.
         // The style decision every label follows is the same one the fills read
-        // (DrawablesBuilder.resolveBlocStyleDecision), cached per bloc since its two label
+        // (BlocStyleResolver.resolveBlocStyleDecision), cached per bloc since its two label
         // consumers - the independent-style test and the adjustment - both read it: under a
         // filter it recedes every non-spotlit bloc and leaves the spotlit one full, so a receded
         // name matches its receded fill and a spotlit name stays full, the drift a filter opens.
@@ -110,7 +112,7 @@ final class ClusterAnchorsBuilder {
         // the same profile seam the theme reads, so the debug names desaturate exactly as production
         // does and the profile setting still has a single reader.
         var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
-        var desaturationPalette = DrawablesBuilder.resolveDesaturationPalette(
+        var desaturationPalette = MapPalettes.resolveDesaturationPalette(
                 RenderStyleReader.readGlobalStyle().desaturationProfile(), sector, neutralColor);
         // The debug border-tracing path never filters - it resolves real dominant owners from the
         // sector - so it recedes nothing and names no synthetic spotlight key.

@@ -14,6 +14,9 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
+import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
+import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.KmuLunaSettings;
 
@@ -31,8 +34,8 @@ import java.util.function.Predicate;
  * shade it draws in and which bloc's name it spells.
  *
  * <p>Both attributes follow the active view off filter and the filter rules under one. The
- * colour is baked from the same {@link DrawablesBuilder} palette mapping the border uses,
- * off the shared {@link DrawablesBuilder#resolveBlocStyleDecision} the fills read - so a
+ * colour is baked from the same {@link MapPalettes} mapping the border uses,
+ * off the shared {@link BlocStyleResolver#resolveBlocStyleDecision} the fills read - so a
  * desaturated bloc's name recolours with its fill. The name comes from the view, except that
  * a filter's synthetic spotlight key (which the view cannot name) resolves back to the
  * selected bloc. Both resolvers memoise per bloc id, since every cluster of a bloc shares one
@@ -70,8 +73,8 @@ final class ClusterLabelStyling {
         // The name resolves against the same two shades the border does, off the one
         // "desaturate swaps the palette" decision DrawablesBuilder owns - so the name can
         // never drift from the fill and border it labels.
-        var palette = DrawablesBuilder.resolveEffectivePalette(adjustment, owner, desaturationPalette);
-        var color = DrawablesBuilder.pickPaletteColor(
+        var palette = MapPalettes.resolveEffectivePalette(adjustment, owner, desaturationPalette);
+        var color = MapPalettes.pickPaletteColor(
                 choice, palette.primaryColor(), palette.secondaryColor());
         var resolved = color != null ? color : palette.primaryColor();
         // The name mutes through the same one rule the fill and border do, so a receded name
@@ -85,12 +88,12 @@ final class ClusterLabelStyling {
     // adjustment call as the shared resolver makes it (the active view's off filter, the filter
     // rules under one), cached per bloc id like the name estimator resolver below, since every
     // cluster of a bloc shares one decision and the two label lambdas both read it.
-    static Function<String, DrawablesBuilder.BlocStyleDecision> newBlocStyleDecisionResolver(
+    static Function<String, BlocStyleDecision> newBlocStyleDecisionResolver(
             boolean isFiltering, PoliticalMapView view, OwnershipGrouping grouping,
             BlocStyleAdjustment recedeAdjustment) {
-        var decisionByBlocId = new HashMap<String, DrawablesBuilder.BlocStyleDecision>();
+        var decisionByBlocId = new HashMap<String, BlocStyleDecision>();
         return blocId -> decisionByBlocId.computeIfAbsent(blocId,
-                id -> DrawablesBuilder.resolveBlocStyleDecision(
+                id -> BlocStyleResolver.resolveBlocStyleDecision(
                         isFiltering, id, view, grouping, recedeAdjustment));
     }
 

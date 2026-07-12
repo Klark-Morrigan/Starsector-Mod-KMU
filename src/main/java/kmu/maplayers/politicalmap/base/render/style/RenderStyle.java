@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.model;
+package kmu.maplayers.politicalmap.base.render.style;
 
 import java.util.Map;
 

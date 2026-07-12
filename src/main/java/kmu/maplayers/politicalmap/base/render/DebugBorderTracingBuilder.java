@@ -12,6 +12,8 @@ import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDebugDrawables;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
+import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 

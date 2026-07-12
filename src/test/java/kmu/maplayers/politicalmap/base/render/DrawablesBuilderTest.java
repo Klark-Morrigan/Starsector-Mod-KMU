@@ -1,9 +1,5 @@
 package kmu.maplayers.politicalmap.base.render;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
-
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
@@ -12,13 +8,13 @@ import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.render.model.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.render.model.CategoryStyle;
-import kmu.maplayers.politicalmap.base.render.model.GlobalStyle;
-import kmu.maplayers.politicalmap.base.render.model.HatchStyle;
-import kmu.maplayers.politicalmap.base.render.model.MapCategory;
 import kmu.maplayers.politicalmap.base.render.model.PoliticalMapDrawables;
-import kmu.maplayers.politicalmap.base.render.model.RenderStyle;
+import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
+import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
+import kmu.maplayers.politicalmap.base.render.style.HatchStyle;
+import kmu.maplayers.politicalmap.base.render.style.MapCategory;
+import kmu.maplayers.politicalmap.base.render.style.RenderStyle;
 import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 
@@ -38,17 +34,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the builder's off-engine, deterministic pieces: the palette-color pick that maps
- * a player's color choice to a palette shade, the desaturation-palette resolver, and
- * an owned cell's Step 3 style-adjustment application (palette swap and opacity scale).
- * The rest shapes cells and reads settings that only resolve in-engine; the cluster-anchor
- * fit lives in {@link ClusterAnchorsBuilder} and is pinned by its own suite.
+ * Pins the builder's off-engine, deterministic pieces: the solid<->hatched transition-seam
+ * trace and an owned cell's style-adjustment application (palette swap and opacity scale). The
+ * shared styling resolvers it used to hold now live in
+ * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes} and
+ * {@link kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver} with their own suites;
+ * the rest shapes cells and reads settings that
+ * only resolve in-engine, and the cluster-anchor fit is pinned by {@link ClusterAnchorsBuilder}.
  */
 final class DrawablesBuilderTest {
-
-    // Two distinct shades so a pick can be told apart from its counterpart.
-    private static final Color PRIMARY = Color.RED;
-    private static final Color SECONDARY = Color.BLUE;
 
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
     // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
@@ -58,139 +52,6 @@ final class DrawablesBuilderTest {
         when(viewMock.shouldUseIndependentStyle(any(), any())).thenReturn(usesIndependentStyle);
         when(viewMock.resolveBlocStyleAdjustment(any(), any())).thenReturn(adjustment);
         return viewMock;
-    }
-
-    @Nested
-    class PickPaletteColor {
-
-        @Test
-        void pickPaletteColorReturnsThePrimaryShadeForAPrimaryChoice() {
-            assertThat(DrawablesBuilder.pickPaletteColor(
-                    FactionPaletteChoice.PRIMARY, PRIMARY, SECONDARY)).isEqualTo(PRIMARY);
-        }
-
-        @Test
-        void pickPaletteColorReturnsTheSecondaryShadeForASecondaryChoice() {
-            assertThat(DrawablesBuilder.pickPaletteColor(
-                    FactionPaletteChoice.SECONDARY, PRIMARY, SECONDARY)).isEqualTo(SECONDARY);
-        }
-
-        @Test
-        void pickPaletteColorReturnsNullForNoColor() {
-            // NONE is the player's "No color" choice; a null color signals the render
-            // layer to skip that element.
-            assertThat(DrawablesBuilder.pickPaletteColor(
-                    FactionPaletteChoice.NONE, PRIMARY, SECONDARY)).isNull();
-        }
-    }
-
-    @Nested
-    class ResolveDesaturationPalette {
-
-        @Test
-        void resolveDesaturationPaletteForgesTheIndependentFactionsSharesUnderTheIndependentProfile() {
-            var independentMock = mock(FactionAPI.class);
-            when(independentMock.getBrightUIColor()).thenReturn(Color.GREEN);
-            when(independentMock.getDarkUIColor()).thenReturn(Color.YELLOW);
-            var sectorMock = mock(SectorAPI.class);
-            when(sectorMock.getFaction(Factions.INDEPENDENT)).thenReturn(independentMock);
-
-            var palette = DrawablesBuilder.resolveDesaturationPalette(
-                    DesaturationProfileChoice.INDEPENDENT, sectorMock, Color.GRAY);
-
-            assertThat(palette).isEqualTo(new FactionPalette(Color.GREEN, Color.YELLOW));
-        }
-
-        @Test
-        void resolveDesaturationPaletteYieldsTheNeutralColorInBothSlotsUnderTheNeutralProfile() {
-            // The Neutral profile never touches the sector, so a bare mock stands in.
-            var palette = DrawablesBuilder.resolveDesaturationPalette(
-                    DesaturationProfileChoice.NEUTRAL, mock(SectorAPI.class), Color.GRAY);
-
-            assertThat(palette).isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
-        }
-    }
-
-    @Nested
-    class ResolveFilterAdjustment {
-
-        @Test
-        void resolveFilterAdjustmentLeavesTheSpotlightedBlocUntouched() {
-            // The spotlighted bloc draws at full strength however the recede is set, so it stands
-            // out against the muted background - neither the view's own adjustment nor the shared
-            // recede touches it.
-            assertThat(DrawablesBuilder.resolveFilterAdjustment(true,
-                    new BlocStyleAdjustment(0.9, false), new BlocStyleAdjustment(0.3, true)))
-                    .isEqualTo(BlocStyleAdjustment.NONE);
-        }
-
-        @Test
-        void resolveFilterAdjustmentRecedesEveryOtherBlocByTheSharedRecede() {
-            // A non-spotlighted bloc the view does not adjust takes the pass's shared recede whole,
-            // so the sector fades to a muted background the spotlight reads against.
-            var recede = new BlocStyleAdjustment(0.3, true);
-
-            assertThat(DrawablesBuilder.resolveFilterAdjustment(false, BlocStyleAdjustment.NONE, recede))
-                    .isEqualTo(recede);
-        }
-
-        @Test
-        void resolveFilterAdjustmentUnionsTheViewRecedeWithTheSharedRecede() {
-            // A bloc the view already recedes (a non-allied faction under the alliances view) and the
-            // filter also recedes takes the union - strongest mute, either desaturate - applied once,
-            // so it never mutes twice by compounding the two multipliers.
-            var viewRecede = new BlocStyleAdjustment(0.5, false);
-            var sharedRecede = new BlocStyleAdjustment(0.3, true);
-
-            assertThat(DrawablesBuilder.resolveFilterAdjustment(false, viewRecede, sharedRecede))
-                    .isEqualTo(new BlocStyleAdjustment(0.3, true));
-        }
-    }
-
-    @Nested
-    class ResolveBlocStyleDecision {
-
-        @Test
-        void resolveBlocStyleDecisionKeepsTheViewsIndependentStyleForANonSpotlitBlocUnderFilter() {
-            // The single decision the fills and the labels both read, so pinning it here pins both.
-            // Under a filter only the ADJUSTMENT is filter-driven; the base-style decision stays the
-            // view's, so independent-held space keeps its independent style rather than snapping to
-            // the faction style when a filter turns on. The stub says independent, so a true result
-            // proves the filter left the view's base-style call live.
-            var decision = DrawablesBuilder.resolveBlocStyleDecision(true, "independent",
-                    viewMockDeciding(true, BlocStyleAdjustment.NONE),
-                    OwnershipGrouping.identity(), new BlocStyleAdjustment(0.3, true));
-
-            assertThat(decision.usesIndependentStyle()).isTrue();
-        }
-
-        @Test
-        void resolveBlocStyleDecisionUnionsTheViewRecedeWithTheSharedRecedeUnderFilter() {
-            // A non-spotlit bloc the view already recedes (a non-allied faction under the alliances
-            // view) and the filter recedes too takes the union - strongest mute, either desaturate -
-            // once, so a receded name still cannot drift from its receded fill and neither mutes
-            // twice by compounding the two multipliers.
-            var viewRecede = new BlocStyleAdjustment(0.5, false);
-            var sharedRecede = new BlocStyleAdjustment(0.3, true);
-            var decision = DrawablesBuilder.resolveBlocStyleDecision(true, "hegemony",
-                    viewMockDeciding(false, viewRecede), OwnershipGrouping.identity(), sharedRecede);
-
-            assertThat(decision.usesIndependentStyle()).isFalse();
-            assertThat(decision.adjustment()).isEqualTo(new BlocStyleAdjustment(0.3, true));
-        }
-
-        @Test
-        void resolveBlocStyleDecisionDelegatesToTheViewOffFilter() {
-            // Off filter the decision is the active view's own call, unchanged: its independent-
-            // recede test and its per-bloc adjustment, so a normal pass styles exactly as before.
-            var adjustment = new BlocStyleAdjustment(0.5, true);
-            var decision = DrawablesBuilder.resolveBlocStyleDecision(false, "pirates",
-                    viewMockDeciding(true, adjustment), OwnershipGrouping.identity(),
-                    BlocStyleAdjustment.NONE);
-
-            assertThat(decision.usesIndependentStyle()).isTrue();
-            assertThat(decision.adjustment()).isSameAs(adjustment);
-        }
     }
 
     @Nested

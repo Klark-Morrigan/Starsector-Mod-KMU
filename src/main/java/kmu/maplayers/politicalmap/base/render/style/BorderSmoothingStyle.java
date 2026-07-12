@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.model;
+package kmu.maplayers.politicalmap.base.render.style;
 
 /**
  * The sector-wide smoothing applied to every national border (and to a factionless cell's

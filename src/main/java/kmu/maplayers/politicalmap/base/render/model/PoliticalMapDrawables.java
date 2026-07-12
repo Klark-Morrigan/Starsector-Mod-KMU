@@ -6,6 +6,10 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
+import kmu.maplayers.politicalmap.base.render.style.MapCategory;
+import kmu.maplayers.politicalmap.base.render.style.RenderStyle;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;

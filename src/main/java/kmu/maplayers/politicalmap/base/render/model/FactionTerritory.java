@@ -21,7 +21,8 @@ import java.util.List;
  * other territory sets {@code hatchSegments} empty and paints only its solid triangles. The two
  * fills tile the footprint inside one frontier, so its border stays a single continuous outline
  * either way. The width the hatch strokes at is sector-wide, so it lives on the theme's global
- * tier ({@link GlobalStyle}) and the renderer sets it once, not per territory.
+ * tier ({@link kmu.maplayers.politicalmap.base.render.style.GlobalStyle}) and the renderer sets it
+ * once, not per territory.
  *
  * <p>{@code transitionSeams} marks where the solid and hatched fills meet inside that footprint,
  * as a {@code GL_LINES} run stroked in {@code transitionSeam}'s (secondary-shade) colour and

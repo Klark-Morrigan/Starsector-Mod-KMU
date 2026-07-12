@@ -1,8 +1,5 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.politicalmap.base.render.model.CategoryStyle;
-import kmu.maplayers.politicalmap.base.render.model.GlobalStyle;
-import kmu.maplayers.politicalmap.base.render.model.MapCategory;
 import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;

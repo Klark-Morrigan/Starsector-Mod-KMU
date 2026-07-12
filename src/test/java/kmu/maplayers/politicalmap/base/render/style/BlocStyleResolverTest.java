@@ -1,0 +1,113 @@
+package kmu.maplayers.politicalmap.base.render.style;
+
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * Pins the shared per-bloc style decision the fills and the cluster-name labels both read: the
+ * filter-mode adjustment a bloc takes (spotlight untouched, everyone else receding by the union
+ * of the view's recede and the shared recede) and the whole decision it feeds.
+ */
+final class BlocStyleResolverTest {
+
+    // A view stub answering both per-bloc style seams with fixed values, so a test can prove
+    // whether the decision consulted the view (off filter) or bypassed it (under filter).
+    private static PoliticalMapView viewMockDeciding(boolean usesIndependentStyle,
+            BlocStyleAdjustment adjustment) {
+        var viewMock = mock(PoliticalMapView.class);
+        when(viewMock.shouldUseIndependentStyle(any(), any())).thenReturn(usesIndependentStyle);
+        when(viewMock.resolveBlocStyleAdjustment(any(), any())).thenReturn(adjustment);
+        return viewMock;
+    }
+
+    @Nested
+    class ResolveFilterAdjustment {
+
+        @Test
+        void resolveFilterAdjustmentLeavesTheSpotlightedBlocUntouched() {
+            // The spotlighted bloc draws at full strength however the recede is set, so it stands
+            // out against the muted background - neither the view's own adjustment nor the shared
+            // recede touches it.
+            assertThat(BlocStyleResolver.resolveFilterAdjustment(true,
+                    new BlocStyleAdjustment(0.9, false), new BlocStyleAdjustment(0.3, true)))
+                    .isEqualTo(BlocStyleAdjustment.NONE);
+        }
+
+        @Test
+        void resolveFilterAdjustmentRecedesEveryOtherBlocByTheSharedRecede() {
+            // A non-spotlighted bloc the view does not adjust takes the pass's shared recede whole,
+            // so the sector fades to a muted background the spotlight reads against.
+            var recede = new BlocStyleAdjustment(0.3, true);
+
+            assertThat(BlocStyleResolver.resolveFilterAdjustment(false, BlocStyleAdjustment.NONE,
+                    recede)).isEqualTo(recede);
+        }
+
+        @Test
+        void resolveFilterAdjustmentUnionsTheViewRecedeWithTheSharedRecede() {
+            // A bloc the view already recedes (a non-allied faction under the alliances view) and the
+            // filter also recedes takes the union - strongest mute, either desaturate - applied once,
+            // so it never mutes twice by compounding the two multipliers.
+            var viewRecede = new BlocStyleAdjustment(0.5, false);
+            var sharedRecede = new BlocStyleAdjustment(0.3, true);
+
+            assertThat(BlocStyleResolver.resolveFilterAdjustment(false, viewRecede, sharedRecede))
+                    .isEqualTo(new BlocStyleAdjustment(0.3, true));
+        }
+    }
+
+    @Nested
+    class ResolveBlocStyleDecision {
+
+        @Test
+        void resolveBlocStyleDecisionKeepsTheViewsIndependentStyleForANonSpotlitBlocUnderFilter() {
+            // The single decision the fills and the labels both read, so pinning it here pins both.
+            // Under a filter only the ADJUSTMENT is filter-driven; the base-style decision stays the
+            // view's, so independent-held space keeps its independent style rather than snapping to
+            // the faction style when a filter turns on. The stub says independent, so a true result
+            // proves the filter left the view's base-style call live.
+            var decision = BlocStyleResolver.resolveBlocStyleDecision(true, "independent",
+                    viewMockDeciding(true, BlocStyleAdjustment.NONE),
+                    OwnershipGrouping.identity(), new BlocStyleAdjustment(0.3, true));
+
+            assertThat(decision.usesIndependentStyle()).isTrue();
+        }
+
+        @Test
+        void resolveBlocStyleDecisionUnionsTheViewRecedeWithTheSharedRecedeUnderFilter() {
+            // A non-spotlit bloc the view already recedes (a non-allied faction under the alliances
+            // view) and the filter recedes too takes the union - strongest mute, either desaturate -
+            // once, so a receded name still cannot drift from its receded fill and neither mutes
+            // twice by compounding the two multipliers.
+            var viewRecede = new BlocStyleAdjustment(0.5, false);
+            var sharedRecede = new BlocStyleAdjustment(0.3, true);
+            var decision = BlocStyleResolver.resolveBlocStyleDecision(true, "hegemony",
+                    viewMockDeciding(false, viewRecede), OwnershipGrouping.identity(), sharedRecede);
+
+            assertThat(decision.usesIndependentStyle()).isFalse();
+            assertThat(decision.adjustment()).isEqualTo(new BlocStyleAdjustment(0.3, true));
+        }
+
+        @Test
+        void resolveBlocStyleDecisionDelegatesToTheViewOffFilter() {
+            // Off filter the decision is the active view's own call, unchanged: its independent-
+            // recede test and its per-bloc adjustment, so a normal pass styles exactly as before.
+            var adjustment = new BlocStyleAdjustment(0.5, true);
+            var decision = BlocStyleResolver.resolveBlocStyleDecision(false, "pirates",
+                    viewMockDeciding(true, adjustment), OwnershipGrouping.identity(),
+                    BlocStyleAdjustment.NONE);
+
+            assertThat(decision.usesIndependentStyle()).isTrue();
+            assertThat(decision.adjustment()).isSameAs(adjustment);
+        }
+    }
+}
