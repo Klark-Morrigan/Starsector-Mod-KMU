@@ -43,7 +43,8 @@ settings or how the runs were shaped.
 The *theme and the styling resolvers* (what colour/width each category and bloc draws in) live in
 `render.style`; this package consumes them, it does not decide them. The *faction-name overlay*
 that sits on top is `render.labels`. The border-ring trace shared with the label anchor search
-(`render.PoliticalBorderTrace`) and the low-level GL helper (`render.MapGl`) stay at the `render`
-root because more than one concern uses them. The *incremental refresh* that folds per-system
+(`render.PoliticalBorderTrace`) stays at the `render` root because more than one concern uses it;
+the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
+*incremental refresh* that folds per-system
 ownership changes into the packets is `render.IncrementalPoliticsRefresh`, kept at the root because
 it orchestrates both this build and the label rebuild.

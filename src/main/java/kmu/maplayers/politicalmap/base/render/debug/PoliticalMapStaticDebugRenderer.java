@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.render.debug;
 
 import kmlib.opengl.GlColor;
+import kmlib.opengl.GlRuns;
 
-import kmu.maplayers.politicalmap.base.render.MapGl;
 import kmu.maplayers.politicalmap.base.render.labels.DiagnosticPalette;
 
 import org.lwjgl.opengl.GL11;
@@ -79,7 +79,7 @@ public final class PoliticalMapStaticDebugRenderer {
         GL11.glLineWidth(width);
         GlColor.set(color, alphaMult);
         for (var loop : loops) {
-            MapGl.drawVertexRun(GL11.GL_LINE_LOOP, loop, factor);
+            GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
         }
     }
 }

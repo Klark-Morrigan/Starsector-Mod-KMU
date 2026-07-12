@@ -1,9 +1,9 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.opengl.GlColor;
+import kmlib.opengl.GlRuns;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.render.MapGl;
 
 import org.lwjgl.opengl.GL11;
 
@@ -80,8 +80,8 @@ public final class TerritoryRenderer {
                 continue;
             }
             GlColor.set(fill.color(), alphaMult * fill.alpha());
-            MapGl.drawVertexRun(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
-            MapGl.drawVertexRun(GL11.GL_LINES, territory.hatchSegments(), factor);
+            GlRuns.drawScaled(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
+            GlRuns.drawScaled(GL11.GL_LINES, territory.hatchSegments(), factor);
         }
     }
 
@@ -105,7 +105,7 @@ public final class TerritoryRenderer {
             }
             GL11.glLineWidth(cell.innerWidth());
             GlColor.set(inner.color(), alphaMult * inner.alpha());
-            MapGl.drawVertexRun(GL11.GL_LINES, cell.interiorEdges(), factor);
+            GlRuns.drawScaled(GL11.GL_LINES, cell.interiorEdges(), factor);
         }
         // The spotlit footprint's solid<->hatched transition seam, drawn with the interior seams
         // (beneath the national borders) so the frontier still dominates where they meet. Its run
@@ -118,7 +118,7 @@ public final class TerritoryRenderer {
             }
             GL11.glLineWidth(territory.transitionSeamWidth());
             GlColor.set(transitionSeam.color(), alphaMult * transitionSeam.alpha());
-            MapGl.drawVertexRun(GL11.GL_LINES, territory.transitionSeams(), factor);
+            GlRuns.drawScaled(GL11.GL_LINES, territory.transitionSeams(), factor);
         }
         for (var cell : territories.getStyledCellBySystemId().values()) {
             var outer = cell.outer();
@@ -127,7 +127,7 @@ public final class TerritoryRenderer {
             }
             GL11.glLineWidth(cell.outerWidth());
             GlColor.set(outer.color(), alphaMult * outer.alpha());
-            MapGl.drawVertexRun(GL11.GL_LINES, cell.boundaryEdges(), factor);
+            GlRuns.drawScaled(GL11.GL_LINES, cell.boundaryEdges(), factor);
         }
         // Each border ring is a closed rounded loop, so it strokes as one continuous
         // GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
@@ -139,7 +139,7 @@ public final class TerritoryRenderer {
             GL11.glLineWidth(territory.borderWidth());
             GlColor.set(border.color(), alphaMult * border.alpha());
             for (var loop : territory.borderLoops()) {
-                MapGl.drawVertexRun(GL11.GL_LINE_LOOP, loop, factor);
+                GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
             }
         }
     }
