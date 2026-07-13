@@ -17,6 +17,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarScrollState;
+import kmu.maplayers.base.sidebar.SidebarScrollbar;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
@@ -49,6 +50,13 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // two list rows, a comfortable step without overshooting a short list.
     private static final float SCROLL_STEP_PX = 40f;
 
+    // A scrollbar-thumb drag in progress, and the pointer's offset from the thumb centre when it was
+    // grabbed. The drag spans frames (press, moves, release), so it lives as state between events: while
+    // set, every mouse move maps the pointer to a scroll position; the grab offset holds the thumb under
+    // the cursor so it does not jump when grabbed off-centre.
+    private static boolean isDraggingThumb;
+    private static float thumbGrabOffsetY;
+
     @Override
     public int getListenerInputPriority() {
         return INPUT_PRIORITY;
@@ -57,8 +65,10 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     @Override
     public void processCampaignInputPreCore(List<InputEventAPI> events) {
         // The bar only shows on the sector map with the starscape filter off; off it, its
-        // keys and clicks must not fire, so leave every event untouched.
+        // keys and clicks must not fire, so leave every event untouched. A drag left dangling by the
+        // overlay closing mid-drag ends here, so a stale grab cannot hijack the next map session.
         if (!CampaignMapView.isSectorMapWithStarscapeOff()) {
+            isDraggingThumb = false;
             return;
         }
         // The placement the renderer drew this frame; null when the tab font could not load, in
@@ -119,18 +129,74 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // map, and consuming the whole box keeps the map from hovering a star or reading the bar as empty
     // margin under the cursor.
     private static void handlePointerOverBar(InputEventAPI event, SidebarPlacement placement) {
+        // A thumb drag in progress owns the event wherever the pointer is - even past the panel edge -
+        // so the list keeps following the cursor until the release, rather than dropping the drag the
+        // moment the pointer leaves the narrow scrollbar column.
+        if (isDraggingThumb) {
+            continueThumbDrag(event, placement);
+            return;
+        }
         if (!TabPanel.containsPoint(placement.panel(), event.getX(), event.getY())) {
             return;
         }
-        // A wheel over the panel scrolls its bloc list rather than zooming the map behind it; a left
-        // press fires the control under it. Either way the event is consumed below, so the map never
-        // also acts on a pointer event the panel handled.
+        // A wheel over the panel scrolls its bloc list rather than zooming the map behind it; a press on
+        // the scrollbar's grab column starts a drag; any other left press fires the control under it.
+        // Either way the event is consumed below, so the map never also acts on a pointer event the panel
+        // handled.
         if (event.isMouseScrollEvent()) {
             scrollListUnderPointer(event, placement);
         } else if (event.isLMBDownEvent()) {
-            actOnLeftPress(placement, event.getX(), event.getY());
+            if (!beginThumbDragIfPressed(event, placement)) {
+                actOnLeftPress(placement, event.getX(), event.getY());
+            }
         }
         event.consume();
+    }
+
+    // Starts a scrollbar drag when a left press lands on the grab column, reporting whether it did. The
+    // grab column is the gutter right of the list, wider than the thin track so it need not be hit
+    // exactly; a press on the thumb records its offset from the thumb centre so the thumb stays under the
+    // cursor, while a press on the bare track jumps the thumb to the pointer at once. Only fires while
+    // the list overflows - there is no scrollbar otherwise.
+    private static boolean beginThumbDragIfPressed(InputEventAPI event, SidebarPlacement placement) {
+        if (!placement.isScrollbarNeeded()) {
+            return false;
+        }
+        var track = SidebarScrollbar.computeTrack(placement);
+        if (!SidebarScrollbar.computeGrabColumn(placement, track)
+                .containsPoint(event.getX(), event.getY())) {
+            return false;
+        }
+        isDraggingThumb = true;
+        var thumb = SidebarScrollbar.computeThumb(placement, track);
+        thumbGrabOffsetY = thumb.containsPoint(event.getX(), event.getY())
+                ? event.getY() - (thumb.y() + thumb.height() / 2f)
+                : 0f;
+        updateDragOffset(placement, event.getY());
+        return true;
+    }
+
+    // Follows an in-progress drag: the release ends it, and until then every move maps the pointer to a
+    // scroll position. Consumes the event so the map neither pans nor acts while the thumb is held.
+    private static void continueThumbDrag(InputEventAPI event, SidebarPlacement placement) {
+        if (event.isLMBUpEvent()) {
+            isDraggingThumb = false;
+            event.consume();
+            return;
+        }
+        if (placement.isScrollbarNeeded()) {
+            updateDragOffset(placement, event.getY());
+        }
+        event.consume();
+    }
+
+    // Maps the dragged pointer to an absolute scroll offset along the track and stores it, holding the
+    // thumb the grab offset below the cursor so it tracks the drag rather than snapping its centre to the
+    // pointer.
+    private static void updateDragOffset(SidebarPlacement placement, float pointerY) {
+        var track = SidebarScrollbar.computeTrack(placement);
+        SidebarScrollState.setOffset(
+                SidebarScrollbar.resolveOffsetForPointer(placement, track, pointerY - thumbGrabOffsetY));
     }
 
     // Scrolls the bloc list when the wheel turns over its scroll region and it has somewhere to scroll.

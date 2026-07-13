@@ -39,6 +39,17 @@ public final class SidebarScrollState {
     }
 
     /**
+     * Sets the scroll offset outright, for a scrollbar drag that maps the pointer straight to a position
+     * rather than nudging by a delta. Not clamped here - {@link #clampTo} settles it into range each
+     * frame - though the drag resolves an already-in-range offset, so the set value is normally valid.
+     *
+     * @param newOffset the offset in pixels to jump to
+     */
+    public static void setOffset(float newOffset) {
+        offset = newOffset;
+    }
+
+    /**
      * Confines the stored offset to {@code [0, overflow]}, called each frame once the layout has resolved
      * how far the list actually overruns its viewport, so the stored request tracks what can be scrolled
      * rather than drifting past it.

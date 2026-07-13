@@ -41,6 +41,19 @@ final class SidebarScrollStateTest {
     }
 
     @Nested
+    class SetOffset {
+
+        @Test
+        void setOffsetJumpsStraightToTheGivenPosition() {
+            // A scrollbar drag maps the pointer to an absolute position, so setOffset replaces the offset
+            // rather than accumulating like scrollBy does.
+            SidebarScrollState.scrollBy(30f);
+            SidebarScrollState.setOffset(80f);
+            assertThat(SidebarScrollState.getOffset()).isCloseTo(80f, within(TOLERANCE));
+        }
+    }
+
+    @Nested
     class ClampTo {
 
         @Test

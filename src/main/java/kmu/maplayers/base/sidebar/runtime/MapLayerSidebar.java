@@ -24,7 +24,6 @@ import kmlib.starsector.ui.render.gl.UiScissor;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.widgets.Checkbox;
 import kmlib.starsector.ui.widgets.IconLabelRow;
-import kmlib.starsector.ui.widgets.Scrollbar;
 import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.text.KmlibStrings;
 
@@ -32,6 +31,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarLayout;
 import kmu.maplayers.base.sidebar.SidebarPlacement;
+import kmu.maplayers.base.sidebar.SidebarScrollbar;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -77,13 +77,6 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // and body controls draw their player-colour accents over it, so the general fill stays black
     // and only lit elements carry colour.
     private static final Color PANEL_FILL = Color.BLACK;
-
-    // The scrollbar's channel: a thin track sitting in the body's right-hand gutter (the inset between
-    // the widest control and the border), a small margin off the border so it clears the stroke. Kept
-    // narrow so it never crowds the list's trailing values, which the list's own viewport clips clear
-    // of the track anyway.
-    private static final float SCROLLBAR_TRACK_WIDTH = 3f;
-    private static final float SCROLLBAR_RIGHT_MARGIN = 3f;
 
     // Cached across instances and reloads: the body labels are a handful of static strings, so one
     // GL text buffer per distinct (size, text) serves the whole run rather than leaking a buffer
@@ -222,12 +215,10 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // content height is the viewport plus how far the list overruns it, the pair the thumb's height and
     // travel derive from.
     private static void drawScrollbar(SidebarPlacement placement, Color accent, float opacity) {
-        var viewport = placement.flexViewport();
-        var track = Scrollbar.computeRightGutterTrack(placement.body(), viewport,
-                SCROLLBAR_TRACK_WIDTH, SCROLLBAR_RIGHT_MARGIN);
-        var contentHeight = viewport.height() + placement.scrollOverflow();
-        var thumb = Scrollbar.computeThumb(track, contentHeight, viewport.height(),
-                placement.scrollOffset());
+        // The track and thumb are the same geometry the input listener hit-tests for a drag, resolved
+        // through one shared adapter so what is drawn and what a drag grabs cannot drift.
+        var track = SidebarScrollbar.computeTrack(placement);
+        var thumb = SidebarScrollbar.computeThumb(placement, track);
         ScrollbarRenderer.render(track, thumb, accent, opacity);
     }
 
