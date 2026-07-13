@@ -196,7 +196,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     private static void updateDragOffset(PanelPlacement placement, float pointerY) {
         var region = placement.toScrollRegion();
         var track = Scrollbar.computeTrack(region);
-        SidebarScrollState.setOffset(
+        SidebarScrollState.INSTANCE.setOffset(
                 Scrollbar.resolveOffsetForPointer(region, track, pointerY - thumbGrabOffsetY));
     }
 
@@ -210,7 +210,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
                 || !placement.flexViewport().containsPoint(event.getX(), event.getY())) {
             return;
         }
-        SidebarScrollState.scrollBy(-Math.signum((float) event.getEventValue()) * SCROLL_STEP_PX);
+        SidebarScrollState.INSTANCE.scrollBy(-Math.signum((float) event.getEventValue()) * SCROLL_STEP_PX);
     }
 
     // Routes a left press inside the box to what sits under it: a tab selects its layer, otherwise a
