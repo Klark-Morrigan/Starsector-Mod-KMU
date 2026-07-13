@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.politicalmap.base.BlocListColumns;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.SortDirection;
@@ -29,7 +30,8 @@ import java.util.function.Function;
  * otherwise, and it rides between the sort selector and the list so the "rest of the sector" knobs sit
  * by the section they modify. It is the same reusable {@link RecedeControl} the alliances view places
  * under its own caption, bound to the one shared toggle set, so a flip here and a flip there move the
- * same recede.
+ * same recede. The columns selector then rides directly above the list, so how many columns the list
+ * wraps across is chosen right by the list it lays out.
  */
 public final class FilterPickerControl {
 
@@ -51,10 +53,12 @@ public final class FilterPickerControl {
      *                       value
      * @param sortDirection  the direction the sort mode runs in, which the ranking follows and the
      *                       sort selector previews
+     * @param columns        how many columns the bloc list wraps its rows across, which the columns
+     *                       selector lights and the list lays out under
      * @return the picker body controls, top to bottom; empty when {@code blocs} is empty
      */
     public static List<ControlSpec> buildControls(List<SelectableBloc> blocs, String selectedBlocId,
-            BlocSortMode sortMode, SortDirection sortDirection) {
+            BlocSortMode sortMode, SortDirection sortDirection, BlocListColumns columns) {
         if (blocs.isEmpty()) {
             return List.of();
         }
@@ -78,9 +82,13 @@ public final class FilterPickerControl {
             controls.addAll(RecedeControl.buildControls(
                     KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION)));
         }
+        // The columns selector rides directly above the list, so the column count is chosen right by
+        // the list it lays out; the list then wraps its rows across that many columns.
+        controls.add(ColumnsSelectorControl.buildSelector(columns));
         controls.add(ControlSpec.createIconRadioList(resolveLabels(rankedBlocs),
                 resolveIconPaths(rankedBlocs), resolveTrailingValues(rankedBlocs, sortMode),
-                selectedIndex, cellIndex -> pickBloc(rankedBlocs, selectedIndex, cellIndex)));
+                selectedIndex, cellIndex -> pickBloc(rankedBlocs, selectedIndex, cellIndex),
+                columns.columnCount()));
         return List.copyOf(controls);
     }
 

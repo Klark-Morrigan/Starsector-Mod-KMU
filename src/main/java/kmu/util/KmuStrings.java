@@ -50,6 +50,9 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_SORT_MARKET_SIZE = "political_map_ctl_sort_market_size";
     public static final String POLITICAL_MAP_CTL_SORT_DIR_ASCENDING = "political_map_ctl_sort_dir_ascending";
     public static final String POLITICAL_MAP_CTL_SORT_DIR_DESCENDING = "political_map_ctl_sort_dir_descending";
+    public static final String POLITICAL_MAP_CTL_COLUMNS_CAPTION = "political_map_ctl_columns_caption";
+    public static final String POLITICAL_MAP_CTL_COLUMNS_ONE = "political_map_ctl_columns_one";
+    public static final String POLITICAL_MAP_CTL_COLUMNS_TWO = "political_map_ctl_columns_two";
 
     private KmuStrings() {
     }

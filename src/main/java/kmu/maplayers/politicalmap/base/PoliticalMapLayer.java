@@ -6,6 +6,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.politicalmap.base.refresh.ColumnSelection;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.refresh.SortSelection;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
@@ -92,9 +93,12 @@ public final class PoliticalMapLayer implements MapLayer {
             var sortMode = BlocSortMode.fromKeyOrDefault(SortSelection.getSortModeKey());
             var sortDirection = SortDirection.fromKeyOrDefault(
                     SortSelection.getSortDirectionKey(), sortMode.defaultDirection());
+            // The stored column count, resolved to the default (one column) when a save has never
+            // picked one, so the list always lays out under a live count.
+            var columns = BlocListColumns.fromKeyOrDefault(ColumnSelection.getColumnCountKey());
             controls.addAll(FilterPickerControl.buildControls(
                     SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
-                    FilterSelection.getSelectedBlocId(), sortMode, sortDirection));
+                    FilterSelection.getSelectedBlocId(), sortMode, sortDirection, columns));
             controls.addAll(selectedView.getViewBodyControls());
         }
         return List.copyOf(controls);

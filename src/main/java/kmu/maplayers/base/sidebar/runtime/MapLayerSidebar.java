@@ -210,8 +210,8 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         var spec = control.spec();
         var bounds = control.bounds();
         var labels = spec.labels();
-        RadioRowRenderer.render(bounds, labels.size(), spec.selectedIndex(), spec.alignment(), accent,
-                accent, opacity);
+        RadioRowRenderer.render(bounds, labels.size(), spec.selectedIndex(), spec.alignment(),
+                spec.columnCount(), accent, accent, opacity);
         var segments = control.segments();
         for (var index = 0; index < segments.size() && index < labels.size(); index++) {
             var segment = segments.get(index);
@@ -233,8 +233,8 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     private static void drawIconRadio(Control control, Color accent, float opacity) {
         var spec = control.spec();
         var bounds = control.bounds();
-        IconRadioListRenderer.render(bounds, spec.iconPaths(), spec.selectedIndex(), accent, accent,
-                opacity);
+        IconRadioListRenderer.render(bounds, spec.iconPaths(), spec.selectedIndex(),
+                spec.columnCount(), accent, accent, opacity);
         var segments = control.segments();
         var labels = spec.labels();
         for (var index = 0; index < segments.size() && index < labels.size(); index++) {

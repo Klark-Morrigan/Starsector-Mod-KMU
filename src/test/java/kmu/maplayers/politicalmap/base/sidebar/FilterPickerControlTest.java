@@ -5,6 +5,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.RadioAlignment;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
+import kmu.maplayers.politicalmap.base.BlocListColumns;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -138,7 +139,8 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
 
                 var picker = pickerOf(FilterPickerControl.buildControls(
-                        BLOCS, null, BlocSortMode.DOMINATION, SortDirection.ASCENDING));
+                        BLOCS, null, BlocSortMode.DOMINATION, SortDirection.ASCENDING,
+                        BlocListColumns.ONE));
 
                 assertThat(picker.labels()).containsExactly("Free Traders", "Hegemony");
                 assertThat(picker.trailingLabels()).containsExactly("2", "5");
@@ -223,20 +225,20 @@ final class FilterPickerControlTest {
         @Test
         void buildControlsOmitsTheRecedeControlWhenNoBlocIsSpotlighted() {
             // With no filter the sector draws normally, so there is nothing to recede - the block is
-            // just the divider, the sort selector, and the list.
+            // just the divider, the sort selector, the columns selector, and the list.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
                 assertThat(build(BLOCS, null, BlocSortMode.DEFAULT))
-                        .hasSize(3);
+                        .hasSize(4);
             }
         }
 
         @Test
-        void buildControlsInsertsTheRecedeControlAboveTheListWhenABlocIsSpotlighted() {
-            // While filtering the recede control rides between the sort selector and the list: its
-            // caption then the Mute and Desaturate checkboxes, so the block is divider + sort selector +
-            // three recede rows + list.
+        void buildControlsInsertsTheRecedeControlAboveTheColumnsSelectorWhenABlocIsSpotlighted() {
+            // While filtering the recede control rides between the sort selector and the columns
+            // selector: its caption then the Mute and Desaturate checkboxes, so the block is divider +
+            // sort selector + three recede rows + columns selector + list.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<RecedePreferences> preferencesMock =
                             mockStatic(RecedePreferences.class)) {
@@ -244,12 +246,51 @@ final class FilterPickerControlTest {
 
                 var controls = build(BLOCS, "hegemony", BlocSortMode.DEFAULT);
 
-                assertThat(controls).hasSize(6);
+                assertThat(controls).hasSize(7);
                 assertThat(controls.get(2).kind()).isEqualTo(ControlKind.LABEL);
                 assertThat(controls.get(2).labels()).containsExactly("Rest of the sector is");
                 assertThat(controls.get(3).kind()).isEqualTo(ControlKind.CHECKBOX);
                 assertThat(controls.get(4).kind()).isEqualTo(ControlKind.CHECKBOX);
+                // The columns selector then the list are the last two rows, both vertical/horizontal
+                // radios; the columns selector sits directly above the list it lays out.
                 assertThat(controls.get(5).kind()).isEqualTo(ControlKind.RADIO);
+                assertThat(controls.get(6).kind()).isEqualTo(ControlKind.RADIO);
+            }
+        }
+
+        @Test
+        void buildControlsPlacesTheColumnsSelectorDirectlyAboveTheList() {
+            // The columns selector rides right above the list, so how many columns the list wraps
+            // across is chosen by the list it lays out: a two-segment horizontal radio.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+
+                var controls = build(BLOCS, null, BlocSortMode.DEFAULT);
+                var columnsSelector = controls.get(controls.size() - 2);
+
+                assertThat(columnsSelector.kind()).isEqualTo(ControlKind.RADIO);
+                assertThat(columnsSelector.alignment()).isEqualTo(RadioAlignment.HORIZONTAL);
+                assertThat(columnsSelector.labels()).hasSize(2);
+            }
+        }
+
+        @Test
+        void buildControlsLaysTheListAcrossTheChosenColumnCount() {
+            // The chosen column count reaches the list widget's geometry: a two-column choice builds a
+            // two-column list, a single-column choice a one-column list, so the layout wraps the rows
+            // exactly as the selector says.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+
+                var oneColumn = pickerOf(FilterPickerControl.buildControls(BLOCS, null,
+                        BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection(),
+                        BlocListColumns.ONE));
+                var twoColumn = pickerOf(FilterPickerControl.buildControls(BLOCS, null,
+                        BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection(),
+                        BlocListColumns.TWO));
+
+                assertThat(oneColumn.columnCount()).isEqualTo(1);
+                assertThat(twoColumn.columnCount()).isEqualTo(2);
             }
         }
     }
@@ -308,12 +349,14 @@ final class FilterPickerControlTest {
         }
     }
 
-    // Builds the picker in the sort mode's own default direction, the state every test that does not
-    // exercise a flip assumes, so the call sites read the mode alone without spelling out its default
-    // direction. A test that flips the direction calls the four-arg builder directly.
+    // Builds the picker in the sort mode's own default direction and the default single-column layout,
+    // the state every test that does not exercise a flip or a column change assumes, so the call sites
+    // read the mode alone without spelling out its default direction or column count. A test that flips
+    // the direction calls the full builder directly.
     private static List<ControlSpec> build(List<SelectableBloc> blocs, String selectedBlocId,
             BlocSortMode mode) {
-        return FilterPickerControl.buildControls(blocs, selectedBlocId, mode, mode.defaultDirection());
+        return FilterPickerControl.buildControls(blocs, selectedBlocId, mode, mode.defaultDirection(),
+                BlocListColumns.ONE);
     }
 
     // The picker list is always the block's last row, so a test reads it from the tail rather than a
