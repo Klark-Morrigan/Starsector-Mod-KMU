@@ -32,6 +32,11 @@
     "political_map_ctl_non_allied_caption": "Non-allied factions are",
     "political_map_ctl_muted": "Muted",
     "political_map_ctl_desaturated": "Desaturated",
-    "political_map_ctl_filter_recede_caption": "Rest of the sector is"
+    "political_map_ctl_filter_recede_caption": "Rest of the sector is",
+    "political_map_ctl_sort_name": "Name",
+    "political_map_ctl_sort_domination": "Domination",
+    "political_map_ctl_sort_presence": "Presence",
+    "political_map_ctl_sort_score": "Score",
+    "political_map_ctl_sort_market_size": "Market size"
   }
 }

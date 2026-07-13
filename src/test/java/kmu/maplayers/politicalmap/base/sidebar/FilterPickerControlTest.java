@@ -4,6 +4,7 @@ import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.RadioAlignment;
 
+import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
@@ -20,25 +21,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the spotlight picker's body controls, top to bottom: a section rule, the shared recede control
- * only while a bloc is spotlighted, and the vertical icon-radio list of selectable blocs. Also pins
- * the click wiring: an unlit option spotlights its bloc, the lit option clears the filter. Strings,
- * the recede preferences, and the filter selection are stubbed so this pins the picker's shape and
- * wiring alone, not how a string resolves or how the selection persists.
+ * Pins the spotlight picker's body controls, top to bottom: a section rule, the sort selector, the
+ * shared recede control only while a bloc is spotlighted, and the vertical icon-radio list of
+ * selectable blocs ranked by the active sort mode. Also pins the click wiring: an unlit option
+ * spotlights its bloc, the lit option clears the filter. Strings, the recede preferences, and the
+ * filter selection are stubbed so this pins the picker's shape and wiring alone, not how a string
+ * resolves or how the selection persists.
  */
 final class FilterPickerControlTest {
-    // The two blocs the picker lists in every test: a crested faction and a crestless one (an
-    // alliance, or a faction with no authored crest), so the null-crest path is exercised too.
+    // The two blocs the picker lists in every test: a crested faction that dominates more and a
+    // crestless one (an alliance, or a faction with no authored crest) that dominates less, so the
+    // null-crest path is exercised and the default domination sort keeps them in this order.
     private static final SelectableBloc HEGEMONY =
-            new SelectableBloc("hegemony", "Hegemony", "crest_heg");
+            new SelectableBloc("hegemony", "Hegemony", "crest_heg", new BlocStats(5, 8, 40, 12));
     private static final SelectableBloc TRADERS =
-            new SelectableBloc("free_traders", "Free Traders", null);
+            new SelectableBloc("free_traders", "Free Traders", null, new BlocStats(2, 3, 6, 4));
     private static final List<SelectableBloc> BLOCS = List.of(HEGEMONY, TRADERS);
 
-    // The section rule always heads the block. The list is always the last row - its offset shifts by
-    // the recede rows when a bloc is spotlighted - so tests read it from the tail rather than a fixed
-    // index.
+    // The section rule always heads the block, and the sort selector always rides directly under it.
+    // The list is always the last row - its offset shifts by the recede rows when a bloc is
+    // spotlighted - so tests read it from the tail rather than a fixed index.
     private static final int DIVIDER = 0;
+    private static final int SORT_SELECTOR = 1;
 
     @Nested
     class BuildControls {
@@ -48,7 +52,8 @@ final class FilterPickerControlTest {
             // A view with no visible weighted bloc contributes no picker at all, so the body carries
             // no empty list widget.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
-                assertThat(FilterPickerControl.buildControls(List.of(), null)).isEmpty();
+                assertThat(FilterPickerControl.buildControls(List.of(), null, BlocSortMode.DEFAULT))
+                        .isEmpty();
             }
         }
 
@@ -59,9 +64,28 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var divider = FilterPickerControl.buildControls(BLOCS, null).get(DIVIDER);
+                var divider =
+                        FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.DEFAULT).get(DIVIDER);
 
                 assertThat(divider.kind()).isEqualTo(ControlKind.DIVIDER);
+            }
+        }
+
+        @Test
+        void buildControlsPlacesTheSortSelectorUnderTheDivider() {
+            // The sort selector rides directly under the rule, so the metric is chosen right above the
+            // list it orders: a vertical, always-selected radio lit on the active mode's row.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+
+                var selector = FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.PRESENCE)
+                        .get(SORT_SELECTOR);
+
+                assertThat(selector.kind()).isEqualTo(ControlKind.RADIO);
+                assertThat(selector.alignment()).isEqualTo(RadioAlignment.VERTICAL);
+                assertThat(selector.canDeselect()).isFalse();
+                assertThat(selector.selectedIndex())
+                        .isEqualTo(List.of(BlocSortMode.values()).indexOf(BlocSortMode.PRESENCE));
             }
         }
 
@@ -70,23 +94,58 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null));
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.DEFAULT));
 
                 assertThat(picker.kind()).isEqualTo(ControlKind.RADIO);
                 assertThat(picker.alignment()).isEqualTo(RadioAlignment.VERTICAL);
                 assertThat(picker.canDeselect()).isTrue();
                 // Labels are the bloc names, the icons the crests, aligned index for index so a
-                // crestless bloc rides as a null entry rather than dropping a row.
+                // crestless bloc rides as a null entry rather than dropping a row. Domination-sorted,
+                // so the higher-dominating Hegemony leads.
                 assertThat(picker.labels()).containsExactly("Hegemony", "Free Traders");
                 assertThat(picker.iconPaths()).containsExactly("crest_heg", null);
             }
         }
 
         @Test
-        void buildControlsDrawsEachBlocsDominationCountAsItsTrailingValue() {
-            // The list reads as a ranked table: each row's trailing value is the count of systems the
-            // bloc dominates, kept aligned index for index so a bloc that dominates nothing shows "0"
-            // rather than dropping the column.
+        void buildControlsRanksTheListByTheSortMode() {
+            // The list is ordered by the chosen metric, high to low; the trailing value is that metric,
+            // so the rows read as a table sorted by the number shown. Under presence Traders and
+            // Hegemony keep their order (8 > 3) but the values switch to the presence counts.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+                // A third bloc that trails on domination but leads on market size, so a market-size
+                // sort visibly reorders the list rather than just relabelling it.
+                var tritachyon = new SelectableBloc("tritachyon", "Tri-Tachyon", "crest_tt",
+                        new BlocStats(1, 9, 30, 99));
+
+                var picker = pickerOf(FilterPickerControl.buildControls(
+                        List.of(HEGEMONY, TRADERS, tritachyon), null, BlocSortMode.MARKET_SIZE));
+
+                assertThat(picker.labels()).containsExactly("Tri-Tachyon", "Hegemony", "Free Traders");
+                assertThat(picker.trailingLabels()).containsExactly("99", "12", "4");
+            }
+        }
+
+        @Test
+        void buildControlsSortsByNameWithBlankValuesUnderTheNameMode() {
+            // The name mode ranks the labels alphabetically and shows no numeric value, so the rows
+            // read as a plain A-to-Z list rather than a ranked table.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.NAME));
+
+                assertThat(picker.labels()).containsExactly("Free Traders", "Hegemony");
+                assertThat(picker.trailingLabels()).containsExactly("", "");
+            }
+        }
+
+        @Test
+        void buildControlsDrawsEachBlocsSortMetricAsItsTrailingValue() {
+            // The list reads as a ranked table: each row's trailing value is the active sort metric for
+            // the bloc, kept aligned index for index so a bloc with a zero metric shows "0" rather than
+            // dropping the column.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
                 var hegemony = new SelectableBloc("hegemony", "Hegemony", "crest_heg",
@@ -94,8 +153,8 @@ final class FilterPickerControlTest {
                 var traders = new SelectableBloc("free_traders", "Free Traders", null,
                         new BlocStats(0, 3, 6, 4));
 
-                var picker = pickerOf(
-                        FilterPickerControl.buildControls(List.of(hegemony, traders), null));
+                var picker = pickerOf(FilterPickerControl.buildControls(
+                        List.of(hegemony, traders), null, BlocSortMode.DOMINATION));
 
                 assertThat(picker.trailingLabels()).containsExactly("5", "0");
             }
@@ -109,7 +168,8 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
                 var nameless = new SelectableBloc("ghost", null, null);
 
-                var picker = pickerOf(FilterPickerControl.buildControls(List.of(nameless), null));
+                var picker = pickerOf(
+                        FilterPickerControl.buildControls(List.of(nameless), null, BlocSortMode.DEFAULT));
 
                 assertThat(picker.labels()).containsExactly("");
             }
@@ -120,8 +180,10 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, "free_traders"));
+                var picker = pickerOf(
+                        FilterPickerControl.buildControls(BLOCS, "free_traders", BlocSortMode.DEFAULT));
 
+                // Domination-sorted, Free Traders is the second row.
                 assertThat(picker.selectedIndex()).isEqualTo(1);
             }
         }
@@ -133,7 +195,8 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, "vanished"));
+                var picker = pickerOf(
+                        FilterPickerControl.buildControls(BLOCS, "vanished", BlocSortMode.DEFAULT));
 
                 assertThat(picker.selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
             }
@@ -142,32 +205,33 @@ final class FilterPickerControlTest {
         @Test
         void buildControlsOmitsTheRecedeControlWhenNoBlocIsSpotlighted() {
             // With no filter the sector draws normally, so there is nothing to recede - the block is
-            // just the divider and the list.
+            // just the divider, the sort selector, and the list.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                assertThat(FilterPickerControl.buildControls(BLOCS, null)).hasSize(2);
+                assertThat(FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.DEFAULT))
+                        .hasSize(3);
             }
         }
 
         @Test
         void buildControlsInsertsTheRecedeControlAboveTheListWhenABlocIsSpotlighted() {
-            // While filtering the recede control rides between the divider and the list: its caption
-            // then the Mute and Desaturate checkboxes, so the block is divider + three recede rows +
-            // list.
+            // While filtering the recede control rides between the sort selector and the list: its
+            // caption then the Mute and Desaturate checkboxes, so the block is divider + sort selector +
+            // three recede rows + list.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<RecedePreferences> preferencesMock =
                             mockStatic(RecedePreferences.class)) {
                 stubCaptions(stringsMock);
 
-                var controls = FilterPickerControl.buildControls(BLOCS, "hegemony");
+                var controls = FilterPickerControl.buildControls(BLOCS, "hegemony", BlocSortMode.DEFAULT);
 
-                assertThat(controls).hasSize(5);
-                assertThat(controls.get(1).kind()).isEqualTo(ControlKind.LABEL);
-                assertThat(controls.get(1).labels()).containsExactly("Rest of the sector is");
-                assertThat(controls.get(2).kind()).isEqualTo(ControlKind.CHECKBOX);
+                assertThat(controls).hasSize(6);
+                assertThat(controls.get(2).kind()).isEqualTo(ControlKind.LABEL);
+                assertThat(controls.get(2).labels()).containsExactly("Rest of the sector is");
                 assertThat(controls.get(3).kind()).isEqualTo(ControlKind.CHECKBOX);
-                assertThat(controls.get(4).kind()).isEqualTo(ControlKind.RADIO);
+                assertThat(controls.get(4).kind()).isEqualTo(ControlKind.CHECKBOX);
+                assertThat(controls.get(5).kind()).isEqualTo(ControlKind.RADIO);
             }
         }
     }
@@ -181,7 +245,7 @@ final class FilterPickerControlTest {
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null));
+                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(0);
 
@@ -199,7 +263,8 @@ final class FilterPickerControlTest {
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, "hegemony"));
+                var picker = pickerOf(
+                        FilterPickerControl.buildControls(BLOCS, "hegemony", BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(0);
 
@@ -215,7 +280,8 @@ final class FilterPickerControlTest {
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, "hegemony"));
+                var picker = pickerOf(
+                        FilterPickerControl.buildControls(BLOCS, "hegemony", BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(1);
 
@@ -230,14 +296,16 @@ final class FilterPickerControlTest {
         return controls.get(controls.size() - 1);
     }
 
-    // Stubs the caption strings the picker heads its rows with, so the assertions read the wiring
-    // without the live strings table. The recede checkbox labels are only reached in tests that mock
-    // RecedePreferences, which stub them there.
+    // Stubs the caption and sort-label strings the picker heads its rows with, so the assertions read
+    // the wiring without the live strings table. The recede checkbox labels are only reached in tests
+    // that mock RecedePreferences, which stub them there.
     private static void stubCaptions(MockedStatic<KmuStrings> stringsMock) {
         stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))
                 .thenReturn("Rest of the sector is");
         stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED)).thenReturn("Muted");
         stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED))
                 .thenReturn("Desaturated");
+        // The picker builds the sort selector, which reads every sort-mode label.
+        SortLabelStubs.stubSortLabels(stringsMock);
     }
 }

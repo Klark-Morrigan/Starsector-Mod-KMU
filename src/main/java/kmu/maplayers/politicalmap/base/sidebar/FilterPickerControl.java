@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
@@ -20,10 +21,12 @@ import java.util.function.Function;
  * decision, read before this is called, so this names no concrete view.
  *
  * <p>The rule parts the view-level controls above (the view selector) from the picker below, marking
- * the section a caption string used to. The recede control only does anything while a bloc is
- * spotlighted (with none selected the map draws exactly as un-filtered), so it is shown solely then
- * and hidden otherwise, and it rides above the list so the "rest of the sector" knobs sit by the rule
- * that opens the section. It is the same reusable {@link RecedeControl} the alliances view places
+ * the section a caption string used to. Under the rule rides the sort selector, so the metric the list
+ * ranks by is chosen right above the list it orders; the picker sorts the blocs by that metric and
+ * labels each row with its value. The recede control only does anything while a bloc is spotlighted
+ * (with none selected the map draws exactly as un-filtered), so it is shown solely then and hidden
+ * otherwise, and it rides between the sort selector and the list so the "rest of the sector" knobs sit
+ * by the section they modify. It is the same reusable {@link RecedeControl} the alliances view places
  * under its own caption, bound to the one shared toggle set, so a flip here and a flip there move the
  * same recede.
  */
@@ -33,36 +36,47 @@ public final class FilterPickerControl {
     }
 
     /**
-     * Builds the picker block for the current view's selectable blocs and filter selection, top to
-     * bottom: the section rule, the recede control when a bloc is spotlighted, then the icon-radio
-     * list (its lit row the spotlighted bloc, or none when the stored id is not among these blocs).
-     * Returns an empty list when there are no selectable blocs, so a view with nothing to spotlight
-     * contributes no picker rather than an empty list widget.
+     * Builds the picker block for the current view's selectable blocs, filter selection, and sort
+     * mode, top to bottom: the section rule, the sort selector, the recede control when a bloc is
+     * spotlighted, then the icon-radio list ranked by the sort mode (its lit row the spotlighted bloc,
+     * or none when the stored id is not among these blocs). Returns an empty list when there are no
+     * selectable blocs, so a view with nothing to spotlight contributes no picker rather than an empty
+     * list widget.
      *
-     * @param blocs          the selectable blocs under the active view, in the order they list
+     * @param blocs          the selectable blocs under the active view; order here is immaterial since
+     *                       the sort mode reorders them for display
      * @param selectedBlocId the currently spotlighted bloc's id, or null when no filter is active
+     * @param sortMode       the metric the list is ranked by, which also picks each row's trailing
+     *                       value
      * @return the picker body controls, top to bottom; empty when {@code blocs} is empty
      */
-    public static List<ControlSpec> buildControls(List<SelectableBloc> blocs,
-            String selectedBlocId) {
+    public static List<ControlSpec> buildControls(List<SelectableBloc> blocs, String selectedBlocId,
+            BlocSortMode sortMode) {
         if (blocs.isEmpty()) {
             return List.of();
         }
-        var selectedIndex = resolveSelectedIndex(blocs, selectedBlocId);
+        // Rank a copy under the active mode, leaving the caller's (cached) list untouched, so the rows
+        // draw in the chosen order and the lit index below is resolved against that same order.
+        var rankedBlocs = new ArrayList<>(blocs);
+        rankedBlocs.sort(sortMode.comparator());
+        var selectedIndex = resolveSelectedIndex(rankedBlocs, selectedBlocId);
         var controls = new ArrayList<ControlSpec>();
         // A rule heads the block, parting the view-level controls above from the picker below - the
         // section break a caption used to mark, now carrying no text.
         controls.add(ControlSpec.createDivider());
+        // The sort selector rides directly under the rule, so the metric is chosen right above the
+        // list it orders.
+        controls.add(SortSelectorControl.buildSelector(sortMode));
         // The recede control only bites while a bloc is spotlighted, so it shows solely then - with
-        // no filter the sector is drawn normally and there is nothing to recede. It rides above the
-        // list so the "rest of the sector" knobs sit next to the divider that opens the section.
+        // no filter the sector is drawn normally and there is nothing to recede. It rides between the
+        // sort selector and the list so the "rest of the sector" knobs sit next to the section.
         if (selectedBlocId != null) {
             controls.addAll(RecedeControl.buildControls(
                     KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION)));
         }
-        controls.add(ControlSpec.createIconRadioList(resolveLabels(blocs), resolveIconPaths(blocs),
-                resolveTrailingValues(blocs), selectedIndex,
-                cellIndex -> pickBloc(blocs, selectedIndex, cellIndex)));
+        controls.add(ControlSpec.createIconRadioList(resolveLabels(rankedBlocs),
+                resolveIconPaths(rankedBlocs), resolveTrailingValues(rankedBlocs, sortMode),
+                selectedIndex, cellIndex -> pickBloc(rankedBlocs, selectedIndex, cellIndex)));
         return List.copyOf(controls);
     }
 
@@ -109,12 +123,14 @@ public final class FilterPickerControl {
         return mapBlocs(blocs, SelectableBloc::crestSpritePath);
     }
 
-    // Each option's trailing value, in list order: the count of systems the bloc dominates, drawn
-    // right-aligned so the rows read as a ranked table. Kept aligned to the labels index for index, so
-    // every row carries a value (a bloc that dominates nothing shows "0" rather than dropping the
-    // column).
-    private static List<String> resolveTrailingValues(List<SelectableBloc> blocs) {
-        return mapBlocs(blocs, bloc -> String.valueOf(bloc.stats().domination()));
+    // Each option's trailing value, in list order: the active sort metric's number for the bloc, drawn
+    // right-aligned so the rows read as a ranked table sorted by the value shown. Kept aligned to the
+    // labels index for index, so every row carries a value (a bloc with a zero metric shows "0" rather
+    // than dropping the column). Under the name mode there is no numeric metric, so the value is blank
+    // and the rows read as a plain alphabetical list.
+    private static List<String> resolveTrailingValues(List<SelectableBloc> blocs,
+            BlocSortMode sortMode) {
+        return mapBlocs(blocs, bloc -> sortMode.resolveTrailingValue(bloc.stats()));
     }
 
     // One column of the picker table: each bloc mapped to a cell string, in list order, so the label,

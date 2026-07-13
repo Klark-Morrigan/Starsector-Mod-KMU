@@ -7,6 +7,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
+import kmu.maplayers.politicalmap.base.refresh.SortSelection;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
@@ -88,7 +89,8 @@ public final class PoliticalMapLayer implements MapLayer {
             // the economy every frame the map is open.
             controls.addAll(FilterPickerControl.buildControls(
                     SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
-                    FilterSelection.getSelectedBlocId()));
+                    FilterSelection.getSelectedBlocId(),
+                    BlocSortMode.fromKeyOrDefault(SortSelection.getSortModeKey())));
             controls.addAll(selectedView.getViewBodyControls());
         }
         return List.copyOf(controls);

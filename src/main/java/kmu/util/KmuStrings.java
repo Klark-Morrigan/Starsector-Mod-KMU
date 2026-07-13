@@ -43,6 +43,11 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_MUTED = "political_map_ctl_muted";
     public static final String POLITICAL_MAP_CTL_DESATURATED = "political_map_ctl_desaturated";
     public static final String POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION = "political_map_ctl_filter_recede_caption";
+    public static final String POLITICAL_MAP_CTL_SORT_NAME = "political_map_ctl_sort_name";
+    public static final String POLITICAL_MAP_CTL_SORT_DOMINATION = "political_map_ctl_sort_domination";
+    public static final String POLITICAL_MAP_CTL_SORT_PRESENCE = "political_map_ctl_sort_presence";
+    public static final String POLITICAL_MAP_CTL_SORT_SCORE = "political_map_ctl_sort_score";
+    public static final String POLITICAL_MAP_CTL_SORT_MARKET_SIZE = "political_map_ctl_sort_market_size";
 
     private KmuStrings() {
     }
