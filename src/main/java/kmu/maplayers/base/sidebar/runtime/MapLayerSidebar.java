@@ -225,10 +225,11 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         }
     }
 
-    // The spotlight picker: a vertical radio whose options each show a crest at the row's left and
-    // their name to the right of it. The list chrome and the icons are the KMLib widget's; the labels
-    // are drawn here in the body face at the same left-anchor the widget reserves past each icon, so
-    // an icon-less option (an alliance, a crestless faction) reads as a plain name.
+    // The spotlight picker: a vertical radio whose options read as a three-column table - a crest at
+    // the row's left, the name to the right of it, and the bloc's ranking value flush at the right
+    // edge. The list chrome and the icons are the KMLib widget's; the name and value are drawn here in
+    // the body face at the same anchors the widget reserves, so an icon-less option (an alliance, a
+    // crestless faction) reads as a plain name and a value-less option shows only its name.
     private static void drawIconRadio(Control control, Color accent, float opacity) {
         var spec = control.spec();
         var bounds = control.bounds();
@@ -243,6 +244,14 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
             var labelX = IconLabelRow.computeLabelAnchorX(segment, spec.hasIconAt(index));
             drawBodyLabel(labels.get(index), labelX, centerY(segment),
                     LazyFont.TextAnchor.CENTER_LEFT, opacity);
+            // The value right-aligns to the row's trailing inset the layout sized past the name, so the
+            // stacked rows align their values into a right-hand column. Drawn only when the option
+            // carries one, so a value-less row is unchanged.
+            var trailing = spec.trailingLabelAt(index);
+            if (KmlibStrings.hasText(trailing)) {
+                drawBodyLabel(trailing, IconLabelRow.computeTrailingAnchorX(segment), centerY(segment),
+                        LazyFont.TextAnchor.CENTER_RIGHT, opacity);
+            }
         }
     }
 

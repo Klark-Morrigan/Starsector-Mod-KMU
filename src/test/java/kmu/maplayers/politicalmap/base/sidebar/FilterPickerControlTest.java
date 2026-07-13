@@ -6,6 +6,7 @@ import kmlib.starsector.ui.controls.RadioAlignment;
 
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
 
@@ -78,6 +79,25 @@ final class FilterPickerControlTest {
                 // crestless bloc rides as a null entry rather than dropping a row.
                 assertThat(picker.labels()).containsExactly("Hegemony", "Free Traders");
                 assertThat(picker.iconPaths()).containsExactly("crest_heg", null);
+            }
+        }
+
+        @Test
+        void buildControlsDrawsEachBlocsDominationCountAsItsTrailingValue() {
+            // The list reads as a ranked table: each row's trailing value is the count of systems the
+            // bloc dominates, kept aligned index for index so a bloc that dominates nothing shows "0"
+            // rather than dropping the column.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+                var hegemony = new SelectableBloc("hegemony", "Hegemony", "crest_heg",
+                        new BlocStats(5, 8, 40, 12));
+                var traders = new SelectableBloc("free_traders", "Free Traders", null,
+                        new BlocStats(0, 3, 6, 4));
+
+                var picker = pickerOf(
+                        FilterPickerControl.buildControls(List.of(hegemony, traders), null));
+
+                assertThat(picker.trailingLabels()).containsExactly("5", "0");
             }
         }
 

@@ -8,6 +8,7 @@ import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * The spotlight picker's body controls, top to bottom: a rule heading the block, then - only while a
@@ -60,7 +61,8 @@ public final class FilterPickerControl {
                     KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION)));
         }
         controls.add(ControlSpec.createIconRadioList(resolveLabels(blocs), resolveIconPaths(blocs),
-                selectedIndex, cellIndex -> pickBloc(blocs, selectedIndex, cellIndex)));
+                resolveTrailingValues(blocs), selectedIndex,
+                cellIndex -> pickBloc(blocs, selectedIndex, cellIndex)));
         return List.copyOf(controls);
     }
 
@@ -97,21 +99,33 @@ public final class FilterPickerControl {
     // Each option's label, in list order; a bloc with no resolved name draws as an unlabelled row
     // rather than a null the width measurer would choke on, so an empty string stands in.
     private static List<String> resolveLabels(List<SelectableBloc> blocs) {
-        var labels = new ArrayList<String>(blocs.size());
-        for (var bloc : blocs) {
-            labels.add(bloc.displayName() == null ? "" : bloc.displayName());
-        }
-        return labels;
+        return mapBlocs(blocs, bloc -> bloc.displayName() == null ? "" : bloc.displayName());
     }
 
     // Each option's crest path, in list order, keeping the nulls: a bloc with no crest (every
     // alliance, and a crestless faction) contributes a null the row draws without an icon, so the
     // list stays aligned to the labels index for index.
     private static List<String> resolveIconPaths(List<SelectableBloc> blocs) {
-        var iconPaths = new ArrayList<String>(blocs.size());
+        return mapBlocs(blocs, SelectableBloc::crestSpritePath);
+    }
+
+    // Each option's trailing value, in list order: the count of systems the bloc dominates, drawn
+    // right-aligned so the rows read as a ranked table. Kept aligned to the labels index for index, so
+    // every row carries a value (a bloc that dominates nothing shows "0" rather than dropping the
+    // column).
+    private static List<String> resolveTrailingValues(List<SelectableBloc> blocs) {
+        return mapBlocs(blocs, bloc -> String.valueOf(bloc.stats().domination()));
+    }
+
+    // One column of the picker table: each bloc mapped to a cell string, in list order, so the label,
+    // crest, and value columns stay aligned index for index. A null entry is kept (a crestless bloc's
+    // null path is a real "no icon"), so callers that need to null-guard do it in their own mapping.
+    private static List<String> mapBlocs(List<SelectableBloc> blocs,
+            Function<SelectableBloc, String> resolveCell) {
+        var cells = new ArrayList<String>(blocs.size());
         for (var bloc : blocs) {
-            iconPaths.add(bloc.crestSpritePath());
+            cells.add(resolveCell.apply(bloc));
         }
-        return iconPaths;
+        return cells;
     }
 }
