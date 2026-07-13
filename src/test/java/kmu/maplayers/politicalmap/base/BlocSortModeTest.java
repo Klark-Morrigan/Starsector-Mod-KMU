@@ -79,6 +79,23 @@ final class BlocSortModeTest {
     }
 
     @Nested
+    class DefaultDirection {
+
+        @Test
+        void defaultDirectionIsDescendingForANumericMode() {
+            // A numeric mode leads with the bigger bloc, so its natural order runs high-to-low.
+            assertThat(BlocSortMode.DOMINATION.defaultDirection()).isEqualTo(SortDirection.DESCENDING);
+            assertThat(BlocSortMode.MARKET_SIZE.defaultDirection()).isEqualTo(SortDirection.DESCENDING);
+        }
+
+        @Test
+        void defaultDirectionIsAscendingForTheNameMode() {
+            // The name mode reads A-to-Z, so its natural order runs ascending.
+            assertThat(BlocSortMode.NAME.defaultDirection()).isEqualTo(SortDirection.ASCENDING);
+        }
+    }
+
+    @Nested
     class Comparator {
 
         @Test
@@ -120,6 +137,38 @@ final class BlocSortModeTest {
         }
 
         @Test
+        void comparatorFlipsANumericModesPrimaryKeyWhenTheDirectionIsAscending() {
+            // Ascending reverses the primary metric, so the lower-dominating bloc leads while the
+            // metric is still domination - only its direction changed.
+            var low = bloc("low", "Low", new BlocStats(1, 0, 0, 0));
+            var high = bloc("high", "High", new BlocStats(9, 0, 0, 0));
+
+            assertThat(idsSortedBy(BlocSortMode.DOMINATION, SortDirection.ASCENDING, low, high))
+                    .containsExactly("low", "high");
+        }
+
+        @Test
+        void comparatorKeepsTheCanonicalTieBreakChainWhenThePrimaryFlips() {
+            // Even with the primary metric ascending, a tie on it still breaks down the canonical chain
+            // the same way: level on domination, the higher presence leads regardless of direction.
+            var lowerPresence = bloc("a", "A", new BlocStats(5, 2, 0, 0));
+            var higherPresence = bloc("b", "B", new BlocStats(5, 7, 0, 0));
+
+            assertThat(idsSortedBy(BlocSortMode.DOMINATION, SortDirection.ASCENDING, lowerPresence,
+                    higherPresence)).containsExactly("b", "a");
+        }
+
+        @Test
+        void comparatorFlipsTheNameModeToDescendingWhenTheDirectionIsDescending() {
+            // The name mode's default is ascending, so descending reverses it to Z-to-A.
+            var zeta = bloc("z", "Zeta", BlocStats.EMPTY);
+            var alpha = bloc("a", "Alpha", BlocStats.EMPTY);
+
+            assertThat(idsSortedBy(BlocSortMode.NAME, SortDirection.DESCENDING, zeta, alpha))
+                    .containsExactly("z", "a");
+        }
+
+        @Test
         void comparatorBreaksANameTieDownTheNumericChain() {
             // Two blocs share a name, so the name mode falls through to the numeric chain: the higher
             // dominating one leads.
@@ -141,11 +190,19 @@ final class BlocSortModeTest {
         }
     }
 
-    // Sorts the blocs by the mode's comparator and returns their ids in the resulting order, so an
-    // assertion reads the arrangement without the blocs' other fields getting in the way.
+    // Sorts the blocs by the mode's comparator in the mode's own default direction and returns their
+    // ids in the resulting order, so an assertion reads the default arrangement without spelling out
+    // the direction. The direction-flip tests use the direction overload.
     private static List<String> idsSortedBy(BlocSortMode mode, SelectableBloc... blocs) {
+        return idsSortedBy(mode, mode.defaultDirection(), blocs);
+    }
+
+    // Sorts the blocs by the mode's comparator in the given direction and returns their ids in order,
+    // so an assertion reads the arrangement without the blocs' other fields getting in the way.
+    private static List<String> idsSortedBy(BlocSortMode mode, SortDirection direction,
+            SelectableBloc... blocs) {
         var sorted = new ArrayList<>(List.of(blocs));
-        sorted.sort(mode.comparator());
+        sorted.sort(mode.comparator(direction));
         var ids = new ArrayList<String>(sorted.size());
         for (var bloc : sorted) {
             ids.add(bloc.blocId());

@@ -139,13 +139,15 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
 
     // Fires the control's action if the press lands on an actionable cell, and reports whether it
     // did. A radio hits by segment over the segments the layout already laid (so the hit rects are
-    // the drawn ones regardless of the flow direction). A standard radio treats a press on the
-    // already-lit segment as inert - re-picking the selected option changes nothing - so
-    // findHitElement folds that rule in and fires nothing. A deselectable radio (the view selector)
-    // instead reads the raw hit so a press on the lit segment reaches its action and turns the
-    // control off. A single-cell checkbox or toggle hits anywhere on its row, reported as cell 0,
-    // and flips on every press. A caption label is not a hit target and is skipped. The action's
-    // meaning stays with the tab that supplied it - this only maps the click to a cell.
+    // the drawn ones regardless of the flow direction). A radio whose reselect behaviour swallows a
+    // re-pick (a standard option pair) treats a press on the already-lit segment as inert - re-
+    // picking changes nothing - so findHitElement folds that rule in and fires nothing. A radio that
+    // fires on a re-pick (the deselectable view selector and filter picker, the re-firing sort
+    // selector) instead reads the raw hit so a press on the lit segment reaches its action - to clear
+    // the selection or to flip its sub-state. A single-cell checkbox or toggle hits anywhere on its
+    // row, reported as cell 0, and flips on every press. A caption label is not a hit target and is
+    // skipped. The action's meaning stays with the tab that supplied it - this only maps the click to
+    // a cell.
     static boolean activateControlIfHit(Control control, float pointX, float pointY) {
         // A caption row and a divider are drawn but not clickable, so a press over either hits nothing
         // and falls through to let the loop try the controls below - never consuming a click as if it
@@ -156,10 +158,10 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
             return false;
         }
         // A radio hits by segment over the segments the layout laid - the icon-list picker included,
-        // since it is a deselectable vertical radio and shares the same segment hit-test. canDeselect
-        // then selects raw-hit vs already-lit handling.
+        // since it is a vertical radio that shares the same segment hit-test. The reselect behaviour
+        // then selects raw-hit (a re-pick fires) vs already-lit handling (a re-pick is swallowed).
         if (control.spec().kind() == ControlKind.RADIO) {
-            var segmentIndex = control.spec().canDeselect()
+            var segmentIndex = control.spec().reselect().firesOnReselect()
                     ? RadioRow.findSegmentIndexAt(control.segments(), pointX, pointY)
                     : RadioRow.findHitElement(control.segments(), control.spec().selectedIndex(),
                             pointX, pointY);

@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
@@ -69,7 +70,7 @@ public final class PoliticalMapBodyControls {
         }
         return ControlSpec.createVerticalRadio(labels,
                 PoliticalMapViewRegistry.getSelectedViewIndex(),
-                PoliticalMapBodyControls::selectViewSegment, true);
+                PoliticalMapBodyControls::selectViewSegment, ReselectBehaviour.DESELECT);
     }
 
     // Toggles the view its clicked segment names - activating it, or turning the map off when it is

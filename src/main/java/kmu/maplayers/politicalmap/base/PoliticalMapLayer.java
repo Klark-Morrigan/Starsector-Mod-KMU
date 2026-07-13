@@ -87,10 +87,14 @@ public final class PoliticalMapLayer implements MapLayer {
             // dominance and dev-reveal settings; empty (no present bloc) contributes no picker. Read
             // through the memo so this per-frame body build reads a cached list rather than re-walking
             // the economy every frame the map is open.
+            // Resolve the direction against the mode's default, so a save with no stored direction (a
+            // pre-direction save, or one that never flipped) reads as the mode's natural order.
+            var sortMode = BlocSortMode.fromKeyOrDefault(SortSelection.getSortModeKey());
+            var sortDirection = SortDirection.fromKeyOrDefault(
+                    SortSelection.getSortDirectionKey(), sortMode.defaultDirection());
             controls.addAll(FilterPickerControl.buildControls(
                     SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
-                    FilterSelection.getSelectedBlocId(),
-                    BlocSortMode.fromKeyOrDefault(SortSelection.getSortModeKey())));
+                    FilterSelection.getSelectedBlocId(), sortMode, sortDirection));
             controls.addAll(selectedView.getViewBodyControls());
         }
         return List.copyOf(controls);

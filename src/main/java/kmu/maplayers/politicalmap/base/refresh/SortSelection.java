@@ -3,10 +3,13 @@ package kmu.maplayers.politicalmap.base.refresh;
 import kmlib.starsector.memory.SectorMemoryString;
 
 /**
- * The metric the political-map filter picker currently ranks its blocs by, persisted per save. Like
- * {@link FilterSelection} it holds only the raw stored value - a bare mode key - and the plumbing to
- * read and write it; what the key means (which comparator it maps to, what it falls back to when
- * unset) is the sort mode's concern, not this class's, so this stays a leaf that names no sort type.
+ * The metric the political-map filter picker currently ranks its blocs by and the direction it runs
+ * in, persisted per save. Like {@link FilterSelection} it holds only the raw stored values - a bare
+ * mode key and a bare direction key - and the plumbing to read and write them; what a key means (which
+ * comparator or direction it maps to, what it falls back to when unset) is the sort mode's and sort
+ * direction's concern, not this class's, so this stays a leaf that names no sort type. The two are
+ * stored apart because they change apart: switching mode rewrites both (a new mode resets to its
+ * default direction), while flipping rewrites only the direction.
  *
  * <p>Sidebar-only like the filter selection and the recede toggles: the mode is driven solely by the
  * picker's sort selector, never a settings-screen control, so it persists in sector memory (each save
@@ -24,6 +27,12 @@ public final class SortSelection {
     private static final SectorMemoryString selectedSortMode =
             new SectorMemoryString("$kmu_political_sort_mode");
 
+    // Save-serialised key of the chosen sort direction; frozen once shipped for the same reason.
+    // Absent until the player first flips a direction (or picks a mode), which the read reports as
+    // null for the caller to resolve to the active mode's default direction.
+    private static final SectorMemoryString selectedSortDirection =
+            new SectorMemoryString("$kmu_political_sort_direction");
+
     private SortSelection() {
     }
 
@@ -36,6 +45,15 @@ public final class SortSelection {
     }
 
     /**
+     * @return the stored sort-direction key, or null when none is stored (a save from before the
+     *         direction existed, or one that never flipped) - the caller resolves null to the active
+     *         mode's default direction
+     */
+    public static String getSortDirectionKey() {
+        return selectedSortDirection.get();
+    }
+
+    /**
      * Persists the chosen sort mode's key in this save. A no-op before the sector exists, since there
      * is no save to write into yet. No repaint follows: the picker list re-sorts on the next per-frame
      * body build, and nothing on the map depends on the sort.
@@ -44,5 +62,15 @@ public final class SortSelection {
      */
     public static void selectSortMode(String modeKey) {
         selectedSortMode.set(modeKey);
+    }
+
+    /**
+     * Persists the chosen sort direction's key in this save. A no-op before the sector exists. Like
+     * the mode write it fires no repaint - only the picker list re-orders, on the next body build.
+     *
+     * @param directionKey the save-stable key of the direction to sort in
+     */
+    public static void selectSortDirection(String directionKey) {
+        selectedSortDirection.set(directionKey);
     }
 }

@@ -249,8 +249,12 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
             // carries one, so a value-less row is unchanged.
             var trailing = spec.trailingLabelAt(index);
             if (KmlibStrings.hasText(trailing)) {
+                // Drawn at the spec's trailing size - the body size for the picker's ranking numbers,
+                // a reduced size for a sort selector's compact direction letters - the same size the
+                // layout reserved the trailing column at.
                 drawBodyLabel(trailing, IconLabelRow.computeTrailingAnchorX(segment), centerY(segment),
-                        LazyFont.TextAnchor.CENTER_RIGHT, opacity);
+                        LazyFont.TextAnchor.CENTER_RIGHT, opacity,
+                        ControlStripLayout.BODY_FONT_SIZE * spec.trailingScale());
             }
         }
     }
@@ -285,11 +289,20 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         return spec.selectedIndex() != ControlSpec.NO_SELECTION;
     }
 
-    // Draws one body label in white, faded by opacity, at the given anchor. Skipped silently when
-    // the body font cannot load, in which case the control draws its chrome without text.
+    // Draws one body label in white, faded by opacity, at the given anchor and the body font size.
+    // Skipped silently when the body font cannot load, in which case the control draws its chrome
+    // without text.
     private static void drawBodyLabel(String text, float x, float y, LazyFont.TextAnchor anchor,
             float opacity) {
-        var drawable = resolveBodyText(text);
+        drawBodyLabel(text, x, y, anchor, opacity, ControlStripLayout.BODY_FONT_SIZE);
+    }
+
+    // Draws one body label at an explicit font size, for a control whose text reads smaller than the
+    // body size (a sort selector's compact trailing direction letters). Otherwise as the body-size
+    // overload: white, faded by opacity, skipped when the font cannot load.
+    private static void drawBodyLabel(String text, float x, float y, LazyFont.TextAnchor anchor,
+            float opacity, double fontSize) {
+        var drawable = resolveBodyText(text, fontSize);
         if (drawable == null) {
             return;
         }
@@ -303,10 +316,12 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     }
 
     // Mints a body drawable once per (size, text) and reuses it for the run; the base colour is
-    // re-set before each draw, so one buffer serves every frame. Null when the font face cannot
-    // load, in which case the control draws without that text.
-    private static DrawableString resolveBodyText(String text) {
-        var key = ControlStripLayout.BODY_FONT_SIZE + "|" + text;
+    // re-set before each draw, so one buffer serves every frame. The size is part of the cache key,
+    // so a control drawing text at a reduced size gets its own buffer rather than colliding with the
+    // body-size run. Null when the font face cannot load, in which case the control draws without
+    // that text.
+    private static DrawableString resolveBodyText(String text, double fontSize) {
+        var key = fontSize + "|" + text;
         var cached = BODY_TEXT_CACHE.get(key);
         if (cached != null) {
             return cached;
@@ -315,8 +330,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         if (font == null) {
             return null;
         }
-        var drawable = font.createText(text, Misc.getTextColor(),
-                (float) ControlStripLayout.BODY_FONT_SIZE);
+        var drawable = font.createText(text, Misc.getTextColor(), (float) fontSize);
         BODY_TEXT_CACHE.put(key, drawable);
         return drawable;
     }

@@ -2,8 +2,10 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.RadioAlignment;
+import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.BlocSortMode;
+import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.refresh.SortSelection;
 import kmu.util.KmuStrings;
 
@@ -14,12 +16,15 @@ import org.mockito.MockedStatic;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 
 /**
- * Pins the sort selector: a vertical, always-selected radio with one row per sort mode in the mode's
- * own order, lit on the active mode, each click persisting the mode its row names. Strings and the
- * sort selection are stubbed so this pins the selector's shape and wiring alone.
+ * Pins the sort selector: a vertical, re-firing radio with one row per sort mode in the mode's own
+ * order, lit on the active mode, each row trailed by the direction it would sort in. Clicking a
+ * different mode switches to it at its default direction; re-clicking the lit mode flips its direction.
+ * Strings and the sort selection are stubbed so this pins the selector's shape and wiring alone.
  */
 final class SortSelectorControlTest {
     // The mode rows in the order the selector stacks them, so a test maps a row index back to a mode.
@@ -29,16 +34,18 @@ final class SortSelectorControlTest {
     class BuildSelector {
 
         @Test
-        void buildSelectorBuildsAVerticalAlwaysSelectedRadio() {
+        void buildSelectorBuildsAVerticalReFiringRadio() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT);
+                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
+                        BlocSortMode.DEFAULT.defaultDirection());
 
                 assertThat(selector.kind()).isEqualTo(ControlKind.RADIO);
                 assertThat(selector.alignment()).isEqualTo(RadioAlignment.VERTICAL);
-                // A sort is always active, so the radio never deselects to an unsorted state.
-                assertThat(selector.canDeselect()).isFalse();
+                // A sort is always active, so the radio never deselects; instead a re-pick re-fires so
+                // the handler can flip the direction.
+                assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.REFIRE);
             }
         }
 
@@ -47,7 +54,8 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT);
+                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
+                        BlocSortMode.DEFAULT.defaultDirection());
 
                 assertThat(selector.labels())
                         .containsExactly("Name", "Domination", "Presence", "Score", "Market size");
@@ -59,28 +67,92 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.MARKET_SIZE);
+                var selector = SortSelectorControl.buildSelector(BlocSortMode.MARKET_SIZE,
+                        SortDirection.DESCENDING);
 
                 assertThat(selector.selectedIndex()).isEqualTo(MODES.indexOf(BlocSortMode.MARKET_SIZE));
+            }
+        }
+
+        @Test
+        void buildSelectorTrailsTheActiveRowWithItsLiveDirectionAndOthersWithTheirDefaults() {
+            // The lit row previews the direction the list is sorting in now (flipped to ascending
+            // "UP"); every other numeric row previews its own default descending "DWN", and the name
+            // row its default ascending "UP" - so each row reads as "pick me and the list sorts this
+            // way".
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                SortLabelStubs.stubSortLabels(stringsMock);
+
+                var selector = SortSelectorControl.buildSelector(BlocSortMode.DOMINATION,
+                        SortDirection.ASCENDING);
+
+                var nameRow = MODES.indexOf(BlocSortMode.NAME);
+                var dominationRow = MODES.indexOf(BlocSortMode.DOMINATION);
+                var presenceRow = MODES.indexOf(BlocSortMode.PRESENCE);
+                assertThat(selector.trailingLabelAt(dominationRow)).isEqualTo("UP");
+                assertThat(selector.trailingLabelAt(presenceRow)).isEqualTo("DWN");
+                assertThat(selector.trailingLabelAt(nameRow)).isEqualTo("UP");
+            }
+        }
+
+        @Test
+        void buildSelectorDrawsNoRowIcons() {
+            // The selector reuses the bloc list's table geometry with an all-null icon column, so no
+            // mode row draws a crest.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                SortLabelStubs.stubSortLabels(stringsMock);
+
+                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
+                        BlocSortMode.DEFAULT.defaultDirection());
+
+                assertThat(selector.hasIconAt(MODES.indexOf(BlocSortMode.DOMINATION))).isFalse();
             }
         }
     }
 
     @Nested
-    class SelectMode {
+    class ApplySelection {
 
         @Test
-        void clickingARowPersistsThatRowsMode() {
+        void clickingADifferentModeSwitchesToItAtItsDefaultDirection() {
+            // The stored mode defaults to domination; clicking presence switches to it and resets the
+            // direction to presence's default (descending), so a mode switch always starts natural.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT);
+                var selector = SortSelectorControl.buildSelector(BlocSortMode.DOMINATION,
+                        SortDirection.DESCENDING);
                 var presenceRow = MODES.indexOf(BlocSortMode.PRESENCE);
 
                 selector.action().activateCell(presenceRow);
 
                 selectionMock.verify(() -> SortSelection.selectSortMode(
                         BlocSortMode.PRESENCE.persistenceKey()));
+                selectionMock.verify(() -> SortSelection.selectSortDirection(
+                        BlocSortMode.PRESENCE.defaultDirection().persistenceKey()));
+            }
+        }
+
+        @Test
+        void reClickingTheLitModeFlipsItsDirectionWithoutSwitchingMode() {
+            // Domination is stored ascending; re-clicking its row flips only the direction to
+            // descending and never rewrites the mode.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
+                SortLabelStubs.stubSortLabels(stringsMock);
+                selectionMock.when(SortSelection::getSortModeKey)
+                        .thenReturn(BlocSortMode.DOMINATION.persistenceKey());
+                selectionMock.when(SortSelection::getSortDirectionKey)
+                        .thenReturn(SortDirection.ASCENDING.persistenceKey());
+                var selector = SortSelectorControl.buildSelector(BlocSortMode.DOMINATION,
+                        SortDirection.ASCENDING);
+                var dominationRow = MODES.indexOf(BlocSortMode.DOMINATION);
+
+                selector.action().activateCell(dominationRow);
+
+                selectionMock.verify(() -> SortSelection.selectSortDirection(
+                        SortDirection.DESCENDING.persistenceKey()));
+                selectionMock.verify(() -> SortSelection.selectSortMode(anyString()), never());
             }
         }
 
@@ -91,7 +163,8 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT);
+                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
+                        BlocSortMode.DEFAULT.defaultDirection());
 
                 selector.action().activateCell(MODES.size());
 

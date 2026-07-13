@@ -19,8 +19,9 @@ import java.util.function.ToIntFunction;
  * mode promotes its own metric to the front of that chain and lets the rest follow in the canonical
  * order; the name mode leads with the name and lets the whole numeric chain follow. Numeric keys sort
  * high-to-low (the bigger bloc ranks first), the name sorts A-to-Z, and a final by-id key gives a
- * total order so a fully-level pair never reshuffles between frames. Direction flipping and the
- * selector's glyphs are a later concern; this fixes only the default ordering each mode reads as.
+ * total order so a fully-level pair never reshuffles between frames. This is each mode's {@link
+ * #defaultDirection()} ordering; {@link #comparator(SortDirection)} flips only the primary key when
+ * the player picks the opposite direction, leaving the canonical tie-break chain fixed either way.
  *
  * <p>{@link #DEFAULT} is domination, the metric a fresh save and any unrecognised stored key fall back
  * to, so the picker always has a live ordering even before the player picks one.
@@ -99,24 +100,35 @@ public enum BlocSortMode {
     }
 
     /**
-     * The comparator that orders the picker's blocs under this mode: the mode's own key first, then
-     * the shared tie-break chain, then a by-id key for a total order. Numeric keys rank high-to-low and
-     * the name key A-to-Z, so the bigger (or alphabetically earlier) bloc comes first.
+     * The direction this mode ranks in until the player flips it: descending for the numeric metrics,
+     * so the bigger bloc leads, and ascending for the name, so the list reads A-to-Z. A fresh save and
+     * a mode the player has just switched to both start here.
      *
-     * @return the bloc comparator for this mode's default ordering
+     * @return this mode's natural sort direction
      */
-    public Comparator<SelectableBloc> comparator() {
-        Comparator<SelectableBloc> order;
+    public SortDirection defaultDirection() {
+        return metric == null ? SortDirection.ASCENDING : SortDirection.DESCENDING;
+    }
+
+    /**
+     * The comparator that orders the picker's blocs under this mode in {@code direction}: the mode's
+     * own key first (run the requested way), then the shared canonical tie-break chain, then a by-id
+     * key for a total order. Only the primary key follows {@code direction}; the tie-break chain stays
+     * canonical, so two blocs level on the primary always break the same way whichever direction shows.
+     *
+     * @param direction the way the primary key runs - this mode's default, or the flipped opposite
+     * @return the bloc comparator for this mode in the requested direction
+     */
+    public Comparator<SelectableBloc> comparator(SortDirection direction) {
+        Comparator<SelectableBloc> order = primaryComparator(direction);
         if (metric == null) {
             // Name mode leads with the label, then breaks ties down the whole numeric chain.
-            order = byNameAscending();
             for (var mode : CANONICAL_NUMERIC_ORDER) {
                 order = order.thenComparing(mode.byMetricDescending());
             }
         } else {
             // A numeric mode leads with its own metric, then follows the canonical chain skipping that
             // metric's own slot, and finally breaks a numeric-level pair by name.
-            order = byMetricDescending();
             for (var mode : CANONICAL_NUMERIC_ORDER) {
                 if (mode != this) {
                     order = order.thenComparing(mode.byMetricDescending());
@@ -127,6 +139,15 @@ public enum BlocSortMode {
         // A final by-id key gives a total order, so two blocs level on every visible key keep a fixed
         // position rather than reshuffling as the per-frame sort re-runs.
         return order.thenComparing(SelectableBloc::blocId);
+    }
+
+    // This mode's primary key in the requested direction: the default-direction primary (numerics
+    // high-to-low, name A-to-Z), reversed when the requested direction is the opposite of the mode's
+    // default. Only the primary flips - the tie-break chain the caller appends stays canonical.
+    private Comparator<SelectableBloc> primaryComparator(SortDirection direction) {
+        Comparator<SelectableBloc> defaultOrder =
+                metric == null ? byNameAscending() : byMetricDescending();
+        return direction == defaultDirection() ? defaultOrder : defaultOrder.reversed();
     }
 
     // This mode's metric as a high-to-low bloc comparator, so the bigger bloc ranks first. Only ever

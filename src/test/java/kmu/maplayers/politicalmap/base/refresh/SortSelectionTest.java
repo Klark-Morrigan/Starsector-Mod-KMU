@@ -15,18 +15,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the sort selection state: the read reports the stored mode key or none, a pick persists the
- * key, and the write no-ops cleanly before the sector exists. Unlike the filter selection this fires
- * no refresh, so there is nothing to verify beyond the memory write. The frozen key is pinned as a
- * literal so a rename that would silently reset every save's sort choice fails here rather than
- * shipping.
+ * Pins the sort selection state: the reads report the stored mode and direction keys or none, a pick
+ * persists each key, and the writes no-op cleanly before the sector exists. Unlike the filter
+ * selection this fires no refresh, so there is nothing to verify beyond the memory write. The frozen
+ * keys are pinned as literals so a rename that would silently reset every save's sort choice fails here
+ * rather than shipping.
  */
 final class SortSelectionTest {
-    // The save-serialised key, pinned as a literal: renaming it resets every existing save's sort
-    // choice back to the default, so a change must break this test first.
+    // The save-serialised keys, pinned as literals: renaming either resets every existing save's sort
+    // choice, so a change must break this test first.
     private static final String SORT_MODE_KEY = "$kmu_political_sort_mode";
+    private static final String SORT_DIRECTION_KEY = "$kmu_political_sort_direction";
 
     private static final String MODE_KEY = "presence";
+    private static final String DIRECTION_KEY = "asc";
 
     @Nested
     class GetSortModeKey {
@@ -93,6 +95,67 @@ final class SortSelectionTest {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
 
                 SortSelection.selectSortMode(MODE_KEY);
+
+                // Nothing to assert beyond it not throwing - there is no memory to have written to.
+            }
+        }
+    }
+
+    @Nested
+    class GetSortDirectionKey {
+
+        @Test
+        void getSortDirectionKeyReturnsTheStoredKey() {
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(SORT_DIRECTION_KEY)).thenReturn(true);
+                when(memoryMock.getString(SORT_DIRECTION_KEY)).thenReturn(DIRECTION_KEY);
+
+                assertThat(SortSelection.getSortDirectionKey()).isEqualTo(DIRECTION_KEY);
+            }
+        }
+
+        @Test
+        void getSortDirectionKeyIsNullWhenNoDirectionIsStored() {
+            // A save from before the direction existed (or one that never flipped) holds no key, which
+            // the caller resolves to the active mode's default direction.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+
+                assertThat(SortSelection.getSortDirectionKey()).isNull();
+            }
+        }
+    }
+
+    @Nested
+    class SelectSortDirection {
+
+        @Test
+        void selectSortDirectionPersistsTheKey() {
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+
+                SortSelection.selectSortDirection(DIRECTION_KEY);
+
+                verify(memoryMock).set(SORT_DIRECTION_KEY, DIRECTION_KEY);
+            }
+        }
+
+        @Test
+        void selectSortDirectionNoOpsBeforeTheSectorExists() {
+            // No sector means no save to write into, so the flip is silently dropped rather than
+            // dereferencing a null sector.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
+
+                SortSelection.selectSortDirection(DIRECTION_KEY);
 
                 // Nothing to assert beyond it not throwing - there is no memory to have written to.
             }

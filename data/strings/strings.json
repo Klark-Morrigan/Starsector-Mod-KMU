@@ -37,6 +37,8 @@
     "political_map_ctl_sort_domination": "Domination",
     "political_map_ctl_sort_presence": "Presence",
     "political_map_ctl_sort_score": "Score",
-    "political_map_ctl_sort_market_size": "Market size"
+    "political_map_ctl_sort_market_size": "Market size",
+    "political_map_ctl_sort_dir_ascending": "UP",
+    "political_map_ctl_sort_dir_descending": "DWN"
   }
 }

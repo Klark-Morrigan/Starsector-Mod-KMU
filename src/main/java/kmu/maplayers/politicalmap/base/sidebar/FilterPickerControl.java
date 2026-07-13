@@ -4,6 +4,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
 
@@ -48,17 +49,20 @@ public final class FilterPickerControl {
      * @param selectedBlocId the currently spotlighted bloc's id, or null when no filter is active
      * @param sortMode       the metric the list is ranked by, which also picks each row's trailing
      *                       value
+     * @param sortDirection  the direction the sort mode runs in, which the ranking follows and the
+     *                       sort selector previews
      * @return the picker body controls, top to bottom; empty when {@code blocs} is empty
      */
     public static List<ControlSpec> buildControls(List<SelectableBloc> blocs, String selectedBlocId,
-            BlocSortMode sortMode) {
+            BlocSortMode sortMode, SortDirection sortDirection) {
         if (blocs.isEmpty()) {
             return List.of();
         }
-        // Rank a copy under the active mode, leaving the caller's (cached) list untouched, so the rows
-        // draw in the chosen order and the lit index below is resolved against that same order.
+        // Rank a copy under the active mode and direction, leaving the caller's (cached) list
+        // untouched, so the rows draw in the chosen order and the lit index below is resolved against
+        // that same order.
         var rankedBlocs = new ArrayList<>(blocs);
-        rankedBlocs.sort(sortMode.comparator());
+        rankedBlocs.sort(sortMode.comparator(sortDirection));
         var selectedIndex = resolveSelectedIndex(rankedBlocs, selectedBlocId);
         var controls = new ArrayList<ControlSpec>();
         // A rule heads the block, parting the view-level controls above from the picker below - the
@@ -66,7 +70,7 @@ public final class FilterPickerControl {
         controls.add(ControlSpec.createDivider());
         // The sort selector rides directly under the rule, so the metric is chosen right above the
         // list it orders.
-        controls.add(SortSelectorControl.buildSelector(sortMode));
+        controls.add(SortSelectorControl.buildSelector(sortMode, sortDirection));
         // The recede control only bites while a bloc is spotlighted, so it shows solely then - with
         // no filter the sector is drawn normally and there is nothing to recede. It rides between the
         // sort selector and the list so the "rest of the sector" knobs sit next to the section.

@@ -3,10 +3,12 @@ package kmu.maplayers.politicalmap.base.sidebar;
 import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.RadioAlignment;
+import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
@@ -52,7 +54,7 @@ final class FilterPickerControlTest {
             // A view with no visible weighted bloc contributes no picker at all, so the body carries
             // no empty list widget.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
-                assertThat(FilterPickerControl.buildControls(List.of(), null, BlocSortMode.DEFAULT))
+                assertThat(build(List.of(), null, BlocSortMode.DEFAULT))
                         .isEmpty();
             }
         }
@@ -65,7 +67,7 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
 
                 var divider =
-                        FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.DEFAULT).get(DIVIDER);
+                        build(BLOCS, null, BlocSortMode.DEFAULT).get(DIVIDER);
 
                 assertThat(divider.kind()).isEqualTo(ControlKind.DIVIDER);
             }
@@ -74,16 +76,16 @@ final class FilterPickerControlTest {
         @Test
         void buildControlsPlacesTheSortSelectorUnderTheDivider() {
             // The sort selector rides directly under the rule, so the metric is chosen right above the
-            // list it orders: a vertical, always-selected radio lit on the active mode's row.
+            // list it orders: a vertical, re-firing radio lit on the active mode's row.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var selector = FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.PRESENCE)
+                var selector = build(BLOCS, null, BlocSortMode.PRESENCE)
                         .get(SORT_SELECTOR);
 
                 assertThat(selector.kind()).isEqualTo(ControlKind.RADIO);
                 assertThat(selector.alignment()).isEqualTo(RadioAlignment.VERTICAL);
-                assertThat(selector.canDeselect()).isFalse();
+                assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.REFIRE);
                 assertThat(selector.selectedIndex())
                         .isEqualTo(List.of(BlocSortMode.values()).indexOf(BlocSortMode.PRESENCE));
             }
@@ -94,11 +96,11 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.DEFAULT));
+                var picker = pickerOf(build(BLOCS, null, BlocSortMode.DEFAULT));
 
                 assertThat(picker.kind()).isEqualTo(ControlKind.RADIO);
                 assertThat(picker.alignment()).isEqualTo(RadioAlignment.VERTICAL);
-                assertThat(picker.canDeselect()).isTrue();
+                assertThat(picker.reselect()).isEqualTo(ReselectBehaviour.DESELECT);
                 // Labels are the bloc names, the icons the crests, aligned index for index so a
                 // crestless bloc rides as a null entry rather than dropping a row. Domination-sorted,
                 // so the higher-dominating Hegemony leads.
@@ -119,11 +121,27 @@ final class FilterPickerControlTest {
                 var tritachyon = new SelectableBloc("tritachyon", "Tri-Tachyon", "crest_tt",
                         new BlocStats(1, 9, 30, 99));
 
-                var picker = pickerOf(FilterPickerControl.buildControls(
+                var picker = pickerOf(build(
                         List.of(HEGEMONY, TRADERS, tritachyon), null, BlocSortMode.MARKET_SIZE));
 
                 assertThat(picker.labels()).containsExactly("Tri-Tachyon", "Hegemony", "Free Traders");
                 assertThat(picker.trailingLabels()).containsExactly("99", "12", "4");
+            }
+        }
+
+        @Test
+        void buildControlsRanksTheListInTheGivenDirection() {
+            // The direction flows through to the ordering: domination ascending reverses the default
+            // descending list, so the lower-dominating Free Traders leads. The trailing values still
+            // read the domination metric, only their order flips.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+
+                var picker = pickerOf(FilterPickerControl.buildControls(
+                        BLOCS, null, BlocSortMode.DOMINATION, SortDirection.ASCENDING));
+
+                assertThat(picker.labels()).containsExactly("Free Traders", "Hegemony");
+                assertThat(picker.trailingLabels()).containsExactly("2", "5");
             }
         }
 
@@ -134,7 +152,7 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.NAME));
+                var picker = pickerOf(build(BLOCS, null, BlocSortMode.NAME));
 
                 assertThat(picker.labels()).containsExactly("Free Traders", "Hegemony");
                 assertThat(picker.trailingLabels()).containsExactly("", "");
@@ -153,7 +171,7 @@ final class FilterPickerControlTest {
                 var traders = new SelectableBloc("free_traders", "Free Traders", null,
                         new BlocStats(0, 3, 6, 4));
 
-                var picker = pickerOf(FilterPickerControl.buildControls(
+                var picker = pickerOf(build(
                         List.of(hegemony, traders), null, BlocSortMode.DOMINATION));
 
                 assertThat(picker.trailingLabels()).containsExactly("5", "0");
@@ -169,7 +187,7 @@ final class FilterPickerControlTest {
                 var nameless = new SelectableBloc("ghost", null, null);
 
                 var picker = pickerOf(
-                        FilterPickerControl.buildControls(List.of(nameless), null, BlocSortMode.DEFAULT));
+                        build(List.of(nameless), null, BlocSortMode.DEFAULT));
 
                 assertThat(picker.labels()).containsExactly("");
             }
@@ -181,7 +199,7 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
 
                 var picker = pickerOf(
-                        FilterPickerControl.buildControls(BLOCS, "free_traders", BlocSortMode.DEFAULT));
+                        build(BLOCS, "free_traders", BlocSortMode.DEFAULT));
 
                 // Domination-sorted, Free Traders is the second row.
                 assertThat(picker.selectedIndex()).isEqualTo(1);
@@ -196,7 +214,7 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
 
                 var picker = pickerOf(
-                        FilterPickerControl.buildControls(BLOCS, "vanished", BlocSortMode.DEFAULT));
+                        build(BLOCS, "vanished", BlocSortMode.DEFAULT));
 
                 assertThat(picker.selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
             }
@@ -209,7 +227,7 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                assertThat(FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.DEFAULT))
+                assertThat(build(BLOCS, null, BlocSortMode.DEFAULT))
                         .hasSize(3);
             }
         }
@@ -224,7 +242,7 @@ final class FilterPickerControlTest {
                             mockStatic(RecedePreferences.class)) {
                 stubCaptions(stringsMock);
 
-                var controls = FilterPickerControl.buildControls(BLOCS, "hegemony", BlocSortMode.DEFAULT);
+                var controls = build(BLOCS, "hegemony", BlocSortMode.DEFAULT);
 
                 assertThat(controls).hasSize(6);
                 assertThat(controls.get(2).kind()).isEqualTo(ControlKind.LABEL);
@@ -245,7 +263,7 @@ final class FilterPickerControlTest {
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = pickerOf(FilterPickerControl.buildControls(BLOCS, null, BlocSortMode.DEFAULT));
+                var picker = pickerOf(build(BLOCS, null, BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(0);
 
@@ -264,7 +282,7 @@ final class FilterPickerControlTest {
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
                 var picker = pickerOf(
-                        FilterPickerControl.buildControls(BLOCS, "hegemony", BlocSortMode.DEFAULT));
+                        build(BLOCS, "hegemony", BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(0);
 
@@ -281,13 +299,21 @@ final class FilterPickerControlTest {
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
                 var picker = pickerOf(
-                        FilterPickerControl.buildControls(BLOCS, "hegemony", BlocSortMode.DEFAULT));
+                        build(BLOCS, "hegemony", BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(1);
 
                 selectionMock.verify(() -> FilterSelection.selectBloc("free_traders"));
             }
         }
+    }
+
+    // Builds the picker in the sort mode's own default direction, the state every test that does not
+    // exercise a flip assumes, so the call sites read the mode alone without spelling out its default
+    // direction. A test that flips the direction calls the four-arg builder directly.
+    private static List<ControlSpec> build(List<SelectableBloc> blocs, String selectedBlocId,
+            BlocSortMode mode) {
+        return FilterPickerControl.buildControls(blocs, selectedBlocId, mode, mode.defaultDirection());
     }
 
     // The picker list is always the block's last row, so a test reads it from the tail rather than a

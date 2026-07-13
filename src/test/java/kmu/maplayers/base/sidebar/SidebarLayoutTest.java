@@ -5,6 +5,7 @@ import kmlib.starsector.ui.controls.ControlAction;
 import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.RadioAlignment;
+import kmlib.starsector.ui.controls.ReselectBehaviour;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.widgets.VanillaTabContent;
@@ -232,7 +233,7 @@ final class SidebarLayoutTest {
         private static final List<ControlSpec> VERTICAL_BODY = List.of(
                 new ControlSpec(ControlKind.RADIO, List.of("Factions", "Alliances"),
                         "", ControlSpec.NO_SELECTION, ControlAction.NONE,
-                        RadioAlignment.VERTICAL, true));
+                        RadioAlignment.VERTICAL, ReselectBehaviour.DESELECT));
 
         @Test
         void computePlacementStandsAVerticalRadioOneRowTallPerOption() {

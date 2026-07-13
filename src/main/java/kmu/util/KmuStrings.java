@@ -48,6 +48,8 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_SORT_PRESENCE = "political_map_ctl_sort_presence";
     public static final String POLITICAL_MAP_CTL_SORT_SCORE = "political_map_ctl_sort_score";
     public static final String POLITICAL_MAP_CTL_SORT_MARKET_SIZE = "political_map_ctl_sort_market_size";
+    public static final String POLITICAL_MAP_CTL_SORT_DIR_ASCENDING = "political_map_ctl_sort_dir_ascending";
+    public static final String POLITICAL_MAP_CTL_SORT_DIR_DESCENDING = "political_map_ctl_sort_dir_descending";
 
     private KmuStrings() {
     }
