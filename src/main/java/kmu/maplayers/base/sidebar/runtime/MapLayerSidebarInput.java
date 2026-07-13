@@ -9,6 +9,7 @@ import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.RadioRow;
+import kmlib.starsector.ui.widgets.Scrollbar;
 import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.starsector.ui.widgets.TabPanelHotkeys;
 import kmlib.starsector.ui.widgets.TabStrip;
@@ -17,7 +18,6 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarScrollState;
-import kmu.maplayers.base.sidebar.SidebarScrollbar;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
@@ -162,13 +162,13 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
         if (!placement.isScrollbarNeeded()) {
             return false;
         }
-        var track = SidebarScrollbar.computeTrack(placement);
-        if (!SidebarScrollbar.computeGrabColumn(placement, track)
-                .containsPoint(event.getX(), event.getY())) {
+        var region = placement.toScrollRegion();
+        var track = Scrollbar.computeTrack(region);
+        if (!Scrollbar.computeGrabColumn(region).containsPoint(event.getX(), event.getY())) {
             return false;
         }
         isDraggingThumb = true;
-        var thumb = SidebarScrollbar.computeThumb(placement, track);
+        var thumb = Scrollbar.computeThumb(region, track);
         thumbGrabOffsetY = thumb.containsPoint(event.getX(), event.getY())
                 ? event.getY() - (thumb.y() + thumb.height() / 2f)
                 : 0f;
@@ -194,9 +194,10 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // thumb the grab offset below the cursor so it tracks the drag rather than snapping its centre to the
     // pointer.
     private static void updateDragOffset(PanelPlacement placement, float pointerY) {
-        var track = SidebarScrollbar.computeTrack(placement);
+        var region = placement.toScrollRegion();
+        var track = Scrollbar.computeTrack(region);
         SidebarScrollState.setOffset(
-                SidebarScrollbar.resolveOffsetForPointer(placement, track, pointerY - thumbGrabOffsetY));
+                Scrollbar.resolveOffsetForPointer(region, track, pointerY - thumbGrabOffsetY));
     }
 
     // Scrolls the bloc list when the wheel turns over its scroll region and it has somewhere to scroll.

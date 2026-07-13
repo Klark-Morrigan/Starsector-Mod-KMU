@@ -26,12 +26,12 @@ import kmlib.starsector.ui.widgets.Checkbox;
 import kmlib.starsector.ui.widgets.IconLabelRow;
 import kmlib.starsector.ui.widgets.PanelLayout;
 import kmlib.starsector.ui.widgets.PanelPlacement;
+import kmlib.starsector.ui.widgets.Scrollbar;
 import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
-import kmu.maplayers.base.sidebar.SidebarScrollbar;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -215,10 +215,11 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // content height is the viewport plus how far the list overruns it, the pair the thumb's height and
     // travel derive from.
     private static void drawScrollbar(PanelPlacement placement, Color accent, float opacity) {
-        // The track and thumb are the same geometry the input listener hit-tests for a drag, resolved
-        // through one shared adapter so what is drawn and what a drag grabs cannot drift.
-        var track = SidebarScrollbar.computeTrack(placement);
-        var thumb = SidebarScrollbar.computeThumb(placement, track);
+        // The track and thumb come from the placement's scroll region - the same geometry the input
+        // listener hit-tests for a drag - so what is drawn and what a drag grabs cannot drift.
+        var region = placement.toScrollRegion();
+        var track = Scrollbar.computeTrack(region);
+        var thumb = Scrollbar.computeThumb(region, track);
         ScrollbarRenderer.render(track, thumb, accent, opacity);
     }
 
