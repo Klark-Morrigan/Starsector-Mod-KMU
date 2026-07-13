@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
+import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.VanillaTabContent;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -49,7 +50,7 @@ public final class LiveSidebarPlacement {
      *         the layout snaps tabs to measured text and cannot run without it, so the caller draws
      *         nothing and consumes nothing that frame
      */
-    public static SidebarPlacement resolveCurrentPlacement() {
+    public static PanelPlacement resolveCurrentPlacement() {
         var measurer = loadTabMeasurer();
         if (measurer == null) {
             return null;

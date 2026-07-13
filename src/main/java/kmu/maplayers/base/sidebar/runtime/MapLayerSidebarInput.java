@@ -7,6 +7,7 @@ import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.Control;
 import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.map.CampaignMapView;
+import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.RadioRow;
 import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.starsector.ui.widgets.TabPanelHotkeys;
@@ -15,7 +16,6 @@ import kmlib.starsector.ui.widgets.TabStrip;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
-import kmu.maplayers.base.sidebar.SidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarScrollState;
 import kmu.maplayers.base.sidebar.SidebarScrollbar;
 import kmu.settings.KmuLunaSettings;
@@ -128,7 +128,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // tab row when the active tab opens no body - so a No Layer bar reserves no dead zone over blank
     // map, and consuming the whole box keeps the map from hovering a star or reading the bar as empty
     // margin under the cursor.
-    private static void handlePointerOverBar(InputEventAPI event, SidebarPlacement placement) {
+    private static void handlePointerOverBar(InputEventAPI event, PanelPlacement placement) {
         // A thumb drag in progress owns the event wherever the pointer is - even past the panel edge -
         // so the list keeps following the cursor until the release, rather than dropping the drag the
         // moment the pointer leaves the narrow scrollbar column.
@@ -158,7 +158,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // exactly; a press on the thumb records its offset from the thumb centre so the thumb stays under the
     // cursor, while a press on the bare track jumps the thumb to the pointer at once. Only fires while
     // the list overflows - there is no scrollbar otherwise.
-    private static boolean beginThumbDragIfPressed(InputEventAPI event, SidebarPlacement placement) {
+    private static boolean beginThumbDragIfPressed(InputEventAPI event, PanelPlacement placement) {
         if (!placement.isScrollbarNeeded()) {
             return false;
         }
@@ -178,7 +178,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
 
     // Follows an in-progress drag: the release ends it, and until then every move maps the pointer to a
     // scroll position. Consumes the event so the map neither pans nor acts while the thumb is held.
-    private static void continueThumbDrag(InputEventAPI event, SidebarPlacement placement) {
+    private static void continueThumbDrag(InputEventAPI event, PanelPlacement placement) {
         if (event.isLMBUpEvent()) {
             isDraggingThumb = false;
             event.consume();
@@ -193,7 +193,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // Maps the dragged pointer to an absolute scroll offset along the track and stores it, holding the
     // thumb the grab offset below the cursor so it tracks the drag rather than snapping its centre to the
     // pointer.
-    private static void updateDragOffset(SidebarPlacement placement, float pointerY) {
+    private static void updateDragOffset(PanelPlacement placement, float pointerY) {
         var track = SidebarScrollbar.computeTrack(placement);
         SidebarScrollState.setOffset(
                 SidebarScrollbar.resolveOffsetForPointer(placement, track, pointerY - thumbGrabOffsetY));
@@ -204,7 +204,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // top, so it decreases the offset, and a wheel down increases it, each by one fixed step. Off the
     // scroll region (over the pinned header, or a list that fits) the wheel does nothing, though the
     // caller still consumes it so the map does not zoom under the panel.
-    private static void scrollListUnderPointer(InputEventAPI event, SidebarPlacement placement) {
+    private static void scrollListUnderPointer(InputEventAPI event, PanelPlacement placement) {
         if (!placement.isScrollbarNeeded()
                 || !placement.flexViewport().containsPoint(event.getX(), event.getY())) {
             return;
@@ -215,7 +215,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // Routes a left press inside the box to what sits under it: a tab selects its layer, otherwise a
     // body control fires its action. A press on the border or blank body falls through to neither and
     // only consumes (handled by the caller), so empty chrome swallows the click without acting.
-    private static void actOnLeftPress(SidebarPlacement placement, float pointX, float pointY) {
+    private static void actOnLeftPress(PanelPlacement placement, float pointX, float pointY) {
         var tabIndex = TabPanel.findTabIndexAt(placement.panel(), pointX, pointY);
         if (tabIndex != TabStrip.NO_TAB) {
             MapLayerRegistry.selectLayer(MapLayerRegistry.getLayers().get(tabIndex));

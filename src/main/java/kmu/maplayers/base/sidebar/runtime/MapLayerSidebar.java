@@ -24,13 +24,13 @@ import kmlib.starsector.ui.render.gl.UiScissor;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.widgets.Checkbox;
 import kmlib.starsector.ui.widgets.IconLabelRow;
+import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarLayout;
-import kmu.maplayers.base.sidebar.SidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarScrollbar;
 import kmu.settings.KmuLunaSettings;
 
@@ -149,7 +149,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         return MapLayerRegistry.getLayers().indexOf(MapLayerRegistry.getActiveLayer());
     }
 
-    private void drawSidebar(SidebarPlacement placement, int selectedIndex, float borderWidth,
+    private void drawSidebar(PanelPlacement placement, int selectedIndex, float borderWidth,
             float opacity) {
         // Belt-and-suspenders around the raw GL: the map chrome and tooltips draw after this
         // pass, so any enable / colour / blend state the panel touches must be restored. The whole
@@ -166,7 +166,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         // KMU's and drawn below.
         TabPanelRenderer.render(placement.panel(), borderWidth, PANEL_FILL, accent, selectedIndex,
                 hoveredIndex, VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT,
-                SidebarLayout.TAB_FONT_SIZE, opacity);
+                PanelLayout.TAB_FONT_SIZE, opacity);
         drawBodyControls(placement, accent, opacity);
         GL11.glPopAttrib();
     }
@@ -175,7 +175,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // scrollbar for its scrolling list. The one control marked as the scroll region draws clipped to
     // its viewport, so its rows that scroll past the top slide out under the pinned header rather than
     // overpainting it; every other control draws unclipped in its pinned place.
-    private static void drawBodyControls(SidebarPlacement placement, Color accent, float opacity) {
+    private static void drawBodyControls(PanelPlacement placement, Color accent, float opacity) {
         for (var control : placement.bodyControls()) {
             if (control.spec().scrolls()) {
                 drawScrollingControl(control, placement.flexViewport(), accent, opacity);
@@ -214,7 +214,7 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // the scroll viewport, with the thumb sized and positioned for how far the list is scrolled. The
     // content height is the viewport plus how far the list overruns it, the pair the thumb's height and
     // travel derive from.
-    private static void drawScrollbar(SidebarPlacement placement, Color accent, float opacity) {
+    private static void drawScrollbar(PanelPlacement placement, Color accent, float opacity) {
         // The track and thumb are the same geometry the input listener hit-tests for a drag, resolved
         // through one shared adapter so what is drawn and what a drag grabs cannot drift.
         var track = SidebarScrollbar.computeTrack(placement);

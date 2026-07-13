@@ -1,10 +1,11 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.Scrollbar;
 
 /**
- * Resolves the sidebar's scrollbar geometry from a laid-out {@link SidebarPlacement}: the track in the
+ * Resolves the sidebar's scrollbar geometry from a laid-out {@link PanelPlacement}: the track in the
  * body's right gutter, the thumb sized within it, the grab column a drag reads, and the scroll offset a
  * pointer maps to. It adapts the placement (body, viewport, offset, overflow) onto the pure KMLib {@link
  * Scrollbar} math, owning only the KMU pixel widths and the "content height = viewport + overflow"
@@ -28,7 +29,7 @@ public final class SidebarScrollbar {
      * @param placement the laid-out sidebar
      * @return the scrollbar track in the body's right gutter, spanning the scroll viewport
      */
-    public static Rectangle computeTrack(SidebarPlacement placement) {
+    public static Rectangle computeTrack(PanelPlacement placement) {
         return Scrollbar.computeRightGutterTrack(placement.body(), placement.flexViewport(),
                 TRACK_WIDTH, RIGHT_MARGIN);
     }
@@ -38,7 +39,7 @@ public final class SidebarScrollbar {
      * @param track     the track from {@link #computeTrack}
      * @return the thumb sized and positioned within the track for how far the list is scrolled
      */
-    public static Rectangle computeThumb(SidebarPlacement placement, Rectangle track) {
+    public static Rectangle computeThumb(PanelPlacement placement, Rectangle track) {
         return Scrollbar.computeThumb(track, resolveContentHeight(placement),
                 placement.flexViewport().height(), placement.scrollOffset());
     }
@@ -53,7 +54,7 @@ public final class SidebarScrollbar {
      * @param track     the track from {@link #computeTrack}
      * @return the grab column, in UI coordinates
      */
-    public static Rectangle computeGrabColumn(SidebarPlacement placement, Rectangle track) {
+    public static Rectangle computeGrabColumn(PanelPlacement placement, Rectangle track) {
         var viewport = placement.flexViewport();
         var listRight = viewport.x() + viewport.width();
         var bodyRight = placement.body().x() + placement.body().width();
@@ -70,7 +71,7 @@ public final class SidebarScrollbar {
      * @param pointerY  the pointer's y, in UI coordinates
      * @return the scroll offset, 0..overflow
      */
-    public static float resolveOffsetForPointer(SidebarPlacement placement, Rectangle track,
+    public static float resolveOffsetForPointer(PanelPlacement placement, Rectangle track,
             float pointerY) {
         return Scrollbar.resolveOffsetForPointer(track, resolveContentHeight(placement),
                 placement.flexViewport().height(), pointerY);
@@ -78,7 +79,7 @@ public final class SidebarScrollbar {
 
     // The scrolled content's full height: the visible viewport plus how far the list overruns it - the
     // pair the thumb size and the pointer mapping both derive from.
-    private static float resolveContentHeight(SidebarPlacement placement) {
+    private static float resolveContentHeight(PanelPlacement placement) {
         return placement.flexViewport().height() + placement.scrollOverflow();
     }
 }

@@ -1,6 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.TabPanelPlacement;
 
 import org.junit.jupiter.api.Nested;
@@ -12,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Pins the sidebar's scrollbar-geometry adapter: it maps a laid-out {@link SidebarPlacement} (body,
+ * Pins the sidebar's scrollbar-geometry adapter: it maps a laid-out {@link PanelPlacement} (body,
  * viewport, offset, overflow) onto the pure KMLib scrollbar math, so the track sits in the body's right
  * gutter, the thumb sizes to the visible fraction and drops as the list scrolls, the grab column runs the
  * gutter right of the list, and a pointer maps to a scroll offset. A body wider than its list column, and
@@ -26,11 +27,11 @@ final class SidebarScrollbarTest {
     private static final Rectangle VIEWPORT = new Rectangle(108f, 250f, 120f, 100f);
     private static final float OVERFLOW = 100f;
 
-    private static SidebarPlacement placementAt(float scrollOffset) {
+    private static PanelPlacement placementAt(float scrollOffset) {
         // The box is not read by the scrollbar geometry, so the body stands in for it; only body,
         // viewport, offset, and overflow drive the adapter.
         var panel = new TabPanelPlacement(BODY, List.of(), BODY);
-        return new SidebarPlacement(panel, List.of(), VIEWPORT, scrollOffset, OVERFLOW);
+        return new PanelPlacement(panel, List.of(), VIEWPORT, scrollOffset, OVERFLOW);
     }
 
     @Nested
