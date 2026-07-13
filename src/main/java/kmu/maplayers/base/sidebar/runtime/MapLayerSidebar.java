@@ -6,11 +6,11 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.util.Misc;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.render.gl.PanelRenderer;
 import kmlib.starsector.ui.render.gl.PanelStyle;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
-import kmlib.starsector.ui.widgets.PanelLayout;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
@@ -109,7 +109,8 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // tab size, and the insignia body face.
     private static PanelStyle buildStyle() {
         return new PanelStyle(PANEL_FILL, Misc.getBasePlayerColor(), Misc.getBrightPlayerColor(),
-                VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT, PanelLayout.TAB_FONT_SIZE,
+                VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT,
+                ControlStripLayout.TAB_FONT_SIZE,
                 BODY_FONT);
     }
 
