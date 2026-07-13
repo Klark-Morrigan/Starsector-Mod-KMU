@@ -17,11 +17,14 @@ import kmlib.starsector.ui.render.gl.CheckboxRenderer;
 import kmlib.starsector.ui.render.gl.DividerRenderer;
 import kmlib.starsector.ui.render.gl.IconRadioListRenderer;
 import kmlib.starsector.ui.render.gl.RadioRowRenderer;
+import kmlib.starsector.ui.render.gl.ScrollbarRenderer;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
 import kmlib.starsector.ui.render.gl.ToggleButton;
+import kmlib.starsector.ui.render.gl.UiScissor;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.widgets.Checkbox;
 import kmlib.starsector.ui.widgets.IconLabelRow;
+import kmlib.starsector.ui.widgets.Scrollbar;
 import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.text.KmlibStrings;
 
@@ -38,7 +41,6 @@ import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -75,6 +77,13 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // and body controls draw their player-colour accents over it, so the general fill stays black
     // and only lit elements carry colour.
     private static final Color PANEL_FILL = Color.BLACK;
+
+    // The scrollbar's channel: a thin track sitting in the body's right-hand gutter (the inset between
+    // the widest control and the border), a small margin off the border so it clears the stroke. Kept
+    // narrow so it never crowds the list's trailing values, which the list's own viewport clips clear
+    // of the track anyway.
+    private static final float SCROLLBAR_TRACK_WIDTH = 3f;
+    private static final float SCROLLBAR_RIGHT_MARGIN = 3f;
 
     // Cached across instances and reloads: the body labels are a handful of static strings, so one
     // GL text buffer per distinct (size, text) serves the whole run rather than leaking a buffer
@@ -165,24 +174,61 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         TabPanelRenderer.render(placement.panel(), borderWidth, PANEL_FILL, accent, selectedIndex,
                 hoveredIndex, VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT,
                 SidebarLayout.TAB_FONT_SIZE, opacity);
-        drawBodyControls(placement.bodyControls(), accent, opacity);
+        drawBodyControls(placement, accent, opacity);
         GL11.glPopAttrib();
     }
 
-    // Draws each body control with its KMLib widget in the lit state its spec carries, then the
-    // control's label(s) in white over it. The kind names the widget; the meaning stays with the
-    // tab that supplied the spec, so this draws any tab's body without learning what it does.
-    private static void drawBodyControls(List<Control> controls, Color accent,
-            float opacity) {
-        for (var control : controls) {
-            switch (control.spec().kind()) {
-                case CHECKBOX -> drawCheckbox(control, accent, opacity);
-                case RADIO -> drawRadio(control, accent, opacity);
-                case TOGGLE -> drawToggle(control, accent, opacity);
-                case LABEL -> drawLabelRow(control, opacity);
-                case DIVIDER -> drawDivider(control, accent, opacity);
+    // Draws each body control in the lit state its spec carries, then - when the body is capped - the
+    // scrollbar for its scrolling list. The one control marked as the scroll region draws clipped to
+    // its viewport, so its rows that scroll past the top slide out under the pinned header rather than
+    // overpainting it; every other control draws unclipped in its pinned place.
+    private static void drawBodyControls(SidebarPlacement placement, Color accent, float opacity) {
+        for (var control : placement.bodyControls()) {
+            if (control.spec().scrolls()) {
+                drawScrollingControl(control, placement.flexViewport(), accent, opacity);
+            } else {
+                drawControl(control, accent, opacity);
             }
         }
+        if (placement.isScrollbarNeeded()) {
+            drawScrollbar(placement, accent, opacity);
+        }
+    }
+
+    // Draws the scrolling list clipped to its viewport: the list control's bounds already carry the
+    // scroll offset, so this only brackets the ordinary draw in the scissor clip, keeping the list's
+    // overrun inside the scroll region.
+    private static void drawScrollingControl(Control control, Rectangle viewport, Color accent,
+            float opacity) {
+        UiScissor.push(viewport);
+        drawControl(control, accent, opacity);
+        UiScissor.pop();
+    }
+
+    // Draws one body control with its KMLib widget. The kind names the widget; the meaning stays with
+    // the tab that supplied the spec, so this draws any tab's control without learning what it does.
+    private static void drawControl(Control control, Color accent, float opacity) {
+        switch (control.spec().kind()) {
+            case CHECKBOX -> drawCheckbox(control, accent, opacity);
+            case RADIO -> drawRadio(control, accent, opacity);
+            case TOGGLE -> drawToggle(control, accent, opacity);
+            case LABEL -> drawLabelRow(control, opacity);
+            case DIVIDER -> drawDivider(control, accent, opacity);
+        }
+    }
+
+    // Draws the scrollbar for the capped body's list: a track in the body's right-hand gutter spanning
+    // the scroll viewport, with the thumb sized and positioned for how far the list is scrolled. The
+    // content height is the viewport plus how far the list overruns it, the pair the thumb's height and
+    // travel derive from.
+    private static void drawScrollbar(SidebarPlacement placement, Color accent, float opacity) {
+        var viewport = placement.flexViewport();
+        var track = Scrollbar.computeRightGutterTrack(placement.body(), viewport,
+                SCROLLBAR_TRACK_WIDTH, SCROLLBAR_RIGHT_MARGIN);
+        var contentHeight = viewport.height() + placement.scrollOverflow();
+        var thumb = Scrollbar.computeThumb(track, contentHeight, viewport.height(),
+                placement.scrollOffset());
+        ScrollbarRenderer.render(track, thumb, accent, opacity);
     }
 
     // A tick box lit when the spec's cell is selected, then its label to the right at the same gap

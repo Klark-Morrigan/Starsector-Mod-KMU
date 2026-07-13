@@ -85,10 +85,14 @@ public final class FilterPickerControl {
         // The columns selector rides directly above the list, so the column count is chosen right by
         // the list it lays out; the list then wraps its rows across that many columns.
         controls.add(ColumnsSelectorControl.buildSelector(columns));
+        // The bloc list is the body's one scrolling region: when the picker plus the controls above and
+        // below it would run the box past the bottom margin, the list gives up the difference and
+        // scrolls while everything around it stays pinned. buildScrollableCopy marks the list; the
+        // capped layout, renderer, and input listener all read that one flag.
         controls.add(ControlSpec.createIconRadioList(resolveLabels(rankedBlocs),
                 resolveIconPaths(rankedBlocs), resolveTrailingValues(rankedBlocs, sortMode),
                 selectedIndex, cellIndex -> pickBloc(rankedBlocs, selectedIndex, cellIndex),
-                columns.columnCount()));
+                columns.columnCount()).buildScrollableCopy());
         return List.copyOf(controls);
     }
 

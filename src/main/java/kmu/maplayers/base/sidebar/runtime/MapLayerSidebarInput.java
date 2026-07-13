@@ -3,6 +3,7 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.Control;
 import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.map.CampaignMapView;
@@ -15,6 +16,7 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarPlacement;
+import kmu.maplayers.base.sidebar.SidebarScrollState;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
@@ -41,6 +43,11 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // Run ahead of the core map and of other mods' listeners, so a tab click or hotkey is
     // consumed before anything else claims it.
     private static final int INPUT_PRIORITY = 1000;
+
+    // Pixels one wheel notch scrolls the bloc list. Only the wheel's sign is read (like the vanilla
+    // scroll lists), so each notch moves this fixed step regardless of the raw wheel magnitude - about
+    // two list rows, a comfortable step without overshooting a short list.
+    private static final float SCROLL_STEP_PX = 40f;
 
     @Override
     public int getListenerInputPriority() {
@@ -115,10 +122,28 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
         if (!TabPanel.containsPoint(placement.panel(), event.getX(), event.getY())) {
             return;
         }
-        if (event.isLMBDownEvent()) {
+        // A wheel over the panel scrolls its bloc list rather than zooming the map behind it; a left
+        // press fires the control under it. Either way the event is consumed below, so the map never
+        // also acts on a pointer event the panel handled.
+        if (event.isMouseScrollEvent()) {
+            scrollListUnderPointer(event, placement);
+        } else if (event.isLMBDownEvent()) {
             actOnLeftPress(placement, event.getX(), event.getY());
         }
         event.consume();
+    }
+
+    // Scrolls the bloc list when the wheel turns over its scroll region and it has somewhere to scroll.
+    // Only the wheel's sign is read (like the vanilla scroll lists): a wheel up scrolls toward the list
+    // top, so it decreases the offset, and a wheel down increases it, each by one fixed step. Off the
+    // scroll region (over the pinned header, or a list that fits) the wheel does nothing, though the
+    // caller still consumes it so the map does not zoom under the panel.
+    private static void scrollListUnderPointer(InputEventAPI event, SidebarPlacement placement) {
+        if (!placement.isScrollbarNeeded()
+                || !placement.flexViewport().containsPoint(event.getX(), event.getY())) {
+            return;
+        }
+        SidebarScrollState.scrollBy(-Math.signum((float) event.getEventValue()) * SCROLL_STEP_PX);
     }
 
     // Routes a left press inside the box to what sits under it: a tab selects its layer, otherwise a
@@ -131,7 +156,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
             return;
         }
         for (var control : placement.bodyControls()) {
-            if (activateControlIfHit(control, pointX, pointY)) {
+            if (activateControlIfHit(control, placement.flexViewport(), pointX, pointY)) {
                 return;
             }
         }
@@ -148,7 +173,15 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     // row, reported as cell 0, and flips on every press. A caption label is not a hit target and is
     // skipped. The action's meaning stays with the tab that supplied it - this only maps the click to
     // a cell.
-    static boolean activateControlIfHit(Control control, float pointX, float pointY) {
+    static boolean activateControlIfHit(Control control, Rectangle flexViewport, float pointX,
+            float pointY) {
+        // The scrolling list only counts inside its viewport: a row scrolled up under the pinned header
+        // (or down under the footer) is clipped from view, so its segment - still laid out at its
+        // scrolled position - must not be clickable through the header or footer that hides it. Only the
+        // one scrolling control is clipped; every other control ignores the viewport.
+        if (control.spec().scrolls() && !flexViewport.containsPoint(pointX, pointY)) {
+            return false;
+        }
         // A caption row and a divider are drawn but not clickable, so a press over either hits nothing
         // and falls through to let the loop try the controls below - never consuming a click as if it
         // acted. The divider matters here because it spans the whole body width: without this guard a

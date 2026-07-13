@@ -19,10 +19,21 @@ import java.util.List;
  * {@link #tabs()}, and {@link #body()} shortcuts read straight off the panel, so a bodyless tab (an
  * empty {@code bodyControls} and a zero-size body) reserves no dead click zone beneath the tab row.
  *
- * @param panel        the frame, tab row, and body rectangle from the reusable panel
- * @param bodyControls the controls KMU laid inside the body, top to bottom (empty for no body)
+ * <p>When the body is capped (its natural height would run past the bottom margin), its one scrolling
+ * list gives up the difference and scrolls within {@link #flexViewport()}: the renderer clips the list
+ * draw to that viewport and the input listener confines its clicks to it, while {@link #scrollOffset()}
+ * (already baked into the list control's laid-out bounds) and {@link #scrollOverflow()} drive the
+ * scrollbar. An uncapped body carries a zero viewport and zero overflow, so the whole strip pins as
+ * before and no scrollbar shows.
+ *
+ * @param panel          the frame, tab row, and body rectangle from the reusable panel
+ * @param bodyControls   the controls KMU laid inside the body, top to bottom (empty for no body)
+ * @param flexViewport   the clip rectangle for the scrolling list, zero-size when nothing scrolls
+ * @param scrollOffset   the applied scroll offset in pixels, baked into the list control's bounds
+ * @param scrollOverflow how far the list overruns its viewport, zero when it fits
  */
-public record SidebarPlacement(TabPanelPlacement panel, List<Control> bodyControls) {
+public record SidebarPlacement(TabPanelPlacement panel, List<Control> bodyControls,
+        Rectangle flexViewport, float scrollOffset, float scrollOverflow) {
     /**
      * @return the panel's full footprint, border included
      */
@@ -42,5 +53,13 @@ public record SidebarPlacement(TabPanelPlacement panel, List<Control> bodyContro
      */
     public Rectangle body() {
         return panel.body();
+    }
+
+    /**
+     * @return whether the scrolling list overruns its viewport, so the renderer draws a scrollbar and
+     *         the input listener scrolls on a wheel event
+     */
+    public boolean isScrollbarNeeded() {
+        return scrollOverflow > 0f;
     }
 }

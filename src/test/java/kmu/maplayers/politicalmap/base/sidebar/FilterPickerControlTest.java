@@ -102,6 +102,9 @@ final class FilterPickerControlTest {
                 assertThat(picker.kind()).isEqualTo(ControlKind.RADIO);
                 assertThat(picker.alignment()).isEqualTo(RadioAlignment.VERTICAL);
                 assertThat(picker.reselect()).isEqualTo(ReselectBehaviour.DESELECT);
+                // The list is the body's scrolling region, so a long bloc list scrolls within the
+                // capped body while the controls above and below it stay pinned.
+                assertThat(picker.scrolls()).isTrue();
                 // Labels are the bloc names, the icons the crests, aligned index for index so a
                 // crestless bloc rides as a null entry rather than dropping a row. Domination-sorted,
                 // so the higher-dominating Hegemony leads.

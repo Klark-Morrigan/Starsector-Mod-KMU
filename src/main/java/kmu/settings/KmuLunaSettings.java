@@ -100,6 +100,8 @@ public final class KmuLunaSettings {
             "kmu_politicalMapSidebarPaddingTop";
     private static final String SIDEBAR_PADDING_LEFT_FIELD =
             "kmu_politicalMapSidebarPaddingLeft";
+    private static final String SIDEBAR_PADDING_BOTTOM_FIELD =
+            "kmu_politicalMapSidebarPaddingBottom";
     private static final String SIDEBAR_BORDER_WIDTH_FIELD =
             "kmu_politicalMapSidebarBorderWidth";
     private static final String SIDEBAR_OPACITY_FIELD =
@@ -370,6 +372,10 @@ public final class KmuLunaSettings {
     // rows' defaultValues.
     private static final int DEFAULT_SIDEBAR_PADDING_TOP = 46;
     private static final int DEFAULT_SIDEBAR_PADDING_LEFT = 12;
+    // Kept clear at the screen bottom, pixels: the panel body caps its height so the box
+    // never runs past this margin, and the bloc list scrolls within what is left. A small
+    // margin like the left padding. Mirrors the CSV row's defaultValue.
+    private static final int DEFAULT_SIDEBAR_PADDING_BOTTOM = 12;
     // A one-pixel outer border by default; 0 hides it. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;
     // 80% opaque by default: readable over the map without fully masking what is behind it.
@@ -1251,6 +1257,16 @@ public final class KmuLunaSettings {
     public static int getPoliticalMapSidebarPaddingLeft() {
         return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_PADDING_LEFT_FIELD,
                 DEFAULT_SIDEBAR_PADDING_LEFT);
+    }
+
+    /**
+     * @return how far above the bottom edge of the screen the overlay sidebar box must stay,
+     *         in pixels; the panel body caps its height to this margin and the bloc list
+     *         scrolls within the room left; 12 by default
+     */
+    public static int getPoliticalMapSidebarPaddingBottom() {
+        return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_PADDING_BOTTOM_FIELD,
+                DEFAULT_SIDEBAR_PADDING_BOTTOM);
     }
 
     /**

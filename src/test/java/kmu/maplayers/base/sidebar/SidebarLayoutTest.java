@@ -30,6 +30,10 @@ final class SidebarLayoutTest {
     private static final float SCREEN_HEIGHT = 1080f;
     private static final int PADDING_TOP = 46;
     private static final int PADDING_LEFT = 12;
+    // A small bottom margin; the bodies in these cases carry no scrolling list, so the cap never
+    // engages and this value only feeds the (never-reached) cap arithmetic. The capped and scrolling
+    // behaviour is exercised in the CappedBody nested class below with a scrolling body.
+    private static final int PADDING_BOTTOM = 12;
     private static final int BORDER_WIDTH = 2;
     private static final float TOLERANCE = 0.01f;
 
@@ -222,7 +226,7 @@ final class SidebarLayoutTest {
 
         private SidebarPlacement place(List<ControlSpec> bodyControls) {
             return SidebarLayout.computePlacement(SCREEN_HEIGHT, PADDING_TOP, PADDING_LEFT,
-                    BORDER_WIDTH, TABS, bodyControls, measurerFake);
+                    PADDING_BOTTOM, BORDER_WIDTH, TABS, bodyControls, measurerFake, 0f);
         }
     }
 
@@ -278,7 +282,7 @@ final class SidebarLayoutTest {
 
         private SidebarPlacement place() {
             return SidebarLayout.computePlacement(SCREEN_HEIGHT, PADDING_TOP, PADDING_LEFT,
-                    BORDER_WIDTH, TABS, VERTICAL_BODY, measurerFake);
+                    PADDING_BOTTOM, BORDER_WIDTH, TABS, VERTICAL_BODY, measurerFake, 0f);
         }
     }
 
@@ -308,7 +312,76 @@ final class SidebarLayoutTest {
 
         private SidebarPlacement place() {
             return SidebarLayout.computePlacement(SCREEN_HEIGHT, PADDING_TOP, PADDING_LEFT,
-                    BORDER_WIDTH, TABS, LABEL_BODY, measurerFake);
+                    PADDING_BOTTOM, BORDER_WIDTH, TABS, LABEL_BODY, measurerFake, 0f);
+        }
+    }
+
+    @Nested
+    class CappedBody {
+        // A body that carries a scrolling list (a header checkbox, the marked list, a footer checkbox),
+        // and a bottom margin tight enough that the natural body would overrun it - so the cap engages
+        // and the list gives up height. Eight options make the list far taller than the room left.
+        private static final int TIGHT_PADDING_BOTTOM = 900;
+
+        private List<ControlSpec> scrollingBody() {
+            var labels = new ArrayList<String>();
+            var icons = new ArrayList<String>();
+            for (var index = 0; index < 8; index++) {
+                labels.add("Opt" + index);
+                icons.add(null);
+            }
+            var list = ControlSpec.createIconRadioList(labels, icons, ControlSpec.NO_SELECTION,
+                    ControlAction.NONE).buildScrollableCopy();
+            return List.of(new ControlSpec(ControlKind.CHECKBOX, List.of("Header"), "",
+                            ControlSpec.NO_SELECTION), list,
+                    new ControlSpec(ControlKind.CHECKBOX, List.of("Footer"), "",
+                            ControlSpec.NO_SELECTION));
+        }
+
+        @Test
+        void computePlacementCapsTheBoxToTheBottomMarginAndOpensAScrollViewport() {
+            var placement = placeCapped(0f);
+            // The box bottom clears the bottom margin (its top is fixed by the top padding), and the
+            // list overruns the room left, so a scroll viewport and overflow are reported.
+            assertThat(placement.box().y())
+                    .isGreaterThanOrEqualTo(TIGHT_PADDING_BOTTOM - TOLERANCE);
+            assertThat(placement.scrollOverflow()).isGreaterThan(0f);
+            assertThat(placement.isScrollbarNeeded()).isTrue();
+            assertThat(placement.flexViewport().height()).isGreaterThan(0f);
+        }
+
+        @Test
+        void computePlacementPinsTheHeaderAndFooterAroundTheScrollingList() {
+            var placement = placeCapped(0f);
+            var controls = placement.bodyControls();
+            var header = controls.get(0).bounds();
+            var footer = controls.get(controls.size() - 1).bounds();
+            // The header hangs from the body top and the footer sits at the body bottom, with the list
+            // (and its viewport) between them - the pinned-around-a-scroll shape.
+            assertThat(header.y()).isGreaterThan(placement.flexViewport().y()
+                    + placement.flexViewport().height() - TOLERANCE);
+            assertThat(footer.y()).isLessThan(placement.flexViewport().y() + TOLERANCE);
+        }
+
+        @Test
+        void computePlacementBakesTheScrollOffsetIntoTheListBounds() {
+            var atTop = listBounds(placeCapped(0f));
+            var scrolled = listBounds(placeCapped(20f));
+            // A larger scroll offset slides the list's content upward (UI y grows up) by that offset,
+            // so the offset the placement reports is the shift baked into the list control's bounds.
+            assertThat(scrolled.y() - atTop.y())
+                    .isCloseTo(placeCapped(20f).scrollOffset(), within(TOLERANCE));
+            assertThat(placeCapped(20f).scrollOffset()).isCloseTo(20f, within(TOLERANCE));
+        }
+
+        private Rectangle listBounds(SidebarPlacement placement) {
+            return placement.bodyControls().get(1).bounds();
+        }
+
+        private SidebarPlacement placeCapped(float rawScrollOffset) {
+            return SidebarLayout.computePlacement(SCREEN_HEIGHT, PADDING_TOP, PADDING_LEFT,
+                    TIGHT_PADDING_BOTTOM, BORDER_WIDTH, TABS, scrollingBody(), measurerFake,
+                    rawScrollOffset);
         }
     }
 }
