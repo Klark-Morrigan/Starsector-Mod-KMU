@@ -65,11 +65,11 @@ public final class LiveSidebarPlacement {
                 KmuLunaSettings.getPoliticalMapSidebarPaddingBottom(),
                 KmuLunaSettings.getPoliticalMapSidebarBorderWidth(),
                 buildTabContents(layers), activeLayer.getBodyControls(), measurer,
-                SidebarScrollState.INSTANCE.getOffset());
+                SidebarPanelController.INSTANCE.getScrollState().getOffset());
         // Settle the stored scroll request into the list's real range now the layout has resolved the
         // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
         // the render and input passes call this each frame, so the stored offset stays bounded.
-        SidebarScrollState.INSTANCE.clampTo(placement.scrollOverflow());
+        SidebarPanelController.INSTANCE.getScrollState().clampTo(placement.scrollOverflow());
         return placement;
     }
 
