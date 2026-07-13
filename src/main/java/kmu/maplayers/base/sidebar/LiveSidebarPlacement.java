@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
+import kmlib.starsector.ui.widgets.PanelLayout;
 import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.VanillaTabContent;
 
@@ -58,7 +59,7 @@ public final class LiveSidebarPlacement {
         var settings = Global.getSettings();
         var layers = MapLayerRegistry.getLayers();
         var activeLayer = MapLayerRegistry.getActiveLayer();
-        var placement = SidebarLayout.computePlacement(settings.getScreenHeight(),
+        var placement = PanelLayout.computePlacement(settings.getScreenHeight(),
                 KmuLunaSettings.getPoliticalMapSidebarPaddingTop(),
                 KmuLunaSettings.getPoliticalMapSidebarPaddingLeft(),
                 KmuLunaSettings.getPoliticalMapSidebarPaddingBottom(),

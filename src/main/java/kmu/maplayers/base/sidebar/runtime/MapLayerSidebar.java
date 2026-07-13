@@ -24,13 +24,13 @@ import kmlib.starsector.ui.render.gl.UiScissor;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.widgets.Checkbox;
 import kmlib.starsector.ui.widgets.IconLabelRow;
+import kmlib.starsector.ui.widgets.PanelLayout;
 import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.TabPanel;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
-import kmu.maplayers.base.sidebar.SidebarLayout;
 import kmu.maplayers.base.sidebar.SidebarScrollbar;
 import kmu.settings.KmuLunaSettings;
 
