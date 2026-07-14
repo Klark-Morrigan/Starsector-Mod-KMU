@@ -19,9 +19,10 @@ import java.util.List;
 /**
  * The map sidebar's input listener shell: it gates when the panel is live, resolves the placement the
  * renderer drew, and feeds pointer events to the reusable KMLib {@link
- * kmlib.starsector.ui.input.PanelController} - which drives the
- * thumb drag, the wheel scroll, and control hits - while owning the two things KMLib cannot: the hotkeys
- * (keycodes from settings, jump straight to a layer) and what a tab click means (select that layer).
+ * kmlib.starsector.ui.input.TabPanelController} - which routes a header tab press to that tab's own action
+ * and drives the thumb drag, the wheel scroll, and body control hits - while owning the one thing KMLib
+ * cannot: the hotkeys (keycodes from settings, jump straight to a layer). What a tab click means (select
+ * that layer) now rides on the tabs control's action, built in {@link LiveSidebarPlacement}, not here.
  *
  * <p>A render pass cannot consume input, so this listener runs in {@code processCampaignInputPreCore},
  * which fires before the map's own widgets each frame the map is open; consuming there stops a click
@@ -58,8 +59,7 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
             if (event.isKeyDownEvent()) {
                 switchToBoundLayer(event);
             } else if (event.isMouseEvent() && placement != null) {
-                SidebarPanelController.INSTANCE.handlePointer(event, placement,
-                        MapLayerSidebarInput::selectLayerAt);
+                SidebarPanelController.INSTANCE.handlePointer(event, placement);
             }
         }
     }
@@ -72,12 +72,6 @@ public final class MapLayerSidebarInput implements CampaignInputListener {
     @Override
     public void processCampaignInputPostCore(List<InputEventAPI> events) {
         // Nothing runs after the core map for the bar; all its input is claimed pre-core.
-    }
-
-    // What a tab click means for this sidebar: select the layer at the clicked tab's index. The
-    // controller resolves which tab was hit; KMU owns that selecting it switches the active layer.
-    private static void selectLayerAt(int tabIndex) {
-        MapLayerRegistry.selectLayer(MapLayerRegistry.getLayers().get(tabIndex));
     }
 
     // Switches to the layer whose bound key was pressed and consumes the event, so the key does not also

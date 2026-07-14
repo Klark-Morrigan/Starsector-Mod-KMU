@@ -8,12 +8,11 @@ import com.fs.starfarer.api.util.Misc;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.map.CampaignMapView;
-import kmlib.starsector.ui.render.gl.PanelRenderer;
+import kmlib.starsector.ui.render.gl.TabPanelRenderer;
 import kmlib.starsector.ui.render.gl.TabStyle;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.render.gl.WidgetStyle;
 
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.settings.KmuLunaSettings;
 
@@ -23,8 +22,8 @@ import java.awt.Color;
 
 /**
  * Drives the on-map layer sidebar as a campaign UI listener: it gates when the panel shows, resolves the
- * placement, and hands it to the reusable KMLib {@link PanelRenderer} to paint. The panel's actual paint -
- * the bordered frame, the vanilla-styled tab strip, the body controls, and the scrollbar - is the
+ * placement, and hands it to the reusable KMLib {@link TabPanelRenderer} to paint. The panel's actual
+ * paint - the bordered frame, the vanilla-styled tab header, the body controls, and the scrollbar - is the
  * renderer's; this class owns only the wiring KMLib cannot: when to draw (the sector map with the
  * starscape filter off), which colours and fonts to draw in (a {@link WidgetStyle} built from the live
  * player colours and settings), flushing the body controls' deferred settings writes when the overlay
@@ -101,8 +100,8 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         // never seen is diagnosed from the numbers rather than another run.
         logViewStateOnChange("showing; " + CampaignMapView.describeViewState() + "; screen="
                 + settings.getScreenWidth() + "x" + settings.getScreenHeight()
-                + " box=" + formatRect(placement.box()) + " opacity=" + opacity);
-        PanelRenderer.render(placement, buildStyle(), borderWidth, selectedTabIndex(), opacity);
+                + " box=" + formatRect(placement.body().box()) + " opacity=" + opacity);
+        TabPanelRenderer.render(placement, buildStyle(), borderWidth, opacity);
     }
 
     // The map sidebar's look, built each frame from the live player colours: a black backdrop, the base
@@ -112,12 +111,6 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         return new WidgetStyle(PANEL_FILL, Misc.getBasePlayerColor(), Misc.getBrightPlayerColor(),
                 BODY_FONT, new TabStyle(VanillaTabColors.mapTabs(), LiveSidebarPlacement.TAB_FONT,
                         ControlStripLayout.TAB_FONT_SIZE));
-    }
-
-    // The active layer's position in the registry order the tabs are laid out in, so the selected tab the
-    // strip lights matches the active pick.
-    private static int selectedTabIndex() {
-        return MapLayerRegistry.getLayers().indexOf(MapLayerRegistry.getActiveLayer());
     }
 
     // Logs the composed view-state line once per change; the dedupe keeps a steady state to one line while

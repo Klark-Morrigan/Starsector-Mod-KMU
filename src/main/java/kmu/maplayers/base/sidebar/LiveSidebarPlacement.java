@@ -2,12 +2,13 @@ package kmu.maplayers.base.sidebar;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
-import kmlib.starsector.ui.widgets.PanelLayout;
-import kmlib.starsector.ui.widgets.PanelPlacement;
-import kmlib.starsector.ui.widgets.VanillaTabContent;
+import kmlib.starsector.ui.layout.Padding;
+import kmlib.starsector.ui.layout.TabPanelLayout;
+import kmlib.starsector.ui.widgets.TabPanelPlacement;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -27,9 +28,11 @@ import java.util.List;
  * (a settings change landing between the render and the input pass would move the drawn box out
  * from under the hit-test).
  *
- * <p>Layout snaps each tab to its measured label, so the placement needs the tab font's width
- * measurer; the font basename lives here as the single source both this measurement and the
- * renderer's tab paint read, so a snapped tab width matches the text drawn into it.
+ * <p>The layer selector is one {@link ControlSpec#createTabs} control whose action selects the layer at
+ * the clicked index, so the layer switch rides on the control itself and the input listener needs no tab
+ * callback. Layout snaps each tab to its measured label, so the placement needs the tab font's width
+ * measurer; the font basename lives here as the single source both this measurement and the renderer's
+ * tab paint read, so a snapped tab width matches the text drawn into it.
  */
 public final class LiveSidebarPlacement {
     /**
@@ -51,7 +54,7 @@ public final class LiveSidebarPlacement {
      *         the layout snaps tabs to measured text and cannot run without it, so the caller draws
      *         nothing and consumes nothing that frame
      */
-    public static PanelPlacement resolveCurrentPlacement() {
+    public static TabPanelPlacement resolveCurrentPlacement() {
         var measurer = loadTabMeasurer();
         if (measurer == null) {
             return null;
@@ -59,30 +62,34 @@ public final class LiveSidebarPlacement {
         var settings = Global.getSettings();
         var layers = MapLayerRegistry.getLayers();
         var activeLayer = MapLayerRegistry.getActiveLayer();
-        var placement = PanelLayout.computePlacement(settings.getScreenHeight(),
-                KmuLunaSettings.getPoliticalMapSidebarPaddingTop(),
-                KmuLunaSettings.getPoliticalMapSidebarPaddingLeft(),
+        // The right margin is unused - the sidebar grows rightward to fit the widest content.
+        var padding = new Padding(KmuLunaSettings.getPoliticalMapSidebarPaddingTop(), 0,
                 KmuLunaSettings.getPoliticalMapSidebarPaddingBottom(),
-                KmuLunaSettings.getPoliticalMapSidebarBorderWidth(),
-                buildTabContents(layers), activeLayer.getBodyControls(), measurer,
+                KmuLunaSettings.getPoliticalMapSidebarPaddingLeft());
+        var placement = TabPanelLayout.computePlacement(settings.getScreenHeight(), padding,
+                KmuLunaSettings.getPoliticalMapSidebarBorderWidth(), buildTabsSpec(layers, activeLayer),
+                activeLayer.getBodyControls(), measurer,
                 SidebarPanelController.INSTANCE.getScrollState().getOffset());
         // Settle the stored scroll request into the list's real range now the layout has resolved the
         // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
         // the render and input passes call this each frame, so the stored offset stays bounded.
-        SidebarPanelController.INSTANCE.getScrollState().clampTo(placement.scrollOverflow());
+        SidebarPanelController.INSTANCE.getScrollState().clampTo(placement.body().scrollOverflow());
         return placement;
     }
 
-    // Turns each layer into a tab's content: its label and the display name of its current shortcut
-    // key, which the strip paints in gold. Registry order, so the placement's tabs, the renderer's
-    // selected/hovered index, and the input listener's hit-test all index the same row.
-    private static List<VanillaTabContent> buildTabContents(List<MapLayer> layers) {
-        var contents = new ArrayList<VanillaTabContent>(layers.size());
+    // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
+    // registry order, the active layer lit, and an action that selects the layer at the clicked index.
+    // Baking the switch into the action means the placement's tabs, the renderer's lit index, and the
+    // click all index the same registry row, and no separate tab callback is threaded through the input.
+    private static ControlSpec buildTabsSpec(List<MapLayer> layers, MapLayer activeLayer) {
+        var labels = new ArrayList<String>(layers.size());
+        var shortcuts = new ArrayList<String>(layers.size());
         for (var layer : layers) {
-            contents.add(new VanillaTabContent(KmuStrings.get(layer.getTabLabelKey()),
-                    resolveShortcutName(layer)));
+            labels.add(KmuStrings.get(layer.getTabLabelKey()));
+            shortcuts.add(resolveShortcutName(layer));
         }
-        return contents;
+        return ControlSpec.createTabs(labels, shortcuts, layers.indexOf(activeLayer),
+                cell -> MapLayerRegistry.selectLayer(layers.get(cell)));
     }
 
     // The display name of a layer's shortcut key, or null when it has none - an unbound keycode (0,
