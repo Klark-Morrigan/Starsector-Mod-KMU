@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
-import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
@@ -43,15 +42,16 @@ public final class PoliticalMapBodyControls {
      */
     public static List<ControlSpec> buildSharedControls() {
         return List.of(
-                ControlSpec.createCheckbox(
+                ControlSpec.Checkbox.lit(
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
                         KmuLunaSettings.getUninhabitedBorderColor().isDrawn(),
                         cellIndex -> toggleUninhabitedSystems()),
-                new ControlSpec(ControlKind.RADIO,
+                ControlSpec.HorizontalRadio.uniform(
                         List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL)),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES),
-                        nameFormatRadioState(), PoliticalMapBodyControls::selectNameFormatSegment));
+                        nameFormatRadioState(),
+                        PoliticalMapBodyControls::selectNameFormatSegment));
     }
 
     /**
@@ -68,9 +68,11 @@ public final class PoliticalMapBodyControls {
         for (var view : PoliticalMapViewRegistry.getViews()) {
             labels.add(KmuStrings.get(view.getSegmentLabelKey()));
         }
-        return ControlSpec.createVerticalRadio(labels,
+        return ControlSpec.VerticalTable.plain(
+                labels,
                 PoliticalMapViewRegistry.getSelectedViewIndex(),
-                PoliticalMapBodyControls::selectViewSegment, ReselectBehaviour.DESELECT);
+                PoliticalMapBodyControls::selectViewSegment,
+                ReselectBehaviour.DESELECT);
     }
 
     // Toggles the view its clicked segment names - activating it, or turning the map off when it is

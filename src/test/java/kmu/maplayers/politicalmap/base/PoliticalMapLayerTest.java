@@ -4,7 +4,6 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
-import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -39,14 +38,10 @@ final class PoliticalMapLayerTest {
 
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
     // order without depending on the real shared controls or selector contents.
-    private static final ControlSpec SHARED_MARKER = new ControlSpec(
-            ControlKind.CHECKBOX, List.of("shared"), "", ControlSpec.NO_SELECTION);
-    private static final ControlSpec SELECTOR_MARKER = new ControlSpec(
-            ControlKind.RADIO, List.of("selector"), "", ControlSpec.NO_SELECTION);
-    private static final ControlSpec VIEW_MARKER = new ControlSpec(
-            ControlKind.CHECKBOX, List.of("view"), "", ControlSpec.NO_SELECTION);
-    private static final ControlSpec PICKER_MARKER = new ControlSpec(
-            ControlKind.RADIO, List.of("picker"), "", ControlSpec.NO_SELECTION);
+    private static final ControlSpec SHARED_MARKER = new ControlSpec.Label("shared");
+    private static final ControlSpec SELECTOR_MARKER = new ControlSpec.Label("selector");
+    private static final ControlSpec VIEW_MARKER = new ControlSpec.Label("view");
+    private static final ControlSpec PICKER_MARKER = new ControlSpec.Label("picker");
 
     private final PoliticalMapView viewWithControlsMock = mock(PoliticalMapView.class);
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);

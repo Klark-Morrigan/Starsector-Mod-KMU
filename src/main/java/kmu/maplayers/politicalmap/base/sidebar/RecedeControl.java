@@ -32,11 +32,13 @@ public final class RecedeControl {
      */
     public static List<ControlSpec> buildControls(String captionLabel) {
         return List.of(
-                ControlSpec.createLabel(captionLabel),
-                ControlSpec.createCheckbox(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED),
+                new ControlSpec.Label(captionLabel),
+                ControlSpec.Checkbox.lit(
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED),
                         RecedePreferences.isMuted(),
                         cellIndex -> toggleMuted()),
-                ControlSpec.createCheckbox(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED),
+                ControlSpec.Checkbox.lit(
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED),
                         RecedePreferences.isDesaturated(),
                         cellIndex -> toggleDesaturated()));
     }

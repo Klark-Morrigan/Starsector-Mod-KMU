@@ -1,8 +1,6 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
-import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
-import kmlib.starsector.ui.controls.RadioAlignment;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.BlocListColumns;
@@ -70,7 +68,7 @@ final class FilterPickerControlTest {
                 var divider =
                         build(BLOCS, null, BlocSortMode.DEFAULT).get(DIVIDER);
 
-                assertThat(divider.kind()).isEqualTo(ControlKind.DIVIDER);
+                assertThat(divider).isInstanceOf(ControlSpec.Divider.class);
             }
         }
 
@@ -81,11 +79,10 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var selector = build(BLOCS, null, BlocSortMode.PRESENCE)
+                var selector = (ControlSpec.VerticalTable) build(BLOCS, null, BlocSortMode.PRESENCE)
                         .get(SORT_SELECTOR);
 
-                assertThat(selector.kind()).isEqualTo(ControlKind.RADIO);
-                assertThat(selector.alignment()).isEqualTo(RadioAlignment.VERTICAL);
+                // A vertical table by type; a sort is always active, so a re-pick re-fires to flip.
                 assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.REFIRE);
                 assertThat(selector.selectedIndex())
                         .isEqualTo(List.of(BlocSortMode.values()).indexOf(BlocSortMode.PRESENCE));
@@ -99,8 +96,7 @@ final class FilterPickerControlTest {
 
                 var picker = pickerOf(build(BLOCS, null, BlocSortMode.DEFAULT));
 
-                assertThat(picker.kind()).isEqualTo(ControlKind.RADIO);
-                assertThat(picker.alignment()).isEqualTo(RadioAlignment.VERTICAL);
+                // A vertical table by type; re-picking the lit row clears the spotlight (DESELECT).
                 assertThat(picker.reselect()).isEqualTo(ReselectBehaviour.DESELECT);
                 // The list is the body's scrolling region, so a long bloc list scrolls within the
                 // capped body while the controls above and below it stay pinned.
@@ -250,14 +246,14 @@ final class FilterPickerControlTest {
                 var controls = build(BLOCS, "hegemony", BlocSortMode.DEFAULT);
 
                 assertThat(controls).hasSize(7);
-                assertThat(controls.get(2).kind()).isEqualTo(ControlKind.LABEL);
+                assertThat(controls.get(2)).isInstanceOf(ControlSpec.Label.class);
                 assertThat(controls.get(2).labels()).containsExactly("Rest of the sector is");
-                assertThat(controls.get(3).kind()).isEqualTo(ControlKind.CHECKBOX);
-                assertThat(controls.get(4).kind()).isEqualTo(ControlKind.CHECKBOX);
-                // The columns selector then the list are the last two rows, both vertical/horizontal
-                // radios; the columns selector sits directly above the list it lays out.
-                assertThat(controls.get(5).kind()).isEqualTo(ControlKind.RADIO);
-                assertThat(controls.get(6).kind()).isEqualTo(ControlKind.RADIO);
+                assertThat(controls.get(3)).isInstanceOf(ControlSpec.Checkbox.class);
+                assertThat(controls.get(4)).isInstanceOf(ControlSpec.Checkbox.class);
+                // The columns selector then the list are the last two rows: the horizontal columns radio
+                // sits directly above the vertical list it lays out.
+                assertThat(controls.get(5)).isInstanceOf(ControlSpec.HorizontalRadio.class);
+                assertThat(controls.get(6)).isInstanceOf(ControlSpec.VerticalTable.class);
             }
         }
 
@@ -271,8 +267,7 @@ final class FilterPickerControlTest {
                 var controls = build(BLOCS, null, BlocSortMode.DEFAULT);
                 var columnsSelector = controls.get(controls.size() - 2);
 
-                assertThat(columnsSelector.kind()).isEqualTo(ControlKind.RADIO);
-                assertThat(columnsSelector.alignment()).isEqualTo(RadioAlignment.HORIZONTAL);
+                assertThat(columnsSelector).isInstanceOf(ControlSpec.HorizontalRadio.class);
                 assertThat(columnsSelector.labels()).hasSize(2);
             }
         }
@@ -363,9 +358,10 @@ final class FilterPickerControlTest {
     }
 
     // The picker list is always the block's last row, so a test reads it from the tail rather than a
-    // fixed index that would shift with the recede rows.
-    private static ControlSpec pickerOf(List<ControlSpec> controls) {
-        return controls.get(controls.size() - 1);
+    // fixed index that would shift with the recede rows. Read as the vertical table it is, so a test
+    // reads its icon and value columns, its scroll flag, and its re-pick behaviour.
+    private static ControlSpec.VerticalTable pickerOf(List<ControlSpec> controls) {
+        return (ControlSpec.VerticalTable) controls.get(controls.size() - 1);
     }
 
     // Stubs the caption and sort-label strings the picker heads its rows with, so the assertions read
@@ -379,5 +375,10 @@ final class FilterPickerControlTest {
                 .thenReturn("Desaturated");
         // The picker builds the sort selector, which reads every sort-mode label.
         SortLabelStubs.stubSortLabels(stringsMock);
+        // The picker also builds the columns selector, whose segment labels must resolve to real text
+        // rather than a null, since a control's labels are copied and reject a null option name.
+        for (var columns : BlocListColumns.values()) {
+            stringsMock.when(() -> KmuStrings.get(columns.labelKey())).thenReturn(columns.name());
+        }
     }
 }

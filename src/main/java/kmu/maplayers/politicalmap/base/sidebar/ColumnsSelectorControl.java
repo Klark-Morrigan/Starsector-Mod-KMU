@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
-import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.BlocListColumns;
@@ -33,15 +32,17 @@ public final class ColumnsSelectorControl {
      * @param activeColumns the column count the list is currently laid across, which this lights
      * @return the horizontal, two-segment columns-selector radio
      */
-    public static ControlSpec buildSelector(BlocListColumns activeColumns) {
+    public static ControlSpec.HorizontalRadio buildSelector(BlocListColumns activeColumns) {
         var choices = List.of(BlocListColumns.values());
         var labels = new ArrayList<String>(choices.size());
         for (var choice : choices) {
             labels.add(KmuStrings.get(choice.labelKey()));
         }
-        return new ControlSpec(ControlKind.RADIO, labels,
+        return ControlSpec.HorizontalRadio.uniform(
+                labels,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_COLUMNS_CAPTION),
-                choices.indexOf(activeColumns), cellIndex -> applySelection(choices, cellIndex));
+                choices.indexOf(activeColumns),
+                cellIndex -> applySelection(choices, cellIndex));
     }
 
     // Persists the column count for the clicked segment. Any index outside the two segments is ignored,

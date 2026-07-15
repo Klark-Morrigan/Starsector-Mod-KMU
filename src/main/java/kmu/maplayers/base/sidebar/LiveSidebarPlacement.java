@@ -28,7 +28,7 @@ import java.util.List;
  * (a settings change landing between the render and the input pass would move the drawn box out
  * from under the hit-test).
  *
- * <p>The layer selector is one {@link ControlSpec#createTabs} control whose action selects the layer at
+ * <p>The layer selector is one {@link ControlSpec.Tabs} control whose action selects the layer at
  * the clicked index, so the layer switch rides on the control itself and the input listener needs no tab
  * callback. Layout snaps each tab to its measured label, so the placement needs the tab font's width
  * measurer; the font basename lives here as the single source both this measurement and the renderer's
@@ -63,12 +63,17 @@ public final class LiveSidebarPlacement {
         var layers = MapLayerRegistry.getLayers();
         var activeLayer = MapLayerRegistry.getActiveLayer();
         // The right margin is unused - the sidebar grows rightward to fit the widest content.
-        var padding = new Padding(KmuLunaSettings.getPoliticalMapSidebarPaddingTop(), 0,
+        var padding = new Padding(KmuLunaSettings.getPoliticalMapSidebarPaddingTop(),
+                0,
                 KmuLunaSettings.getPoliticalMapSidebarPaddingBottom(),
                 KmuLunaSettings.getPoliticalMapSidebarPaddingLeft());
-        var placement = TabPanelLayout.computePlacement(settings.getScreenHeight(), padding,
-                KmuLunaSettings.getPoliticalMapSidebarBorderWidth(), buildTabsSpec(layers, activeLayer),
-                activeLayer.getBodyControls(), measurer,
+        var placement = TabPanelLayout.computePlacement(
+                settings.getScreenHeight(),
+                padding,
+                KmuLunaSettings.getPoliticalMapSidebarBorderWidth(),
+                buildTabsSpec(layers, activeLayer),
+                activeLayer.getBodyControls(),
+                measurer,
                 SidebarPanelController.INSTANCE.getScrollState().getOffset());
         // Settle the stored scroll request into the list's real range now the layout has resolved the
         // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
@@ -81,14 +86,17 @@ public final class LiveSidebarPlacement {
     // registry order, the active layer lit, and an action that selects the layer at the clicked index.
     // Baking the switch into the action means the placement's tabs, the renderer's lit index, and the
     // click all index the same registry row, and no separate tab callback is threaded through the input.
-    private static ControlSpec buildTabsSpec(List<MapLayer> layers, MapLayer activeLayer) {
+    private static ControlSpec.Tabs buildTabsSpec(List<MapLayer> layers, MapLayer activeLayer) {
         var labels = new ArrayList<String>(layers.size());
         var shortcuts = new ArrayList<String>(layers.size());
         for (var layer : layers) {
             labels.add(KmuStrings.get(layer.getTabLabelKey()));
             shortcuts.add(resolveShortcutName(layer));
         }
-        return ControlSpec.createTabs(labels, shortcuts, layers.indexOf(activeLayer),
+        return new ControlSpec.Tabs(
+                labels,
+                shortcuts,
+                layers.indexOf(activeLayer),
                 cell -> MapLayerRegistry.selectLayer(layers.get(cell)));
     }
 
@@ -97,7 +105,8 @@ public final class LiveSidebarPlacement {
     // shortcut leaves the tab label alone.
     private static String resolveShortcutName(MapLayer layer) {
         var keycode = KmuLunaSettings.getPoliticalMapLayerShortcut(
-                layer.getShortcutSettingKey(), layer.getDefaultShortcutKeycode());
+                layer.getShortcutSettingKey(),
+                layer.getDefaultShortcutKeycode());
         if (keycode <= 0) {
             return null;
         }

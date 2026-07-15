@@ -49,7 +49,9 @@ public final class SortSelectorControl {
      * @param activeDirection the direction the active mode is currently ranking in
      * @return the vertical, re-firing sort-selector radio table
      */
-    public static ControlSpec buildSelector(BlocSortMode activeMode, SortDirection activeDirection) {
+    public static ControlSpec.VerticalTable buildSelector(
+            BlocSortMode activeMode,
+            SortDirection activeDirection) {
         var modes = List.of(BlocSortMode.values());
         var labels = new ArrayList<String>(modes.size());
         var directionLabels = new ArrayList<String>(modes.size());
@@ -60,10 +62,14 @@ public final class SortSelectorControl {
             var rowDirection = mode == activeMode ? activeDirection : mode.defaultDirection();
             directionLabels.add(KmuStrings.get(rowDirection.labelKey()));
         }
-        return ControlSpec.createVerticalRadioTable(labels,
-                Collections.<String>nCopies(modes.size(), null), directionLabels,
-                modes.indexOf(activeMode), cellIndex -> applySelection(modes, cellIndex),
-                ReselectBehaviour.REFIRE, DIRECTION_LABEL_SCALE);
+        return ControlSpec.VerticalTable.table(
+                labels,
+                Collections.<String>nCopies(modes.size(), null),
+                directionLabels,
+                modes.indexOf(activeMode),
+                cellIndex -> applySelection(modes, cellIndex),
+                ReselectBehaviour.REFIRE,
+                DIRECTION_LABEL_SCALE);
     }
 
     // Applies a click on a sort row. Re-picking the lit mode flips its direction; picking a different

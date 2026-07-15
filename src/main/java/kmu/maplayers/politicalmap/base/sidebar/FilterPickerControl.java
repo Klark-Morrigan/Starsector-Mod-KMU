@@ -57,8 +57,12 @@ public final class FilterPickerControl {
      *                       selector lights and the list lays out under
      * @return the picker body controls, top to bottom; empty when {@code blocs} is empty
      */
-    public static List<ControlSpec> buildControls(List<SelectableBloc> blocs, String selectedBlocId,
-            BlocSortMode sortMode, SortDirection sortDirection, BlocListColumns columns) {
+    public static List<ControlSpec> buildControls(
+            List<SelectableBloc> blocs,
+            String selectedBlocId,
+            BlocSortMode sortMode,
+            SortDirection sortDirection,
+            BlocListColumns columns) {
         if (blocs.isEmpty()) {
             return List.of();
         }
@@ -71,7 +75,7 @@ public final class FilterPickerControl {
         var controls = new ArrayList<ControlSpec>();
         // A rule heads the block, parting the view-level controls above from the picker below - the
         // section break a caption used to mark, now carrying no text.
-        controls.add(ControlSpec.createDivider());
+        controls.add(new ControlSpec.Divider());
         // The sort selector rides directly under the rule, so the metric is chosen right above the
         // list it orders.
         controls.add(SortSelectorControl.buildSelector(sortMode, sortDirection));
@@ -87,12 +91,17 @@ public final class FilterPickerControl {
         controls.add(ColumnsSelectorControl.buildSelector(columns));
         // The bloc list is the body's one scrolling region: when the picker plus the controls above and
         // below it would run the box past the bottom margin, the list gives up the difference and
-        // scrolls while everything around it stays pinned. buildScrollableCopy marks the list; the
-        // capped layout, renderer, and input listener all read that one flag.
-        controls.add(ControlSpec.createIconRadioList(resolveLabels(rankedBlocs),
-                resolveIconPaths(rankedBlocs), resolveTrailingValues(rankedBlocs, sortMode),
-                selectedIndex, cellIndex -> pickBloc(rankedBlocs, selectedIndex, cellIndex),
-                columns.columnCount()).buildScrollableCopy());
+        // scrolls while everything around it stays pinned. asScrolling marks the list; the capped
+        // layout, renderer, and input listener all read that one flag.
+        controls.add(
+                ControlSpec.VerticalTable.iconList(
+                        resolveLabels(rankedBlocs),
+                        resolveIconPaths(rankedBlocs),
+                        resolveTrailingValues(rankedBlocs, sortMode),
+                        selectedIndex,
+                        cellIndex -> pickBloc(rankedBlocs, selectedIndex, cellIndex),
+                        columns.columnCount())
+                        .asScrolling());
         return List.copyOf(controls);
     }
 

@@ -1,7 +1,5 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
-import kmlib.starsector.ui.controls.ControlKind;
-import kmlib.starsector.ui.controls.RadioAlignment;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.BlocSortMode;
@@ -41,10 +39,8 @@ final class SortSelectorControlTest {
                 var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
                         BlocSortMode.DEFAULT.defaultDirection());
 
-                assertThat(selector.kind()).isEqualTo(ControlKind.RADIO);
-                assertThat(selector.alignment()).isEqualTo(RadioAlignment.VERTICAL);
-                // A sort is always active, so the radio never deselects; instead a re-pick re-fires so
-                // the handler can flip the direction.
+                // A vertical table by type; a sort is always active, so it never deselects - instead a
+                // re-pick re-fires so the handler can flip the direction.
                 assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.REFIRE);
             }
         }

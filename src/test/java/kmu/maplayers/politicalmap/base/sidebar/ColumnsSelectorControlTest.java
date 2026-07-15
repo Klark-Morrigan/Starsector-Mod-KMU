@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
-import kmlib.starsector.ui.controls.ControlKind;
-import kmlib.starsector.ui.controls.RadioAlignment;
+import kmlib.starsector.ui.controls.SegmentSizing;
 
 import kmu.maplayers.politicalmap.base.BlocListColumns;
 import kmu.maplayers.politicalmap.base.refresh.ColumnSelection;
@@ -37,8 +36,8 @@ final class ColumnsSelectorControlTest {
 
                 var selector = ColumnsSelectorControl.buildSelector(BlocListColumns.ONE);
 
-                assertThat(selector.kind()).isEqualTo(ControlKind.RADIO);
-                assertThat(selector.alignment()).isEqualTo(RadioAlignment.HORIZONTAL);
+                // A horizontal radio by type; its even-cell segments read the default UNIFORM sizing.
+                assertThat(selector.segmentSizing()).isEqualTo(SegmentSizing.UNIFORM);
                 assertThat(selector.labels()).containsExactly("1", "2");
             }
         }

@@ -93,7 +93,10 @@ final class PoliticalMapBodyControlsTest {
     // Fires the selector's click action for the segment at the given index, the path a click on that
     // view's radio row takes - the only way to reach the private selectViewSegment the selector wires.
     private static void clickViewSegment(int segmentIndex) {
-        PoliticalMapBodyControls.buildViewSelector().action().activateCell(segmentIndex);
+        // The selector is a vertical table (an Interactive control), so its click action drives the
+        // private selectViewSegment the selector wires.
+        var selector = (ControlSpec.Interactive) PoliticalMapBodyControls.buildViewSelector();
+        selector.action().activateCell(segmentIndex);
     }
 
     // Stubs the two registered views and their radio labels, so building the selector and resolving a

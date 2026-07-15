@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
-import kmlib.starsector.ui.controls.ControlKind;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.RecedePreferences;
@@ -42,10 +41,10 @@ final class RecedeControlTest {
 
                 var caption = RecedeControl.buildControls(CAPTION_LABEL).get(CAPTION);
 
-                // A caption is a text-only LABEL - drawn but never clicked, so it carries no lit cell.
-                assertThat(caption.kind()).isEqualTo(ControlKind.LABEL);
+                // A caption is a text-only Label - drawn but never clicked, so it is not Interactive and
+                // carries no lit cell at all.
+                assertThat(caption).isInstanceOf(ControlSpec.Label.class);
                 assertThat(caption.labels()).containsExactly(CAPTION_LABEL);
-                assertThat(caption.selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 
@@ -60,10 +59,9 @@ final class RecedeControlTest {
 
                 var controls = RecedeControl.buildControls(CAPTION_LABEL);
 
-                assertThat(controls.get(MUTE_CHECKBOX).kind()).isEqualTo(ControlKind.CHECKBOX);
+                assertThat(controls.get(MUTE_CHECKBOX)).isInstanceOf(ControlSpec.Checkbox.class);
                 assertThat(controls.get(MUTE_CHECKBOX).labels()).containsExactly("Muted");
-                assertThat(controls.get(DESATURATE_CHECKBOX).kind())
-                        .isEqualTo(ControlKind.CHECKBOX);
+                assertThat(controls.get(DESATURATE_CHECKBOX)).isInstanceOf(ControlSpec.Checkbox.class);
                 assertThat(controls.get(DESATURATE_CHECKBOX).labels()).containsExactly("Desaturated");
             }
         }
@@ -78,8 +76,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 preferencesMock.when(RecedePreferences::isMuted).thenReturn(true);
 
-                assertThat(RecedeControl.buildControls(CAPTION_LABEL).get(MUTE_CHECKBOX)
-                        .selectedIndex()).isEqualTo(0);
+                assertThat(interactiveAt(MUTE_CHECKBOX).selectedIndex()).isEqualTo(0);
             }
         }
 
@@ -91,8 +88,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 preferencesMock.when(RecedePreferences::isMuted).thenReturn(false);
 
-                assertThat(RecedeControl.buildControls(CAPTION_LABEL).get(MUTE_CHECKBOX)
-                        .selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
+                assertThat(interactiveAt(MUTE_CHECKBOX).selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 
@@ -104,8 +100,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(true);
 
-                assertThat(RecedeControl.buildControls(CAPTION_LABEL).get(DESATURATE_CHECKBOX)
-                        .selectedIndex()).isEqualTo(0);
+                assertThat(interactiveAt(DESATURATE_CHECKBOX).selectedIndex()).isEqualTo(0);
             }
         }
 
@@ -117,8 +112,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(false);
 
-                assertThat(RecedeControl.buildControls(CAPTION_LABEL).get(DESATURATE_CHECKBOX)
-                        .selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
+                assertThat(interactiveAt(DESATURATE_CHECKBOX).selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 
@@ -131,8 +125,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 preferencesMock.when(RecedePreferences::isMuted).thenReturn(false);
 
-                RecedeControl.buildControls(CAPTION_LABEL).get(MUTE_CHECKBOX).action()
-                        .activateCell(0);
+                interactiveAt(MUTE_CHECKBOX).action().activateCell(0);
 
                 preferencesMock.verify(() -> RecedePreferences.setMuted(true));
             }
@@ -146,8 +139,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 preferencesMock.when(RecedePreferences::isMuted).thenReturn(true);
 
-                RecedeControl.buildControls(CAPTION_LABEL).get(MUTE_CHECKBOX).action()
-                        .activateCell(0);
+                interactiveAt(MUTE_CHECKBOX).action().activateCell(0);
 
                 preferencesMock.verify(() -> RecedePreferences.setMuted(false));
             }
@@ -161,8 +153,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(false);
 
-                RecedeControl.buildControls(CAPTION_LABEL).get(DESATURATE_CHECKBOX).action()
-                        .activateCell(0);
+                interactiveAt(DESATURATE_CHECKBOX).action().activateCell(0);
 
                 preferencesMock.verify(() -> RecedePreferences.setDesaturated(true));
             }
@@ -176,12 +167,18 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(true);
 
-                RecedeControl.buildControls(CAPTION_LABEL).get(DESATURATE_CHECKBOX).action()
-                        .activateCell(0);
+                interactiveAt(DESATURATE_CHECKBOX).action().activateCell(0);
 
                 preferencesMock.verify(() -> RecedePreferences.setDesaturated(false));
             }
         }
+    }
+
+    // The control at index, read as the Interactive control it is - a caption is chrome and not
+    // Interactive, so only the checkboxes below it expose the lit cell and click action a test drives.
+    // Rebuilt fresh each call, so a test running under its own mocks reads the state those mocks set.
+    private static ControlSpec.Interactive interactiveAt(int index) {
+        return (ControlSpec.Interactive) RecedeControl.buildControls(CAPTION_LABEL).get(index);
     }
 
     // Stubs the two checkbox labels to their plain text so the assertions read the wiring - which key
