@@ -54,6 +54,43 @@ final class MapPalettesTest {
     }
 
     @Nested
+    class ResolveSpotlightSafeDesaturationProfile {
+
+        @Test
+        void resolveSpotlightSafeDesaturationProfileFallsBackToNeutralWhenSpotlightingIndependent() {
+            // The only colliding case: spotlit Independent would paint the same palette the
+            // Independent profile desaturates the receded background to, so it must grey out.
+            assertThat(MapPalettes.resolveSpotlightSafeDesaturationProfile(
+                    DesaturationProfileChoice.INDEPENDENT, Factions.INDEPENDENT))
+                    .isEqualTo(DesaturationProfileChoice.NEUTRAL);
+        }
+
+        @Test
+        void resolveSpotlightSafeDesaturationProfileKeepsIndependentWhenSpotlightingAnotherBloc() {
+            assertThat(MapPalettes.resolveSpotlightSafeDesaturationProfile(
+                    DesaturationProfileChoice.INDEPENDENT, Factions.HEGEMONY))
+                    .isEqualTo(DesaturationProfileChoice.INDEPENDENT);
+        }
+
+        @Test
+        void resolveSpotlightSafeDesaturationProfileKeepsIndependentWhenNothingIsSpotlit() {
+            // A null selection is the un-filtered pass, where no bloc collides with the background.
+            assertThat(MapPalettes.resolveSpotlightSafeDesaturationProfile(
+                    DesaturationProfileChoice.INDEPENDENT, null))
+                    .isEqualTo(DesaturationProfileChoice.INDEPENDENT);
+        }
+
+        @Test
+        void resolveSpotlightSafeDesaturationProfileLeavesTheNeutralProfileUntouched() {
+            // The Neutral profile already greys the background, so spotlit Independent never
+            // collides and the override does not apply.
+            assertThat(MapPalettes.resolveSpotlightSafeDesaturationProfile(
+                    DesaturationProfileChoice.NEUTRAL, Factions.INDEPENDENT))
+                    .isEqualTo(DesaturationProfileChoice.NEUTRAL);
+        }
+    }
+
+    @Nested
     class ResolveDesaturationPalette {
 
         @Test

@@ -55,6 +55,24 @@ public final class MapPalettes {
     }
 
     /**
+     * Overrides the desaturation profile away from the spotlit bloc's own palette when the two
+     * would otherwise collide. The {@code INDEPENDENT} profile desaturates every receded bloc to
+     * the Independent faction's two shades; spotlight the Independent faction and its
+     * full-strength fill is that same pair, so the spotlit bloc and the entire receded background
+     * would paint one indistinguishable colour. In that one case the profile falls back to
+     * {@code NEUTRAL}, so the receded ground greys out distinctly while spotlit Independent keeps
+     * its colour. Every other spotlight, an un-filtered pass (null selection), and the
+     * {@code NEUTRAL} profile pass through unchanged, so the override bites only the reported case.
+     */
+    public static DesaturationProfileChoice resolveSpotlightSafeDesaturationProfile(
+            DesaturationProfileChoice profile, String selectedBlocId) {
+        return profile == DesaturationProfileChoice.INDEPENDENT
+                && Factions.INDEPENDENT.equals(selectedBlocId)
+                ? DesaturationProfileChoice.NEUTRAL
+                : profile;
+    }
+
+    /**
      * Resolves the desaturation palette a desaturated bloc recolours to, from the given
      * profile: Independent forges the Independent faction's own two shades (the same pair
      * a real independent owner's DominantOwner carries), so a desaturated bloc reads

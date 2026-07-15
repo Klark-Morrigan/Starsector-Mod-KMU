@@ -113,8 +113,14 @@ public final class TerritoryBuilder {
             // re-shapes cells against the same snapshot this pass used.
             var renderStyle = RenderStyleReader.readRenderStyle();
             var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
+            // Spotlighting Independent under the Independent desaturation profile would collapse
+            // the spotlit fill and the receded background to one colour (both resolve to the
+            // Independent palette), so the profile falls back to Neutral in that one case before
+            // the palette is resolved; every other spotlight and the Neutral profile are untouched.
+            var desaturationProfile = MapPalettes.resolveSpotlightSafeDesaturationProfile(
+                    renderStyle.global().desaturationProfile(), selectedBlocId);
             var desaturationPalette = MapPalettes.resolveDesaturationPalette(
-                    renderStyle.global().desaturationProfile(), sector, neutralColor);
+                    desaturationProfile, sector, neutralColor);
             // The styling every non-spotlighted bloc recedes to, resolved once from the filter recede
             // toggles - the "rest of the sector" set, shared across both views under a filter; the
             // identity adjustment off filter, so a normal pass touches no bloc.
