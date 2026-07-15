@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
-import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.settings.FactionNameFormatChoice;
 
 import java.util.List;

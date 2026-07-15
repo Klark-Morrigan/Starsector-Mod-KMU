@@ -8,9 +8,12 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
-import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.FactionNameFormatChoice;
 
@@ -140,8 +143,10 @@ final class FactionsViewTest {
         // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
         // here - any rules stand in where the seam demands them.
         private static final DominanceRules ANY_RULES =
-                new DominanceRules(1.0, null, 1.0, false, 1.0, false, 1.0, 0.5, 0.5,
-                        false, 0.25, 0.5, 1.0, 0.5);
+                new DominanceRules(false,
+                        new BaseSizeWeighting(1.0, null, 1.0, 1.0),
+                        new StationWeighting(false, 1.0, 0.5, 0.5),
+                        new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
         // The view forwards a present bloc's stats onto its option verbatim, so any stats value
         // stands in - these arbitrary numbers are only asserted to survive the pass unchanged.

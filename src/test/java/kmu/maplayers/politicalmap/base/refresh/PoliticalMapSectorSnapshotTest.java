@@ -12,7 +12,10 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
-import kmu.maplayers.politicalmap.base.politics.DominanceRules;
+import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -44,8 +47,10 @@ class PoliticalMapSectorSnapshotTest {
     // stability rule alone, with the colony-size weight at its identity and the colony
     // penalty at a full collapse (the old whole-rating stability behaviour).
     private static final DominanceRules STABILITY_WEIGHTED =
-            new DominanceRules(1.0, HiddenMarketScalingChoice.FIXED, 1.0, true, 1.0,
-                    false, 1.0, 0.5, 0.5, false, 0.25, 0.5, 1.0, 0.5);
+            new DominanceRules(true,
+                    new BaseSizeWeighting(1.0, HiddenMarketScalingChoice.FIXED, 1.0, 1.0),
+                    new StationWeighting(false, 1.0, 0.5, 0.5),
+                    new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
     @Nested
     class Scan {

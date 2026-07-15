@@ -9,9 +9,9 @@ import kmlib.math.hashing.Fingerprints;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
-import kmu.maplayers.politicalmap.base.politics.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.util.KmuStrings;
 

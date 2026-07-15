@@ -9,6 +9,10 @@ import com.fs.starfarer.api.impl.campaign.ids.Stats;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import com.fs.starfarer.api.util.DynamicStatsAPI;
 
+import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -49,8 +53,8 @@ class KnownMarketFootprintsIntegrationTest {
     private static final float HALF_STABILITY = 5.0f;
     private static final float NO_STABILITY = 0.0f;
 
-    // A fluent builder over the 14-factor DominanceRules, defaulting every field to
-    // its CSV default so each test states only the axis it pins. The defaults are:
+    // A fluent builder over DominanceRules and its three weight factors, defaulting every
+    // knob to its CSV default so each test states only the axis it pins. The defaults are:
     // colony-size weight 1 (raw size), hidden markets Fixed at token weight 1, the
     // stability master on with a full (1.0) colony penalty, stations off (weight 1,
     // hidden rate 0.5, penalty 0.5), and patrols off (0.25/0.5/1 tier weights, penalty
@@ -112,10 +116,12 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         private DominanceRules build() {
-            return new DominanceRules(colonySizeWeight, hiddenMarketScaling, hiddenMarketFixedWeight,
-                    stabilityMaster, normalPenalty, stationOn, stationWeight, stationHiddenRate,
-                    stationPenalty, patrolOn, patrolSmall, patrolMedium, patrolLarge,
-                    patrolPenalty);
+            return new DominanceRules(stabilityMaster,
+                    new BaseSizeWeighting(colonySizeWeight, hiddenMarketScaling,
+                            hiddenMarketFixedWeight, normalPenalty),
+                    new StationWeighting(stationOn, stationWeight, stationHiddenRate, stationPenalty),
+                    new PatrolWeighting(patrolOn, patrolSmall, patrolMedium, patrolLarge,
+                            patrolPenalty));
         }
     }
 

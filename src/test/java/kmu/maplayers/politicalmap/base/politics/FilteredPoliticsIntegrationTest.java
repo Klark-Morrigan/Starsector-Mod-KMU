@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

@@ -7,6 +7,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import java.awt.Color;
@@ -53,8 +57,10 @@ final class PoliticsTestSectors {
      * @return the shared stability-only weighting rule
      */
     static DominanceRules stabilityWeightedRules() {
-        return new DominanceRules(1.0, HiddenMarketScalingChoice.FIXED, 1.0, true, 1.0,
-                false, 1.0, 0.5, 0.5, false, 0.25, 0.5, 1.0, 0.5);
+        return new DominanceRules(true,
+                new BaseSizeWeighting(1.0, HiddenMarketScalingChoice.FIXED, 1.0, 1.0),
+                new StationWeighting(false, 1.0, 0.5, 0.5),
+                new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
     }
 
     /**

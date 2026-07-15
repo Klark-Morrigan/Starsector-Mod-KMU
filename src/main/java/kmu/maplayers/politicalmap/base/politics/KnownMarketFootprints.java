@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.markets.Markets;
 
+import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import java.util.LinkedHashMap;
@@ -92,7 +93,9 @@ public final class KnownMarketFootprints {
      *         when the system holds no folded market
      */
     public static Map<String, MarketFootprint> readByFaction(
-            SectorAPI sector, StarSystemAPI system, DominanceRules rules,
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
         // The dominance-only projection of the fuller contribution read: a footprint-only caller
         // (the dominance resolve, the watcher's diff) drops the raw market size the picker's stats
@@ -127,7 +130,9 @@ public final class KnownMarketFootprints {
      *         holds no folded market
      */
     static Map<String, FactionMarketContribution> readContributionsByFaction(
-            SectorAPI sector, StarSystemAPI system, DominanceRules rules,
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
         var contributionByFactionId = new LinkedHashMap<String, FactionMarketContribution>();
         for (var market : sector.getEconomy().getMarkets(system)) {
@@ -165,7 +170,7 @@ public final class KnownMarketFootprints {
     // presence and paints its system when unopposed. The lifted sum rounds once onto
     // the grid so a fractional weight lands cleanly and the rule stays exact.
     private static int computeDominanceWeight(MarketAPI market, DominanceRules rules) {
-        var weightedBaseSize = computeBaseSize(market, rules) * rules.colonySizeWeight();
+        var weightedBaseSize = computeBaseSize(market, rules) * rules.baseSize().colonySizeWeight();
         var stationBonus = computeStationBonus(market, rules);
         var patrolStrength = computePatrolStrength(market, rules);
         // A market whose three factors are all zero is worth zero at any stability, so
@@ -176,13 +181,13 @@ public final class KnownMarketFootprints {
         }
         var stabilityFraction = Markets.getStabilityFraction(market);
         var total = weightedBaseSize
-                        * effectiveFactor(rules, rules.normalLowStabilityPenalty(),
+                        * effectiveFactor(rules, rules.baseSize().lowStabilityPenalty(),
                                 stabilityFraction)
                 + stationBonus
-                        * effectiveFactor(rules, rules.stationLowStabilityPenalty(),
+                        * effectiveFactor(rules, rules.station().lowStabilityPenalty(),
                                 stabilityFraction)
                 + patrolStrength
-                        * effectiveFactor(rules, rules.patrolLowStabilityPenalty(),
+                        * effectiveFactor(rules, rules.patrols().lowStabilityPenalty(),
                                 stabilityFraction);
         return (int) Math.round(total * DOMINANCE_WEIGHT_SCALE);
     }
@@ -193,8 +198,8 @@ public final class KnownMarketFootprints {
     // swaying dominance when the player pins it to a token.
     private static double computeBaseSize(MarketAPI market, DominanceRules rules) {
         if (market.isHidden()
-                && rules.hiddenMarketScaling() == HiddenMarketScalingChoice.FIXED) {
-            return rules.hiddenMarketFixedWeight();
+                && rules.baseSize().hiddenMarketScaling() == HiddenMarketScalingChoice.FIXED) {
+            return rules.baseSize().hiddenMarketFixedWeight();
         }
         return market.getSize();
     }
@@ -203,7 +208,9 @@ public final class KnownMarketFootprints {
     // master stability weighting is off, else 1 - penalty * (1 - stabilityFraction), so
     // a penalty of 1 collapses the factor to nothing at 0 stability and a penalty of 0
     // leaves it untouched at any stability.
-    private static double effectiveFactor(DominanceRules rules, double lowStabilityPenalty,
+    private static double effectiveFactor(
+            DominanceRules rules,
+            double lowStabilityPenalty,
             double stabilityFraction) {
         if (!rules.isStabilityWeighted()) {
             return UNWEIGHTED_STABILITY_FRACTION;
@@ -219,13 +226,13 @@ public final class KnownMarketFootprints {
     // A zero weight is checked before the connected-entity station scan, so disabling
     // the factor by weight - not just by the toggle - skips that scan too.
     private static double computeStationBonus(MarketAPI market, DominanceRules rules) {
-        if (!rules.isStationWeighted() || rules.stationWeight() <= 0.0
+        if (!rules.station().isWeighted() || rules.station().weight() <= 0.0
                 || !Markets.hasAttachedStation(market)) {
             return 0.0;
         }
         return market.isHidden()
-                ? rules.stationWeight() * rules.stationHiddenMarketRate()
-                : rules.stationWeight();
+                ? rules.station().weight() * rules.station().hiddenMarketRate()
+                : rules.station().weight();
     }
 
     // The patrol size bonus a market earns before stability scaling: its small, medium,
@@ -233,12 +240,12 @@ public final class KnownMarketFootprints {
     // when the patrol factor is toggled off. The economy read is skipped while the factor
     // is off, so a disabled factor costs no dynamic-stat lookups.
     private static double computePatrolStrength(MarketAPI market, DominanceRules rules) {
-        if (!rules.isPatrolWeighted()) {
+        if (!rules.patrols().isWeighted()) {
             return 0.0;
         }
         var patrols = Markets.readPatrolCounts(market);
-        return patrols.small() * rules.patrolSmallWeight()
-                + patrols.medium() * rules.patrolMediumWeight()
-                + patrols.large() * rules.patrolLargeWeight();
+        return patrols.small() * rules.patrols().smallWeight()
+                + patrols.medium() * rules.patrols().mediumWeight()
+                + patrols.large() * rules.patrols().largeWeight();
     }
 }
