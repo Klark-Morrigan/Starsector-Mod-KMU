@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
-import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
@@ -55,24 +54,23 @@ public final class PoliticalMapBodyControls {
     }
 
     /**
-     * The view-selector radio: one stacked segment per registered political-map view, the lit
-     * segment the active view, or none when the map is off. It deselects on a re-pick, so clicking
-     * the lit view turns the overlay off while the tab stays open - the behaviour the old faction
-     * toggle had. With only the faction view registered the radio is one segment, reading as the
-     * political-map on/off.
+     * The view-selector radio: one side-by-side segment per registered political-map view (Factions |
+     * Alliances on one row), the lit segment the active view, or none when the map is off. It deselects
+     * on a re-pick, so clicking the lit view turns the overlay off while the tab stays open - the
+     * behaviour the old faction toggle had. With only the faction view registered the radio is one
+     * segment, reading as the political-map on/off.
      *
-     * @return the vertical, deselectable view-selector radio
+     * @return the horizontal, deselectable view-selector radio
      */
     public static ControlSpec buildViewSelector() {
         var labels = new ArrayList<String>();
         for (var view : PoliticalMapViewRegistry.getViews()) {
             labels.add(KmuStrings.get(view.getSegmentLabelKey()));
         }
-        return ControlSpec.VerticalTable.plain(
+        return ControlSpec.HorizontalRadio.deselectable(
                 labels,
                 PoliticalMapViewRegistry.getSelectedViewIndex(),
-                PoliticalMapBodyControls::selectViewSegment,
-                ReselectBehaviour.DESELECT);
+                PoliticalMapBodyControls::selectViewSegment);
     }
 
     // Toggles the view its clicked segment names - activating it, or turning the map off when it is

@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
@@ -13,6 +14,7 @@ import org.mockito.MockedStatic;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -90,10 +92,46 @@ final class PoliticalMapBodyControlsTest {
         }
     }
 
+    @Nested
+    class BuildViewSelector {
+
+        @Test
+        void buildsAHorizontalRadioWithOneSegmentPerView() {
+            // The views lay side by side on one row (Factions | Alliances), so the selector is a
+            // horizontal radio carrying a segment per registered view in registry order.
+            try (MockedStatic<PoliticalMapViewRegistry> registryMock =
+                            mockStatic(PoliticalMapViewRegistry.class);
+                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubSelectorViews(registryMock, stringsMock);
+
+                var selector = PoliticalMapBodyControls.buildViewSelector();
+
+                assertThat(selector).isInstanceOf(ControlSpec.HorizontalRadio.class);
+                assertThat(((ControlSpec.HorizontalRadio) selector).labels())
+                        .containsExactly("Factions", "Alliances");
+            }
+        }
+
+        @Test
+        void deselectsOnARepickSoRelightingTheViewTurnsTheMapOff() {
+            // Re-picking the lit view must reach the action to turn the overlay off, so the selector
+            // carries DESELECT rather than a plain option pair's inert re-pick.
+            try (MockedStatic<PoliticalMapViewRegistry> registryMock =
+                            mockStatic(PoliticalMapViewRegistry.class);
+                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubSelectorViews(registryMock, stringsMock);
+
+                var selector = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls.buildViewSelector();
+
+                assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.DESELECT);
+            }
+        }
+    }
+
     // Fires the selector's click action for the segment at the given index, the path a click on that
     // view's radio row takes - the only way to reach the private selectViewSegment the selector wires.
     private static void clickViewSegment(int segmentIndex) {
-        // The selector is a vertical table (an Interactive control), so its click action drives the
+        // The selector is a horizontal radio (an Interactive control), so its click action drives the
         // private selectViewSegment the selector wires.
         var selector = (ControlSpec.Interactive) PoliticalMapBodyControls.buildViewSelector();
         selector.action().activateCell(segmentIndex);
