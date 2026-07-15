@@ -276,21 +276,22 @@ final class PoliticalMapCache {
     // marks just its system stale now. The active view is folded in so switching views (their
     // grouping, styling, and labels differ) rebuilds the territories under the newly-selected view
     // rather than reusing the previous view's. The view's content fingerprint is folded in too, so
-    // a change to any live input the active view samples - the alliances view's alliance set or its
-    // recede toggles - rebuilds the territories even though no setting moved. The faction view
-    // samples nothing live and contributes a constant, so an alliance change never churns it; the
-    // pipeline stays view-neutral by reading this off the view rather than naming the alliance
-    // revision itself. The filter revision is folded in at this pipeline level rather than through
-    // any view, since the filter is a mode either view can be under: a pick or a clear bumps it and
-    // rebuilds the territories under whichever view is up, with no view naming the filter.
-    // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
-    // combine here.
+    // a change to any live input the active view samples - the alliances view's alliance set -
+    // rebuilds the territories even though no setting moved. The faction view samples nothing live
+    // and contributes a constant, so an alliance change never churns it; the pipeline stays
+    // view-neutral by reading this off the view rather than naming the alliance revision itself. The
+    // filter and recede-style revisions are folded in at this pipeline level rather than through any
+    // view, since each is a mode either view can be under: a filter pick or clear, or a recede
+    // Mute/Desaturate flip, bumps its revision and rebuilds the territories under whichever view is
+    // up, with no view naming it. Objects.hash is the JDK's standard 31-multiply fold, so the inputs
+    // separate without a bespoke combine here.
     private static int computeContentRevision(PoliticalMapView view) {
         return Objects.hash(
                 KmuLunaSettings.getSettingsRevision(),
                 view.getId(),
                 view.getContentRevision(),
-                PoliticalMapRefresh.getFilterRevision());
+                PoliticalMapRefresh.getFilterRevision(),
+                PoliticalMapRefresh.getRecedeStyleRevision());
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
