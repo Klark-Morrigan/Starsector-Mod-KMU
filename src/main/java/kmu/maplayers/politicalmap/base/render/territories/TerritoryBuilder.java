@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.math.geometry.Polygons;
+import kmlib.math.geometry.PolygonSmoothing;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.Hatching;
 import kmlib.opengl.PolygonTessellator;
@@ -175,7 +175,7 @@ public final class TerritoryBuilder {
             String systemId,
             ShapedCell shaped) {
         // A cell the border inset consumed or collapsed comes back with an empty fill
-        // (CellShaper via Polygons.insetSelectedEdges guarantees empty-or-drawable), so
+        // (CellShaper via PolygonOffsets.insetSelectedEdges guarantees empty-or-drawable), so
         // there is nothing to fill or stroke.
         if (shaped.fillPolygon().isEmpty()) {
             return null;
@@ -487,7 +487,7 @@ public final class TerritoryBuilder {
     // corner-rounding switch.
     private static List<double[]> roundCellOutline(ShapedCell shaped,
             BorderSmoothingStyle borderSmoothing) {
-        return Polygons.roundCorners(shaped.fillPolygon(),
+        return PolygonSmoothing.roundCorners(shaped.fillPolygon(),
                 borderSmoothing.cornerRadius(),
                 borderSmoothing.cornerSegments(),
                 borderSmoothing.chamferAngleRadians());

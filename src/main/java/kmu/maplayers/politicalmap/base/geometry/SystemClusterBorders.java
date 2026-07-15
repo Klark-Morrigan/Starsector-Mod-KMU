@@ -2,7 +2,8 @@ package kmu.maplayers.politicalmap.base.geometry;
 
 import kmlib.math.geometry.EdgeRings;
 import kmlib.math.geometry.Limits;
-import kmlib.math.geometry.Polygons;
+import kmlib.math.geometry.PolygonOffsets;
+import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.Segment;
 
 import java.util.ArrayList;
@@ -76,7 +77,7 @@ public final class SystemClusterBorders {
                 groupKeyBySystemId);
         var rings = new ArrayList<List<double[]>>();
         for (var rawRing : EdgeRings.chainIntoRings(boundarySegments, vertexWeldTolerance)) {
-            var inset = Polygons.insetPolygonByMiter(rawRing, borderInset, miterSpikeLimit);
+            var inset = PolygonOffsets.insetPolygonByMiter(rawRing, borderInset, miterSpikeLimit);
             if (!isCollapsed(rawRing, inset)) {
                 rings.add(inset);
             }
@@ -120,8 +121,8 @@ public final class SystemClusterBorders {
         if (insetRing.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
             return true;
         }
-        var rawArea = Polygons.computeSignedArea(rawRing);
-        var insetArea = Polygons.computeSignedArea(insetRing);
+        var rawArea = PolygonRegions.computeSignedArea(rawRing);
+        var insetArea = PolygonRegions.computeSignedArea(insetRing);
         if (Math.abs(insetArea) < MIN_RING_SIGNED_AREA
                 || Math.signum(rawArea) != Math.signum(insetArea)) {
             return true;

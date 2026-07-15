@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
-import kmlib.math.geometry.Polygons;
+import kmlib.math.geometry.PolygonSmoothing;
 
 import kmu.settings.KmuLunaSettings;
 
@@ -30,7 +30,7 @@ public final class BorderSmoothing {
         var spikeAngle = KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians();
         var sanded = new ArrayList<List<double[]>>(loops.size());
         for (var loop : loops) {
-            sanded.add(Polygons.removeSpikes(loop, spikeHeight, spikeAngle));
+            sanded.add(PolygonSmoothing.removeSpikes(loop, spikeHeight, spikeAngle));
         }
         return sanded;
     }
@@ -45,7 +45,7 @@ public final class BorderSmoothing {
         var chamfer = KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians();
         var rounded = new ArrayList<List<double[]>>(loops.size());
         for (var loop : loops) {
-            rounded.add(Polygons.roundCorners(loop, radius, segments, chamfer));
+            rounded.add(PolygonSmoothing.roundCorners(loop, radius, segments, chamfer));
         }
         return rounded;
     }

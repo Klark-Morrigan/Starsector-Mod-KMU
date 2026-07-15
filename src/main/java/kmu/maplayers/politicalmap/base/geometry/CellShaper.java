@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.geometry;
 
-import kmlib.math.geometry.Polygons;
+import kmlib.math.geometry.PolygonOffsets;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -19,7 +19,7 @@ import java.util.Map;
  *
  * <p>Pure geometry over the adjacency graph and the per-system grouping keys: it decides which
  * edges merge with {@link EdgeClassifier}'s rule and offsets the rest with
- * {@link Polygons#insetSelectedEdges}, handing the render layer a ready fill polygon and a
+ * {@link PolygonOffsets#insetSelectedEdges}, handing the render layer a ready fill polygon and a
  * per-edge boundary flag so it never re-derives adjacency. The key is opaque here (the faction
  * layer keys by dominant-faction id), so the same clustering serves any layer.
  */
@@ -74,7 +74,7 @@ public final class CellShaper {
             isBorderEdge[i] = EdgeClassifier.classifyAcross(edge, ownGroupKey, groupKeyBySystemId)
                     == EdgeClass.BOUNDARY;
         }
-        var inset = Polygons.insetSelectedEdges(vertices, isBorderEdge, borderInset);
+        var inset = PolygonOffsets.insetSelectedEdges(vertices, isBorderEdge, borderInset);
         return new ShapedCell(inset.vertices(), inset.edgeIsInset());
     }
 }
