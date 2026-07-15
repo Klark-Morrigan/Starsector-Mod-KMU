@@ -59,10 +59,14 @@ final class ClusterAnchorPlacement {
     // colour; the candidate lines use a fixed diagnostic palette instead, painted by the
     // renderer. The style classifier - bound to the pass by the caller - decides which of
     // the two outer-border colour choices each cluster follows.
-    static List<ClusterAnchor> computeClusterAnchors(List<List<String>> clusters,
-            Map<String, List<CellEdge>> edgesBySystemId, Map<String, double[]> siteBySystemId,
-            Map<String, DominantOwner> ownerBySystemId, Map<String, String> groupKeyBySystemId,
-            LabelAnchorSpecification spec, Predicate<String> usesIndependentStyleByBlocId,
+    static List<ClusterAnchor> computeClusterAnchors(
+            List<List<String>> clusters,
+            Map<String, List<CellEdge>> edgesBySystemId,
+            Map<String, double[]> siteBySystemId,
+            Map<String, DominantOwner> ownerBySystemId,
+            Map<String, String> groupKeyBySystemId,
+            LabelAnchorSpecification spec,
+            Predicate<String> usesIndependentStyleByBlocId,
             Function<String, BlocStyleAdjustment> blocStyleAdjustmentByBlocId,
             FactionPalette desaturationPalette,
             Function<String, LabelLengthEstimator> nameEstimatorByFactionId) {
@@ -74,13 +78,24 @@ final class ClusterAnchorPlacement {
             }
             var owner = ownerBySystemId.get(memberSystemIds.get(0));
             var axis = resolveClusterAxis(memberSystemIds, edgesBySystemId, sites);
-            var rings = spec.search().borderTrace().traceRings(memberSystemIds, edgesBySystemId,
+            var rings = spec.search().borderTrace().traceRings(
+                    memberSystemIds,
+                    edgesBySystemId,
                     groupKeyBySystemId);
             var adjustment = blocStyleAdjustmentByBlocId.apply(owner.factionId());
-            anchors.add(searchClusterAnchor(rings, siteBySystemId, axis,
-                    ClusterLabelStyling.resolveLabelColor(owner, spec,
-                            usesIndependentStyleByBlocId, adjustment, desaturationPalette),
-                    spec, nameEstimatorByFactionId.apply(owner.factionId())));
+            anchors.add(
+                    searchClusterAnchor(
+                        rings,
+                        siteBySystemId,
+                        axis,
+                        ClusterLabelStyling.resolveLabelColor(
+                            owner,
+                            spec,
+                            usesIndependentStyleByBlocId,
+                            adjustment,
+                            desaturationPalette),
+                        spec,
+                        nameEstimatorByFactionId.apply(owner.factionId())));
         }
         return anchors;
     }
@@ -99,9 +114,13 @@ final class ClusterAnchorPlacement {
     // centroid dot, optionally carrying the best near-miss span for the red diagnostic.
     // With the unbiased toggle on, the box that wins on raw font height (no slope
     // penalty) rides along as the yellow diagnostic whenever the penalty moved the pick.
-    private static ClusterAnchor searchClusterAnchor(List<List<double[]>> rings,
-            Map<String, double[]> siteBySystemId, PrincipalAxis axis, Color color,
-            LabelAnchorSpecification spec, LabelLengthEstimator nameEstimator) {
+    private static ClusterAnchor searchClusterAnchor(
+            List<List<double[]>> rings,
+            Map<String, double[]> siteBySystemId,
+            PrincipalAxis axis,
+            Color color,
+            LabelAnchorSpecification spec,
+            LabelLengthEstimator nameEstimator) {
         var centroidX = (float) axis.centroidX();
         var centroidY = (float) axis.centroidY();
         if (rings.isEmpty()) {
@@ -142,7 +161,7 @@ final class ClusterAnchorPlacement {
                             LabelBoxFitter.BoxFit::fontHeight);
                 } else if (spec.diagnostics().showRejectedAxis()) {
                     bestRejected = Picks.pickHigher(bestRejected,
-                            findRejectedSpan(fitter, chord, spec.nameFit().minFontSize()),
+                            findRejectedSpan(fitter, chord, spec.nameFit().minFontHeight()),
                             RejectedSpan::length);
                 }
             }
@@ -172,11 +191,11 @@ final class ClusterAnchorPlacement {
     // Builds the box fitter from the tuning and the cluster's name estimator: the
     // font-size clamp, line count, and spacing that shape the growth, the icon clearance
     // and end inset every band trim reads, and the name the fit sizes against.
-    private static LabelBoxFitter newBoxFitter(LabelAnchorSpecification spec, LabelLengthEstimator nameEstimator) {
-        var nameFit = spec.nameFit();
+    private static LabelBoxFitter newBoxFitter(
+            LabelAnchorSpecification spec,
+            LabelLengthEstimator nameEstimator) {
         var search = spec.search();
-        return new LabelBoxFitter(nameFit.minFontSize(), nameFit.maxFontSize(),
-                nameFit.maxLines(), nameFit.lineSpacing(), search.iconClearance(),
+        return new LabelBoxFitter(spec.nameFit(), search.iconClearance(),
                 search.endInsetDistance(), nameEstimator);
     }
 
@@ -205,8 +224,12 @@ final class ClusterAnchorPlacement {
     // onto the chosen offset line, so the through-point sits near the cluster for stable
     // parameters. Offsets step strictly inside the extent (never on the grazing edges);
     // a single offset lands at the centre line.
-    private static double[] offsetThroughPoint(PrincipalAxis axis, double[] direction,
-            double[] extent, int offsetIndex, int offsetCount) {
+    private static double[] offsetThroughPoint(
+            PrincipalAxis axis,
+            double[] direction,
+            double[] extent,
+            int offsetIndex,
+            int offsetCount) {
         var normalX = -direction[1];
         var normalY = direction[0];
         var offset = extent[0] + (extent[1] - extent[0]) * offsetIndex / (offsetCount + 1.0);
@@ -224,7 +247,9 @@ final class ClusterAnchorPlacement {
     // band at the minimum font's single-line girth - the furthest a name-holding line got
     // before the border, icon, or end-margin trim discarded it. Null when even the thin
     // band finds no clear interior at all.
-    private static RejectedSpan findRejectedSpan(LabelBoxFitter fitter, RegionChord chord,
+    private static RejectedSpan findRejectedSpan(
+            LabelBoxFitter fitter,
+            RegionChord chord,
             double minFontSize) {
         var band = fitter.fitBand(chord, minFontSize / 2.0);
         if (band.clearSpan() == null) {
@@ -259,15 +284,20 @@ final class ClusterAnchorPlacement {
         // The vertex cloud supplies the direction, so it also supplies the minor extent -
         // the slant gate reads the elongation of whichever cloud gave the axis, not the
         // site cloud's (which had no usable spread here).
-        return new PrincipalAxis(siteAxis.centroidX(), siteAxis.centroidY(),
-                vertexAxis.axisX(), vertexAxis.axisY(), vertexAxis.length(),
+        return new PrincipalAxis(
+                siteAxis.centroidX(),
+                siteAxis.centroidY(),
+                vertexAxis.axisX(),
+                vertexAxis.axisY(),
+                vertexAxis.length(),
                 vertexAxis.minorLength());
     }
 
     // Gathers every member cell's raw Voronoi edge endpoints as a point cloud - the
     // cluster's own footprint, fitted for a direction when its systems' site positions
     // alone have no spread to fit one to.
-    private static List<double[]> collectClusterCellVertices(List<String> memberSystemIds,
+    private static List<double[]> collectClusterCellVertices(
+            List<String> memberSystemIds,
             Map<String, List<CellEdge>> edgesBySystemId) {
         var vertices = new ArrayList<double[]>();
         for (var systemId : memberSystemIds) {

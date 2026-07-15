@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
+import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
@@ -12,7 +13,6 @@ import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.Ancho
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LeanScoring;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.NameFit;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.NameGroupStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.settings.FactionPaletteChoice;
@@ -900,7 +900,8 @@ final class ClusterAnchorPlacementTest {
                             endInsetDistance, iconClearance, directionCount, offsetCount),
                     new LeanScoring(verticalPenaltyStrength, verticalPenaltyExponent, 0.0),
                     new AnchorDiagnostics(showRejectedAxis, showUnbiasedAxis),
-                    new NameFit(nameMinFontSize, nameMaxFontSize, nameMaxLines, nameLineSpacing),
+                    new NameFitSpecification(nameMinFontSize, nameMaxFontSize, nameMaxLines,
+                            nameLineSpacing),
                     new NameGroupStyle(FactionPaletteChoice.PRIMARY, FULL_OPACITY),
                     new NameGroupStyle(FactionPaletteChoice.PRIMARY, FULL_OPACITY));
         }
@@ -933,7 +934,8 @@ final class ClusterAnchorPlacementTest {
                             0.0, 0.0, 3, 1),
                     new LeanScoring(0.0, 2.0, 0.0),
                     new AnchorDiagnostics(false, false),
-                    new NameFit(NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE, ONE_LINE, FLUSH_LINES),
+                    new NameFitSpecification(NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE, ONE_LINE,
+                            FLUSH_LINES),
                     new NameGroupStyle(factionOuterColor, factionNameOpacity),
                     new NameGroupStyle(independentOuterColor, independentNameOpacity));
         }

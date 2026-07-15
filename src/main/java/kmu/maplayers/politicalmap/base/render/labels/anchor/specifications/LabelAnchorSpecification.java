@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor.specifications;
 
+import kmlib.starsector.ui.label.NameFitSpecification;
+
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.settings.KmuLunaSettings;
@@ -12,7 +14,7 @@ import kmu.settings.KmuLunaSettings;
  * <p>The tuning splits into the search's own knobs - where it generates candidate lines
  * ({@link AnchorSearch}), how it scores their lean ({@link LeanScoring}), and which debug
  * lines each cluster carries ({@link AnchorDiagnostics}) - and how a chosen anchor's name
- * is drawn: how it is sized ({@link NameFit}) and, per owner group, coloured and faded
+ * is drawn: how it is sized ({@link NameFitSpecification}) and, per owner group, coloured and faded
  * ({@link NameGroupStyle}). The placement search reads the first three and the name fit;
  * the label styling reads only the two group styles.
  *
@@ -27,7 +29,7 @@ public record LabelAnchorSpecification(
         AnchorSearch search,
         LeanScoring scoring,
         AnchorDiagnostics diagnostics,
-        NameFit nameFit,
+        NameFitSpecification nameFit,
         NameGroupStyle factionNames,
         NameGroupStyle independentNames) {
 
@@ -55,7 +57,7 @@ public record LabelAnchorSpecification(
                 new AnchorDiagnostics(
                         KmuLunaSettings.getPoliticalMapShowRejectedAxes(),
                         KmuLunaSettings.getPoliticalMapShowUnbiasedAxes()),
-                new NameFit(
+                new NameFitSpecification(
                         KmuLunaSettings.getPoliticalMapNameMinFontSize(),
                         KmuLunaSettings.getPoliticalMapNameMaxFontSize(),
                         KmuLunaSettings.getPoliticalMapNameMaxLines(),
