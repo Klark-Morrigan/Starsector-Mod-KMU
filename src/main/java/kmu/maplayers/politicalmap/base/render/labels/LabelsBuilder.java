@@ -6,6 +6,7 @@ import kmlib.math.geometry.Segment;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchor;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;

@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
@@ -8,6 +8,12 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.AnchorDiagnostics;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.AnchorSearch;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LeanScoring;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.NameFit;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.NameGroupStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.settings.FactionPaletteChoice;
 
@@ -890,12 +896,13 @@ final class ClusterAnchorPlacementTest {
                 boolean showRejectedAxis, boolean showUnbiasedAxis, double nameMinFontSize,
                 double nameMaxFontSize, int nameMaxLines, double nameLineSpacing) {
             return new LabelAnchorSpecification(
-                    new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT), endInsetDistance,
-                    iconClearance, directionCount, offsetCount, verticalPenaltyStrength,
-                    verticalPenaltyExponent, 0.0, showRejectedAxis, showUnbiasedAxis,
-                    nameMinFontSize, nameMaxFontSize, nameMaxLines, nameLineSpacing,
-                    FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
-                    FULL_OPACITY, FULL_OPACITY);
+                    new AnchorSearch(new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT),
+                            endInsetDistance, iconClearance, directionCount, offsetCount),
+                    new LeanScoring(verticalPenaltyStrength, verticalPenaltyExponent, 0.0),
+                    new AnchorDiagnostics(showRejectedAxis, showUnbiasedAxis),
+                    new NameFit(nameMinFontSize, nameMaxFontSize, nameMaxLines, nameLineSpacing),
+                    new NameGroupStyle(FactionPaletteChoice.PRIMARY, FULL_OPACITY),
+                    new NameGroupStyle(FactionPaletteChoice.PRIMARY, FULL_OPACITY));
         }
 
         // A slender single-line tuning whose faction outer-border colour choice the label
@@ -922,10 +929,13 @@ final class ClusterAnchorPlacementTest {
                 FactionPaletteChoice factionOuterColor, FactionPaletteChoice independentOuterColor,
                 double factionNameOpacity, double independentNameOpacity) {
             return new LabelAnchorSpecification(
-                    new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT), 0.0, 0.0, 3, 1, 0.0, 2.0,
-                    0.0, false, false, NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE, ONE_LINE,
-                    FLUSH_LINES, factionOuterColor, independentOuterColor,
-                    factionNameOpacity, independentNameOpacity);
+                    new AnchorSearch(new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT),
+                            0.0, 0.0, 3, 1),
+                    new LeanScoring(0.0, 2.0, 0.0),
+                    new AnchorDiagnostics(false, false),
+                    new NameFit(NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE, ONE_LINE, FLUSH_LINES),
+                    new NameGroupStyle(factionOuterColor, factionNameOpacity),
+                    new NameGroupStyle(independentOuterColor, independentNameOpacity));
         }
 
         // One square cell's CCW edges (bottom, right, top, left), each tagged with the

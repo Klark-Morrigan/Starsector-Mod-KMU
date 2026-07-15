@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.labels;
 
+import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchor;
+
 import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 
 import java.awt.Color;

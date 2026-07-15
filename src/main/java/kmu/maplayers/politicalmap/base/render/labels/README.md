@@ -9,18 +9,30 @@ Part of Klark Morrigan's Utilities; see the
 
 ## Index
 
+- [Layout](#layout)
 - [Placement: where a name sits](#placement-where-a-name-sits)
 - [Rendering: the name and its overlay](#rendering-the-name-and-its-overlay)
 - [What is not here](#what-is-not-here)
 
+## Layout
+
+- `render.labels` (this package) - the drawn name: `Label`, `LabelsBuilder`, `LabelRenderer`,
+  and the shared `LabelFonts`.
+- `render.labels.anchor` - the placement subsystem that decides where each name sits and paints
+  its debug overlay.
+- `render.labels.anchor.specifications` - the search's tuning surface, read once per rebuild:
+  `LabelAnchorSpecification` and its component records (`AnchorSearch`, `LeanScoring`,
+  `AnchorDiagnostics`, `NameFit`, `NameGroupStyle`).
+
 ## Placement: where a name sits
 
 A cluster's label rides on an *anchor* - the line the name is laid along, chosen to fit inside the
-national border and clear of the system icons. `ClusterAnchorsBuilder` drives the fit;
-`ClusterAnchorPlacement` runs the pure geometric search; `LabelAnchorSpecification` and
-`LabelSlantPreference` carry its tuning; `ClusterLabelStyling` resolves each label's colour and
-name. The anchor is computed once and shared by both consumers below, so a name and its debug dot
-never disagree.
+national border and clear of the system icons. The placement subsystem lives in `anchor`:
+`ClusterAnchorsBuilder` drives the fit; `ClusterAnchorPlacement` runs the pure geometric search;
+`LabelSlantPreference` supplies the per-cluster lean; `ClusterLabelStyling` resolves each label's
+colour and name. Its tuning is read into `LabelAnchorSpecification` (see `anchor.specifications`).
+The anchor is computed once and shared by both consumers below, so a name and its debug dot never
+disagree.
 
 ## Rendering: the name and its overlay
 

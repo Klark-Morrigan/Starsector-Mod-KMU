@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.KmuLunaSettings;

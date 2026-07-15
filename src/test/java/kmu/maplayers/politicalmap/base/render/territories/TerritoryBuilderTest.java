@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  * {@link kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver} with their own suites;
  * the rest shapes cells and reads settings that
  * only resolve in-engine, and the cluster-anchor fit is pinned by
- * {@link kmu.maplayers.politicalmap.base.render.labels.ClusterAnchorsBuilder}.
+ * {@link kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder}.
  */
 final class TerritoryBuilderTest {
 

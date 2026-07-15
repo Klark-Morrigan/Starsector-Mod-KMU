@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import java.awt.Color;
 

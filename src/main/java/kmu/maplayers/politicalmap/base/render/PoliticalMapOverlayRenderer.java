@@ -3,8 +3,8 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapStaticDebugRenderer;
-import kmu.maplayers.politicalmap.base.render.labels.ClusterAnchorRenderer;
 import kmu.maplayers.politicalmap.base.render.labels.LabelRenderer;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer;
 import kmu.settings.KmuLunaSettings;
 

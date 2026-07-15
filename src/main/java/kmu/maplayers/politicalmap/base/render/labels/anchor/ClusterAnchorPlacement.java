@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
@@ -13,6 +13,7 @@ import kmlib.starsector.ui.label.LabelLengthEstimator;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ final class ClusterAnchorPlacement {
             }
             var owner = ownerBySystemId.get(memberSystemIds.get(0));
             var axis = resolveClusterAxis(memberSystemIds, edgesBySystemId, sites);
-            var rings = spec.borderTrace().traceRings(memberSystemIds, edgesBySystemId,
+            var rings = spec.search().borderTrace().traceRings(memberSystemIds, edgesBySystemId,
                     groupKeyBySystemId);
             var adjustment = blocStyleAdjustmentByBlocId.apply(owner.factionId());
             anchors.add(searchClusterAnchor(rings, siteBySystemId, axis,
@@ -112,17 +113,17 @@ final class ClusterAnchorPlacement {
 
         var fitter = newBoxFitter(spec, nameEstimator);
         var icons = siteBySystemId.values();
-        var slant = LabelSlantPreference.resolveFrom(axis, spec.maxSlantDegrees());
-        var directions = buildCandidateDirections(axis, slant, spec.directionCount());
+        var slant = LabelSlantPreference.resolveFrom(axis, spec.scoring().maxSlantDegrees());
+        var directions = buildCandidateDirections(axis, slant, spec.search().directionCount());
         LabelBoxFitter.BoxFit bestAccepted = null;
         var bestScore = 0.0;
         LabelBoxFitter.BoxFit longestAccepted = null;
         RejectedSpan bestRejected = null;
         for (var direction : directions) {
             var extent = Points.projectCombinedExtentOnto(rings, -direction[1], direction[0]);
-            for (var offsetIndex = 1; offsetIndex <= spec.offsetCount(); offsetIndex++) {
+            for (var offsetIndex = 1; offsetIndex <= spec.search().offsetCount(); offsetIndex++) {
                 var through = offsetThroughPoint(axis, direction, extent, offsetIndex,
-                        spec.offsetCount());
+                        spec.search().offsetCount());
                 var chord = new RegionChord(rings, icons, through[0], through[1], direction);
                 var box = fitter.fitLargestBox(chord);
                 if (box != null) {
@@ -131,16 +132,17 @@ final class ClusterAnchorPlacement {
                     // not in the fitter; the unbiased pick keeps the raw-height winner for
                     // the yellow diagnostic.
                     var score = box.fontHeight() * slant.computePenaltyMultiplier(direction,
-                            spec.verticalPenaltyStrength(), spec.verticalPenaltyExponent());
+                            spec.scoring().verticalPenaltyStrength(),
+                            spec.scoring().verticalPenaltyExponent());
                     if (bestAccepted == null || score > bestScore) {
                         bestAccepted = box;
                         bestScore = score;
                     }
                     longestAccepted = Picks.pickHigher(longestAccepted, box,
                             LabelBoxFitter.BoxFit::fontHeight);
-                } else if (spec.showRejectedAxis()) {
+                } else if (spec.diagnostics().showRejectedAxis()) {
                     bestRejected = Picks.pickHigher(bestRejected,
-                            findRejectedSpan(fitter, chord, spec.nameMinFontSize()),
+                            findRejectedSpan(fitter, chord, spec.nameFit().minFontSize()),
                             RejectedSpan::length);
                 }
             }
@@ -152,7 +154,7 @@ final class ClusterAnchorPlacement {
             // the label's hang-point are the line's own midpoint.
             var midX = (float) ((accepted.startX() + accepted.endX()) / 2.0);
             var midY = (float) ((accepted.startY() + accepted.endY()) / 2.0);
-            var unbiased = spec.showUnbiasedAxis() && longestAccepted != null
+            var unbiased = spec.diagnostics().showUnbiasedAxis() && longestAccepted != null
                     && !longestAccepted.segment().equals(accepted)
                     ? longestAccepted.segment() : null;
             return new ClusterAnchor(midX, midY, color,
@@ -171,9 +173,11 @@ final class ClusterAnchorPlacement {
     // font-size clamp, line count, and spacing that shape the growth, the icon clearance
     // and end inset every band trim reads, and the name the fit sizes against.
     private static LabelBoxFitter newBoxFitter(LabelAnchorSpecification spec, LabelLengthEstimator nameEstimator) {
-        return new LabelBoxFitter(spec.nameMinFontSize(), spec.nameMaxFontSize(),
-                spec.nameMaxLines(), spec.nameLineSpacing(), spec.iconClearance(),
-                spec.endInsetDistance(), nameEstimator);
+        var nameFit = spec.nameFit();
+        var search = spec.search();
+        return new LabelBoxFitter(nameFit.minFontSize(), nameFit.maxFontSize(),
+                nameFit.maxLines(), nameFit.lineSpacing(), search.iconClearance(),
+                search.endInsetDistance(), nameEstimator);
     }
 
     // The candidate directions for one cluster: an even fan of unit directions over the

@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -14,6 +14,8 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.render.labels.LabelFonts;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
@@ -68,8 +70,10 @@ final class ClusterLabelStyling {
             Predicate<String> usesIndependentStyleByBlocId, BlocStyleAdjustment adjustment,
             FactionPalette desaturationPalette) {
         var usesIndependentStyle = usesIndependentStyleByBlocId.test(owner.factionId());
-        var choice = usesIndependentStyle
-                ? spec.independentOuterColor() : spec.factionOuterColor();
+        // One group pick drives both the name's colour choice and its opacity, so the two
+        // can never be read from different groups.
+        var nameStyle = usesIndependentStyle ? spec.independentNames() : spec.factionNames();
+        var choice = nameStyle.outerColor();
         // The name resolves against the same two shades the border does, off the one
         // "desaturate swaps the palette" decision MapPalettes owns - so the name can
         // never drift from the fill and border it labels.
@@ -79,8 +83,7 @@ final class ClusterLabelStyling {
         var resolved = color != null ? color : palette.primaryColor();
         // The name mutes through the same one rule the fill and border do, so a receded name
         // dims in lockstep with the space it labels.
-        var mutedOpacity = adjustment.muteOpacity(usesIndependentStyle
-                ? spec.independentNameOpacity() : spec.factionNameOpacity());
+        var mutedOpacity = adjustment.muteOpacity(nameStyle.nameOpacity());
         return Colors.scaleAlpha(resolved, mutedOpacity);
     }
 

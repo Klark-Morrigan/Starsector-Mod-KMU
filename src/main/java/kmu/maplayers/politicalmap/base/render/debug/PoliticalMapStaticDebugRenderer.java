@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render.debug;
 import kmlib.opengl.GlColor;
 import kmlib.opengl.GlRuns;
 
-import kmu.maplayers.politicalmap.base.render.labels.DiagnosticPalette;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.DiagnosticPalette;
 
 import org.lwjgl.opengl.GL11;
 
