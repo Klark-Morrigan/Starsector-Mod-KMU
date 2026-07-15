@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.starsector.ui.map.CampaignMapView;
-import kmlib.starsector.ui.widgets.TabPanelHotkeys;
-import kmlib.starsector.ui.widgets.TabStrip;
+import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
+import kmlib.starsector.ui.widgets.tabs.TabStrip;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
