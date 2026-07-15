@@ -64,10 +64,13 @@ public final class AlliancesView implements PoliticalMapView {
     public int getContentRevision() {
         // This view's rebuild is driven by two live inputs, composed into one fingerprint the content
         // token reads: the alliance set (the sector watcher bumps its revision when membership moves,
-        // repainting on a form/dissolve/transfer) and the shared recede toggles (their setter bumps
-        // the recede-style revision on a Mute/Desaturate flip, since those sidebar-only toggles never
-        // move settingsRevision). Composing them means a third live input later is one more source
-        // here, not a wider contract; a change to any shifts the fingerprint and forces a rebuild.
+        // repainting on a form/dissolve/transfer) and this view's non-allied recede toggles (their
+        // setter bumps the recede-style revision on a Mute/Desaturate flip, since those sidebar-only
+        // toggles never move settingsRevision). The recede-style revision is one coarse signal every
+        // recede set shares, so a filter-recede flip advances it too; harmless here, since this view
+        // only draws the non-allied ground and simply rebuilds. Composing the two means a third live
+        // input later is one more source here, not a wider contract; a change to either forces a
+        // rebuild.
         return Fingerprints.compute(
                 PoliticalMapRefresh::getAllianceRevision,
                 PoliticalMapRefresh::getRecedeStyleRevision);
@@ -91,20 +94,21 @@ public final class AlliancesView implements PoliticalMapView {
         // stands out. Muting never swaps the bundle; it only dims the active style via the opacity
         // modifier, so a lone faction with both toggles off reads exactly as the faction view.
         return Factions.INDEPENDENT.equals(blocId)
-                || (!grouping.isAlliance(blocId) && RecedePreferences.isDesaturated());
+                || (!grouping.isAlliance(blocId)
+                        && RecedePreferences.ALLIANCE_NON_ALLIED.isDesaturated());
     }
 
     @Override
     public BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, OwnershipGrouping grouping) {
         // An alliance keeps its full colour; only a non-alliance bloc recedes. The view owns just
-        // that gate - how far a receded bloc dims or desaturates is the shared recede's decision, so
-        // a non-allied faction takes the same adjustment every receding context applies. Keeping the
-        // gate here (like the grouping already samples Nex) leaves the pipeline a pure applier that
-        // never names an alliance.
+        // that gate - how far a receded bloc dims or desaturates is its own non-allied recede set's
+        // decision, so every non-allied faction takes the one adjustment that set resolves. Keeping
+        // the gate here (like the grouping already samples Nex) leaves the pipeline a pure applier
+        // that never names an alliance.
         if (grouping.isAlliance(blocId)) {
             return BlocStyleAdjustment.NONE;
         }
-        return RecedePreferences.resolveRecedeAdjustment();
+        return RecedePreferences.ALLIANCE_NON_ALLIED.resolveRecedeAdjustment();
     }
 
     @Override

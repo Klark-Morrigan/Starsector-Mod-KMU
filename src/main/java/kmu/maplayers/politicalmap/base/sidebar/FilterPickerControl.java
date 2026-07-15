@@ -4,6 +4,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.BlocListColumns;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
+import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
@@ -29,9 +30,10 @@ import java.util.function.Function;
  * (with none selected the map draws exactly as un-filtered), so it is shown solely then and hidden
  * otherwise, and it rides between the sort selector and the list so the "rest of the sector" knobs sit
  * by the section they modify. It is the same reusable {@link RecedeControl} the alliances view places
- * under its own caption, bound to the one shared toggle set, so a flip here and a flip there move the
- * same recede. The columns selector then rides directly above the list, so how many columns the list
- * wraps across is chosen right by the list it lays out.
+ * under its own caption, here bound to the filter recede set - the "rest of the sector" behind a
+ * spotlight, its own toggles independent of the alliances view's non-allied recede. The columns
+ * selector then rides directly above the list, so how many columns the list wraps across is chosen
+ * right by the list it lays out.
  */
 public final class FilterPickerControl {
 
@@ -84,6 +86,7 @@ public final class FilterPickerControl {
         // sort selector and the list so the "rest of the sector" knobs sit next to the section.
         if (selectedBlocId != null) {
             controls.addAll(RecedeControl.buildControls(
+                    RecedePreferences.FILTER,
                     KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION)));
         }
         // The columns selector rides directly above the list, so the column count is chosen right by

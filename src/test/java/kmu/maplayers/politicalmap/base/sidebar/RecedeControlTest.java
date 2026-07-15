@@ -10,13 +10,17 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins the reusable recede control: the caller's caption then a Mute and a Desaturate checkbox, each
- * lit from the shared preferences and each flipping that preference on a click. The strings and the
- * preference reads/writes are stubbed so this pins the control shape and the toggle wiring alone, not
- * how a string resolves or how a toggle persists.
+ * lit from the passed preferences set and each flipping that set on a click. The strings are stubbed
+ * and the preferences set is a mock, so this pins the control shape and the toggle wiring alone - not
+ * how a string resolves or how a set persists - and proves the control drives whichever set it is
+ * handed rather than a fixed one.
  */
 final class RecedeControlTest {
     // A sample caption the caller supplies, echoed into the first cell; a fixed value so the test
@@ -34,12 +38,11 @@ final class RecedeControlTest {
 
         @Test
         void buildControlsHeadsWithTheCallerCaptionLabel() {
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
+                var preferencesMock = mock(RecedePreferences.class);
 
-                var caption = RecedeControl.buildControls(CAPTION_LABEL).get(CAPTION);
+                var caption = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL).get(CAPTION);
 
                 // A caption is a text-only Label - drawn but never clicked, so it is not Interactive and
                 // carries no lit cell at all.
@@ -52,12 +55,11 @@ final class RecedeControlTest {
         void buildControlsPlacesMuteThenDesaturateCheckboxes() {
             // The two toggles read left-to-right: Mute before Desaturate, both checkboxes, so the
             // control reads "<caption> [ ] Muted [ ] Desaturated".
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
+                var preferencesMock = mock(RecedePreferences.class);
 
-                var controls = RecedeControl.buildControls(CAPTION_LABEL);
+                var controls = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL);
 
                 assertThat(controls.get(MUTE_CHECKBOX)).isInstanceOf(ControlSpec.Checkbox.class);
                 assertThat(controls.get(MUTE_CHECKBOX).labels()).containsExactly("Muted");
@@ -68,117 +70,114 @@ final class RecedeControlTest {
 
         @Test
         void buildControlsLightsTheMuteCheckboxWhenGroundIsMuted() {
-            // The checkbox reflects the live toggle, so a save that muted receded ground shows the
-            // box ticked (its one cell, index 0, lit) on the next rebuild.
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            // The checkbox reflects the passed set's live toggle, so a set that muted its receded
+            // ground shows the box ticked (its one cell, index 0, lit) on the next rebuild.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
-                preferencesMock.when(RecedePreferences::isMuted).thenReturn(true);
+                var preferencesMock = mock(RecedePreferences.class);
+                when(preferencesMock.isMuted()).thenReturn(true);
 
-                assertThat(interactiveAt(MUTE_CHECKBOX).selectedIndex()).isEqualTo(0);
+                assertThat(interactiveAt(preferencesMock, MUTE_CHECKBOX).selectedIndex()).isEqualTo(0);
             }
         }
 
         @Test
         void buildControlsLeavesTheMuteCheckboxOffWhenGroundIsNotMuted() {
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
-                preferencesMock.when(RecedePreferences::isMuted).thenReturn(false);
+                var preferencesMock = mock(RecedePreferences.class);
+                when(preferencesMock.isMuted()).thenReturn(false);
 
-                assertThat(interactiveAt(MUTE_CHECKBOX).selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
+                assertThat(interactiveAt(preferencesMock, MUTE_CHECKBOX).selectedIndex())
+                        .isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 
         @Test
         void buildControlsLightsTheDesaturateCheckboxWhenGroundIsDesaturated() {
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
-                preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(true);
+                var preferencesMock = mock(RecedePreferences.class);
+                when(preferencesMock.isDesaturated()).thenReturn(true);
 
-                assertThat(interactiveAt(DESATURATE_CHECKBOX).selectedIndex()).isEqualTo(0);
+                assertThat(interactiveAt(preferencesMock, DESATURATE_CHECKBOX).selectedIndex())
+                        .isEqualTo(0);
             }
         }
 
         @Test
         void buildControlsLeavesTheDesaturateCheckboxOffWhenGroundIsNotDesaturated() {
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
-                preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(false);
+                var preferencesMock = mock(RecedePreferences.class);
+                when(preferencesMock.isDesaturated()).thenReturn(false);
 
-                assertThat(interactiveAt(DESATURATE_CHECKBOX).selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
+                assertThat(interactiveAt(preferencesMock, DESATURATE_CHECKBOX).selectedIndex())
+                        .isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 
         @Test
         void clickingTheMuteCheckboxTurnsMutingOnWhenItIsOff() {
-            // A checkbox click flips the toggle, so clicking an unticked Mute box turns muting on.
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            // A checkbox click flips the passed set's toggle, so clicking an unticked Mute box turns
+            // muting on for that set.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
-                preferencesMock.when(RecedePreferences::isMuted).thenReturn(false);
+                var preferencesMock = mock(RecedePreferences.class);
+                when(preferencesMock.isMuted()).thenReturn(false);
 
-                interactiveAt(MUTE_CHECKBOX).action().activateCell(0);
+                interactiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
 
-                preferencesMock.verify(() -> RecedePreferences.setMuted(true));
+                verify(preferencesMock).setMuted(true);
             }
         }
 
         @Test
         void clickingTheMuteCheckboxTurnsMutingOffWhenItIsOn() {
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
-                preferencesMock.when(RecedePreferences::isMuted).thenReturn(true);
+                var preferencesMock = mock(RecedePreferences.class);
+                when(preferencesMock.isMuted()).thenReturn(true);
 
-                interactiveAt(MUTE_CHECKBOX).action().activateCell(0);
+                interactiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
 
-                preferencesMock.verify(() -> RecedePreferences.setMuted(false));
+                verify(preferencesMock).setMuted(false);
             }
         }
 
         @Test
         void clickingTheDesaturateCheckboxTurnsDesaturationOnWhenItIsOff() {
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
-                preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(false);
+                var preferencesMock = mock(RecedePreferences.class);
+                when(preferencesMock.isDesaturated()).thenReturn(false);
 
-                interactiveAt(DESATURATE_CHECKBOX).action().activateCell(0);
+                interactiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
 
-                preferencesMock.verify(() -> RecedePreferences.setDesaturated(true));
+                verify(preferencesMock).setDesaturated(true);
             }
         }
 
         @Test
         void clickingTheDesaturateCheckboxTurnsDesaturationOffWhenItIsOn() {
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
-                preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(true);
+                var preferencesMock = mock(RecedePreferences.class);
+                when(preferencesMock.isDesaturated()).thenReturn(true);
 
-                interactiveAt(DESATURATE_CHECKBOX).action().activateCell(0);
+                interactiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
 
-                preferencesMock.verify(() -> RecedePreferences.setDesaturated(false));
+                verify(preferencesMock).setDesaturated(false);
             }
         }
     }
 
-    // The control at index, read as the Interactive control it is - a caption is chrome and not
-    // Interactive, so only the checkboxes below it expose the lit cell and click action a test drives.
-    // Rebuilt fresh each call, so a test running under its own mocks reads the state those mocks set.
-    private static ControlSpec.Interactive interactiveAt(int index) {
-        return (ControlSpec.Interactive) RecedeControl.buildControls(CAPTION_LABEL).get(index);
+    // The control at index, built over the given set and read as the Interactive control it is - a
+    // caption is chrome and not Interactive, so only the checkboxes below it expose the lit cell and
+    // click action a test drives. Rebuilt fresh each call, so a test reads the state its stubs set.
+    private static ControlSpec.Interactive interactiveAt(RecedePreferences preferences, int index) {
+        return (ControlSpec.Interactive) RecedeControl.buildControls(preferences, CAPTION_LABEL)
+                .get(index);
     }
 
     // Stubs the two checkbox labels to their plain text so the assertions read the wiring - which key

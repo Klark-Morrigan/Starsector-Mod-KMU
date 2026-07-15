@@ -115,10 +115,11 @@ public final class TerritoryBuilder {
             var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
             var desaturationPalette = MapPalettes.resolveDesaturationPalette(
                     renderStyle.global().desaturationProfile(), sector, neutralColor);
-            // The styling every non-spotlighted bloc recedes to, resolved once from the shared
-            // recede toggles; the identity adjustment off filter, so a normal pass touches no bloc.
+            // The styling every non-spotlighted bloc recedes to, resolved once from the filter recede
+            // toggles - the "rest of the sector" set, shared across both views under a filter; the
+            // identity adjustment off filter, so a normal pass touches no bloc.
             var recedeAdjustment = isFiltering
-                    ? RecedePreferences.resolveRecedeAdjustment()
+                    ? RecedePreferences.FILTER.resolveRecedeAdjustment()
                     : BlocStyleAdjustment.NONE;
             var territories = new PoliticalMapTerritories(
                     new LinkedHashMap<>(), new LinkedHashMap<>(),

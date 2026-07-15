@@ -5,10 +5,12 @@ import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.memory.SectorMemoryAccess;
+
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
-import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -19,6 +21,7 @@ import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.FactionNameFormatChoice;
+import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,6 +49,12 @@ import static org.mockito.Mockito.when;
  */
 final class AlliancesViewTest {
     private static final String NEXERELIN_MOD_ID = "nexerelin";
+
+    // The alliances view's own non-allied recede set keys, driven here through sector memory so the
+    // view's real recede reads are exercised. Pinned as literals: this set is what the view consults
+    // for a non-allied faction, so a rename that would silently reset the choice breaks here.
+    private static final String ALLIANCE_MUTE_KEY = "$kmu_political_alliance_recede_mute";
+    private static final String ALLIANCE_DESATURATE_KEY = "$kmu_political_alliance_recede_desaturate";
 
     // An alliance grouping with one alliance bloc "rebel_pact" fusing two members, coloured off the
     // sorted-first member and named "Rebel Pact"; a faction not in the map stays its own lone bloc.
@@ -119,24 +128,21 @@ final class AlliancesViewTest {
 
         @Test
         void shouldUseIndependentStyleIsFalseForAnAllianceBlocEvenWhenDesaturated() {
-            // An alliance always paints in the full faction style, no matter the Desaturate toggle.
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                    mockStatic(RecedePreferences.class)) {
-                preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(true);
-
-                assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                        "rebel_pact", ALLIANCE_GROUPING)).isFalse();
-            }
+            // An alliance always paints in the full faction style: the alliance gate short-circuits
+            // before the non-allied recede's Desaturate toggle is even read, so no memory is touched.
+            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
+                    "rebel_pact", ALLIANCE_GROUPING)).isFalse();
         }
 
         @Test
         void shouldUseIndependentStyleIsFalseForALoneFactionWhenNotDesaturated() {
             // With Desaturate off a non-allied faction keeps its own faction style, so it reads
             // exactly as the faction view draws it; muting only dims that style, never swaps the
-            // bundle, so only the allied factions differ across the two views.
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                    mockStatic(RecedePreferences.class)) {
-                preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(false);
+            // bundle, so only the allied factions differ across the two views. No save means the
+            // non-allied recede reads off.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
 
                 assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
                         "hegemony", ALLIANCE_GROUPING)).isFalse();
@@ -147,9 +153,13 @@ final class AlliancesViewTest {
         void shouldUseIndependentStyleIsTrueForALoneFactionWhenDesaturated() {
             // Desaturate makes a non-allied faction adopt the whole independent style - its
             // independent opacities and widths, not just an independent recolour over faction ones.
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                    mockStatic(RecedePreferences.class)) {
-                preferencesMock.when(RecedePreferences::isDesaturated).thenReturn(true);
+            // The view reads the Desaturate choice off its own non-allied recede key.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
 
                 assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
                         "hegemony", ALLIANCE_GROUPING)).isTrue();
@@ -160,30 +170,36 @@ final class AlliancesViewTest {
     @Nested
     class ResolveBlocStyleAdjustment {
 
-        // A distinctive adjustment the shared recede is stubbed to return, so a test proves the view
-        // passes it straight through rather than composing its own.
-        private static final BlocStyleAdjustment RECEDED = new BlocStyleAdjustment(0.3, true);
+        // The muted modifier and the two toggles the non-allied recede set is driven to, so a test
+        // proves the view returns exactly what that set resolves rather than composing its own.
+        private static final double MUTED_MODIFIER = 0.3;
+        private static final BlocStyleAdjustment RECEDED = new BlocStyleAdjustment(MUTED_MODIFIER, true);
 
         @Test
         void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocEvenWhenGroundRecedes() {
-            // An alliance keeps its full colour: the view gates it to NONE before the shared recede
-            // is consulted, so recede can never dim or desaturate an alliance.
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                    mockStatic(RecedePreferences.class)) {
-                preferencesMock.when(RecedePreferences::resolveRecedeAdjustment).thenReturn(RECEDED);
-
-                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                        "rebel_pact", ALLIANCE_GROUPING)).isEqualTo(BlocStyleAdjustment.NONE);
-            }
+            // An alliance keeps its full colour: the view gates it to NONE before its non-allied
+            // recede set is consulted, so recede can never dim or desaturate an alliance - and no
+            // memory is touched.
+            assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                    "rebel_pact", ALLIANCE_GROUPING)).isEqualTo(BlocStyleAdjustment.NONE);
         }
 
         @Test
-        void resolveBlocStyleAdjustmentTakesTheSharedRecedeForANonAllianceBloc() {
-            // A non-allied faction is background ground, so the view returns exactly what the shared
-            // recede resolves - the same adjustment every receding context applies, composed once.
-            try (MockedStatic<RecedePreferences> preferencesMock =
-                    mockStatic(RecedePreferences.class)) {
-                preferencesMock.when(RecedePreferences::resolveRecedeAdjustment).thenReturn(RECEDED);
+        void resolveBlocStyleAdjustmentTakesTheNonAlliedRecedeForANonAllianceBloc() {
+            // A non-allied faction is background ground, so the view returns exactly what its own
+            // non-allied recede set resolves - the one adjustment every faction outside an alliance
+            // takes, driven here through that set's mute and desaturate keys.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                            mockStatic(SectorMemoryAccess.class);
+                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(ALLIANCE_MUTE_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(ALLIANCE_MUTE_KEY)).thenReturn(true);
+                when(memoryMock.contains(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapAllianceMutedOpacityModifier)
+                        .thenReturn(MUTED_MODIFIER);
 
                 assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
                         "hegemony", ALLIANCE_GROUPING)).isEqualTo(RECEDED);

@@ -2,17 +2,19 @@ package kmu.maplayers.politicalmap.alliances;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.util.KmuStrings;
 
 import java.util.List;
 
 /**
- * The alliances view's recede adapter: the shared {@link RecedeControl} placed under the caption
- * {@code Non-allied factions are}, so the view recedes every faction outside an alliance through the
- * same Mute/Desaturate toggles every other context uses. It lives in the alliances package, beside
- * the view that owns it, because the caption - which ground this view recedes - is the view's own
- * choice; the checkboxes and their wiring belong to the shared control.
+ * The alliances view's recede adapter: the reusable {@link RecedeControl} bound to the view's own
+ * non-allied recede set and placed under the caption {@code Non-allied factions are}, so the view
+ * recedes every faction outside an alliance through its own Mute/Desaturate toggles - independent of
+ * the filter recede the picker drives. It lives in the alliances package, beside the view that owns
+ * it, because both the set and the caption - which ground this view recedes - are the view's own
+ * choice; the checkbox shape and its wiring belong to the shared control.
  */
 public final class AllianceBodyControls {
 
@@ -26,6 +28,7 @@ public final class AllianceBodyControls {
      */
     public static List<ControlSpec> buildControls() {
         return RecedeControl.buildControls(
+                RecedePreferences.ALLIANCE_NON_ALLIED,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION));
     }
 }

@@ -1,11 +1,11 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
+import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.BlocListColumns;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
-import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
@@ -23,11 +23,11 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the spotlight picker's body controls, top to bottom: a section rule, the sort selector, the
- * shared recede control only while a bloc is spotlighted, and the vertical icon-radio list of
+ * filter recede control only while a bloc is spotlighted, and the vertical icon-radio list of
  * selectable blocs ranked by the active sort mode. Also pins the click wiring: an unlit option
- * spotlights its bloc, the lit option clears the filter. Strings, the recede preferences, and the
- * filter selection are stubbed so this pins the picker's shape and wiring alone, not how a string
- * resolves or how the selection persists.
+ * spotlights its bloc, the lit option clears the filter. Strings and the filter selection are stubbed,
+ * and sector memory is stubbed absent so the filter recede reads its default, so this pins the
+ * picker's shape and wiring alone, not how a string resolves or how the selection persists.
  */
 final class FilterPickerControlTest {
     // The two blocs the picker lists in every test: a crested faction that dominates more and a
@@ -239,8 +239,8 @@ final class FilterPickerControlTest {
             // selector: its caption then the Mute and Desaturate checkboxes, so the block is divider +
             // sort selector + three recede rows + columns selector + list.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class)) {
+                    MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                            mockStatic(SectorMemoryAccess.class)) {
                 stubCaptions(stringsMock);
 
                 var controls = build(BLOCS, "hegemony", BlocSortMode.DEFAULT);
@@ -315,8 +315,8 @@ final class FilterPickerControlTest {
             // The list is deselectable, so a press on the spotlighted row reaches the action with its
             // own index; re-picking it stops the spotlight rather than re-selecting it.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
+                    MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                            mockStatic(SectorMemoryAccess.class);
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
@@ -332,8 +332,8 @@ final class FilterPickerControlTest {
         @Test
         void clickingAnotherOptionWhileFilteringSpotlightsTheNewBloc() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<RecedePreferences> preferencesMock =
-                            mockStatic(RecedePreferences.class);
+                    MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                            mockStatic(SectorMemoryAccess.class);
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
@@ -365,8 +365,8 @@ final class FilterPickerControlTest {
     }
 
     // Stubs the caption and sort-label strings the picker heads its rows with, so the assertions read
-    // the wiring without the live strings table. The recede checkbox labels are only reached in tests
-    // that mock RecedePreferences, which stub them there.
+    // the wiring without the live strings table. The recede checkbox labels resolve here too, since a
+    // spotlighted picker builds the filter recede control whose checkboxes read them.
     private static void stubCaptions(MockedStatic<KmuStrings> stringsMock) {
         stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))
                 .thenReturn("Rest of the sector is");
