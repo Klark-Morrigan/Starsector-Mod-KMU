@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
+import kmlib.math.geometry.DirectedLine;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PrincipalAxis;
@@ -143,7 +144,10 @@ final class ClusterAnchorPlacement {
             for (var offsetIndex = 1; offsetIndex <= spec.search().offsetCount(); offsetIndex++) {
                 var through = offsetThroughPoint(axis, direction, extent, offsetIndex,
                         spec.search().offsetCount());
-                var chord = new RegionChord(rings, icons, through[0], through[1], direction);
+                var chord = new RegionChord(
+                        rings,
+                        icons,
+                        new DirectedLine(through[0], through[1], direction[0], direction[1]));
                 var box = fitter.fitLargestBox(chord);
                 if (box != null) {
                     // Selection docks the fitted font height for lines that stray from the
