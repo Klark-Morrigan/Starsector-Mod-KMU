@@ -41,12 +41,18 @@ public final class CellShaper {
      */
     public static Map<String, ShapedCell> shapeCells(
             Map<String, List<CellEdge>> edgesBySystemId,
-            Map<String, String> groupKeyBySystemId, double borderInset) {
+            Map<String, String> groupKeyBySystemId,
+            double borderInset) {
         var shaped = new LinkedHashMap<String, ShapedCell>();
         for (var entry : edgesBySystemId.entrySet()) {
             var ownGroupKey = groupKeyBySystemId.get(entry.getKey());
-            shaped.put(entry.getKey(),
-                    shapeCell(entry.getValue(), ownGroupKey, groupKeyBySystemId, borderInset));
+            shaped.put(
+                    entry.getKey(),
+                    shapeCell(
+                        entry.getValue(),
+                        ownGroupKey,
+                        groupKeyBySystemId,
+                        borderInset));
         }
         return shaped;
     }
@@ -64,8 +70,11 @@ public final class CellShaper {
      * @param borderInset        inward inset applied to every border edge
      * @return the shaped cell: its inset fill polygon and per-edge boundary flags
      */
-    public static ShapedCell shapeCell(List<CellEdge> edges, String ownGroupKey,
-            Map<String, String> groupKeyBySystemId, double borderInset) {
+    public static ShapedCell shapeCell(
+            List<CellEdge> edges,
+            String ownGroupKey,
+            Map<String, String> groupKeyBySystemId,
+            double borderInset) {
         var vertices = new ArrayList<double[]>(edges.size());
         var isBorderEdge = new boolean[edges.size()];
         for (var i = 0; i < edges.size(); i++) {
