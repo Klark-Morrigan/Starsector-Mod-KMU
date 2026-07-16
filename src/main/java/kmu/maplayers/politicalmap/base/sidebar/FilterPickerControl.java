@@ -15,25 +15,24 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * The spotlight picker's body controls, top to bottom: a rule heading the block, then - only while a
- * bloc is spotlighted - the shared recede control that sets how the rest of the sector fades behind
- * it, then the vertical icon-radio list of selectable blocs. It turns the active view's {@link
- * SelectableBloc} options into one clickable list and wires each click straight to {@link
- * FilterSelection}, so picking a row spotlights that bloc and re-picking the lit row clears the
- * filter. It draws the same list under either view; which blocs the list holds is the view's
- * decision, read before this is called, so this names no concrete view.
+ * The spotlight picker's body controls, top to bottom: a rule heading the block, the columns selector,
+ * a row pairing the sort selector beside the recede control, then the vertical icon-radio list of
+ * selectable blocs. It turns the active view's {@link SelectableBloc} options into one clickable list
+ * and wires each click straight to {@link FilterSelection}, so picking a row spotlights that bloc and
+ * re-picking the lit row clears the filter. It draws the same list under either view; which blocs the
+ * list holds is the view's decision, read before this is called, so this names no concrete view.
  *
  * <p>The rule parts the view-level controls above (the view selector) from the picker below, marking
- * the section a caption string used to. Under the rule rides the sort selector, so the metric the list
- * ranks by is chosen right above the list it orders; the picker sorts the blocs by that metric and
- * labels each row with its value. The recede control only does anything while a bloc is spotlighted
- * (with none selected the map draws exactly as un-filtered), so it is shown solely then and hidden
- * otherwise, and it rides between the sort selector and the list so the "rest of the sector" knobs sit
- * by the section they modify. It is the same reusable {@link RecedeControl} the alliances view places
- * under its own caption, here bound to the filter recede set - the "rest of the sector" behind a
- * spotlight, its own toggles independent of the alliances view's non-allied recede. The columns
- * selector then rides directly above the list, so how many columns the list wraps across is chosen
- * right by the list it lays out.
+ * the section a caption string used to. The columns selector rides directly under the rule, so how many
+ * columns the list wraps across is chosen for the block as a whole. Below it a paired row sets the sort
+ * beside the recede: the sort selector on the left picks the metric the list ranks by (the picker sorts
+ * the blocs by that metric and labels each row with its value), and the recede control on the right sets
+ * how the rest of the sector fades behind a spotlight. The recede sits by the sort rather than above the
+ * list to keep the picker compact, and it is always shown - a change there simply has no visible effect
+ * until a bloc is spotlighted, so the knobs stay put whether or not a filter is active. It is the same
+ * reusable {@link RecedeControl} the alliances view places under its own caption, here bound to the
+ * filter recede set - the "rest of the sector" behind a spotlight, its own toggles independent of the
+ * alliances view's non-allied recede.
  */
 public final class FilterPickerControl {
 
@@ -42,11 +41,11 @@ public final class FilterPickerControl {
 
     /**
      * Builds the picker block for the current view's selectable blocs, filter selection, and sort
-     * mode, top to bottom: the section rule, the sort selector, the recede control when a bloc is
-     * spotlighted, then the icon-radio list ranked by the sort mode (its lit row the spotlighted bloc,
-     * or none when the stored id is not among these blocs). Returns an empty list when there are no
-     * selectable blocs, so a view with nothing to spotlight contributes no picker rather than an empty
-     * list widget.
+     * mode, top to bottom: the section rule, the columns selector, a row pairing the sort selector
+     * beside the filter recede control, then the icon-radio list ranked by the sort mode (its lit row
+     * the spotlighted bloc, or none when the stored id is not among these blocs). Returns an empty list
+     * when there are no selectable blocs, so a view with nothing to spotlight contributes no picker
+     * rather than an empty list widget.
      *
      * @param blocs          the selectable blocs under the active view; order here is immaterial since
      *                       the sort mode reorders them for display
@@ -78,20 +77,19 @@ public final class FilterPickerControl {
         // A rule heads the block, parting the view-level controls above from the picker below - the
         // section break a caption used to mark, now carrying no text.
         controls.add(new ControlSpec.Divider());
-        // The sort selector rides directly under the rule, so the metric is chosen right above the
-        // list it orders.
-        controls.add(SortSelectorControl.buildSelector(sortMode, sortDirection));
-        // The recede control only bites while a bloc is spotlighted, so it shows solely then - with
-        // no filter the sector is drawn normally and there is nothing to recede. It rides between the
-        // sort selector and the list so the "rest of the sector" knobs sit next to the section.
-        if (selectedBlocId != null) {
-            controls.addAll(RecedeControl.buildControls(
-                    RecedePreferences.FILTER,
-                    KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION)));
-        }
-        // The columns selector rides directly above the list, so the column count is chosen right by
-        // the list it lays out; the list then wraps its rows across that many columns.
+        // The columns selector rides directly under the rule, so the column count is chosen for the
+        // block as a whole; the list below then wraps its rows across that many columns.
         controls.add(ColumnsSelectorControl.buildSelector(columns));
+        // The sort selector and the recede control share one row, the sort on the left picking the
+        // metric the list ranks by and the recede on the right setting how the rest of the sector fades
+        // behind a spotlight. Pairing them keeps the picker compact. The recede is always shown - it
+        // simply has no visible effect until a bloc is spotlighted, so the knobs stay put whether or not
+        // a filter is active.
+        controls.add(new ControlSpec.SideBySide(
+                List.of(SortSelectorControl.buildSelector(sortMode, sortDirection)),
+                RecedeControl.buildControls(
+                        RecedePreferences.FILTER,
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))));
         // The bloc list is the body's one scrolling region: when the picker plus the controls above and
         // below it would run the box past the bottom margin, the list gives up the difference and
         // scrolls while everything around it stays pinned. asScrolling marks the list; the capped

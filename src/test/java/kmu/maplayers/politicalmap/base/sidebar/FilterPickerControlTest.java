@@ -12,6 +12,8 @@ import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -22,12 +24,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the spotlight picker's body controls, top to bottom: a section rule, the sort selector, the
- * filter recede control only while a bloc is spotlighted, and the vertical icon-radio list of
+ * Pins the spotlight picker's body controls, top to bottom: a section rule, the columns selector, a row
+ * pairing the sort selector beside the filter recede control, and the vertical icon-radio list of
  * selectable blocs ranked by the active sort mode. Also pins the click wiring: an unlit option
  * spotlights its bloc, the lit option clears the filter. Strings and the filter selection are stubbed,
- * and sector memory is stubbed absent so the filter recede reads its default, so this pins the
- * picker's shape and wiring alone, not how a string resolves or how the selection persists.
+ * and sector memory is stubbed absent so the always-shown filter recede reads its default, so this pins
+ * the picker's shape and wiring alone, not how a string resolves or how the selection persists.
  */
 final class FilterPickerControlTest {
     // The two blocs the picker lists in every test: a crested faction that dominates more and a
@@ -39,11 +41,31 @@ final class FilterPickerControlTest {
             new SelectableBloc("free_traders", "Free Traders", null, new BlocStats(2, 3, 6, 4));
     private static final List<SelectableBloc> BLOCS = List.of(HEGEMONY, TRADERS);
 
-    // The section rule always heads the block, and the sort selector always rides directly under it.
-    // The list is always the last row - its offset shifts by the recede rows when a bloc is
-    // spotlighted - so tests read it from the tail rather than a fixed index.
+    // The block is a fixed four rows: the section rule, the columns selector, the paired sort-and-recede
+    // row, then the list. The recede is folded into the pair and always shown, so the block no longer
+    // grows or shrinks with the selection - the list is always the last row.
     private static final int DIVIDER = 0;
-    private static final int SORT_SELECTOR = 1;
+    private static final int COLUMNS_SELECTOR = 1;
+    private static final int SORT_AND_RECEDE = 2;
+    // The recede's three cells within the pair's right column: its caption then the two checkboxes.
+    private static final int RECEDE_CAPTION = 0;
+    private static final int RECEDE_MUTE = 1;
+    private static final int RECEDE_DESATURATE = 2;
+
+    // Sector memory is stubbed absent across every test, so the always-built filter recede reads its
+    // default lit state off a null memory rather than reaching for the live sector. Opened as a field so
+    // every test in the suite shares one registration rather than repeating it in each try block.
+    private MockedStatic<SectorMemoryAccess> memoryAccessMock;
+
+    @BeforeEach
+    void stubSectorMemoryAbsent() {
+        memoryAccessMock = mockStatic(SectorMemoryAccess.class);
+    }
+
+    @AfterEach
+    void closeSectorMemoryStub() {
+        memoryAccessMock.close();
+    }
 
     @Nested
     class BuildControls {
@@ -65,27 +87,79 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var divider =
-                        build(BLOCS, null, BlocSortMode.DEFAULT).get(DIVIDER);
+                var divider = build(BLOCS, null, BlocSortMode.DEFAULT).get(DIVIDER);
 
                 assertThat(divider).isInstanceOf(ControlSpec.Divider.class);
             }
         }
 
         @Test
-        void buildControlsPlacesTheSortSelectorUnderTheDivider() {
-            // The sort selector rides directly under the rule, so the metric is chosen right above the
-            // list it orders: a vertical, re-firing radio lit on the active mode's row.
+        void buildControlsPlacesTheColumnsSelectorUnderTheDivider() {
+            // The columns selector rides directly under the rule, so the column count is chosen for the
+            // block as a whole: a two-segment horizontal radio.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var selector = (ControlSpec.VerticalTable) build(BLOCS, null, BlocSortMode.PRESENCE)
-                        .get(SORT_SELECTOR);
+                var columnsSelector = build(BLOCS, null, BlocSortMode.DEFAULT).get(COLUMNS_SELECTOR);
 
-                // A vertical table by type; a sort is always active, so a re-pick re-fires to flip.
-                assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.REFIRE);
-                assertThat(selector.selectedIndex())
+                assertThat(columnsSelector).isInstanceOf(ControlSpec.HorizontalRadio.class);
+                assertThat(columnsSelector.labels()).hasSize(2);
+            }
+        }
+
+        @Test
+        void buildControlsPairsTheSortSelectorBesideTheRecedeControl() {
+            // The sort selector and the recede share one row: the sort on the left (a vertical,
+            // re-firing radio lit on the active mode's row) and the recede on the right (its caption then
+            // the Mute and Desaturate checkboxes), so the metric and the "rest of the sector" knobs read
+            // side by side above the list.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+
+                var pair = sortAndRecedeOf(build(BLOCS, null, BlocSortMode.PRESENCE));
+
+                var sortSelector = (ControlSpec.VerticalTable) pair.leftColumn().get(0);
+                assertThat(pair.leftColumn()).hasSize(1);
+                // A sort is always active, so a re-pick re-fires to flip; the lit row is the active mode.
+                assertThat(sortSelector.reselect()).isEqualTo(ReselectBehaviour.REFIRE);
+                assertThat(sortSelector.selectedIndex())
                         .isEqualTo(List.of(BlocSortMode.values()).indexOf(BlocSortMode.PRESENCE));
+                // The recede is the caller's caption then the two checkboxes, left to right.
+                assertThat(pair.rightColumn().get(RECEDE_CAPTION)).isInstanceOf(ControlSpec.Label.class);
+                assertThat(pair.rightColumn().get(RECEDE_CAPTION).labels())
+                        .containsExactly("Rest of the sector is");
+                assertThat(pair.rightColumn().get(RECEDE_MUTE)).isInstanceOf(ControlSpec.Checkbox.class);
+                assertThat(pair.rightColumn().get(RECEDE_DESATURATE))
+                        .isInstanceOf(ControlSpec.Checkbox.class);
+            }
+        }
+
+        @Test
+        void buildControlsShowsTheFilterRecedeEvenWithNoSelection() {
+            // The recede is always shown, not gated on a selection: with no filter it simply has no
+            // visible effect, so the knobs stay put in the pair's right column whether or not a bloc is
+            // spotlighted.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+
+                var pair = sortAndRecedeOf(build(BLOCS, null, BlocSortMode.DEFAULT));
+
+                assertThat(pair.rightColumn()).hasSize(3);
+                assertThat(pair.rightColumn().get(RECEDE_CAPTION).labels())
+                        .containsExactly("Rest of the sector is");
+            }
+        }
+
+        @Test
+        void buildControlsIsAFixedFourRowBlock() {
+            // The rule, the columns selector, the paired sort-and-recede row, and the list: four rows,
+            // fixed regardless of the selection since the recede folds into the pair rather than
+            // appearing and disappearing.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                stubCaptions(stringsMock);
+
+                assertThat(build(BLOCS, null, BlocSortMode.DEFAULT)).hasSize(4);
+                assertThat(build(BLOCS, "hegemony", BlocSortMode.DEFAULT)).hasSize(4);
             }
         }
 
@@ -222,57 +296,6 @@ final class FilterPickerControlTest {
         }
 
         @Test
-        void buildControlsOmitsTheRecedeControlWhenNoBlocIsSpotlighted() {
-            // With no filter the sector draws normally, so there is nothing to recede - the block is
-            // just the divider, the sort selector, the columns selector, and the list.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
-                stubCaptions(stringsMock);
-
-                assertThat(build(BLOCS, null, BlocSortMode.DEFAULT))
-                        .hasSize(4);
-            }
-        }
-
-        @Test
-        void buildControlsInsertsTheRecedeControlAboveTheColumnsSelectorWhenABlocIsSpotlighted() {
-            // While filtering the recede control rides between the sort selector and the columns
-            // selector: its caption then the Mute and Desaturate checkboxes, so the block is divider +
-            // sort selector + three recede rows + columns selector + list.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                            mockStatic(SectorMemoryAccess.class)) {
-                stubCaptions(stringsMock);
-
-                var controls = build(BLOCS, "hegemony", BlocSortMode.DEFAULT);
-
-                assertThat(controls).hasSize(7);
-                assertThat(controls.get(2)).isInstanceOf(ControlSpec.Label.class);
-                assertThat(controls.get(2).labels()).containsExactly("Rest of the sector is");
-                assertThat(controls.get(3)).isInstanceOf(ControlSpec.Checkbox.class);
-                assertThat(controls.get(4)).isInstanceOf(ControlSpec.Checkbox.class);
-                // The columns selector then the list are the last two rows: the horizontal columns radio
-                // sits directly above the vertical list it lays out.
-                assertThat(controls.get(5)).isInstanceOf(ControlSpec.HorizontalRadio.class);
-                assertThat(controls.get(6)).isInstanceOf(ControlSpec.VerticalTable.class);
-            }
-        }
-
-        @Test
-        void buildControlsPlacesTheColumnsSelectorDirectlyAboveTheList() {
-            // The columns selector rides right above the list, so how many columns the list wraps
-            // across is chosen by the list it lays out: a two-segment horizontal radio.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
-                stubCaptions(stringsMock);
-
-                var controls = build(BLOCS, null, BlocSortMode.DEFAULT);
-                var columnsSelector = controls.get(controls.size() - 2);
-
-                assertThat(columnsSelector).isInstanceOf(ControlSpec.HorizontalRadio.class);
-                assertThat(columnsSelector.labels()).hasSize(2);
-            }
-        }
-
-        @Test
         void buildControlsLaysTheListAcrossTheChosenColumnCount() {
             // The chosen column count reaches the list widget's geometry: a two-column choice builds a
             // two-column list, a single-column choice a one-column list, so the layout wraps the rows
@@ -315,8 +338,6 @@ final class FilterPickerControlTest {
             // The list is deselectable, so a press on the spotlighted row reaches the action with its
             // own index; re-picking it stops the spotlight rather than re-selecting it.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                            mockStatic(SectorMemoryAccess.class);
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
@@ -332,8 +353,6 @@ final class FilterPickerControlTest {
         @Test
         void clickingAnotherOptionWhileFilteringSpotlightsTheNewBloc() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                            mockStatic(SectorMemoryAccess.class);
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
@@ -357,16 +376,22 @@ final class FilterPickerControlTest {
                 BlocListColumns.ONE);
     }
 
-    // The picker list is always the block's last row, so a test reads it from the tail rather than a
-    // fixed index that would shift with the recede rows. Read as the vertical table it is, so a test
-    // reads its icon and value columns, its scroll flag, and its re-pick behaviour.
+    // The picker list is always the block's last row, so a test reads it from the tail. Read as the
+    // vertical table it is, so a test reads its icon and value columns, its scroll flag, and its re-pick
+    // behaviour.
     private static ControlSpec.VerticalTable pickerOf(List<ControlSpec> controls) {
         return (ControlSpec.VerticalTable) controls.get(controls.size() - 1);
     }
 
+    // The paired sort-and-recede row, read as the side-by-side group it is so a test reads its left
+    // column (the sort selector) and its right column (the recede control) separately.
+    private static ControlSpec.SideBySide sortAndRecedeOf(List<ControlSpec> controls) {
+        return (ControlSpec.SideBySide) controls.get(SORT_AND_RECEDE);
+    }
+
     // Stubs the caption and sort-label strings the picker heads its rows with, so the assertions read
-    // the wiring without the live strings table. The recede checkbox labels resolve here too, since a
-    // spotlighted picker builds the filter recede control whose checkboxes read them.
+    // the wiring without the live strings table. The recede checkbox labels resolve here too, since the
+    // always-shown filter recede's checkboxes read them.
     private static void stubCaptions(MockedStatic<KmuStrings> stringsMock) {
         stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))
                 .thenReturn("Rest of the sector is");
