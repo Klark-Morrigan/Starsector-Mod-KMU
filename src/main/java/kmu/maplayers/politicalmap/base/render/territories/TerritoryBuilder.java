@@ -358,14 +358,15 @@ public final class TerritoryBuilder {
                 borderRuns.add(GlVertexRuns.flattenVertices(loop));
             }
         }
-        // The transition seam strokes the solid<->hatched boundary in the bloc's secondary shade at
-        // the inner-seam width, reusing the inner-seam element so the contested pocket reads as a
-        // bounded region; it is null-coloured (hidden) for every non-spotlit territory.
-        return new FactionTerritory(fill.solidTriangles(), fill.hatchSegments(),
+        // The contested seams stroke every interior edge touching a contested cell - the
+        // solid<->hatched transitions and the hatched<->hatched divisions - in the bloc's secondary
+        // shade at the inner-seam width, reusing the inner-seam element so each contested pocket
+        // reads as a bounded region; they are null-coloured (hidden) for every non-spotlit territory.
+        return new FactionTerritory(
                 fill.solidTriangles(),
                 fill.hatchSegments(),
                 new UiElementPaint(fillColor, adjustment.muteOpacity(style.fillOpacity())),
-                fill.transitionSeams(),
+                fill.contestedSeams(),
                 new UiElementPaint(
                         isSpotlit ? palette.secondaryColor() : null,
                         adjustment.muteOpacity(style.innerOpacity())),
@@ -377,12 +378,13 @@ public final class TerritoryBuilder {
 
     // Splits the spotlit footprint's fill per cell: the systems the bloc dominates tessellate into
     // the solid triangle soup, the contested systems into their own soup the hatch generator then
-    // clips diagonal lines to, and the edges between the two become the transition seam. Each cell
-    // is tessellated on its own inset shape - the very shape the pass already built, reused here
-    // rather than re-shaped. Same-key neighbours leave their shared edge on the true cell border,
-    // so adjacent same-state cells' fills meet exactly and read as fused, and a dominated cell
-    // meets a contested one along the raw edge the seam then strokes. A "No color" fill draws
-    // neither region, but the seam still bounds the (invisible) pocket.
+    // clips diagonal lines to, and the interior seams touching a contested cell are stroked over
+    // the whole footprint. Each cell is tessellated on its own inset shape - the very shape the
+    // pass already built, reused here rather than re-shaped. Same-key neighbours leave their shared
+    // edge on the true cell border, so adjacent same-state cells' fills meet exactly, and the
+    // contested seam then re-divides two joined contested cells (whose hatch soups would otherwise
+    // fuse) while leaving two joined dominant cells solidly merged. A "No color" fill draws neither
+    // region, but the seams still bound the (invisible) pockets.
     private static TerritoryFill computeSpotlitFill(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
@@ -390,11 +392,13 @@ public final class TerritoryBuilder {
             Map<String, ShapedCell> shapedCellBySystemId,
             Color fillColor) {
         var contestedSystemIds = territories.getContestedSystemIds();
-        var transitionSeams = computeTransitionSeams(memberSystemIds, contestedSystemIds,
+        var contestedSeams = computeContestedSeams(
+                memberSystemIds,
+                contestedSystemIds,
                 geometryCache.getCellEdgesBySystemId());
         if (fillColor == null) {
             return new TerritoryFill(GlVertexRuns.NO_VERTICES, GlVertexRuns.NO_VERTICES,
-                    transitionSeams);
+                    contestedSeams);
         }
         var solidRuns = new ArrayList<float[]>();
         var contestedRuns = new ArrayList<float[]>();
@@ -408,7 +412,7 @@ public final class TerritoryBuilder {
                 concatenateRuns(contestedRuns),
                 hatch.angleRadians(),
                 hatch.spacing());
-        return new TerritoryFill(concatenateRuns(solidRuns), hatchSegments, transitionSeams);
+        return new TerritoryFill(concatenateRuns(solidRuns), hatchSegments, contestedSeams);
     }
 
     // Tessellates one spotlit member's already-shaped inset cell into a GL_TRIANGLES soup, so the
@@ -422,30 +426,50 @@ public final class TerritoryBuilder {
         return PolygonTessellator.tessellateToTriangles(List.of(shaped.fillPolygon()));
     }
 
-    // The edges between a dominant and a contested spotlit cell, as a GL_LINES run. Walks each
-    // dominant member (so every transition edge is collected once, from the dominant side) and
-    // keeps the edges whose neighbour is a contested spotlit system. These same-key edges are not
-    // inset, so they sit on the true cell border where the solid and hatched fills meet - exactly
-    // where the seam should stroke.
-    static float[] computeTransitionSeams(List<String> memberSystemIds,
-            Set<String> contestedSystemIds, Map<String, List<CellEdge>> edgesBySystemId) {
+    // Every interior seam within the spotlit footprint that touches a contested cell, as a
+    // GL_LINES run: the dominant<->contested transitions (where the solid fill meets the hatched
+    // one) and the contested<->contested divisions (so two joined hatched cells still read apart
+    // rather than fusing into one hatch blob). Dominant<->dominant edges are omitted, so the solid
+    // region fuses into one nation with no line through it. Only an edge between two footprint
+    // members is interior; an edge to an outside system (or to empty space) is the footprint's
+    // national border, traced elsewhere. Voronoi adjacency is symmetric, so each shared edge is
+    // seen from both of its cells - it is emitted once, from the lexicographically smaller system
+    // id, so a contested<->contested division is not stroked twice. These same-key edges are not
+    // inset, so they sit on the true cell border where the fills meet - exactly where the seam
+    // should stroke.
+    static float[] computeContestedSeams(
+            List<String> memberSystemIds,
+            Set<String> contestedSystemIds,
+            Map<String, List<CellEdge>> edgesBySystemId) {
+        var memberSystemIdSet = new HashSet<>(memberSystemIds);
         var coordinates = new ArrayList<Float>();
         for (var systemId : memberSystemIds) {
-            if (contestedSystemIds.contains(systemId)) {
-                continue;
-            }
             var edges = edgesBySystemId.get(systemId);
             if (edges == null) {
                 continue;
             }
+            var isThisContested = contestedSystemIds.contains(systemId);
             for (var edge : edges) {
-                if (edge.neighbourSystemId() != null
-                        && contestedSystemIds.contains(edge.neighbourSystemId())) {
-                    coordinates.add((float) edge.x1());
-                    coordinates.add((float) edge.y1());
-                    coordinates.add((float) edge.x2());
-                    coordinates.add((float) edge.y2());
+                var neighbourSystemId = edge.neighbourSystemId();
+                // An edge to empty space or to a system outside the footprint is the national
+                // border, not an interior seam.
+                if (neighbourSystemId == null || !memberSystemIdSet.contains(neighbourSystemId)) {
+                    continue;
                 }
+                // Walk each shared edge from its smaller-id cell only, so a contested<->contested
+                // division seen from both cells is stroked once.
+                if (systemId.compareTo(neighbourSystemId) >= 0) {
+                    continue;
+                }
+                // A seam reads only where a contested cell is involved; two dominant cells fuse
+                // into the solid region with no line between them.
+                if (!isThisContested && !contestedSystemIds.contains(neighbourSystemId)) {
+                    continue;
+                }
+                coordinates.add((float) edge.x1());
+                coordinates.add((float) edge.y1());
+                coordinates.add((float) edge.x2());
+                coordinates.add((float) edge.y2());
             }
         }
         return GlVertexRuns.packFloats(coordinates);
@@ -467,12 +491,15 @@ public final class TerritoryBuilder {
         return concatenated;
     }
 
-    // The spotlit footprint's fill split into its two painted regions plus the seam between them:
-    // the solid triangle soup for the dominated cells, the hatch GL_LINES for the contested cells,
-    // and the transition GL_LINES where they meet. A non-spotlit territory carries only its solid
-    // region, the other two empty.
-    private record TerritoryFill(float[] solidTriangles, float[] hatchSegments,
-            float[] transitionSeams) {
+    // The spotlit footprint's fill split into its two painted regions plus the interior seams
+    // between them: the solid triangle soup for the dominated cells, the hatch GL_LINES for the
+    // contested cells, and the contested-seam GL_LINES touching those contested cells (the
+    // solid<->hatched transitions and the hatched<->hatched divisions). A non-spotlit territory
+    // carries only its solid region, the other two empty.
+    private record TerritoryFill(
+            float[] solidTriangles,
+            float[] hatchSegments,
+            float[] contestedSeams) {
     }
 
     // The base style and per-bloc adjustment a bloc draws under this pass, shared by the per-cell
