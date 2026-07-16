@@ -31,8 +31,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the builder's off-engine, deterministic pieces: the solid<->hatched transition-seam
- * trace and an owned cell's style-adjustment application (palette swap and opacity scale). The
+ * Pins the builder's off-engine, deterministic pieces: the contested-border trace (the interior
+ * edges touching a hatched cell) and an owned cell's style-adjustment application (palette swap
+ * and opacity scale). The
  * shared styling resolvers it used to hold now live in
  * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes} and
  * {@link kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver} with their own suites;
@@ -53,48 +54,70 @@ final class TerritoryBuilderTest {
     }
 
     @Nested
-    class ComputeTransitionSeams {
+    class ComputeContestedBorders {
 
         @Test
-        void emitsOnlyTheEdgeFromADominantCellToAContestedNeighbour() {
-            // The seam marks where a solid (dominated) cell meets a hatched (contested) one. A
-            // dominant->contested edge is the transition; a dominant->dominant edge fuses and a
-            // frontier edge (null neighbour) is the footprint's outer border, neither a seam.
-            var dominantEdges = List.of(
-                    new CellEdge(0, 0, 10, 0, "con"),
-                    new CellEdge(10, 0, 10, 10, "dom2"),
-                    new CellEdge(10, 10, 0, 0, null));
-            // The contested cell's own edge back to the dominant one, to prove the walk collects
-            // the transition once from the dominant side rather than twice.
+        void emitsTheEdgeWhereADominantCellMeetsAContestedCell() {
+            // The solid<->hatched transition is a contested border. Each shared edge is walked from
+            // both cells (Voronoi adjacency is symmetric) but emitted once, from the smaller id -
+            // here "con" < "dom" - so its coordinates come from the contested cell's edge record.
+            var dominantEdges = List.of(new CellEdge(0, 0, 10, 0, "con"));
             var contestedEdges = List.of(new CellEdge(10, 0, 0, 0, "dom"));
 
-            var seams = TerritoryBuilder.computeTransitionSeams(List.of("dom", "con"),
+            var borders = TerritoryBuilder.computeContestedBorders(List.of("dom", "con"),
                     Set.of("con"), Map.of("dom", dominantEdges, "con", contestedEdges));
 
-            assertThat(seams).containsExactly(0f, 0f, 10f, 0f);
+            assertThat(borders).containsExactly(10f, 0f, 0f, 0f);
         }
 
         @Test
-        void ignoresANeighbourThatIsNotContested() {
-            // A dominant neighbour (fused) and a non-spotlit receded rival both leave the spotlit
-            // interior seamless; only a contested neighbour bounds the pocket.
-            var dominantEdges = List.of(
-                    new CellEdge(0, 0, 10, 0, "dom2"),
-                    new CellEdge(10, 0, 20, 0, "receded-rival"));
+        void emitsTheDivisionWhereTwoContestedCellsMeet() {
+            // Two joined contested cells' hatch fills fuse into one continuous soup, so their shared
+            // edge is stroked to keep them reading as distinct bounded territories.
+            var firstEdges = List.of(new CellEdge(0, 0, 5, 5, "con2"));
+            var secondEdges = List.of(new CellEdge(5, 5, 0, 0, "con1"));
 
-            var seams = TerritoryBuilder.computeTransitionSeams(List.of("dom"),
-                    Set.of("con"), Map.of("dom", dominantEdges));
+            var borders = TerritoryBuilder.computeContestedBorders(List.of("con1", "con2"),
+                    Set.of("con1", "con2"), Map.of("con1", firstEdges, "con2", secondEdges));
 
-            assertThat(seams).isEmpty();
+            // Emitted once, from the smaller id ("con1"), so it is not stroked twice.
+            assertThat(borders).containsExactly(0f, 0f, 5f, 5f);
+        }
+
+        @Test
+        void omitsTheEdgeBetweenTwoDominantCells() {
+            // Two dominated cells fuse into the solid region with only their faint per-cell interior
+            // seam, so their shared edge carries no contested border.
+            var firstEdges = List.of(new CellEdge(0, 0, 5, 5, "dom2"));
+            var secondEdges = List.of(new CellEdge(5, 5, 0, 0, "dom1"));
+
+            var borders = TerritoryBuilder.computeContestedBorders(List.of("dom1", "dom2"),
+                    Set.of(), Map.of("dom1", firstEdges, "dom2", secondEdges));
+
+            assertThat(borders).isEmpty();
+        }
+
+        @Test
+        void ignoresAnEdgeToASystemOutsideTheFootprint() {
+            // A non-spotlit receded rival and a frontier edge (null neighbour) both lie on the
+            // footprint's national border, traced elsewhere, so neither is an interior division.
+            var contestedEdges = List.of(
+                    new CellEdge(0, 0, 10, 0, "receded-rival"),
+                    new CellEdge(10, 0, 10, 10, null));
+
+            var borders = TerritoryBuilder.computeContestedBorders(List.of("con"),
+                    Set.of("con"), Map.of("con", contestedEdges));
+
+            assertThat(borders).isEmpty();
         }
 
         @Test
         void skipsAMemberWithNoCellEdges() {
-            // A member absent from the edge map (no cell) contributes no seam rather than throwing.
-            var seams = TerritoryBuilder.computeTransitionSeams(List.of("dom"),
+            // A member absent from the edge map (no cell) contributes no border rather than throwing.
+            var borders = TerritoryBuilder.computeContestedBorders(List.of("dom"),
                     Set.of("con"), Map.of());
 
-            assertThat(seams).isEmpty();
+            assertThat(borders).isEmpty();
         }
     }
 

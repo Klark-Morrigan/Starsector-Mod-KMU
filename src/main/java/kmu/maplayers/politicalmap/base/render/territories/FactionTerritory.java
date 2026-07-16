@@ -24,14 +24,20 @@ import java.util.List;
  * tier ({@link kmu.maplayers.politicalmap.base.render.style.GlobalStyle}) and the renderer sets it
  * once, not per territory.
  *
- * <p>{@code transitionSeams} marks where the solid and hatched fills meet inside that footprint,
- * as a {@code GL_LINES} run stroked in {@code transitionSeam}'s (secondary-shade) colour and
- * {@code transitionSeamWidth}, emphasising that one boundary on top of the footprint's per-cell
- * interior seams so the contested pocket reads as a bounded region. It is empty for every
- * non-spotlit territory (whose fill is uniform) and for a spotlit footprint with no contested
- * systems.
+ * <p>{@code contestedBorders} is a {@code GL_LINES} run of every interior footprint edge that
+ * touches a contested cell - the solid<->hatched transitions and the hatched<->hatched divisions -
+ * stroked in this same {@link #border} colour and {@link #borderWidth}, so a contested cell reads
+ * as a bounded territory within the footprint rather than dissolving into the hatch. Two dominated
+ * cells, sharing no edge with a contested cell, are left to fuse with only their faint per-cell
+ * interior seam. It is empty for every non-spotlit territory (whose fill is uniform) and for a
+ * spotlit footprint with no contested systems.
  */
-public record FactionTerritory(float[] fillTriangles, float[] hatchSegments, UiElementPaint fill,
-        float[] transitionSeams, UiElementPaint transitionSeam, float transitionSeamWidth,
-        List<float[]> borderLoops, UiElementPaint border, float borderWidth) {
+public record FactionTerritory(
+        float[] fillTriangles,
+        float[] hatchSegments,
+        UiElementPaint fill,
+        List<float[]> borderLoops,
+        float[] contestedBorders,
+        UiElementPaint border,
+        float borderWidth) {
 }

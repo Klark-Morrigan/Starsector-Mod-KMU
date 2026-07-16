@@ -107,19 +107,6 @@ public final class TerritoryRenderer {
             GlColor.set(inner.color(), alphaMult * inner.alpha());
             GlRuns.drawScaled(GL11.GL_LINES, cell.interiorEdges(), factor);
         }
-        // The spotlit footprint's solid<->hatched transition seam, drawn with the interior seams
-        // (beneath the national borders) so the frontier still dominates where they meet. Its run
-        // is empty for every non-spotlit territory, and its paint is hidden there too, so this is a
-        // no-op off filter.
-        for (var territory : territories.getFactionTerritoryByFactionId().values()) {
-            var transitionSeam = territory.transitionSeam();
-            if (transitionSeam.isHidden()) {
-                continue;
-            }
-            GL11.glLineWidth(territory.transitionSeamWidth());
-            GlColor.set(transitionSeam.color(), alphaMult * transitionSeam.alpha());
-            GlRuns.drawScaled(GL11.GL_LINES, territory.transitionSeams(), factor);
-        }
         for (var cell : territories.getStyledCellBySystemId().values()) {
             var outer = cell.outer();
             if (outer.isHidden()) {
@@ -129,8 +116,12 @@ public final class TerritoryRenderer {
             GlColor.set(outer.color(), alphaMult * outer.alpha());
             GlRuns.drawScaled(GL11.GL_LINES, cell.boundaryEdges(), factor);
         }
-        // Each border ring is a closed rounded loop, so it strokes as one continuous
-        // GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
+        // The national border in its own style, over the interior seams so the frontier dominates
+        // where they meet. The spotlit footprint's contested borders - the interior edges touching a
+        // hatched cell - stroke in this same style and pass, so a contested cell reads as a bounded
+        // territory; that run is empty off filter. Each frontier ring is a closed rounded loop, so it
+        // strokes as one continuous GL_LINE_LOOP, while the contested borders are disconnected
+        // GL_LINES on the raw cell edges.
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
             var border = territory.border();
             if (border.isHidden()) {
@@ -141,6 +132,7 @@ public final class TerritoryRenderer {
             for (var loop : territory.borderLoops()) {
                 GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
             }
+            GlRuns.drawScaled(GL11.GL_LINES, territory.contestedBorders(), factor);
         }
     }
 
