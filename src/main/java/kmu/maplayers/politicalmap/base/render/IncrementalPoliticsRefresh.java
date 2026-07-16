@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
-import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -80,11 +79,8 @@ final class IncrementalPoliticsRefresh {
                         + staleSystemIds.size());
                 return;
             }
-            // One frontier snapshot for the whole re-shape batch, matching the full
-            // build's read-once so an incremental re-shape lands the same pull-in.
-            var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
             for (var cellId : cellsToReshape) {
-                reshapeCellInPlace(territories, geometryCache, cellId, frontier);
+                reshapeCellInPlace(territories, geometryCache, cellId);
             }
             // Only the old and new owners' territories can have changed shape; every
             // other faction's rings trace unchanged cells, so they are left as-is.
@@ -92,7 +88,7 @@ final class IncrementalPoliticsRefresh {
                     DominantOwner.groupSystemIdsByFactionId(territories.getOwnerBySystemId());
             for (var factionId : affectedFactionIds) {
                 rebuildFactionTerritoryInPlace(territories, geometryCache, factionId,
-                        systemsByFaction.get(factionId), frontier);
+                        systemsByFaction.get(factionId));
             }
             // A flip can split or merge clusters (a lost system severs one, a gained
             // one bridges two), so re-fit every placement off the updated owners rather than
@@ -194,8 +190,7 @@ final class IncrementalPoliticsRefresh {
     private static void reshapeCellInPlace(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
-            String systemId,
-            FrontierSettings frontier) {
+            String systemId) {
         var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
         if (edges == null) {
             territories.getStyledCellBySystemId().remove(systemId);
@@ -203,9 +198,9 @@ final class IncrementalPoliticsRefresh {
         }
         var owner = territories.getOwnerBySystemId().get(systemId);
         var ownerFactionId = owner == null ? null : owner.factionId();
-        var shaped = CellShaper.shapeCell(systemId, edges, ownerFactionId,
+        var shaped = CellShaper.shapeCell(edges, ownerFactionId,
                 DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()),
-                PoliticalMapStyle.BORDER_INSET_DISTANCE, frontier);
+                PoliticalMapStyle.BORDER_INSET_DISTANCE);
         var styled = TerritoryBuilder.buildStyledCellForSystem(territories, systemId, shaped);
         if (styled == null) {
             territories.getStyledCellBySystemId().remove(systemId);
@@ -221,12 +216,11 @@ final class IncrementalPoliticsRefresh {
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
             String factionId,
-            List<String> memberSystemIds,
-            FrontierSettings frontier) {
+            List<String> memberSystemIds) {
         var territory = memberSystemIds == null || memberSystemIds.isEmpty()
                 ? null
                 : TerritoryBuilder.buildFactionTerritory(territories, geometryCache, factionId,
-                        memberSystemIds, frontier);
+                        memberSystemIds);
         if (territory == null) {
             territories.getFactionTerritoryByFactionId().remove(factionId);
         } else {

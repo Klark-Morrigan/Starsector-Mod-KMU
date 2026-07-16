@@ -18,7 +18,6 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
-import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -148,12 +147,9 @@ public final class TerritoryBuilder {
             // key. Cells consumed by the inset (fewer than three vertices left) drop out.
             var shapeStart = System.nanoTime();
             var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
-            // The frontier snapshot the whole shape pass reads: a factionless cell's edge
-            // facing an owned neighbour recedes to its keep-out pocket while the toggle is on.
-            var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
             var shapedCells = profiler.measure("politicalMap.shapeCells",
                     () -> CellShaper.shapeCells(geometryCache.getCellEdgesBySystemId(),
-                            groupKeyBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE, frontier));
+                            groupKeyBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE));
             for (var entry : shapedCells.entrySet()) {
                 var styled = buildStyledCellForSystem(territories, entry.getKey(), entry.getValue());
                 if (styled != null) {
@@ -168,7 +164,7 @@ public final class TerritoryBuilder {
             // chaining, smoothing, and tessellating every faction's outline is comparable
             // in cost to shaping the cells.
             profiler.measure("politicalMap.buildFactionTerritories",
-                    () -> buildAllFactionTerritories(territories, geometryCache, frontier));
+                    () -> buildAllFactionTerritories(territories, geometryCache));
 
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
                     + " styledCells=" + territories.getStyledCellBySystemId().size()
@@ -241,16 +237,14 @@ public final class TerritoryBuilder {
     // incremental refresh rebuilds one faction's entry without touching the rest.
     private static void buildAllFactionTerritories(
             PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache,
-            FrontierSettings frontier) {
+            PoliticalMapGeometryCache geometryCache) {
         for (var faction
                 : DominantOwner.groupSystemIdsByFactionId(territories.getOwnerBySystemId()).entrySet()) {
             var territory = buildFactionTerritory(
                     territories,
                     geometryCache,
                     faction.getKey(),
-                    faction.getValue(),
-                    frontier);
+                    faction.getValue());
             if (territory != null) {
                 territories.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
             }
@@ -269,8 +263,7 @@ public final class TerritoryBuilder {
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
             String factionId,
-            List<String> memberSystemIds,
-            FrontierSettings frontier) {
+            List<String> memberSystemIds) {
         // The grouping key here is a bloc id (a faction id under the faction view, or one of the
         // filter's synthetic spotlight keys), so its style and per-bloc adjustment come from the
         // same styling resolver a per-cell owner does. A desaturated bloc's fill and border swap
@@ -303,7 +296,7 @@ public final class TerritoryBuilder {
         // One trace for the whole territory: the national border's rings, and - for a spotlit
         // footprint - the per-state sub-region rings its fill splits into, so border and fill
         // offset under identical parameters and cannot drift apart.
-        var borderTrace = PoliticalBorderTrace.readFromLunaSettings(frontier);
+        var borderTrace = PoliticalBorderTrace.readFromLunaSettings();
         var insetRings = borderTrace.traceRings(
                 memberSystemIds,
                 geometryCache.getCellEdgesBySystemId(),

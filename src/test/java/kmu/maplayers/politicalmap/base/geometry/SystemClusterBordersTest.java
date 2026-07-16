@@ -17,9 +17,7 @@ import static org.assertj.core.api.Assertions.within;
  *  - a cell facing a present but unowned neighbour keeps that frontier edge as border,
  *  - a group with no geometry yields no rings,
  *  - an inset that swallows a cluster drops the ring rather than folding it over,
- *  - with the frontier enabled, an owned cell's open-frontier edge bulges outward toward
- *    the dead star and stops at the star's keep-out line, and two rivals sharing one dead
- *    neighbour each stop short of it without overlapping.
+ *  - a region naming a neighbour coincident keeps that shared edge on the raw cell border.
  *
  * <p>Cells here are hand-built squares rather than real Voronoi output, since the
  * border tracer only reads the adjacency graph and grouping keys - the geometry source is
@@ -30,10 +28,6 @@ final class SystemClusterBordersTest {
     private static final double BORDER_INSET = 2.0;
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
-    // The frontier feature off: no sites, no radius. Every open frontier then insets by the
-    // plain channel, so a cluster traces exactly as it did before the feature.
-    private static final FrontierSettings FRONTIER_OFF =
-            new FrontierSettings(Map.of(), 0.0, false);
     // No neighbour opted out of the channel: every boundary edge insets by it, the way a
     // trace of a whole cluster runs.
     private static final Set<String> NO_COINCIDENT_NEIGHBOURS = Set.of();
@@ -62,7 +56,7 @@ final class SystemClusterBordersTest {
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A", "B"), edges, owners,
                     NO_COINCIDENT_NEIGHBOURS,
-                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
+                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
             assertThat(rings.get(0).size()).isGreaterThanOrEqualTo(3);
@@ -81,7 +75,7 @@ final class SystemClusterBordersTest {
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
                     NO_COINCIDENT_NEIGHBOURS,
-                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
+                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
         }
@@ -101,7 +95,7 @@ final class SystemClusterBordersTest {
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
                     NO_COINCIDENT_NEIGHBOURS,
-                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
+                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
         }
@@ -110,7 +104,7 @@ final class SystemClusterBordersTest {
         void a_group_with_no_geometry_yields_no_rings() {
             var rings = SystemClusterBorders.traceBorderRings(List.of("missing"), Map.of(), Map.of(),
                     NO_COINCIDENT_NEIGHBOURS,
-                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
+                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).isEmpty();
         }
@@ -127,7 +121,7 @@ final class SystemClusterBordersTest {
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
                     NO_COINCIDENT_NEIGHBOURS,
-                    20.0, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
+                    20.0, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).isEmpty();
         }
@@ -171,65 +165,30 @@ final class SystemClusterBordersTest {
             return new TracedPair(
                     SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
                             aCoincidentNeighbours,
-                            BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF).get(0),
+                            BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT).get(0),
                     SystemClusterBorders.traceBorderRings(List.of("B"), edges, owners,
                             bCoincidentNeighbours,
-                            BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF).get(0));
+                            BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT).get(0));
         }
 
         @Test
-        void an_open_frontier_edge_bulges_out_to_the_star_keep_out_line_when_enabled() {
+        void an_open_frontier_edge_insets_inward_by_the_plain_channel() {
             // Owned A [0,0]..[100,100] faces a dead star B across its right edge (x = 100).
-            // The stars sit 100 apart, so the setback is dist/2 - r = 50 - 20 = 30. With the
-            // frontier on, that edge pushes outward toward B by the channel plus the setback
-            // (2 + 30 = 32), so the right border reaches x = 132 - r - channel = 18 short of
-            // B's star at x = 150, the keep-out line - while the other three insets stay
-            // inward by the plain channel.
+            // That open frontier takes the same inward channel every other boundary does, so
+            // the ring's right side lands at x = 98 and never reaches past the raw cell edge
+            // toward B - an owned cluster stops at the Voronoi midline like any other border.
             var edges = Map.of(
                     "A", List.of(
                             edge(0, 0, 100, 0, null), edge(100, 0, 100, 100, "B"),
                             edge(100, 100, 0, 100, null), edge(0, 100, 0, 0, null)));
             var owners = Map.of("A", "F");
-            var frontier = new FrontierSettings(
-                    Map.of("A", new double[] {50, 50}, "B", new double[] {150, 50}), 20.0, true);
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
                     NO_COINCIDENT_NEIGHBOURS,
-                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, frontier);
+                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
-            assertThat(maxXOf(rings.get(0))).isCloseTo(132.0, within(1e-6));
-        }
-
-        @Test
-        void two_rivals_sharing_a_dead_neighbour_each_stop_at_the_keep_out_without_overlapping() {
-            // A [0,0]..[100,100] (F) and C [200,0]..[300,100] (G) both border the dead star
-            // B in the middle, 100 from each. Tracing each faction alone, both push their
-            // facing edge outward toward B by 2 + 30 = 32: F's right border reaches x = 132,
-            // G's left border reaches x = 168, so a 36-wide unclaimed lens with B's star at
-            // x = 150 threads between them - the two never overlap.
-            var edges = Map.of(
-                    "A", List.of(
-                            edge(0, 0, 100, 0, null), edge(100, 0, 100, 100, "B"),
-                            edge(100, 100, 0, 100, null), edge(0, 100, 0, 0, null)),
-                    "C", List.of(
-                            edge(200, 0, 300, 0, null), edge(300, 0, 300, 100, null),
-                            edge(300, 100, 200, 100, null), edge(200, 100, 200, 0, "B")));
-            var owners = Map.of("A", "F", "C", "G");
-            var frontier = new FrontierSettings(Map.of(
-                    "A", new double[] {50, 50}, "B", new double[] {150, 50},
-                    "C", new double[] {250, 50}), 20.0, true);
-
-            var fRings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
-                    NO_COINCIDENT_NEIGHBOURS,
-                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, frontier);
-            var gRings = SystemClusterBorders.traceBorderRings(List.of("C"), edges, owners,
-                    NO_COINCIDENT_NEIGHBOURS,
-                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, frontier);
-
-            assertThat(maxXOf(fRings.get(0))).isCloseTo(132.0, within(1e-6));
-            assertThat(minXOf(gRings.get(0))).isCloseTo(168.0, within(1e-6));
-            assertThat(maxXOf(fRings.get(0))).isLessThan(minXOf(gRings.get(0)));
+            assertThat(maxXOf(rings.get(0))).isCloseTo(98.0, within(1e-6));
         }
     }
 

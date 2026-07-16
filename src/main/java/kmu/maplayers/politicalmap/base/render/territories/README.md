@@ -10,7 +10,7 @@ Part of Klark Morrigan's Utilities; see the
 ## Index
 
 - [Building: cells into territories](#building-cells-into-territories)
-- [Frontiers against empty space](#frontiers-against-empty-space)
+- [Borders against empty space](#borders-against-empty-space)
 - [The draw packets](#the-draw-packets)
 - [Spotlit footprint: split fill and contested borders](#spotlit-footprint-split-fill-and-contested-borders)
 - [Rendering](#rendering)
@@ -26,25 +26,20 @@ corners of those borders; `VertexRuns` flattens shaped cells into GL vertex runs
 per-faction build steps are the shared primitives an incremental re-shape reuses, so a full
 rebuild and a single-system refresh style a cell identically.
 
-## Frontiers against empty space
+## Borders against empty space
 
-A border edge is shaped by what sits across it. Against another organised entity
-(a rival faction or an alliance) the edge keeps the mutual midline plus its inward
-border channel, so two territories meet and push back evenly. Against *empty*
-space - an uncontrolled star with no owner, whether never-settled or decivilised -
-the edge is instead pushed outward past the midline toward that star and capped a
-fixed distance short of it, so the faction colour flows around the dead star and
-leaves it a pocket rather than cutting off at the halfway line. The owned fill's
-push-out and the factionless cell's own pulled-in outline both target that one
-keep-out line, so they abut without a gap or overlap.
+Every border edge is shaped the same way, whatever sits across it. Against another
+organised entity (a rival faction or an alliance) and against *empty* space alike -
+an uncontrolled star with no owner, whether never-settled or decivilised - the edge
+keeps the mutual midline plus its inward border channel. So a faction cuts off
+halfway to a dead star exactly as it does halfway to a rival, and the dead star's
+own cell draws its inset outline in the neutral style on the far side of that
+channel.
 
-Two player settings on the **Political map - visuals** tab drive it, both under
-Territory reach: *Uncontrolled systems give way to faction territory* toggles the
-whole behaviour (off reverts every empty-facing edge to the midline cut), and
-*Frontier keep-out* sets how close territory may reach to the star, sizing the
-pocket. When two systems sit closer than twice the keep-out radius the push clamps
-to the midline, so colonies never overlap and a star squeezed between two rivals
-keeps an unclaimed lens between them.
+The three player settings under Territory reach on the **Political map - visuals**
+tab - *Uncontrolled systems give way to faction territory*, *Frontier keep-out*,
+and *Frontier max reach* - describe an asymmetric treatment of empty space that the
+draw does not yet apply, so changing them does not move a border.
 
 ## The draw packets
 

@@ -7,7 +7,6 @@ import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
-import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -68,10 +67,6 @@ public final class DebugBorderTracingBuilder {
         var miterLimit = KmuLunaSettings.getPoliticalMapBorderMiterLimit();
         var isSandingOn = KmuLunaSettings.shouldSandBorderSpikes();
         var isRoundingOn = KmuLunaSettings.shouldRoundBorderCorners();
-        // The same frontier snapshot the production build reads, so an owned cluster's
-        // border reaches around a dead star in the overlay exactly as on the live map.
-        // Read once here and shared with the factionless outlines below.
-        var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
         var baseLoops = new ArrayList<float[]>();
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
@@ -86,8 +81,7 @@ public final class DebugBorderTracingBuilder {
                     Set.of(),
                     PoliticalMapStyle.BORDER_INSET_DISTANCE,
                     weldTolerance,
-                    miterLimit,
-                    frontier);
+                    miterLimit);
             if (insetRings.isEmpty()) {
                 continue;
             }
@@ -111,7 +105,6 @@ public final class DebugBorderTracingBuilder {
                 groupKeyBySystemId,
                 decivilisedSystemIds,
                 isRoundingOn,
-                frontier,
                 baseLoops,
                 roundedLoops);
         return new PoliticalMapDebugTerritories(baseLoops, despikedLoops, roundedLoops);
@@ -128,7 +121,6 @@ public final class DebugBorderTracingBuilder {
             Map<String, String> groupKeyBySystemId,
             Set<String> decivilisedSystemIds,
             boolean isRoundingOn,
-            FrontierSettings frontier,
             List<float[]> baseLoops,
             List<float[]> roundedLoops) {
         var decivilisedStyle = RenderStyleReader.readDecivilisedStyle();
@@ -144,12 +136,10 @@ public final class DebugBorderTracingBuilder {
                 continue;
             }
             var shaped = CellShaper.shapeCell(
-                    entry.getKey(),
                     entry.getValue(),
                     null,
                     groupKeyBySystemId,
-                    PoliticalMapStyle.BORDER_INSET_DISTANCE,
-                    frontier);
+                    PoliticalMapStyle.BORDER_INSET_DISTANCE);
             if (shaped.fillPolygon().isEmpty()) {
                 continue;
             }

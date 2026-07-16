@@ -6,7 +6,6 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -83,10 +82,6 @@ public final class ClusterAnchorsBuilder {
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesBySystemId(),
                 groupKeyBySystemId);
-        // The anchor search traces the same cluster border the fills stroke, so it reads the
-        // pass's frontier snapshot too: an open frontier pushes the ring out toward its dead
-        // star, and the anchor must clip against that pushed ring to stay on the fill.
-        var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
         // The desaturation palette is handed in already resolved - off the production build's
         // drawables, or by the debug path from the same profile seam - so a desaturated bloc's
         // name matches its recolored fill and border exactly without re-reading the profile here.
@@ -103,7 +98,7 @@ public final class ClusterAnchorsBuilder {
                 geometryCache.getSiteBySystemId(),
                 ownerBySystemId,
                 groupKeyBySystemId,
-                LabelAnchorSpecification.readFromLunaSettings(frontier),
+                LabelAnchorSpecification.readFromLunaSettings(),
                 blocId -> styleDecisionByBlocId.apply(blocId).usesIndependentStyle(),
                 blocId -> styleDecisionByBlocId.apply(blocId).adjustment(),
                 desaturationPalette,

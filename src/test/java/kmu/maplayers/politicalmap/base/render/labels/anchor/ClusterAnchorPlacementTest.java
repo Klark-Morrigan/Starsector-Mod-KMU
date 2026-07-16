@@ -7,7 +7,6 @@ import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
-import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.AnchorDiagnostics;
@@ -67,10 +66,6 @@ final class ClusterAnchorPlacementTest {
         private static final double CELL_SIDE = 1000.0;
         private static final double WELD_TOLERANCE = 1.0;
         private static final double MITER_LIMIT = 4.0;
-        // The frontier feature off: no sites, no radius, so the border trace insets by the
-        // plain channel exactly as before the feature - these anchor fixtures pin that geometry.
-        private static final FrontierSettings FRONTIER_OFF =
-                new FrontierSettings(Map.of(), 0.0, false);
 
         // The faction view's classification for these fixtures: the fixture owner "F" is a
         // core faction, so no bloc is drawn in the independent style and every label
@@ -901,7 +896,7 @@ final class ClusterAnchorPlacementTest {
                 boolean showRejectedAxis, boolean showUnbiasedAxis, double nameMinFontSize,
                 double nameMaxFontSize, int nameMaxLines, double nameLineSpacing) {
             return new LabelAnchorSpecification(
-                    new AnchorSearch(new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT, FRONTIER_OFF),
+                    new AnchorSearch(new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT),
                             endInsetDistance, iconClearance, directionCount, offsetCount),
                     new LeanScoring(verticalPenaltyStrength, verticalPenaltyExponent, 0.0),
                     new AnchorDiagnostics(showRejectedAxis, showUnbiasedAxis),
@@ -935,7 +930,7 @@ final class ClusterAnchorPlacementTest {
                 FactionPaletteChoice factionOuterColor, FactionPaletteChoice independentOuterColor,
                 double factionNameOpacity, double independentNameOpacity) {
             return new LabelAnchorSpecification(
-                    new AnchorSearch(new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT, FRONTIER_OFF),
+                    new AnchorSearch(new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT),
                             0.0, 0.0, 3, 1),
                     new LeanScoring(0.0, 2.0, 0.0),
                     new AnchorDiagnostics(false, false),

@@ -35,15 +35,6 @@ import java.util.Set;
  * no overlap. A caller tracing a whole cluster names none, and every boundary edge then
  * takes the uniform channel.
  *
- * <p>An open-frontier edge - the cluster facing an unheld dead or decivilised star -
- * is the other exception to the uniform inward channel: while the frontier toggle is on
- * it pushes <em>outward</em> past the raw edge toward that star by the channel plus the
- * {@link FrontierSetback} for its spacing, so the colour reaches around the star and
- * stops at the star's keep-out line rather than cutting off at the midline. That push
- * mirrors the facing empty cell's own pull-in ({@link CellShaper}) - the same setback,
- * only the sign flipped - so fill and empty pocket land on one shared line. It is inert
- * on organised boundaries and while the toggle is off, so those insets stay unchanged.
- *
  * <p>Pure geometry over the adjacency graph and the resolved owners, using the same
  * {@link EdgeClassifier} rule the fills merge on, so a system's edge is a border in
  * exactly the cases its fill leaves a channel. Kept free of GL and of styling: it
@@ -87,9 +78,6 @@ public final class SystemClusterBorders {
      *                        multiple of {@code borderInset} is bevelled instead of
      *                        pointed, so a sharp cluster corner never shoots an
      *                        inward loop
-     * @param frontier        the pass's frontier snapshot: while enabled, an open-frontier
-     *                        edge pushes outward toward its unheld star by the channel plus
-     *                        its setback instead of insetting inward by the channel
      * @return one inset (un-rounded) ring per cluster and per enclave, in world
      *         coordinates; empty when the group holds no borderable geometry
      */
@@ -100,26 +88,24 @@ public final class SystemClusterBorders {
             Set<String> coincidentNeighbourSystemIds,
             double borderInset,
             double vertexWeldTolerance,
-            double miterSpikeLimit,
-            FrontierSettings frontier) {
+            double miterSpikeLimit) {
         var boundary = collectBoundarySegments(
                 groupSystemIds, edgesBySystemId,
                 groupKeyBySystemId,
                 coincidentNeighbourSystemIds,
-                borderInset,
-                frontier);
+                borderInset);
         var rings = new ArrayList<List<double[]>>();
         for (var ring : EdgeRings.chainIntoRingsWithEdgeValues(
                 boundary.segments(),
                 boundary.edgeDistances(),
                 vertexWeldTolerance)) {
-            // Offset each ring edge by its own signed distance: organised boundaries inward
-            // by the channel, open frontiers outward toward their star. The per-edge miter
-            // path is used rather than the half-plane clip because only it can carry an edge
-            // outward past the outline, the reach the frontier push needs.
+            // Offset each ring edge by its own distance: the channel for an ordinary
+            // boundary, nothing across a coincident neighbour. The per-edge miter path is
+            // used rather than a uniform inset because those two distances differ along one
+            // ring, and the miter is what carries the difference through each corner.
             var inset = PolygonOffsets.insetPolygonByMiter(
                     ring.corners(), ring.edgeValues(), miterSpikeLimit);
-            if (!isCollapsed(ring.corners(), inset, hasOutwardPush(ring.edgeValues()))) {
+            if (!isCollapsed(ring.corners(), inset)) {
                 rings.add(inset);
             }
         }
@@ -128,7 +114,7 @@ public final class SystemClusterBorders {
 
     // Gathers, across every system in the group, the edges that face outside the
     // cluster (a different key, no key, or the map frontier) as directed segments,
-    // each paired with the signed distance its ring edge later offsets by. Same-key
+    // each paired with the distance its ring edge later insets by. Same-key
     // seams are dropped, so the surviving segments trace only the cluster's outer
     // boundary and its enclaves.
     private static BoundarySegments collectBoundarySegments(
@@ -136,8 +122,7 @@ public final class SystemClusterBorders {
             Map<String, List<CellEdge>> edgesBySystemId,
             Map<String, String> groupKeyBySystemId,
             Set<String> coincidentNeighbourSystemIds,
-            double borderInset,
-            FrontierSettings frontier) {
+            double borderInset) {
         var segments = new ArrayList<Segment>();
         var distances = new ArrayList<Double>();
         for (var systemId : groupSystemIds) {
@@ -146,7 +131,6 @@ public final class SystemClusterBorders {
                 continue;
             }
             var ownGroupKey = groupKeyBySystemId.get(systemId);
-            var ownSite = frontier.siteBySystemId().get(systemId);
             for (var edge : edges) {
                 var edgeClass = EdgeClassifier.classifyAcross(
                         edge,
@@ -156,32 +140,19 @@ public final class SystemClusterBorders {
                     continue;
                 }
                 segments.add(new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
-                distances.add(computeSignedOffset(
-                        edge,
-                        ownSite,
-                        edgeClass,
-                        coincidentNeighbourSystemIds,
-                        borderInset,
-                        frontier));
+                distances.add(computeEdgeInset(edge, coincidentNeighbourSystemIds, borderInset));
             }
         }
         return new BoundarySegments(segments, toDoubleArray(distances));
     }
 
-    // The signed miter offset one boundary segment receives: nothing (zero) across a
-    // coincident neighbour, the border channel inward (positive) for an organised boundary
-    // or the map bound, and the channel plus the frontier setback outward (negative, toward
-    // the dead star) for the owned side of an open frontier. The outward push carries the
-    // owned colour around an unheld star and stops it at the star's keep-out line; the
-    // setback is the exact one the facing empty cell pulls in by, only the sign flipped, so
-    // owned fill and empty pocket coincide.
-    private static double computeSignedOffset(
+    // The inward miter inset one boundary segment receives: nothing (zero) across a
+    // coincident neighbour, the border channel for every other boundary edge - an organised
+    // boundary, unowned space, or the map bound alike.
+    private static double computeEdgeInset(
             CellEdge edge,
-            double[] ownSite,
-            EdgeClass edgeClass,
             Set<String> coincidentNeighbourSystemIds,
-            double borderInset,
-            FrontierSettings frontier) {
+            double borderInset) {
         // A coincident neighbour's edge stays on the raw cell border, so the region traced
         // from the other side lands on the same line and the two abut with no channel
         // between them. The null guard covers the map-reach bound (no neighbour across it),
@@ -190,44 +161,7 @@ public final class SystemClusterBorders {
                 && coincidentNeighbourSystemIds.contains(edge.neighbourSystemId())) {
             return 0;
         }
-        if (!isOwnedFrontierPushOut(edge, ownSite, edgeClass, frontier)) {
-            return borderInset;
-        }
-        var neighbourSite = frontier.siteBySystemId().get(edge.neighbourSystemId());
-        var setback = FrontierSetback.computeSetback(
-                ownSite,
-                neighbourSite,
-                frontier.keepOutRadius());
-        return -(borderInset + setback);
-    }
-
-    // Whether this segment is the owned side of an open frontier to push outward: the
-    // toggle on, the edge an open frontier (an owned cell facing an unheld star), and both
-    // sites known so the setback can be measured. Every group system here is owned, so an
-    // open-frontier edge is always the owned side; a missing site (a stale adjacency edge)
-    // falls back to the plain inward channel rather than offsetting with garbage.
-    private static boolean isOwnedFrontierPushOut(
-            CellEdge edge,
-            double[] ownSite,
-            EdgeClass edgeClass,
-            FrontierSettings frontier) {
-        return frontier.isEnabled()
-                && edgeClass == EdgeClass.OPEN_FRONTIER
-                && ownSite != null
-                && frontier.siteBySystemId().get(edge.neighbourSystemId()) != null;
-    }
-
-    // Whether any edge pushes outward (a negative signed offset) - an open frontier
-    // reaching around a dead star. When it does, the ring may legitimately grow, so the
-    // collapse guard's grew-check (which assumes a pure inward inset always shrinks an
-    // outer ring) is waived for it.
-    private static boolean hasOutwardPush(double[] edgeDistances) {
-        for (var distance : edgeDistances) {
-            if (distance < 0) {
-                return true;
-            }
-        }
-        return false;
+        return borderInset;
     }
 
     // Copies a distance list into a primitive array, so the per-edge distances hand to the
@@ -242,19 +176,15 @@ public final class SystemClusterBorders {
 
     // Whether the inset folded the ring over rather than cleanly offsetting it:
     // fewer than three corners left, a vanishing or sign-flipped area, or - for an
-    // outer ring with no outward push - an area that grew. A miter offset past a convex
-    // ring's own width does not invert the winding; it re-expands the corners into a
-    // larger ring of the same winding, so a grown outer ring is the tell-tale of
-    // over-inset. An outer ring (positive, counter-clockwise) must shrink under an inward
-    // inset, while a hole (negative, clockwise) legitimately grows as its border backs
-    // into the surrounding solid - so the grew-check is applied only to outer rings. When
-    // {@code mayGrow}, a frontier edge deliberately pushed the outer ring outward, so a
-    // grown ring is expected rather than a fold and the grew-check is waived; the
-    // winding-flip and vanishing-area guards, which still catch a true fold, remain.
+    // outer ring - an area that grew. A miter offset past a convex ring's own width does
+    // not invert the winding; it re-expands the corners into a larger ring of the same
+    // winding, so a grown outer ring is the tell-tale of over-inset. An outer ring
+    // (positive, counter-clockwise) must shrink under an inward inset, while a hole
+    // (negative, clockwise) legitimately grows as its border backs into the surrounding
+    // solid - so the grew-check is applied only to outer rings.
     private static boolean isCollapsed(
             List<double[]> rawRing,
-            List<double[]> insetRing,
-            boolean mayGrow) {
+            List<double[]> insetRing) {
         if (insetRing.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
             return true;
         }
@@ -264,12 +194,12 @@ public final class SystemClusterBorders {
                 || Math.signum(rawArea) != Math.signum(insetArea)) {
             return true;
         }
-        return !mayGrow && rawArea > 0 && insetArea > rawArea;
+        return rawArea > 0 && insetArea > rawArea;
     }
 
-    // One faction group's boundary segments paired with the signed miter offset each
-    // receives, kept parallel so the offset survives chaining onto the ring edge it
-    // forms (an organised boundary insets inward, an open frontier pushes outward).
+    // One faction group's boundary segments paired with the miter inset each receives,
+    // kept parallel so the distance survives chaining onto the ring edge it forms (the
+    // channel for an ordinary boundary, nothing across a coincident neighbour).
     private record BoundarySegments(List<Segment> segments, double[] edgeDistances) {
     }
 }

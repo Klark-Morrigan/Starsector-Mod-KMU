@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
-import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.settings.KmuLunaSettings;
@@ -22,22 +21,16 @@ import java.util.Set;
  *                        welded into one when chaining the boundary
  * @param miterSpikeLimit the multiple of the border inset past which a sharp
  *                        corner's inset miter is bevelled instead of pointed
- * @param frontier        the pass's frontier snapshot, carried into the trace so an open
- *                        frontier reaches around its unheld star exactly as the fills do
  */
 public record PoliticalBorderTrace(
         double weldTolerance,
-        double miterSpikeLimit,
-        FrontierSettings frontier) {
+        double miterSpikeLimit) {
 
-    // Reads the live trace parameters from the Dev "Border tracing" section, pairing them
-    // with the pass's frontier snapshot so the trace offsets under the same snapshot the
-    // cell shaping already read once.
-    public static PoliticalBorderTrace readFromLunaSettings(FrontierSettings frontier) {
+    // Reads the live trace parameters from the Dev "Border tracing" section.
+    public static PoliticalBorderTrace readFromLunaSettings() {
         return new PoliticalBorderTrace(
                 KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
-                KmuLunaSettings.getPoliticalMapBorderMiterLimit(),
-                frontier);
+                KmuLunaSettings.getPoliticalMapBorderMiterLimit());
     }
 
     // Traces one cluster's inset border rings with these parameters and the fixed
@@ -53,7 +46,7 @@ public record PoliticalBorderTrace(
     // the boundary edge shared with any of them insets by nothing, so a region traced from
     // the far side of that edge lands on the same line and the two abut exactly. This is how
     // one same-key body is carved into regions that meet without a channel opening between
-    // them; the channel and the frontier push still apply to every other boundary edge.
+    // them; the channel still applies to every other boundary edge.
     public List<List<double[]>> traceRings(
             Collection<String> memberSystemIds,
             Map<String, List<CellEdge>> edgesBySystemId,
@@ -66,7 +59,6 @@ public record PoliticalBorderTrace(
                 coincidentNeighbourSystemIds,
                 PoliticalMapStyle.BORDER_INSET_DISTANCE,
                 weldTolerance,
-                miterSpikeLimit,
-                frontier);
+                miterSpikeLimit);
     }
 }

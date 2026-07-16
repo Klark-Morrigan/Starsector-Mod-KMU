@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor.specifications;
 
 import kmlib.starsector.ui.label.NameFitSpecification;
 
-import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.settings.KmuLunaSettings;
@@ -41,12 +40,11 @@ public record LabelAnchorSpecification(
     // name-fit knobs from the visuals "Faction names" section, and per owner group the
     // outer-border colour choice the name inherits (the same the national border reads)
     // beside that group's name opacity. The border trace comes from the same source the
-    // national border renders with, carrying the pass's frontier snapshot, so the anchor
-    // clips against the frontier-pushed rings the player sees rather than a plain-inset trace.
-    public static LabelAnchorSpecification readFromLunaSettings(FrontierSettings frontier) {
+    // national border renders with, so the anchor clips against the rings the player sees.
+    public static LabelAnchorSpecification readFromLunaSettings() {
         return new LabelAnchorSpecification(
                 new AnchorSearch(
-                        PoliticalBorderTrace.readFromLunaSettings(frontier),
+                        PoliticalBorderTrace.readFromLunaSettings(),
                         KmuLunaSettings.getPoliticalMapAnchorEndInsetMultiple()
                                 * PoliticalMapStyle.BORDER_INSET_DISTANCE,
                         KmuLunaSettings.getPoliticalMapAnchorIconClearance(),
