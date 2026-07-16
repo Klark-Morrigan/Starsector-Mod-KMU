@@ -5,6 +5,7 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
@@ -38,6 +39,11 @@ import static org.mockito.Mockito.mock;
  * theme, whose global tier and four same-typed category bundles a swap would not otherwise catch,
  * the view and grouping the incremental re-shape classifies against, and the filter snapshot it
  * recedes by).
+ *
+ * <p>Also pins the two invariants the cursor read leans on, since a break in either is invisible
+ * until a hover lands on the wrong cell: that a cell's draw record and the shape it is hit-tested
+ * against are written and dropped together, and that the cluster index tracks ownership through
+ * the splits and merges a single flip can cause.
  */
 final class PoliticalMapTerritoriesTest {
 
@@ -159,6 +165,180 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getRecedeAdjustment()).isSameAs(recedeAdjustment);
             assertThat(territories.getContestedSystemIds()).isSameAs(contested);
         }
+    }
+
+    @Nested
+    class PutStyledCell {
+
+        @Test
+        void putStyledCellRecordsTheDrawRecordAndItsShapeUnderTheSameSystem() {
+            var territories = drawablesWith(Map.of(), Map.of());
+            var styledCell = anyStyledCell();
+            var fillPolygon = squarePolygon();
+
+            territories.putStyledCell("system", styledCell, fillPolygon);
+
+            assertThat(territories.getStyledCellBySystemId()).containsOnlyKeys("system");
+            assertThat(territories.getStyledCellBySystemId().get("system")).isSameAs(styledCell);
+            assertThat(territories.getFillPolygonBySystemId()).containsOnlyKeys("system");
+            assertThat(territories.getFillPolygonBySystemId().get("system")).isSameAs(fillPolygon);
+        }
+
+        @Test
+        void putStyledCellReplacesBothHalvesWhenACellIsReshaped() {
+            // The drift the paired write exists to prevent: a re-shaped cell must not keep
+            // answering the cursor with the extent it had before it was re-shaped.
+            var territories = drawablesWith(Map.of(), Map.of());
+            territories.putStyledCell("system", anyStyledCell(), squarePolygon());
+            var reshapedCell = anyStyledCell();
+            var reshapedPolygon = trianglePolygon();
+
+            territories.putStyledCell("system", reshapedCell, reshapedPolygon);
+
+            assertThat(territories.getStyledCellBySystemId().get("system")).isSameAs(reshapedCell);
+            assertThat(territories.getFillPolygonBySystemId().get("system"))
+                    .isSameAs(reshapedPolygon);
+        }
+    }
+
+    @Nested
+    class RemoveStyledCell {
+
+        @Test
+        void removeStyledCellDropsTheDrawRecordAndItsShapeTogether() {
+            // A cell that draws nothing can be hovered no more than it can be seen, so the
+            // shape must go with the draw record rather than linger as a phantom hit region.
+            var territories = drawablesWith(Map.of(), Map.of());
+            territories.putStyledCell("system", anyStyledCell(), squarePolygon());
+
+            territories.removeStyledCell("system");
+
+            assertThat(territories.getStyledCellBySystemId()).isEmpty();
+            assertThat(territories.getFillPolygonBySystemId()).isEmpty();
+        }
+
+        @Test
+        void removeStyledCellLeavesEveryOtherCellStanding() {
+            var territories = drawablesWith(Map.of(), Map.of());
+            territories.putStyledCell("dropped", anyStyledCell(), squarePolygon());
+            territories.putStyledCell("kept", anyStyledCell(), trianglePolygon());
+
+            territories.removeStyledCell("dropped");
+
+            assertThat(territories.getStyledCellBySystemId()).containsOnlyKeys("kept");
+            assertThat(territories.getFillPolygonBySystemId()).containsOnlyKeys("kept");
+        }
+    }
+
+    @Nested
+    class ReindexClusters {
+
+        @Test
+        void reindexClustersResolvesASystemToItsWholeContiguousTerritory() {
+            var territories = ownedBy(Map.of("A", "F", "B", "F"));
+
+            territories.reindexClusters(Map.of(
+                    "A", List.of(edgeTo("B")),
+                    "B", List.of(edgeTo("A"))));
+
+            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
+                    .containsExactlyInAnyOrder("A", "B");
+        }
+
+        @Test
+        void reindexClustersExcludesADifferentlyOwnedNeighbour() {
+            var territories = ownedBy(Map.of("A", "F", "B", "RIVAL"));
+
+            territories.reindexClusters(Map.of(
+                    "A", List.of(edgeTo("B")),
+                    "B", List.of(edgeTo("A"))));
+
+            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
+                    .containsExactly("A");
+        }
+
+        @Test
+        void reindexClustersSeversOneTerritoryInTwoWhenTheBridgeSystemFlips() {
+            // Why the index is re-derived rather than patched: B is the only thing joining A to
+            // C, so B changing hands splits one territory into two pockets - a change no edit of
+            // the old index would find, since neither A nor C was itself touched.
+            var edges = Map.of(
+                    "A", List.of(edgeTo("B")),
+                    "B", List.of(edgeTo("A"), edgeTo("C")),
+                    "C", List.of(edgeTo("B")));
+            var territories = ownedBy(Map.of("A", "F", "B", "F", "C", "F"));
+            territories.reindexClusters(edges);
+            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
+                    .containsExactlyInAnyOrder("A", "B", "C");
+
+            territories.getOwnerBySystemId().put("B", ownerOf("RIVAL"));
+            territories.reindexClusters(edges);
+
+            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
+                    .containsExactly("A");
+            assertThat(territories.getClusterIndex().findClusterMembersOf("C"))
+                    .containsExactly("C");
+        }
+
+        @Test
+        void reindexClustersBridgesTwoTerritoriesIntoOneWhenTheGapSystemIsGained() {
+            // The mirror of the sever: B joining F merges what were two lone pockets.
+            var edges = Map.of(
+                    "A", List.of(edgeTo("B")),
+                    "B", List.of(edgeTo("A"), edgeTo("C")),
+                    "C", List.of(edgeTo("B")));
+            var territories = ownedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
+            territories.reindexClusters(edges);
+
+            territories.getOwnerBySystemId().put("B", ownerOf("F"));
+            territories.reindexClusters(edges);
+
+            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
+                    .containsExactlyInAnyOrder("A", "B", "C");
+        }
+
+        @Test
+        void reindexClustersCarriesNoClusterForAnUnownedSystem() {
+            var territories = ownedBy(Map.of("A", "F"));
+
+            territories.reindexClusters(Map.of(
+                    "A", List.of(edgeTo("UNOWNED")),
+                    "UNOWNED", List.of(edgeTo("A"))));
+
+            assertThat(territories.getClusterIndex().findClusterMembersOf("UNOWNED")).isEmpty();
+        }
+    }
+
+    // A territories holding the given owners, the one input the cluster index is derived from;
+    // every other slot is an inert placeholder.
+    private static PoliticalMapTerritories ownedBy(Map<String, String> factionIdBySystemId) {
+        var territories = drawablesWith(Map.of(), Map.of());
+        for (var entry : factionIdBySystemId.entrySet()) {
+            territories.getOwnerBySystemId().put(entry.getKey(), ownerOf(entry.getValue()));
+        }
+        return territories;
+    }
+
+    // Clustering keys off the faction id alone, so the palette shades are inert here.
+    private static DominantOwner ownerOf(String factionId) {
+        return new DominantOwner(factionId, Color.GRAY, Color.GRAY);
+    }
+
+    // One cell edge bordering the given neighbour. Clustering reads only the adjacency tag, so
+    // the segment is left at the origin.
+    private static CellEdge edgeTo(String neighbourSystemId) {
+        return new CellEdge(0, 0, 0, 0, neighbourSystemId);
+    }
+
+    // Two distinct fill shapes, so a test that swaps one for the other is caught by identity.
+    // Nothing here reads the geometry, only which instance is held against a system.
+    private static List<double[]> squarePolygon() {
+        return List.of(new double[] {0, 0}, new double[] {1, 0}, new double[] {1, 1},
+                new double[] {0, 1});
+    }
+
+    private static List<double[]> trianglePolygon() {
+        return List.of(new double[] {0, 0}, new double[] {2, 0}, new double[] {0, 2});
     }
 
     // A territories whose only varying inputs are the two draw lists; the retained inputs
