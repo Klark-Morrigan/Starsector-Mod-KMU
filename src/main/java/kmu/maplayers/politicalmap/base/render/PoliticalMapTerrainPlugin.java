@@ -17,9 +17,10 @@ import java.util.EnumSet;
  *
  * <p>This class is only the terrain adapter: it satisfies Starsector's terrain contract and, each
  * frame the map is open, asks its {@link PoliticalMapCache} to bring the cached draw lists up to
- * date and hands them to its {@link PoliticalMapOverlayRenderer} to paint. All the real work -
- * keeping the draw lists fresh with the least work per frame, and composing the overlay layers -
- * lives in those two collaborators.
+ * date, has its {@link PoliticalMapHoverPublisher} resolve what the cursor is over, and hands the
+ * draw lists to its {@link PoliticalMapOverlayRenderer} to paint. All the real work - keeping the
+ * draw lists fresh with the least work per frame, reading the cursor, and composing the overlay
+ * layers - lives in those three collaborators.
  *
  * <p>Terrain is the surface because the sector map renders terrain through {@code renderOnMap} -
  * the same hook the vanilla nebulae draw with. A custom campaign entity has no map-render hook, so
@@ -27,7 +28,7 @@ import java.util.EnumSet;
  * {@code renderOnMapAbove}) keeps the territory beneath system and constellation names, matching
  * its role as a quiet background layer.
  *
- * <p>The two collaborators are {@code transient}: they hold record types XStream cannot serialise
+ * <p>The three collaborators are {@code transient}: they hold record types XStream cannot serialise
  * and are rebuilt each session, so they must never enter the save. A save-restored plugin comes
  * back with them null - XStream skips transient fields and runs no field initialisers - so they
  * are created lazily in {@link #renderOnMap} rather than in a field initialiser.
@@ -45,11 +46,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
             EnumSet.noneOf(CampaignEngineLayers.class);
 
-    // The freshness cache and the overlay compositor the plugin delegates to. Transient: they hold
-    // record types XStream cannot serialise and are derived each session, so they stay out of the
-    // save. Null until the first render this session (and after a save restore), then created lazily.
+    // The freshness cache, the cursor read, and the overlay compositor the plugin delegates to.
+    // Transient: they hold record types XStream cannot serialise and are derived each session, so
+    // they stay out of the save. Null until the first render this session (and after a save
+    // restore), then created lazily.
     private transient PoliticalMapCache cache;
     private transient PoliticalMapOverlayRenderer overlayRenderer;
+    private transient PoliticalMapHoverPublisher hoverPublisher;
 
     @Override
     public EnumSet<CampaignEngineLayers> getActiveLayers() {
@@ -90,7 +93,15 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         if (overlayRenderer == null) {
             overlayRenderer = new PoliticalMapOverlayRenderer();
         }
+        if (hoverPublisher == null) {
+            hoverPublisher = new PoliticalMapHoverPublisher();
+        }
         cache.refresh(view);
+        // The cursor read sits between the refresh and the draw: after, so it tests against the
+        // shapes this frame actually paints, and before, so the highlight layers already have the
+        // frame's answer when they draw. It is the one point in the frame with both the live GL
+        // matrices it needs and the current draw lists.
+        hoverPublisher.publishHoverFrom(cache, factor);
         overlayRenderer.renderOnMap(cache, factor, alphaMult);
     }
 }

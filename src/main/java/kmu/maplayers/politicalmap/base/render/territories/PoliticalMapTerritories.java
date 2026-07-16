@@ -4,6 +4,9 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.geometry.CellEdge;
+import kmu.maplayers.politicalmap.base.geometry.SystemClusterIndex;
+import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
@@ -14,6 +17,7 @@ import kmu.maplayers.politicalmap.base.render.style.RenderStyle;
 import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,6 +50,10 @@ public final class PoliticalMapTerritories {
     // fresh build fills them and no caller ever supplies them pre-populated.
     private final Map<String, StyledCell> styledCellBySystemId = new LinkedHashMap<>();
     private final Map<String, FactionTerritory> factionTerritoryByFactionId = new LinkedHashMap<>();
+    // Each drawn cell's shaped fill polygon, the shape the cursor is tested against. Written only
+    // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
+    // hover is exactly what the frame painted.
+    private final Map<String, List<double[]>> fillPolygonBySystemId = new LinkedHashMap<>();
     // Retained derivation inputs. The owner map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
     private final Map<String, DominantOwner> ownerBySystemId;
@@ -56,6 +64,10 @@ public final class PoliticalMapTerritories {
     private final MapStyling styling;
     private final ViewGrouping viewGrouping;
     private final FilterSnapshot filter;
+    // Which contiguous territory each system sits in, re-derived by reindexClusters whenever the
+    // owner map changes. Seeded empty so a build that never indexes (and the empty placeholder)
+    // still answers a lookup rather than tripping over a null.
+    private SystemClusterIndex clusterIndex = SystemClusterIndex.indexClusters(List.of());
 
     public PoliticalMapTerritories(
             Map<String, DominantOwner> ownerBySystemId,
@@ -97,6 +109,67 @@ public final class PoliticalMapTerritories {
 
     public Map<String, StyledCell> getStyledCellBySystemId() {
         return styledCellBySystemId;
+    }
+
+    /**
+     * Records one system's draw record together with the shape it was built from, the pair the
+     * cursor read depends on staying aligned.
+     *
+     * <p>The write path for both maps, rather than each caller putting into them separately: a
+     * cell that draws and a cell that answers a hover must be the same set, and pairing the two
+     * writes here is what makes that true by construction instead of by two call sites
+     * remembering to agree.
+     *
+     * @param systemId    the system whose cell this is
+     * @param styledCell  its draw record
+     * @param fillPolygon the shaped fill it was built from - the cell's painted extent, with the
+     *                    border inset, frontier setback, and keep-out clipping already applied
+     */
+    public void putStyledCell(String systemId, StyledCell styledCell, List<double[]> fillPolygon) {
+        styledCellBySystemId.put(systemId, styledCell);
+        fillPolygonBySystemId.put(systemId, fillPolygon);
+    }
+
+    /**
+     * Drops one system's cell entirely - it draws nothing, so it can be hovered over no more than
+     * it can be seen.
+     *
+     * @param systemId the system whose cell no longer draws
+     */
+    public void removeStyledCell(String systemId) {
+        styledCellBySystemId.remove(systemId);
+        fillPolygonBySystemId.remove(systemId);
+    }
+
+    /**
+     * @return each drawn cell's painted extent as {x, y} vertex pairs in world coordinates, the
+     *         geometry a cursor position is resolved against
+     */
+    public Map<String, List<double[]>> getFillPolygonBySystemId() {
+        return fillPolygonBySystemId;
+    }
+
+    /**
+     * @return which contiguous territory each system belongs to, so a hovered cell resolves to the
+     *         whole cluster around it - the same clusters that carry one name apiece
+     */
+    public SystemClusterIndex getClusterIndex() {
+        return clusterIndex;
+    }
+
+    /**
+     * Re-derives the cluster index from the current owners.
+     *
+     * <p>Clusters are a function of ownership, so any pass that edits the owner map re-runs this:
+     * a single system flipping can sever one territory in two or bridge two into one, which no
+     * amount of patching the old index would catch.
+     *
+     * @param cellEdgesBySystemId the adjacency the clusters are walked over
+     */
+    public void reindexClusters(Map<String, List<CellEdge>> cellEdgesBySystemId) {
+        clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
+                cellEdgesBySystemId,
+                DominantOwner.mapFactionIdBySystemId(ownerBySystemId)));
     }
 
     public Map<String, FactionTerritory> getFactionTerritoryByFactionId() {

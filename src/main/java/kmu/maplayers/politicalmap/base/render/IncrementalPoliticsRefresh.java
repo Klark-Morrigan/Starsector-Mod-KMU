@@ -82,6 +82,10 @@ final class IncrementalPoliticsRefresh {
             for (var cellId : cellsToReshape) {
                 reshapeCellInPlace(territories, geometryCache, cellId);
             }
+            // A flip changes which systems are contiguous - it can sever one territory in two or
+            // bridge two into one - so the cursor read's cluster index is re-derived off the
+            // updated owners here, in step with the cells that just re-shaped.
+            territories.reindexClusters(geometryCache.getCellEdgesBySystemId());
             // Only the old and new owners' territories can have changed shape; every
             // other faction's rings trace unchanged cells, so they are left as-is.
             var systemsByFaction =
@@ -193,7 +197,7 @@ final class IncrementalPoliticsRefresh {
             String systemId) {
         var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
         if (edges == null) {
-            territories.getStyledCellBySystemId().remove(systemId);
+            territories.removeStyledCell(systemId);
             return;
         }
         var owner = territories.getOwnerBySystemId().get(systemId);
@@ -203,9 +207,9 @@ final class IncrementalPoliticsRefresh {
                 PoliticalMapStyle.BORDER_INSET_DISTANCE);
         var styled = TerritoryBuilder.buildStyledCellForSystem(territories, systemId, shaped);
         if (styled == null) {
-            territories.getStyledCellBySystemId().remove(systemId);
+            territories.removeStyledCell(systemId);
         } else {
-            territories.getStyledCellBySystemId().put(systemId, styled);
+            territories.putStyledCell(systemId, styled, shaped.fillPolygon());
         }
     }
 

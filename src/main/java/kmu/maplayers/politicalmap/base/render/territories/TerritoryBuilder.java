@@ -151,9 +151,16 @@ public final class TerritoryBuilder {
             for (var entry : shapedCells.entrySet()) {
                 var styled = buildStyledCellForSystem(territories, entry.getKey(), entry.getValue());
                 if (styled != null) {
-                    territories.getStyledCellBySystemId().put(entry.getKey(), styled);
+                    territories.putStyledCell(
+                            entry.getKey(),
+                            styled,
+                            entry.getValue().fillPolygon());
                 }
             }
+            // The clusters the cursor read resolves a hovered cell's whole territory through.
+            // Derived here off the same keys the shaping just fused the cells by, so a highlighted
+            // territory is exactly the one the map merged into a single region.
+            territories.reindexClusters(geometryCache.getCellEdgesBySystemId());
 
             // Each owned faction's territory: one region per cluster (traced across all
             // its cells so a multi-system cluster reads as one frontier), tessellated for
