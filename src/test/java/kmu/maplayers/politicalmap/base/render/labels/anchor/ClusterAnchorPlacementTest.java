@@ -13,7 +13,7 @@ import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.Ancho
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LeanScoring;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.NameGroupStyle;
+import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.settings.FactionPaletteChoice;
 
@@ -902,8 +902,8 @@ final class ClusterAnchorPlacementTest {
                     new AnchorDiagnostics(showRejectedAxis, showUnbiasedAxis),
                     new NameFitSpecification(nameMinFontSize, nameMaxFontSize, nameMaxLines,
                             nameLineSpacing),
-                    new NameGroupStyle(FactionPaletteChoice.PRIMARY, FULL_OPACITY),
-                    new NameGroupStyle(FactionPaletteChoice.PRIMARY, FULL_OPACITY));
+                    new ElementStyle(FactionPaletteChoice.PRIMARY, FULL_OPACITY),
+                    new ElementStyle(FactionPaletteChoice.PRIMARY, FULL_OPACITY));
         }
 
         // A slender single-line tuning whose faction outer-border colour choice the label
@@ -936,8 +936,8 @@ final class ClusterAnchorPlacementTest {
                     new AnchorDiagnostics(false, false),
                     new NameFitSpecification(NO_MIN_FONT_SIZE, AMPLE_MAX_FONT_SIZE, ONE_LINE,
                             FLUSH_LINES),
-                    new NameGroupStyle(factionOuterColor, factionNameOpacity),
-                    new NameGroupStyle(independentOuterColor, independentNameOpacity));
+                    new ElementStyle(factionOuterColor, factionNameOpacity),
+                    new ElementStyle(independentOuterColor, independentNameOpacity));
         }
 
         // One square cell's CCW edges (bottom, right, top, left), each tagged with the

@@ -22,7 +22,8 @@ Part of Klark Morrigan's Utilities; see the
   its debug overlay.
 - `render.labels.anchor.specifications` - the search's tuning surface, read once per rebuild:
   `LabelAnchorSpecification` and its component records (`AnchorSearch`, `LeanScoring`,
-  `AnchorDiagnostics`, `NameFit`, `NameGroupStyle`).
+  `AnchorDiagnostics`, `NameFit`). Each owner group's name colour and opacity ride in an
+  `ElementStyle`, the pair every drawn element of the map shares.
 
 ## Placement: where a name sits
 

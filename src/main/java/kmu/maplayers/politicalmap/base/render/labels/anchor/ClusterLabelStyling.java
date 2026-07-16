@@ -73,7 +73,7 @@ final class ClusterLabelStyling {
         // One group pick drives both the name's colour choice and its opacity, so the two
         // can never be read from different groups.
         var nameStyle = usesIndependentStyle ? spec.independentNames() : spec.factionNames();
-        var choice = nameStyle.outerColor();
+        var choice = nameStyle.color();
         // The name resolves against the same two shades the border does, off the one
         // "desaturate swaps the palette" decision MapPalettes owns - so the name can
         // never drift from the fill and border it labels.
@@ -83,7 +83,7 @@ final class ClusterLabelStyling {
         var resolved = color != null ? color : palette.primaryColor();
         // The name mutes through the same one rule the fill and border do, so a receded name
         // dims in lockstep with the space it labels.
-        var mutedOpacity = adjustment.muteOpacity(nameStyle.nameOpacity());
+        var mutedOpacity = adjustment.muteOpacity(nameStyle.opacity());
         return Colors.scaleAlpha(resolved, mutedOpacity);
     }
 
