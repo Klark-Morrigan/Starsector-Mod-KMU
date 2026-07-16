@@ -59,24 +59,31 @@ public final class RenderStyleReader {
     // loop applies them per cluster without eight lookups each.
     public static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
-                KmuLunaSettings.getFactionFillColor(), KmuLunaSettings.getFactionFillOpacity(),
-                KmuLunaSettings.getFactionOuterBorderColor(),
-                KmuLunaSettings.getFactionOuterBorderOpacity(),
+                new ElementStyle(
+                        KmuLunaSettings.getFactionFillColor(),
+                        KmuLunaSettings.getFactionFillOpacity()),
+                new ElementStyle(
+                        KmuLunaSettings.getFactionOuterBorderColor(),
+                        KmuLunaSettings.getFactionOuterBorderOpacity()),
                 KmuLunaSettings.getFactionOuterBorderWidth(),
-                KmuLunaSettings.getFactionInnerBorderColor(),
-                KmuLunaSettings.getFactionInnerBorderOpacity(),
+                new ElementStyle(
+                        KmuLunaSettings.getFactionInnerBorderColor(),
+                        KmuLunaSettings.getFactionInnerBorderOpacity()),
                 KmuLunaSettings.getFactionInnerBorderWidth());
     }
 
     public static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
-                KmuLunaSettings.getIndependentFillColor(),
-                KmuLunaSettings.getIndependentFillOpacity(),
-                KmuLunaSettings.getIndependentOuterBorderColor(),
-                KmuLunaSettings.getIndependentOuterBorderOpacity(),
+                new ElementStyle(
+                        KmuLunaSettings.getIndependentFillColor(),
+                        KmuLunaSettings.getIndependentFillOpacity()),
+                new ElementStyle(
+                        KmuLunaSettings.getIndependentOuterBorderColor(),
+                        KmuLunaSettings.getIndependentOuterBorderOpacity()),
                 KmuLunaSettings.getIndependentOuterBorderWidth(),
-                KmuLunaSettings.getIndependentInnerBorderColor(),
-                KmuLunaSettings.getIndependentInnerBorderOpacity(),
+                new ElementStyle(
+                        KmuLunaSettings.getIndependentInnerBorderColor(),
+                        KmuLunaSettings.getIndependentInnerBorderOpacity()),
                 KmuLunaSettings.getIndependentInnerBorderWidth());
     }
 
@@ -102,7 +109,7 @@ public final class RenderStyleReader {
     private static CategoryStyle neutralStyle(NeutralColorChoice color, double opacity,
             double width) {
         var outerColor = color.isDrawn() ? FactionPaletteChoice.PRIMARY : FactionPaletteChoice.NONE;
-        return new CategoryStyle(FactionPaletteChoice.NONE, 0, outerColor, opacity, width,
-                FactionPaletteChoice.NONE, 0, 0);
+        return new CategoryStyle(ElementStyle.NOT_DRAWN, new ElementStyle(outerColor, opacity),
+                width, ElementStyle.NOT_DRAWN, 0);
     }
 }

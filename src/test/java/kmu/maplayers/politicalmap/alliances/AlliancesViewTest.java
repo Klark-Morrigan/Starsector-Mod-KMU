@@ -151,9 +151,9 @@ final class AlliancesViewTest {
 
         @Test
         void shouldUseIndependentStyleIsTrueForALoneFactionWhenDesaturated() {
-            // Desaturate makes a non-allied faction adopt the whole independent style - its
-            // independent opacities and widths, not just an independent recolour over faction ones.
-            // The view reads the Desaturate choice off its own non-allied recede key.
+            // Desaturate makes a non-allied faction adopt the independent style - its independent
+            // borders and seams, not just an independent recolour over the faction ones. The view
+            // reads the Desaturate choice off its own non-allied recede key.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);

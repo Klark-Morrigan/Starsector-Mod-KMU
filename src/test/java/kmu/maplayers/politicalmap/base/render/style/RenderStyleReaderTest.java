@@ -56,9 +56,11 @@ final class RenderStyleReaderTest {
                 var style = RenderStyleReader.readFactionStyle();
 
                 assertThat(style).isEqualTo(new CategoryStyle(
-                        FactionPaletteChoice.PRIMARY, FILL_OPACITY,
-                        FactionPaletteChoice.SECONDARY, OUTER_OPACITY, OUTER_WIDTH,
-                        FactionPaletteChoice.NONE, INNER_OPACITY, INNER_WIDTH));
+                        new ElementStyle(FactionPaletteChoice.PRIMARY, FILL_OPACITY),
+                        new ElementStyle(FactionPaletteChoice.SECONDARY, OUTER_OPACITY),
+                        OUTER_WIDTH,
+                        new ElementStyle(FactionPaletteChoice.NONE, INNER_OPACITY),
+                        INNER_WIDTH));
             }
         }
     }
@@ -89,9 +91,11 @@ final class RenderStyleReaderTest {
                 var style = RenderStyleReader.readIndependentStyle();
 
                 assertThat(style).isEqualTo(new CategoryStyle(
-                        FactionPaletteChoice.SECONDARY, FILL_OPACITY,
-                        FactionPaletteChoice.PRIMARY, OUTER_OPACITY, OUTER_WIDTH,
-                        FactionPaletteChoice.NONE, INNER_OPACITY, INNER_WIDTH));
+                        new ElementStyle(FactionPaletteChoice.SECONDARY, FILL_OPACITY),
+                        new ElementStyle(FactionPaletteChoice.PRIMARY, OUTER_OPACITY),
+                        OUTER_WIDTH,
+                        new ElementStyle(FactionPaletteChoice.NONE, INNER_OPACITY),
+                        INNER_WIDTH));
             }
         }
     }
@@ -114,9 +118,11 @@ final class RenderStyleReaderTest {
                 // A factionless category is outline-only: the drawn choice routes to the
                 // outer border via a PRIMARY palette slot, with fill and inner seam off.
                 assertThat(style).isEqualTo(new CategoryStyle(
-                        FactionPaletteChoice.NONE, 0,
-                        FactionPaletteChoice.PRIMARY, NEUTRAL_OPACITY, NEUTRAL_WIDTH,
-                        FactionPaletteChoice.NONE, 0, 0));
+                        ElementStyle.NOT_DRAWN,
+                        new ElementStyle(FactionPaletteChoice.PRIMARY, NEUTRAL_OPACITY),
+                        NEUTRAL_WIDTH,
+                        ElementStyle.NOT_DRAWN,
+                        0));
             }
         }
 
@@ -134,8 +140,8 @@ final class RenderStyleReaderTest {
 
                 // The "No color" choice turns the outer slot off, yet its opacity and width
                 // still pass through so the sole difference from the drawn case is the slot.
-                assertThat(style.outerColor()).isEqualTo(FactionPaletteChoice.NONE);
-                assertThat(style.outerOpacity()).isEqualTo(NEUTRAL_OPACITY);
+                assertThat(style.outer().color()).isEqualTo(FactionPaletteChoice.NONE);
+                assertThat(style.outer().opacity()).isEqualTo(NEUTRAL_OPACITY);
                 assertThat(style.outerWidth()).isEqualTo(NEUTRAL_WIDTH);
             }
         }
@@ -157,9 +163,11 @@ final class RenderStyleReaderTest {
                 var style = RenderStyleReader.readUninhabitedStyle();
 
                 assertThat(style).isEqualTo(new CategoryStyle(
-                        FactionPaletteChoice.NONE, 0,
-                        FactionPaletteChoice.PRIMARY, NEUTRAL_OPACITY, NEUTRAL_WIDTH,
-                        FactionPaletteChoice.NONE, 0, 0));
+                        ElementStyle.NOT_DRAWN,
+                        new ElementStyle(FactionPaletteChoice.PRIMARY, NEUTRAL_OPACITY),
+                        NEUTRAL_WIDTH,
+                        ElementStyle.NOT_DRAWN,
+                        0));
             }
         }
 
@@ -175,8 +183,8 @@ final class RenderStyleReaderTest {
 
                 var style = RenderStyleReader.readUninhabitedStyle();
 
-                assertThat(style.outerColor()).isEqualTo(FactionPaletteChoice.NONE);
-                assertThat(style.outerOpacity()).isEqualTo(NEUTRAL_OPACITY);
+                assertThat(style.outer().color()).isEqualTo(FactionPaletteChoice.NONE);
+                assertThat(style.outer().opacity()).isEqualTo(NEUTRAL_OPACITY);
                 assertThat(style.outerWidth()).isEqualTo(NEUTRAL_WIDTH);
             }
         }

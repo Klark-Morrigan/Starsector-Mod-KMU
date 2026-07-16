@@ -21,7 +21,9 @@ A `RenderStyle` is the whole theme, in two tiers:
 - `GlobalStyle` - sector-wide, identical for every territory: the contested-fill `HatchStyle`,
   the national-border `BorderSmoothingStyle`, and the desaturation profile.
 - `Map<MapCategory, CategoryStyle>` - one style per category (faction, independent, decivilised,
-  uninhabited).
+  uninhabited). Each holds its three drawn elements - fill, outer border, inner seam - as an
+  `ElementStyle` (a palette choice paired with the opacity it paints at), plus the width each
+  border strokes at.
 
 `RenderStyleReader` is the ONE seam that reads the theme out of LunaLib. A new sector-wide knob is
 added to the matching `GlobalStyle` sub-record and read there - never fetched ad hoc in a builder.

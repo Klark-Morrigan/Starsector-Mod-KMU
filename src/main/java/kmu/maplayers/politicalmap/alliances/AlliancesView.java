@@ -27,9 +27,10 @@ import java.util.List;
  * alliance reads as a single coloured, named region, while every unaligned faction keeps its
  * own border and name. Two orthogonal knobs recede a non-allied faction: Mute dims its opacity
  * by the muted modifier while leaving its faction style and colours intact, and Desaturate makes
- * it adopt the whole independent style - the independent fill/border opacities and widths plus
- * the desaturation palette - so it reads as independent ground rather than an independent colour
- * over faction opacities. With both off it paints exactly as the faction view draws it, so a lone
+ * it adopt the independent style - the independent borders and seams plus the desaturation
+ * palette - so it reads as independent ground. Its fill holds the faction fill opacity, since
+ * desaturated ground reads as one uniform surface separated by colour alone. With both off it
+ * paints exactly as the faction view draws it, so a lone
  * faction reads identically in both views and only the allied factions differ between the two. It
  * exists so the shared pipeline can paint alliances without knowing anything about them - the view
  * supplies only the grouping, the recede test, and the label.
@@ -87,12 +88,14 @@ public final class AlliancesView implements PoliticalMapView {
     public boolean shouldUseIndependentStyle(String blocId, OwnershipGrouping grouping) {
         // Genuine independent space always takes the independent style, exactly as the faction view
         // classifies it. A non-allied faction takes it too while Desaturate is on: desaturation
-        // means "read as independent ground", so the bloc must adopt the whole independent style -
-        // its independent fill/border opacities and widths, paired with the desaturation palette in
-        // resolveBlocStyleAdjustment - and not sit at faction opacities with only an independent
-        // recolour painted over them. An alliance always paints in the full faction style so it
-        // stands out. Muting never swaps the bundle; it only dims the active style via the opacity
-        // modifier, so a lone faction with both toggles off reads exactly as the faction view.
+        // means "read as independent ground", so the bloc adopts the independent borders and seams,
+        // paired with the desaturation palette resolveBlocStyleAdjustment carries - not a bare
+        // independent recolour painted over the faction style. Its fill is the exception: a
+        // desaturated bloc fills at the faction opacity, so the desaturated background stays one
+        // uniform surface rather than splitting into two weights of grey. An alliance always paints
+        // in the full faction style so it stands out. Muting never swaps the bundle; it only dims
+        // the active style via the opacity modifier, so a lone faction with both toggles off reads
+        // exactly as the faction view.
         return Factions.INDEPENDENT.equals(blocId)
                 || (!grouping.isAlliance(blocId)
                         && RecedePreferences.ALLIANCE_NON_ALLIED.isDesaturated());

@@ -28,11 +28,11 @@ import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapCategory;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.settings.FactionPaletteChoice;
 
 import org.apache.log4j.Logger;
 
@@ -218,7 +218,7 @@ public final class TerritoryBuilder {
         var style = territories.getDecivilisedSystemIds().contains(systemId)
                 ? territories.getCategoryStyle(MapCategory.DECIVILISED)
                 : territories.getCategoryStyle(MapCategory.UNINHABITED);
-        if (style.outerColor() == FactionPaletteChoice.NONE) {
+        if (!style.outer().isDrawn()) {
             return null;
         }
         var neutralColor = territories.getNeutralColor();
@@ -283,11 +283,11 @@ public final class TerritoryBuilder {
                 owner,
                 territories.getDesaturationPalette());
         var fillColor = MapPalettes.pickPaletteColor(
-                style.fillColor(),
+                style.fill().color(),
                 palette.primaryColor(),
                 palette.secondaryColor());
         var borderColor = MapPalettes.pickPaletteColor(
-                style.outerColor(),
+                style.outer().color(),
                 palette.primaryColor(),
                 palette.secondaryColor());
         if (fillColor == null && borderColor == null) {
@@ -352,10 +352,10 @@ public final class TerritoryBuilder {
         return new FactionTerritory(
                 fill.solidTriangles(),
                 fill.hatchSegments(),
-                new UiElementPaint(fillColor, adjustment.muteOpacity(style.fillOpacity())),
+                new UiElementPaint(fillColor, adjustment.muteOpacity(style.fill().opacity())),
                 borderRuns,
                 fill.contestedBorders(),
-                new UiElementPaint(borderColor, adjustment.muteOpacity(style.outerOpacity())),
+                new UiElementPaint(borderColor, adjustment.muteOpacity(style.outer().opacity())),
                 (float) style.outerWidth());
     }
 
@@ -538,10 +538,40 @@ public final class TerritoryBuilder {
                 territories.getView(),
                 territories.getGrouping(),
                 territories.getRecedeAdjustment());
-        var style = decision.usesIndependentStyle()
-                ? territories.getCategoryStyle(MapCategory.INDEPENDENT)
-                : territories.getCategoryStyle(MapCategory.FACTION);
-        return new BlocStyling(style, decision.adjustment());
+        var factionStyle = territories.getCategoryStyle(MapCategory.FACTION);
+        if (!decision.usesIndependentStyle()) {
+            return new BlocStyling(factionStyle, decision.adjustment());
+        }
+        return new BlocStyling(
+                applyDesaturatedFillOpacity(
+                        territories.getCategoryStyle(MapCategory.INDEPENDENT),
+                        factionStyle,
+                        decision.adjustment()),
+                decision.adjustment());
+    }
+
+    // Holds every desaturated bloc's ground at the one faction fill opacity, so a sector drawn
+    // under desaturation reads as a single uniform surface separated by colour alone rather than
+    // by two fill weights. Independent space carries a lighter fill of its own so it recedes
+    // behind faction ground when the map paints in full colour, but once desaturation has already
+    // sunk a bloc to the shared grey that second cue only fractures the background: neighbouring
+    // greys at different weights read as two kinds of empty. The rest of the independent bundle -
+    // both border opacities and both widths - still applies, since those distinguish independent
+    // ground without breaking the fill's uniformity.
+    private static CategoryStyle applyDesaturatedFillOpacity(
+            CategoryStyle independentStyle,
+            CategoryStyle factionStyle,
+            BlocStyleAdjustment adjustment) {
+        if (!adjustment.desaturate()) {
+            return independentStyle;
+        }
+        return new CategoryStyle(
+                new ElementStyle(
+                        independentStyle.fill().color(), factionStyle.fill().opacity()),
+                independentStyle.outer(),
+                independentStyle.outerWidth(),
+                independentStyle.inner(),
+                independentStyle.innerWidth());
     }
 
     // Builds one cell's per-cell draw record: its interior seams always, plus - only
@@ -580,20 +610,20 @@ public final class TerritoryBuilder {
                 VertexRuns.flattenEdgesOfClass(shaped, false),
                 new UiElementPaint(
                         perCellFillAndBorder
-                                ? MapPalettes.pickPaletteColor(style.fillColor(), primaryColor,
+                                ? MapPalettes.pickPaletteColor(style.fill().color(), primaryColor,
                                         secondaryColor)
                                 : null,
-                        adjustment.muteOpacity(style.fillOpacity())),
+                        adjustment.muteOpacity(style.fill().opacity())),
                 new UiElementPaint(
                         perCellFillAndBorder
-                                ? MapPalettes.pickPaletteColor(style.outerColor(), primaryColor,
+                                ? MapPalettes.pickPaletteColor(style.outer().color(), primaryColor,
                                         secondaryColor)
                                 : null,
-                        adjustment.muteOpacity(style.outerOpacity())),
+                        adjustment.muteOpacity(style.outer().opacity())),
                 new UiElementPaint(
-                        MapPalettes.pickPaletteColor(style.innerColor(), primaryColor,
+                        MapPalettes.pickPaletteColor(style.inner().color(), primaryColor,
                                 secondaryColor),
-                        adjustment.muteOpacity(style.innerOpacity())),
+                        adjustment.muteOpacity(style.inner().opacity())),
                 (float) style.outerWidth(), (float) style.innerWidth());
     }
 

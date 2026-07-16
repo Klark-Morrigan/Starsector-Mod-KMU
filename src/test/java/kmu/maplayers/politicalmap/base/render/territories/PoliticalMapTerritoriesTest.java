@@ -9,6 +9,7 @@ import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.style.HatchStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapCategory;
@@ -195,8 +196,7 @@ final class PoliticalMapTerritoriesTest {
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
     // interchangeable style bundles are distinct instances.
     private static CategoryStyle styleMarked(double marker) {
-        return new CategoryStyle(FactionPaletteChoice.PRIMARY, marker,
-                FactionPaletteChoice.PRIMARY, marker, marker,
-                FactionPaletteChoice.PRIMARY, marker, marker);
+        var element = new ElementStyle(FactionPaletteChoice.PRIMARY, marker);
+        return new CategoryStyle(element, element, marker, element, marker);
     }
 }

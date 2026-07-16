@@ -14,7 +14,6 @@ import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.BorderSmoothing;
-import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
@@ -132,7 +131,7 @@ public final class DebugBorderTracingBuilder {
             var style = decivilisedSystemIds.contains(entry.getKey())
                     ? decivilisedStyle
                     : uninhabitedStyle;
-            if (style.outerColor() == FactionPaletteChoice.NONE) {
+            if (!style.outer().isDrawn()) {
                 continue;
             }
             var shaped = CellShaper.shapeCell(

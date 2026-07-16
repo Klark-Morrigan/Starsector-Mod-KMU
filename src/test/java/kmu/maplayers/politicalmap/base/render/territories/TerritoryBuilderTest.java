@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.style.HatchStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapCategory;
@@ -124,6 +125,14 @@ final class TerritoryBuilderTest {
     @Nested
     class BuildStyledCellForSystem {
 
+        // The two owned categories' fill opacities, kept distinct (and neither 1.0, which the
+        // shared STYLE already uses) so an observed fill alpha names the category it came from.
+        private static final double FACTION_FILL_OPACITY = 0.4;
+        private static final double INDEPENDENT_FILL_OPACITY = 0.2;
+        // A seam width only the independent bundle carries, so it witnesses that the rest of that
+        // bundle survives a desaturated pass rather than being replaced wholesale.
+        private static final double INDEPENDENT_INNER_WIDTH = 2.0;
+
         private static final String SYSTEM_ID = "hegemony-system";
         private static final Color OWNER_PRIMARY = Color.RED;
         private static final Color OWNER_SECONDARY = Color.BLUE;
@@ -135,9 +144,9 @@ final class TerritoryBuilderTest {
         // so fill and outer are "No color" here and only inner - the interior seam -
         // resolves a real color, the one slot these tests can observe.
         private static final CategoryStyle STYLE = new CategoryStyle(
-                FactionPaletteChoice.NONE, 1.0,
-                FactionPaletteChoice.NONE, 1.0, 3.0,
-                FactionPaletteChoice.SECONDARY, 1.0, 1.0);
+                new ElementStyle(FactionPaletteChoice.NONE, 1.0),
+                new ElementStyle(FactionPaletteChoice.NONE, 1.0), 3.0,
+                new ElementStyle(FactionPaletteChoice.SECONDARY, 1.0), 1.0);
 
         @Test
         void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheOwnerPaletteWhenNotDesaturated() {
@@ -186,6 +195,72 @@ final class TerritoryBuilderTest {
         // adjustment it exercises.
         private static PoliticalMapView viewMockAdjusting(BlocStyleAdjustment adjustment) {
             return viewMockDeciding(false, adjustment);
+        }
+
+        @Test
+        void buildStyledCellForSystemFillsADesaturatedIndependentStyledBlocAtTheFactionOpacity() {
+            // Desaturated ground holds the one faction fill opacity, so the whole desaturated
+            // surface reads uniform rather than splitting into two weights of grey.
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
+                    independentStyledDrawablesWith(new BlocStyleAdjustment(1.0, true)),
+                    SYSTEM_ID, ownedCell());
+
+            assertThat(styled.fillPaint().alpha()).isEqualTo((float) FACTION_FILL_OPACITY);
+        }
+
+        @Test
+        void buildStyledCellForSystemFillsAnUndesaturatedIndependentStyledBlocAtItsOwnOpacity() {
+            // In full colour the independent bundle keeps its own lighter fill, so independent
+            // space still recedes behind faction ground.
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
+                    independentStyledDrawablesWith(BlocStyleAdjustment.NONE),
+                    SYSTEM_ID, ownedCell());
+
+            assertThat(styled.fillPaint().alpha()).isEqualTo((float) INDEPENDENT_FILL_OPACITY);
+        }
+
+        @Test
+        void buildStyledCellForSystemKeepsTheIndependentSeamWidthWhenDesaturated() {
+            // Only the fill opacity crosses over: the rest of the independent bundle still
+            // applies, so independent ground keeps its own borders and seams.
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
+                    independentStyledDrawablesWith(new BlocStyleAdjustment(1.0, true)),
+                    SYSTEM_ID, ownedCell());
+
+            assertThat(styled.innerWidth()).isEqualTo((float) INDEPENDENT_INNER_WIDTH);
+        }
+
+        // An un-filtered pass whose view recedes every bloc to the independent style, over a theme
+        // whose two owned categories fill at different opacities - the backdrop that can tell which
+        // category the fill opacity was sourced from.
+        private static PoliticalMapTerritories independentStyledDrawablesWith(
+                BlocStyleAdjustment adjustment) {
+            Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
+            categories.put(MapCategory.FACTION, styleFilling(FACTION_FILL_OPACITY, 1.0));
+            categories.put(MapCategory.INDEPENDENT,
+                    styleFilling(INDEPENDENT_FILL_OPACITY, INDEPENDENT_INNER_WIDTH));
+            categories.put(MapCategory.DECIVILISED, STYLE);
+            categories.put(MapCategory.UNINHABITED, STYLE);
+            return new PoliticalMapTerritories(
+                    Map.of(SYSTEM_ID, OWNER), Set.of(),
+                    new MapStyling(
+                            new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
+                                    new BorderSmoothingStyle(false, false, 0, 0, 0), 0.3),
+                                    categories),
+                            Color.GRAY,
+                            new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
+                    new ViewGrouping(viewMockDeciding(true, adjustment),
+                            OwnershipGrouping.identity()),
+                    new FilterSnapshot(null, BlocStyleAdjustment.NONE, Set.of()));
+        }
+
+        // A category style identified solely by the two values these tests read back, so an
+        // assertion on either one names which category the builder sourced it from.
+        private static CategoryStyle styleFilling(double fillOpacity, double innerWidth) {
+            return new CategoryStyle(
+                    new ElementStyle(FactionPaletteChoice.NONE, fillOpacity),
+                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 3.0,
+                    new ElementStyle(FactionPaletteChoice.SECONDARY, 1.0), innerWidth);
         }
 
         @Test
