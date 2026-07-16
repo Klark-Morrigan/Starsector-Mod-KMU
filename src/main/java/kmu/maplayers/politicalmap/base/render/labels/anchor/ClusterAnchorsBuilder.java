@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.FactionPalette;
-import kmlib.starsector.factions.StarsectorFactionColors;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -129,13 +128,11 @@ public final class ClusterAnchorsBuilder {
         // key off the same snapshot their names and colours are classified against.
         var grouping = view.resolveGrouping();
         // This path builds no drawables to borrow the palette from, so resolve it here - through
-        // the same profile seam the theme reads, so the debug names desaturate exactly as production
-        // does and the profile setting still has a single reader.
-        var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
+        // the same darkening seam the theme reads, so the debug names desaturate exactly as
+        // production does and the setting still has a single reader.
         var desaturationPalette = MapPalettes.resolveDesaturationPalette(
-                RenderStyleReader.readGlobalStyle().desaturationProfile(),
                 sector,
-                neutralColor);
+                RenderStyleReader.readGlobalStyle().desaturationDarkening());
         // The debug border-tracing path never filters - it resolves real dominant owners from the
         // sector - so it recedes nothing and names no synthetic spotlight key.
         rebuildClusterAnchors(

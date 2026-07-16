@@ -37,7 +37,7 @@ public final class RenderStyleReader {
     }
 
     // Folds the sector-wide knobs into the global tier: the contested-fill hatch, the
-    // national-border smoothing, and the desaturation profile a receded bloc recolours to.
+    // national-border smoothing, and how far a receded bloc's Independent-based grey darkens.
     // The hatch angle is authored in degrees and converted to radians at the reader so the
     // hatch math downstream stays in radians.
     public static GlobalStyle readGlobalStyle() {
@@ -52,7 +52,7 @@ public final class RenderStyleReader {
                         KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
                         KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
                         KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians()),
-                KmuLunaSettings.getPoliticalMapDesaturationProfile());
+                KmuLunaSettings.getPoliticalMapDesaturationDarkening());
     }
 
     // Reads each owned category's eight style settings into one bundle, so the build

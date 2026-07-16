@@ -4,9 +4,9 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.color.Colors;
 import kmlib.starsector.factions.FactionPalette;
 
-import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -54,66 +54,41 @@ final class MapPalettesTest {
     }
 
     @Nested
-    class ResolveSpotlightSafeDesaturationProfile {
-
-        @Test
-        void resolveSpotlightSafeDesaturationProfileFallsBackToNeutralWhenSpotlightingIndependent() {
-            // The only colliding case: spotlit Independent would paint the same palette the
-            // Independent profile desaturates the receded background to, so it must grey out.
-            assertThat(MapPalettes.resolveSpotlightSafeDesaturationProfile(
-                    DesaturationProfileChoice.INDEPENDENT, Factions.INDEPENDENT))
-                    .isEqualTo(DesaturationProfileChoice.NEUTRAL);
-        }
-
-        @Test
-        void resolveSpotlightSafeDesaturationProfileKeepsIndependentWhenSpotlightingAnotherBloc() {
-            assertThat(MapPalettes.resolveSpotlightSafeDesaturationProfile(
-                    DesaturationProfileChoice.INDEPENDENT, Factions.HEGEMONY))
-                    .isEqualTo(DesaturationProfileChoice.INDEPENDENT);
-        }
-
-        @Test
-        void resolveSpotlightSafeDesaturationProfileKeepsIndependentWhenNothingIsSpotlit() {
-            // A null selection is the un-filtered pass, where no bloc collides with the background.
-            assertThat(MapPalettes.resolveSpotlightSafeDesaturationProfile(
-                    DesaturationProfileChoice.INDEPENDENT, null))
-                    .isEqualTo(DesaturationProfileChoice.INDEPENDENT);
-        }
-
-        @Test
-        void resolveSpotlightSafeDesaturationProfileLeavesTheNeutralProfileUntouched() {
-            // The Neutral profile already greys the background, so spotlit Independent never
-            // collides and the override does not apply.
-            assertThat(MapPalettes.resolveSpotlightSafeDesaturationProfile(
-                    DesaturationProfileChoice.NEUTRAL, Factions.INDEPENDENT))
-                    .isEqualTo(DesaturationProfileChoice.NEUTRAL);
-        }
-    }
-
-    @Nested
     class ResolveDesaturationPalette {
 
+        // A sample darkening strength (30% removed); mirrored here so the expected shades are the
+        // Independent pair scaled to the same kept fraction the resolver applies.
+        private static final double DARKENING_STRENGTH = 0.3;
+        private static final float KEEP_FACTOR = (float) (1.0 - DARKENING_STRENGTH);
+
         @Test
-        void resolveDesaturationPaletteForgesTheIndependentFactionsSharesUnderTheIndependentProfile() {
+        void resolveDesaturationPaletteDarkensTheIndependentFactionsOwnShades() {
             var independentMock = mock(FactionAPI.class);
             when(independentMock.getBrightUIColor()).thenReturn(Color.GREEN);
             when(independentMock.getDarkUIColor()).thenReturn(Color.YELLOW);
             var sectorMock = mock(SectorAPI.class);
             when(sectorMock.getFaction(Factions.INDEPENDENT)).thenReturn(independentMock);
 
-            var palette = MapPalettes.resolveDesaturationPalette(
-                    DesaturationProfileChoice.INDEPENDENT, sectorMock, Color.GRAY);
+            var palette = MapPalettes.resolveDesaturationPalette(sectorMock, DARKENING_STRENGTH);
 
-            assertThat(palette).isEqualTo(new FactionPalette(Color.GREEN, Color.YELLOW));
+            // The Independent pair, sunk toward black by the strength so the receded ground reads
+            // behind genuine independent-held space rather than as it.
+            assertThat(palette).isEqualTo(new FactionPalette(
+                    Colors.darken(Color.GREEN, KEEP_FACTOR), Colors.darken(Color.YELLOW, KEEP_FACTOR)));
         }
 
         @Test
-        void resolveDesaturationPaletteYieldsTheNeutralColorInBothSlotsUnderTheNeutralProfile() {
-            // The Neutral profile never touches the sector, so a bare mock stands in.
-            var palette = MapPalettes.resolveDesaturationPalette(
-                    DesaturationProfileChoice.NEUTRAL, mock(SectorAPI.class), Color.GRAY);
+        void resolveDesaturationPaletteLeavesTheIndependentShadesUntouchedAtZeroStrength() {
+            var independentMock = mock(FactionAPI.class);
+            when(independentMock.getBrightUIColor()).thenReturn(Color.GREEN);
+            when(independentMock.getDarkUIColor()).thenReturn(Color.YELLOW);
+            var sectorMock = mock(SectorAPI.class);
+            when(sectorMock.getFaction(Factions.INDEPENDENT)).thenReturn(independentMock);
 
-            assertThat(palette).isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
+            // A strength of 0 keeps full brightness, so the target is the raw Independent pair.
+            var palette = MapPalettes.resolveDesaturationPalette(sectorMock, 0.0);
+
+            assertThat(palette).isEqualTo(new FactionPalette(Color.GREEN, Color.YELLOW));
         }
     }
 }

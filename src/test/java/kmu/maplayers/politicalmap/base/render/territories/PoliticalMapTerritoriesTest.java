@@ -13,7 +13,6 @@ import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.style.HatchStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyle;
-import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -118,8 +117,7 @@ final class PoliticalMapTerritoriesTest {
             categories.put(MapCategory.DECIVILISED, decivilisedStyle);
             categories.put(MapCategory.UNINHABITED, uninhabitedStyle);
             var globalStyle = new GlobalStyle(new HatchStyle(5, 5, 5),
-                    new BorderSmoothingStyle(true, true, 5, 5, 5),
-                    DesaturationProfileChoice.INDEPENDENT);
+                    new BorderSmoothingStyle(true, true, 5, 5, 5), 0.3);
             var renderStyle = new RenderStyle(globalStyle, categories);
             PoliticalMapView viewMock = mock(PoliticalMapView.class);
             var grouping = OwnershipGrouping.identity();

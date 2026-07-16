@@ -14,7 +14,6 @@ import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.style.HatchStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyle;
-import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -217,8 +216,7 @@ final class TerritoryBuilderTest {
                 categories.put(category, style);
             }
             return new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
-                    new BorderSmoothingStyle(false, false, 0, 0, 0),
-                    DesaturationProfileChoice.INDEPENDENT), categories);
+                    new BorderSmoothingStyle(false, false, 0, 0, 0), 0.3), categories);
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

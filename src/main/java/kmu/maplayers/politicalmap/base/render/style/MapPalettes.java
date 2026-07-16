@@ -3,12 +3,12 @@ package kmu.maplayers.politicalmap.base.render.style;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.color.Colors;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.factions.StarsectorFactionColors;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 
 import java.awt.Color;
@@ -55,37 +55,23 @@ public final class MapPalettes {
     }
 
     /**
-     * Overrides the desaturation profile away from the spotlit bloc's own palette when the two
-     * would otherwise collide. The {@code INDEPENDENT} profile desaturates every receded bloc to
-     * the Independent faction's two shades; spotlight the Independent faction and its
-     * full-strength fill is that same pair, so the spotlit bloc and the entire receded background
-     * would paint one indistinguishable colour. In that one case the profile falls back to
-     * {@code NEUTRAL}, so the receded ground greys out distinctly while spotlit Independent keeps
-     * its colour. Every other spotlight, an un-filtered pass (null selection), and the
-     * {@code NEUTRAL} profile pass through unchanged, so the override bites only the reported case.
+     * Resolves the one uniform palette every desaturated bloc recolours to: the Independent
+     * faction's own two shades, each scaled toward black by {@code darkeningStrength}. Independent's
+     * authored colour and the mid-grey genuine independent space paints in are the same grey, so
+     * painting a desaturated faction in Independent's shades unchanged would make it read as
+     * independent-held space; darkening sinks the receded ground to a distinctly darker grey that
+     * sits behind it, separated by value rather than a hue neither grey has. The strength is the
+     * fraction of brightness removed - 0 leaves the Independent shades untouched, 0.3 draws them
+     * 30% darker, 1 goes to black. Takes the sector and strength as parameters (rather than reading
+     * KmuLunaSettings itself) so the mapping is a pure lookup; the caller reads the live setting once
+     * per pass and hands it in.
      */
-    public static DesaturationProfileChoice resolveSpotlightSafeDesaturationProfile(
-            DesaturationProfileChoice profile, String selectedBlocId) {
-        return profile == DesaturationProfileChoice.INDEPENDENT
-                && Factions.INDEPENDENT.equals(selectedBlocId)
-                ? DesaturationProfileChoice.NEUTRAL
-                : profile;
-    }
-
-    /**
-     * Resolves the desaturation palette a desaturated bloc recolours to, from the given
-     * profile: Independent forges the Independent faction's own two shades (the same pair
-     * a real independent owner's DominantOwner carries), so a desaturated bloc reads
-     * exactly as independent-held space; Neutral is the shared neutral color in both
-     * slots, the flat gray unowned space draws in. Takes the profile and the neutral color
-     * as parameters (rather than reading KmuLunaSettings itself) so the mapping is a pure
-     * lookup; the caller reads the live setting once per pass and hands it in.
-     */
-    public static FactionPalette resolveDesaturationPalette(DesaturationProfileChoice profile,
-            SectorAPI sector, Color neutralColor) {
-        return switch (profile) {
-            case INDEPENDENT -> StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);
-            case NEUTRAL -> new FactionPalette(neutralColor, neutralColor);
-        };
+    public static FactionPalette resolveDesaturationPalette(SectorAPI sector,
+            double darkeningStrength) {
+        var keepFactor = (float) (1.0 - darkeningStrength);
+        var independent = StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);
+        return new FactionPalette(
+                Colors.darken(independent.primaryColor(), keepFactor),
+                Colors.darken(independent.secondaryColor(), keepFactor));
     }
 }

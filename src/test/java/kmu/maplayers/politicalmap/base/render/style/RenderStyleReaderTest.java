@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.settings.DesaturationProfileChoice;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;
@@ -192,6 +191,7 @@ final class RenderStyleReaderTest {
         private static final double CORNER_RADIUS = 300.0;
         private static final int CORNER_SEGMENTS = 4;
         private static final double CHAMFER_ANGLE = 0.6;
+        private static final double DESATURATION_DARKENING = 0.4;
 
         @Test
         void readGlobalStyleGathersTheHatchSmoothingAndDesaturationKnobsIntoOneTier() {
@@ -210,8 +210,8 @@ final class RenderStyleReaderTest {
                         .thenReturn(CORNER_SEGMENTS);
                 settingsMock.when(KmuLunaSettings::getPoliticalMapBorderChamferAngleRadians)
                         .thenReturn(CHAMFER_ANGLE);
-                settingsMock.when(KmuLunaSettings::getPoliticalMapDesaturationProfile)
-                        .thenReturn(DesaturationProfileChoice.NEUTRAL);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapDesaturationDarkening)
+                        .thenReturn(DESATURATION_DARKENING);
 
                 var global = RenderStyleReader.readGlobalStyle();
 
@@ -223,8 +223,7 @@ final class RenderStyleReaderTest {
                 assertThat(global.borderSmoothing().cornerRadius()).isEqualTo(CORNER_RADIUS);
                 assertThat(global.borderSmoothing().cornerSegments()).isEqualTo(CORNER_SEGMENTS);
                 assertThat(global.borderSmoothing().chamferAngleRadians()).isEqualTo(CHAMFER_ANGLE);
-                assertThat(global.desaturationProfile())
-                        .isEqualTo(DesaturationProfileChoice.NEUTRAL);
+                assertThat(global.desaturationDarkening()).isEqualTo(DESATURATION_DARKENING);
             }
         }
     }
@@ -235,8 +234,8 @@ final class RenderStyleReaderTest {
         @Test
         void readRenderStyleCarriesTheGlobalTierAndAllFourCategories() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getPoliticalMapDesaturationProfile)
-                        .thenReturn(DesaturationProfileChoice.INDEPENDENT);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapDesaturationDarkening)
+                        .thenReturn(0.3);
                 // The two factionless categories dereference their neutral-color choice, so give
                 // them a concrete one; every other getter can default since the assertions below
                 // only check that each category slot is populated, not its values.
