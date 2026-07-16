@@ -4,7 +4,6 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
@@ -32,9 +31,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the builder's off-engine, deterministic pieces: the contested-border trace (the interior
- * edges touching a hatched cell) and an owned cell's style-adjustment application (palette swap
- * and opacity scale). The
+ * Pins the builder's one off-engine, deterministic piece: an owned cell's style-adjustment
+ * application (palette swap and opacity scale). The
  * shared styling resolvers it used to hold now live in
  * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes} and
  * {@link kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver} with their own suites;
@@ -52,74 +50,6 @@ final class TerritoryBuilderTest {
         when(viewMock.shouldUseIndependentStyle(any(), any())).thenReturn(usesIndependentStyle);
         when(viewMock.resolveBlocStyleAdjustment(any(), any())).thenReturn(adjustment);
         return viewMock;
-    }
-
-    @Nested
-    class ComputeContestedBorders {
-
-        @Test
-        void emitsTheEdgeWhereADominantCellMeetsAContestedCell() {
-            // The solid<->hatched transition is a contested border. Each shared edge is walked from
-            // both cells (Voronoi adjacency is symmetric) but emitted once, from the smaller id -
-            // here "con" < "dom" - so its coordinates come from the contested cell's edge record.
-            var dominantEdges = List.of(new CellEdge(0, 0, 10, 0, "con"));
-            var contestedEdges = List.of(new CellEdge(10, 0, 0, 0, "dom"));
-
-            var borders = TerritoryBuilder.computeContestedBorders(List.of("dom", "con"),
-                    Set.of("con"), Map.of("dom", dominantEdges, "con", contestedEdges));
-
-            assertThat(borders).containsExactly(10f, 0f, 0f, 0f);
-        }
-
-        @Test
-        void emitsTheDivisionWhereTwoContestedCellsMeet() {
-            // Two joined contested cells' hatch fills fuse into one continuous soup, so their shared
-            // edge is stroked to keep them reading as distinct bounded territories.
-            var firstEdges = List.of(new CellEdge(0, 0, 5, 5, "con2"));
-            var secondEdges = List.of(new CellEdge(5, 5, 0, 0, "con1"));
-
-            var borders = TerritoryBuilder.computeContestedBorders(List.of("con1", "con2"),
-                    Set.of("con1", "con2"), Map.of("con1", firstEdges, "con2", secondEdges));
-
-            // Emitted once, from the smaller id ("con1"), so it is not stroked twice.
-            assertThat(borders).containsExactly(0f, 0f, 5f, 5f);
-        }
-
-        @Test
-        void omitsTheEdgeBetweenTwoDominantCells() {
-            // Two dominated cells fuse into the solid region with only their faint per-cell interior
-            // seam, so their shared edge carries no contested border.
-            var firstEdges = List.of(new CellEdge(0, 0, 5, 5, "dom2"));
-            var secondEdges = List.of(new CellEdge(5, 5, 0, 0, "dom1"));
-
-            var borders = TerritoryBuilder.computeContestedBorders(List.of("dom1", "dom2"),
-                    Set.of(), Map.of("dom1", firstEdges, "dom2", secondEdges));
-
-            assertThat(borders).isEmpty();
-        }
-
-        @Test
-        void ignoresAnEdgeToASystemOutsideTheFootprint() {
-            // A non-spotlit receded rival and a frontier edge (null neighbour) both lie on the
-            // footprint's national border, traced elsewhere, so neither is an interior division.
-            var contestedEdges = List.of(
-                    new CellEdge(0, 0, 10, 0, "receded-rival"),
-                    new CellEdge(10, 0, 10, 10, null));
-
-            var borders = TerritoryBuilder.computeContestedBorders(List.of("con"),
-                    Set.of("con"), Map.of("con", contestedEdges));
-
-            assertThat(borders).isEmpty();
-        }
-
-        @Test
-        void skipsAMemberWithNoCellEdges() {
-            // A member absent from the edge map (no cell) contributes no border rather than throwing.
-            var borders = TerritoryBuilder.computeContestedBorders(List.of("dom"),
-                    Set.of("con"), Map.of());
-
-            assertThat(borders).isEmpty();
-        }
     }
 
     @Nested

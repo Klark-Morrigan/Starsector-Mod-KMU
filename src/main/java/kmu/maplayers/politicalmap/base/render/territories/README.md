@@ -12,7 +12,7 @@ Part of Klark Morrigan's Utilities; see the
 - [Building: cells into territories](#building-cells-into-territories)
 - [Borders against empty space](#borders-against-empty-space)
 - [The draw packets](#the-draw-packets)
-- [Spotlit footprint: split fill and contested borders](#spotlit-footprint-split-fill-and-contested-borders)
+- [Spotlit footprint: the split fill](#spotlit-footprint-the-split-fill)
 - [Rendering](#rendering)
 - [What is not here](#what-is-not-here)
 
@@ -36,20 +36,20 @@ halfway to a dead star exactly as it does halfway to a rival, and the dead star'
 own cell draws its inset outline in the neutral style on the far side of that
 channel.
 
-The three player settings under Territory reach on the **Political map - visuals**
-tab - *Uncontrolled systems give way to faction territory*, *Frontier keep-out*,
-and *Frontier max reach* - describe an asymmetric treatment of empty space that the
-draw does not yet apply, so changing them does not move a border.
+The two player settings under Territory reach on the **Political map - visuals**
+tab - *Uncontrolled systems give way to faction territory* and *Frontier keep-out* -
+describe an asymmetric treatment of empty space that the draw does not yet apply, so
+changing them does not move a border.
 
 ## The draw packets
 
 `PoliticalMapTerritories` is the built state a rebuild produces and an incremental refresh edits in
 place: the two draw lists (`FactionTerritory` per owned faction, `StyledCell` per cell) plus the
 retained ownership, theme, and filter inputs a re-shape needs. `FactionTerritory` carries one
-faction's fill triangles, contested-hatch segments, contested borders, and border loops;
-`StyledCell` carries one cell's fill, outline, and interior seams.
+faction's fill triangles, contested-hatch segments, and border loops; `StyledCell` carries one
+cell's fill, outline, and interior seams.
 
-## Spotlit footprint: split fill and contested borders
+## Spotlit footprint: the split fill
 
 When the filter spotlights one bloc, its whole footprint - the systems it dominates plus the ones
 it merely contests - clusters into a single `FactionTerritory` under one national frontier, and the
@@ -66,17 +66,13 @@ raw cell edge. Filling per cell instead would truncate each member's kept edges 
 inset boundary edges, and two members meeting at a corner against a rival would pull their shared
 edge back by different amounts - opening an unfilled wedge on the more-receded side.
 
-Every interior edge that touches a contested cell - the
-solid/hatch transitions and the divisions between two hatched cells - is stroked in the frontier's
-own border colour and width (the `contestedBorders` run), so each contested cell reads as a bounded
-territory instead of dissolving into the hatch. Two dominated cells share no such edge, so they
-fuse with only the faint per-cell province seam between them and the solid region stays one nation.
-
-Those contested-touching edges are drawn twice: once as the faint per-cell province seam (the cell
-build is contested-agnostic, so it emits every interior edge) and once as the bold contested border
-laid over it. The overdraw is deliberate - it keeps the per-cell seam build free of any
-contested-awareness at the cost of a few doubled line segments, which is invisible against the rest
-of the overlay and never a measurable share of the per-frame draw.
+The footprint's interior divisions carry no geometry of their own: the whole footprint shares one
+grouping key, so a solid/hatch transition is an interior seam like any other and its two cells
+already stroke it in the province style. Giving those divisions the frontier's own border style
+instead would put a heavy line under the faction's name label, which the label has to stay legible
+over, and would need raw cell edges to draw - untrimmed, so they overshoot the inset frontier and
+poke out into the border channel. The province seam has neither problem: it is faint, and the cell
+shaper truncates it where it runs into a pulled-in border.
 
 ## Rendering
 

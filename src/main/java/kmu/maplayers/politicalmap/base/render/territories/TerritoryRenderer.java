@@ -117,11 +117,8 @@ public final class TerritoryRenderer {
             GlRuns.drawScaled(GL11.GL_LINES, cell.boundaryEdges(), factor);
         }
         // The national border in its own style, over the interior seams so the frontier dominates
-        // where they meet. The spotlit footprint's contested borders - the interior edges touching a
-        // hatched cell - stroke in this same style and pass, so a contested cell reads as a bounded
-        // territory; that run is empty off filter. Each frontier ring is a closed rounded loop, so it
-        // strokes as one continuous GL_LINE_LOOP, while the contested borders are disconnected
-        // GL_LINES on the raw cell edges.
+        // where they meet. Each border ring is a closed rounded loop, so it strokes as one
+        // continuous GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
             var border = territory.border();
             if (border.isHidden()) {
@@ -132,7 +129,6 @@ public final class TerritoryRenderer {
             for (var loop : territory.borderLoops()) {
                 GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
             }
-            GlRuns.drawScaled(GL11.GL_LINES, territory.contestedBorders(), factor);
         }
     }
 

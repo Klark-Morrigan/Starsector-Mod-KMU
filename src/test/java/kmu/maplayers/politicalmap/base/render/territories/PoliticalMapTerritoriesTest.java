@@ -190,7 +190,7 @@ final class PoliticalMapTerritoriesTest {
 
     private static FactionTerritory anyFactionTerritory() {
         return new FactionTerritory(new float[0], new float[0], hiddenPaint(),
-                List.of(), new float[0], hiddenPaint(), 0f);
+                List.of(), hiddenPaint(), 0f);
     }
 
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
