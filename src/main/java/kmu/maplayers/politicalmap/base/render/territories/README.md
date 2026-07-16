@@ -10,6 +10,7 @@ Part of Klark Morrigan's Utilities; see the
 ## Index
 
 - [Building: cells into territories](#building-cells-into-territories)
+- [Frontiers against empty space](#frontiers-against-empty-space)
 - [The draw packets](#the-draw-packets)
 - [Rendering](#rendering)
 - [What is not here](#what-is-not-here)
@@ -23,6 +24,26 @@ per cluster, and bakes each element's colours, opacities, and widths by cascadin
 corners of those borders; `VertexRuns` flattens shaped cells into GL vertex runs. The per-cell and
 per-faction build steps are the shared primitives an incremental re-shape reuses, so a full
 rebuild and a single-system refresh style a cell identically.
+
+## Frontiers against empty space
+
+A border edge is shaped by what sits across it. Against another organised entity
+(a rival faction or an alliance) the edge keeps the mutual midline plus its inward
+border channel, so two territories meet and push back evenly. Against *empty*
+space - an uncontrolled star with no owner, whether never-settled or decivilised -
+the edge is instead pushed outward past the midline toward that star and capped a
+fixed distance short of it, so the faction colour flows around the dead star and
+leaves it a pocket rather than cutting off at the halfway line. The owned fill's
+push-out and the factionless cell's own pulled-in outline both target that one
+keep-out line, so they abut without a gap or overlap.
+
+Two player settings on the **Political map - visuals** tab drive it, both under
+Territory reach: *Uncontrolled systems give way to faction territory* toggles the
+whole behaviour (off reverts every empty-facing edge to the midline cut), and
+*Frontier keep-out* sets how close territory may reach to the star, sizing the
+pocket. When two systems sit closer than twice the keep-out radius the push clamps
+to the midline, so colonies never overlap and a star squeezed between two rivals
+keeps an unclaimed lens between them.
 
 ## The draw packets
 

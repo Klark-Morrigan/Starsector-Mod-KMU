@@ -101,8 +101,6 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void gettersReturnEachConstructorInputInItsMatchingSlot() {
-            Map<String, StyledCell> styledCells = new LinkedHashMap<>();
-            Map<String, FactionTerritory> factionTerritories = new LinkedHashMap<>();
             Map<String, DominantOwner> owners = new LinkedHashMap<>();
             Set<String> decivilised = new LinkedHashSet<>();
             var neutral = Color.CYAN;
@@ -133,12 +131,15 @@ final class PoliticalMapTerritoriesTest {
             // A distinct contested set so a swapped filter-snapshot field is caught by identity.
             Set<String> contested = new LinkedHashSet<>(Set.of("contested-system"));
 
-            var territories = new PoliticalMapTerritories(styledCells, factionTerritories, owners,
-                    decivilised, neutral, desaturationPalette, renderStyle, viewMock, grouping,
-                    selectedBlocId, recedeAdjustment, contested);
+            var territories = new PoliticalMapTerritories(owners, decivilised,
+                    new MapStyling(renderStyle, neutral, desaturationPalette),
+                    new ViewGrouping(viewMock, grouping),
+                    new FilterSnapshot(selectedBlocId, recedeAdjustment, contested));
 
-            assertThat(territories.getStyledCellBySystemId()).isSameAs(styledCells);
-            assertThat(territories.getFactionTerritoryByFactionId()).isSameAs(factionTerritories);
+            // The two draw lists are created internally, not passed, so the build can fill them;
+            // they start empty and stay mutable for the incremental refresh to edit in place.
+            assertThat(territories.getStyledCellBySystemId()).isEmpty();
+            assertThat(territories.getFactionTerritoryByFactionId()).isEmpty();
             assertThat(territories.getOwnerBySystemId()).isSameAs(owners);
             assertThat(territories.getDecivilisedSystemIds()).isSameAs(decivilised);
             assertThat(territories.getNeutralColor()).isSameAs(neutral);
@@ -166,10 +167,15 @@ final class PoliticalMapTerritoriesTest {
     private static PoliticalMapTerritories drawablesWith(Map<String, StyledCell> styledCells,
             Map<String, FactionTerritory> territories) {
         PoliticalMapView viewMock = mock(PoliticalMapView.class);
-        return new PoliticalMapTerritories(new LinkedHashMap<>(styledCells),
-                new LinkedHashMap<>(territories), new LinkedHashMap<>(), new LinkedHashSet<>(),
-                Color.GRAY, null, null, viewMock,
-                OwnershipGrouping.identity(), null, BlocStyleAdjustment.NONE, new LinkedHashSet<>());
+        var drawables = new PoliticalMapTerritories(new LinkedHashMap<>(), new LinkedHashSet<>(),
+                new MapStyling(null, Color.GRAY, null),
+                new ViewGrouping(viewMock, OwnershipGrouping.identity()),
+                new FilterSnapshot(null, BlocStyleAdjustment.NONE, new LinkedHashSet<>()));
+        // The draw lists are no longer constructor inputs; fill the internally-created maps so
+        // this fixture's only varying state is what isEmpty reads.
+        drawables.getStyledCellBySystemId().putAll(styledCells);
+        drawables.getFactionTerritoryByFactionId().putAll(territories);
+        return drawables;
     }
 
     // A hidden element paint (null color) is enough to stand in wherever a StyledCell or

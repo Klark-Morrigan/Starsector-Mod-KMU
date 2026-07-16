@@ -223,11 +223,12 @@ final class TerritoryBuilderTest {
                 boolean isFiltering, BlocStyleAdjustment recede) {
             // A filtered pass carries the selected bloc's id; the fixture's owner is never that
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
-            return new PoliticalMapTerritories(new LinkedHashMap<>(), new LinkedHashMap<>(),
-                    Map.of(SYSTEM_ID, OWNER), Set.of(), Color.GRAY,
-                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                    renderStyleWithEveryCategory(STYLE), viewMock, OwnershipGrouping.identity(),
-                    isFiltering ? "selected-bloc" : null, recede, Set.of());
+            return new PoliticalMapTerritories(
+                    Map.of(SYSTEM_ID, OWNER), Set.of(),
+                    new MapStyling(renderStyleWithEveryCategory(STYLE), Color.GRAY,
+                            new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
+                    new ViewGrouping(viewMock, OwnershipGrouping.identity()),
+                    new FilterSnapshot(isFiltering ? "selected-bloc" : null, recede, Set.of()));
         }
 
         // Wraps one category style into a full theme with all four categories set to it and an

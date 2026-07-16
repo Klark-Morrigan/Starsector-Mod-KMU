@@ -24,85 +24,50 @@ import java.util.Set;
  * and styles the full rebuild used.
  *
  * <p>The styled-cell and faction-territory maps are the render output - the per-cell
- * seam/outline records and each faction's fill and national border. The rest are
- * retained inputs: the owner-by-system and decivilised-system maps say who holds each
- * system, the {@link RenderStyle} theme (its global tier plus each category's style) and
- * the neutral color say how each category draws, the
- * desaturation palette says what a desaturated bloc recolours to, and the view plus its
- * resolved grouping say how ownership is grouped and which blocs recede to the
- * independent style - so an incremental re-shape classifies a cell exactly as the full
- * build did.
+ * seam/outline records and each faction's fill and national border. They start empty and
+ * the build fills them, so they are created here rather than passed in. The rest are
+ * retained inputs, grouped into three cohesive snapshots: {@link MapStyling} (the theme,
+ * the neutral color, and the desaturation palette - how each category draws and what a
+ * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
+ * grouping - how ownership is grouped and which blocs recede to the independent style),
+ * and {@link FilterSnapshot} (the spotlight state). The owner-by-system and
+ * decivilised-system maps ride alongside as who holds each system. An incremental re-shape
+ * reads them all back so it classifies a cell exactly as the full build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
  * not values: the styled-cell, faction-territory, and owner-by-system maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions an
- * ownership change touched. The theme, the decivilised set, the neutral color, the
- * view, and the grouping are set once at build and only read after, so an incremental
- * pass re-shapes against the exact inputs the full build baked in.
- *
- * <p>The filter snapshot rides along the same way: {@code selectedBlocId} is the spotlighted
- * bloc's id (null off filter, and {@link #isFiltering} derives from it), and
- * {@code recedeAdjustment} is the styling every non-spotlighted bloc takes this pass (resolved
- * once from the shared recede toggles). A re-shape and the label rebuild read them back so a
- * filtered cell recedes and a spotlight cluster names itself exactly as the full build did; off
- * filter they are the inert defaults (null, {@link BlocStyleAdjustment#NONE}).
+ * ownership change touched. The styling, decivilised set, view grouping, and filter
+ * snapshot are set once at build and only read after, so an incremental pass re-shapes
+ * against the exact inputs the full build baked in.
  */
 public final class PoliticalMapTerritories {
-    // Render output, mutated in place by the incremental refresh.
-    private final Map<String, StyledCell> styledCellBySystemId;
-    private final Map<String, FactionTerritory> factionTerritoryByFactionId;
+    // Render output, mutated in place by the incremental refresh. Created empty here since a
+    // fresh build fills them and no caller ever supplies them pre-populated.
+    private final Map<String, StyledCell> styledCellBySystemId = new LinkedHashMap<>();
+    private final Map<String, FactionTerritory> factionTerritoryByFactionId = new LinkedHashMap<>();
     // Retained derivation inputs. The owner map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
     private final Map<String, DominantOwner> ownerBySystemId;
     private final Set<String> decivilisedSystemIds;
-    private final Color neutralColor;
-    private final FactionPalette desaturationPalette;
-    // The whole theme: the global tier plus one style per category. One value in place of
-    // the four separate category-style fields, so the builders index it by MapCategory and
-    // read the global tier (hatch, smoothing) off it too.
-    private final RenderStyle renderStyle;
-    // The view whose per-bloc style classifier an incremental re-shape reads, and the
-    // grouping snapshot the full build resolved ownership under - held together so the
-    // re-shape classifies a cell against the same view and the same once-sampled grouping.
-    private final PoliticalMapView view;
-    private final OwnershipGrouping grouping;
-    // The filter snapshot: the spotlighted bloc's id (null off filter, so isFiltering() derives
-    // from it), and the styling every non-spotlighted bloc recedes to (resolved once from the
-    // shared recede toggles, inert off filter). Held so an incremental re-shape and the label
-    // rebuild recede and name exactly as the full build did.
-    private final String selectedBlocId;
-    private final BlocStyleAdjustment recedeAdjustment;
-    // The spotlit systems the bloc is present in but does not dominate. The whole spotlit
-    // footprint shares one group key so its border traces as one frontier, so this set is the
-    // only record of which of those systems are contested - the faction builder reads it to split
-    // the footprint's fill per cell (solid where it dominates, hatched here). Empty off filter.
-    private final Set<String> contestedSystemIds;
+    // The three cohesive input snapshots: the resolved paint scheme, the view and its once-sampled
+    // grouping, and the spotlight state. The flat getters below unwrap them so every reader keeps
+    // its original accessor.
+    private final MapStyling styling;
+    private final ViewGrouping viewGrouping;
+    private final FilterSnapshot filter;
 
     public PoliticalMapTerritories(
-            Map<String, StyledCell> styledCellBySystemId,
-            Map<String, FactionTerritory> factionTerritoryByFactionId,
             Map<String, DominantOwner> ownerBySystemId,
             Set<String> decivilisedSystemIds,
-            Color neutralColor,
-            FactionPalette desaturationPalette,
-            RenderStyle renderStyle,
-            PoliticalMapView view,
-            OwnershipGrouping grouping,
-            String selectedBlocId,
-            BlocStyleAdjustment recedeAdjustment,
-            Set<String> contestedSystemIds) {
-        this.styledCellBySystemId = styledCellBySystemId;
-        this.factionTerritoryByFactionId = factionTerritoryByFactionId;
+            MapStyling styling,
+            ViewGrouping viewGrouping,
+            FilterSnapshot filter) {
         this.ownerBySystemId = ownerBySystemId;
         this.decivilisedSystemIds = decivilisedSystemIds;
-        this.neutralColor = neutralColor;
-        this.desaturationPalette = desaturationPalette;
-        this.renderStyle = renderStyle;
-        this.view = view;
-        this.grouping = grouping;
-        this.selectedBlocId = selectedBlocId;
-        this.recedeAdjustment = recedeAdjustment;
-        this.contestedSystemIds = contestedSystemIds;
+        this.styling = styling;
+        this.viewGrouping = viewGrouping;
+        this.filter = filter;
     }
 
     // An empty placeholder for the render path to fall back on after a failed first
@@ -114,11 +79,20 @@ public final class PoliticalMapTerritories {
     // concrete view, keeping this model view-agnostic; the identity grouping and the
     // gray-paired desaturation palette are inert defaults, never read for the same reason.
     public static PoliticalMapTerritories createEmpty(PoliticalMapView view) {
-        return new PoliticalMapTerritories(new LinkedHashMap<>(), new LinkedHashMap<>(),
-                new LinkedHashMap<>(), new LinkedHashSet<>(), Color.GRAY,
-                new FactionPalette(Color.GRAY, Color.GRAY),
-                null, view, OwnershipGrouping.identity(),
-                null, BlocStyleAdjustment.NONE, new LinkedHashSet<>());
+        return new PoliticalMapTerritories(
+                new LinkedHashMap<>(),
+                new LinkedHashSet<>(),
+                new MapStyling(
+                    null,
+                    Color.GRAY,
+                    new FactionPalette(Color.GRAY, Color.GRAY)),
+                new ViewGrouping(
+                    view,
+                    OwnershipGrouping.identity()),
+                new FilterSnapshot(
+                    null,
+                    BlocStyleAdjustment.NONE,
+                    new LinkedHashSet<>()));
     }
 
     public Map<String, StyledCell> getStyledCellBySystemId() {
@@ -138,60 +112,60 @@ public final class PoliticalMapTerritories {
     }
 
     public Color getNeutralColor() {
-        return neutralColor;
+        return styling.neutralColor();
     }
 
     public FactionPalette getDesaturationPalette() {
-        return desaturationPalette;
+        return styling.desaturationPalette();
     }
 
     public RenderStyle getRenderStyle() {
-        return renderStyle;
+        return styling.renderStyle();
     }
 
     // The sector-wide tier (hatch, border smoothing, desaturation profile), read by the
     // renderer and the builders so a global knob resolves once off the theme.
     public GlobalStyle getGlobalStyle() {
-        return renderStyle.global();
+        return styling.renderStyle().global();
     }
 
     // The style for one category, the per-category tier the cascade folds over the global
     // tier when a cell or territory of that category is built.
     public CategoryStyle getCategoryStyle(MapCategory category) {
-        return renderStyle.categoryStyle(category);
+        return styling.renderStyle().categoryStyle(category);
     }
 
     public PoliticalMapView getView() {
-        return view;
+        return viewGrouping.view();
     }
 
     public OwnershipGrouping getGrouping() {
-        return grouping;
+        return viewGrouping.grouping();
     }
 
     // Whether this build spotlights a bloc - it does exactly when a bloc id was selected, so the
     // shared cell and faction builders bypass the view's per-bloc styling seams for the filter's.
     public boolean isFiltering() {
-        return selectedBlocId != null;
+        return filter.isFiltering();
     }
 
     // The spotlighted bloc's id this build recedes the rest of the sector around, or null off
     // filter; the label rebuild resolves the filter's synthetic spotlight keys back to its name.
     public String getSelectedBlocId() {
-        return selectedBlocId;
+        return filter.selectedBlocId();
     }
 
     // The styling every non-spotlighted bloc recedes to this pass; BlocStyleAdjustment.NONE off
     // filter, so a bloc no filter recedes draws untouched.
     public BlocStyleAdjustment getRecedeAdjustment() {
-        return recedeAdjustment;
+        return filter.recedeAdjustment();
     }
 
     // The spotlit systems the bloc is present in but does not dominate, so the faction builder
     // hatches their cells inside the one spotlit frontier while the dominated cells fill solid.
     // Empty off filter.
     public Set<String> getContestedSystemIds() {
-        return contestedSystemIds;
+        return filter.contestedSystemIds();
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push

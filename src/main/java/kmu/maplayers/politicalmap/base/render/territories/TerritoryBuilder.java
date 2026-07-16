@@ -40,7 +40,6 @@ import org.apache.log4j.Logger;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -132,18 +131,11 @@ public final class TerritoryBuilder {
                     ? RecedePreferences.FILTER.resolveRecedeAdjustment()
                     : BlocStyleAdjustment.NONE;
             var territories = new PoliticalMapTerritories(
-                    new LinkedHashMap<>(),
-                    new LinkedHashMap<>(),
                     ownerBySystemId,
                     decivilisedSystemIds,
-                    neutralColor,
-                    desaturationPalette,
-                    renderStyle,
-                    view,
-                    grouping,
-                    selectedBlocId,
-                    recedeAdjustment,
-                    contestedSystemIds);
+                    new MapStyling(renderStyle, neutralColor, desaturationPalette),
+                    new ViewGrouping(view, grouping),
+                    new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
             // geometry clusters by grouping key, so hand it each system's faction id as the
