@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins the contract of {@link SystemClusterBorders#traceBorderRings}:
  *  - two same-key cells fuse into one border ring (their shared seam dropped),
  *  - a cell facing a different key keeps that shared edge as border,
+ *  - a cell facing a present but unowned neighbour keeps that frontier edge as border,
  *  - a group with no geometry yields no rings,
  *  - an inset that swallows a cluster drops the ring rather than folding it over.
  *
@@ -64,6 +65,25 @@ final class SystemClusterBordersTest {
                             edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
                             edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)));
             var owners = Map.of("A", "F", "B", "G");
+
+            var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
+                    BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
+
+            assertThat(rings).hasSize(1);
+        }
+
+        @Test
+        void an_edge_facing_an_unowned_neighbour_stays_a_border() {
+            // A [0,0]..[10,10] is held by F; its right edge faces a present but unowned
+            // neighbour B (a dead star - a cell, no owner). That owned-vs-empty edge is an
+            // open frontier, which still bounds the cluster, so A's whole square outlines
+            // one ring. Were the frontier edge treated as a non-border and dropped, the
+            // open chain of the remaining three edges could not close into a ring.
+            var edges = Map.of(
+                    "A", List.of(
+                            edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
+                            edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)));
+            var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);

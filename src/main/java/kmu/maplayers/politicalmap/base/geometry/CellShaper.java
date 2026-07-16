@@ -72,7 +72,7 @@ public final class CellShaper {
             var edge = edges.get(i);
             vertices.add(new double[] {edge.x1(), edge.y1()});
             isBorderEdge[i] = EdgeClassifier.classifyAcross(edge, ownGroupKey, groupKeyBySystemId)
-                    == EdgeClass.BOUNDARY;
+                    .isBoundary();
         }
         var inset = PolygonOffsets.insetSelectedEdges(vertices, isBorderEdge, borderInset);
         return new ShapedCell(inset.vertices(), inset.edgeIsInset());

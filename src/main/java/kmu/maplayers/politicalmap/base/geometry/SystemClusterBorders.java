@@ -101,7 +101,7 @@ public final class SystemClusterBorders {
             var ownGroupKey = groupKeyBySystemId.get(systemId);
             for (var edge : edges) {
                 if (EdgeClassifier.classifyAcross(edge, ownGroupKey, groupKeyBySystemId)
-                        == EdgeClass.BOUNDARY) {
+                        .isBoundary()) {
                     segments.add(new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
                 }
             }
