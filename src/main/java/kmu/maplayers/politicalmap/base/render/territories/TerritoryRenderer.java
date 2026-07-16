@@ -107,18 +107,18 @@ public final class TerritoryRenderer {
             GlColor.set(inner.color(), alphaMult * inner.alpha());
             GlRuns.drawScaled(GL11.GL_LINES, cell.interiorEdges(), factor);
         }
-        // The spotlit footprint's contested seams - the solid<->hatched transitions and the
-        // hatched<->hatched divisions - drawn with the interior seams (beneath the national borders)
-        // so the frontier still dominates where they meet. Its run is empty for every non-spotlit
-        // territory, and its paint is hidden there too, so this is a no-op off filter.
+        // The spotlit footprint's solid<->hatched transition seam, drawn with the interior seams
+        // (beneath the national borders) so the frontier still dominates where they meet. Its run
+        // is empty for every non-spotlit territory, and its paint is hidden there too, so this is a
+        // no-op off filter.
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
-            var contestedSeam = territory.contestedSeam();
-            if (contestedSeam.isHidden()) {
+            var transitionSeam = territory.transitionSeam();
+            if (transitionSeam.isHidden()) {
                 continue;
             }
-            GL11.glLineWidth(territory.contestedSeamWidth());
-            GlColor.set(contestedSeam.color(), alphaMult * contestedSeam.alpha());
-            GlRuns.drawScaled(GL11.GL_LINES, territory.contestedSeams(), factor);
+            GL11.glLineWidth(territory.transitionSeamWidth());
+            GlColor.set(transitionSeam.color(), alphaMult * transitionSeam.alpha());
+            GlRuns.drawScaled(GL11.GL_LINES, territory.transitionSeams(), factor);
         }
         for (var cell : territories.getStyledCellBySystemId().values()) {
             var outer = cell.outer();
