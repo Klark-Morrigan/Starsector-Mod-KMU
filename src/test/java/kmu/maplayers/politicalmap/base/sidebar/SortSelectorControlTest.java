@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ReselectBehaviour;
+import kmlib.starsector.ui.controls.TriangleDirection;
 
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SortDirection;
@@ -72,10 +73,10 @@ final class SortSelectorControlTest {
 
         @Test
         void buildSelectorTrailsTheActiveRowWithItsLiveDirectionAndOthersWithTheirDefaults() {
-            // The lit row previews the direction the list is sorting in now (flipped to ascending
-            // "UP"); every other numeric row previews its own default descending "DWN", and the name
-            // row its default ascending "UP" - so each row reads as "pick me and the list sorts this
-            // way".
+            // The lit row previews the direction the list is sorting in now (flipped to ascending, an UP
+            // triangle); every other numeric row previews its own default descending DOWN triangle, and
+            // the name row its default ascending UP triangle - so each row reads as "pick me and the list
+            // sorts this way".
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
@@ -85,9 +86,9 @@ final class SortSelectorControlTest {
                 var nameRow = MODES.indexOf(BlocSortMode.NAME);
                 var dominationRow = MODES.indexOf(BlocSortMode.DOMINATION);
                 var presenceRow = MODES.indexOf(BlocSortMode.PRESENCE);
-                assertThat(selector.trailingLabelAt(dominationRow)).isEqualTo("UP");
-                assertThat(selector.trailingLabelAt(presenceRow)).isEqualTo("DWN");
-                assertThat(selector.trailingLabelAt(nameRow)).isEqualTo("UP");
+                assertThat(selector.directionAt(dominationRow)).isEqualTo(TriangleDirection.UP);
+                assertThat(selector.directionAt(presenceRow)).isEqualTo(TriangleDirection.DOWN);
+                assertThat(selector.directionAt(nameRow)).isEqualTo(TriangleDirection.UP);
             }
         }
 

@@ -1,7 +1,5 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmu.util.KmuStrings;
-
 /**
  * The direction the filter picker's active sort runs in - ascending or descending on the chosen
  * metric. It rides alongside the {@link BlocSortMode}: a mode fixes which key ranks the blocs, this
@@ -9,20 +7,18 @@ import kmu.util.KmuStrings;
  * independently - picking a new mode resets the direction to that mode's default, while re-picking
  * the lit mode flips only the direction.
  *
- * <p>Each direction owns the save-stable key it persists under and the compact label the sort
- * selector draws in a row's trailing slot (capitalised "UP" / "DWN", since the body font renders no
- * up/down arrow, triangle, or chevron glyph). {@link #opposite()} is the flip a re-pick applies.
+ * <p>Each direction owns the save-stable key it persists under; the sort selector maps it to the
+ * up/down triangle it draws in a row's trailing slot, since the body font renders no up/down glyph.
+ * {@link #opposite()} is the flip a re-pick applies.
  */
 public enum SortDirection {
-    ASCENDING("asc", KmuStrings.POLITICAL_MAP_CTL_SORT_DIR_ASCENDING),
-    DESCENDING("desc", KmuStrings.POLITICAL_MAP_CTL_SORT_DIR_DESCENDING);
+    ASCENDING("asc"),
+    DESCENDING("desc");
 
     private final String persistenceKey;
-    private final String labelKey;
 
-    SortDirection(String persistenceKey, String labelKey) {
+    SortDirection(String persistenceKey) {
         this.persistenceKey = persistenceKey;
-        this.labelKey = labelKey;
     }
 
     /**
@@ -50,11 +46,6 @@ public enum SortDirection {
      */
     public String persistenceKey() {
         return persistenceKey;
-    }
-
-    /** @return the string key of this direction's compact trailing-slot label ("UP" / "DWN") */
-    public String labelKey() {
-        return labelKey;
     }
 
     /** @return the other direction - the flip a re-pick of the lit sort mode applies */

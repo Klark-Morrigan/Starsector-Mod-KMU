@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
+import kmlib.starsector.ui.controls.TriangleDirection;
 
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SortDirection;
@@ -9,7 +10,6 @@ import kmu.maplayers.politicalmap.base.refresh.SortSelection;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,26 +22,24 @@ import java.util.List;
  * <p>A sort is always active (the list is always ordered somehow), so unlike the bloc picker this
  * radio never clears to nothing. Instead it re-fires on a re-pick ({@link ReselectBehaviour#REFIRE}):
  * clicking the already-lit mode flips its direction, while clicking a different mode switches to it at
- * that mode's default direction. The trailing letters read "UP" / "DWN" (a compact, reduced-size
- * column) rather than an arrow or triangle glyph, since the sidebar body font renders no such glyph.
+ * that mode's default direction. Each row's direction is drawn as a small filled triangle (up for
+ * ascending, down for descending) rather than a letter, since the sidebar body font renders no up/down
+ * glyph.
  *
- * <p>The rows carry no icon - every {@code iconPaths} entry is null - so the selector reuses the bloc
- * list's three-column table geometry (a would-be crest column, the mode name, the trailing direction)
- * and reads as a left-aligned list of modes with their directions flush right. The rows are drawn in
- * {@link BlocSortMode}'s own order, so the row index a click reports maps straight back to a mode by
- * position.
+ * <p>The rows carry no icon - the direction table's icon column is all null - so the selector reuses
+ * the bloc list's three-column table geometry (a would-be crest column, the mode name, the trailing
+ * direction triangle) and reads as a left-aligned list of modes with their directions flush right. The
+ * rows are drawn in {@link BlocSortMode}'s own order, so the row index a click reports maps straight
+ * back to a mode by position.
  */
 public final class SortSelectorControl {
-    // The direction letters draw smaller than the mode names so the trailing column reads as a quiet
-    // annotation, not a second label competing with the mode name. Relative to the strip body size.
-    private static final double DIRECTION_LABEL_SCALE = 0.8d;
 
     private SortSelectorControl() {
     }
 
     /**
      * Builds the sort selector for the active mode and direction: a vertical radio lit on that mode's
-     * row, each row labelled with its mode's string and trailed by a direction letter - the active
+     * row, each row labelled with its mode's string and trailed by a direction triangle - the active
      * mode's current direction on the lit row, each other mode's default direction on its own row, so
      * every row previews the order picking it would give.
      *
@@ -54,22 +52,27 @@ public final class SortSelectorControl {
             SortDirection activeDirection) {
         var modes = List.of(BlocSortMode.values());
         var labels = new ArrayList<String>(modes.size());
-        var directionLabels = new ArrayList<String>(modes.size());
+        var directions = new ArrayList<TriangleDirection>(modes.size());
         for (var mode : modes) {
             labels.add(KmuStrings.get(mode.labelKey()));
             // The lit mode shows its live direction; every other row previews its own default, so a
             // row reads as "pick me and the list sorts this way".
             var rowDirection = mode == activeMode ? activeDirection : mode.defaultDirection();
-            directionLabels.add(KmuStrings.get(rowDirection.labelKey()));
+            directions.add(resolveTriangleDirection(rowDirection));
         }
-        return ControlSpec.VerticalTable.table(
+        return ControlSpec.VerticalTable.directionTable(
                 labels,
-                Collections.<String>nCopies(modes.size(), null),
-                directionLabels,
+                directions,
                 modes.indexOf(activeMode),
                 cellIndex -> applySelection(modes, cellIndex),
-                ReselectBehaviour.REFIRE,
-                DIRECTION_LABEL_SCALE);
+                ReselectBehaviour.REFIRE);
+    }
+
+    // The triangle that previews a sort direction: ascending points up, descending down. The selector
+    // draws this shape in each row's trailing slot in place of a direction word, since the body font
+    // renders no up/down glyph.
+    private static TriangleDirection resolveTriangleDirection(SortDirection direction) {
+        return direction == SortDirection.ASCENDING ? TriangleDirection.UP : TriangleDirection.DOWN;
     }
 
     // Applies a click on a sort row. Re-picking the lit mode flips its direction; picking a different
