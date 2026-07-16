@@ -9,7 +9,8 @@ import java.util.Map;
 
 /**
  * Reads the whole political-map theme out of the player's LunaLib settings into one
- * {@link RenderStyle}: the global tier (hatch, border smoothing, desaturation profile) and
+ * {@link RenderStyle}: the global tier (hatch, border smoothing, hover highlight, desaturation
+ * profile) and
  * one {@link CategoryStyle} per {@link MapCategory}. This is the single seam a rebuild reads
  * the render settings through, so every knob resolves in one place rather than being fetched
  * ad hoc across the builders, and an incremental re-shape restyles against the same snapshot.
@@ -37,9 +38,9 @@ public final class RenderStyleReader {
     }
 
     // Folds the sector-wide knobs into the global tier: the contested-fill hatch, the
-    // national-border smoothing, and how far a receded bloc's Independent-based grey darkens.
-    // The hatch angle is authored in degrees and converted to radians at the reader so the
-    // hatch math downstream stays in radians.
+    // national-border smoothing, the hover highlight, and how far a receded bloc's
+    // Independent-based grey darkens. The hatch angle is authored in degrees and converted to
+    // radians at the reader so the hatch math downstream stays in radians.
     public static GlobalStyle readGlobalStyle() {
         return new GlobalStyle(
                 new HatchStyle(
@@ -52,7 +53,27 @@ public final class RenderStyleReader {
                         KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
                         KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
                         KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians()),
+                readHoverHighlightStyle(),
                 KmuLunaSettings.getPoliticalMapDesaturationDarkening());
+    }
+
+    // Reads the cursor's feedback into one style: the shared palette choice both its elements
+    // paint in, the frontier halo's stack and pulse, and the hovered cell's wash. Read here
+    // with the rest of the theme rather than per frame in the highlight pass, so a knob moved
+    // mid-hover repaints through the same rebuild every other style change does.
+    public static HoverHighlightStyle readHoverHighlightStyle() {
+        return new HoverHighlightStyle(
+                KmuLunaSettings.getPoliticalMapHoverHighlightColor(),
+                new HoverGlowStyle(
+                        KmuLunaSettings.getPoliticalMapHoverGlowOpacity(),
+                        KmuLunaSettings.getPoliticalMapHoverGlowWidth(),
+                        KmuLunaSettings.getPoliticalMapHoverGlowLayers(),
+                        KmuLunaSettings.getPoliticalMapHoverGlowPulseStrength(),
+                        KmuLunaSettings.getPoliticalMapHoverGlowPulsePeriod()),
+                new HoverWashStyle(
+                        KmuLunaSettings.getPoliticalMapHoverWashOpacity(),
+                        KmuLunaSettings.getPoliticalMapHoverWashOutlineOpacity(),
+                        KmuLunaSettings.getPoliticalMapHoverWashOutlineWidth()));
     }
 
     // Reads each owned category's eight style settings into one bundle, so the build

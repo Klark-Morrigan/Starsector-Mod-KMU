@@ -200,10 +200,15 @@ final class RenderStyleReaderTest {
         private static final int CORNER_SEGMENTS = 4;
         private static final double CHAMFER_ANGLE = 0.6;
         private static final double DESATURATION_DARKENING = 0.4;
+        // One distinctive hover knob, enough to prove the tier carries the hover style it
+        // gathers; ReadHoverHighlightStyle pins the rest of that bundle's threading.
+        private static final double HOVER_GLOW_OPACITY = 0.65;
 
         @Test
-        void readGlobalStyleGathersTheHatchSmoothingAndDesaturationKnobsIntoOneTier() {
+        void readGlobalStyleGathersEverySectorWideKnobIntoOneTier() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverGlowOpacity)
+                        .thenReturn(HOVER_GLOW_OPACITY);
                 settingsMock.when(KmuLunaSettings::getPoliticalMapHatchSpacing)
                         .thenReturn(HATCH_SPACING);
                 settingsMock.when(KmuLunaSettings::getPoliticalMapHatchAngleRadians)
@@ -232,6 +237,58 @@ final class RenderStyleReaderTest {
                 assertThat(global.borderSmoothing().cornerSegments()).isEqualTo(CORNER_SEGMENTS);
                 assertThat(global.borderSmoothing().chamferAngleRadians()).isEqualTo(CHAMFER_ANGLE);
                 assertThat(global.desaturationDarkening()).isEqualTo(DESATURATION_DARKENING);
+                assertThat(global.hoverHighlight().glow().opacity()).isEqualTo(HOVER_GLOW_OPACITY);
+            }
+        }
+    }
+
+    @Nested
+    class ReadHoverHighlightStyle {
+
+        // Distinct values per knob, so a getter wired into the wrong slot reads as a swap
+        // rather than matching by luck.
+        private static final double GLOW_OPACITY = 0.65;
+        private static final double GLOW_WIDTH = 17.0;
+        private static final int GLOW_LAYERS = 6;
+        private static final double GLOW_PULSE_STRENGTH = 0.4;
+        private static final double GLOW_PULSE_PERIOD = 2.5;
+        private static final double WASH_OPACITY = 0.3;
+        private static final double WASH_OUTLINE_OPACITY = 0.85;
+        private static final double WASH_OUTLINE_WIDTH = 3.5;
+
+        @Test
+        void readHoverHighlightStyleThreadsEachHoverSettingIntoItsMatchingSlot() {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverHighlightColor)
+                        .thenReturn(FactionPaletteChoice.SECONDARY);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverGlowOpacity)
+                        .thenReturn(GLOW_OPACITY);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverGlowWidth)
+                        .thenReturn(GLOW_WIDTH);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverGlowLayers)
+                        .thenReturn(GLOW_LAYERS);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverGlowPulseStrength)
+                        .thenReturn(GLOW_PULSE_STRENGTH);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverGlowPulsePeriod)
+                        .thenReturn(GLOW_PULSE_PERIOD);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverWashOpacity)
+                        .thenReturn(WASH_OPACITY);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverWashOutlineOpacity)
+                        .thenReturn(WASH_OUTLINE_OPACITY);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverWashOutlineWidth)
+                        .thenReturn(WASH_OUTLINE_WIDTH);
+
+                var hover = RenderStyleReader.readHoverHighlightStyle();
+
+                assertThat(hover.color()).isEqualTo(FactionPaletteChoice.SECONDARY);
+                assertThat(hover.glow().opacity()).isEqualTo(GLOW_OPACITY);
+                assertThat(hover.glow().width()).isEqualTo(GLOW_WIDTH);
+                assertThat(hover.glow().layers()).isEqualTo(GLOW_LAYERS);
+                assertThat(hover.glow().pulseStrength()).isEqualTo(GLOW_PULSE_STRENGTH);
+                assertThat(hover.glow().pulsePeriodSeconds()).isEqualTo(GLOW_PULSE_PERIOD);
+                assertThat(hover.wash().fillOpacity()).isEqualTo(WASH_OPACITY);
+                assertThat(hover.wash().outlineOpacity()).isEqualTo(WASH_OUTLINE_OPACITY);
+                assertThat(hover.wash().outlineWidth()).isEqualTo(WASH_OUTLINE_WIDTH);
             }
         }
     }

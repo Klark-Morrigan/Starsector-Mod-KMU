@@ -2,7 +2,9 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapStaticDebugRenderer;
+import kmu.maplayers.politicalmap.base.render.hover.HoverHighlightRenderer;
 import kmu.maplayers.politicalmap.base.render.labels.LabelRenderer;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer;
@@ -13,14 +15,19 @@ import org.apache.log4j.Logger;
 /**
  * Composes the political map's map-overlay layers over the {@link PoliticalMapCache}'s current
  * draw lists, bottom to top: the base view (the normal territories, or the debug border-tracing
- * overlay when it has replaced them), then the cluster-anchor debug overlay, then the faction
- * names. The two debug facilities compose rather than one hiding the other - the anchor overlay
- * layers over whichever base view drew - and each layer draws only under its own toggle. The
- * plugin holds one of these behind a transient field and delegates its {@code renderOnMap} here,
- * so the terrain adapter stays a thin surface over the render sequencing.
+ * overlay when it has replaced them), then the hover highlight, then the cluster-anchor debug
+ * overlay, then the faction names. The two debug facilities compose rather than one hiding the
+ * other - the anchor overlay layers over whichever base view drew - and each layer draws only
+ * under its own toggle. The plugin holds one of these behind a transient field and delegates its
+ * {@code renderOnMap} here, so the terrain adapter stays a thin surface over the render
+ * sequencing.
  */
 final class PoliticalMapOverlayRenderer {
     private static final Logger LOG = Global.getLogger(PoliticalMapOverlayRenderer.class);
+
+    // Held rather than called statically: the highlight retains the geometry it resolved for the
+    // hovered cell, so a cursor resting on one cell resolves it once instead of every frame.
+    private final HoverHighlightRenderer hoverHighlightRenderer = new HoverHighlightRenderer();
 
     // Diagnostic: ensures the first map render logs exactly once, for the no-draw investigation.
     private boolean hasLoggedFirstRender;
@@ -30,14 +37,32 @@ final class PoliticalMapOverlayRenderer {
      * below-UI pass so the territory and bands stay beneath the vanilla star and constellation
      * names.
      */
-    public void renderOnMap(PoliticalMapCache cache, float factor, float alphaMult) {
+    public void renderOnMap(
+            PoliticalMapCache cache,
+            float factor,
+            float alphaMult) {
         logFirstRenderOnce(cache, factor, alphaMult);
         // Swap production and debug base render on which view the cache built: the debug overlay
         // replaces the normal render, and the cache built exactly one of the two.
         if (cache.isDebug()) {
-            PoliticalMapStaticDebugRenderer.renderOnMap(cache.getDebugTerritories(), factor, alphaMult);
+            PoliticalMapStaticDebugRenderer.renderOnMap(
+                    cache.getDebugTerritories(),
+                    factor,
+                    alphaMult);
         } else {
-            TerritoryRenderer.renderOnMap(cache.getTerritories(), factor, alphaMult);
+            TerritoryRenderer.renderOnMap(
+                    cache.getTerritories(),
+                    factor,
+                    alphaMult);
+            // Over the territories it lights up, so the halo reads off the frontier it traces
+            // and the wash brightens the fill beneath it rather than being painted over. Only
+            // under the production view: the debug overlay replaced the draw lists the highlight
+            // would trace, and the hover has nothing to resolve against.
+            hoverHighlightRenderer.renderOnMap(
+                    cache.getTerritories(),
+                    PoliticalMapHoverState.getInstance().getHover(),
+                    factor,
+                    alphaMult);
         }
         // The anchor overlay layers over whichever base view just drew - independent of the swap
         // above, so the two debug toggles compose. Gated on its own toggle here (not by the list

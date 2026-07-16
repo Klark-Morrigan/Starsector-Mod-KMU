@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.color.Colors;
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -20,8 +21,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the shared palette resolution both the fills and the cluster-name labels read: the
- * palette-color pick that maps a player's colour choice to a palette shade, and the
- * desaturation-palette resolver that a receded bloc recolours through.
+ * palette-color pick that maps a player's colour choice to a palette shade, the owner-shade
+ * pick that falls back to neutral for unowned ground, and the desaturation-palette resolver
+ * that a receded bloc recolours through.
  */
 final class MapPalettesTest {
 
@@ -50,6 +52,42 @@ final class MapPalettesTest {
             // layer to skip that element.
             assertThat(MapPalettes.pickPaletteColor(
                     FactionPaletteChoice.NONE, PRIMARY, SECONDARY)).isNull();
+        }
+    }
+
+    @Nested
+    class PickOwnerPaletteColor {
+
+        // A distinct third shade, so a neutral substitution cannot be mistaken for either of
+        // the owner's own.
+        private static final Color NEUTRAL = Color.GRAY;
+        private static final DominantOwner OWNER =
+                new DominantOwner("hegemony", PRIMARY, SECONDARY);
+
+        @Test
+        void pickOwnerPaletteColorReturnsTheOwnersShadeForTheChoice() {
+            assertThat(MapPalettes.pickOwnerPaletteColor(
+                    FactionPaletteChoice.PRIMARY, OWNER, NEUTRAL)).isEqualTo(PRIMARY);
+            assertThat(MapPalettes.pickOwnerPaletteColor(
+                    FactionPaletteChoice.SECONDARY, OWNER, NEUTRAL)).isEqualTo(SECONDARY);
+        }
+
+        @Test
+        void pickOwnerPaletteColorFallsBackToTheNeutralShadeForUnownedGround() {
+            // A factionless system has no palette, so both shades resolve neutral - the same
+            // substitution its own cell outline draws under.
+            assertThat(MapPalettes.pickOwnerPaletteColor(
+                    FactionPaletteChoice.PRIMARY, null, NEUTRAL)).isEqualTo(NEUTRAL);
+            assertThat(MapPalettes.pickOwnerPaletteColor(
+                    FactionPaletteChoice.SECONDARY, null, NEUTRAL)).isEqualTo(NEUTRAL);
+        }
+
+        @Test
+        void pickOwnerPaletteColorReturnsNullForNoColorWhoeverHoldsTheGround() {
+            assertThat(MapPalettes.pickOwnerPaletteColor(
+                    FactionPaletteChoice.NONE, OWNER, NEUTRAL)).isNull();
+            assertThat(MapPalettes.pickOwnerPaletteColor(
+                    FactionPaletteChoice.NONE, null, NEUTRAL)).isNull();
         }
     }
 

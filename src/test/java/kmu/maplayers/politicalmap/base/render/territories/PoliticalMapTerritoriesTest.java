@@ -13,6 +13,9 @@ import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
 import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.style.HatchStyle;
+import kmu.maplayers.politicalmap.base.render.style.HoverGlowStyle;
+import kmu.maplayers.politicalmap.base.render.style.HoverHighlightStyle;
+import kmu.maplayers.politicalmap.base.render.style.HoverWashStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyle;
 import kmu.settings.FactionPaletteChoice;
@@ -46,6 +49,11 @@ import static org.mockito.Mockito.mock;
  * the splits and merges a single flip can cause.
  */
 final class PoliticalMapTerritoriesTest {
+    // An inert hover highlight: this model carries the style through untouched, and no case here
+    // hovers anything, so its values are never read.
+    private static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
+            FactionPaletteChoice.NONE, new HoverGlowStyle(0, 0, 0, 0, 0),
+            new HoverWashStyle(0, 0, 0));
 
     @Nested
     class CreateEmpty {
@@ -124,7 +132,7 @@ final class PoliticalMapTerritoriesTest {
             categories.put(MapCategory.DECIVILISED, decivilisedStyle);
             categories.put(MapCategory.UNINHABITED, uninhabitedStyle);
             var globalStyle = new GlobalStyle(new HatchStyle(5, 5, 5),
-                    new BorderSmoothingStyle(true, true, 5, 5, 5), 0.3);
+                    new BorderSmoothingStyle(true, true, 5, 5, 5), NO_HOVER_HIGHLIGHT, 0.3);
             var renderStyle = new RenderStyle(globalStyle, categories);
             PoliticalMapView viewMock = mock(PoliticalMapView.class);
             var grouping = OwnershipGrouping.identity();

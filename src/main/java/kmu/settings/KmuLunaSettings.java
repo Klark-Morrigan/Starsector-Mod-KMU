@@ -175,6 +175,34 @@ public final class KmuLunaSettings {
     private static final String DESATURATION_DARKENING_FIELD =
             "kmu_politicalMapDesaturationDarkening";
 
+    // Hover highlight settings (Political map - visuals tab): how the map answers the cursor -
+    // a halo around the hovered territory's frontier and a wash over the one hovered cell,
+    // both in the hovered ground's own palette colour (or off, at "No color"). The halo is a
+    // stack of strokes, so it takes a widest-layer width, an innermost-layer opacity, a layer
+    // count, and a pulse (strength plus period); the wash takes a fill opacity and its own
+    // outline opacity and width, since an interior cell reads only by its trace. All feed the
+    // drawables rebuild, so a change repaints the highlight live on the open map - which is the
+    // point of exposing them: the look is dialed in-engine against real territory rather than
+    // guessed at build time.
+    private static final String HOVER_HIGHLIGHT_COLOR_FIELD =
+            "kmu_politicalMapHoverHighlightColor";
+    private static final String HOVER_GLOW_OPACITY_FIELD =
+            "kmu_politicalMapHoverGlowOpacity";
+    private static final String HOVER_GLOW_WIDTH_FIELD =
+            "kmu_politicalMapHoverGlowWidth";
+    private static final String HOVER_GLOW_LAYERS_FIELD =
+            "kmu_politicalMapHoverGlowLayers";
+    private static final String HOVER_GLOW_PULSE_STRENGTH_FIELD =
+            "kmu_politicalMapHoverGlowPulseStrength";
+    private static final String HOVER_GLOW_PULSE_PERIOD_FIELD =
+            "kmu_politicalMapHoverGlowPulsePeriod";
+    private static final String HOVER_WASH_OPACITY_FIELD =
+            "kmu_politicalMapHoverWashOpacity";
+    private static final String HOVER_WASH_OUTLINE_OPACITY_FIELD =
+            "kmu_politicalMapHoverWashOutlineOpacity";
+    private static final String HOVER_WASH_OUTLINE_WIDTH_FIELD =
+            "kmu_politicalMapHoverWashOutlineWidth";
+
     // Dominance rules (Political map - domination tab): how the map decides a system's
     // dominant faction. Not styling fields - they change the political verdicts
     // themselves. The colony-size weight multiplies each market's base size rating; a
@@ -521,6 +549,21 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_HATCH_SPACING = 400.0;
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
     private static final double DEFAULT_HATCH_WIDTH = 1.0;
+    // Hover-highlight knobs, mirroring the CSV defaults: the hovered ground's own bright
+    // shade, a four-layer halo peaking at half alpha and fading out by 14 pixels with a slow
+    // quarter-depth breath, and a cell wash of a little over a third alpha under a crisp
+    // near-opaque trace. Tuned to sit over the fills without swamping them - the fills
+    // themselves paint at 0.4 - and expected to move once playtested.
+    private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOR =
+            FactionPaletteChoice.PRIMARY;
+    private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
+    private static final double DEFAULT_HOVER_GLOW_WIDTH = 14.0;
+    private static final int DEFAULT_HOVER_GLOW_LAYERS = 4;
+    private static final double DEFAULT_HOVER_GLOW_PULSE_STRENGTH = 0.25;
+    private static final double DEFAULT_HOVER_GLOW_PULSE_PERIOD_SECONDS = 1.5;
+    private static final double DEFAULT_HOVER_WASH_OPACITY = 0.35;
+    private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
+    private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
     // Label-anchor search knobs.
     private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
     private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
@@ -1066,6 +1109,85 @@ public final class KmuLunaSettings {
      */
     public static double getPoliticalMapHatchWidth() {
         return LunaSettingsReader.getDouble(MOD_ID, HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH);
+    }
+
+    /**
+     * @return which palette color of the ground under the cursor the hover halo and cell wash
+     *         both draw in, or NONE to leave the map unresponsive to hovering; the primary
+     *         (bright) color by default
+     */
+    public static FactionPaletteChoice getPoliticalMapHoverHighlightColor() {
+        return readPaletteChoice(HOVER_HIGHLIGHT_COLOR_FIELD, DEFAULT_HOVER_HIGHLIGHT_COLOR);
+    }
+
+    /**
+     * @return the alpha of the hover halo's innermost stroke, 0..1 - its brightest layer,
+     *         which the outer layers fade away from
+     */
+    public static double getPoliticalMapHoverGlowOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, HOVER_GLOW_OPACITY_FIELD,
+                DEFAULT_HOVER_GLOW_OPACITY);
+    }
+
+    /**
+     * @return how far the hover halo reaches off the hovered frontier, in pixels - the width
+     *         of its widest, faintest stroke
+     */
+    public static double getPoliticalMapHoverGlowWidth() {
+        return LunaSettingsReader.getDouble(MOD_ID, HOVER_GLOW_WIDTH_FIELD,
+                DEFAULT_HOVER_GLOW_WIDTH);
+    }
+
+    /**
+     * @return how many strokes the hover halo accumulates from; more buys a smoother falloff
+     *         at a stroke of the whole frontier apiece
+     */
+    public static int getPoliticalMapHoverGlowLayers() {
+        return LunaSettingsReader.getInt(MOD_ID, HOVER_GLOW_LAYERS_FIELD,
+                DEFAULT_HOVER_GLOW_LAYERS);
+    }
+
+    /**
+     * @return how much of its alpha the hover halo gives up at the bottom of a breath, 0..1;
+     *         0 holds it steady
+     */
+    public static double getPoliticalMapHoverGlowPulseStrength() {
+        return LunaSettingsReader.getDouble(MOD_ID, HOVER_GLOW_PULSE_STRENGTH_FIELD,
+                DEFAULT_HOVER_GLOW_PULSE_STRENGTH);
+    }
+
+    /**
+     * @return how long one breath of the hover halo's pulse takes, in seconds; ignored while
+     *         the pulse strength is 0
+     */
+    public static double getPoliticalMapHoverGlowPulsePeriod() {
+        return LunaSettingsReader.getDouble(MOD_ID, HOVER_GLOW_PULSE_PERIOD_FIELD,
+                DEFAULT_HOVER_GLOW_PULSE_PERIOD_SECONDS);
+    }
+
+    /**
+     * @return the alpha the hovered cell's wash brightens its painted extent by, 0..1
+     */
+    public static double getPoliticalMapHoverWashOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, HOVER_WASH_OPACITY_FIELD,
+                DEFAULT_HOVER_WASH_OPACITY);
+    }
+
+    /**
+     * @return the alpha the hovered cell's own outline traces at, 0..1 - the only cue a cell
+     *         surrounded by its own faction has, so it reads apart from the wash
+     */
+    public static double getPoliticalMapHoverWashOutlineOpacity() {
+        return LunaSettingsReader.getDouble(MOD_ID, HOVER_WASH_OUTLINE_OPACITY_FIELD,
+                DEFAULT_HOVER_WASH_OUTLINE_OPACITY);
+    }
+
+    /**
+     * @return the line width the hovered cell's outline traces at, in pixels
+     */
+    public static double getPoliticalMapHoverWashOutlineWidth() {
+        return LunaSettingsReader.getDouble(MOD_ID, HOVER_WASH_OUTLINE_WIDTH_FIELD,
+                DEFAULT_HOVER_WASH_OUTLINE_WIDTH);
     }
 
     /**

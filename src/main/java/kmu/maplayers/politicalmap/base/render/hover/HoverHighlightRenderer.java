@@ -1,0 +1,137 @@
+package kmu.maplayers.politicalmap.base.render.hover;
+
+import kmlib.opengl.GlColor;
+import kmlib.opengl.GlRuns;
+import kmlib.profiling.Timings;
+
+import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
+import kmu.maplayers.politicalmap.base.render.style.HoverGlowStyle;
+import kmu.maplayers.politicalmap.base.render.style.HoverHighlightStyle;
+import kmu.maplayers.politicalmap.base.render.style.HoverWashStyle;
+import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
+import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+
+import org.lwjgl.opengl.GL11;
+
+import java.awt.Color;
+
+/**
+ * Draws the map's answer to the cursor: a halo blooming off the hovered territory's frontier
+ * and a wash lifting the one cell the cursor is in.
+ *
+ * <p>Both burn additively rather than blending over the map. A halo is layers of the same
+ * loop stacked on each other - only additive blending lets those layers accumulate into a
+ * soft outward falloff instead of the topmost one simply replacing the rest - and the wash
+ * brightens ground already painted, so adding light to the fill under it reads as the cell
+ * lighting up rather than as a second, flatter fill laid over it.
+ *
+ * <p>Pure GL emission over the geometry {@link HoverHighlightGeometry} resolved and the style
+ * the theme baked; nothing here decides what is hovered or reads a setting.
+ */
+public final class HoverHighlightRenderer {
+    private final HoverHighlightGeometry geometry = new HoverHighlightGeometry();
+
+    /**
+     * Paints the hover highlight for one map frame, or nothing when the cursor is over no
+     * cell.
+     *
+     * @param territories the frame's draw lists, supplying the hovered geometry and the theme
+     * @param hover       what the cursor is over this frame
+     * @param factor      the per-vertex scale the map applies to world coordinates
+     * @param alphaMult   the map's own fade, applied on top of every element's opacity
+     */
+    public void renderOnMap(
+            PoliticalMapTerritories territories,
+            PoliticalMapHover hover,
+            float factor,
+            float alphaMult) {
+        var style = territories.getGlobalStyle().hoverHighlight();
+        var color = resolveHighlightColor(territories, hover, style);
+        // A fully faded map (at the ends of its zoom fade) or a highlight the player has turned
+        // off at "No color" would emit every run for nothing, so both skip the GL state push
+        // rather than being left to blend away.
+        if (color == null || alphaMult <= 0f) {
+            return;
+        }
+        var highlight = geometry.resolveHighlightFor(territories, hover);
+        if (highlight.isEmpty()) {
+            return;
+        }
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT
+                | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_LINE_BIT | GL11.GL_HINT_BIT);
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+        GL11.glEnable(GL11.GL_LINE_SMOOTH);
+        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+
+        drawGlow(highlight, style.glow(), color, factor, alphaMult);
+        drawWash(highlight, style.wash(), color, factor, alphaMult);
+
+        // Restores the map's own blend function and line state; every pass after this one
+        // (the anchors, the faction names) expects to draw over the map, not into it.
+        GL11.glPopAttrib();
+    }
+
+    // The colour the whole highlight paints in: the shade of the ground under the cursor.
+    // Null when the player chose "No color", or when the cursor is over nothing, so the caller
+    // skips the pass.
+    private static Color resolveHighlightColor(
+            PoliticalMapTerritories territories,
+            PoliticalMapHover hover,
+            HoverHighlightStyle style) {
+        if (!hover.isHovering()) {
+            return null;
+        }
+        return MapPalettes.pickOwnerPaletteColor(
+                style.color(),
+                territories.getOwnerBySystemId().get(hover.hoveredSystemId()),
+                territories.getNeutralColor());
+    }
+
+    // Strokes the hovered frontier once per layer, so the additive layers pile into a halo;
+    // each layer's width and alpha come off the style, which owns the shape of the stack.
+    private static void drawGlow(
+            HoverHighlight highlight,
+            HoverGlowStyle style,
+            Color color,
+            float factor,
+            float alphaMult) {
+        if (style.opacity() <= 0 || style.layers() < 1) {
+            return;
+        }
+        // The pulse rides a wall clock rather than the campaign's own: the sector map is open
+        // on a paused game, where advance() does not tick, and a halo frozen mid-breath while
+        // the player studies the map would read as the overlay having hung. Read once for the
+        // whole stack, so every layer of one frame is phased alike.
+        var timeSeconds = Timings.convertNanosToSeconds(System.nanoTime());
+        for (var layer = 0; layer < style.layers(); layer++) {
+            GL11.glLineWidth((float) style.computeLayerWidth(layer));
+            GlColor.set(color, (float) (alphaMult * style.computeLayerAlpha(layer, timeSeconds)));
+            for (var loop : highlight.glowLoops()) {
+                GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
+            }
+        }
+    }
+
+    // Lifts the hovered cell: its whole painted extent brightened, then its boundary traced all
+    // the way round. The trace is what names an interior cell - one walled in by its own faction
+    // draws no border of its own, so without it a wash inside a same-coloured territory would
+    // have no edge to read.
+    private static void drawWash(
+            HoverHighlight highlight,
+            HoverWashStyle style,
+            Color color,
+            float factor,
+            float alphaMult) {
+        if (style.fillOpacity() > 0) {
+            GlColor.set(color, (float) (alphaMult * style.fillOpacity()));
+            GlRuns.drawScaled(GL11.GL_TRIANGLES, highlight.washTriangles(), factor);
+        }
+        if (style.outlineOpacity() > 0) {
+            GL11.glLineWidth((float) style.outlineWidth());
+            GlColor.set(color, (float) (alphaMult * style.outlineOpacity()));
+            GlRuns.drawScaled(GL11.GL_LINE_LOOP, highlight.washOutline(), factor);
+        }
+    }
+}

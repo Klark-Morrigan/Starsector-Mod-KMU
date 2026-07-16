@@ -33,8 +33,10 @@ public final class MapPalettes {
      * palette" rule, so a cell's seams, a faction's fill and border, and the bloc's name
      * all recolour off one decision rather than three copies of it.
      */
-    public static FactionPalette resolveEffectivePalette(BlocStyleAdjustment adjustment,
-            DominantOwner owner, FactionPalette desaturationPalette) {
+    public static FactionPalette resolveEffectivePalette(
+            BlocStyleAdjustment adjustment,
+            DominantOwner owner,
+            FactionPalette desaturationPalette) {
         return adjustment.desaturate()
                 ? desaturationPalette
                 : new FactionPalette(owner.primaryColor(), owner.secondaryColor());
@@ -45,13 +47,35 @@ public final class MapPalettes {
      * shade for a SECONDARY choice, the primary (bright) shade for a PRIMARY choice, or
      * null for NONE ("No color") so the caller skips that element.
      */
-    public static Color pickPaletteColor(FactionPaletteChoice choice, Color primaryColor,
+    public static Color pickPaletteColor(
+            FactionPaletteChoice choice,
+            Color primaryColor,
             Color secondaryColor) {
         return switch (choice) {
             case PRIMARY -> primaryColor;
             case SECONDARY -> secondaryColor;
             case NONE -> null;
         };
+    }
+
+    /**
+     * Picks the palette shade of a piece of ground itself: its owner's, or the shared neutral
+     * colour when nothing owns it - a factionless system (decivilised, or uninhabited) has no
+     * palette of its own, so both shades resolve neutral, exactly as its cell's own outline
+     * draws. Null for a NONE ("No color") choice, so the caller skips the element.
+     *
+     * <p>Reads the owner's authored shades untouched, with no per-bloc adjustment folded in,
+     * so this answers "whose ground is this" rather than "how is this ground painted right
+     * now". The two diverge under a recede: ground the map has sunk to grey still belongs to
+     * its owner, and an element whose whole job is to name that owner should say so.
+     */
+    public static Color pickOwnerPaletteColor(
+            FactionPaletteChoice choice, 
+            DominantOwner owner,
+            Color neutralColor) {
+        return owner == null
+                ? pickPaletteColor(choice, neutralColor, neutralColor)
+                : pickPaletteColor(choice, owner.primaryColor(), owner.secondaryColor());
     }
 
     /**
@@ -66,7 +90,8 @@ public final class MapPalettes {
      * KmuLunaSettings itself) so the mapping is a pure lookup; the caller reads the live setting once
      * per pass and hands it in.
      */
-    public static FactionPalette resolveDesaturationPalette(SectorAPI sector,
+    public static FactionPalette resolveDesaturationPalette(
+            SectorAPI sector,
             double darkeningStrength) {
         var keepFactor = (float) (1.0 - darkeningStrength);
         var independent = StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);

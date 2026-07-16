@@ -12,6 +12,9 @@ import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
 import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.style.HatchStyle;
+import kmu.maplayers.politicalmap.base.render.style.HoverGlowStyle;
+import kmu.maplayers.politicalmap.base.render.style.HoverHighlightStyle;
+import kmu.maplayers.politicalmap.base.render.style.HoverWashStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyle;
 import kmu.settings.FactionPaletteChoice;
@@ -41,6 +44,11 @@ import static org.mockito.Mockito.when;
  * {@link kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder}.
  */
 final class TerritoryBuilderTest {
+    // An inert hover highlight: the builder bakes draw lists, and nothing it produces is
+    // hovered here, so the style is carried untouched and its values never read.
+    private static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
+            FactionPaletteChoice.NONE, new HoverGlowStyle(0, 0, 0, 0, 0),
+            new HoverWashStyle(0, 0, 0));
 
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
     // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
@@ -176,7 +184,7 @@ final class TerritoryBuilderTest {
                     Map.of(SYSTEM_ID, OWNER), Set.of(),
                     new MapStyling(
                             new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
-                                    new BorderSmoothingStyle(false, false, 0, 0, 0), 0.3),
+                                    new BorderSmoothingStyle(false, false, 0, 0, 0), NO_HOVER_HIGHLIGHT, 0.3),
                                     categories),
                             Color.GRAY,
                             new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
@@ -245,7 +253,7 @@ final class TerritoryBuilderTest {
                 categories.put(category, style);
             }
             return new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
-                    new BorderSmoothingStyle(false, false, 0, 0, 0), 0.3), categories);
+                    new BorderSmoothingStyle(false, false, 0, 0, 0), NO_HOVER_HIGHLIGHT, 0.3), categories);
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never
