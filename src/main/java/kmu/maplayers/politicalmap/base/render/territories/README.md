@@ -12,6 +12,7 @@ Part of Klark Morrigan's Utilities; see the
 - [Building: cells into territories](#building-cells-into-territories)
 - [Frontiers against empty space](#frontiers-against-empty-space)
 - [The draw packets](#the-draw-packets)
+- [Spotlit footprint: split fill and contested borders](#spotlit-footprint-split-fill-and-contested-borders)
 - [Rendering](#rendering)
 - [What is not here](#what-is-not-here)
 
@@ -50,8 +51,25 @@ keeps an unclaimed lens between them.
 `PoliticalMapTerritories` is the built state a rebuild produces and an incremental refresh edits in
 place: the two draw lists (`FactionTerritory` per owned faction, `StyledCell` per cell) plus the
 retained ownership, theme, and filter inputs a re-shape needs. `FactionTerritory` carries one
-faction's fill triangles, contested-hatch segments, and border loops; `StyledCell` carries one
-cell's fill, outline, and interior seams.
+faction's fill triangles, contested-hatch segments, contested borders, and border loops;
+`StyledCell` carries one cell's fill, outline, and interior seams.
+
+## Spotlit footprint: split fill and contested borders
+
+When the filter spotlights one bloc, its whole footprint - the systems it dominates plus the ones
+it merely contests - clusters into a single `FactionTerritory` under one national frontier, and the
+fill splits per cell: solid where the bloc dominates, a pre-clipped diagonal hatch where it is only
+present ("mine, but contested"). Every interior edge that touches a contested cell - the
+solid/hatch transitions and the divisions between two hatched cells - is stroked in the frontier's
+own border colour and width (the `contestedBorders` run), so each contested cell reads as a bounded
+territory instead of dissolving into the hatch. Two dominated cells share no such edge, so they
+fuse with only the faint per-cell province seam between them and the solid region stays one nation.
+
+Those contested-touching edges are drawn twice: once as the faint per-cell province seam (the cell
+build is contested-agnostic, so it emits every interior edge) and once as the bold contested border
+laid over it. The overdraw is deliberate - it keeps the per-cell seam build free of any
+contested-awareness at the cost of a few doubled line segments, which is invisible against the rest
+of the overlay and never a measurable share of the per-frame draw.
 
 ## Rendering
 
