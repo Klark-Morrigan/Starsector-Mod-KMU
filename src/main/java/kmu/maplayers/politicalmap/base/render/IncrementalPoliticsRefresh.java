@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
+import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -77,8 +78,11 @@ final class IncrementalPoliticsRefresh {
                         + staleSystemIds.size());
                 return;
             }
+            // One frontier snapshot for the whole re-shape batch, matching the full
+            // build's read-once so an incremental re-shape lands the same pull-in.
+            var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
             for (var cellId : cellsToReshape) {
-                reshapeCellInPlace(territories, geometryCache, cellId);
+                reshapeCellInPlace(territories, geometryCache, cellId, frontier);
             }
             // Only the old and new owners' territories can have changed shape; every
             // other faction's rings trace unchanged cells, so they are left as-is.
@@ -174,7 +178,7 @@ final class IncrementalPoliticsRefresh {
     // drops it when the cell contributes nothing (inset-collapsed, or factionless with a
     // "No color" outline).
     private static void reshapeCellInPlace(PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache, String systemId) {
+            PoliticalMapGeometryCache geometryCache, String systemId, FrontierSettings frontier) {
         var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
         if (edges == null) {
             territories.getStyledCellBySystemId().remove(systemId);
@@ -182,9 +186,9 @@ final class IncrementalPoliticsRefresh {
         }
         var owner = territories.getOwnerBySystemId().get(systemId);
         var ownerFactionId = owner == null ? null : owner.factionId();
-        var shaped = CellShaper.shapeCell(edges, ownerFactionId,
+        var shaped = CellShaper.shapeCell(systemId, edges, ownerFactionId,
                 DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()),
-                PoliticalMapStyle.BORDER_INSET_DISTANCE);
+                PoliticalMapStyle.BORDER_INSET_DISTANCE, frontier);
         var styled = TerritoryBuilder.buildStyledCellForSystem(territories, systemId, shaped);
         if (styled == null) {
             territories.getStyledCellBySystemId().remove(systemId);

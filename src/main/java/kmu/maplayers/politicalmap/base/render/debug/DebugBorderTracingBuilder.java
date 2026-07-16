@@ -7,6 +7,7 @@ import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
+import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -92,8 +93,11 @@ public final class DebugBorderTracingBuilder {
                 addFlattenedLoops(roundedLoops, smoothed);
             }
         }
+        // Same frontier snapshot the production build reads, so a factionless cell's outline
+        // in the overlay recedes to its keep-out pocket exactly as it would on the live map.
+        var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
         addFactionlessOutlines(geometryCache, groupKeyBySystemId, decivilisedSystemIds,
-                isRoundingOn, baseLoops, roundedLoops);
+                isRoundingOn, frontier, baseLoops, roundedLoops);
         return new PoliticalMapDebugTerritories(baseLoops, despikedLoops, roundedLoops);
     }
 
@@ -105,7 +109,8 @@ public final class DebugBorderTracingBuilder {
     // matching the normal render's visibility so the overlay stays legible.
     private static void addFactionlessOutlines(PoliticalMapGeometryCache geometryCache,
             Map<String, String> groupKeyBySystemId, Set<String> decivilisedSystemIds,
-            boolean isRoundingOn, List<float[]> baseLoops, List<float[]> roundedLoops) {
+            boolean isRoundingOn, FrontierSettings frontier, List<float[]> baseLoops,
+            List<float[]> roundedLoops) {
         var decivilisedStyle = RenderStyleReader.readDecivilisedStyle();
         var uninhabitedStyle = RenderStyleReader.readUninhabitedStyle();
         for (var entry : geometryCache.getCellEdgesBySystemId().entrySet()) {
@@ -118,8 +123,8 @@ public final class DebugBorderTracingBuilder {
             if (style.outerColor() == FactionPaletteChoice.NONE) {
                 continue;
             }
-            var shaped = CellShaper.shapeCell(entry.getValue(), null, groupKeyBySystemId,
-                    PoliticalMapStyle.BORDER_INSET_DISTANCE);
+            var shaped = CellShaper.shapeCell(entry.getKey(), entry.getValue(), null,
+                    groupKeyBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE, frontier);
             if (shaped.fillPolygon().isEmpty()) {
                 continue;
             }

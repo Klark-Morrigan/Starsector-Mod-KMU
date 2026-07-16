@@ -18,6 +18,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
+import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -138,9 +139,12 @@ public final class TerritoryBuilder {
             // key. Cells consumed by the inset (fewer than three vertices left) drop out.
             var shapeStart = System.nanoTime();
             var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
+            // The frontier snapshot the whole shape pass reads: a factionless cell's edge
+            // facing an owned neighbour recedes to its keep-out pocket while the toggle is on.
+            var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
             var shapedCells = profiler.measure("politicalMap.shapeCells",
                     () -> CellShaper.shapeCells(geometryCache.getCellEdgesBySystemId(),
-                            groupKeyBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE));
+                            groupKeyBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE, frontier));
             for (var entry : shapedCells.entrySet()) {
                 var styled = buildStyledCellForSystem(territories, entry.getKey(), entry.getValue());
                 if (styled != null) {
