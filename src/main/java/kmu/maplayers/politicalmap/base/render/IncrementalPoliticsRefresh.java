@@ -223,13 +223,10 @@ final class IncrementalPoliticsRefresh {
             String factionId,
             List<String> memberSystemIds,
             FrontierSettings frontier) {
-        // No shaped-cell map: the incremental refresh is bypassed while a filter is active (it
-        // re-derives non-filter owners), so it never rebuilds a spotlit territory - the only
-        // territory whose fill reads the shaped cells - and passes none.
         var territory = memberSystemIds == null || memberSystemIds.isEmpty()
                 ? null
                 : TerritoryBuilder.buildFactionTerritory(territories, geometryCache, factionId,
-                        memberSystemIds, Map.of(), frontier);
+                        memberSystemIds, frontier);
         if (territory == null) {
             territories.getFactionTerritoryByFactionId().remove(factionId);
         } else {

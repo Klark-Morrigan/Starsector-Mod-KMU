@@ -9,6 +9,7 @@ import kmu.settings.KmuLunaSettings;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The parameters of one cluster-border ring trace, and the trace itself - the single path the
@@ -40,15 +41,29 @@ public record PoliticalBorderTrace(
     }
 
     // Traces one cluster's inset border rings with these parameters and the fixed
-    // border channel every trace shares.
+    // border channel every trace shares, insetting every boundary edge by that channel.
     public List<List<double[]>> traceRings(
             Collection<String> memberSystemIds,
             Map<String, List<CellEdge>> edgesBySystemId,
             Map<String, String> groupKeyBySystemId) {
+        return traceRings(memberSystemIds, edgesBySystemId, groupKeyBySystemId, Set.of());
+    }
+
+    // Traces one region's rings while opting a set of neighbours out of the border channel:
+    // the boundary edge shared with any of them insets by nothing, so a region traced from
+    // the far side of that edge lands on the same line and the two abut exactly. This is how
+    // one same-key body is carved into regions that meet without a channel opening between
+    // them; the channel and the frontier push still apply to every other boundary edge.
+    public List<List<double[]>> traceRings(
+            Collection<String> memberSystemIds,
+            Map<String, List<CellEdge>> edgesBySystemId,
+            Map<String, String> groupKeyBySystemId,
+            Set<String> coincidentNeighbourSystemIds) {
         return SystemClusterBorders.traceBorderRings(
                 memberSystemIds,
                 edgesBySystemId,
                 groupKeyBySystemId,
+                coincidentNeighbourSystemIds,
                 PoliticalMapStyle.BORDER_INSET_DISTANCE,
                 weldTolerance,
                 miterSpikeLimit,

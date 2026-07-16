@@ -58,8 +58,20 @@ faction's fill triangles, contested-hatch segments, contested borders, and borde
 
 When the filter spotlights one bloc, its whole footprint - the systems it dominates plus the ones
 it merely contests - clusters into a single `FactionTerritory` under one national frontier, and the
-fill splits per cell: solid where the bloc dominates, a pre-clipped diagonal hatch where it is only
-present ("mine, but contested"). Every interior edge that touches a contested cell - the
+fill splits in two: solid where the bloc dominates, a pre-clipped diagonal hatch where it is only
+present ("mine, but contested").
+
+Each of those two states fills from its own traced rings, not from its members' individual cells.
+The footprint's one grouping key is suffixed per state, so the border tracer - which fuses same-key
+cells - traces the dominant members as one region and the contested members as another, while every
+system outside the footprint keeps its real key and the two regions' outer edge therefore lands
+exactly where the national border draws it. Each state names the other's members as *coincident*
+neighbours, so the boundary they share insets by nothing and the solid and hatched fills abut on the
+raw cell edge. Filling per cell instead would truncate each member's kept edges against its own
+inset boundary edges, and two members meeting at a corner against a rival would pull their shared
+edge back by different amounts - opening an unfilled wedge on the more-receded side.
+
+Every interior edge that touches a contested cell - the
 solid/hatch transitions and the divisions between two hatched cells - is stroked in the frontier's
 own border colour and width (the `contestedBorders` run), so each contested cell reads as a bounded
 territory instead of dissolving into the hatch. Two dominated cells share no such edge, so they

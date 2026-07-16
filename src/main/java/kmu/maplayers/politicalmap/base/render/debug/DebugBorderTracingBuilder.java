@@ -77,10 +77,13 @@ public final class DebugBorderTracingBuilder {
         var roundedLoops = new ArrayList<float[]>();
         for (var memberSystemIds
                 : DominantOwner.groupSystemIdsByFactionId(ownerBySystemId).values()) {
+            // Whole clusters, so no neighbour is coincident: every boundary edge takes the
+            // uniform channel, exactly as the drawn national border does.
             var insetRings = SystemClusterBorders.traceBorderRings(
                     memberSystemIds,
                     geometryCache.getCellEdgesBySystemId(),
                     groupKeyBySystemId,
+                    Set.of(),
                     PoliticalMapStyle.BORDER_INSET_DISTANCE,
                     weldTolerance,
                     miterLimit,

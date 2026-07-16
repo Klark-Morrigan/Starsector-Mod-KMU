@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Traces the inset border rings that outline one faction's system cluster(s).
@@ -27,8 +28,15 @@ import java.util.Map;
  * clipped away by that resolve. Interior seams are never touched - they stay
  * sharp, drawn per cell.
  *
+ * <p>A caller that carves one cluster out of a larger same-key body can name the
+ * neighbours it was carved away from as <em>coincident</em>: their shared boundary edge
+ * insets by nothing, so it stays on the raw cell border. Both sides of such an edge trace
+ * it at the same place, so the two carved regions meet exactly - no channel between them,
+ * no overlap. A caller tracing a whole cluster names none, and every boundary edge then
+ * takes the uniform channel.
+ *
  * <p>An open-frontier edge - the cluster facing an unheld dead or decivilised star -
- * is the one exception to the uniform inward channel: while the frontier toggle is on
+ * is the other exception to the uniform inward channel: while the frontier toggle is on
  * it pushes <em>outward</em> past the raw edge toward that star by the channel plus the
  * {@link FrontierSetback} for its spacing, so the colour reaches around the star and
  * stops at the star's keep-out line rather than cutting off at the midline. That push
@@ -67,6 +75,10 @@ public final class SystemClusterBorders {
      *                        neighbour across them - the adjacency graph
      * @param groupKeyBySystemId the grouping key per system, to tell a border edge
      *                        (different or no key across it) from a fused seam
+     * @param coincidentNeighbourSystemIds the neighbours whose shared boundary edge insets
+     *                        by nothing and so stays on the raw cell border, letting two
+     *                        regions traced against each other meet exactly; empty for a
+     *                        trace that gives every boundary edge the uniform channel
      * @param borderInset     inward inset applied to each ring, matching the fills'
      *                        channel so the border lands on the fill edge
      * @param vertexWeldTolerance largest gap between two reports of a shared corner
@@ -85,12 +97,17 @@ public final class SystemClusterBorders {
             Collection<String> groupSystemIds,
             Map<String, List<CellEdge>> edgesBySystemId,
             Map<String, String> groupKeyBySystemId,
+            Set<String> coincidentNeighbourSystemIds,
             double borderInset,
             double vertexWeldTolerance,
             double miterSpikeLimit,
             FrontierSettings frontier) {
-        var boundary = collectBoundarySegments(groupSystemIds, edgesBySystemId,
-                groupKeyBySystemId, borderInset, frontier);
+        var boundary = collectBoundarySegments(
+                groupSystemIds, edgesBySystemId,
+                groupKeyBySystemId,
+                coincidentNeighbourSystemIds,
+                borderInset,
+                frontier);
         var rings = new ArrayList<List<double[]>>();
         for (var ring : EdgeRings.chainIntoRingsWithEdgeValues(
                 boundary.segments(),
@@ -118,6 +135,7 @@ public final class SystemClusterBorders {
             Collection<String> groupSystemIds,
             Map<String, List<CellEdge>> edgesBySystemId,
             Map<String, String> groupKeyBySystemId,
+            Set<String> coincidentNeighbourSystemIds,
             double borderInset,
             FrontierSettings frontier) {
         var segments = new ArrayList<Segment>();
@@ -138,25 +156,40 @@ public final class SystemClusterBorders {
                     continue;
                 }
                 segments.add(new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
-                distances.add(
-                        computeSignedOffset(edge, ownSite, edgeClass, borderInset, frontier));
+                distances.add(computeSignedOffset(
+                        edge,
+                        ownSite,
+                        edgeClass,
+                        coincidentNeighbourSystemIds,
+                        borderInset,
+                        frontier));
             }
         }
         return new BoundarySegments(segments, toDoubleArray(distances));
     }
 
-    // The signed miter offset one boundary segment receives: the border channel inward
-    // (positive) for an organised boundary or the map bound, and the channel plus the
-    // frontier setback outward (negative, toward the dead star) for the owned side of an
-    // open frontier. The outward push carries the owned colour around an unheld star and
-    // stops it at the star's keep-out line; the setback is the exact one the facing empty
-    // cell pulls in by, only the sign flipped, so owned fill and empty pocket coincide.
+    // The signed miter offset one boundary segment receives: nothing (zero) across a
+    // coincident neighbour, the border channel inward (positive) for an organised boundary
+    // or the map bound, and the channel plus the frontier setback outward (negative, toward
+    // the dead star) for the owned side of an open frontier. The outward push carries the
+    // owned colour around an unheld star and stops it at the star's keep-out line; the
+    // setback is the exact one the facing empty cell pulls in by, only the sign flipped, so
+    // owned fill and empty pocket coincide.
     private static double computeSignedOffset(
             CellEdge edge,
             double[] ownSite,
             EdgeClass edgeClass,
+            Set<String> coincidentNeighbourSystemIds,
             double borderInset,
             FrontierSettings frontier) {
+        // A coincident neighbour's edge stays on the raw cell border, so the region traced
+        // from the other side lands on the same line and the two abut with no channel
+        // between them. The null guard covers the map-reach bound (no neighbour across it),
+        // which an immutable Set.of would reject outright.
+        if (edge.neighbourSystemId() != null
+                && coincidentNeighbourSystemIds.contains(edge.neighbourSystemId())) {
+            return 0;
+        }
         if (!isOwnedFrontierPushOut(edge, ownSite, edgeClass, frontier)) {
             return borderInset;
         }

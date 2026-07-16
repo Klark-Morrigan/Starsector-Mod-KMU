@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -33,6 +34,9 @@ final class SystemClusterBordersTest {
     // plain channel, so a cluster traces exactly as it did before the feature.
     private static final FrontierSettings FRONTIER_OFF =
             new FrontierSettings(Map.of(), 0.0, false);
+    // No neighbour opted out of the channel: every boundary edge insets by it, the way a
+    // trace of a whole cluster runs.
+    private static final Set<String> NO_COINCIDENT_NEIGHBOURS = Set.of();
 
     // One CCW square cell edge, tagged with the neighbour across it (null for a
     // frontier into empty space).
@@ -57,6 +61,7 @@ final class SystemClusterBordersTest {
             var owners = Map.of("A", "F", "B", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A", "B"), edges, owners,
+                    NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
 
             assertThat(rings).hasSize(1);
@@ -75,6 +80,7 @@ final class SystemClusterBordersTest {
             var owners = Map.of("A", "F", "B", "G");
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
+                    NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
 
             assertThat(rings).hasSize(1);
@@ -94,6 +100,7 @@ final class SystemClusterBordersTest {
             var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
+                    NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
 
             assertThat(rings).hasSize(1);
@@ -102,6 +109,7 @@ final class SystemClusterBordersTest {
         @Test
         void a_group_with_no_geometry_yields_no_rings() {
             var rings = SystemClusterBorders.traceBorderRings(List.of("missing"), Map.of(), Map.of(),
+                    NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
 
             assertThat(rings).isEmpty();
@@ -118,9 +126,55 @@ final class SystemClusterBordersTest {
             var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
+                    NO_COINCIDENT_NEIGHBOURS,
                     20.0, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF);
 
             assertThat(rings).isEmpty();
+        }
+
+        @Test
+        void two_regions_traced_against_each_other_meet_exactly_on_their_coincident_edge() {
+            // Cells A [0,0]..[10,10] and B [10,0]..[20,10] share the x = 10 edge but carry
+            // different keys, so each traces as its own region. Naming the other as coincident
+            // leaves that shared edge un-inset from both sides: A's border reaches x = 10 and B's
+            // starts at x = 10, so the two fills abut on the raw cell edge with no wedge between
+            // them. Their outward edges still take the plain channel.
+            var rings = traceCarvedNeighbours(Set.of("B"), Set.of("A"));
+
+            assertThat(maxXOf(rings.first())).isCloseTo(10.0, within(1e-6));
+            assertThat(minXOf(rings.second())).isCloseTo(10.0, within(1e-6));
+        }
+
+        @Test
+        void two_regions_traced_without_coincidence_leave_the_border_channel_between_them() {
+            // The same two cells, neither naming the other: the shared edge is an ordinary
+            // boundary, so both sides inset by the channel and the 2 + 2 gap between them is the
+            // border channel two rival nations are meant to be separated by.
+            var rings = traceCarvedNeighbours(NO_COINCIDENT_NEIGHBOURS, NO_COINCIDENT_NEIGHBOURS);
+
+            assertThat(maxXOf(rings.first())).isCloseTo(8.0, within(1e-6));
+            assertThat(minXOf(rings.second())).isCloseTo(12.0, within(1e-6));
+        }
+
+        // Traces the two differently-keyed neighbours A and B, each naming the given coincident
+        // set, so a test varies only what each opts out of the channel.
+        private static TracedPair traceCarvedNeighbours(
+                Set<String> aCoincidentNeighbours, Set<String> bCoincidentNeighbours) {
+            var edges = Map.of(
+                    "A", List.of(
+                            edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
+                            edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)),
+                    "B", List.of(
+                            edge(10, 0, 20, 0, null), edge(20, 0, 20, 10, null),
+                            edge(20, 10, 10, 10, null), edge(10, 10, 10, 0, "A")));
+            var owners = Map.of("A", "F#dominant", "B", "F#contested");
+            return new TracedPair(
+                    SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
+                            aCoincidentNeighbours,
+                            BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF).get(0),
+                    SystemClusterBorders.traceBorderRings(List.of("B"), edges, owners,
+                            bCoincidentNeighbours,
+                            BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, FRONTIER_OFF).get(0));
         }
 
         @Test
@@ -140,6 +194,7 @@ final class SystemClusterBordersTest {
                     Map.of("A", new double[] {50, 50}, "B", new double[] {150, 50}), 20.0, true);
 
             var rings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
+                    NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, frontier);
 
             assertThat(rings).hasSize(1);
@@ -166,14 +221,21 @@ final class SystemClusterBordersTest {
                     "C", new double[] {250, 50}), 20.0, true);
 
             var fRings = SystemClusterBorders.traceBorderRings(List.of("A"), edges, owners,
+                    NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, frontier);
             var gRings = SystemClusterBorders.traceBorderRings(List.of("C"), edges, owners,
+                    NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT, frontier);
 
             assertThat(maxXOf(fRings.get(0))).isCloseTo(132.0, within(1e-6));
             assertThat(minXOf(gRings.get(0))).isCloseTo(168.0, within(1e-6));
             assertThat(maxXOf(fRings.get(0))).isLessThan(minXOf(gRings.get(0)));
         }
+    }
+
+    // The single ring each of two neighbouring cells traced to, so a test reads the two sides of
+    // their shared edge without unpacking two ring lists.
+    private record TracedPair(List<double[]> first, List<double[]> second) {
     }
 
     private static double maxXOf(List<double[]> ring) {

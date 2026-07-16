@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -82,6 +83,7 @@ class PoliticalBorderTraceIntegrationTest {
 
             var throughRecord = trace.traceRings(List.of("A"), EDGES, OWNERS);
             var directTrace = SystemClusterBorders.traceBorderRings(List.of("A"), EDGES, OWNERS,
+                    Set.of(),
                     PoliticalMapStyle.BORDER_INSET_DISTANCE, WELD_TOLERANCE, MITER_SPIKE_LIMIT,
                     FRONTIER_ON);
 

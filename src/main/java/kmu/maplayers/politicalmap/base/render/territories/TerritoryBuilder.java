@@ -39,7 +39,9 @@ import org.apache.log4j.Logger;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +59,13 @@ import java.util.Set;
  * so a full rebuild and an incremental re-shape classify and style a cell identically.
  */
 public final class TerritoryBuilder {
+    // The suffixes that split the spotlit footprint's one grouping key into a key per state, so
+    // the border tracer traces the dominant and the contested members as two regions. Appended to
+    // the footprint's own key, which already carries a sentinel prefix no real bloc id can hold,
+    // so neither derived key can collide with a rival's.
+    private static final String CONTESTED_SUB_REGION_SUFFIX = "#contested";
+    private static final String DOMINANT_SUB_REGION_SUFFIX = "#dominant";
+
     private static final Logger LOG = Global.getLogger(TerritoryBuilder.class);
 
     // Builds only; never instantiated.
@@ -159,7 +168,7 @@ public final class TerritoryBuilder {
             // chaining, smoothing, and tessellating every faction's outline is comparable
             // in cost to shaping the cells.
             profiler.measure("politicalMap.buildFactionTerritories",
-                    () -> buildAllFactionTerritories(territories, geometryCache, shapedCells, frontier));
+                    () -> buildAllFactionTerritories(territories, geometryCache, frontier));
 
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
                     + " styledCells=" + territories.getStyledCellBySystemId().size()
@@ -229,13 +238,10 @@ public final class TerritoryBuilder {
 
     // Builds every owned faction's territory into the territories, keyed by faction id.
     // Each faction is independent - its cluster(s) trace only its own cells - so the
-    // incremental refresh rebuilds one faction's entry without touching the rest. The
-    // already-shaped cells are handed along so the spotlit fill split reuses them rather
-    // than re-shaping (the incremental refresh, never a spotlit build, passes none).
+    // incremental refresh rebuilds one faction's entry without touching the rest.
     private static void buildAllFactionTerritories(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
-            Map<String, ShapedCell> shapedCellBySystemId,
             FrontierSettings frontier) {
         for (var faction
                 : DominantOwner.groupSystemIdsByFactionId(territories.getOwnerBySystemId()).entrySet()) {
@@ -244,7 +250,6 @@ public final class TerritoryBuilder {
                     geometryCache,
                     faction.getKey(),
                     faction.getValue(),
-                    shapedCellBySystemId,
                     frontier);
             if (territory != null) {
                 territories.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
@@ -265,7 +270,6 @@ public final class TerritoryBuilder {
             PoliticalMapGeometryCache geometryCache,
             String factionId,
             List<String> memberSystemIds,
-            Map<String, ShapedCell> shapedCellBySystemId,
             FrontierSettings frontier) {
         // The grouping key here is a bloc id (a faction id under the faction view, or one of the
         // filter's synthetic spotlight keys), so its style and per-bloc adjustment come from the
@@ -296,12 +300,14 @@ public final class TerritoryBuilder {
         if (fillColor == null && borderColor == null) {
             return null;
         }
-        var insetRings = PoliticalBorderTrace
-                .readFromLunaSettings(frontier)
-                .traceRings(
-                        memberSystemIds,
-                        geometryCache.getCellEdgesBySystemId(),
-                        DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()));
+        // One trace for the whole territory: the national border's rings, and - for a spotlit
+        // footprint - the per-state sub-region rings its fill splits into, so border and fill
+        // offset under identical parameters and cannot drift apart.
+        var borderTrace = PoliticalBorderTrace.readFromLunaSettings(frontier);
+        var insetRings = borderTrace.traceRings(
+                memberSystemIds,
+                geometryCache.getCellEdgesBySystemId(),
+                DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()));
         if (insetRings.isEmpty()) {
             return null;
         }
@@ -320,7 +326,7 @@ public final class TerritoryBuilder {
         if (borderSmoothing.shouldRoundCorners()) {
             borderLoops = BorderSmoothing.roundBorderCorners(borderLoops);
         }
-        // The spotlit footprint splits its fill per cell inside its one frontier - solid where the
+        // The spotlit footprint splits its fill in two inside its one frontier - solid where the
         // bloc dominates, hatched where it is merely present - so the two states read apart without
         // the border fracturing. Every other territory fills its whole region solid, tessellated
         // from the same smoothed loops the border strokes so fill and border match exactly.
@@ -328,8 +334,9 @@ public final class TerritoryBuilder {
                 ? computeSpotlitFill(
                         territories,
                         geometryCache,
+                        borderTrace,
+                        factionId,
                         memberSystemIds,
-                        shapedCellBySystemId,
                         fillColor)
                 : new TerritoryFill(
                         fillColor == null
@@ -359,53 +366,110 @@ public final class TerritoryBuilder {
                 (float) style.outerWidth());
     }
 
-    // Splits the spotlit footprint's fill per cell: the systems the bloc dominates tessellate into
-    // the solid triangle soup, the contested systems into their own soup the hatch generator then
-    // clips diagonal lines to, and every interior edge touching a contested cell becomes a contested
-    // border. Each cell is tessellated on its own inset shape - the very shape the pass already
-    // built, reused here rather than re-shaped. Same-key neighbours leave their shared edge on the
-    // true cell border, so adjacent cells' fills meet exactly along it, and a contested cell meets
-    // its neighbour along the raw edge the contested border then strokes. A "No color" fill draws
-    // neither region, but the borders still bound the (invisible) pockets.
+    // Splits the spotlit footprint's fill into its two states: the systems the bloc dominates
+    // tessellate into the solid triangle soup, the contested systems into their own soup the hatch
+    // generator then clips diagonal lines to, and every interior edge touching a contested cell
+    // becomes a contested border. Each state fills from its own traced rings rather than from its
+    // members' individual cells, so no per-cell inset truncation can leave an unfilled wedge where
+    // two members meet at a corner against a rival or empty space. A "No color" fill draws neither
+    // region, but the borders still bound the (invisible) pockets.
     private static TerritoryFill computeSpotlitFill(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
+            PoliticalBorderTrace borderTrace,
+            String blocId,
             List<String> memberSystemIds,
-            Map<String, ShapedCell> shapedCellBySystemId,
             Color fillColor) {
-        var contestedSystemIds = territories.getContestedSystemIds();
+        var contestedMembers = new LinkedHashSet<String>();
+        var dominantMembers = new LinkedHashSet<String>();
+        for (var systemId : memberSystemIds) {
+            (territories.getContestedSystemIds().contains(systemId)
+                    ? contestedMembers : dominantMembers).add(systemId);
+        }
         var contestedBorders = computeContestedBorders(
                 memberSystemIds,
-                contestedSystemIds,
+                territories.getContestedSystemIds(),
                 geometryCache.getCellEdgesBySystemId());
         if (fillColor == null) {
-            return new TerritoryFill(GlVertexRuns.NO_VERTICES, GlVertexRuns.NO_VERTICES,
+            return new TerritoryFill(
+                    GlVertexRuns.NO_VERTICES,
+                    GlVertexRuns.NO_VERTICES,
                     contestedBorders);
         }
-        var solidRuns = new ArrayList<float[]>();
-        var contestedRuns = new ArrayList<float[]>();
-        for (var systemId : memberSystemIds) {
-            var cellTriangles = tessellateMemberCell(shapedCellBySystemId.get(systemId));
-            (contestedSystemIds.contains(systemId) ? contestedRuns : solidRuns)
-                    .add(cellTriangles);
-        }
+        // The two states are traced against each other, so each names the other's members as
+        // coincident: their shared boundary lands on the raw cell edge from both sides and the
+        // solid and hatched fills meet exactly along the line the contested border strokes.
+        var subRegionKeys = mapSubRegionKeyBySystemId(
+                territories,
+                blocId,
+                memberSystemIds,
+                contestedMembers);
+        var solidTriangles = tessellateSubRegion(
+                borderTrace,
+                geometryCache,
+                dominantMembers,
+                subRegionKeys,
+                contestedMembers);
+        var contestedTriangles = tessellateSubRegion(
+                borderTrace,
+                geometryCache,
+                contestedMembers,
+                subRegionKeys, dominantMembers);
         var hatch = territories.getGlobalStyle().hatch();
         var hatchSegments = Hatching.computeHatchSegments(
-                concatenateRuns(contestedRuns),
+                contestedTriangles,
                 hatch.angleRadians(),
                 hatch.spacing());
-        return new TerritoryFill(concatenateRuns(solidRuns), hatchSegments, contestedBorders);
+        return new TerritoryFill(solidTriangles, hatchSegments, contestedBorders);
     }
 
-    // Tessellates one spotlit member's already-shaped inset cell into a GL_TRIANGLES soup, so the
-    // footprint's fill is the union of its cells rather than one region cut from the traced rings -
-    // which lets the dominant and contested cells fill in separate soups. Empty when the cell was
-    // not shaped (absent) or the inset consumed it (an empty fill polygon).
-    private static float[] tessellateMemberCell(ShapedCell shaped) {
-        if (shaped == null || shaped.fillPolygon().isEmpty()) {
+    // Keys the footprint's two states apart, so the border tracer - which fuses cells sharing a
+    // key - traces the dominant and the contested members as separate regions rather than as the
+    // one body their shared footprint key makes them. Every system outside the footprint keeps its
+    // real key, so an edge from a member to a rival or to empty space classifies exactly as it does
+    // when the whole footprint is traced, and the sub-regions' outer edge therefore lands where the
+    // national border draws it. Suffixing the footprint's own key leaves the derived keys as
+    // collision-free as it already is.
+    private static Map<String, String> mapSubRegionKeyBySystemId(
+            PoliticalMapTerritories territories,
+            String blocId,
+            List<String> memberSystemIds,
+            Set<String> contestedMembers) {
+        var keys = new HashMap<String, String>(
+                DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()));
+        for (var systemId : memberSystemIds) {
+            keys.put(systemId, blocId + (contestedMembers.contains(systemId)
+                    ? CONTESTED_SUB_REGION_SUFFIX
+                    : DOMINANT_SUB_REGION_SUFFIX));
+        }
+        return keys;
+    }
+
+    // Tessellates one of the footprint's states into a GL_TRIANGLES soup from the rings tracing
+    // its members as a single region, so a state fills as one continuous area with no per-cell
+    // seam or truncation inside it. The other state's members are the coincident neighbours, whose
+    // shared edge insets by nothing so the two states abut with no channel between them. The rings
+    // are tessellated exactly as traced - unsmoothed - since the smoothing the national border runs
+    // would pull the fill off the border it is drawn under. Empty when the state holds no members
+    // or the trace yields no drawable ring.
+    private static float[] tessellateSubRegion(
+            PoliticalBorderTrace borderTrace,
+            PoliticalMapGeometryCache geometryCache,
+            Set<String> subRegionSystemIds,
+            Map<String, String> subRegionKeyBySystemId,
+            Set<String> coincidentSystemIds) {
+        if (subRegionSystemIds.isEmpty()) {
             return GlVertexRuns.NO_VERTICES;
         }
-        return PolygonTessellator.tessellateToTriangles(List.of(shaped.fillPolygon()));
+        var rings = borderTrace.traceRings(
+                subRegionSystemIds,
+                geometryCache.getCellEdgesBySystemId(),
+                subRegionKeyBySystemId,
+                coincidentSystemIds);
+        if (rings.isEmpty()) {
+            return GlVertexRuns.NO_VERTICES;
+        }
+        return PolygonTessellator.tessellateToTriangles(rings);
     }
 
     // Every interior footprint edge that touches a contested cell, as a GL_LINES run: the
@@ -455,22 +519,6 @@ public final class TerritoryBuilder {
             }
         }
         return GlVertexRuns.packFloats(coordinates);
-    }
-
-    // Concatenates a list of GL vertex runs into one run, since a triangle soup is order-agnostic:
-    // separate cells tessellate independently and their soups append into the footprint's fill.
-    private static float[] concatenateRuns(List<float[]> runs) {
-        var total = 0;
-        for (var run : runs) {
-            total += run.length;
-        }
-        var concatenated = new float[total];
-        var offset = 0;
-        for (var run : runs) {
-            System.arraycopy(run, 0, concatenated, offset, run.length);
-            offset += run.length;
-        }
-        return concatenated;
     }
 
     // The spotlit footprint's fill split into its two painted regions plus the contested borders
