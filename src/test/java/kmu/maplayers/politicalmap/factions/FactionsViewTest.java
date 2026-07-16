@@ -76,13 +76,22 @@ final class FactionsViewTest {
         @Test
         void shouldUseIndependentStyleIsTrueForIndependentSpace() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT, ANY_GROUPING)).isTrue();
+                    Factions.INDEPENDENT, ANY_GROUPING, BlocStyleAdjustment.NONE)).isTrue();
         }
 
         @Test
         void shouldUseIndependentStyleIsFalseForACoreFaction() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING)).isFalse();
+                    "hegemony", ANY_GROUPING, BlocStyleAdjustment.NONE)).isFalse();
+        }
+
+        @Test
+        void shouldUseIndependentStyleIsFalseForACoreFactionEvenWhenDesaturated() {
+            // This view classifies on ownership alone, so a receding adjustment never moves the
+            // bundle - unlike the alliances view, which reads desaturation as "this is independent
+            // ground". A faction the filter recede desaturates keeps its faction borders and seams.
+            assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
+                    "hegemony", ANY_GROUPING, new BlocStyleAdjustment(0.3, true))).isFalse();
         }
     }
 

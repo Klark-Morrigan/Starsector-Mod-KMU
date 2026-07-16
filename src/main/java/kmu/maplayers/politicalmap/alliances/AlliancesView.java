@@ -85,24 +85,34 @@ public final class AlliancesView implements PoliticalMapView {
     }
 
     @Override
-    public boolean shouldUseIndependentStyle(String blocId, OwnershipGrouping grouping) {
+    public boolean shouldUseIndependentStyle(
+            String blocId,
+            OwnershipGrouping grouping,
+            BlocStyleAdjustment adjustment) {
         // Genuine independent space always takes the independent style, exactly as the faction view
-        // classifies it. A non-allied faction takes it too while Desaturate is on: desaturation
-        // means "read as independent ground", so the bloc adopts the independent borders and seams,
-        // paired with the desaturation palette resolveBlocStyleAdjustment carries - not a bare
-        // independent recolour painted over the faction style. Its fill is the exception: a
-        // desaturated bloc fills at the faction opacity, so the desaturated background stays one
-        // uniform surface rather than splitting into two weights of grey. An alliance always paints
-        // in the full faction style so it stands out. Muting never swaps the bundle; it only dims
-        // the active style via the opacity modifier, so a lone faction with both toggles off reads
-        // exactly as the faction view.
+        // classifies it. A non-allied faction takes it too once it desaturates: desaturation means
+        // "read as independent ground", so the bloc adopts the independent borders and seams, paired
+        // with the desaturation palette the same adjustment carries - not a bare independent recolour
+        // painted over the faction style. Its fill is the exception: a desaturated bloc fills at the
+        // faction opacity, so the desaturated background stays one uniform surface rather than
+        // splitting into two weights of grey. An alliance always paints in the full faction style so
+        // it stands out. Muting never swaps the bundle; it only dims the active style via the opacity
+        // modifier, so a lone faction that neither desaturates nor mutes reads exactly as the faction
+        // view draws it.
+        //
+        // The test reads the passed adjustment - every reason to recede already unioned into it -
+        // rather than this view's own toggle, so the bundle and the palette can never disagree about
+        // whether a bloc is desaturated. Reading the view's toggle alone would leave a faction the
+        // filter recede desaturates painted grey but still in the faction bundle, and flipping this
+        // view's toggle would then appear to change nothing but the border weight.
         return Factions.INDEPENDENT.equals(blocId)
-                || (!grouping.isAlliance(blocId)
-                        && RecedePreferences.ALLIANCE_NON_ALLIED.isDesaturated());
+                || (!grouping.isAlliance(blocId) && adjustment.desaturate());
     }
 
     @Override
-    public BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, OwnershipGrouping grouping) {
+    public BlocStyleAdjustment resolveBlocStyleAdjustment(
+            String blocId,
+            OwnershipGrouping grouping) {
         // An alliance keeps its full colour; only a non-alliance bloc recedes. The view owns just
         // that gate - how far a receded bloc dims or desaturates is its own non-allied recede set's
         // decision, so every non-allied faction takes the one adjustment that set resolves. Keeping
@@ -115,7 +125,10 @@ public final class AlliancesView implements PoliticalMapView {
     }
 
     @Override
-    public String resolveName(String blocId, OwnershipGrouping grouping, SectorAPI sector,
+    public String resolveName(
+            String blocId,
+            OwnershipGrouping grouping,
+            SectorAPI sector,
             FactionNameFormatChoice nameFormat) {
         var allianceName = grouping.resolveAllianceName(blocId);
         if (allianceName != null) {
@@ -127,7 +140,9 @@ public final class AlliancesView implements PoliticalMapView {
     }
 
     @Override
-    public List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector, DominanceRules rules,
+    public List<SelectableBloc> resolveSelectableBlocs(
+            SectorAPI sector,
+            DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
         // Under this view only alliances are filter targets - a lone faction is not spotlightable
         // here, matching the view's role of grouping ownership by alliance. The alliance grouping
@@ -136,8 +151,9 @@ public final class AlliancesView implements PoliticalMapView {
         // carries each surviving alliance's stats onto its option for the picker to sort and label by.
         var grouping = resolveGrouping();
         var selectableBlocs = new ArrayList<SelectableBloc>();
-        for (var entry : SectorPolitics.aggregateBlocStats(
-                sector, rules, shouldIncludeUndiscoveredMarkets, grouping).entrySet()) {
+        for (var entry : SectorPolitics
+                .aggregateBlocStats(sector, rules, shouldIncludeUndiscoveredMarkets, grouping)
+                .entrySet()) {
             var blocId = entry.getKey();
             if (!grouping.isAlliance(blocId)) {
                 continue;
@@ -150,8 +166,15 @@ public final class AlliancesView implements PoliticalMapView {
             var crestSpritePath = colorFaction == null ? null : colorFaction.getCrest();
             // The name comes from the grouping via resolveName, so the format argument never
             // matters here.
-            var displayName = resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT);
-            selectableBlocs.add(new SelectableBloc(blocId, displayName, crestSpritePath,
+            var displayName = resolveName(
+                    blocId,
+                    grouping,
+                    sector,
+                    FactionNameFormatChoice.SHORT);
+            selectableBlocs.add(new SelectableBloc(
+                    blocId,
+                    displayName,
+                    crestSpritePath,
                     entry.getValue()));
         }
         return selectableBlocs;

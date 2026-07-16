@@ -118,52 +118,53 @@ final class AlliancesViewTest {
     @Nested
     class ShouldUseIndependentStyle {
 
+        // The two adjustments the style test discriminates on: one that desaturates the bloc and one
+        // that only dims it. The mute multiplier is arbitrary - the test proves only desaturation
+        // moves the bundle.
+        private static final BlocStyleAdjustment DESATURATED = new BlocStyleAdjustment(0.3, true);
+        private static final BlocStyleAdjustment MUTED_ONLY = new BlocStyleAdjustment(0.3, false);
+
         @Test
         void shouldUseIndependentStyleIsTrueForIndependentSpace() {
             // Genuine independent space always takes the independent style, exactly as the faction
-            // view classifies it - short-circuiting before the Desaturate toggle is even read.
+            // view classifies it - short-circuiting before the adjustment is even read.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT, ALLIANCE_GROUPING)).isTrue();
+                    Factions.INDEPENDENT, ALLIANCE_GROUPING, BlocStyleAdjustment.NONE)).isTrue();
         }
 
         @Test
         void shouldUseIndependentStyleIsFalseForAnAllianceBlocEvenWhenDesaturated() {
-            // An alliance always paints in the full faction style: the alliance gate short-circuits
-            // before the non-allied recede's Desaturate toggle is even read, so no memory is touched.
+            // An alliance always paints in the full faction style so it stands out, whatever the
+            // adjustment says.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "rebel_pact", ALLIANCE_GROUPING)).isFalse();
+                    "rebel_pact", ALLIANCE_GROUPING, DESATURATED)).isFalse();
         }
 
         @Test
         void shouldUseIndependentStyleIsFalseForALoneFactionWhenNotDesaturated() {
-            // With Desaturate off a non-allied faction keeps its own faction style, so it reads
-            // exactly as the faction view draws it; muting only dims that style, never swaps the
-            // bundle, so only the allied factions differ across the two views. No save means the
-            // non-allied recede reads off.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
+            // Undesaturated, a non-allied faction keeps its own faction style, so it reads exactly as
+            // the faction view draws it.
+            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
+                    "hegemony", ALLIANCE_GROUPING, BlocStyleAdjustment.NONE)).isFalse();
+        }
 
-                assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                        "hegemony", ALLIANCE_GROUPING)).isFalse();
-            }
+        @Test
+        void shouldUseIndependentStyleIsFalseForALoneFactionThatOnlyMutes() {
+            // Muting only dims the active style through the opacity modifier; it never swaps the
+            // bundle, so a merely dimmed faction keeps its faction borders and seams.
+            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
+                    "hegemony", ALLIANCE_GROUPING, MUTED_ONLY)).isFalse();
         }
 
         @Test
         void shouldUseIndependentStyleIsTrueForALoneFactionWhenDesaturated() {
             // Desaturate makes a non-allied faction adopt the independent style - its independent
-            // borders and seams, not just an independent recolour over the faction ones. The view
-            // reads the Desaturate choice off its own non-allied recede key.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
-                when(memoryMock.getBoolean(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
-
-                assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                        "hegemony", ALLIANCE_GROUPING)).isTrue();
-            }
+            // borders and seams, not just an independent recolour over the faction ones. The test
+            // reads the passed adjustment, so it holds however that desaturation was asked for: this
+            // view's own toggle, or the filter recede unioned in upstream. Nothing here touches
+            // sector memory, since the view no longer resolves the choice a second time.
+            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
+                    "hegemony", ALLIANCE_GROUPING, DESATURATED)).isTrue();
         }
     }
 

@@ -74,12 +74,23 @@ public interface PoliticalMapView {
      * alliances view styles every non-alliance bloc this way, so the unaligned recede
      * while alliances stand out in full colour.
      *
-     * @param blocId   the winning bloc for a system, as resolved under {@code grouping}
-     * @param grouping the grouping this pass resolved, supplied so the test is a pure
-     *                 lookup over the once-sampled snapshot rather than a fresh read
+     * <p>The bloc's already-resolved {@code adjustment} is supplied so a view that keys the
+     * style bundle off desaturation reads the one adjustment the pass actually paints under -
+     * every reason to recede already folded in - rather than re-deriving it from a source of
+     * its own. A view answering from a narrower source than the palette resolves from would
+     * paint a bloc in the desaturation palette while leaving it in the faction bundle.
+     *
+     * @param blocId     the winning bloc for a system, as resolved under {@code grouping}
+     * @param grouping   the grouping this pass resolved, supplied so the test is a pure
+     *                   lookup over the once-sampled snapshot rather than a fresh read
+     * @param adjustment the dimming and recolouring this bloc draws under, resolved ahead of
+     *                   this test so both read one decision
      * @return true when the bloc takes the independent style
      */
-    boolean shouldUseIndependentStyle(String blocId, OwnershipGrouping grouping);
+    boolean shouldUseIndependentStyle(
+            String blocId,
+            OwnershipGrouping grouping,
+            BlocStyleAdjustment adjustment);
 
     /**
      * How a bloc's fills, borders, and name are dimmed or recoloured before the pipeline
@@ -108,7 +119,10 @@ public interface PoliticalMapView {
      * @param nameFormat whether a faction name reads in its short or full form
      * @return the bloc's display name, or null when none resolves
      */
-    String resolveName(String blocId, OwnershipGrouping grouping, SectorAPI sector,
+    String resolveName(
+            String blocId,
+            OwnershipGrouping grouping,
+            SectorAPI sector,
             FactionNameFormatChoice nameFormat);
 
     /**
@@ -137,7 +151,9 @@ public interface PoliticalMapView {
      * @return the selectable blocs, in the order the economy walk surfaces them; empty when no bloc
      *         holds a visible weighted market
      */
-    List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector, DominanceRules rules,
+    List<SelectableBloc> resolveSelectableBlocs(
+            SectorAPI sector,
+            DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets);
 
     /**
@@ -149,7 +165,9 @@ public interface PoliticalMapView {
      * @return the selectable blocs under the player's live settings; empty when none qualify
      */
     default List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector) {
-        return resolveSelectableBlocs(sector, DominanceRules.readFromLunaSettings(),
+        return resolveSelectableBlocs(
+                sector,
+                DominanceRules.readFromLunaSettings(),
                 PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions());
     }
 

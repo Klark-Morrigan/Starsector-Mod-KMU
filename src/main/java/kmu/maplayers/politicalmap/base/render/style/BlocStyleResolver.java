@@ -32,19 +32,29 @@ public final class BlocStyleResolver {
      * independent test (which an alliances-view desaturate would otherwise trip). Every other bloc
      * unions the view's own recede with the pass's shared recede, so a bloc receded by both never
      * mutes twice.
+     *
+     * <p>The adjustment resolves first and is handed to the view's style test, so a view that keys
+     * its bundle off desaturation sees the union rather than one contributing toggle - the palette
+     * and the bundle then agree in every mode. The order is safe because no adjustment input depends
+     * on the style decision.
      */
-    public static BlocStyleDecision resolveBlocStyleDecision(boolean isFiltering, String blocId,
-            PoliticalMapView view, OwnershipGrouping grouping,
+    public static BlocStyleDecision resolveBlocStyleDecision(
+            boolean isFiltering,
+            String blocId,
+            PoliticalMapView view,
+            OwnershipGrouping grouping,
             BlocStyleAdjustment recedeAdjustment) {
         if (isFiltering) {
             var isSpotlit = FilteredPolitics.isSpotlitBloc(blocId);
+            var adjustment = resolveFilterAdjustment(isSpotlit,
+                    view.resolveBlocStyleAdjustment(blocId, grouping), recedeAdjustment);
             return new BlocStyleDecision(
-                    !isSpotlit && view.shouldUseIndependentStyle(blocId, grouping),
-                    resolveFilterAdjustment(isSpotlit,
-                            view.resolveBlocStyleAdjustment(blocId, grouping), recedeAdjustment));
+                    !isSpotlit && view.shouldUseIndependentStyle(blocId, grouping, adjustment),
+                    adjustment);
         }
-        return new BlocStyleDecision(view.shouldUseIndependentStyle(blocId, grouping),
-                view.resolveBlocStyleAdjustment(blocId, grouping));
+        var adjustment = view.resolveBlocStyleAdjustment(blocId, grouping);
+        return new BlocStyleDecision(
+                view.shouldUseIndependentStyle(blocId, grouping, adjustment), adjustment);
     }
 
     /**
@@ -55,8 +65,10 @@ public final class BlocStyleResolver {
      * the alliances view - does not mute a second time when the filter recedes it too. Pure over
      * its inputs so the rule pins without geometry.
      */
-    public static BlocStyleAdjustment resolveFilterAdjustment(boolean isSpotlit,
-            BlocStyleAdjustment viewAdjustment, BlocStyleAdjustment recedeAdjustment) {
+    public static BlocStyleAdjustment resolveFilterAdjustment(
+            boolean isSpotlit,
+            BlocStyleAdjustment viewAdjustment,
+            BlocStyleAdjustment recedeAdjustment) {
         return isSpotlit
                 ? BlocStyleAdjustment.NONE
                 : viewAdjustment.mergeRecede(recedeAdjustment);

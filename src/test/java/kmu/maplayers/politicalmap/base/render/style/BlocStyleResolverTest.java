@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -24,7 +25,8 @@ final class BlocStyleResolverTest {
     private static PoliticalMapView viewMockDeciding(boolean usesIndependentStyle,
             BlocStyleAdjustment adjustment) {
         var viewMock = mock(PoliticalMapView.class);
-        when(viewMock.shouldUseIndependentStyle(any(), any())).thenReturn(usesIndependentStyle);
+        when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
+                .thenReturn(usesIndependentStyle);
         when(viewMock.resolveBlocStyleAdjustment(any(), any())).thenReturn(adjustment);
         return viewMock;
     }
@@ -95,6 +97,36 @@ final class BlocStyleResolverTest {
 
             assertThat(decision.usesIndependentStyle()).isFalse();
             assertThat(decision.adjustment()).isEqualTo(new BlocStyleAdjustment(0.3, true));
+        }
+
+        @Test
+        void resolveBlocStyleDecisionOffersTheUnionedRecedeToTheViewsStyleTestUnderFilter() {
+            // The style test sees the union the bloc actually paints under, not the view's own recede
+            // alone, so a view keying its bundle off desaturation cannot disagree with the palette -
+            // which resolves from this same adjustment. Here only the shared recede desaturates: the
+            // view's style test must still be offered a desaturating adjustment, or a bloc would paint
+            // in the desaturation palette while keeping the faction bundle.
+            var viewMock = viewMockDeciding(false, new BlocStyleAdjustment(0.5, false));
+
+            BlocStyleResolver.resolveBlocStyleDecision(true, "hegemony", viewMock,
+                    OwnershipGrouping.identity(), new BlocStyleAdjustment(0.3, true));
+
+            verify(viewMock).shouldUseIndependentStyle("hegemony", OwnershipGrouping.identity(),
+                    new BlocStyleAdjustment(0.3, true));
+        }
+
+        @Test
+        void resolveBlocStyleDecisionOffersTheUntouchedAdjustmentToTheViewsStyleTestOffFilter() {
+            // Off filter the view's own adjustment is what the bloc paints under, so that is what its
+            // style test reads - the same "bundle and palette agree" rule, with nothing to union in.
+            var adjustment = new BlocStyleAdjustment(0.5, true);
+            var viewMock = viewMockDeciding(true, adjustment);
+
+            BlocStyleResolver.resolveBlocStyleDecision(false, "pirates", viewMock,
+                    OwnershipGrouping.identity(), BlocStyleAdjustment.NONE);
+
+            verify(viewMock).shouldUseIndependentStyle("pirates", OwnershipGrouping.identity(),
+                    adjustment);
         }
 
         @Test

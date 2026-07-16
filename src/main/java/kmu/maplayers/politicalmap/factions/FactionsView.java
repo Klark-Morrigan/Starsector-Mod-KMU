@@ -63,21 +63,31 @@ public final class FactionsView implements PoliticalMapView {
     }
 
     @Override
-    public boolean shouldUseIndependentStyle(String blocId, OwnershipGrouping grouping) {
+    public boolean shouldUseIndependentStyle(
+            String blocId,
+            OwnershipGrouping grouping,
+            BlocStyleAdjustment adjustment) {
         // Only independent space is drawn muted; every other faction paints in the full
         // faction style. The grouping is identity here, so the bloc id is the faction id.
+        // This view classifies on ownership alone, so a receding adjustment never moves the
+        // bundle - a receded faction dims and recolours within the faction style.
         return Factions.INDEPENDENT.equals(blocId);
     }
 
     @Override
-    public BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, OwnershipGrouping grouping) {
+    public BlocStyleAdjustment resolveBlocStyleAdjustment(
+            String blocId,
+            OwnershipGrouping grouping) {
         // The faction view dims or recolours no bloc - every faction paints exactly as its
         // style classification says, so there is nothing for the pipeline to adjust.
         return BlocStyleAdjustment.NONE;
     }
 
     @Override
-    public String resolveName(String blocId, OwnershipGrouping grouping, SectorAPI sector,
+    public String resolveName(
+            String blocId,
+            OwnershipGrouping grouping,
+            SectorAPI sector,
             FactionNameFormatChoice nameFormat) {
         // A faction bloc id is a real faction id, so the label is the faction's own name
         // in the player's chosen form; a faction that will not resolve carries no name.
@@ -86,7 +96,9 @@ public final class FactionsView implements PoliticalMapView {
     }
 
     @Override
-    public List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector, DominanceRules rules,
+    public List<SelectableBloc> resolveSelectableBlocs(
+            SectorAPI sector,
+            DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
         // Under identity every faction is its own bloc, so every present bloc is a selectable target -
         // the view maps each straight to an option, leaving the presence gate (a bloc appears in the
@@ -94,8 +106,9 @@ public final class FactionsView implements PoliticalMapView {
         // from, and carrying that bloc's stats onto the option for the picker to sort and label by.
         var grouping = resolveGrouping();
         var selectableBlocs = new ArrayList<SelectableBloc>();
-        for (var entry : SectorPolitics.aggregateBlocStats(
-                sector, rules, shouldIncludeUndiscoveredMarkets, grouping).entrySet()) {
+        for (var entry : SectorPolitics
+                .aggregateBlocStats(sector, rules, shouldIncludeUndiscoveredMarkets, grouping)
+                .entrySet()) {
             var blocId = entry.getKey();
             var faction = sector.getFaction(blocId);
             // The crest is the picker row's icon; a faction with no authored crest simply draws its
@@ -104,7 +117,10 @@ public final class FactionsView implements PoliticalMapView {
             // The picker labels a faction by its short name regardless of the map's name-format
             // setting, so a long-form map label never widens the sidebar's option rows.
             var displayName = resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT);
-            selectableBlocs.add(new SelectableBloc(blocId, displayName, crestSpritePath,
+            selectableBlocs.add(new SelectableBloc(
+                    blocId,
+                    displayName,
+                    crestSpritePath,
                     entry.getValue()));
         }
         return selectableBlocs;
@@ -114,7 +130,9 @@ public final class FactionsView implements PoliticalMapView {
     // Short, the long-form title for Full (the default). getDisplayName is a faction's
     // short name and getDisplayNameLong its full title; both may be blank, which the
     // caller then treats as an unresolved name.
-    private static String resolveFactionName(FactionAPI faction, FactionNameFormatChoice nameFormat) {
+    private static String resolveFactionName(
+            FactionAPI faction,
+            FactionNameFormatChoice nameFormat) {
         return nameFormat == FactionNameFormatChoice.SHORT
                 ? faction.getDisplayName()
                 : faction.getDisplayNameLong();

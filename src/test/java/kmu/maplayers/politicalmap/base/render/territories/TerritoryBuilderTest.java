@@ -47,7 +47,8 @@ final class TerritoryBuilderTest {
     private static PoliticalMapView viewMockDeciding(boolean usesIndependentStyle,
             BlocStyleAdjustment adjustment) {
         var viewMock = mock(PoliticalMapView.class);
-        when(viewMock.shouldUseIndependentStyle(any(), any())).thenReturn(usesIndependentStyle);
+        when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
+                .thenReturn(usesIndependentStyle);
         when(viewMock.resolveBlocStyleAdjustment(any(), any())).thenReturn(adjustment);
         return viewMock;
     }
