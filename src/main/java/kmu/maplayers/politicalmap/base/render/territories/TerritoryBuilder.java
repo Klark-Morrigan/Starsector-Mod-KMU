@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,8 +71,10 @@ public final class TerritoryBuilder {
     // per cell. The active view supplies the ownership grouping the pass resolves under
     // and the style classifier each cell reads; both are retained on the territories so an
     // incremental re-shape classifies against the same view and grouping snapshot.
-    public static PoliticalMapTerritories buildTerritories(PoliticalMapGeometryCache geometryCache,
-            SectorAPI sector, PoliticalMapView view) {
+    public static PoliticalMapTerritories buildTerritories(
+            PoliticalMapGeometryCache geometryCache,
+            SectorAPI sector,
+            PoliticalMapView view) {
         var profiler = KmuProfiling.getProfiler();
         return profiler.measure("politicalMap.rebuildTerritories", () -> {
             // Sample the view's grouping once for the whole pass (the alliances view reads
@@ -129,10 +132,18 @@ public final class TerritoryBuilder {
                     ? RecedePreferences.FILTER.resolveRecedeAdjustment()
                     : BlocStyleAdjustment.NONE;
             var territories = new PoliticalMapTerritories(
-                    new LinkedHashMap<>(), new LinkedHashMap<>(),
-                    ownerBySystemId, decivilisedSystemIds,
-                    neutralColor, desaturationPalette, renderStyle,
-                    view, grouping, selectedBlocId, recedeAdjustment, contestedSystemIds);
+                    new LinkedHashMap<>(),
+                    new LinkedHashMap<>(),
+                    ownerBySystemId,
+                    decivilisedSystemIds,
+                    neutralColor,
+                    desaturationPalette,
+                    renderStyle,
+                    view,
+                    grouping,
+                    selectedBlocId,
+                    recedeAdjustment,
+                    contestedSystemIds);
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
             // geometry clusters by grouping key, so hand it each system's faction id as the
@@ -159,7 +170,7 @@ public final class TerritoryBuilder {
             // chaining, smoothing, and tessellating every faction's outline is comparable
             // in cost to shaping the cells.
             profiler.measure("politicalMap.buildFactionTerritories",
-                    () -> buildAllFactionTerritories(territories, geometryCache, shapedCells));
+                    () -> buildAllFactionTerritories(territories, geometryCache, shapedCells, frontier));
 
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
                     + " styledCells=" + territories.getStyledCellBySystemId().size()
@@ -175,7 +186,8 @@ public final class TerritoryBuilder {
     // border are per-cluster, in factionTerritories); a factionless cell keeps its own
     // inset fill and outline, since factionless cells do not fuse. Shared by the full
     // rebuild and the incremental re-shape so both classify a cell identically.
-    public static StyledCell buildStyledCellForSystem(PoliticalMapTerritories territories,
+    public static StyledCell buildStyledCellForSystem(
+            PoliticalMapTerritories territories,
             String systemId,
             ShapedCell shaped) {
         // A cell the border inset consumed or collapsed comes back with an empty fill
@@ -220,7 +232,12 @@ public final class TerritoryBuilder {
             return null;
         }
         var neutralColor = territories.getNeutralColor();
-        return buildStyledCell(shaped, neutralColor, neutralColor, style, true,
+        return buildStyledCell(
+                shaped,
+                neutralColor,
+                neutralColor,
+                style,
+                true,
                 BlocStyleAdjustment.NONE,
                 territories.getGlobalStyle().borderSmoothing());
     }
@@ -230,12 +247,20 @@ public final class TerritoryBuilder {
     // incremental refresh rebuilds one faction's entry without touching the rest. The
     // already-shaped cells are handed along so the spotlit fill split reuses them rather
     // than re-shaping (the incremental refresh, never a spotlit build, passes none).
-    private static void buildAllFactionTerritories(PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache, Map<String, ShapedCell> shapedCellBySystemId) {
+    private static void buildAllFactionTerritories(
+            PoliticalMapTerritories territories,
+            PoliticalMapGeometryCache geometryCache,
+            Map<String, ShapedCell> shapedCellBySystemId,
+            FrontierSettings frontier) {
         for (var faction
                 : DominantOwner.groupSystemIdsByFactionId(territories.getOwnerBySystemId()).entrySet()) {
-            var territory = buildFactionTerritory(territories, geometryCache,
-                    faction.getKey(), faction.getValue(), shapedCellBySystemId);
+            var territory = buildFactionTerritory(
+                    territories,
+                    geometryCache,
+                    faction.getKey(),
+                    faction.getValue(),
+                    shapedCellBySystemId,
+                    frontier);
             if (territory != null) {
                 territories.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
             }
@@ -250,9 +275,13 @@ public final class TerritoryBuilder {
     // rebuilding a faction from its current members alone re-splits or re-merges its
     // clusters when the incremental refresh gains or loses one. Returns null when the
     // faction has no fill and no border color, or no borderable geometry.
-    public static FactionTerritory buildFactionTerritory(PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache, String factionId,
-            List<String> memberSystemIds, Map<String, ShapedCell> shapedCellBySystemId) {
+    public static FactionTerritory buildFactionTerritory(
+            PoliticalMapTerritories territories,
+            PoliticalMapGeometryCache geometryCache,
+            String factionId,
+            List<String> memberSystemIds,
+            Map<String, ShapedCell> shapedCellBySystemId,
+            FrontierSettings frontier) {
         // The grouping key here is a bloc id (a faction id under the faction view, or one of the
         // filter's synthetic spotlight keys), so its style and per-bloc adjustment come from the
         // same styling resolver a per-cell owner does. A desaturated bloc's fill and border swap
@@ -267,18 +296,27 @@ public final class TerritoryBuilder {
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
         var owner = territories.getOwnerBySystemId().get(memberSystemIds.get(0));
-        var palette = MapPalettes.resolveEffectivePalette(adjustment, owner,
+        var palette = MapPalettes.resolveEffectivePalette(
+                adjustment,
+                owner,
                 territories.getDesaturationPalette());
         var fillColor = MapPalettes.pickPaletteColor(
-                style.fillColor(), palette.primaryColor(), palette.secondaryColor());
+                style.fillColor(),
+                palette.primaryColor(),
+                palette.secondaryColor());
         var borderColor = MapPalettes.pickPaletteColor(
-                style.outerColor(), palette.primaryColor(), palette.secondaryColor());
+                style.outerColor(),
+                palette.primaryColor(),
+                palette.secondaryColor());
         if (fillColor == null && borderColor == null) {
             return null;
         }
-        var insetRings = PoliticalBorderTrace.readFromLunaSettings().traceRings(memberSystemIds,
-                geometryCache.getCellEdgesBySystemId(),
-                DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()));
+        var insetRings = PoliticalBorderTrace
+                .readFromLunaSettings(frontier)
+                .traceRings(
+                        memberSystemIds,
+                        geometryCache.getCellEdgesBySystemId(),
+                        DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()));
         if (insetRings.isEmpty()) {
             return null;
         }
@@ -302,12 +340,18 @@ public final class TerritoryBuilder {
         // the border fracturing. Every other territory fills its whole region solid, tessellated
         // from the same smoothed loops the border strokes so fill and border match exactly.
         var fill = isSpotlit
-                ? computeSpotlitFill(territories, geometryCache, memberSystemIds,
-                        shapedCellBySystemId, fillColor)
-                : new TerritoryFill(fillColor == null
-                        ? GlVertexRuns.NO_VERTICES
-                        : PolygonTessellator.tessellateToTriangles(borderLoops),
-                        GlVertexRuns.NO_VERTICES, GlVertexRuns.NO_VERTICES);
+                ? computeSpotlitFill(
+                        territories,
+                        geometryCache,
+                        memberSystemIds,
+                        shapedCellBySystemId,
+                        fillColor)
+                : new TerritoryFill(
+                        fillColor == null
+                                ? GlVertexRuns.NO_VERTICES
+                                : PolygonTessellator.tessellateToTriangles(borderLoops),
+                        GlVertexRuns.NO_VERTICES,
+                        GlVertexRuns.NO_VERTICES);
         var borderRuns = new ArrayList<float[]>();
         if (borderColor != null) {
             for (var loop : PolygonTessellator.tessellateToBoundaryLoops(borderLoops)) {
@@ -318,9 +362,12 @@ public final class TerritoryBuilder {
         // the inner-seam width, reusing the inner-seam element so the contested pocket reads as a
         // bounded region; it is null-coloured (hidden) for every non-spotlit territory.
         return new FactionTerritory(fill.solidTriangles(), fill.hatchSegments(),
+                fill.solidTriangles(),
+                fill.hatchSegments(),
                 new UiElementPaint(fillColor, adjustment.muteOpacity(style.fillOpacity())),
                 fill.transitionSeams(),
-                new UiElementPaint(isSpotlit ? palette.secondaryColor() : null,
+                new UiElementPaint(
+                        isSpotlit ? palette.secondaryColor() : null,
                         adjustment.muteOpacity(style.innerOpacity())),
                 (float) style.innerWidth(),
                 borderRuns,
@@ -336,9 +383,12 @@ public final class TerritoryBuilder {
     // so adjacent same-state cells' fills meet exactly and read as fused, and a dominated cell
     // meets a contested one along the raw edge the seam then strokes. A "No color" fill draws
     // neither region, but the seam still bounds the (invisible) pocket.
-    private static TerritoryFill computeSpotlitFill(PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache, List<String> memberSystemIds,
-            Map<String, ShapedCell> shapedCellBySystemId, Color fillColor) {
+    private static TerritoryFill computeSpotlitFill(
+            PoliticalMapTerritories territories,
+            PoliticalMapGeometryCache geometryCache,
+            List<String> memberSystemIds,
+            Map<String, ShapedCell> shapedCellBySystemId,
+            Color fillColor) {
         var contestedSystemIds = territories.getContestedSystemIds();
         var transitionSeams = computeTransitionSeams(memberSystemIds, contestedSystemIds,
                 geometryCache.getCellEdgesBySystemId());
@@ -350,11 +400,14 @@ public final class TerritoryBuilder {
         var contestedRuns = new ArrayList<float[]>();
         for (var systemId : memberSystemIds) {
             var cellTriangles = tessellateMemberCell(shapedCellBySystemId.get(systemId));
-            (contestedSystemIds.contains(systemId) ? contestedRuns : solidRuns).add(cellTriangles);
+            (contestedSystemIds.contains(systemId) ? contestedRuns : solidRuns)
+                    .add(cellTriangles);
         }
         var hatch = territories.getGlobalStyle().hatch();
-        var hatchSegments = Hatching.computeHatchSegments(concatenateRuns(contestedRuns),
-                hatch.angleRadians(), hatch.spacing());
+        var hatchSegments = Hatching.computeHatchSegments(
+                concatenateRuns(contestedRuns),
+                hatch.angleRadians(),
+                hatch.spacing());
         return new TerritoryFill(concatenateRuns(solidRuns), hatchSegments, transitionSeams);
     }
 
@@ -427,9 +480,15 @@ public final class TerritoryBuilder {
     // the same call the label path reads, so a bloc's name never drifts from its fill - onto this
     // pass's two concrete styles: the independent style when the decision recedes a bloc to it,
     // the faction style otherwise.
-    private static BlocStyling resolveBlocStyling(PoliticalMapTerritories territories, String blocId) {
-        var decision = BlocStyleResolver.resolveBlocStyleDecision(territories.isFiltering(), blocId,
-                territories.getView(), territories.getGrouping(), territories.getRecedeAdjustment());
+    private static BlocStyling resolveBlocStyling(
+            PoliticalMapTerritories territories,
+            String blocId) {
+        var decision = BlocStyleResolver.resolveBlocStyleDecision(
+                territories.isFiltering(),
+                blocId,
+                territories.getView(),
+                territories.getGrouping(),
+                territories.getRecedeAdjustment());
         var style = decision.usesIndependentStyle()
                 ? territories.getCategoryStyle(MapCategory.INDEPENDENT)
                 : territories.getCategoryStyle(MapCategory.FACTION);
@@ -448,9 +507,14 @@ public final class TerritoryBuilder {
     // choice, so the draw pass skips it. Every seam's opacity is muted by the caller's
     // resolved per-bloc {@code adjustment} through its one muteOpacity rule (BlocStyleAdjustment.NONE
     // for a factionless cell, which carries no adjustment, so its opacity passes unchanged).
-    private static StyledCell buildStyledCell(ShapedCell shaped, Color primaryColor,
-            Color secondaryColor, CategoryStyle style, boolean perCellFillAndBorder,
-            BlocStyleAdjustment adjustment, BorderSmoothingStyle borderSmoothing) {
+    private static StyledCell buildStyledCell(
+            ShapedCell shaped,
+            Color primaryColor,
+            Color secondaryColor,
+            CategoryStyle style,
+            boolean perCellFillAndBorder,
+            BlocStyleAdjustment adjustment,
+            BorderSmoothingStyle borderSmoothing) {
         // Gate the corner rounding outside the round call: on rounds this cell's outline
         // in step with the cluster borders, off leaves its raw inset outline.
         var outline = shaped.fillPolygon();
@@ -489,9 +553,11 @@ public final class TerritoryBuilder {
     // convex inset polygon (all its edges are national border), so it needs no chaining
     // or envelope resolve - only the corner rounding. The caller gates this on the
     // corner-rounding switch.
-    private static List<double[]> roundCellOutline(ShapedCell shaped,
+    private static List<double[]> roundCellOutline(
+            ShapedCell shaped,
             BorderSmoothingStyle borderSmoothing) {
-        return PolygonSmoothing.roundCorners(shaped.fillPolygon(),
+        return PolygonSmoothing.roundCorners(
+                shaped.fillPolygon(),
                 borderSmoothing.cornerRadius(),
                 borderSmoothing.cornerSegments(),
                 borderSmoothing.chamferAngleRadians());

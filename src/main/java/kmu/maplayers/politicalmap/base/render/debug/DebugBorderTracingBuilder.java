@@ -58,7 +58,8 @@ public final class DebugBorderTracingBuilder {
     // factionless cells) into the three stage lists. Independent of the production
     // drawables, so the plugin builds this instead of them in debug mode, not alongside.
     public static PoliticalMapDebugTerritories buildDebugDrawables(
-            PoliticalMapGeometryCache geometryCache, SectorAPI sector) {
+            PoliticalMapGeometryCache geometryCache,
+            SectorAPI sector) {
         var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
         // The agnostic geometry clusters by grouping key, so key by each system's faction id.
         var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
@@ -67,14 +68,23 @@ public final class DebugBorderTracingBuilder {
         var miterLimit = KmuLunaSettings.getPoliticalMapBorderMiterLimit();
         var isSandingOn = KmuLunaSettings.shouldSandBorderSpikes();
         var isRoundingOn = KmuLunaSettings.shouldRoundBorderCorners();
+        // The same frontier snapshot the production build reads, so an owned cluster's
+        // border reaches around a dead star in the overlay exactly as on the live map.
+        // Read once here and shared with the factionless outlines below.
+        var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
         var baseLoops = new ArrayList<float[]>();
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
         for (var memberSystemIds
                 : DominantOwner.groupSystemIdsByFactionId(ownerBySystemId).values()) {
-            var insetRings = SystemClusterBorders.traceBorderRings(memberSystemIds,
-                    geometryCache.getCellEdgesBySystemId(), groupKeyBySystemId,
-                    PoliticalMapStyle.BORDER_INSET_DISTANCE, weldTolerance, miterLimit);
+            var insetRings = SystemClusterBorders.traceBorderRings(
+                    memberSystemIds,
+                    geometryCache.getCellEdgesBySystemId(),
+                    groupKeyBySystemId,
+                    PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                    weldTolerance,
+                    miterLimit,
+                    frontier);
             if (insetRings.isEmpty()) {
                 continue;
             }
@@ -93,11 +103,14 @@ public final class DebugBorderTracingBuilder {
                 addFlattenedLoops(roundedLoops, smoothed);
             }
         }
-        // Same frontier snapshot the production build reads, so a factionless cell's outline
-        // in the overlay recedes to its keep-out pocket exactly as it would on the live map.
-        var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
-        addFactionlessOutlines(geometryCache, groupKeyBySystemId, decivilisedSystemIds,
-                isRoundingOn, frontier, baseLoops, roundedLoops);
+        addFactionlessOutlines(
+                geometryCache,
+                groupKeyBySystemId,
+                decivilisedSystemIds,
+                isRoundingOn,
+                frontier,
+                baseLoops,
+                roundedLoops);
         return new PoliticalMapDebugTerritories(baseLoops, despikedLoops, roundedLoops);
     }
 
@@ -107,9 +120,13 @@ public final class DebugBorderTracingBuilder {
     // rounded corners, produced through the same shared rounding the clusters use. Skips
     // owned cells (traced as clusters above) and any category whose outline is "No color",
     // matching the normal render's visibility so the overlay stays legible.
-    private static void addFactionlessOutlines(PoliticalMapGeometryCache geometryCache,
-            Map<String, String> groupKeyBySystemId, Set<String> decivilisedSystemIds,
-            boolean isRoundingOn, FrontierSettings frontier, List<float[]> baseLoops,
+    private static void addFactionlessOutlines(
+            PoliticalMapGeometryCache geometryCache,
+            Map<String, String> groupKeyBySystemId,
+            Set<String> decivilisedSystemIds,
+            boolean isRoundingOn,
+            FrontierSettings frontier,
+            List<float[]> baseLoops,
             List<float[]> roundedLoops) {
         var decivilisedStyle = RenderStyleReader.readDecivilisedStyle();
         var uninhabitedStyle = RenderStyleReader.readUninhabitedStyle();
@@ -123,8 +140,13 @@ public final class DebugBorderTracingBuilder {
             if (style.outerColor() == FactionPaletteChoice.NONE) {
                 continue;
             }
-            var shaped = CellShaper.shapeCell(entry.getKey(), entry.getValue(), null,
-                    groupKeyBySystemId, PoliticalMapStyle.BORDER_INSET_DISTANCE, frontier);
+            var shaped = CellShaper.shapeCell(
+                    entry.getKey(),
+                    entry.getValue(),
+                    null,
+                    groupKeyBySystemId,
+                    PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                    frontier);
             if (shaped.fillPolygon().isEmpty()) {
                 continue;
             }

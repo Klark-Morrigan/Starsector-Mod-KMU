@@ -7,6 +7,7 @@ import kmlib.starsector.factions.StarsectorFactionColors;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.geometry.FrontierSettings;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -59,12 +60,17 @@ public final class ClusterAnchorsBuilder {
     // filter the label styling follows the same shared decision the fills do - receding every
     // non-spotlit bloc, leaving the spotlit one full - and the synthetic spotlight keys resolve
     // to the selected bloc's name, since the view cannot name a synthetic id.
-    public static void rebuildClusterAnchors(List<ClusterAnchor> anchors,
+    public static void rebuildClusterAnchors(
+            List<ClusterAnchor> anchors,
             PoliticalMapGeometryCache geometryCache,
-            Map<String, DominantOwner> ownerBySystemId, SectorAPI sector,
+            Map<String, DominantOwner> ownerBySystemId,
+            SectorAPI sector,
             FactionPalette desaturationPalette,
-            PoliticalMapView view, OwnershipGrouping grouping, boolean isFiltering,
-            BlocStyleAdjustment recedeAdjustment, String selectedBlocId) {
+            PoliticalMapView view,
+            OwnershipGrouping grouping,
+            boolean isFiltering,
+            BlocStyleAdjustment recedeAdjustment,
+            String selectedBlocId) {
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowNames()
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
@@ -76,7 +82,12 @@ public final class ClusterAnchorsBuilder {
         // trace as their own territories exactly as the fills do.
         var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
         var clusters = SystemClusters.findClusters(
-                geometryCache.getCellEdgesBySystemId(), groupKeyBySystemId);
+                geometryCache.getCellEdgesBySystemId(),
+                groupKeyBySystemId);
+        // The anchor search traces the same cluster border the fills stroke, so it reads the
+        // pass's frontier snapshot too: an open frontier pushes the ring out toward its dead
+        // star, and the anchor must clip against that pushed ring to stay on the fill.
+        var frontier = FrontierSettings.readFromLunaSettings(geometryCache.getSiteBySystemId());
         // The desaturation palette is handed in already resolved - off the production build's
         // drawables, or by the debug path from the same profile seam - so a desaturated bloc's
         // name matches its recolored fill and border exactly without re-reading the profile here.
@@ -87,11 +98,16 @@ public final class ClusterAnchorsBuilder {
         // name matches its receded fill and a spotlit name stays full, the drift a filter opens.
         var styleDecisionByBlocId = ClusterLabelStyling.newBlocStyleDecisionResolver(
                 isFiltering, view, grouping, recedeAdjustment);
-        anchors.addAll(ClusterAnchorPlacement.computeClusterAnchors(clusters,
-                geometryCache.getCellEdgesBySystemId(), geometryCache.getSiteBySystemId(),
-                ownerBySystemId, groupKeyBySystemId, LabelAnchorSpecification.readFromLunaSettings(),
+        anchors.addAll(ClusterAnchorPlacement.computeClusterAnchors(
+                clusters,
+                geometryCache.getCellEdgesBySystemId(),
+                geometryCache.getSiteBySystemId(),
+                ownerBySystemId,
+                groupKeyBySystemId,
+                LabelAnchorSpecification.readFromLunaSettings(frontier),
                 blocId -> styleDecisionByBlocId.apply(blocId).usesIndependentStyle(),
-                blocId -> styleDecisionByBlocId.apply(blocId).adjustment(), desaturationPalette,
+                blocId -> styleDecisionByBlocId.apply(blocId).adjustment(),
+                desaturationPalette,
                 ClusterLabelStyling.newNameEstimatorResolver(
                         sector, view, grouping, isFiltering, selectedBlocId)));
     }
@@ -100,8 +116,11 @@ public final class ClusterAnchorsBuilder {
     // which builds no production draw lists to borrow one from. Resolves ownership from
     // the sector itself, gated behind the toggle so the economy scan only runs while
     // someone is actually looking at the anchors.
-    public static void rebuildClusterAnchorsFromSector(List<ClusterAnchor> anchors,
-            PoliticalMapGeometryCache geometryCache, SectorAPI sector, PoliticalMapView view) {
+    public static void rebuildClusterAnchorsFromSector(
+            List<ClusterAnchor> anchors,
+            PoliticalMapGeometryCache geometryCache,
+            SectorAPI sector,
+            PoliticalMapView view) {
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
@@ -114,11 +133,21 @@ public final class ClusterAnchorsBuilder {
         // does and the profile setting still has a single reader.
         var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
         var desaturationPalette = MapPalettes.resolveDesaturationPalette(
-                RenderStyleReader.readGlobalStyle().desaturationProfile(), sector, neutralColor);
+                RenderStyleReader.readGlobalStyle().desaturationProfile(),
+                sector,
+                neutralColor);
         // The debug border-tracing path never filters - it resolves real dominant owners from the
         // sector - so it recedes nothing and names no synthetic spotlight key.
-        rebuildClusterAnchors(anchors, geometryCache,
-                SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping), sector,
-                desaturationPalette, view, grouping, false, BlocStyleAdjustment.NONE, null);
+        rebuildClusterAnchors(
+                anchors,
+                geometryCache,
+                SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping),
+                sector,
+                desaturationPalette,
+                view,
+                grouping,
+                false,
+                BlocStyleAdjustment.NONE,
+                null);
     }
 }

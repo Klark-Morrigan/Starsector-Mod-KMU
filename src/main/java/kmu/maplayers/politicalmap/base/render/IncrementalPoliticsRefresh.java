@@ -52,8 +52,10 @@ final class IncrementalPoliticsRefresh {
     // cheap per-frame path. The placement and label lists ride along because they are the
     // plugin's own overlays, not part of the territories, yet must track the same ownership
     // the cells do.
-    static void applyStalePoliticsUpdates(PoliticalMapTerritories territories,
-            List<ClusterAnchor> clusterAnchors, List<Label> factionLabels,
+    static void applyStalePoliticsUpdates(
+            PoliticalMapTerritories territories,
+            List<ClusterAnchor> clusterAnchors,
+            List<Label> factionLabels,
             PoliticalMapGeometryCache geometryCache) {
         var staleSystemIds = PoliticalMapRefresh.drainStalePoliticsSystemIds();
         if (staleSystemIds.isEmpty()) {
@@ -90,7 +92,7 @@ final class IncrementalPoliticsRefresh {
                     DominantOwner.groupSystemIdsByFactionId(territories.getOwnerBySystemId());
             for (var factionId : affectedFactionIds) {
                 rebuildFactionTerritoryInPlace(territories, geometryCache, factionId,
-                        systemsByFaction.get(factionId));
+                        systemsByFaction.get(factionId), frontier);
             }
             // A flip can split or merge clusters (a lost system severs one, a gained
             // one bridges two), so re-fit every placement off the updated owners rather than
@@ -98,10 +100,17 @@ final class IncrementalPoliticsRefresh {
             // off. Runs only on a real flip - the early return above already left. The name
             // labels then rebuild from the re-fitted placements so a renamed or relocated
             // cluster's name follows.
-            ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
-                    territories.getOwnerBySystemId(), sector, territories.getDesaturationPalette(),
-                    territories.getView(), territories.getGrouping(), territories.isFiltering(),
-                    territories.getRecedeAdjustment(), territories.getSelectedBlocId());
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    clusterAnchors,
+                    geometryCache,
+                    territories.getOwnerBySystemId(),
+                    sector,
+                    territories.getDesaturationPalette(),
+                    territories.getView(),
+                    territories.getGrouping(),
+                    territories.isFiltering(),
+                    territories.getRecedeAdjustment(),
+                    territories.getSelectedBlocId());
             LabelsBuilder.rebuildLabels(factionLabels, clusterAnchors);
             LOG.debug("Political map politics updated incrementally; stale="
                     + staleSystemIds.size() + " reshapedCells=" + cellsToReshape.size()
@@ -114,9 +123,13 @@ final class IncrementalPoliticsRefresh {
     // same-faction seam and a national border) and the factions whose territory must
     // rebuild (the old and new owner). A system with no cell seeds no drawing, so it is
     // skipped: a resize changes ownership over existing cells, never map membership.
-    private static void rederiveSystemOwner(PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache, SectorAPI sector,
-            Map<String, StarSystemAPI> systemById, String systemId, Set<String> cellsToReshape,
+    private static void rederiveSystemOwner(
+            PoliticalMapTerritories territories,
+            PoliticalMapGeometryCache geometryCache,
+            SectorAPI sector,
+            Map<String, StarSystemAPI> systemById,
+            String systemId,
+            Set<String> cellsToReshape,
             Set<String> affectedFactionIds) {
         if (!geometryCache.getCellEdgesBySystemId().containsKey(systemId)) {
             return;
@@ -160,7 +173,8 @@ final class IncrementalPoliticsRefresh {
     // The systems whose cell borders this one, read from the adjacency graph. When this
     // system's owner flips, each neighbour's shared edge flips between a same-faction
     // seam and a national border, so every neighbour re-shapes too.
-    private static Set<String> neighbourSystemIdsOf(PoliticalMapGeometryCache geometryCache,
+    private static Set<String> neighbourSystemIdsOf(
+            PoliticalMapGeometryCache geometryCache,
             String systemId) {
         var neighbours = new LinkedHashSet<String>();
         var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
@@ -177,8 +191,11 @@ final class IncrementalPoliticsRefresh {
     // Re-shapes one cell against the now-updated owners and replaces its draw record, or
     // drops it when the cell contributes nothing (inset-collapsed, or factionless with a
     // "No color" outline).
-    private static void reshapeCellInPlace(PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache, String systemId, FrontierSettings frontier) {
+    private static void reshapeCellInPlace(
+            PoliticalMapTerritories territories,
+            PoliticalMapGeometryCache geometryCache,
+            String systemId,
+            FrontierSettings frontier) {
         var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
         if (edges == null) {
             territories.getStyledCellBySystemId().remove(systemId);
@@ -200,16 +217,19 @@ final class IncrementalPoliticsRefresh {
     // Rebuilds (or drops) one faction's territory entry from its current members. A
     // faction that lost its last member, or whose cluster no longer yields drawable
     // geometry, is removed so its fill and border stop drawing.
-    private static void rebuildFactionTerritoryInPlace(PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache, String factionId,
-            List<String> memberSystemIds) {
+    private static void rebuildFactionTerritoryInPlace(
+            PoliticalMapTerritories territories,
+            PoliticalMapGeometryCache geometryCache,
+            String factionId,
+            List<String> memberSystemIds,
+            FrontierSettings frontier) {
         // No shaped-cell map: the incremental refresh is bypassed while a filter is active (it
         // re-derives non-filter owners), so it never rebuilds a spotlit territory - the only
         // territory whose fill reads the shaped cells - and passes none.
         var territory = memberSystemIds == null || memberSystemIds.isEmpty()
                 ? null
                 : TerritoryBuilder.buildFactionTerritory(territories, geometryCache, factionId,
-                        memberSystemIds, Map.of());
+                        memberSystemIds, Map.of(), frontier);
         if (territory == null) {
             territories.getFactionTerritoryByFactionId().remove(factionId);
         } else {
