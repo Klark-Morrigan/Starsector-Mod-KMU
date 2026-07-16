@@ -236,9 +236,11 @@ public final class KmuLunaSettings {
     // way a faction's territory meets unclaimed or decivilised space. When on, a frontier
     // edge facing an empty star flows toward it and stops the keep-out radius short of it,
     // leaving a pocket, rather than cutting at the Voronoi midline as it does against a
-    // rival faction. The toggle sits before the radius so the radius reads as its dependent
-    // knob; both reseed frontier geometry, so they feed the geometry rebuild. Player-facing
-    // appearance choices, hence the visuals tab rather than Dev.
+    // rival faction. How far that flow may carry needs no knob of its own: the cell radius
+    // above already bounds how far a system's colour reaches from its star, and it bounds
+    // the flow into a dead star's space the same way. The toggle sits before the radius so
+    // the radius reads as its dependent knob; both reseed frontier geometry, so they feed
+    // the geometry rebuild. Player-facing appearance choices, hence the visuals tab.
     private static final String ASYMMETRIC_FRONTIER_FIELD =
             "kmu_politicalMapAsymmetricFrontier";
     private static final String FRONTIER_KEEP_OUT_FIELD =
