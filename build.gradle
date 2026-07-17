@@ -7,6 +7,40 @@ apply from: "${rootDir}/../Starsector-Mod-KMLib/gradle/starsector-mod.gradle"
 
 group = 'kmu'
 
+// Developer tooling that is neither shipped nor a test: the sector fixture, the pipeline
+// that assembles it into shapes, and the viewer and SVG writer that draw it. It sits in its
+// own source set so none of it can reach the mod's jar, while the tests can still depend on
+// it - the fixture and the assembly path are shared by the viewer and the assertions, and
+// keeping one copy is what makes the picture evidence about what the tests check.
+//
+// Declared before `dependencies` because creating the source set is what creates its
+// utilsCompileOnly / utilsRuntimeOnly configurations, which that block then populates.
+//
+// Only the mod's own classes are added to the classpaths here. The game and library jars
+// arrive through this source set's own configurations rather than by borrowing main's: main
+// declares them compileOnly because Starsector supplies them at runtime, so borrowing its
+// runtime configuration would hand utils an empty one.
+sourceSets {
+    // src/utils/java and src/utils/resources are this source set's conventional layout, so
+    // they are not declared: naming a srcDir that is already one registers it twice and
+    // every resource then arrives as a duplicate.
+    //
+    // Only the mod's own classes are added to the classpaths. The game and library jars
+    // arrive through this source set's own utilsCompileOnly / utilsRuntimeOnly
+    // configurations, rather than by borrowing main's: main declares them compileOnly
+    // because Starsector supplies them at runtime, so borrowing its runtime configuration
+    // would hand utils an empty one and the viewer would compile and then die on
+    // NoClassDefFoundError.
+    utils {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    test {
+        compileClasspath += sourceSets.utils.output
+        runtimeClasspath += sourceSets.utils.output
+    }
+}
+
 // The shared conventions expose the resolved install root so KMU can locate
 // its own extra dependencies without re-deriving the path.
 def starsectorRoot = project.ext.starsectorRoot
@@ -56,6 +90,20 @@ dependencies {
     testRuntimeOnly nexJars
     testRuntimeOnly files(kmlibJarFile)
     testRuntimeOnly files(lazyLibJarFile)
+
+    // The utils tooling needs the same jars at RUNTIME as well as to compile, for the same
+    // reason the tests do: compileOnly is enough for the mod itself because Starsector's mod
+    // classloader hands it these at runtime, but nothing outside the game does. A viewer
+    // that compiles and then dies on NoClassDefFoundError is the shape that mistake takes.
+    utilsCompileOnly consoleCommandsJars
+    utilsCompileOnly nexJars
+    utilsCompileOnly xstreamJars
+    utilsCompileOnly files(kmlibJarFile)
+    utilsCompileOnly files(lazyLibJarFile)
+    utilsRuntimeOnly consoleCommandsJars
+    utilsRuntimeOnly nexJars
+    utilsRuntimeOnly files(kmlibJarFile)
+    utilsRuntimeOnly files(lazyLibJarFile)
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -91,4 +139,14 @@ tasks.withType(JavaCompile).configureEach {
                     "Install Nexerelin for compiling KMU's market-transfer map integration.")
         }
     }
+}
+
+// Opens the political map's geometry in an interactive window, rebuilt live as its knobs
+// move. A dev tool, not part of `build`: the knobs it drives are geometric, and their effect
+// is only legible as a shape rather than as a number in a settings file.
+tasks.register('viewSectorGeometry', JavaExec) {
+    group = 'help'
+    description = 'Opens the sector geometry viewer (live sliders over a real sector).'
+    classpath = sourceSets.utils.runtimeClasspath
+    mainClass = 'kmu.maplayers.politicalmap.base.geometry.SectorGeometryViewer'
 }
