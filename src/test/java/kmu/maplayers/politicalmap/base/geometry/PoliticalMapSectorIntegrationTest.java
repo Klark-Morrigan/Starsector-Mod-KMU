@@ -102,13 +102,13 @@ class PoliticalMapSectorIntegrationTest {
             var cellEdges = geometryOf(sector).cellEdgesByCellId();
             for (var cell : cellEdges.entrySet()) {
                 for (var edge : cell.getValue()) {
-                    if (edge.neighbourSystemId() == null) {
+                    if (!(edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem)) {
                         continue;
                     }
-                    assertThat(namesNeighbour(cellEdges.get(edge.neighbourSystemId()),
+                    assertThat(namesNeighbour(cellEdges.get(acrossSystem.systemId()),
                             cell.getKey()))
                             .as("%s names %s, so the reverse must hold",
-                                    cell.getKey(), edge.neighbourSystemId())
+                                    cell.getKey(), acrossSystem.systemId())
                             .isTrue();
                 }
             }
@@ -205,7 +205,8 @@ class PoliticalMapSectorIntegrationTest {
 
     private static boolean namesNeighbour(List<CellEdge> edges, String systemId) {
         for (var edge : edges) {
-            if (systemId.equals(edge.neighbourSystemId())) {
+            if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
+                    && systemId.equals(acrossSystem.systemId())) {
                 return true;
             }
         }

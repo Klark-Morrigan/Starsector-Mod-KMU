@@ -6,6 +6,7 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
+import kmu.maplayers.politicalmap.base.geometry.EdgeTarget;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
@@ -69,7 +70,7 @@ final class PoliticalMapTerritoriesTest {
             // the GL state push; the retained inputs are neutral placeholders the next
             // frame's real build replaces before any incremental pass reads them.
             assertThat(territories.isEmpty()).isTrue();
-            assertThat(territories.getStyledCellBySystemId()).isEmpty();
+            assertThat(territories.getStyledCellByCellId()).isEmpty();
             assertThat(territories.getFactionTerritoryByFactionId()).isEmpty();
             assertThat(territories.getOwnerBySystemId()).isEmpty();
             assertThat(territories.getDecivilisedSystemIds()).isEmpty();
@@ -151,7 +152,7 @@ final class PoliticalMapTerritoriesTest {
 
             // The two draw lists are created internally, not passed, so the build can fill them;
             // they start empty and stay mutable for the incremental refresh to edit in place.
-            assertThat(territories.getStyledCellBySystemId()).isEmpty();
+            assertThat(territories.getStyledCellByCellId()).isEmpty();
             assertThat(territories.getFactionTerritoryByFactionId()).isEmpty();
             assertThat(territories.getOwnerBySystemId()).isSameAs(owners);
             assertThat(territories.getDecivilisedSystemIds()).isSameAs(decivilised);
@@ -186,10 +187,10 @@ final class PoliticalMapTerritoriesTest {
 
             territories.putStyledCell("system", styledCell, fillPolygon);
 
-            assertThat(territories.getStyledCellBySystemId()).containsOnlyKeys("system");
-            assertThat(territories.getStyledCellBySystemId().get("system")).isSameAs(styledCell);
-            assertThat(territories.getFillPolygonBySystemId()).containsOnlyKeys("system");
-            assertThat(territories.getFillPolygonBySystemId().get("system")).isSameAs(fillPolygon);
+            assertThat(territories.getStyledCellByCellId()).containsOnlyKeys("system");
+            assertThat(territories.getStyledCellByCellId().get("system")).isSameAs(styledCell);
+            assertThat(territories.getFillPolygonByCellId()).containsOnlyKeys("system");
+            assertThat(territories.getFillPolygonByCellId().get("system")).isSameAs(fillPolygon);
         }
 
         @Test
@@ -203,8 +204,8 @@ final class PoliticalMapTerritoriesTest {
 
             territories.putStyledCell("system", reshapedCell, reshapedPolygon);
 
-            assertThat(territories.getStyledCellBySystemId().get("system")).isSameAs(reshapedCell);
-            assertThat(territories.getFillPolygonBySystemId().get("system"))
+            assertThat(territories.getStyledCellByCellId().get("system")).isSameAs(reshapedCell);
+            assertThat(territories.getFillPolygonByCellId().get("system"))
                     .isSameAs(reshapedPolygon);
         }
     }
@@ -221,8 +222,8 @@ final class PoliticalMapTerritoriesTest {
 
             territories.removeStyledCell("system");
 
-            assertThat(territories.getStyledCellBySystemId()).isEmpty();
-            assertThat(territories.getFillPolygonBySystemId()).isEmpty();
+            assertThat(territories.getStyledCellByCellId()).isEmpty();
+            assertThat(territories.getFillPolygonByCellId()).isEmpty();
         }
 
         @Test
@@ -233,8 +234,8 @@ final class PoliticalMapTerritoriesTest {
 
             territories.removeStyledCell("dropped");
 
-            assertThat(territories.getStyledCellBySystemId()).containsOnlyKeys("kept");
-            assertThat(territories.getFillPolygonBySystemId()).containsOnlyKeys("kept");
+            assertThat(territories.getStyledCellByCellId()).containsOnlyKeys("kept");
+            assertThat(territories.getFillPolygonByCellId()).containsOnlyKeys("kept");
         }
     }
 
@@ -245,7 +246,7 @@ final class PoliticalMapTerritoriesTest {
         void reindexClustersResolvesASystemToItsWholeContiguousTerritory() {
             var territories = ownedBy(Map.of("A", "F", "B", "F"));
 
-            territories.reindexClusters(Map.of(
+            reindex(territories, Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A"))));
 
@@ -257,7 +258,7 @@ final class PoliticalMapTerritoriesTest {
         void reindexClustersExcludesADifferentlyOwnedNeighbour() {
             var territories = ownedBy(Map.of("A", "F", "B", "RIVAL"));
 
-            territories.reindexClusters(Map.of(
+            reindex(territories, Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A"))));
 
@@ -275,12 +276,12 @@ final class PoliticalMapTerritoriesTest {
                     "B", List.of(edgeTo("A"), edgeTo("C")),
                     "C", List.of(edgeTo("B")));
             var territories = ownedBy(Map.of("A", "F", "B", "F", "C", "F"));
-            territories.reindexClusters(edges);
+            reindex(territories, edges);
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
                     .containsExactlyInAnyOrder("A", "B", "C");
 
             territories.getOwnerBySystemId().put("B", ownerOf("RIVAL"));
-            territories.reindexClusters(edges);
+            reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
                     .containsExactly("A");
@@ -296,10 +297,10 @@ final class PoliticalMapTerritoriesTest {
                     "B", List.of(edgeTo("A"), edgeTo("C")),
                     "C", List.of(edgeTo("B")));
             var territories = ownedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
-            territories.reindexClusters(edges);
+            reindex(territories, edges);
 
             territories.getOwnerBySystemId().put("B", ownerOf("F"));
-            territories.reindexClusters(edges);
+            reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
                     .containsExactlyInAnyOrder("A", "B", "C");
@@ -309,7 +310,7 @@ final class PoliticalMapTerritoriesTest {
         void reindexClustersCarriesNoClusterForAnUnownedSystem() {
             var territories = ownedBy(Map.of("A", "F"));
 
-            territories.reindexClusters(Map.of(
+            reindex(territories, Map.of(
                     "A", List.of(edgeTo("UNOWNED")),
                     "UNOWNED", List.of(edgeTo("A"))));
 
@@ -332,10 +333,21 @@ final class PoliticalMapTerritoriesTest {
         return new DominantOwner(factionId, Color.GRAY, Color.GRAY);
     }
 
-    // One cell edge bordering the given neighbour. Clustering reads only the adjacency tag, so
-    // the segment is left at the origin.
+    // One cell edge facing the given neighbour system. Clustering reads only the adjacency tag,
+    // so the segment is left at the origin.
     private static CellEdge edgeTo(String neighbourSystemId) {
-        return new CellEdge(0, 0, 0, 0, neighbourSystemId);
+        return new CellEdge(0, 0, 0, 0, new EdgeTarget.AcrossSystem(neighbourSystemId));
+    }
+
+    // Reindexes the clusters over the given adjacency, each cell drawing as its own star
+    // (identity draws-as), so a test names only the edges the clusters are walked over.
+    private static void reindex(
+            PoliticalMapTerritories territories, Map<String, List<CellEdge>> edges) {
+        var systemIdByCellId = new LinkedHashMap<String, String>();
+        for (var cellId : edges.keySet()) {
+            systemIdByCellId.put(cellId, cellId);
+        }
+        territories.reindexClusters(edges, systemIdByCellId);
     }
 
     // Two distinct fill shapes, so a test that swaps one for the other is caught by identity.
@@ -360,7 +372,7 @@ final class PoliticalMapTerritoriesTest {
                 new FilterSnapshot(null, BlocStyleAdjustment.NONE, new LinkedHashSet<>()));
         // The draw lists are no longer constructor inputs; fill the internally-created maps so
         // this fixture's only varying state is what isEmpty reads.
-        drawables.getStyledCellBySystemId().putAll(styledCells);
+        drawables.getStyledCellByCellId().putAll(styledCells);
         drawables.getFactionTerritoryByFactionId().putAll(territories);
         return drawables;
     }

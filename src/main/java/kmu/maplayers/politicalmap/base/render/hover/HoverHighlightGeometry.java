@@ -59,7 +59,7 @@ public final class HoverHighlightGeometry {
             return HoverHighlight.NONE;
         }
         var systemId = hover.hoveredSystemId();
-        var fillPolygon = territories.getFillPolygonBySystemId().get(systemId);
+        var fillPolygon = territories.getFillPolygonByCellId().get(systemId);
         if (fillPolygon == null || fillPolygon.isEmpty()) {
             return HoverHighlight.NONE;
         }

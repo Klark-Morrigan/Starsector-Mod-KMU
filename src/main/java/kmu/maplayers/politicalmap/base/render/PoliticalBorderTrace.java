@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
+import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.settings.KmuLunaSettings;
@@ -36,10 +37,10 @@ public record PoliticalBorderTrace(
     // Traces one cluster's inset border rings with these parameters and the fixed
     // border channel every trace shares, insetting every boundary edge by that channel.
     public List<List<double[]>> traceRings(
-            Collection<String> memberSystemIds,
-            Map<String, List<CellEdge>> edgesBySystemId,
-            Map<String, String> groupKeyBySystemId) {
-        return traceRings(memberSystemIds, edgesBySystemId, groupKeyBySystemId, Set.of());
+            Collection<String> memberCellIds,
+            Map<String, List<CellEdge>> edgesByCellId,
+            CellGrouping grouping) {
+        return traceRings(memberCellIds, edgesByCellId, grouping, Set.of());
     }
 
     // Traces one region's rings while opting a set of neighbours out of the border channel:
@@ -48,14 +49,14 @@ public record PoliticalBorderTrace(
     // one same-key body is carved into regions that meet without a channel opening between
     // them; the channel still applies to every other boundary edge.
     public List<List<double[]>> traceRings(
-            Collection<String> memberSystemIds,
-            Map<String, List<CellEdge>> edgesBySystemId,
-            Map<String, String> groupKeyBySystemId,
+            Collection<String> memberCellIds,
+            Map<String, List<CellEdge>> edgesByCellId,
+            CellGrouping grouping,
             Set<String> coincidentNeighbourSystemIds) {
         return SystemClusterBorders.traceBorderRings(
-                memberSystemIds,
-                edgesBySystemId,
-                groupKeyBySystemId,
+                memberCellIds,
+                edgesByCellId,
+                grouping,
                 coincidentNeighbourSystemIds,
                 PoliticalMapStyle.BORDER_INSET_DISTANCE,
                 weldTolerance,

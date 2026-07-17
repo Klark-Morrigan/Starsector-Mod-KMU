@@ -57,7 +57,7 @@ import javax.swing.SwingUtilities;
  * <ul>
  *   <li><i>Deciding what exists</i> - {@code PoliticalMapVisibility.shouldAppearOnMap},
  *       {@code PoliticalMapGeometryCache.updateFromSector} and
- *       {@code getCellEdgesBySystemId}. {@link SectorFixture} rebuilds the cache's private
+ *       {@code getCellEdgesByCellId}. {@link SectorFixture} rebuilds the cache's private
  *       cell-to-edge translation, so every fixture row is drawn and nothing exercises the
  *       cache, its diffing, or the incremental refresh.</li>
  *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantOwnerBySystemId},

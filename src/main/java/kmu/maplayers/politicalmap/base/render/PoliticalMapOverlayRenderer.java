@@ -89,7 +89,7 @@ final class PoliticalMapOverlayRenderer {
         // replaced them (territories is null in debug mode).
         var builtCounts = cache.isDebug()
                 ? "debugBaseLoops=" + cache.getDebugTerritories().baseLoops().size()
-                : "styledCells=" + cache.getTerritories().getStyledCellBySystemId().size();
+                : "styledCells=" + cache.getTerritories().getStyledCellByCellId().size();
         LOG.debug("Political map render renderOnMap fired: " + builtCounts
                 + " factor=" + factor + " alphaMult=" + alphaMult);
     }

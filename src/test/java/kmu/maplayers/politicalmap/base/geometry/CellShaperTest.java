@@ -32,7 +32,7 @@ final class CellShaperTest {
             // same-faction "b", the other three are frontiers. Only the shared edge
             // stays a seam (not a boundary), on the raw x = 10 line, so a
             // same-faction "b" filling up to x = 10 fuses with it.
-            var shaped = CellShaper.shapeCells(
+            var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b")),
                     Map.of("a", "hegemony", "b", "hegemony"), INSET).get("a");
 
@@ -48,7 +48,7 @@ final class CellShaperTest {
             // pulled-in top and bottom borders cut it back to the 2..8 inset band, so
             // the seam's ends stay within the padding rather than poking out to the
             // midline corner between cells.
-            var shaped = CellShaper.shapeCells(
+            var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b")),
                     Map.of("a", "hegemony", "b", "hegemony"), INSET).get("a");
 
@@ -61,7 +61,7 @@ final class CellShaperTest {
         void shapeCellsInsetsASharedEdgeBetweenDifferentFactions() {
             // With a rival across the right edge, nothing merges: every edge is a
             // boundary and the fill pulls in to x <= 8, leaving the border channel.
-            var shaped = CellShaper.shapeCells(
+            var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b")),
                     Map.of("a", "hegemony", "b", "tritachyon"), INSET).get("a");
 
@@ -73,7 +73,7 @@ final class CellShaperTest {
         void shapeCellsMakesEveryEdgeOfAnUnownedCellABoundary() {
             // "a" is absent from the owner map (unowned): it fuses with no one, so
             // every edge - even the one shared with an owned "b" - is a boundary.
-            var shaped = CellShaper.shapeCells(
+            var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b")),
                     Map.of("b", "hegemony"), INSET).get("a");
 
@@ -84,7 +84,7 @@ final class CellShaperTest {
         void shapeCellsMakesAFrontierEdgeABoundary() {
             // A lone owned cell touches no neighbour, so every edge is a frontier
             // into empty space - all boundaries, none merged.
-            var shaped = CellShaper.shapeCells(
+            var shaped = shape(
                     Map.of("a", squareCellSharedOnRight(null)),
                     Map.of("a", "hegemony"), INSET).get("a");
 
@@ -96,7 +96,7 @@ final class CellShaperTest {
             // Left square "a" and right square "b" share the x = 10 line and are both
             // Hegemony. Each keeps that edge as a seam on x = 10, so their fills meet
             // there with no channel between them.
-            var shaped = CellShaper.shapeCells(
+            var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b"), "b", rightSquareCellSharedOnLeft("a")),
                     Map.of("a", "hegemony", "b", "hegemony"), INSET);
 
@@ -110,10 +110,10 @@ final class CellShaperTest {
             // channel every other boundary does, from whichever side shapes it. Factionless
             // "a" facing owned "b" stops at x = 98, and owned "a" facing factionless "b"
             // stops there too; neither side reaches past the channel toward the other's star.
-            var emptySide = CellShaper.shapeCells(
+            var emptySide = shape(
                     Map.of("a", bigSquareCellSharedOnRight("b")),
                     Map.of("b", "hegemony"), INSET).get("a");
-            var ownedSide = CellShaper.shapeCells(
+            var ownedSide = shape(
                     Map.of("a", bigSquareCellSharedOnRight("b")),
                     Map.of("a", "hegemony"), INSET).get("a");
 
@@ -125,14 +125,40 @@ final class CellShaperTest {
         }
     }
 
+    // Shapes the cells under the identity draws-as grouping, so a test names its edges and
+    // owners exactly as before while the shaper reads a cell's key through its own star.
+    private static Map<String, ShapedCell> shape(
+            Map<String, List<CellEdge>> edges, Map<String, String> owners, double inset) {
+        return CellShaper.shapeCells(edges, grouping(edges, owners), inset);
+    }
+
+    // One cell edge facing the given neighbour system, or the reach bound when it is null.
+    private static CellEdge edge(double x1, double y1, double x2, double y2, String neighbour) {
+        return new CellEdge(x1, y1, x2, y2,
+                neighbour == null
+                        ? EdgeTarget.REACH_BOUND
+                        : new EdgeTarget.AcrossSystem(neighbour));
+    }
+
+    // The grouping to shape under: each cell drawing as its own star (identity draws-as over
+    // the cell set), keyed by the given owners.
+    private static CellGrouping grouping(
+            Map<String, List<CellEdge>> edges, Map<String, String> owners) {
+        var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
+        for (var cellId : edges.keySet()) {
+            systemIdByCellId.put(cellId, cellId);
+        }
+        return new CellGrouping(systemIdByCellId, owners);
+    }
+
     // The unit square (0,0)..(10,10) CCW, its right edge (x = 10) tagged with the
     // given neighbour and the other three left as frontiers (null neighbour).
     private static List<CellEdge> squareCellSharedOnRight(String rightNeighbour) {
         return List.of(
-                new CellEdge(0, 0, 10, 0, null),
-                new CellEdge(10, 0, 10, 10, rightNeighbour),
-                new CellEdge(10, 10, 0, 10, null),
-                new CellEdge(0, 10, 0, 0, null));
+                edge(0, 0, 10, 0, null),
+                edge(10, 0, 10, 10, rightNeighbour),
+                edge(10, 10, 0, 10, null),
+                edge(0, 10, 0, 0, null));
     }
 
     // The side-100 square (0,0)..(100,100) CCW, its right edge (x = 100) tagged with the
@@ -140,20 +166,20 @@ final class CellShaperTest {
     // channel-plus-setback frontier pull-in still leaves a drawable cell.
     private static List<CellEdge> bigSquareCellSharedOnRight(String rightNeighbour) {
         return List.of(
-                new CellEdge(0, 0, 100, 0, null),
-                new CellEdge(100, 0, 100, 100, rightNeighbour),
-                new CellEdge(100, 100, 0, 100, null),
-                new CellEdge(0, 100, 0, 0, null));
+                edge(0, 0, 100, 0, null),
+                edge(100, 0, 100, 100, rightNeighbour),
+                edge(100, 100, 0, 100, null),
+                edge(0, 100, 0, 0, null));
     }
 
     // The square (10,0)..(20,10) CCW, its left edge (x = 10) tagged with the given
     // neighbour - the mirror partner of a squareCellSharedOnRight cell.
     private static List<CellEdge> rightSquareCellSharedOnLeft(String leftNeighbour) {
         return List.of(
-                new CellEdge(10, 0, 20, 0, null),
-                new CellEdge(20, 0, 20, 10, null),
-                new CellEdge(20, 10, 10, 10, null),
-                new CellEdge(10, 10, 10, 0, leftNeighbour));
+                edge(10, 0, 20, 0, null),
+                edge(20, 0, 20, 10, null),
+                edge(20, 10, 10, 10, null),
+                edge(10, 10, 10, 0, leftNeighbour));
     }
 
     private static double maxXOf(ShapedCell shaped) {

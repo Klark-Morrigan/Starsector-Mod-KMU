@@ -165,7 +165,7 @@ final class SectorFixture {
     }
 
     // Walks a labelled cell into edges, resolving each edge's neighbour site index back to
-    // the system across it - and BOUND_EDGE to the null tag that means "no star across it".
+    // the system across it - and BOUND_EDGE to the reach bound that means "no star across it".
     private List<CellEdge> buildCellEdges(VoronoiCellBuilder.LabelledCell cell) {
         var vertices = cell.vertices();
         var edges = new ArrayList<CellEdge>(vertices.size());
@@ -173,10 +173,10 @@ final class SectorFixture {
             var from = vertices.get(i);
             var to = vertices.get((i + 1) % vertices.size());
             var neighbourIndex = cell.edgeNeighbourSiteIndices()[i];
-            edges.add(new CellEdge(from[0], from[1], to[0], to[1],
-                    neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
-                            ? null
-                            : systemIds.get(neighbourIndex)));
+            var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
+                    ? EdgeTarget.REACH_BOUND
+                    : new EdgeTarget.AcrossSystem(systemIds.get(neighbourIndex));
+            edges.add(new CellEdge(from[0], from[1], to[0], to[1], target));
         }
         return edges;
     }

@@ -10,21 +10,39 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the contract of {@link SystemClusters#findClusters}:
- *  - adjacent same-key systems fuse into one cluster, transitively along a chain,
- *  - same-key systems with no shared border stay separate clusters,
- *  - adjacent systems of different keys never fuse,
- *  - ungrouped and cell-less systems carry no cluster.
+ *  - adjacent same-key cells fuse into one cluster, transitively along a chain,
+ *  - same-key cells with no shared border stay separate clusters,
+ *  - adjacent cells of different keys never fuse,
+ *  - ungrouped and cell-less systems carry no cluster,
+ *  - a cluster's members are the systems its cells draw as, so a cell with no system of its
+ *    own adds no member yet still connects the cells on either side of it.
  *
- * <p>Clustering reads only the adjacency tags and the grouping keys, never the edge geometry,
- * so the cells here are bare edges tagged with their neighbour - the coordinates are
- * left at zero as they play no part in which systems fuse.
+ * <p>Clustering reads only the adjacency tags and the grouping, never the edge geometry, so
+ * the cells here are bare edges tagged with what lies across them - the coordinates are
+ * left at zero as they play no part in which cells fuse.
  */
 final class SystemClustersTest {
 
-    // One cell edge that borders the given neighbour (null for a frontier into empty
-    // space). Geometry is irrelevant to clustering, so the segment is left at the origin.
-    private static CellEdge edgeTo(String neighbour) {
-        return new CellEdge(0, 0, 0, 0, neighbour);
+    // One cell edge that faces the given system's cell. Geometry is irrelevant to clustering,
+    // so the segment is left at the origin.
+    private static CellEdge edgeTo(String neighbourSystemId) {
+        return new CellEdge(0, 0, 0, 0, new EdgeTarget.AcrossSystem(neighbourSystemId));
+    }
+
+    // One cell edge facing the reach bound - a frontier into empty space.
+    private static CellEdge boundEdge() {
+        return new CellEdge(0, 0, 0, 0, EdgeTarget.REACH_BOUND);
+    }
+
+    // The grouping the clustering runs over: each cell drawing as its own star (identity
+    // draws-as over the cell set), keyed by the given owners.
+    private static CellGrouping grouping(
+            Map<String, List<CellEdge>> edges, Map<String, String> owners) {
+        var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
+        for (var cellId : edges.keySet()) {
+            systemIdByCellId.put(cellId, cellId);
+        }
+        return new CellGrouping(systemIdByCellId, owners);
     }
 
     @Nested
@@ -38,7 +56,7 @@ final class SystemClustersTest {
                     "B", List.of(edgeTo("A")));
             var owners = Map.of("A", "F", "B", "F");
 
-            var clusters = SystemClusters.findClusters(edges, owners);
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactlyInAnyOrder("A", "B");
@@ -54,7 +72,7 @@ final class SystemClustersTest {
                     "C", List.of(edgeTo("B")));
             var owners = Map.of("A", "F", "B", "F", "C", "F");
 
-            var clusters = SystemClusters.findClusters(edges, owners);
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactlyInAnyOrder("A", "B", "C");
@@ -65,11 +83,11 @@ final class SystemClustersTest {
             // Two F systems that face only empty space (a disjoint pocket each) get their
             // own cluster - one label each, not a name stranded between them.
             var edges = Map.of(
-                    "A", List.of(edgeTo(null)),
-                    "B", List.of(edgeTo(null)));
+                    "A", List.of(boundEdge()),
+                    "B", List.of(boundEdge()));
             var owners = Map.of("A", "F", "B", "F");
 
-            var clusters = SystemClusters.findClusters(edges, owners);
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(2);
         }
@@ -83,7 +101,7 @@ final class SystemClustersTest {
                     "B", List.of(edgeTo("A")));
             var owners = Map.of("A", "F", "B", "G");
 
-            var clusters = SystemClusters.findClusters(edges, owners);
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(2);
             assertThat(clusters).allSatisfy(cluster -> assertThat(cluster).hasSize(1));
@@ -98,7 +116,7 @@ final class SystemClustersTest {
                     "B", List.of(edgeTo("A")));
             var owners = Map.of("A", "F");
 
-            var clusters = SystemClusters.findClusters(edges, owners);
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactly("A");
@@ -106,11 +124,28 @@ final class SystemClustersTest {
 
         @Test
         void nothing_owned_yields_no_clusters() {
-            var edges = Map.of("A", List.of(edgeTo(null)));
+            var edges = Map.of("A", List.of(boundEdge()));
 
-            var clusters = SystemClusters.findClusters(edges, Map.of());
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, Map.of()));
 
             assertThat(clusters).isEmpty();
+        }
+
+        @Test
+        void a_cell_drawing_as_another_owners_star_reports_that_star_not_its_own_id() {
+            // Cell "wedge" is absorbed ground drawing as owner F's star A - it has no star of
+            // its own. It borders A's own cell, so it fuses into A's cluster, but the cluster's
+            // members are the systems the cells draw as, so it reports A once, never "wedge".
+            var edges = Map.of(
+                    "A", List.of(edgeTo("wedge")),
+                    "wedge", List.of(edgeTo("A")));
+            var systemIdByCellId = Map.of("A", "A", "wedge", "A");
+            var grouping = new CellGrouping(systemIdByCellId, Map.of("A", "F"));
+
+            var clusters = SystemClusters.findClusters(edges, grouping);
+
+            assertThat(clusters).hasSize(1);
+            assertThat(clusters.get(0)).containsExactly("A");
         }
     }
 }

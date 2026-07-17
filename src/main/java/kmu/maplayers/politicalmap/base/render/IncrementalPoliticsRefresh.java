@@ -5,7 +5,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
+import kmu.maplayers.politicalmap.base.geometry.EdgeTarget;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -85,14 +87,20 @@ final class IncrementalPoliticsRefresh {
             // A flip changes which systems are contiguous - it can sever one territory in two or
             // bridge two into one - so the cursor read's cluster index is re-derived off the
             // updated owners here, in step with the cells that just re-shaped.
-            territories.reindexClusters(geometryCache.getCellEdgesBySystemId());
+            territories.reindexClusters(
+                    geometryCache.getCellEdgesByCellId(),
+                    geometryCache.getSystemIdByCellId());
             // Only the old and new owners' territories can have changed shape; every
-            // other faction's rings trace unchanged cells, so they are left as-is.
-            var systemsByFaction =
-                    DominantOwner.groupSystemIdsByFactionId(territories.getOwnerBySystemId());
+            // other faction's rings trace unchanged cells, so they are left as-is. A faction's
+            // members are the cells it draws, so they are grouped from the cells here to match
+            // what buildFactionTerritory traces.
+            var cellsByFaction = new CellGrouping(
+                    geometryCache.getSystemIdByCellId(),
+                    DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()))
+                    .groupCellIdsByKey();
             for (var factionId : affectedFactionIds) {
                 rebuildFactionTerritoryInPlace(territories, geometryCache, factionId,
-                        systemsByFaction.get(factionId));
+                        cellsByFaction.get(factionId));
             }
             // A flip can split or merge clusters (a lost system severs one, a gained
             // one bridges two), so re-fit every placement off the updated owners rather than
@@ -131,7 +139,7 @@ final class IncrementalPoliticsRefresh {
             String systemId,
             Set<String> cellsToReshape,
             Set<String> affectedFactionIds) {
-        if (!geometryCache.getCellEdgesBySystemId().containsKey(systemId)) {
+        if (!geometryCache.getCellEdgesByCellId().containsKey(systemId)) {
             return;
         }
         // Re-derive under the grouping the full build resolved this system's owner with,
@@ -177,11 +185,11 @@ final class IncrementalPoliticsRefresh {
             PoliticalMapGeometryCache geometryCache,
             String systemId) {
         var neighbours = new LinkedHashSet<String>();
-        var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
+        var edges = geometryCache.getCellEdgesByCellId().get(systemId);
         if (edges != null) {
             for (var edge : edges) {
-                if (edge.neighbourSystemId() != null) {
-                    neighbours.add(edge.neighbourSystemId());
+                if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem) {
+                    neighbours.add(acrossSystem.systemId());
                 }
             }
         }
@@ -194,22 +202,26 @@ final class IncrementalPoliticsRefresh {
     private static void reshapeCellInPlace(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
-            String systemId) {
-        var edges = geometryCache.getCellEdgesBySystemId().get(systemId);
+            String cellId) {
+        var edges = geometryCache.getCellEdgesByCellId().get(cellId);
         if (edges == null) {
-            territories.removeStyledCell(systemId);
+            territories.removeStyledCell(cellId);
             return;
         }
-        var owner = territories.getOwnerBySystemId().get(systemId);
+        // The system the cell draws as, whose owner colours and keys it. Every cell here is a
+        // star's own ground, so it resolves to that star, but the resolve is explicit so an
+        // absorbed cell would key by its owner rather than its own missing star.
+        var drawnSystemId = geometryCache.getSystemIdByCellId().get(cellId);
+        var owner = territories.getOwnerBySystemId().get(drawnSystemId);
         var ownerFactionId = owner == null ? null : owner.factionId();
         var shaped = CellShaper.shapeCell(edges, ownerFactionId,
                 DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()),
                 PoliticalMapStyle.BORDER_INSET_DISTANCE);
-        var styled = TerritoryBuilder.buildStyledCellForSystem(territories, systemId, shaped);
+        var styled = TerritoryBuilder.buildStyledCellForSystem(territories, drawnSystemId, shaped);
         if (styled == null) {
-            territories.removeStyledCell(systemId);
+            territories.removeStyledCell(cellId);
         } else {
-            territories.putStyledCell(systemId, styled, shaped.fillPolygon());
+            territories.putStyledCell(cellId, styled, shaped.fillPolygon());
         }
     }
 
@@ -220,11 +232,11 @@ final class IncrementalPoliticsRefresh {
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
             String factionId,
-            List<String> memberSystemIds) {
-        var territory = memberSystemIds == null || memberSystemIds.isEmpty()
+            List<String> memberCellIds) {
+        var territory = memberCellIds == null || memberCellIds.isEmpty()
                 ? null
                 : TerritoryBuilder.buildFactionTerritory(territories, geometryCache, factionId,
-                        memberSystemIds);
+                        memberCellIds);
         if (territory == null) {
             territories.getFactionTerritoryByFactionId().remove(factionId);
         } else {

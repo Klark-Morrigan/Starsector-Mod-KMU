@@ -110,7 +110,7 @@ final class PoliticalMapHoverPublisherTest {
     // proves it carries the whole territory and not just the cell it resolved.
     private static PoliticalMapCache buildCacheWithOneCell() {
         var territoriesMock = mock(PoliticalMapTerritories.class);
-        when(territoriesMock.getFillPolygonBySystemId())
+        when(territoriesMock.getFillPolygonByCellId())
                 .thenReturn(Map.of(HOVERED_SYSTEM_ID, CELL_POLYGON));
         when(territoriesMock.getClusterIndex()).thenReturn(SystemClusterIndex.indexClusters(
                 List.of(List.of(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID))));

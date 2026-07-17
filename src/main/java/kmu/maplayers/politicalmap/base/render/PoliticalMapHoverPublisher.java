@@ -75,7 +75,7 @@ final class PoliticalMapHoverPublisher {
         var hoveredSystemId = CellHitTest.resolveSystemIdAt(
                 worldPoint.x,
                 worldPoint.y,
-                territories.getFillPolygonBySystemId());
+                territories.getFillPolygonByCellId());
         if (hoveredSystemId == null) {
             parkHover();
             return;

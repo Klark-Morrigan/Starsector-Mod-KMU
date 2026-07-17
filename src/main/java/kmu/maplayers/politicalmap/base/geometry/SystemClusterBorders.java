@@ -17,7 +17,7 @@ import java.util.Set;
  *
  * <p>Where {@link CellShaper} shapes each cell on its
  * own, this looks at a whole cluster: it gathers the boundary edges of every
- * system a faction holds - the edges against a different owner, unowned space, or
+ * cell a faction draws - the edges against a different owner, unowned space, or
  * the map frontier, with same-faction seams dropped - and chains them into the
  * closed rings that outline the cluster. Disjoint pockets of the faction and
  * enclaves carved out of it each come back as their own ring. Every ring is inset
@@ -59,13 +59,14 @@ public final class SystemClusterBorders {
      * only then rounds it - rounding before that resolve would see the arc clipped
      * off at the crossing and left a sharp corner.
      *
-     * @param groupSystemIds  the systems sharing one grouping key whose fused
-     *                        cluster(s) to outline; systems absent from
-     *                        {@code edgesBySystemId} are skipped
-     * @param edgesBySystemId each system's raw cell edges, tagged with the
-     *                        neighbour across them - the adjacency graph
-     * @param groupKeyBySystemId the grouping key per system, to tell a border edge
-     *                        (different or no key across it) from a fused seam
+     * @param groupCellIds    the cells sharing one grouping key whose fused
+     *                        cluster(s) to outline; cells absent from
+     *                        {@code edgesByCellId} are skipped
+     * @param edgesByCellId   each cell's raw edges, tagged with what lies across
+     *                        them - the adjacency graph
+     * @param grouping        which system each cell draws as and each system's grouping
+     *                        key, to tell a border edge (different or no key across it)
+     *                        from a fused seam
      * @param coincidentNeighbourSystemIds the neighbours whose shared boundary edge insets
      *                        by nothing and so stays on the raw cell border, letting two
      *                        regions traced against each other meet exactly; empty for a
@@ -82,16 +83,16 @@ public final class SystemClusterBorders {
      *         coordinates; empty when the group holds no borderable geometry
      */
     public static List<List<double[]>> traceBorderRings(
-            Collection<String> groupSystemIds,
-            Map<String, List<CellEdge>> edgesBySystemId,
-            Map<String, String> groupKeyBySystemId,
+            Collection<String> groupCellIds,
+            Map<String, List<CellEdge>> edgesByCellId,
+            CellGrouping grouping,
             Set<String> coincidentNeighbourSystemIds,
             double borderInset,
             double vertexWeldTolerance,
             double miterSpikeLimit) {
         var boundary = collectBoundarySegments(
-                groupSystemIds, edgesBySystemId,
-                groupKeyBySystemId,
+                groupCellIds, edgesByCellId,
+                grouping,
                 coincidentNeighbourSystemIds,
                 borderInset);
         var rings = new ArrayList<List<double[]>>();
@@ -112,30 +113,30 @@ public final class SystemClusterBorders {
         return rings;
     }
 
-    // Gathers, across every system in the group, the edges that face outside the
+    // Gathers, across every cell in the group, the edges that face outside the
     // cluster (a different key, no key, or the map frontier) as directed segments,
     // each paired with the distance its ring edge later insets by. Same-key
     // seams are dropped, so the surviving segments trace only the cluster's outer
     // boundary and its enclaves.
     private static BoundarySegments collectBoundarySegments(
-            Collection<String> groupSystemIds,
-            Map<String, List<CellEdge>> edgesBySystemId,
-            Map<String, String> groupKeyBySystemId,
+            Collection<String> groupCellIds,
+            Map<String, List<CellEdge>> edgesByCellId,
+            CellGrouping grouping,
             Set<String> coincidentNeighbourSystemIds,
             double borderInset) {
         var segments = new ArrayList<Segment>();
         var distances = new ArrayList<Double>();
-        for (var systemId : groupSystemIds) {
-            var edges = edgesBySystemId.get(systemId);
+        for (var cellId : groupCellIds) {
+            var edges = edgesByCellId.get(cellId);
             if (edges == null) {
                 continue;
             }
-            var ownGroupKey = groupKeyBySystemId.get(systemId);
+            var ownGroupKey = grouping.resolveGroupKeyOf(cellId);
             for (var edge : edges) {
                 var edgeClass = EdgeClassifier.classifyAcross(
                         edge,
                         ownGroupKey,
-                        groupKeyBySystemId);
+                        grouping.groupKeyBySystemId());
                 if (!edgeClass.isBoundary()) {
                     continue;
                 }
@@ -155,10 +156,11 @@ public final class SystemClusterBorders {
             double borderInset) {
         // A coincident neighbour's edge stays on the raw cell border, so the region traced
         // from the other side lands on the same line and the two abut with no channel
-        // between them. The null guard covers the map-reach bound (no neighbour across it),
-        // which an immutable Set.of would reject outright.
-        if (edge.neighbourSystemId() != null
-                && coincidentNeighbourSystemIds.contains(edge.neighbourSystemId())) {
+        // between them. Only an edge naming a system can be coincident: a reach bound has
+        // no neighbour to be carved away from, and a same-territory cut is no boundary at
+        // all.
+        if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
+                && coincidentNeighbourSystemIds.contains(acrossSystem.systemId())) {
             return 0;
         }
         return borderInset;

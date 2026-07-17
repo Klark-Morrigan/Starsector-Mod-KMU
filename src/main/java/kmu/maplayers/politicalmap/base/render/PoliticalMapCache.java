@@ -255,7 +255,7 @@ final class PoliticalMapCache {
         }
         var builtCounts = debugTerritories != null
                 ? "debugBaseLoops=" + debugTerritories.baseLoops().size()
-                : "styledCells=" + territories.getStyledCellBySystemId().size();
+                : "styledCells=" + territories.getStyledCellByCellId().size();
         LOG.debug("Political map territories rebuilt; contentRevision=" + contentRevision
                 + " " + builtCounts + " geometryRebuilt=" + rebuiltCells
                 + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));

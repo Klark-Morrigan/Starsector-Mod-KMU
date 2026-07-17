@@ -66,60 +66,74 @@ final class EmptyCellClassifierTest {
     }
 
     @Nested
-    class CollectFrontierEmptySystemIds {
+    class CollectFrontierEmptyCellIds {
 
         @Test
-        void collectFrontierEmptySystemIdsKeepsOnlyTheUnownedCellsAgainstTerritory() {
+        void collectFrontierEmptyCellIdsKeepsOnlyTheUnownedCellsAgainstTerritory() {
             // "near" touches owned "a"; "far" touches only "near"; "a" is owned. One id out.
             var cells = Map.of(
                     "a", cellNeighbouring("near"),
                     "near", cellNeighbouring("a", "far"),
                     "far", cellNeighbouring("near"));
 
-            var frontierEmptySystemIds = EmptyCellClassifier.collectFrontierEmptySystemIds(
-                    cells, Map.of("a", "hegemony"));
+            var frontierEmptyCellIds = EmptyCellClassifier.collectFrontierEmptyCellIds(
+                    cells, grouping(cells, Map.of("a", "hegemony")));
 
-            assertThat(frontierEmptySystemIds).containsExactly("near");
+            assertThat(frontierEmptyCellIds).containsExactly("near");
         }
 
         @Test
-        void collectFrontierEmptySystemIdsReturnsEveryEmptyCellBorderingRivalOwners() {
+        void collectFrontierEmptyCellIdsReturnsEveryEmptyCellBorderingRivalOwners() {
             // A dead star between two rivals is frontier-empty once, not once per owner.
             var cells = Map.of(
                     "a", cellNeighbouring("empty"),
                     "b", cellNeighbouring("empty"),
                     "empty", cellNeighbouring("a", "b"));
 
-            var frontierEmptySystemIds = EmptyCellClassifier.collectFrontierEmptySystemIds(
-                    cells, Map.of("a", "hegemony", "b", "tritachyon"));
+            var frontierEmptyCellIds = EmptyCellClassifier.collectFrontierEmptyCellIds(
+                    cells, grouping(cells, Map.of("a", "hegemony", "b", "tritachyon")));
 
-            assertThat(frontierEmptySystemIds).containsExactly("empty");
+            assertThat(frontierEmptyCellIds).containsExactly("empty");
         }
 
         @Test
-        void collectFrontierEmptySystemIdsIsEmptyWhenNoSystemIsOwned() {
+        void collectFrontierEmptyCellIdsIsEmptyWhenNoSystemIsOwned() {
             // An unclaimed sector redistributes nothing: every cell draws as today.
             var cells = Map.of(
                     "a", cellNeighbouring("b"),
                     "b", cellNeighbouring("a"));
 
-            var frontierEmptySystemIds = EmptyCellClassifier.collectFrontierEmptySystemIds(
-                    cells, Map.of());
+            var frontierEmptyCellIds = EmptyCellClassifier.collectFrontierEmptyCellIds(
+                    cells, grouping(cells, Map.of()));
 
-            assertThat(frontierEmptySystemIds).isEmpty();
+            assertThat(frontierEmptyCellIds).isEmpty();
         }
     }
 
     /**
      * A cell whose edges face the given neighbours in turn, one edge each; a null neighbour is
-     * the map-reach bound. Only the adjacency tags matter here, so the outline is a unit square
+     * the reach bound. Only the adjacency tags matter here, so the outline is a unit square
      * walked in order and the coordinates carry no meaning beyond keeping the edges distinct.
      */
     private static List<CellEdge> cellNeighbouring(String... neighbourSystemIds) {
         var edges = new ArrayList<CellEdge>();
         for (var i = 0; i < neighbourSystemIds.length; i++) {
-            edges.add(new CellEdge(i, 0, i + 1, 0, neighbourSystemIds[i]));
+            var target = neighbourSystemIds[i] == null
+                    ? EdgeTarget.REACH_BOUND
+                    : new EdgeTarget.AcrossSystem(neighbourSystemIds[i]);
+            edges.add(new CellEdge(i, 0, i + 1, 0, target));
         }
         return edges;
+    }
+
+    // The grouping to classify under: each cell drawing as its own star (identity draws-as over
+    // the cell set), keyed by the given owners.
+    private static CellGrouping grouping(
+            Map<String, List<CellEdge>> cells, Map<String, String> owners) {
+        var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
+        for (var cellId : cells.keySet()) {
+            systemIdByCellId.put(cellId, cellId);
+        }
+        return new CellGrouping(systemIdByCellId, owners);
     }
 }

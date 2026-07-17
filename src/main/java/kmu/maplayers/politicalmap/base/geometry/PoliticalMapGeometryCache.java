@@ -46,11 +46,14 @@ import java.util.Set;
  * ordinary remove or add in the diff - it comes to rest and rejoins with no special
  * case here.
  *
- * <p>Each system's cell is kept as a list of {@link CellEdge}s - the raw convex
- * cell and, at once, the cell-adjacency graph. Every edge is tagged with the
- * neighbouring system across it (or none, for a frontier into empty space), which
- * the render layer classifies into interior seams and national boundaries once it
- * knows who owns what, then shapes into merged faction clusters. The cache holds the
+ * <p>Each cell is kept as a list of {@link CellEdge}s - the raw convex
+ * cell and, at once, the cell-adjacency graph. Every edge is tagged with what lies
+ * across it, which the render layer classifies into interior seams and national
+ * boundaries once it knows who owns what, then shapes into merged faction clusters.
+ * The cells are keyed by cell id and paired with the system each draws as: here every
+ * cell is one star's own ground, so the two coincide, but the cells are a partition of
+ * space rather than a list of stars and a consumer must not assume a cell's key names a
+ * system. The cache holds the
  * raw cells rather than any shaped outline: the inset that leaves a cluster its
  * border channel is ownership-dependent - two same-faction cells fuse along their
  * shared edge - so it belongs to the render pass, not to this ownership-agnostic
@@ -63,10 +66,13 @@ public final class PoliticalMapGeometryCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapGeometryCache.class);
 
     private final Map<String, double[]> siteBySystemId = new LinkedHashMap<>();
-    // The raw cell of each system as adjacency edges: an affected cell's edges are
+    // Each raw cell as adjacency edges, keyed by cell id: an affected cell's edges are
     // recomputed on an access change while distant cells keep their existing lists
     // (and their adjacency), so untouched cells stay the very same object.
-    private final Map<String, List<CellEdge>> cellEdgesBySystemId = new LinkedHashMap<>();
+    private final Map<String, List<CellEdge>> cellEdgesByCellId = new LinkedHashMap<>();
+    // The system each cell draws as. Written in lockstep with the cells above, since a cell
+    // and what it draws as are produced together and a reader of one always needs the other.
+    private final Map<String, String> systemIdByCellId = new LinkedHashMap<>();
 
     // The frontier resolution the cached cells were seeded at. The bound-segment
     // count is a per-cell seed input, so a change invalidates every built cell, not
@@ -134,7 +140,8 @@ public final class PoliticalMapGeometryCache {
         // so the diff below reads every current system as "added" and reseeds it.
         if (boundSegments != lastBoundSegments || cellRadius != lastCellRadius) {
             siteBySystemId.clear();
-            cellEdgesBySystemId.clear();
+            cellEdgesByCellId.clear();
+            systemIdByCellId.clear();
             lastBoundSegments = boundSegments;
             lastCellRadius = cellRadius;
         }
@@ -171,7 +178,8 @@ public final class PoliticalMapGeometryCache {
         siteBySystemId.clear();
         siteBySystemId.putAll(newSites);
         for (var id : removed) {
-            cellEdgesBySystemId.remove(id);
+            cellEdgesByCellId.remove(id);
+            systemIdByCellId.remove(id);
         }
         // Ordered site list plus its parallel id list: the labelled cell builder
         // works in site indices, and the adjacency graph translates each edge's
@@ -188,7 +196,10 @@ public final class PoliticalMapGeometryCache {
             var cell = VoronoiCellBuilder.buildLabelledCell(
                     indexBySystemId.get(id), allSites, cellRadius, boundSegments);
             var edges = buildCellEdges(cell, allSiteIds);
-            cellEdgesBySystemId.put(id, edges);
+            cellEdgesByCellId.put(id, edges);
+            // Every cell here is one star's own ground, so it is keyed by that star and
+            // draws as it.
+            systemIdByCellId.put(id, id);
             recomputedCellEdges += edges.size();
         }
 
@@ -205,13 +216,20 @@ public final class PoliticalMapGeometryCache {
     }
 
     /**
-     * @return the cell-adjacency graph keyed by system id; each value is the
-     *         system's raw cell edges, every edge tagged with the neighbouring
-     *         system across it (null for a frontier into empty space). An
-     *         unmodifiable live view.
+     * @return the cell-adjacency graph keyed by cell id; each value is that cell's raw
+     *         edges, every edge tagged with what lies across it. An unmodifiable live view.
      */
-    public Map<String, List<CellEdge>> getCellEdgesBySystemId() {
-        return Collections.unmodifiableMap(cellEdgesBySystemId);
+    public Map<String, List<CellEdge>> getCellEdgesByCellId() {
+        return Collections.unmodifiableMap(cellEdgesByCellId);
+    }
+
+    /**
+     * @return the system each cell draws as, keyed by cell id - the map a consumer resolves a
+     *         cell's owner, palette, and name through. Every cell here is one star's own
+     *         ground, so each maps to the star it was seeded from. An unmodifiable live view.
+     */
+    public Map<String, String> getSystemIdByCellId() {
+        return Collections.unmodifiableMap(systemIdByCellId);
     }
 
     /**
@@ -251,10 +269,9 @@ public final class PoliticalMapGeometryCache {
     }
 
     // Turns one labelled cell into its adjacency edges: each edge as a world-space
-    // segment tagged with the neighbouring system across it, or null for an edge
-    // on the cell's outer reach bound (a frontier into empty space). The builder reports
-    // each edge's neighbour as a site index, resolved to a system id here through
-    // the parallel id list.
+    // segment tagged with what lies across it - the neighbouring system, or the cell's
+    // own outer reach bound. The builder reports each edge's neighbour as a site index,
+    // resolved to a system id here through the parallel id list.
     private static List<CellEdge> buildCellEdges(VoronoiCellBuilder.LabelledCell cell,
             List<String> allSiteIds) {
         var vertices = cell.vertices();
@@ -265,10 +282,10 @@ public final class PoliticalMapGeometryCache {
             var start = vertices.get(i);
             var end = vertices.get((i + 1) % count);
             var neighbourIndex = neighbourIndices[i];
-            var neighbourId = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
-                    ? null
-                    : allSiteIds.get(neighbourIndex);
-            edges.add(new CellEdge(start[0], start[1], end[0], end[1], neighbourId));
+            var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
+                    ? EdgeTarget.REACH_BOUND
+                    : new EdgeTarget.AcrossSystem(allSiteIds.get(neighbourIndex));
+            edges.add(new CellEdge(start[0], start[1], end[0], end[1], target));
         }
         return edges;
     }

@@ -57,15 +57,19 @@ record SectorGeometry(
         // The one place the effective keys are decided. The frontier's redistribution pass
         // belongs here, between the partition and the shaping, replacing both the cell set
         // and the keys with what it emits; every consumer downstream then follows without
-        // knowing it happened.
+        // knowing it happened. Today one cell per system, each drawing as its own star, so the
+        // draws-as map is identity over the cell ids.
+        var grouping = new CellGrouping(
+                identityOver(cellEdges.keySet()),
+                fixture.getGroupKeyBySystemId());
         var groupKeys = fixture.getGroupKeyBySystemId();
-        var shaped = CellShaper.shapeCells(cellEdges, groupKeys, parameters.borderInset());
+        var shaped = CellShaper.shapeCells(cellEdges, grouping, parameters.borderInset());
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
         for (var bloc : groupCellIdsByBloc(groupKeys).entrySet()) {
             rings.put(bloc.getKey(), SystemClusterBorders.traceBorderRings(
                     bloc.getValue(),
                     cellEdges,
-                    groupKeys,
+                    grouping,
                     Set.of(),
                     parameters.borderInset(),
                     parameters.weldTolerance(),
@@ -87,5 +91,15 @@ record SectorGeometry(
             members.computeIfAbsent(entry.getValue(), key -> new ArrayList<>()).add(entry.getKey());
         }
         return members;
+    }
+
+    // A map of each id to itself, so a cell set with one cell per system draws each cell as its
+    // own star - the draws-as identity the redistribution pass later replaces with real cells.
+    private static Map<String, String> identityOver(Set<String> ids) {
+        var identity = new LinkedHashMap<String, String>();
+        for (var id : ids) {
+            identity.put(id, id);
+        }
+        return identity;
     }
 }

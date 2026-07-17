@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Shapes each system's raw Voronoi cell into a merged cluster polygon, fused by grouping key.
+ * Shapes each raw cell into a merged cluster polygon, fused by grouping key.
  *
  * <p>An edge shared with a same-key neighbour is left on the true cell border, so the two
  * cells' fills meet exactly along it and fuse into one cluster with no seam. Every other edge -
@@ -29,41 +29,40 @@ public final class CellShaper {
     }
 
     /**
-     * Shapes every system's cell into its merged-cluster polygon.
+     * Shapes every cell into its merged-cluster polygon.
      *
-     * @param edgesBySystemId    each system's raw cell edges, in winding order,
-     *                           tagged with the neighbour across them
-     * @param groupKeyBySystemId the grouping key per system; a system absent from
-     *                           the map counts as ungrouped
-     * @param borderInset        inward inset applied to every border edge
-     * @return one shaped cell per input system, keyed by system id, in iteration
-     *         order
+     * @param edgesByCellId each cell's raw edges, in winding order, tagged with what lies
+     *                      across them
+     * @param grouping      which system each cell draws as and each system's grouping key -
+     *                      a cell with no system, or whose system is ungrouped, shapes as
+     *                      ungrouped
+     * @param borderInset   inward inset applied to every border edge
+     * @return one shaped cell per input cell, keyed by cell id, in iteration order
      */
     public static Map<String, ShapedCell> shapeCells(
-            Map<String, List<CellEdge>> edgesBySystemId,
-            Map<String, String> groupKeyBySystemId,
+            Map<String, List<CellEdge>> edgesByCellId,
+            CellGrouping grouping,
             double borderInset) {
         var shaped = new LinkedHashMap<String, ShapedCell>();
-        for (var entry : edgesBySystemId.entrySet()) {
-            var ownGroupKey = groupKeyBySystemId.get(entry.getKey());
+        for (var entry : edgesByCellId.entrySet()) {
             shaped.put(
                     entry.getKey(),
                     shapeCell(
                         entry.getValue(),
-                        ownGroupKey,
-                        groupKeyBySystemId,
+                        grouping.resolveGroupKeyOf(entry.getKey()),
+                        grouping.groupKeyBySystemId(),
                         borderInset));
         }
         return shaped;
     }
 
     /**
-     * Shapes one system's cell into its merged-cluster polygon, for the incremental
+     * Shapes one cell into its merged-cluster polygon, for the incremental
      * refresh path that re-shapes just the cells around a grouping change rather
      * than the whole map. Same rule as {@link #shapeCells}, applied to one cell.
      *
      * @param edges              the cell's raw edges, in winding order, each tagged
-     *                           with the neighbour across it
+     *                           with what lies across it
      * @param ownGroupKey        the grouping key of this cell, or null if ungrouped
      * @param groupKeyBySystemId the grouping key per system, to classify each edge
      *                           as a same-key seam or a border

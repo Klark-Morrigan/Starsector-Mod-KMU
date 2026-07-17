@@ -13,6 +13,7 @@ import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
+import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 
@@ -62,10 +63,10 @@ final class ClusterAnchorPlacement {
     // the two outer-border colour choices each cluster follows.
     static List<ClusterAnchor> computeClusterAnchors(
             List<List<String>> clusters,
-            Map<String, List<CellEdge>> edgesBySystemId,
+            Map<String, List<CellEdge>> edgesByCellId,
             Map<String, double[]> siteBySystemId,
             Map<String, DominantOwner> ownerBySystemId,
-            Map<String, String> groupKeyBySystemId,
+            CellGrouping grouping,
             LabelAnchorSpecification spec,
             Predicate<String> usesIndependentStyleByBlocId,
             Function<String, BlocStyleAdjustment> blocStyleAdjustmentByBlocId,
@@ -78,11 +79,11 @@ final class ClusterAnchorPlacement {
                 continue;
             }
             var owner = ownerBySystemId.get(memberSystemIds.get(0));
-            var axis = resolveClusterAxis(memberSystemIds, edgesBySystemId, sites);
+            var axis = resolveClusterAxis(memberSystemIds, edgesByCellId, sites);
             var rings = spec.search().borderTrace().traceRings(
                     memberSystemIds,
-                    edgesBySystemId,
-                    groupKeyBySystemId);
+                    edgesByCellId,
+                    grouping);
             var adjustment = blocStyleAdjustmentByBlocId.apply(owner.factionId());
             anchors.add(
                     searchClusterAnchor(
@@ -272,12 +273,12 @@ final class ClusterAnchorPlacement {
     // the sweep's origin regardless of which cloud supplied the direction, so the anchor
     // still falls back to the system's own position, not the cell's vertex-cloud mean.
     private static PrincipalAxis resolveClusterAxis(List<String> memberSystemIds,
-            Map<String, List<CellEdge>> edgesBySystemId, List<double[]> sites) {
+            Map<String, List<CellEdge>> edgesByCellId, List<double[]> sites) {
         var siteAxis = PrincipalAxis.fitTo(sites);
         if (siteAxis.length() >= Limits.MIN_EDGE_LENGTH) {
             return siteAxis;
         }
-        var cellVertices = collectClusterCellVertices(memberSystemIds, edgesBySystemId);
+        var cellVertices = collectClusterCellVertices(memberSystemIds, edgesByCellId);
         if (cellVertices.size() < 2) {
             return siteAxis;
         }
@@ -302,10 +303,10 @@ final class ClusterAnchorPlacement {
     // alone have no spread to fit one to.
     private static List<double[]> collectClusterCellVertices(
             List<String> memberSystemIds,
-            Map<String, List<CellEdge>> edgesBySystemId) {
+            Map<String, List<CellEdge>> edgesByCellId) {
         var vertices = new ArrayList<double[]>();
         for (var systemId : memberSystemIds) {
-            var edges = edgesBySystemId.get(systemId);
+            var edges = edgesByCellId.get(systemId);
             if (edges == null) {
                 continue;
             }

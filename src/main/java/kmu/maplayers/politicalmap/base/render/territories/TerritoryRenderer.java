@@ -98,7 +98,7 @@ public final class TerritoryRenderer {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        for (var cell : territories.getStyledCellBySystemId().values()) {
+        for (var cell : territories.getStyledCellByCellId().values()) {
             var inner = cell.inner();
             if (inner.isHidden()) {
                 continue;
@@ -107,7 +107,7 @@ public final class TerritoryRenderer {
             GlColor.set(inner.color(), alphaMult * inner.alpha());
             GlRuns.drawScaled(GL11.GL_LINES, cell.interiorEdges(), factor);
         }
-        for (var cell : territories.getStyledCellBySystemId().values()) {
+        for (var cell : territories.getStyledCellByCellId().values()) {
             var outer = cell.outer();
             if (outer.isHidden()) {
                 continue;

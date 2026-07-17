@@ -26,27 +26,27 @@ public final class EmptyCellClassifier {
     }
 
     /**
-     * Every frontier-empty system in a cell set: unowned, and touching at least one owned
-     * neighbour. Owned systems and deep-empty systems are both absent, so a caller iterating
+     * Every frontier-empty cell in a cell set: unowned, and touching at least one owned
+     * neighbour. Owned cells and deep-empty cells are both absent, so a caller iterating
      * the result visits precisely the cells a frontier pass redistributes.
      *
-     * @param cellEdgesBySystemId the cell of each system, as its adjacency-tagged edges
-     * @param groupKeyBySystemId  the grouping key per system; a system absent from the map is
-     *                            unowned
-     * @return the ids of the unowned systems that touch an owned one, possibly empty
+     * @param cellEdgesByCellId each cell, as its adjacency-tagged edges
+     * @param grouping          which system each cell draws as and each system's grouping
+     *                          key; a cell with no system, or an ungrouped one, is unowned
+     * @return the ids of the unowned cells that touch an owned one, possibly empty
      */
-    public static Set<String> collectFrontierEmptySystemIds(
-            Map<String, List<CellEdge>> cellEdgesBySystemId,
-            Map<String, String> groupKeyBySystemId) {
-        var frontierEmptySystemIds = new LinkedHashSet<String>();
-        for (var cell : cellEdgesBySystemId.entrySet()) {
-            var systemId = cell.getKey();
-            if (isFrontierEmpty(groupKeyBySystemId.get(systemId), cell.getValue(),
-                    groupKeyBySystemId)) {
-                frontierEmptySystemIds.add(systemId);
+    public static Set<String> collectFrontierEmptyCellIds(
+            Map<String, List<CellEdge>> cellEdgesByCellId,
+            CellGrouping grouping) {
+        var frontierEmptyCellIds = new LinkedHashSet<String>();
+        for (var cell : cellEdgesByCellId.entrySet()) {
+            var cellId = cell.getKey();
+            if (isFrontierEmpty(grouping.resolveGroupKeyOf(cellId), cell.getValue(),
+                    grouping.groupKeyBySystemId())) {
+                frontierEmptyCellIds.add(cellId);
             }
         }
-        return frontierEmptySystemIds;
+        return frontierEmptyCellIds;
     }
 
     /**
@@ -55,7 +55,7 @@ public final class EmptyCellClassifier {
      * because {@link EdgeClassifier#classifyAcross} rules it a plain boundary.
      *
      * @param ownGroupKey         the grouping key of this cell, or null if it is unowned
-     * @param cellEdges           this cell's edges, each tagged with the neighbour across it
+     * @param cellEdges           this cell's edges, each tagged with what lies across it
      * @param groupKeyBySystemId  the grouping key per system, to resolve each neighbour
      * @return true only for an unowned cell with an owned neighbour
      */

@@ -15,7 +15,8 @@ import java.util.Map;
  * knowing what the key means.
  * The core {@link #classify} rule is kept free of the geometry source and of GL so it
  * can be exercised directly on hand-built key pairs, while {@link #classifyAcross} adapts
- * it to a raw {@link CellEdge} and the key map every consumer already holds - so
+ * it to a raw {@link CellEdge} - resolving what the edge's {@link EdgeTarget} names before
+ * the keys are compared - and the key map every consumer already holds, so
  * {@link CellShaper}, {@link SystemClusterBorders}, and {@link SystemClusters} decide
  * merging off one shared rule rather than each resolving the neighbour's key itself.
  */
@@ -54,27 +55,38 @@ public final class EdgeClassifier {
     }
 
     /**
-     * Classifies one cell edge from a system's own grouping key against whatever lies across
-     * it: the neighbour's key is read from the key map (null for a frontier into empty space,
-     * whose {@code neighbourSystemId} is null), then handed to {@link #classify}. The one
-     * place that turns an adjacency edge plus the keys into a seam-or-boundary verdict, so
-     * every consumer classifies identically.
+     * Classifies one cell edge from its cell's own grouping key against whatever the edge's
+     * target names across it. The one place that turns an adjacency edge plus the keys into a
+     * seam-or-boundary verdict, so every consumer classifies identically.
      *
-     * @param edge             the cell edge, tagged with the neighbour across it
+     * <p>Each target decides on its own terms: a system across the edge has its key looked up
+     * and handed to {@link #classify}; the cell's reach bound is a plain boundary, since with
+     * no star across it there is nothing to reach toward; and more of the same territory is an
+     * interior seam outright - the far side is this cell's own ground, so no key can differ.
+     *
+     * @param edge             the cell edge, tagged with what lies across it
      * @param ownGroupKey      the grouping key of the cell this edge belongs to, or null if
      *                         that cell is ungrouped
-     * @param groupKeyBySystemId the grouping key per system, to look up the neighbour's key
-     * @return INTERIOR_SEAM for a shared non-null key, OPEN_FRONTIER for an owned cell facing
-     *         an unowned star, else BOUNDARY; the map-reach bound is always BOUNDARY
+     * @param groupKeyBySystemId the grouping key per system, to look up the key of a system
+     *                         across the edge
+     * @return INTERIOR_SEAM for a shared non-null key or for same-territory, OPEN_FRONTIER for
+     *         an owned cell facing an unowned star, else BOUNDARY; the reach bound is always
+     *         BOUNDARY
      */
-    public static EdgeClass classifyAcross(CellEdge edge, String ownGroupKey,
+    public static EdgeClass classifyAcross(
+            CellEdge edge,
+            String ownGroupKey,
             Map<String, String> groupKeyBySystemId) {
-        // The map-reach bound (no neighbour system) has no star across it, so it can never be
-        // an open frontier to reach toward - it stays a plain boundary and skips the key lookup
-        // (an immutable key map, Map.of in tests, would reject a null-key get anyway).
-        if (edge.neighbourSystemId() == null) {
-            return EdgeClass.BOUNDARY;
+        var target = edge.target();
+        if (target instanceof EdgeTarget.AcrossSystem acrossSystem) {
+            return classify(ownGroupKey, groupKeyBySystemId.get(acrossSystem.systemId()));
         }
-        return classify(ownGroupKey, groupKeyBySystemId.get(edge.neighbourSystemId()));
+        // Same ground on both sides, so the edge fuses whatever this cell's key is - an
+        // ungrouped cell's own cut included, which "same key both sides" could not express
+        // for a null key.
+        if (EdgeTarget.SAME_TERRITORY.equals(target)) {
+            return EdgeClass.INTERIOR_SEAM;
+        }
+        return EdgeClass.BOUNDARY;
     }
 }

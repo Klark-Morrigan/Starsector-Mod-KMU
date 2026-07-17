@@ -64,15 +64,15 @@ final class PoliticalMapGeometryCacheTest {
                     accessibleSystem("b", 4000, 0),
                     inaccessibleSystem("hidden", 8000, 0));
 
-            assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a", "b");
-            assertThat(cache.getCellEdgesBySystemId().get("a")).isNotEmpty();
+            assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a", "b");
+            assertThat(cache.getCellEdgesByCellId().get("a")).isNotEmpty();
         }
 
         @Test
         void updateLeavesDistantCellsUntouchedWhenASystemIsAdded() {
             var cache = new PoliticalMapGeometryCache();
             updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0));
-            var distantBefore = cache.getCellEdgesBySystemId().get("b");
+            var distantBefore = cache.getCellEdgesByCellId().get("b");
 
             // Add a system next to "a"; "b" is far away, so its cell must be the
             // very same object - proof it was not recomputed.
@@ -81,8 +81,8 @@ final class PoliticalMapGeometryCacheTest {
                     accessibleSystem("b", FAR, 0),
                     accessibleSystem("c", 100, 0));
 
-            assertThat(cache.getCellEdgesBySystemId()).containsKey("c");
-            assertThat(cache.getCellEdgesBySystemId().get("b")).isSameAs(distantBefore);
+            assertThat(cache.getCellEdgesByCellId()).containsKey("c");
+            assertThat(cache.getCellEdgesByCellId().get("b")).isSameAs(distantBefore);
         }
 
         @Test
@@ -91,7 +91,7 @@ final class PoliticalMapGeometryCacheTest {
             cache.updateFromSector(
                     sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
                     NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS);
-            var distantBefore = cache.getCellEdgesBySystemId().get("b");
+            var distantBefore = cache.getCellEdgesByCellId().get("b");
 
             // The segment count seeds every cell's frontier polygon, so lowering it
             // invalidates all cells even where the reachable set is identical: the
@@ -102,8 +102,8 @@ final class PoliticalMapGeometryCacheTest {
                     sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
                     NO_MOVING_SYSTEMS, 24, DEFAULT_CELL_RADIUS);
 
-            assertThat(cache.getCellEdgesBySystemId().get("b")).isNotSameAs(distantBefore);
-            assertThat(cache.getCellEdgesBySystemId().get("b")).hasSize(24);
+            assertThat(cache.getCellEdgesByCellId().get("b")).isNotSameAs(distantBefore);
+            assertThat(cache.getCellEdgesByCellId().get("b")).hasSize(24);
         }
 
         @Test
@@ -112,7 +112,7 @@ final class PoliticalMapGeometryCacheTest {
             cache.updateFromSector(
                     sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
                     NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS);
-            var distantBefore = cache.getCellEdgesBySystemId().get("b");
+            var distantBefore = cache.getCellEdgesByCellId().get("b");
 
             // The cell radius seeds each cell's reach into empty space, so changing it
             // invalidates every cell even where the reachable set is identical - the
@@ -122,7 +122,7 @@ final class PoliticalMapGeometryCacheTest {
                     sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
                     NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS / 2.0);
 
-            assertThat(cache.getCellEdgesBySystemId().get("b")).isNotSameAs(distantBefore);
+            assertThat(cache.getCellEdgesByCellId().get("b")).isNotSameAs(distantBefore);
         }
 
         @Test
@@ -132,7 +132,7 @@ final class PoliticalMapGeometryCacheTest {
 
             updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
 
-            assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a");
+            assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a");
         }
 
         @Test
@@ -150,16 +150,31 @@ final class PoliticalMapGeometryCacheTest {
         }
 
         @Test
-        void updateMarksAFrontierEdgeWithNoNeighbour() {
+        void updateMarksAFrontierEdgeWithTheReachBound() {
             var cache = new PoliticalMapGeometryCache();
 
             // A lone system has no neighbour to share an edge with, so every edge
-            // is a frontier into empty space - a null neighbour id.
+            // is a frontier into empty space - the cell's own reach bound.
             updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
 
-            assertThat(cache.getCellEdgesBySystemId().get("a"))
+            assertThat(cache.getCellEdgesByCellId().get("a"))
                     .isNotEmpty()
-                    .allSatisfy(edge -> assertThat(edge.neighbourSystemId()).isNull());
+                    .allSatisfy(edge -> assertThat(edge.target()).isEqualTo(EdgeTarget.REACH_BOUND));
+        }
+
+        @Test
+        void updateKeysEachCellByTheSystemItDrawsAs() {
+            var cache = new PoliticalMapGeometryCache();
+
+            // Every cell here is one star's own ground, so it draws as that star: the
+            // draws-as map is the identity a cell-keyed consumer resolves an owner through.
+            updateAtDefaultResolution(cache,
+                    accessibleSystem("a", 0, 0),
+                    accessibleSystem("b", 1000, 0));
+
+            assertThat(cache.getSystemIdByCellId()).containsOnly(
+                    org.assertj.core.api.Assertions.entry("a", "a"),
+                    org.assertj.core.api.Assertions.entry("b", "b"));
         }
 
         @Test
@@ -169,7 +184,7 @@ final class PoliticalMapGeometryCacheTest {
 
             updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
 
-            assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a");
+            assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a");
         }
 
         @Test
@@ -182,7 +197,7 @@ final class PoliticalMapGeometryCacheTest {
                     accessibleSystem("a", 0, 0),
                     decivilisedUnreachableSystem("ruin", 4000, 0));
 
-            assertThat(cache.getCellEdgesBySystemId()).containsOnlyKeys("a", "ruin");
+            assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a", "ruin");
         }
 
         @Test
@@ -192,8 +207,8 @@ final class PoliticalMapGeometryCacheTest {
                     accessibleSystem("m", 0, 0),
                     accessibleSystem("n", 2000, 0),
                     accessibleSystem("f", FAR, 0));
-            var neighbourBefore = cache.getCellEdgesBySystemId().get("n");
-            var distantBefore = cache.getCellEdgesBySystemId().get("f");
+            var neighbourBefore = cache.getCellEdgesByCellId().get("n");
+            var distantBefore = cache.getCellEdgesByCellId().get("f");
 
             // "m" starts moving, so it drops out of the partition: it seeds no cell, and
             // "n" (within a neighbourhood radius) reshapes to reclaim its space, while
@@ -203,9 +218,9 @@ final class PoliticalMapGeometryCacheTest {
                     accessibleSystem("n", 2000, 0),
                     accessibleSystem("f", FAR, 0));
 
-            assertThat(cache.getCellEdgesBySystemId()).doesNotContainKey("m");
-            assertThat(cache.getCellEdgesBySystemId().get("n")).isNotSameAs(neighbourBefore);
-            assertThat(cache.getCellEdgesBySystemId().get("f")).isSameAs(distantBefore);
+            assertThat(cache.getCellEdgesByCellId()).doesNotContainKey("m");
+            assertThat(cache.getCellEdgesByCellId().get("n")).isNotSameAs(neighbourBefore);
+            assertThat(cache.getCellEdgesByCellId().get("f")).isSameAs(distantBefore);
         }
 
         @Test
@@ -219,33 +234,33 @@ final class PoliticalMapGeometryCacheTest {
             // with a fresh cell.
             updateAtDefaultResolution(cache, accessibleSystem("m", 0, 0), accessibleSystem("n", 2000, 0));
 
-            assertThat(cache.getCellEdgesBySystemId()).containsKey("m");
-            assertThat(cache.getCellEdgesBySystemId().get("m")).isNotEmpty();
+            assertThat(cache.getCellEdgesByCellId()).containsKey("m");
+            assertThat(cache.getCellEdgesByCellId().get("m")).isNotEmpty();
         }
 
         @Test
         void updateExcludingAnIsolatedSystemLeavesDistantCellsUntouched() {
             var cache = new PoliticalMapGeometryCache();
             updateAtDefaultResolution(cache, accessibleSystem("m", 0, 0), accessibleSystem("f", FAR, 0));
-            var distantBefore = cache.getCellEdgesBySystemId().get("f");
+            var distantBefore = cache.getCellEdgesByCellId().get("f");
 
             // "m" starts moving but has no neighbour within a neighbourhood radius, so
             // its removal touches only itself; "f" keeps the same cell object.
             updateExcluding(cache, Set.of("m"),
                     accessibleSystem("m", 0, 0), accessibleSystem("f", FAR, 0));
 
-            assertThat(cache.getCellEdgesBySystemId()).doesNotContainKey("m");
-            assertThat(cache.getCellEdgesBySystemId().get("f")).isSameAs(distantBefore);
+            assertThat(cache.getCellEdgesByCellId()).doesNotContainKey("m");
+            assertThat(cache.getCellEdgesByCellId().get("f")).isSameAs(distantBefore);
         }
     }
 
     // The distinct neighbouring system ids one cell names across its edges,
-    // dropping the null frontier markers - the adjacency the merge step reads.
+    // dropping the reach-bound edges - the adjacency the merge step reads.
     private static Set<String> neighboursOf(PoliticalMapGeometryCache cache, String systemId) {
         var neighbours = new LinkedHashSet<String>();
-        for (var edge : cache.getCellEdgesBySystemId().get(systemId)) {
-            if (edge.neighbourSystemId() != null) {
-                neighbours.add(edge.neighbourSystemId());
+        for (var edge : cache.getCellEdgesByCellId().get(systemId)) {
+            if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem) {
+                neighbours.add(acrossSystem.systemId());
             }
         }
         return neighbours;

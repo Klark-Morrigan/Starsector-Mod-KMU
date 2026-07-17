@@ -6,6 +6,7 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -74,14 +75,17 @@ public final class ClusterAnchorsBuilder {
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }
-        // The agnostic clustering and border trace key by grouping id, so hand them each
-        // system's bloc id; the owner map is still carried for the per-owner colour. Under a
-        // filter that key is a synthetic spotlight key, so the solid and contested clusters
-        // trace as their own territories exactly as the fills do.
-        var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
+        // The agnostic clustering and border trace group the drawn cells, resolving each to
+        // the system it draws as and that system to its bloc id; the owner map is still
+        // carried for the per-owner colour. Under a filter that key is a synthetic spotlight
+        // key, so the solid and contested clusters trace as their own territories exactly as
+        // the fills do.
+        var cellGrouping = new CellGrouping(
+                geometryCache.getSystemIdByCellId(),
+                DominantOwner.mapFactionIdBySystemId(ownerBySystemId));
         var clusters = SystemClusters.findClusters(
-                geometryCache.getCellEdgesBySystemId(),
-                groupKeyBySystemId);
+                geometryCache.getCellEdgesByCellId(),
+                cellGrouping);
         // The desaturation palette is handed in already resolved - off the production build's
         // drawables, or by the debug path from the same profile seam - so a desaturated bloc's
         // name matches its recolored fill and border exactly without re-reading the profile here.
@@ -94,10 +98,10 @@ public final class ClusterAnchorsBuilder {
                 isFiltering, view, grouping, recedeAdjustment);
         anchors.addAll(ClusterAnchorPlacement.computeClusterAnchors(
                 clusters,
-                geometryCache.getCellEdgesBySystemId(),
+                geometryCache.getCellEdgesByCellId(),
                 geometryCache.getSiteBySystemId(),
                 ownerBySystemId,
-                groupKeyBySystemId,
+                cellGrouping,
                 LabelAnchorSpecification.readFromLunaSettings(),
                 blocId -> styleDecisionByBlocId.apply(blocId).usesIndependentStyle(),
                 blocId -> styleDecisionByBlocId.apply(blocId).adjustment(),

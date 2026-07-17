@@ -6,6 +6,7 @@ import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
+import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
@@ -18,7 +19,6 @@ import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -59,8 +59,11 @@ public final class DebugBorderTracingBuilder {
             PoliticalMapGeometryCache geometryCache,
             SectorAPI sector) {
         var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
-        // The agnostic geometry clusters by grouping key, so key by each system's faction id.
-        var groupKeyBySystemId = DominantOwner.mapFactionIdBySystemId(ownerBySystemId);
+        // The agnostic geometry groups the drawn cells, resolving each to the system it draws
+        // as and that system to its faction id.
+        var cellGrouping = new CellGrouping(
+                geometryCache.getSystemIdByCellId(),
+                DominantOwner.mapFactionIdBySystemId(ownerBySystemId));
         var decivilisedSystemIds = DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector);
         var weldTolerance = KmuLunaSettings.getPoliticalMapBorderWeldTolerance();
         var miterLimit = KmuLunaSettings.getPoliticalMapBorderMiterLimit();
@@ -69,14 +72,13 @@ public final class DebugBorderTracingBuilder {
         var baseLoops = new ArrayList<float[]>();
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
-        for (var memberSystemIds
-                : DominantOwner.groupSystemIdsByFactionId(ownerBySystemId).values()) {
+        for (var memberCellIds : cellGrouping.groupCellIdsByKey().values()) {
             // Whole clusters, so no neighbour is coincident: every boundary edge takes the
             // uniform channel, exactly as the drawn national border does.
             var insetRings = SystemClusterBorders.traceBorderRings(
-                    memberSystemIds,
-                    geometryCache.getCellEdgesBySystemId(),
-                    groupKeyBySystemId,
+                    memberCellIds,
+                    geometryCache.getCellEdgesByCellId(),
+                    cellGrouping,
                     Set.of(),
                     PoliticalMapStyle.BORDER_INSET_DISTANCE,
                     weldTolerance,
@@ -101,7 +103,7 @@ public final class DebugBorderTracingBuilder {
         }
         addFactionlessOutlines(
                 geometryCache,
-                groupKeyBySystemId,
+                cellGrouping,
                 decivilisedSystemIds,
                 isRoundingOn,
                 baseLoops,
@@ -117,18 +119,21 @@ public final class DebugBorderTracingBuilder {
     // matching the normal render's visibility so the overlay stays legible.
     private static void addFactionlessOutlines(
             PoliticalMapGeometryCache geometryCache,
-            Map<String, String> groupKeyBySystemId,
+            CellGrouping cellGrouping,
             Set<String> decivilisedSystemIds,
             boolean isRoundingOn,
             List<float[]> baseLoops,
             List<float[]> roundedLoops) {
         var decivilisedStyle = RenderStyleReader.readDecivilisedStyle();
         var uninhabitedStyle = RenderStyleReader.readUninhabitedStyle();
-        for (var entry : geometryCache.getCellEdgesBySystemId().entrySet()) {
-            if (groupKeyBySystemId.containsKey(entry.getKey())) {
+        for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
+            if (cellGrouping.resolveGroupKeyOf(entry.getKey()) != null) {
                 continue;
             }
-            var style = decivilisedSystemIds.contains(entry.getKey())
+            // A factionless cell resolves its decivilised/uninhabited style through the system
+            // it draws as; a cell with no system of its own is uninhabited ground.
+            var drawnSystemId = cellGrouping.resolveDrawnSystemIdOf(entry.getKey());
+            var style = drawnSystemId != null && decivilisedSystemIds.contains(drawnSystemId)
                     ? decivilisedStyle
                     : uninhabitedStyle;
             if (!style.outer().isDrawn()) {
@@ -137,7 +142,7 @@ public final class DebugBorderTracingBuilder {
             var shaped = CellShaper.shapeCell(
                     entry.getValue(),
                     null,
-                    groupKeyBySystemId,
+                    cellGrouping.groupKeyBySystemId(),
                     PoliticalMapStyle.BORDER_INSET_DISTANCE);
             if (shaped.fillPolygon().isEmpty()) {
                 continue;
