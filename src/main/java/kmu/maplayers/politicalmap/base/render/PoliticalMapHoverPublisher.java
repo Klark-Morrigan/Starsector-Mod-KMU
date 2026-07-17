@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.ui.map.CampaignMapTransform;
-import kmlib.starsector.ui.map.GlModelviewMatrixReader;
+import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
 import kmu.maplayers.politicalmap.base.geometry.CellHitTest;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
@@ -50,7 +50,7 @@ final class PoliticalMapHoverPublisher {
         // A snapshot the map's transform could not be read into resolves nothing, so the hover
         // parks rather than reporting a cell worked out from a transform that is not the map's.
         var transform = CampaignMapTransform.captureFromMapPass(
-                factor, GlModelviewMatrixReader.INSTANCE);
+                factor, ModelviewMatrixReaders.selectForActiveRenderer());
         if (transform == null) {
             parkHover();
             return;
