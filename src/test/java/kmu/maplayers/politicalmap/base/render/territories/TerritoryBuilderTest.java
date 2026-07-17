@@ -77,6 +77,9 @@ final class TerritoryBuilderTest {
         private static final Color OWNER_SECONDARY = Color.BLUE;
         private static final Color DESATURATED_PRIMARY = Color.GREEN;
         private static final Color DESATURATED_SECONDARY = Color.YELLOW;
+        // The neutral shade a factionless cell resolves both its palette slots to, distinct from
+        // every owner/desaturation colour so an observed outline names the factionless path.
+        private static final Color FACTIONLESS_NEUTRAL = Color.PINK;
         private static final DominantOwner OWNER =
                 new DominantOwner("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
         // An owned cell's fill and national border are per cluster (in FactionTerritory),
@@ -200,6 +203,64 @@ final class TerritoryBuilderTest {
                     new ElementStyle(FactionPaletteChoice.NONE, fillOpacity),
                     new ElementStyle(FactionPaletteChoice.NONE, 1.0), 3.0,
                     new ElementStyle(FactionPaletteChoice.SECONDARY, 1.0), innerWidth);
+        }
+
+        @Test
+        void buildStyledCellForSystemDrawsACellWithNoStarAsUninhabitedGround() {
+            // A cell that draws as no system - a shard of a dead star's leftover space the
+            // redistribution pass leaves behind - has no owner and no market to have died, so it
+            // paints as plain uninhabited ground. The null star must resolve through the draws-as
+            // map without being taken for decivilised: the decivilised category is "No color"
+            // here, so had the null id been routed there the cell would have dropped to null.
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
+                    factionlessDrawables(), null, ownedCell());
+
+            assertThat(styled).isNotNull();
+            assertThat(styled.outer().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+        }
+
+        // A pass whose uninhabited category draws a visible outline and whose decivilised category
+        // is "No color", over a non-empty (immutable) decivilised set. A cell with no star resolves
+        // as uninhabited here; the immutable set would throw on a contains(null), so a clean result
+        // also witnesses the null-id guard.
+        private static PoliticalMapTerritories factionlessDrawables() {
+            Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
+            categories.put(MapCategory.FACTION, STYLE);
+            categories.put(MapCategory.INDEPENDENT, STYLE);
+            categories.put(MapCategory.DECIVILISED, noColorStyle());
+            categories.put(MapCategory.UNINHABITED, drawnOutlineStyle());
+            // An immutable owner map AND an immutable decivilised set, both null-hostile: a clean
+            // result proves the null-star path reads neither - it resolves no owner and is not
+            // taken for decivilised without ever probing a map with the null key.
+            return new PoliticalMapTerritories(
+                    Map.of(), Set.of("some-decivilised-system"),
+                    new MapStyling(
+                            new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
+                                    new BorderSmoothingStyle(false, false, 0, 0, 0),
+                                    NO_HOVER_HIGHLIGHT, 0.3), categories),
+                            FACTIONLESS_NEUTRAL,
+                            new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
+                    new ViewGrouping(viewMockAdjusting(BlocStyleAdjustment.NONE),
+                            OwnershipGrouping.identity()),
+                    new FilterSnapshot(null, BlocStyleAdjustment.NONE, Set.of()));
+        }
+
+        // A category whose outer outline is drawn (a real palette slot, resolved to the neutral
+        // colour for a factionless cell), so a factionless cell built under it comes back drawable.
+        private static CategoryStyle drawnOutlineStyle() {
+            return new CategoryStyle(
+                    new ElementStyle(FactionPaletteChoice.NONE, 1.0),
+                    new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0), 3.0,
+                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+        }
+
+        // A category that draws nothing - every slot "No color" - so a cell built under it drops
+        // to null rather than a drawable record.
+        private static CategoryStyle noColorStyle() {
+            return new CategoryStyle(
+                    new ElementStyle(FactionPaletteChoice.NONE, 1.0),
+                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 3.0,
+                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
         }
 
         @Test

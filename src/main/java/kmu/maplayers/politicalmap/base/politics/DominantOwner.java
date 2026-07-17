@@ -1,9 +1,9 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
+
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,22 +45,22 @@ public record DominantOwner(String factionId, Color primaryColor, Color secondar
     }
 
     /**
-     * Inverts the ownership map into each faction's member systems, so every faction's
-     * cluster(s) can be traced from its own members. Takes the owner map rather than any
-     * render state, so the production build, the incremental refresh, and the debug overlay -
-     * which resolves owners without building draw lists - all group the same way.
+     * The drawn cells' grouping under an ownership map: which system each cell draws as, paired
+     * with each owned system's faction id. The one place the two halves are joined into a
+     * {@link CellGrouping}, so the production build, the incremental refresh, the label pass, and
+     * the debug overlay all group the cells the same way rather than each re-composing the pair.
      *
-     * @param ownerBySystemId the dominant owner per owned system
-     * @return each faction id mapped to its owned system ids, in the map's iteration order
+     * <p>Lives here rather than on {@code CellGrouping} so the geometry layer stays ignorant of
+     * factions: this is the faction layer supplying "who owns this cell", exactly as
+     * {@link #mapFactionIdBySystemId} does for the key half.
+     *
+     * @param systemIdByCellId the system each cell draws as, from the geometry cache
+     * @param ownerBySystemId  the dominant owner per owned system
+     * @return the cells grouped by the faction id of the system each draws as
      */
-    public static Map<String, List<String>> groupSystemIdsByFactionId(
+    public static CellGrouping mapCellGrouping(
+            Map<String, String> systemIdByCellId,
             Map<String, DominantOwner> ownerBySystemId) {
-        var systemIdsByFactionId = new LinkedHashMap<String, List<String>>();
-        for (var entry : ownerBySystemId.entrySet()) {
-            systemIdsByFactionId
-                    .computeIfAbsent(entry.getValue().factionId(), factionId -> new ArrayList<>())
-                    .add(entry.getKey());
-        }
-        return systemIdsByFactionId;
+        return new CellGrouping(systemIdByCellId, mapFactionIdBySystemId(ownerBySystemId));
     }
 }

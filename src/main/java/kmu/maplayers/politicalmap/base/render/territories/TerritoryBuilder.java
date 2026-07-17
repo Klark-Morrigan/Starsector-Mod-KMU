@@ -206,7 +206,10 @@ public final class TerritoryBuilder {
         if (shaped.fillPolygon().isEmpty()) {
             return null;
         }
-        var owner = territories.getOwnerBySystemId().get(systemId);
+        // A cell with no star of its own has no owner to look up, so the null id skips the owner
+        // map rather than probing it for a key it does not hold - keeping the null-star path clear
+        // of whether the owner map happens to tolerate a null-key get.
+        var owner = systemId == null ? null : territories.getOwnerBySystemId().get(systemId);
         if (owner != null) {
             // Every owned cell - the spotlighted bloc included - contributes only its interior
             // seams here; its fill and national border come per cluster from the tessellated
@@ -527,14 +530,14 @@ public final class TerritoryBuilder {
     }
 
     // The drawn cells' grouping this pass shapes and traces against: which system each cell draws
-    // as, off the geometry cache, paired with each owned system's faction id. The one place the
-    // two maps are joined, so every stage of the pass groups the cells identically.
+    // as, off the geometry cache, paired with each owned system's faction id. Resolved once per
+    // pass so every stage groups the cells identically.
     private static CellGrouping resolveCellGrouping(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache) {
-        return new CellGrouping(
+        return DominantOwner.mapCellGrouping(
                 geometryCache.getSystemIdByCellId(),
-                DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()));
+                territories.getOwnerBySystemId());
     }
 
     // The base style and per-bloc adjustment a bloc draws under this pass, shared by the per-cell

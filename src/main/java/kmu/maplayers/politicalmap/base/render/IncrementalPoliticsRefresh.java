@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
 import kmu.maplayers.politicalmap.base.geometry.EdgeTarget;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
@@ -94,9 +93,9 @@ final class IncrementalPoliticsRefresh {
             // other faction's rings trace unchanged cells, so they are left as-is. A faction's
             // members are the cells it draws, so they are grouped from the cells here to match
             // what buildFactionTerritory traces.
-            var cellsByFaction = new CellGrouping(
+            var cellsByFaction = DominantOwner.mapCellGrouping(
                     geometryCache.getSystemIdByCellId(),
-                    DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()))
+                    territories.getOwnerBySystemId())
                     .groupCellIdsByKey();
             for (var factionId : affectedFactionIds) {
                 rebuildFactionTerritoryInPlace(territories, geometryCache, factionId,

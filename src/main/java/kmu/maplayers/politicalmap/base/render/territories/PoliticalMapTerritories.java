@@ -5,7 +5,6 @@ import kmlib.starsector.factions.FactionPalette;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.geometry.CellEdge;
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterIndex;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -174,9 +173,7 @@ public final class PoliticalMapTerritories {
             Map<String, String> systemIdByCellId) {
         clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
                 cellEdgesByCellId,
-                new CellGrouping(
-                        systemIdByCellId,
-                        DominantOwner.mapFactionIdBySystemId(ownerBySystemId))));
+                DominantOwner.mapCellGrouping(systemIdByCellId, ownerBySystemId)));
     }
 
     public Map<String, FactionTerritory> getFactionTerritoryByFactionId() {

@@ -6,7 +6,6 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -80,9 +79,8 @@ public final class ClusterAnchorsBuilder {
         // carried for the per-owner colour. Under a filter that key is a synthetic spotlight
         // key, so the solid and contested clusters trace as their own territories exactly as
         // the fills do.
-        var cellGrouping = new CellGrouping(
-                geometryCache.getSystemIdByCellId(),
-                DominantOwner.mapFactionIdBySystemId(ownerBySystemId));
+        var cellGrouping = DominantOwner.mapCellGrouping(
+                geometryCache.getSystemIdByCellId(), ownerBySystemId);
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesByCellId(),
                 cellGrouping);

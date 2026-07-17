@@ -61,9 +61,8 @@ public final class DebugBorderTracingBuilder {
         var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its faction id.
-        var cellGrouping = new CellGrouping(
-                geometryCache.getSystemIdByCellId(),
-                DominantOwner.mapFactionIdBySystemId(ownerBySystemId));
+        var cellGrouping = DominantOwner.mapCellGrouping(
+                geometryCache.getSystemIdByCellId(), ownerBySystemId);
         var decivilisedSystemIds = DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector);
         var weldTolerance = KmuLunaSettings.getPoliticalMapBorderWeldTolerance();
         var miterLimit = KmuLunaSettings.getPoliticalMapBorderMiterLimit();
