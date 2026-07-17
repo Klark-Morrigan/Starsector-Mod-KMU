@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.CampaignEngineLayers;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
+import kmlib.starsector.ui.map.ModelviewMatrixReaders;
+
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 
 import java.util.EnumSet;
@@ -94,7 +96,8 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             overlayRenderer = new PoliticalMapOverlayRenderer();
         }
         if (hoverPublisher == null) {
-            hoverPublisher = new PoliticalMapHoverPublisher();
+            hoverPublisher = new PoliticalMapHoverPublisher(
+                    ModelviewMatrixReaders.selectForActiveRenderer());
         }
         cache.refresh(view);
         // The cursor read sits between the refresh and the draw: after, so it tests against the

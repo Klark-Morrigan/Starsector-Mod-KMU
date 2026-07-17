@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.ui.map.CampaignMapTransform;
-import kmlib.starsector.ui.map.ModelviewMatrixReaders;
+import kmlib.starsector.ui.map.ModelviewMatrixReader;
 
 import kmu.maplayers.politicalmap.base.geometry.CellHitTest;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
@@ -28,9 +28,22 @@ import org.lwjgl.input.Mouse;
 final class PoliticalMapHoverPublisher {
     private static final Logger LOG = Global.getLogger(PoliticalMapHoverPublisher.class);
 
+    // Where the map's modelview is read back from. Held rather than resolved per frame because the
+    // renderer underneath cannot change while the game runs, so the binding is a fixed collaborator
+    // of this publisher's session-long life.
+    private final ModelviewMatrixReader modelviewMatrixReader;
+
     // The last system named in the log, so the trace reports each move onto a new cell once rather
     // than re-reporting the same cell every frame the cursor rests on it.
     private String lastLoggedSystemId;
+
+    /**
+     * @param modelviewMatrixReader the binding the running renderer needs, from
+     *                              {@code ModelviewMatrixReaders#selectForActiveRenderer}
+     */
+    public PoliticalMapHoverPublisher(ModelviewMatrixReader modelviewMatrixReader) {
+        this.modelviewMatrixReader = modelviewMatrixReader;
+    }
 
     /**
      * Resolves the cursor to a cell and its territory and publishes the result, or parks the hover
@@ -49,8 +62,7 @@ final class PoliticalMapHoverPublisher {
         }
         // A snapshot the map's transform could not be read into resolves nothing, so the hover
         // parks rather than reporting a cell worked out from a transform that is not the map's.
-        var transform = CampaignMapTransform.captureFromMapPass(
-                factor, ModelviewMatrixReaders.selectForActiveRenderer());
+        var transform = CampaignMapTransform.captureFromMapPass(factor, modelviewMatrixReader);
         if (transform == null) {
             parkHover();
             return;
