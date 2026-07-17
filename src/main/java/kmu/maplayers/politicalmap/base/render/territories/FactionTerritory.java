@@ -5,8 +5,10 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import java.util.List;
 
 /**
- * One owned faction's fill and national border, both the same GLU-resolved region of the border
- * rings so they match exactly. {@code fillTriangles} is the solid part of that region as a
+ * One owned faction's fill and national border. The border is the GLU-resolved region of the
+ * border rings; a plain territory's {@code fillTriangles} is that same region triangulated, so
+ * the two match exactly, while a spotlighted bloc's split fills are each clipped to that region
+ * (see below), so their outer edge lands on it too. {@code fillTriangles} is the solid part as a
  * GL_TRIANGLES soup ([x, y, x, y, ...], empty when the fill is "No color"); {@code borderLoops}
  * is the whole region's boundary as GL_LINE_LOOP runs (empty when the border is "No color") -
  * one loop per disjoint cluster and per enclave, with any narrow-neck self-crossing resolved
@@ -16,8 +18,9 @@ import java.util.List;
  * <p>The political-map filter's spotlighted bloc splits its one bordered footprint into two
  * fills painted in the same {@link #fill} colour and opacity: {@code fillTriangles} covers the
  * systems it dominates (solid), and {@code hatchSegments} - a {@code GL_LINES} run of diagonal
- * lines pre-clipped to the contested systems' tessellated region and baked once at build time -
- * covers the systems it is merely present in (hatched, reading as "mine but contested"). Every
+ * lines pre-clipped to the contested systems' region and baked once at build time - covers the
+ * systems it is merely present in (hatched, reading as "mine but contested"). Each state's region
+ * is clipped to the national border, so both stop at the same frontier the border strokes. Every
  * other territory sets {@code hatchSegments} empty and paints only its solid triangles. The two
  * fills tile the footprint inside one frontier, so its border stays a single continuous outline
  * either way. The width the hatch strokes at is sector-wide, so it lives on the theme's global

@@ -350,6 +350,7 @@ public final class TerritoryBuilder {
                         geometryCache,
                         cellGrouping,
                         borderTrace,
+                        borderLoops,
                         factionId,
                         memberCellIds,
                         fillColor)
@@ -377,13 +378,16 @@ public final class TerritoryBuilder {
     // tessellate into the solid triangle soup, and the contested systems into their own soup the
     // hatch generator then clips diagonal lines to. Each state fills from its own traced rings
     // rather than from its members' individual cells, so no per-cell inset truncation can leave an
-    // unfilled wedge where two members meet at a corner against a rival or empty space. A "No
-    // color" fill draws neither region.
+    // unfilled wedge where two members meet at a corner against a rival or empty space. Both fills
+    // are clipped to the smoothed national border loops, so neither keeps the mitered corner the
+    // border's rounding cut and pokes out past the frontier the border strokes. A "No color" fill
+    // draws neither region.
     private static TerritoryFill computeSpotlitFill(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
             CellGrouping cellGrouping,
             PoliticalBorderTrace borderTrace,
+            List<List<double[]>> borderLoops,
             String blocId,
             List<String> memberCellIds,
             Color fillColor) {
@@ -405,6 +409,7 @@ public final class TerritoryBuilder {
         var solidTriangles = tessellateSubRegion(
                 borderTrace,
                 geometryCache,
+                borderLoops,
                 cellGrouping.systemIdByCellId(),
                 split.dominant(),
                 subRegionKeys,
@@ -412,6 +417,7 @@ public final class TerritoryBuilder {
         var contestedTriangles = tessellateSubRegion(
                 borderTrace,
                 geometryCache,
+                borderLoops,
                 cellGrouping.systemIdByCellId(),
                 split.contested(),
                 subRegionKeys,
@@ -472,13 +478,16 @@ public final class TerritoryBuilder {
     // Tessellates one of the footprint's states into a GL_TRIANGLES soup from the rings tracing
     // its cells as a single region, so a state fills as one continuous area with no per-cell
     // seam or truncation inside it. The other state's systems are the coincident neighbours, whose
-    // shared edge insets by nothing so the two states abut with no channel between them. The rings
-    // are tessellated exactly as traced - unsmoothed - since the smoothing the national border runs
-    // would pull the fill off the border it is drawn under. Empty when the state holds no members
-    // or the trace yields no drawable ring.
+    // shared edge insets by nothing so the two states abut with no channel between them. The traced
+    // rings are clipped to the smoothed national border loops rather than tessellated as traced:
+    // their shared dom<->con seam is interior to both operands and survives the clip untouched, so
+    // the two states still meet exactly along it, while their outer edge is clamped onto the exact
+    // line the national border strokes instead of keeping the mitered corner the border's rounding
+    // cut away. Empty when the state holds no members or the trace yields no drawable ring.
     private static float[] tessellateSubRegion(
             PoliticalBorderTrace borderTrace,
             PoliticalMapGeometryCache geometryCache,
+            List<List<double[]>> borderLoops,
             Map<String, String> systemIdByCellId,
             SpotlitMembers subRegion,
             Map<String, String> subRegionKeyBySystemId,
@@ -494,7 +503,7 @@ public final class TerritoryBuilder {
         if (rings.isEmpty()) {
             return GlVertexRuns.NO_VERTICES;
         }
-        return PolygonTessellator.tessellateToTriangles(rings);
+        return PolygonTessellator.tessellateIntersectionToTriangles(rings, borderLoops);
     }
 
     // The spotlit footprint's fill split into its two painted regions: the solid triangle soup for
