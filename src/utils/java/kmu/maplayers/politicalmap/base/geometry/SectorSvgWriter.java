@@ -58,6 +58,9 @@ final class SectorSvgWriter {
         var bounds = computeBounds(fixture.getSites());
         var svg = new StringBuilder();
         openSvg(svg, bounds);
+        // The raw partition, drawn faintly underneath: it is the reference the shaped cells and
+        // traced borders above are read against, so a channel or a fused seam can be seen against
+        // the cell edge it came from.
         appendRawCells(svg, geometry.cellEdgesByCellId());
         appendNeutralCells(svg, geometry);
         appendBlocRings(svg, geometry.ringsByBlocId());
@@ -116,13 +119,34 @@ final class SectorSvgWriter {
         }
     }
 
+    // Each bloc as ONE path of all its rings, filled under the even-odd rule, so a ring wound
+    // against the rest reads as a hole in it rather than as another island of colour. A bloc's
+    // enclaves and the keep-out clearings punched into it are both carried that way, and drawing
+    // each ring on its own would paint them solid - the exact opposite of what they mean.
     private static void appendBlocRings(
             StringBuilder svg, Map<String, List<List<double[]>>> ringsByBloc) {
         for (var entry : ringsByBloc.entrySet()) {
             var colour = pickBlocColour(entry.getKey());
+            var subPaths = new StringBuilder();
             for (var ring : entry.getValue()) {
-                appendPolygon(svg, ring, colour, colour, RING_STROKE);
+                if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+                    continue;
+                }
+                for (var i = 0; i < ring.size(); i++) {
+                    subPaths.append(i == 0 ? 'M' : 'L')
+                            .append(fmt(ring.get(i)[0])).append(' ')
+                            .append(fmt(ring.get(i)[1])).append(' ');
+                }
+                subPaths.append("Z ");
             }
+            if (subPaths.length() == 0) {
+                continue;
+            }
+            svg.append("<path fill-rule=\"evenodd\" d=\"").append(subPaths)
+                    .append("\" fill=\"").append(colour)
+                    .append("\" fill-opacity=\"").append(BLOC_FILL_OPACITY)
+                    .append("\" stroke=\"").append(colour)
+                    .append("\" stroke-width=\"").append(fmt(RING_STROKE)).append("\"/>\n");
         }
     }
 

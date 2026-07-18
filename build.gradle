@@ -68,6 +68,13 @@ def nexJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/Exereli
 // supplies it at runtime - compileOnly. Globbed so a version bump does not break
 // the path.
 def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['xstream-*.jar'])
+// LWJGL, which carries the GLU tessellator the render layer resolves a territory's winding with.
+// The utils tooling runs that same geometry outside the game to draw and to write SVGs, so it
+// needs the jar at RUNTIME - the game classloader is not there to hand it over. Compiling without
+// it succeeds and the tool then dies on NoClassDefFoundError, which is exactly the trap the
+// source-set comment above warns about.
+def lwjglJars = fileTree(dir: "${starsectorRoot}/starsector-core",
+        include: ['lwjgl.jar', 'lwjgl_util.jar'])
 
 dependencies {
     compileOnly consoleCommandsJars
@@ -104,6 +111,7 @@ dependencies {
     utilsRuntimeOnly nexJars
     utilsRuntimeOnly files(kmlibJarFile)
     utilsRuntimeOnly files(lazyLibJarFile)
+    utilsRuntimeOnly lwjglJars
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -149,4 +157,14 @@ tasks.register('viewSectorGeometry', JavaExec) {
     description = 'Opens the sector geometry viewer (live sliders over a real sector).'
     classpath = sourceSets.utils.runtimeClasspath
     mainClass = 'kmu.maplayers.politicalmap.base.geometry.SectorGeometryViewer'
+}
+
+// The same shapes the viewer draws, written straight to file with the frontier off and on. The
+// viewer needs someone sitting at it; a shape often has to be looked at when nobody is - to attach
+// to a plan, to diff two runs of a geometry change, or to hand to someone else.
+tasks.register('writeSectorSvg', JavaExec) {
+    group = 'help'
+    description = 'Writes every sector fixture to SVG, frontier off and on, into build/reports.'
+    classpath = sourceSets.utils.runtimeClasspath
+    mainClass = 'kmu.maplayers.politicalmap.base.geometry.SectorSvgDump'
 }
