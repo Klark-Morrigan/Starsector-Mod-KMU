@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -95,6 +96,25 @@ final class HoverHighlightGeometryTest {
                     .resolveHighlightFor(territories, hoverOf("A"));
 
             assertThat(highlight.glowLoops()).containsExactly(enclaveInsideRival);
+        }
+
+        @Test
+        void a_cell_poking_past_the_frontier_washes_only_up_to_it() {
+            // The shaped cell reaches past the frontier that encloses its centre - the corner the
+            // border's rounding cut, which the raw cell keeps. The wash must clamp to the loop, so
+            // the overlap [50,100]x[50,100] (area 2500) washes, not the whole 80x80 cell (6400).
+            var loop = squareRun(0, 0, 100);
+            var territories = territoriesWith(
+                    Map.of("A", OWNER),
+                    Map.of("A", square(50, 50, 80)),
+                    territoryWithLoops(List.of(loop)));
+
+            var highlight = new HoverHighlightGeometry()
+                    .resolveHighlightFor(territories, hoverOf("A"));
+
+            assertThat(totalTriangleArea(highlight.washTriangles()))
+                    .isCloseTo(2500.0, within(1e-2));
+            assertThat(highlight.washOutline()).hasSize(1);
         }
 
         @Test
@@ -245,6 +265,23 @@ final class HoverHighlightGeometryTest {
                 new double[] {minX + side, minY},
                 new double[] {minX + side, minY + side},
                 new double[] {minX, minY + side});
+    }
+
+    // Sums the unsigned area of every triangle in a flat [x, y, x, y, ...] soup, six floats per
+    // triangle - the area the wash actually covers, for asserting the clip clamped it.
+    private static double totalTriangleArea(float[] triangles) {
+        var floatsPerTriangle = 6;
+        var total = 0.0;
+        for (var i = 0; i + floatsPerTriangle <= triangles.length; i += floatsPerTriangle) {
+            var ax = triangles[i];
+            var ay = triangles[i + 1];
+            var bx = triangles[i + 2];
+            var by = triangles[i + 3];
+            var cx = triangles[i + 4];
+            var cy = triangles[i + 5];
+            total += Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2.0;
+        }
+        return total;
     }
 
     // The same square as the baked [x, y, x, y, ...] run a border loop is kept in.

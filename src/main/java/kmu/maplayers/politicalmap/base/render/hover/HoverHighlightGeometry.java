@@ -82,27 +82,56 @@ public final class HoverHighlightGeometry {
         return resolvedHighlight;
     }
 
-    // Assembles the two halves: the frontier loop enclosing the cell, and the cell itself
-    // tessellated for its wash and flattened for its trace.
+    // Assembles the two halves: the frontier loop enclosing the cell, and the cell - clamped to
+    // that frontier - tessellated for its wash and outlined for its trace.
     private static HoverHighlight buildHighlight(
             FactionTerritory territory,
             List<double[]> fillPolygon) {
+        var enclosingLoop = findEnclosingLoop(territory, fillPolygon);
         return new HoverHighlight(
-                findEnclosingLoop(territory, fillPolygon),
-                PolygonTessellator.tessellateToTriangles(List.of(fillPolygon)),
-                GlVertexRuns.flattenVertices(fillPolygon));
+                enclosingLoop == null ? List.of() : List.of(enclosingLoop),
+                clipWashTriangles(fillPolygon, enclosingLoop),
+                clipWashOutline(fillPolygon, enclosingLoop));
+    }
+
+    // The hovered cell washed as a triangle soup, clamped to the frontier it sits inside so it
+    // stops at the rounded national border instead of keeping the sharp mitered corner the
+    // border's rounding cut away - the same clip the territory fill already applies to itself.
+    // A factionless or "No color" cell has no frontier (null loop), so it washes as shaped.
+    private static float[] clipWashTriangles(List<double[]> fillPolygon, float[] enclosingLoop) {
+        if (enclosingLoop == null) {
+            return PolygonTessellator.tessellateToTriangles(List.of(fillPolygon));
+        }
+        return PolygonTessellator.tessellateIntersectionToTriangles(
+                List.of(fillPolygon),
+                List.of(GlVertexRuns.unflattenVertices(enclosingLoop)));
+    }
+
+    // The hovered cell's trace, clamped to the same frontier as its wash so the outline never
+    // strokes past the rounded border either. The clip can split the extent into more than one
+    // loop, so it returns however many the overlap has; an unclipped cell traces as its one ring.
+    private static List<float[]> clipWashOutline(List<double[]> fillPolygon, float[] enclosingLoop) {
+        if (enclosingLoop == null) {
+            return List.of(GlVertexRuns.flattenVertices(fillPolygon));
+        }
+        return PolygonTessellator.tessellateIntersectionToBoundaryLoops(
+                        List.of(fillPolygon),
+                        List.of(GlVertexRuns.unflattenVertices(enclosingLoop)))
+                .stream()
+                .map(GlVertexRuns::flattenVertices)
+                .toList();
     }
 
     // The hovered cluster's frontier: the smallest of its faction's border loops that encloses
-    // the cell, as a single-loop list (empty for a factionless cell, or when no loop encloses
-    // it - the border is "No color", so the faction baked none). Smallest rather than first
-    // because nested loops all enclose the point and only the innermost is the cell's own
-    // cluster; area is compared by magnitude since a hole ring winds against its outer ring.
-    private static List<float[]> findEnclosingLoop(
+    // the cell, or null for a factionless cell, or when no loop encloses it - the border is
+    // "No color", so the faction baked none. Smallest rather than first because nested loops all
+    // enclose the point and only the innermost is the cell's own cluster; area is compared by
+    // magnitude since a hole ring winds against its outer ring.
+    private static float[] findEnclosingLoop(
             FactionTerritory territory,
             List<double[]> fillPolygon) {
         if (territory == null) {
-            return List.of();
+            return null;
         }
         // A point standing in for the whole cell, well clear of its edges: the mean of its
         // vertices. Not the cursor, which can rest a pixel inside an edge.
@@ -120,7 +149,7 @@ public final class HoverHighlightGeometry {
                 smallestLoop = loop;
             }
         }
-        return smallestLoop == null ? List.of() : List.of(smallestLoop);
+        return smallestLoop;
     }
 
 }

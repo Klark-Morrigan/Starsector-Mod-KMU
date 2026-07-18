@@ -131,7 +131,9 @@ public final class HoverHighlightRenderer {
         if (style.outlineOpacity() > 0) {
             GL11.glLineWidth((float) style.outlineWidth());
             GlColor.set(color, (float) (alphaMult * style.outlineOpacity()));
-            GlRuns.drawScaled(GL11.GL_LINE_LOOP, highlight.washOutline(), factor);
+            for (var loop : highlight.washOutline()) {
+                GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
+            }
         }
     }
 }

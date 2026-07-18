@@ -12,8 +12,14 @@ import java.util.List;
  * baked. {@code glowLoops} are {@code GL_LINE_LOOP} runs - normally the one loop enclosing
  * the hovered cell, empty when the cell belongs to no faction (a factionless cell fuses into
  * no territory, so it has no frontier to bloom). {@code washTriangles} is the hovered cell's
- * painted extent as a {@code GL_TRIANGLES} soup and {@code washOutline} the same extent as a
- * {@code GL_LINE_LOOP} ring.
+ * painted extent as a {@code GL_TRIANGLES} soup and {@code washOutline} the same extent as
+ * {@code GL_LINE_LOOP} rings - one normally, but more where the extent is clipped to the
+ * frontier into disjoint pieces.
+ *
+ * <p>Both wash runs are the cell clamped to the frontier it sits inside, not the raw cell:
+ * at the cluster edge the shaped cell keeps the sharp mitered corner the border's rounding
+ * cut away, so washing it raw would spill the wash past the rounded national border. Clipping
+ * to the frontier stops the wash exactly where the border strokes.
  *
  * <p>A triangle soup rather than a fan over the cell's vertices: a cell is not reliably
  * convex - a keep-out pocket bitten out of a frontier cell leaves a concave notch, and a fan
@@ -22,14 +28,15 @@ import java.util.List;
 public record HoverHighlight(
         List<float[]> glowLoops,
         float[] washTriangles,
-        float[] washOutline) {
+        List<float[]> washOutline) {
 
     /** Nothing is hovered, or the hovered cell has no drawable shape, so nothing lights up. */
     public static final HoverHighlight NONE = new HoverHighlight(
-            List.of(), GlVertexRuns.NO_VERTICES, GlVertexRuns.NO_VERTICES);
+            List.of(), GlVertexRuns.NO_VERTICES, List.of());
 
     public HoverHighlight {
         glowLoops = List.copyOf(glowLoops);
+        washOutline = List.copyOf(washOutline);
     }
 
     /**
@@ -37,6 +44,6 @@ public record HoverHighlight(
      *         its GL state push on
      */
     public boolean isEmpty() {
-        return glowLoops.isEmpty() && washOutline.length == 0;
+        return glowLoops.isEmpty() && washOutline.isEmpty();
     }
 }
