@@ -47,9 +47,10 @@ public final class HoverHighlightRenderer {
             float alphaMult) {
         var style = territories.getGlobalStyle().hoverHighlight();
         var color = resolveHighlightColor(territories, hover, style);
-        // A fully faded map (at the ends of its zoom fade) or a highlight the player has turned
-        // off at "No color" would emit every run for nothing, so both skip the GL state push
-        // rather than being left to blend away.
+        // Nothing to paint when the cursor is over no cell (which is also how a disabled highlight
+        // reads, its hover parked upstream) or the map has fully faded at the ends of its zoom
+        // fade - both would emit every run for nothing, so both skip the GL state push rather than
+        // being left to blend away.
         if (color == null || alphaMult <= 0f) {
             return;
         }
@@ -74,8 +75,8 @@ public final class HoverHighlightRenderer {
     }
 
     // The colour the whole highlight paints in: the shade of the ground under the cursor.
-    // Null when the player chose "No color", or when the cursor is over nothing, so the caller
-    // skips the pass.
+    // Null when the cursor is over nothing (a parked hover, including when the highlight is
+    // disabled), so the caller skips the pass.
     private static Color resolveHighlightColor(
             PoliticalMapTerritories territories,
             PoliticalMapHover hover,

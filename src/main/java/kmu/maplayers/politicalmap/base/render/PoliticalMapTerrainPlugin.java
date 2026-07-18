@@ -7,6 +7,8 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
+import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
+import kmu.settings.KmuLunaSettings;
 
 import java.util.EnumSet;
 
@@ -95,16 +97,32 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         if (overlayRenderer == null) {
             overlayRenderer = new PoliticalMapOverlayRenderer();
         }
+        cache.refresh(view);
+        publishHoverIfEnabled(factor);
+        overlayRenderer.renderOnMap(cache, factor, alphaMult);
+    }
+
+    // Runs the cursor read only while the hover highlight is switched on. The whole feature - the
+    // map-matrix read (bridged, and a per-frame render-thread hop under Fast Rendering), the
+    // unproject, and the cell hit test - hangs off this call, so gating it here is what makes the
+    // toggle a real off switch rather than one that draws nothing while still paying to resolve the
+    // hover every frame. When off, the hover is parked so nothing downstream keeps a stale cell lit,
+    // and the publisher (and the renderer binding it holds) is never created.
+    private void publishHoverIfEnabled(float factor) {
+        if (!KmuLunaSettings.getPoliticalMapHoverEnabled()) {
+            PoliticalMapHoverState.getInstance().clearHover();
+            return;
+        }
+        // Recreated lazily like the other collaborators: a save-restored plugin comes back with it
+        // null (transient), and it is only wanted once the toggle is on.
         if (hoverPublisher == null) {
             hoverPublisher = new PoliticalMapHoverPublisher(
                     ModelviewMatrixReaders.selectForActiveRenderer());
         }
-        cache.refresh(view);
         // The cursor read sits between the refresh and the draw: after, so it tests against the
         // shapes this frame actually paints, and before, so the highlight layers already have the
         // frame's answer when they draw. It is the one point in the frame with both the live GL
         // matrices it needs and the current draw lists.
         hoverPublisher.publishHoverFrom(cache, factor);
-        overlayRenderer.renderOnMap(cache, factor, alphaMult);
     }
 }

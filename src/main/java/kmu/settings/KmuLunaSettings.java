@@ -177,13 +177,16 @@ public final class KmuLunaSettings {
 
     // Hover highlight settings (Political map - visuals tab): how the map answers the cursor -
     // a halo around the hovered territory's frontier and a wash over the one hovered cell,
-    // both in the hovered ground's own palette colour (or off, at "No color"). The halo is a
-    // stack of strokes, so it takes a widest-layer width, an innermost-layer opacity, a layer
-    // count, and a pulse (strength plus period); the wash takes a fill opacity and its own
-    // outline opacity and width, since an interior cell reads only by its trace. All feed the
-    // drawables rebuild, so a change repaints the highlight live on the open map - which is the
-    // point of exposing them: the look is dialed in-engine against real territory rather than
-    // guessed at build time.
+    // both in the hovered ground's own palette colour. The enable toggle is the master switch:
+    // it gates the whole feature, so with it off the cursor read never runs and nothing is
+    // drawn. The halo is a stack of strokes, so it takes a widest-layer width, an
+    // innermost-layer opacity, a layer count, and a pulse (strength plus period); the wash
+    // takes a fill opacity and its own outline opacity and width, since an interior cell reads
+    // only by its trace. All feed the drawables rebuild, so a change repaints the highlight
+    // live on the open map - which is the point of exposing them: the look is dialed in-engine
+    // against real territory rather than guessed at build time.
+    private static final String HOVER_ENABLED_FIELD =
+            "kmu_politicalMapHoverEnabled";
     private static final String HOVER_HIGHLIGHT_COLOR_FIELD =
             "kmu_politicalMapHoverHighlightColor";
     private static final String HOVER_GLOW_OPACITY_FIELD =
@@ -554,6 +557,7 @@ public final class KmuLunaSettings {
     // quarter-depth breath, and a cell wash of a little over a third alpha under a crisp
     // near-opaque trace. Tuned to sit over the fills without swamping them - the fills
     // themselves paint at 0.4 - and expected to move once playtested.
+    private static final boolean DEFAULT_HOVER_ENABLED = true;
     private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
@@ -1112,9 +1116,17 @@ public final class KmuLunaSettings {
     }
 
     /**
+     * @return whether the hover highlight is on at all - the master switch gating the per-frame
+     *         cursor read and every highlight pass; on by default
+     */
+    public static boolean getPoliticalMapHoverEnabled() {
+        return LunaSettingsReader.getBoolean(MOD_ID, HOVER_ENABLED_FIELD, DEFAULT_HOVER_ENABLED);
+    }
+
+    /**
      * @return which palette color of the ground under the cursor the hover halo and cell wash
-     *         both draw in, or NONE to leave the map unresponsive to hovering; the primary
-     *         (bright) color by default
+     *         both draw in; the primary (bright) color by default. Turning the highlight off is
+     *         the enable toggle's job, not a color choice
      */
     public static FactionPaletteChoice getPoliticalMapHoverHighlightColor() {
         return readPaletteChoice(HOVER_HIGHLIGHT_COLOR_FIELD, DEFAULT_HOVER_HIGHLIGHT_COLOR);
