@@ -83,43 +83,37 @@ public final class HoverHighlightGeometry {
     }
 
     // Assembles the two halves: the frontier loop enclosing the cell, and the cell - clamped to
-    // that frontier - tessellated for its wash and outlined for its trace.
+    // that frontier - washed and traced from one resolved set of loops.
     private static HoverHighlight buildHighlight(
             FactionTerritory territory,
             List<double[]> fillPolygon) {
         var enclosingLoop = findEnclosingLoop(territory, fillPolygon);
+        // Resolve the wash to boundary loops once, then fill and trace both come off it - so the
+        // wash and its outline are the same region by construction (as the territory fill and its
+        // border already are), and the clip runs a single tessellation rather than one per half.
+        var washLoops = clipCellToFrontier(fillPolygon, enclosingLoop);
         return new HoverHighlight(
                 enclosingLoop == null ? List.of() : List.of(enclosingLoop),
-                clipWashTriangles(fillPolygon, enclosingLoop),
-                clipWashOutline(fillPolygon, enclosingLoop));
+                PolygonTessellator.tessellateToTriangles(washLoops),
+                washLoops.stream().map(GlVertexRuns::flattenVertices).toList());
     }
 
-    // The hovered cell washed as a triangle soup, clamped to the frontier it sits inside so it
-    // stops at the rounded national border instead of keeping the sharp mitered corner the
-    // border's rounding cut away - the same clip the territory fill already applies to itself.
-    // A factionless or "No color" cell has no frontier (null loop), so it washes as shaped.
-    private static float[] clipWashTriangles(List<double[]> fillPolygon, float[] enclosingLoop) {
+    // The hovered cell as the boundary loops its wash fills and traces, clamped to the frontier it
+    // sits inside so neither spills past the rounded national border - it stops at the exact line
+    // the border strokes instead of keeping the sharp mitered corner the border's rounding cut
+    // away, the same clip the territory fill applies to itself. A factionless or "No color" cell
+    // has no frontier (null loop), so it resolves to the cell's own boundary. The clip can bite the
+    // extent into more than one loop, so it returns however many the overlap has.
+    private static List<List<double[]>> clipCellToFrontier(
+            List<double[]> fillPolygon,
+            float[] enclosingLoop) {
+        var cell = List.of(fillPolygon);
         if (enclosingLoop == null) {
-            return PolygonTessellator.tessellateToTriangles(List.of(fillPolygon));
-        }
-        return PolygonTessellator.tessellateIntersectionToTriangles(
-                List.of(fillPolygon),
-                List.of(GlVertexRuns.unflattenVertices(enclosingLoop)));
-    }
-
-    // The hovered cell's trace, clamped to the same frontier as its wash so the outline never
-    // strokes past the rounded border either. The clip can split the extent into more than one
-    // loop, so it returns however many the overlap has; an unclipped cell traces as its one ring.
-    private static List<float[]> clipWashOutline(List<double[]> fillPolygon, float[] enclosingLoop) {
-        if (enclosingLoop == null) {
-            return List.of(GlVertexRuns.flattenVertices(fillPolygon));
+            return PolygonTessellator.tessellateToBoundaryLoops(cell);
         }
         return PolygonTessellator.tessellateIntersectionToBoundaryLoops(
-                        List.of(fillPolygon),
-                        List.of(GlVertexRuns.unflattenVertices(enclosingLoop)))
-                .stream()
-                .map(GlVertexRuns::flattenVertices)
-                .toList();
+                cell,
+                List.of(GlVertexRuns.unflattenVertices(enclosingLoop)));
     }
 
     // The hovered cluster's frontier: the smallest of its faction's border loops that encloses

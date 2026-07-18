@@ -99,6 +99,22 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
+        void a_cell_fully_inside_its_frontier_washes_its_whole_extent() {
+            // The clip must be a no-op for an interior cell: it washes its full 80x80 area (6400),
+            // not a clamped-down piece, so only cells that reach the frontier are ever trimmed.
+            var territories = territoriesWith(
+                    Map.of("A", OWNER),
+                    Map.of("A", square(10, 10, 80)),
+                    territoryWithLoops(List.of(squareRun(0, 0, 100))));
+
+            var highlight = new HoverHighlightGeometry()
+                    .resolveHighlightFor(territories, hoverOf("A"));
+
+            assertThat(totalTriangleArea(highlight.washTriangles()))
+                    .isCloseTo(6400.0, within(1e-2));
+        }
+
+        @Test
         void a_cell_poking_past_the_frontier_washes_only_up_to_it() {
             // The shaped cell reaches past the frontier that encloses its centre - the corner the
             // border's rounding cut, which the raw cell keeps. The wash must clamp to the loop, so
