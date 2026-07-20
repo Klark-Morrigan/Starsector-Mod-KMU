@@ -263,20 +263,6 @@ public final class KmuLunaSettings {
     private static final String CELL_RADIUS_FIELD =
             "kmu_politicalMapCellRadius";
 
-    // Asymmetric frontier (visuals tab): the master switch and its keep-out radius for the
-    // way a faction's territory meets unclaimed or decivilised space. When on, a frontier
-    // edge facing an empty star flows toward it and stops the keep-out radius short of it,
-    // leaving a pocket, rather than cutting at the Voronoi midline as it does against a
-    // rival faction. How far that flow may carry needs no knob of its own: the cell radius
-    // above already bounds how far a system's colour reaches from its star, and it bounds
-    // the flow into a dead star's space the same way. The toggle sits before the radius so
-    // the radius reads as its dependent knob; both reseed frontier geometry, so they feed
-    // the geometry rebuild. Player-facing appearance choices, hence the visuals tab.
-    private static final String ASYMMETRIC_FRONTIER_FIELD =
-            "kmu_politicalMapAsymmetricFrontier";
-    private static final String FRONTIER_KEEP_OUT_FIELD =
-            "kmu_politicalMapFrontierKeepOut";
-
     // National-border geometry (Dev tab): the shape of the frontier stroked and filled
     // per cluster, exposed for live tuning rather than baked as constants. All feed the
     // drawables rebuild, so a change takes effect the moment it is applied. The Dev tab
@@ -530,11 +516,6 @@ public final class KmuLunaSettings {
     // The default cell reach into empty space, world units - the constant the geometry
     // used before this became a knob. Mirrors the CSV defaultValue.
     private static final double DEFAULT_CELL_RADIUS = 4000.0;
-    // Asymmetric frontier on by default so the friendlier reach-around look ships live; its
-    // keep-out radius (world units) mirrors the CSV defaultValue - how far short of a dead
-    // star the territory stops.
-    private static final boolean DEFAULT_ASYMMETRIC_FRONTIER = true;
-    private static final double DEFAULT_FRONTIER_KEEP_OUT = 1200.0;
     // Border-tracing knobs (ungated).
     private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
@@ -1036,28 +1017,6 @@ public final class KmuLunaSettings {
      */
     public static double getPoliticalMapCellRadius() {
         return LunaSettingsReader.getDouble(MOD_ID, CELL_RADIUS_FIELD, DEFAULT_CELL_RADIUS);
-    }
-
-    /**
-     * @return whether a faction's territory reaches around an unclaimed or decivilised star
-     *         it does not hold and stops short of it, leaving a pocket; when off, borders
-     *         against empty space cut at the Voronoi midline like borders between two
-     *         factions, and the keep-out radius has no effect
-     */
-    public static boolean isAsymmetricFrontierEnabled() {
-        return LunaSettingsReader.getBoolean(MOD_ID, ASYMMETRIC_FRONTIER_FIELD,
-                DEFAULT_ASYMMETRIC_FRONTIER);
-    }
-
-    /**
-     * @return how close a faction's coloured territory may reach to an unclaimed or
-     *         decivilised star it does not hold, in world units; the territory stops this
-     *         far short of the star, leaving a pocket; ignored while asymmetric frontier is
-     *         off and irrelevant to borders between two factions
-     */
-    public static double getPoliticalMapFrontierKeepOut() {
-        return LunaSettingsReader.getDouble(MOD_ID, FRONTIER_KEEP_OUT_FIELD,
-                DEFAULT_FRONTIER_KEEP_OUT);
     }
 
     /**
