@@ -86,12 +86,20 @@ final class FactionsViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsFalseForACoreFactionEvenWhenDesaturated() {
-            // This view classifies on ownership alone, so a receding adjustment never moves the
-            // bundle - unlike the alliances view, which reads desaturation as "this is independent
-            // ground". A faction the filter recede desaturates keeps its faction borders and seams.
+        void shouldUseIndependentStyleIsTrueForACoreFactionWhenDesaturated() {
+            // A faction the filter recede has desaturated reads as background ground, so it takes
+            // the independent borders and seams paired with the desaturation palette - the same
+            // classification the alliances view makes for a desaturated non-allied bloc.
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, new BlocStyleAdjustment(0.3, true))).isFalse();
+                    "hegemony", ANY_GROUPING, new BlocStyleAdjustment(0.3, true))).isTrue();
+        }
+
+        @Test
+        void shouldUseIndependentStyleIsFalseForACoreFactionWhenOnlyMuted() {
+            // Muting dims a bloc but does not desaturate it, so a merely muted faction keeps its
+            // faction bundle: dimming alone never swaps border weight or the palette slot.
+            assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
+                    "hegemony", ANY_GROUPING, new BlocStyleAdjustment(0.3, false))).isFalse();
         }
     }
 

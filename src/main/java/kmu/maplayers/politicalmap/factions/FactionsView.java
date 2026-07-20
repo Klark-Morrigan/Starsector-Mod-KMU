@@ -67,11 +67,18 @@ public final class FactionsView implements PoliticalMapView {
             String blocId,
             OwnershipGrouping grouping,
             BlocStyleAdjustment adjustment) {
-        // Only independent space is drawn muted; every other faction paints in the full
-        // faction style. The grouping is identity here, so the bloc id is the faction id.
-        // This view classifies on ownership alone, so a receding adjustment never moves the
-        // bundle - a receded faction dims and recolours within the faction style.
-        return Factions.INDEPENDENT.equals(blocId);
+        // Genuine independent space always takes the independent style. A faction the recede has
+        // desaturated takes it too: desaturation means "read as background ground", so the bloc
+        // adopts the independent borders and seams paired with the desaturation palette the same
+        // adjustment carries, rather than sitting at full faction border weight and slot with only
+        // its colour greyed. The grouping is identity here, so no bloc is an alliance and every
+        // desaturated faction qualifies; a merely muted (dimmed, not desaturated) faction keeps the
+        // faction bundle, so dimming alone never swaps border weight.
+        //
+        // The test reads the passed adjustment - the filter recede already unioned in - not this
+        // view's own toggle, so the border bundle and the desaturation palette can never disagree
+        // about whether a bloc has desaturated.
+        return Factions.INDEPENDENT.equals(blocId) || adjustment.desaturate();
     }
 
     @Override
