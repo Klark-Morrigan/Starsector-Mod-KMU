@@ -343,14 +343,19 @@ final class SectorGeometryViewer {
                 g2.setColor(NEUTRAL_COLOUR);
                 g2.draw(buildPath(entry.getValue().fillPolygon()));
             }
+            // One path per bloc, filled even-odd, so a ring wound against the rest cuts a hole in
+            // it - an enclave - instead of painting over it solid. Filling each ring on its own
+            // paints an enclave as another island of the bloc's colour, which is the opposite of
+            // what it means.
             for (var entry : geometry.ringsByBlocId().entrySet()) {
+                var region = new Path2D.Double(Path2D.WIND_EVEN_ODD);
                 for (var ring : entry.getValue()) {
-                    var path = buildPath(ring);
-                    g2.setColor(pickBlocColour(entry.getKey(), BLOC_FILL_ALPHA));
-                    g2.fill(path);
-                    g2.setColor(pickBlocColour(entry.getKey(), OPAQUE_ALPHA));
-                    g2.draw(path);
+                    region.append(buildPath(ring), false);
                 }
+                g2.setColor(pickBlocColour(entry.getKey(), BLOC_FILL_ALPHA));
+                g2.fill(region);
+                g2.setColor(pickBlocColour(entry.getKey(), OPAQUE_ALPHA));
+                g2.draw(region);
             }
             g2.setColor(SITE_COLOUR);
             for (var site : fixture.getSites()) {
