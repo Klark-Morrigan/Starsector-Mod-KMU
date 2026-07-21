@@ -1,6 +1,11 @@
-package kmu.maplayers.politicalmap.base.politics;
+package kmu.maplayers.politicalmap.base.politics.ownership;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -44,6 +49,7 @@ final class DefaultOwnershipProviderTest {
 
                 assertThat(resolution.ownerBySystemId()).isEqualTo(owners);
                 assertThat(resolution.contestedSystemIds()).isEmpty();
+                assertThat(resolution.unfilledSystemIds()).isEmpty();
             }
         }
 
@@ -65,6 +71,9 @@ final class DefaultOwnershipProviderTest {
 
                 assertThat(resolution.ownerBySystemId()).isEqualTo(owners);
                 assertThat(resolution.contestedSystemIds()).isEqualTo(contested);
+                // The presence-aware resolver reports no unfilled systems; the filter path leaves
+                // that fill state empty.
+                assertThat(resolution.unfilledSystemIds()).isEmpty();
             }
         }
     }

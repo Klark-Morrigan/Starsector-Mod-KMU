@@ -1,6 +1,10 @@
-package kmu.maplayers.politicalmap.base.politics;
+package kmu.maplayers.politicalmap.base.politics.ownership;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
+import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 
 import java.util.Set;
 
@@ -32,9 +36,11 @@ public final class DefaultOwnershipProvider implements OwnershipProvider {
             var filtered =
                     FilteredPolitics.resolveFilteredOwnership(sector, grouping, selectedBlocId);
             return new OwnershipResolution(
-                    filtered.ownerBySystemId(), filtered.contestedSystemIds());
+                    filtered.ownerBySystemId(), filtered.contestedSystemIds(), Set.of());
         }
         return new OwnershipResolution(
-                SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping), Set.of());
+                SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping),
+                Set.of(),
+                Set.of());
     }
 }

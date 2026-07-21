@@ -74,6 +74,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getFactionTerritoryByFactionId()).isEmpty();
             assertThat(territories.getOwnerBySystemId()).isEmpty();
             assertThat(territories.getDecivilisedSystemIds()).isEmpty();
+            assertThat(territories.getUnfilledSystemIds()).isEmpty();
             assertThat(territories.getNeutralColor()).isEqualTo(Color.GRAY);
             assertThat(territories.getDesaturationPalette())
                     .isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
@@ -118,6 +119,9 @@ final class PoliticalMapTerritoriesTest {
         void gettersReturnEachConstructorInputInItsMatchingSlot() {
             Map<String, DominantOwner> owners = new LinkedHashMap<>();
             Set<String> decivilised = new LinkedHashSet<>();
+            // A distinct unfilled set so a swapped slot is caught by identity, held apart from the
+            // decivilised set it sits beside.
+            Set<String> unfilled = new LinkedHashSet<>(Set.of("unfilled-system"));
             var neutral = Color.CYAN;
             var desaturationPalette = new FactionPalette(Color.MAGENTA, Color.ORANGE);
             // Four distinct category instances plus a distinct global tier, all wrapped in one
@@ -145,7 +149,7 @@ final class PoliticalMapTerritoriesTest {
             // A distinct contested set so a swapped filter-snapshot field is caught by identity.
             Set<String> contested = new LinkedHashSet<>(Set.of("contested-system"));
 
-            var territories = new PoliticalMapTerritories(owners, decivilised,
+            var territories = new PoliticalMapTerritories(owners, decivilised, unfilled,
                     new MapStyling(renderStyle, neutral, desaturationPalette),
                     new ViewGrouping(viewMock, grouping),
                     new FilterSnapshot(selectedBlocId, recedeAdjustment, contested));
@@ -156,6 +160,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getFactionTerritoryByFactionId()).isEmpty();
             assertThat(territories.getOwnerBySystemId()).isSameAs(owners);
             assertThat(territories.getDecivilisedSystemIds()).isSameAs(decivilised);
+            assertThat(territories.getUnfilledSystemIds()).isSameAs(unfilled);
             assertThat(territories.getNeutralColor()).isSameAs(neutral);
             assertThat(territories.getDesaturationPalette()).isSameAs(desaturationPalette);
             assertThat(territories.getRenderStyle()).isSameAs(renderStyle);
@@ -367,6 +372,7 @@ final class PoliticalMapTerritoriesTest {
             Map<String, FactionTerritory> territories) {
         PoliticalMapView viewMock = mock(PoliticalMapView.class);
         var drawables = new PoliticalMapTerritories(new LinkedHashMap<>(), new LinkedHashSet<>(),
+                new LinkedHashSet<>(),
                 new MapStyling(null, Color.GRAY, null),
                 new ViewGrouping(viewMock, OwnershipGrouping.identity()),
                 new FilterSnapshot(null, BlocStyleAdjustment.NONE, new LinkedHashSet<>()));

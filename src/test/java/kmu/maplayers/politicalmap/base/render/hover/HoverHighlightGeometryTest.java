@@ -246,6 +246,7 @@ final class HoverHighlightGeometryTest {
         var territories = new PoliticalMapTerritories(
                 new LinkedHashMap<>(ownerBySystemId),
                 new LinkedHashSet<>(),
+                new LinkedHashSet<>(),
                 new MapStyling(null, Color.GRAY, new FactionPalette(Color.GRAY, Color.GRAY)),
                 new ViewGrouping(viewMock, OwnershipGrouping.identity()),
                 new FilterSnapshot(null, BlocStyleAdjustment.NONE, new LinkedHashSet<>()));

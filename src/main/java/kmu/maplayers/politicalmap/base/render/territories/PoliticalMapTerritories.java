@@ -34,15 +34,16 @@ import java.util.Set;
  * the neutral color, and the desaturation palette - how each category draws and what a
  * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
  * grouping - how ownership is grouped and which blocs recede to the independent style),
- * and {@link FilterSnapshot} (the spotlight state). The owner-by-system and
- * decivilised-system maps ride alongside as who holds each system. An incremental re-shape
- * reads them all back so it classifies a cell exactly as the full build did.
+ * and {@link FilterSnapshot} (the spotlight state). The owner-by-system, decivilised-system,
+ * and unfilled-system sets ride alongside as who holds each system and how its fill is drawn.
+ * An incremental re-shape reads them all back so it classifies a cell exactly as the full
+ * build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
  * not values: the styled-cell, faction-territory, and owner-by-system maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions an
- * ownership change touched. The styling, decivilised set, view grouping, and filter
- * snapshot are set once at build and only read after, so an incremental pass re-shapes
+ * ownership change touched. The styling, decivilised and unfilled sets, view grouping, and
+ * filter snapshot are set once at build and only read after, so an incremental pass re-shapes
  * against the exact inputs the full build baked in.
  */
 public final class PoliticalMapTerritories {
@@ -58,6 +59,10 @@ public final class PoliticalMapTerritories {
     // rest are set once at build and only read after.
     private final Map<String, DominantOwner> ownerBySystemId;
     private final Set<String> decivilisedSystemIds;
+    // The owned systems drawn with no fill: held by their bloc for border and label but painting
+    // nothing inside its one frontier, so a held/claimed boundary reads as a seam where the fill
+    // stops. Set once at build alongside the owner map, read by the per-faction fill split.
+    private final Set<String> unfilledSystemIds;
     // The three cohesive input snapshots: the resolved paint scheme, the view and its once-sampled
     // grouping, and the spotlight state. The flat getters below unwrap them so every reader keeps
     // its original accessor.
@@ -72,11 +77,13 @@ public final class PoliticalMapTerritories {
     public PoliticalMapTerritories(
             Map<String, DominantOwner> ownerBySystemId,
             Set<String> decivilisedSystemIds,
+            Set<String> unfilledSystemIds,
             MapStyling styling,
             ViewGrouping viewGrouping,
             FilterSnapshot filter) {
         this.ownerBySystemId = ownerBySystemId;
         this.decivilisedSystemIds = decivilisedSystemIds;
+        this.unfilledSystemIds = unfilledSystemIds;
         this.styling = styling;
         this.viewGrouping = viewGrouping;
         this.filter = filter;
@@ -93,6 +100,7 @@ public final class PoliticalMapTerritories {
     public static PoliticalMapTerritories createEmpty(PoliticalMapView view) {
         return new PoliticalMapTerritories(
                 new LinkedHashMap<>(),
+                new LinkedHashSet<>(),
                 new LinkedHashSet<>(),
                 new MapStyling(
                     null,
@@ -186,6 +194,12 @@ public final class PoliticalMapTerritories {
 
     public Set<String> getDecivilisedSystemIds() {
         return decivilisedSystemIds;
+    }
+
+    // The owned systems the per-faction fill split leaves empty, drawn inside their bloc's one
+    // border but painting nothing; empty when every owned system fills solid.
+    public Set<String> getUnfilledSystemIds() {
+        return unfilledSystemIds;
     }
 
     public Color getNeutralColor() {

@@ -4,9 +4,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
-import kmu.maplayers.politicalmap.base.politics.DefaultOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.OwnershipProvider;
+import kmu.maplayers.politicalmap.base.politics.ownership.DefaultOwnershipProvider;
+import kmu.maplayers.politicalmap.base.politics.ownership.OwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.settings.FactionNameFormatChoice;
 

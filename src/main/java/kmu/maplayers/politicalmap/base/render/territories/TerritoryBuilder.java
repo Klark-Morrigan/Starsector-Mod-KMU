@@ -56,12 +56,13 @@ import java.util.Set;
  * so a full rebuild and an incremental re-shape classify and style a cell identically.
  */
 public final class TerritoryBuilder {
-    // The suffixes that split the spotlit footprint's one grouping key into a key per state, so
-    // the border tracer traces the dominant and the contested members as two regions. Appended to
-    // the footprint's own key, which already carries a sentinel prefix no real bloc id can hold,
-    // so neither derived key can collide with a rival's.
-    private static final String CONTESTED_SUB_REGION_SUFFIX = "#contested";
-    private static final String DOMINANT_SUB_REGION_SUFFIX = "#dominant";
+    // The suffixes that split a bloc's one grouping key into a key per fill state, so the border
+    // tracer traces the solid, hatched, and unfilled members as separate regions rather than the
+    // one body their shared key makes them. Appended to the bloc's own key, which already carries a
+    // sentinel prefix no real bloc id can hold, so no derived key can collide with a rival's.
+    private static final String SOLID_SUB_REGION_SUFFIX = "#solid";
+    private static final String HATCHED_SUB_REGION_SUFFIX = "#hatched";
+    private static final String UNFILLED_SUB_REGION_SUFFIX = "#unfilled";
 
     private static final Logger LOG = Global.getLogger(TerritoryBuilder.class);
 
@@ -103,8 +104,13 @@ public final class TerritoryBuilder {
                             .resolveOwnership(sector, grouping, selectedBlocId));
             var ownerBySystemId = resolution.ownerBySystemId();
             var contestedSystemIds = resolution.contestedSystemIds();
+            // The owned systems this resolution paints no fill for - held by their bloc but drawn
+            // empty inside its one border. Empty for the faction/alliance and filter paths today;
+            // the split reads it so a source that populates it needs no further wiring.
+            var unfilledSystemIds = resolution.unfilledSystemIds();
             LOG.debug("Political map politics resolved; ownedSystems=" + ownerBySystemId.size()
                     + " filtering=" + isFiltering + " contested=" + contestedSystemIds.size()
+                    + " unfilled=" + unfilledSystemIds.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
 
             var decivilisedStart = System.nanoTime();
@@ -133,6 +139,7 @@ public final class TerritoryBuilder {
             var territories = new PoliticalMapTerritories(
                     ownerBySystemId,
                     decivilisedSystemIds,
+                    unfilledSystemIds,
                     new MapStyling(renderStyle, neutralColor, desaturationPalette),
                     new ViewGrouping(view, grouping),
                     new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
@@ -294,6 +301,14 @@ public final class TerritoryBuilder {
         // one key, so it clusters into this single territory outlined by one frontier, then splits
         // its fill per cell below. Every other territory fills solid as one region.
         var isSpotlit = FilteredPolitics.isSpotlitBloc(factionId);
+        // How each of this territory's members fills: solid, hatched (a spotlit bloc's contested
+        // systems), or unfilled (systems held for border and label but drawn empty). Resolved once
+        // so both the fast-path decision and the split read the same partition.
+        var fillSplit = splitMembersByFillState(
+                cellGrouping,
+                memberCellIds,
+                territories.getContestedSystemIds(),
+                territories.getUnfilledSystemIds());
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
         var owner = territories.getOwnerBySystemId()
@@ -339,19 +354,22 @@ public final class TerritoryBuilder {
         if (borderSmoothing.shouldRoundCorners()) {
             borderLoops = BorderSmoothing.roundBorderCorners(borderLoops);
         }
-        // The spotlit footprint splits its fill in two inside its one frontier - solid where the
-        // bloc dominates, hatched where it is merely present - so the two states read apart without
-        // the border fracturing. Every other territory fills its whole region solid, tessellated
-        // from the same smoothed loops the border strokes so fill and border match exactly.
-        var fill = isSpotlit
-                ? computeSpotlitFill(
+        // A territory whose members do not all fill solid splits its fill per state inside its one
+        // frontier - solid where the bloc holds, hatched where it is present but dominated, empty
+        // where it is held-but-unfilled - so the states read apart without the border fracturing. A
+        // spotlit bloc always splits (its fill is per-state even when it dominates everywhere it is
+        // present); every other territory splits only when it has non-solid members. A territory
+        // that fills solid throughout tessellates its whole region from the same smoothed loops the
+        // border strokes, so fill and border match exactly.
+        var fill = isSpotlit || fillSplit.hasNonSolidMembers()
+                ? computeSplitFill(
                         territories,
                         geometryCache,
                         cellGrouping,
                         borderTrace,
                         borderLoops,
                         factionId,
-                        memberCellIds,
+                        fillSplit,
                         fillColor)
                 : new TerritoryFill(
                         fillColor == null
@@ -373,34 +391,32 @@ public final class TerritoryBuilder {
                 (float) style.outerWidth());
     }
 
-    // Splits the spotlit footprint's fill into its two states: the systems the bloc dominates
-    // tessellate into the solid triangle soup, and the contested systems into their own soup the
-    // hatch generator then clips diagonal lines to. Each state fills from its own traced rings
-    // rather than from its members' individual cells, so no per-cell inset truncation can leave an
-    // unfilled wedge where two members meet at a corner against a rival or empty space. Both fills
-    // are clipped to the smoothed national border loops, so neither keeps the mitered corner the
+    // Splits a bloc's footprint fill into its three states: the systems the bloc holds solid
+    // tessellate into the solid triangle soup, the contested systems into their own soup the hatch
+    // generator then clips diagonal lines to, and the unfilled systems into nothing - held inside
+    // the one frontier but painting no fill. Each drawn state fills from its own traced rings rather
+    // than from its members' individual cells, so no per-cell inset truncation can leave an unfilled
+    // wedge where two members meet at a corner against a rival or empty space. Both drawn fills are
+    // clipped to the smoothed national border loops, so neither keeps the mitered corner the
     // border's rounding cut and pokes out past the frontier the border strokes. A "No color" fill
-    // draws neither region.
-    private static TerritoryFill computeSpotlitFill(
+    // draws no region.
+    private static TerritoryFill computeSplitFill(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,
             CellGrouping cellGrouping,
             PoliticalBorderTrace borderTrace,
             List<List<double[]>> borderLoops,
             String blocId,
-            List<String> memberCellIds,
+            FillSplit split,
             Color fillColor) {
         if (fillColor == null) {
             return new TerritoryFill(GlVertexRuns.NO_VERTICES, GlVertexRuns.NO_VERTICES);
         }
-        var split = splitMembersByState(
-                cellGrouping,
-                memberCellIds,
-                territories.getContestedSystemIds());
-        // The two states are traced against each other, so each names the other's members as
+        // The states are traced against each other, so each names the others' members as
         // coincident: their shared boundary lands on the raw cell edge from both sides and the
-        // solid and hatched fills meet exactly along it - the same line the cells' own interior
-        // seams stroke.
+        // fills meet exactly along it - the same line the cells' own interior seams stroke. The
+        // unfilled state paints nothing, but the drawn states still name its members coincident so
+        // the fill stops flush against it rather than opening a channel over held-but-empty ground.
         var subRegionKeys = mapSubRegionKeyBySystemId(
                 territories,
                 blocId,
@@ -410,27 +426,29 @@ public final class TerritoryBuilder {
                 geometryCache,
                 borderLoops,
                 cellGrouping.systemIdByCellId(),
-                split.dominant(),
+                split.solid(),
                 subRegionKeys,
-                split.contested().systemIds());
-        var contestedTriangles = tessellateSubRegion(
+                unionSystemIds(split.hatched().systemIds(), split.unfilled().systemIds()));
+        var hatchedTriangles = tessellateSubRegion(
                 borderTrace,
                 geometryCache,
                 borderLoops,
                 cellGrouping.systemIdByCellId(),
-                split.contested(),
+                split.hatched(),
                 subRegionKeys,
-                split.dominant().systemIds());
+                unionSystemIds(split.solid().systemIds(), split.unfilled().systemIds()));
         var hatch = territories.getGlobalStyle().hatch();
         var hatchSegments = Hatching.computeHatchSegments(
-                contestedTriangles,
+                hatchedTriangles,
                 hatch.angleRadians(),
                 hatch.spacing());
+        // The unfilled state is deliberately never tessellated: it holds ground for the bloc's
+        // border and label but paints no fill of its own.
         return new TerritoryFill(solidTriangles, hatchSegments);
     }
 
-    // Keys the footprint's two states apart, so the border tracer - which fuses cells sharing a
-    // key - traces the dominant and the contested members as separate regions rather than as the
+    // Keys the footprint's three fill states apart, so the border tracer - which fuses cells sharing
+    // a key - traces the solid, hatched, and unfilled members as separate regions rather than as the
     // one body their shared footprint key makes them. Every system outside the footprint keeps its
     // real key, so an edge from a member to a rival or to empty space classifies exactly as it does
     // when the whole footprint is traced, and the sub-regions' outer edge therefore lands where the
@@ -439,48 +457,72 @@ public final class TerritoryBuilder {
     private static Map<String, String> mapSubRegionKeyBySystemId(
             PoliticalMapTerritories territories,
             String blocId,
-            SpotlitSplit split) {
+            FillSplit split) {
         var keys = new HashMap<String, String>(
                 DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()));
-        for (var systemId : split.dominant().systemIds()) {
-            keys.put(systemId, blocId + DOMINANT_SUB_REGION_SUFFIX);
+        for (var systemId : split.solid().systemIds()) {
+            keys.put(systemId, blocId + SOLID_SUB_REGION_SUFFIX);
         }
-        for (var systemId : split.contested().systemIds()) {
-            keys.put(systemId, blocId + CONTESTED_SUB_REGION_SUFFIX);
+        for (var systemId : split.hatched().systemIds()) {
+            keys.put(systemId, blocId + HATCHED_SUB_REGION_SUFFIX);
+        }
+        for (var systemId : split.unfilled().systemIds()) {
+            keys.put(systemId, blocId + UNFILLED_SUB_REGION_SUFFIX);
         }
         return keys;
     }
 
-    // Splits the footprint's members into the two states the fill paints apart, each held as
-    // both its cells and its systems: the cells are what a region is traced from, while the
-    // keys and the coincident set the trace is given are per system, since that is the level
-    // dominance is decided at.
-    private static SpotlitSplit splitMembersByState(
+    // Splits the footprint's members into the three fill states, each held as both its cells and
+    // its systems: the cells are what a region is traced from, while the keys and the coincident
+    // set the trace is given are per system, since that is the level a fill state is decided at.
+    private static FillSplit splitMembersByFillState(
             CellGrouping cellGrouping,
             List<String> memberCellIds,
-            Set<String> contestedSystemIds) {
-        var dominant = new SpotlitMembers(new LinkedHashSet<>(), new LinkedHashSet<>());
-        var contested = new SpotlitMembers(new LinkedHashSet<>(), new LinkedHashSet<>());
+            Set<String> contestedSystemIds,
+            Set<String> unfilledSystemIds) {
+        var solid = new FillMembers(new LinkedHashSet<>(), new LinkedHashSet<>());
+        var hatched = new FillMembers(new LinkedHashSet<>(), new LinkedHashSet<>());
+        var unfilled = new FillMembers(new LinkedHashSet<>(), new LinkedHashSet<>());
         for (var cellId : memberCellIds) {
             var systemId = cellGrouping.resolveDrawnSystemIdOf(cellId);
-            var state = systemId != null && contestedSystemIds.contains(systemId)
-                    ? contested
-                    : dominant;
+            var state = switch (classifyFillState(systemId, contestedSystemIds, unfilledSystemIds)) {
+                case SOLID -> solid;
+                case HATCHED -> hatched;
+                case UNFILLED -> unfilled;
+            };
             state.cellIds().add(cellId);
             if (systemId != null) {
                 state.systemIds().add(systemId);
             }
         }
-        return new SpotlitSplit(dominant, contested);
+        return new FillSplit(solid, hatched, unfilled);
+    }
+
+    // The fill state one member's system draws in - the pure rule the split turns on, free of
+    // geometry so it can be exercised on plain id sets. Unfilled takes precedence over hatched,
+    // since a system drawn empty is empty however dominance falls; a cell with no star of its own
+    // has no per-system fill state, so it fills solid with the bloc's held ground.
+    static FillState classifyFillState(
+            String systemId, Set<String> contestedSystemIds, Set<String> unfilledSystemIds) {
+        if (systemId == null) {
+            return FillState.SOLID;
+        }
+        if (unfilledSystemIds.contains(systemId)) {
+            return FillState.UNFILLED;
+        }
+        if (contestedSystemIds.contains(systemId)) {
+            return FillState.HATCHED;
+        }
+        return FillState.SOLID;
     }
 
     // Tessellates one of the footprint's states into a GL_TRIANGLES soup from the rings tracing
     // its cells as a single region, so a state fills as one continuous area with no per-cell
-    // seam or truncation inside it. The other state's systems are the coincident neighbours, whose
-    // shared edge insets by nothing so the two states abut with no channel between them. The traced
+    // seam or truncation inside it. The other states' systems are the coincident neighbours, whose
+    // shared edge insets by nothing so the states abut with no channel between them. The traced
     // rings are clipped to the smoothed national border loops rather than tessellated as traced:
-    // their shared dom<->con seam is interior to both operands and survives the clip untouched, so
-    // the two states still meet exactly along it, while their outer edge is clamped onto the exact
+    // their shared inter-state seam is interior to both operands and survives the clip untouched, so
+    // the states still meet exactly along it, while their outer edge is clamped onto the exact
     // line the national border strokes instead of keeping the mitered corner the border's rounding
     // cut away. Empty when the state holds no members or the trace yields no drawable ring.
     private static float[] tessellateSubRegion(
@@ -488,7 +530,7 @@ public final class TerritoryBuilder {
             PoliticalMapGeometryCache geometryCache,
             List<List<double[]>> borderLoops,
             Map<String, String> systemIdByCellId,
-            SpotlitMembers subRegion,
+            FillMembers subRegion,
             Map<String, String> subRegionKeyBySystemId,
             Set<String> coincidentSystemIds) {
         if (subRegion.cellIds().isEmpty()) {
@@ -505,24 +547,50 @@ public final class TerritoryBuilder {
         return PolygonTessellator.tessellateIntersectionToTriangles(rings, borderLoops);
     }
 
-    // The spotlit footprint's fill split into its two painted regions: the solid triangle soup for
-    // the dominated cells and the hatch GL_LINES for the contested ones. A non-spotlit territory
-    // carries only its solid region, the hatch empty.
+    // The systems two states hold together, the coincident set a third state's trace opts out of the
+    // border channel so it abuts them flush. Order does not matter - the trace reads it as a
+    // membership test - so a plain union suffices.
+    private static Set<String> unionSystemIds(Set<String> first, Set<String> second) {
+        var union = new LinkedHashSet<String>(first);
+        union.addAll(second);
+        return union;
+    }
+
+    // The three states a bloc's system can draw its fill in: solid where the bloc holds, hatched
+    // where it is present but dominated, unfilled where it is held but painted empty. Package-private
+    // so the pure classifier that decides it can be pinned on plain id sets.
+    enum FillState {
+        SOLID,
+        HATCHED,
+        UNFILLED
+    }
+
+    // A bloc footprint's fill split into its two painted regions: the solid triangle soup for the
+    // held cells and the hatch GL_LINES for the contested ones. The unfilled state carries no
+    // geometry here - it paints nothing - so a territory with no hatched members leaves the hatch
+    // empty and one that fills solid throughout carries only its solid region.
     private record TerritoryFill(
             float[] solidTriangles,
             float[] hatchSegments) {
     }
 
-    // One spotlight state's members at both levels the fill needs them: the cells a region is
-    // traced from, and the systems its keys and coincident set are addressed by. The two differ
-    // wherever the footprint holds a cell with no star of its own - it joins a region's outline
-    // but names no system to key or to mark coincident.
-    private record SpotlitMembers(Set<String> cellIds, Set<String> systemIds) {
+    // One fill state's members at both levels the fill needs them: the cells a region is traced
+    // from, and the systems its keys and coincident set are addressed by. The two differ wherever
+    // the footprint holds a cell with no star of its own - it joins a region's outline but names no
+    // system to key or to mark coincident.
+    private record FillMembers(Set<String> cellIds, Set<String> systemIds) {
     }
 
-    // The footprint's members split into the two states its fill paints apart - solid where the
-    // bloc dominates, hatched where it is merely present - each carried as its cells and systems.
-    private record SpotlitSplit(SpotlitMembers dominant, SpotlitMembers contested) {
+    // The footprint's members split into the three states its fill paints apart - solid where the
+    // bloc holds, hatched where it is present but dominated, unfilled where it is held but drawn
+    // empty - each carried as its cells and systems.
+    private record FillSplit(FillMembers solid, FillMembers hatched, FillMembers unfilled) {
+
+        // Whether any member draws as something other than solid, so a territory that is not
+        // spotlit still takes the per-state split when it holds hatched or unfilled ground.
+        private boolean hasNonSolidMembers() {
+            return !hatched.systemIds().isEmpty() || !unfilled.systemIds().isEmpty();
+        }
     }
 
     // The drawn cells' grouping this pass shapes and traces against: which system each cell draws
