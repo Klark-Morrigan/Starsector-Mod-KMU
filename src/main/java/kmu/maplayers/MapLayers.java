@@ -6,9 +6,11 @@ import kmu.maplayers.politicalmap.alliances.AlliancesView;
 import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
+import kmu.maplayers.politicalmap.claims.ClaimsView;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,19 +40,23 @@ public final class MapLayers {
     }
 
     /**
-     * The political-map view roster in radio-segment order: the faction view always, plus the
-     * alliances view appended only when Nexerelin is present, so the radio grows an Alliances
-     * segment exactly when the live alliance set behind it exists. Kept as its own step because
-     * choosing the roster is a soft-dependency decision, distinct from the wiring that registers it;
-     * the alliances view is only referenced past the mod-enabled gate, so a Nex-free install never
-     * needs it.
+     * The political-map view roster in radio-segment order: the faction view leads, the alliances
+     * view follows only when Nexerelin is present (so the radio grows an Alliances segment exactly
+     * when the live alliance set behind it exists), and the claims view always closes the row. The
+     * claims view is not Nex-gated - the claim mechanic it paints is vanilla - so it sits after the
+     * alliances slot whether or not that slot is filled. Kept as its own step because choosing the
+     * roster is a soft-dependency decision, distinct from the wiring that registers it; the alliances
+     * view is only referenced past the mod-enabled gate, so a Nex-free install never needs it.
      *
      * @return the ordered views to register, one segment each on the view-selector radio
      */
     static List<PoliticalMapView> selectPoliticalMapViews() {
+        var views = new ArrayList<PoliticalMapView>();
+        views.add(FactionsView.INSTANCE);
         if (NexerelinAlliances.isAvailable()) {
-            return List.of(FactionsView.INSTANCE, AlliancesView.INSTANCE);
+            views.add(AlliancesView.INSTANCE);
         }
-        return List.of(FactionsView.INSTANCE);
+        views.add(ClaimsView.INSTANCE);
+        return List.copyOf(views);
     }
 }

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
 import kmu.maplayers.politicalmap.alliances.AlliancesView;
+import kmu.maplayers.politicalmap.claims.ClaimsView;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 
 import org.junit.jupiter.api.Nested;
@@ -18,9 +19,10 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the composition root's soft-dependency gate: the alliances view joins the political-map view
- * roster only when Nexerelin is present, and the faction view leads the roster either way. This is
- * the one place a Nex absence must keep the Alliances segment - and the class behind it - off the
- * radio, so the gate is pinned here rather than left to the in-game test alone.
+ * roster only when Nexerelin is present, while the faction view leads and the claims view closes the
+ * roster either way. This is the one place a Nex absence must keep the Alliances segment - and the
+ * class behind it - off the radio without dropping the vanilla claims segment, so the gate is pinned
+ * here rather than left to the in-game test alone.
  */
 final class MapLayersTest {
     private static final String NEXERELIN_MOD_ID = "nexerelin";
@@ -29,22 +31,26 @@ final class MapLayersTest {
     class SelectPoliticalMapViews {
 
         @Test
-        void selectPoliticalMapViewsAppendsTheAlliancesViewWhenNexIsPresent() {
+        void selectPoliticalMapViewsPutsTheAlliancesViewBetweenFactionsAndClaimsWhenNexIsPresent() {
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 stubNexEnabled(globalMock, true);
 
-                assertThat(MapLayers.selectPoliticalMapViews())
-                        .containsExactly(FactionsView.INSTANCE, AlliancesView.INSTANCE);
+                // The claims view always closes the roster, so with Nex present it follows the
+                // alliances segment rather than displacing it.
+                assertThat(MapLayers.selectPoliticalMapViews()).containsExactly(
+                        FactionsView.INSTANCE, AlliancesView.INSTANCE, ClaimsView.INSTANCE);
             }
         }
 
         @Test
-        void selectPoliticalMapViewsIsFactionOnlyWhenNexIsAbsent() {
+        void selectPoliticalMapViewsIsFactionThenClaimsWhenNexIsAbsent() {
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 stubNexEnabled(globalMock, false);
 
+                // The claims view is vanilla, so it stays on the roster with no Nex; only the
+                // alliances segment drops, and claims falls in directly after factions.
                 assertThat(MapLayers.selectPoliticalMapViews())
-                        .containsExactly(FactionsView.INSTANCE);
+                        .containsExactly(FactionsView.INSTANCE, ClaimsView.INSTANCE);
             }
         }
     }

@@ -157,6 +157,12 @@ public interface PoliticalMapView {
      * player's live dominance and dev-reveal toggles so a caller with no pass of its own need not
      * thread them.
      *
+     * <p>The spotlight is optional: the default offers no selectable blocs, so a view that paints an
+     * ownership the shared market-presence gate cannot rank (the claims view, whose presence is claim
+     * presence, not market presence) inherits an empty picker rather than overriding with three
+     * arguments it would ignore. A view opts into the spotlight by overriding this, the same way it
+     * opts into its own body controls.
+     *
      * @param sector                       the sector whose economy the visibility gate reads; null
      *                                     yields an empty list
      * @param rules                        the dominance-weighting rules for this read, so selectable
@@ -165,12 +171,14 @@ public interface PoliticalMapView {
      *                                     visibility (the "show all factions" dev reveal); false
      *                                     applies the normal known-to-player filter
      * @return the selectable blocs, in the order the economy walk surfaces them; empty when no bloc
-     *         holds a visible weighted market
+     *         holds a visible weighted market, and empty by default for a view with no spotlight
      */
-    List<SelectableBloc> resolveSelectableBlocs(
+    default List<SelectableBloc> resolveSelectableBlocs(
             SectorAPI sector,
             DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets);
+            boolean shouldIncludeUndiscoveredMarkets) {
+        return List.of();
+    }
 
     /**
      * The selectable blocs under this view, gated by the player's current dominance and dev-reveal
