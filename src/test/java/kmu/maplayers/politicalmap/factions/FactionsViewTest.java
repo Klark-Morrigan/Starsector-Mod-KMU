@@ -10,7 +10,7 @@ import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.politics.ownership.DefaultOwnershipProvider;
+import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
@@ -61,10 +61,10 @@ final class FactionsViewTest {
         @Test
         void resolveOwnershipProviderReturnsTheDefaultProvider() {
             // The faction view resolves ownership no differently from the pipeline's default -
-            // each system's dominant owner - so it inherits the shared default provider rather
-            // than supplying one of its own.
+            // each system's dominant owner, extended with the systems it merely claims - so it
+            // inherits the shared claim-augmented default rather than supplying one of its own.
             assertThat(FactionsView.INSTANCE.resolveOwnershipProvider())
-                    .isSameAs(DefaultOwnershipProvider.INSTANCE);
+                    .isSameAs(ClaimAugmentedOwnershipProvider.INSTANCE);
         }
     }
 

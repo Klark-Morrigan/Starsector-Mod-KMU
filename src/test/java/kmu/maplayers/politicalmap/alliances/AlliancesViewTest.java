@@ -15,7 +15,7 @@ import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.politics.ownership.DefaultOwnershipProvider;
+import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
@@ -123,9 +123,10 @@ final class AlliancesViewTest {
         void resolveOwnershipProviderReturnsTheDefaultProvider() {
             // The alliances view rolls factions into alliance blocs through its grouping, but the
             // ownership source underneath is the same dominant-owner resolution the faction view
-            // uses, so it inherits the shared default provider rather than supplying one of its own.
+            // uses - extended with claimed systems - so it inherits the shared claim-augmented
+            // default rather than supplying one of its own.
             assertThat(AlliancesView.INSTANCE.resolveOwnershipProvider())
-                    .isSameAs(DefaultOwnershipProvider.INSTANCE);
+                    .isSameAs(ClaimAugmentedOwnershipProvider.INSTANCE);
         }
     }
 

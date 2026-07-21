@@ -206,11 +206,24 @@ public final class FilteredPolitics {
         return spotlit;
     }
 
-    // The selected bloc under the spotlit key: the bloc's real palette (its own for a faction,
-    // its dominant member's for an alliance) rekeyed onto the one synthetic key, so the cell
-    // paints in the selected bloc's colours while clustering into the single spotlit territory.
-    // Null when the bloc's colour faction does not resolve.
-    private static DominantOwner resolveSpotlitOwner(SectorAPI sector, OwnershipGrouping grouping,
+    /**
+     * The owner that draws a system as part of the selected bloc's single spotlight territory: the
+     * bloc's palette - its own for a faction, its dominant member's for an alliance - carried on the
+     * one synthetic spotlight key, so a cell holding it paints at the bloc's full strength and
+     * clusters into that one bordered frontier rather than a territory of its own.
+     *
+     * <p>Keying any system this way fuses it into the spotlight, whether the bloc reaches it through
+     * a market its presence pass reads or through a tie that pass never sees - so a system the
+     * normal resolve would leave out can still be drawn under the spotlight, keyed exactly as a
+     * present one. The synthetic key stays this class's secret: a caller holds the returned owner
+     * opaquely and never has to name the key.
+     *
+     * @param sector         the sector whose faction palette is read
+     * @param grouping       the grouping naming the bloc's colour faction
+     * @param selectedBlocId the spotlighted bloc to draw the system under
+     * @return the spotlight owner, or null when the bloc's colour faction does not resolve
+     */
+    public static DominantOwner resolveSpotlitOwner(SectorAPI sector, OwnershipGrouping grouping,
             String selectedBlocId) {
         var paletteOwner = SectorPolitics.resolveBlocOwner(sector, grouping, selectedBlocId);
         if (paletteOwner == null) {

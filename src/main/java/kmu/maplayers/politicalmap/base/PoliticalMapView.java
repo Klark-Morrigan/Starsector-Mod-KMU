@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.ownership.DefaultOwnershipProvider;
+import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.ownership.OwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.settings.FactionNameFormatChoice;
@@ -71,16 +71,17 @@ public interface PoliticalMapView {
     OwnershipGrouping resolveGrouping();
 
     /**
-     * The source this view resolves its per-system ownership from: each inhabited system's
-     * dominant owner for the faction and alliance views (the default), a different source for a
-     * view that paints ownership it derives some other way. Supplied per view so the pipeline
-     * reads ownership through one seam without naming a concrete resolver, exactly as it reads
-     * {@link #resolveGrouping}.
+     * The source this view resolves its per-system ownership from: for the faction and alliance
+     * views (the default), each inhabited system's dominant owner, extended with each system a
+     * bloc claims but does not hold, drawn as an unfilled part of that bloc's territory; a view
+     * painting ownership it derives some other way supplies its own source. Supplied per view so
+     * the pipeline reads ownership through one seam without naming a concrete resolver, exactly as
+     * it reads {@link #resolveGrouping}.
      *
      * @return the provider that resolves this view's per-system ownership
      */
     default OwnershipProvider resolveOwnershipProvider() {
-        return DefaultOwnershipProvider.INSTANCE;
+        return ClaimAugmentedOwnershipProvider.INSTANCE;
     }
 
     /**
