@@ -8,6 +8,7 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
+import kmu.maplayers.politicalmap.base.politics.DefaultOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
@@ -51,6 +52,19 @@ final class FactionsViewTest {
             // Every faction is its own bloc, so the pipeline resolves plain faction ownership.
             assertThat(FactionsView.INSTANCE.resolveGrouping())
                     .isSameAs(OwnershipGrouping.identity());
+        }
+    }
+
+    @Nested
+    class ResolveOwnershipProvider {
+
+        @Test
+        void resolveOwnershipProviderReturnsTheDefaultProvider() {
+            // The faction view resolves ownership no differently from the pipeline's default -
+            // each system's dominant owner - so it inherits the shared default provider rather
+            // than supplying one of its own.
+            assertThat(FactionsView.INSTANCE.resolveOwnershipProvider())
+                    .isSameAs(DefaultOwnershipProvider.INSTANCE);
         }
     }
 

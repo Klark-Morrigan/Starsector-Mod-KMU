@@ -13,6 +13,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
+import kmu.maplayers.politicalmap.base.politics.DefaultOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
@@ -112,6 +113,19 @@ final class AlliancesViewTest {
                 assertThat(AlliancesView.INSTANCE.resolveGrouping())
                         .isSameAs(OwnershipGrouping.identity());
             }
+        }
+    }
+
+    @Nested
+    class ResolveOwnershipProvider {
+
+        @Test
+        void resolveOwnershipProviderReturnsTheDefaultProvider() {
+            // The alliances view rolls factions into alliance blocs through its grouping, but the
+            // ownership source underneath is the same dominant-owner resolution the faction view
+            // uses, so it inherits the shared default provider rather than supplying one of its own.
+            assertThat(AlliancesView.INSTANCE.resolveOwnershipProvider())
+                    .isSameAs(DefaultOwnershipProvider.INSTANCE);
         }
     }
 

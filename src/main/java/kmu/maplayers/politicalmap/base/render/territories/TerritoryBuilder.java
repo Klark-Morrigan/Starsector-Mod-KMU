@@ -22,7 +22,6 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
-import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
@@ -87,10 +86,10 @@ public final class TerritoryBuilder {
             // Nexerelin), so every stage keys off one snapshot and the retained copy the
             // incremental re-shape reads matches the ownership this build resolved.
             var grouping = view.resolveGrouping();
-            // A spotlighted bloc switches the pass to the presence-aware resolver: it keeps the
-            // selected bloc visible everywhere it owns a market (solid where it wins, contested
-            // elsewhere) instead of collapsing every system to its lone winner. Read once so the
-            // whole pass keys off one snapshot, exactly like the grouping.
+            // The spotlighted bloc, read once so the whole pass keys off one snapshot - the
+            // ownership provider (which keeps a spotlit bloc drawn wherever it is present), the
+            // recede the rest of the sector takes, and the retained filter snapshot all resolve
+            // from this one read, exactly like the grouping.
             var selectedBlocId = FilterSelection.getSelectedBlocId();
             var isFiltering = selectedBlocId != null;
             // The politics scan walks the whole economy - the priciest content step -
@@ -99,14 +98,11 @@ public final class TerritoryBuilder {
             // which spotlit systems are contested, since the whole spotlit footprint shares one
             // key and that set is the only record of the dominant/contested split.
             var politicsStart = System.nanoTime();
-            var filtered = profiler.measure("politicalMap.resolvePolitics",
-                    () -> isFiltering
-                            ? FilteredPolitics.resolveFilteredOwnership(sector, grouping, selectedBlocId)
-                            : new FilteredPolitics.FilteredOwnership(
-                                    SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping),
-                                    Set.of()));
-            var ownerBySystemId = filtered.ownerBySystemId();
-            var contestedSystemIds = filtered.contestedSystemIds();
+            var resolution = profiler.measure("politicalMap.resolvePolitics",
+                    () -> view.resolveOwnershipProvider()
+                            .resolveOwnership(sector, grouping, selectedBlocId));
+            var ownerBySystemId = resolution.ownerBySystemId();
+            var contestedSystemIds = resolution.contestedSystemIds();
             LOG.debug("Political map politics resolved; ownedSystems=" + ownerBySystemId.size()
                     + " filtering=" + isFiltering + " contested=" + contestedSystemIds.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));

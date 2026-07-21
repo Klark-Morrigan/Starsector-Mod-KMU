@@ -4,7 +4,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.politicalmap.base.politics.DefaultOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.politics.OwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.settings.FactionNameFormatChoice;
 
@@ -67,6 +69,19 @@ public interface PoliticalMapView {
      * @return the grouping that collapses factions into blocs for this pass
      */
     OwnershipGrouping resolveGrouping();
+
+    /**
+     * The source this view resolves its per-system ownership from: each inhabited system's
+     * dominant owner for the faction and alliance views (the default), a different source for a
+     * view that paints ownership it derives some other way. Supplied per view so the pipeline
+     * reads ownership through one seam without naming a concrete resolver, exactly as it reads
+     * {@link #resolveGrouping}.
+     *
+     * @return the provider that resolves this view's per-system ownership
+     */
+    default OwnershipProvider resolveOwnershipProvider() {
+        return DefaultOwnershipProvider.INSTANCE;
+    }
 
     /**
      * Whether a bloc paints in the muted independent cell style rather than the full
