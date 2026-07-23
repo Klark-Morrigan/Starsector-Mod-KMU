@@ -15,6 +15,7 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeL
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin;
+import kmu.maplayers.politicalmap.base.tooltip.ClusterHoverTooltip;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -124,6 +125,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
             installPoliticalMapSidebar(Global.getSector());
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU political map sidebar", exception);
+        }
+
+        try {
+            installPoliticalMapHoverTooltip(Global.getSector());
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to install KMU political map hover tooltip", exception);
         }
 
         try {
@@ -287,6 +294,24 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // consume). Same transient, remove-then-add contract, so exactly one of each renders.
         listenerManager.removeListenerOfClass(MapLayerSidebarInput.class);
         listenerManager.addListener(new MapLayerSidebarInput(), true);
+    }
+
+    // Registers the render listener that draws the hover tooltip - the box naming the star system
+    // under the cursor on the political overlay. Transient, remove-then-add: it draws only, holds no
+    // save-relevant state, and its cached GL text must never enter a save, so it is re-added fresh each
+    // load and never duplicates. Mirrors the sidebar's contract so exactly one renders.
+    static void installPoliticalMapHoverTooltip(SectorAPI sector) {
+        if (sector == null) {
+            return;
+        }
+
+        var listenerManager = sector.getListenerManager();
+        if (listenerManager == null) {
+            return;
+        }
+
+        listenerManager.removeListenerOfClass(ClusterHoverTooltip.class);
+        listenerManager.addListener(new ClusterHoverTooltip(), true);
     }
 
     static void installPoliticalMapTerrain(SectorAPI sector) {

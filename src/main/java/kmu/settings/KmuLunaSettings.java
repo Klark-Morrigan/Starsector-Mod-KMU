@@ -205,6 +205,12 @@ public final class KmuLunaSettings {
             "kmu_politicalMapHoverWashOutlineOpacity";
     private static final String HOVER_WASH_OUTLINE_WIDTH_FIELD =
             "kmu_politicalMapHoverWashOutlineWidth";
+    // Hover tooltip master switch (visuals tab): whether the cursor tooltip - the box
+    // naming the hovered system and its owner - draws at all. Distinct from the
+    // hover-highlight switch above (the halo and cell wash): the tooltip is the info box,
+    // each gated on its own, in its own section beside the highlight controls.
+    private static final String HOVER_TOOLTIP_ENABLED_FIELD =
+            "kmu_politicalMapHoverTooltipEnabled";
 
     // Dominance rules (Political map - domination tab): how the map decides a system's
     // dominant faction. Not styling fields - they change the political verdicts
@@ -549,6 +555,8 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_HOVER_WASH_OPACITY = 0.35;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
+    // The hover tooltip draws by default while the map is up; its switch turns it off.
+    private static final boolean DEFAULT_HOVER_TOOLTIP_ENABLED = true;
     // Label-anchor search knobs.
     private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
     private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
@@ -1080,6 +1088,16 @@ public final class KmuLunaSettings {
      */
     public static boolean getPoliticalMapHoverEnabled() {
         return LunaSettingsReader.getBoolean(MOD_ID, HOVER_ENABLED_FIELD, DEFAULT_HOVER_ENABLED);
+    }
+
+    /**
+     * @return whether the hover tooltip - the box naming the system under the cursor -
+     *         draws at all; on by default, gated separately from the hover highlight. A
+     *         master switch read live each frame so toggling it needs no rebuild
+     */
+    public static boolean getPoliticalMapHoverTooltipEnabled() {
+        return LunaSettingsReader.getBoolean(MOD_ID, HOVER_TOOLTIP_ENABLED_FIELD,
+                DEFAULT_HOVER_TOOLTIP_ENABLED);
     }
 
     /**
