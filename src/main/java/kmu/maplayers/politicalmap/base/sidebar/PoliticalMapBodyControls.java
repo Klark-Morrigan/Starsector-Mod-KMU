@@ -2,9 +2,9 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;
@@ -75,22 +75,21 @@ public final class PoliticalMapBodyControls {
 
     // Toggles the view its clicked segment names - activating it, or turning the map off when it is
     // already the active view. Any index outside the registered views is ignored, so a stray hit
-    // changes nothing. Switching from one view to a different one clears the filter: a stored bloc id
-    // is a faction id under the factions view and an alliance id under the alliances view, so it must
-    // never be read under the other view's grouping. Turning the map off (re-picking the lit view) or
-    // on from off leaves any filter intact - the selection persists across the map being toggled off,
-    // and the load heal, not this, judges a persisted filter against whichever view is up next.
+    // changes nothing. Each view remembers its own spotlight (a faction id under the factions view, an
+    // alliance id under the alliances view), so a switch loads the switched-in view's stored bloc
+    // rather than clearing - the choice survives moving between views and the map being toggled off.
+    // The switched-in view's slot is then healed against its current selectable blocs, so a bloc that
+    // lapsed since it was last shown (a faction removed, an alliance dissolved) does not spotlight an
+    // empty footprint; the heal is a no-op when the map toggled off, since no view is active to
+    // validate against, and the switch itself repaints so the cleared spotlight shows without its own
+    // refresh request.
     private static void selectViewSegment(int segmentIndex) {
         List<PoliticalMapView> views = PoliticalMapViewRegistry.getViews();
         if (segmentIndex < 0 || segmentIndex >= views.size()) {
             return;
         }
-        var previousView = PoliticalMapViewRegistry.getSelectedView();
         PoliticalMapViewRegistry.toggleView(views.get(segmentIndex));
-        var nextView = PoliticalMapViewRegistry.getSelectedView();
-        if (previousView != null && nextView != null && previousView != nextView) {
-            FilterSelection.clearSelection();
-        }
+        FilterSelectionHeal.healStaleSelectionAgainstActiveView();
     }
 
     // Flips the uninhabited-systems outline on or off: if it currently draws (the neutral colour),

@@ -22,17 +22,20 @@ public final class PoliticalMapSaveMigrations {
      * Runs every political-map save self-heal once against the loaded save: carry a pre-view save's
      * faction-overlay boolean into the active-view selection, rewrite the political-map tab's former
      * id to its current one, carry the recede toggles from their former alliance-view keys to the
-     * shared keys and then on into the filter recede set, and clear a spotlight selection the active
-     * view no longer offers. Each is a no-op when its state needs no repair. Order matters here: the
-     * overlay-selection heal runs first so the active view is settled before the filter heal judges
-     * the stored bloc against it, and the recede legacy-key heal runs before the split heal so an
-     * oldest-spelling choice reaches the filter keys in one load. Call once on game load.
+     * shared keys and then on into the filter recede set, carry a pre-per-view save's single shared
+     * spotlight into the active view's slot, and clear a spotlight selection the active view no longer
+     * offers. Each is a no-op when its state needs no repair. Order matters here: the overlay-selection
+     * heal runs first so the active view is settled before the spotlight migration and heal read it,
+     * the spotlight migration runs before the heal so a carried-over choice is validated in the same
+     * load, and the recede legacy-key heal runs before the split heal so an oldest-spelling choice
+     * reaches the filter keys in one load. Call once on game load.
      */
     public static void healLoadedSave() {
         PoliticalMapViewRegistry.migrateLegacyOverlaySelection();
         PoliticalMapLayer.migrateLegacyStoredId();
         RecedePreferences.migrateLegacyKeys();
         RecedePreferences.migrateSharedKeysIntoFilterSet();
+        FilterSelectionHeal.migrateLegacySharedSelectionToActiveView();
         FilterSelectionHeal.healStaleSelectionAgainstActiveView();
     }
 }

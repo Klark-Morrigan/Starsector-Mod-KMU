@@ -47,6 +47,8 @@ public final class FilterPickerControl {
      * when there are no selectable blocs, so a view with nothing to spotlight contributes no picker
      * rather than an empty list widget.
      *
+     * @param viewId         the active view's id, the slot a pick or clear writes into so the choice is
+     *                       remembered against this view alone
      * @param blocs          the selectable blocs under the active view; order here is immaterial since
      *                       the sort mode reorders them for display
      * @param selectedBlocId the currently spotlighted bloc's id, or null when no filter is active
@@ -59,6 +61,7 @@ public final class FilterPickerControl {
      * @return the picker body controls, top to bottom; empty when {@code blocs} is empty
      */
     public static List<ControlSpec> buildControls(
+            String viewId,
             List<SelectableBloc> blocs,
             String selectedBlocId,
             BlocSortMode sortMode,
@@ -100,7 +103,7 @@ public final class FilterPickerControl {
                         resolveIconPaths(rankedBlocs),
                         resolveTrailingValues(rankedBlocs, sortMode),
                         selectedIndex,
-                        cellIndex -> pickBloc(rankedBlocs, selectedIndex, cellIndex),
+                        cellIndex -> pickBloc(viewId, rankedBlocs, selectedIndex, cellIndex),
                         columns.columnCount())
                         .asScrolling());
         return List.copyOf(controls);
@@ -110,14 +113,15 @@ public final class FilterPickerControl {
     // The list is deselectable, so a press on the lit option reaches here with its own index; re-
     // picking it means "stop spotlighting". Any index outside the bloc list is ignored, so a stray
     // hit changes nothing.
-    private static void pickBloc(List<SelectableBloc> blocs, int selectedIndex, int cellIndex) {
+    private static void pickBloc(
+            String viewId, List<SelectableBloc> blocs, int selectedIndex, int cellIndex) {
         if (cellIndex < 0 || cellIndex >= blocs.size()) {
             return;
         }
         if (cellIndex == selectedIndex) {
-            FilterSelection.clearSelection();
+            FilterSelection.clearSelection(viewId);
         } else {
-            FilterSelection.selectBloc(blocs.get(cellIndex).blocId());
+            FilterSelection.selectBloc(viewId, blocs.get(cellIndex).blocId());
         }
     }
 

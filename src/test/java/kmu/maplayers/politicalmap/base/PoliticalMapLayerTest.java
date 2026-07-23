@@ -78,7 +78,7 @@ final class PoliticalMapLayerTest {
                 globalMock.when(Global::getSector).thenReturn(null);
                 stubSharedControlsAndSelector(controlsMock);
                 pickerMock.when(() -> FilterPickerControl.buildControls(any(), any(), any(), any(),
-                        any())).thenReturn(List.of(PICKER_MARKER));
+                        any(), any())).thenReturn(List.of(PICKER_MARKER));
 
                 var body = PoliticalMapLayer.INSTANCE.getBodyControls();
 

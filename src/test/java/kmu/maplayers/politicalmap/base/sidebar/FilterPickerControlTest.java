@@ -32,6 +32,9 @@ import static org.mockito.Mockito.mockStatic;
  * the picker's shape and wiring alone, not how a string resolves or how the selection persists.
  */
 final class FilterPickerControlTest {
+    // The active view whose slot a pick or clear writes into; the picker is built for this view.
+    private static final String VIEW_ID = "factions";
+
     // The two blocs the picker lists in every test: a crested faction that dominates more and a
     // crestless one (an alliance, or a faction with no authored crest) that dominates less, so the
     // null-crest path is exercised and the default domination sort keeps them in this order.
@@ -212,7 +215,7 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
 
                 var picker = pickerOf(FilterPickerControl.buildControls(
-                        BLOCS, null, BlocSortMode.DOMINATION, SortDirection.ASCENDING,
+                        VIEW_ID, BLOCS, null, BlocSortMode.DOMINATION, SortDirection.ASCENDING,
                         BlocListColumns.ONE));
 
                 assertThat(picker.labels()).containsExactly("Free Traders", "Hegemony");
@@ -303,10 +306,10 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var oneColumn = pickerOf(FilterPickerControl.buildControls(BLOCS, null,
+                var oneColumn = pickerOf(FilterPickerControl.buildControls(VIEW_ID, BLOCS, null,
                         BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection(),
                         BlocListColumns.ONE));
-                var twoColumn = pickerOf(FilterPickerControl.buildControls(BLOCS, null,
+                var twoColumn = pickerOf(FilterPickerControl.buildControls(VIEW_ID, BLOCS, null,
                         BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection(),
                         BlocListColumns.TWO));
 
@@ -329,7 +332,7 @@ final class FilterPickerControlTest {
 
                 picker.action().activateCell(0);
 
-                selectionMock.verify(() -> FilterSelection.selectBloc("hegemony"));
+                selectionMock.verify(() -> FilterSelection.selectBloc(VIEW_ID, "hegemony"));
             }
         }
 
@@ -346,7 +349,7 @@ final class FilterPickerControlTest {
 
                 picker.action().activateCell(0);
 
-                selectionMock.verify(FilterSelection::clearSelection);
+                selectionMock.verify(() -> FilterSelection.clearSelection(VIEW_ID));
             }
         }
 
@@ -361,7 +364,7 @@ final class FilterPickerControlTest {
 
                 picker.action().activateCell(1);
 
-                selectionMock.verify(() -> FilterSelection.selectBloc("free_traders"));
+                selectionMock.verify(() -> FilterSelection.selectBloc(VIEW_ID, "free_traders"));
             }
         }
     }
@@ -372,8 +375,8 @@ final class FilterPickerControlTest {
     // the direction calls the full builder directly.
     private static List<ControlSpec> build(List<SelectableBloc> blocs, String selectedBlocId,
             BlocSortMode mode) {
-        return FilterPickerControl.buildControls(blocs, selectedBlocId, mode, mode.defaultDirection(),
-                BlocListColumns.ONE);
+        return FilterPickerControl.buildControls(VIEW_ID, blocs, selectedBlocId, mode,
+                mode.defaultDirection(), BlocListColumns.ONE);
     }
 
     // The picker list is always the block's last row, so a test reads it from the tail. Read as the

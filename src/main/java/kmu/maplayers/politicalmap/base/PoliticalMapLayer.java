@@ -97,8 +97,12 @@ public final class PoliticalMapLayer implements MapLayer {
             // picked one, so the list always lays out under a live count.
             var columns = BlocListColumns.fromKeyOrDefault(ColumnSelection.getColumnCountKey());
             controls.addAll(FilterPickerControl.buildControls(
+                    selectedView.getId(),
                     SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
-                    FilterSelection.getSelectedBlocId(), sortMode, sortDirection, columns));
+                    FilterSelection.getSelectedBlocId(selectedView.getId()),
+                    sortMode,
+                    sortDirection,
+                    columns));
             controls.addAll(selectedView.getViewBodyControls());
         }
         return List.copyOf(controls);

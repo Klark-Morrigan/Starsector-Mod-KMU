@@ -17,16 +17,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the filter selection state: the read reports the stored bloc or none, a pick persists the
- * frozen key and bumps the filter revision so the overlay repaints, a clear drops the key and bumps
- * too, every mutation no-ops cleanly before the sector exists, and the self-heal clears only a stored
- * bloc that is no longer selectable. The frozen key is pinned as a literal so a rename that would
- * silently reset every save's filter choice fails here rather than shipping.
+ * Pins the per-view filter selection state: the read reports one view's stored bloc or none, a pick
+ * persists that view's frozen key and bumps the filter revision so the overlay repaints, a clear drops
+ * the key and bumps too, every mutation no-ops cleanly before the sector exists, the self-heal clears
+ * only a stored bloc that is no longer selectable, and the legacy migration carries a pre-per-view
+ * save's single shared choice into a view slot. The frozen key prefix is pinned as a literal so a
+ * rename that would silently reset every save's filter choice fails here rather than shipping.
  */
 final class FilterSelectionTest {
-    // The save-serialised key, pinned as a literal: renaming it drops every existing save's filter
-    // choice back to none, so a change must break this test first.
-    private static final String SELECTED_BLOC_KEY = "$kmu_political_filter_bloc";
+    // The view whose slot these tests exercise; its id composes into the per-view key below.
+    private static final String VIEW_ID = "factions";
+
+    // The save-serialised per-view key, pinned as a literal: renaming the prefix drops every existing
+    // save's filter choice back to none, so a change must break this test first.
+    private static final String SELECTED_BLOC_KEY = "$kmu_political_filter_bloc_factions";
+
+    // The pre-per-view single shared key the migration reads and retires; pinned so its retirement
+    // path keeps finding it on an un-migrated save.
+    private static final String LEGACY_KEY = "$kmu_political_filter_bloc";
 
     private static final String BLOC_ID = "hegemony";
 
@@ -42,19 +50,19 @@ final class FilterSelectionTest {
                 when(memoryMock.contains(SELECTED_BLOC_KEY)).thenReturn(true);
                 when(memoryMock.getString(SELECTED_BLOC_KEY)).thenReturn(BLOC_ID);
 
-                assertThat(FilterSelection.getSelectedBlocId()).isEqualTo(BLOC_ID);
+                assertThat(FilterSelection.getSelectedBlocId(VIEW_ID)).isEqualTo(BLOC_ID);
             }
         }
 
         @Test
         void getSelectedBlocIdIsNullWhenNoBlocIsStored() {
-            // A save that never picked a bloc holds no key, which is the un-filtered state.
+            // A view that never picked a bloc holds no key, which is the un-filtered state.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
 
-                assertThat(FilterSelection.getSelectedBlocId()).isNull();
+                assertThat(FilterSelection.getSelectedBlocId(VIEW_ID)).isNull();
             }
         }
 
@@ -65,7 +73,7 @@ final class FilterSelectionTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
 
-                assertThat(FilterSelection.getSelectedBlocId()).isNull();
+                assertThat(FilterSelection.getSelectedBlocId(VIEW_ID)).isNull();
             }
         }
     }
@@ -82,7 +90,7 @@ final class FilterSelectionTest {
                 when(memoryMock.contains(SELECTED_BLOC_KEY)).thenReturn(true);
                 when(memoryMock.getString(SELECTED_BLOC_KEY)).thenReturn(BLOC_ID);
 
-                assertThat(FilterSelection.hasSelection()).isTrue();
+                assertThat(FilterSelection.hasSelection(VIEW_ID)).isTrue();
             }
         }
 
@@ -93,7 +101,7 @@ final class FilterSelectionTest {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
 
-                assertThat(FilterSelection.hasSelection()).isFalse();
+                assertThat(FilterSelection.hasSelection(VIEW_ID)).isFalse();
             }
         }
     }
@@ -109,7 +117,7 @@ final class FilterSelectionTest {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 var revisionBefore = PoliticalMapRefresh.getFilterRevision();
 
-                FilterSelection.selectBloc(BLOC_ID);
+                FilterSelection.selectBloc(VIEW_ID, BLOC_ID);
 
                 verify(memoryMock).set(SELECTED_BLOC_KEY, BLOC_ID);
                 // The pick must bump the filter revision, since this sidebar-only choice never moves
@@ -127,7 +135,7 @@ final class FilterSelectionTest {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
                 var revisionBefore = PoliticalMapRefresh.getFilterRevision();
 
-                FilterSelection.selectBloc(BLOC_ID);
+                FilterSelection.selectBloc(VIEW_ID, BLOC_ID);
 
                 assertThat(PoliticalMapRefresh.getFilterRevision()).isEqualTo(revisionBefore);
             }
@@ -146,7 +154,7 @@ final class FilterSelectionTest {
                 when(memoryMock.contains(SELECTED_BLOC_KEY)).thenReturn(true);
                 var revisionBefore = PoliticalMapRefresh.getFilterRevision();
 
-                FilterSelection.clearSelection();
+                FilterSelection.clearSelection(VIEW_ID);
 
                 verify(memoryMock).unset(SELECTED_BLOC_KEY);
                 assertThat(PoliticalMapRefresh.getFilterRevision()).isNotEqualTo(revisionBefore);
@@ -156,14 +164,14 @@ final class FilterSelectionTest {
         @Test
         void clearSelectionNoOpsWhenNoBlocIsStored() {
             // Nothing to unset and nothing to repaint when the filter was already off, so a clear on
-            // an un-filtered map neither touches memory nor bumps the revision.
+            // an un-filtered view neither touches memory nor bumps the revision.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 var revisionBefore = PoliticalMapRefresh.getFilterRevision();
 
-                FilterSelection.clearSelection();
+                FilterSelection.clearSelection(VIEW_ID);
 
                 verify(memoryMock, never()).unset(anyString());
                 assertThat(PoliticalMapRefresh.getFilterRevision()).isEqualTo(revisionBefore);
@@ -177,7 +185,7 @@ final class FilterSelectionTest {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
                 var revisionBefore = PoliticalMapRefresh.getFilterRevision();
 
-                FilterSelection.clearSelection();
+                FilterSelection.clearSelection(VIEW_ID);
 
                 assertThat(PoliticalMapRefresh.getFilterRevision()).isEqualTo(revisionBefore);
             }
@@ -189,7 +197,7 @@ final class FilterSelectionTest {
 
         @Test
         void healStaleSelectionClearsABlocThatIsNoLongerSelectable() {
-            // A save whose spotlighted faction was removed (or alliance dissolved) between sessions
+            // A view whose spotlighted faction was removed (or alliance dissolved) between sessions
             // holds a dangling id; the heal drops it so the filter falls back to none.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
@@ -198,7 +206,7 @@ final class FilterSelectionTest {
                 when(memoryMock.contains(SELECTED_BLOC_KEY)).thenReturn(true);
                 when(memoryMock.getString(SELECTED_BLOC_KEY)).thenReturn(BLOC_ID);
 
-                FilterSelection.healStaleSelection(blocId -> false);
+                FilterSelection.healStaleSelection(VIEW_ID, blocId -> false);
 
                 verify(memoryMock).unset(SELECTED_BLOC_KEY);
             }
@@ -206,8 +214,8 @@ final class FilterSelectionTest {
 
         @Test
         void healStaleSelectionKeepsABlocThatIsStillSelectable() {
-            // A still-valid pick survives load untouched, so a reloaded save keeps spotlighting the
-            // bloc the player last chose.
+            // A still-valid pick survives untouched, so the view keeps spotlighting the bloc the
+            // player last chose.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
@@ -215,7 +223,7 @@ final class FilterSelectionTest {
                 when(memoryMock.contains(SELECTED_BLOC_KEY)).thenReturn(true);
                 when(memoryMock.getString(SELECTED_BLOC_KEY)).thenReturn(BLOC_ID);
 
-                FilterSelection.healStaleSelection(blocId -> true);
+                FilterSelection.healStaleSelection(VIEW_ID, blocId -> true);
 
                 verify(memoryMock, never()).unset(anyString());
             }
@@ -230,7 +238,7 @@ final class FilterSelectionTest {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
 
-                FilterSelection.healStaleSelection(blocId -> {
+                FilterSelection.healStaleSelection(VIEW_ID, blocId -> {
                     throw new AssertionError("selectable check must not run without a stored bloc");
                 });
 
@@ -244,11 +252,49 @@ final class FilterSelectionTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
 
-                FilterSelection.healStaleSelection(blocId -> {
+                FilterSelection.healStaleSelection(VIEW_ID, blocId -> {
                     throw new AssertionError("selectable check must not run without a sector");
                 });
 
                 memoryAccessMock.verify(SectorMemoryAccess::readSectorMemory);
+            }
+        }
+    }
+
+    @Nested
+    class MigrateLegacySharedSelection {
+
+        @Test
+        void migrateMovesTheLegacyChoiceIntoTheViewSlotAndRetiresTheOldKey() {
+            // A pre-per-view save holds its single shared choice under the old key; the migration copies
+            // it into the given view's slot and unsets the old key, so the choice survives the split.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(LEGACY_KEY)).thenReturn(true);
+                when(memoryMock.getString(LEGACY_KEY)).thenReturn(BLOC_ID);
+
+                FilterSelection.migrateLegacySharedSelection(VIEW_ID);
+
+                verify(memoryMock).set(SELECTED_BLOC_KEY, BLOC_ID);
+                verify(memoryMock).unset(LEGACY_KEY);
+            }
+        }
+
+        @Test
+        void migrateNoOpsWhenNoLegacyChoiceIsStored() {
+            // An already-migrated save (or one that never filtered) holds no old key, so the migration
+            // writes no slot and unsets nothing.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+
+                FilterSelection.migrateLegacySharedSelection(VIEW_ID);
+
+                verify(memoryMock, never()).set(anyString(), anyString());
+                verify(memoryMock, never()).unset(anyString());
             }
         }
     }

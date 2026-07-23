@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.sidebar;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
+import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
@@ -15,17 +16,18 @@ import org.mockito.MockedStatic;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the view selector's filter-clearing rule: switching from one view to a different one clears the
- * spotlight filter (a stored bloc id means one thing under factions and another under alliances, so it
- * must never carry across), while turning the map off or on leaves any persisted filter intact. The
- * registry, the strings, and the filter selection are stubbed so this drives the selector's click
- * action and pins only what it does to the filter, not how the view or the filter persist.
+ * Pins the view selector's switch rule: each view remembers its own spotlight, so switching toggles the
+ * clicked view and heals the switched-in view's slot against its current blocs - never clearing another
+ * view's stored selection. The registry, the strings, the filter selection, and the selection heal are
+ * stubbed so this drives the selector's click action and pins only what it does, not how the view or the
+ * filter persist.
  */
 final class PoliticalMapBodyControlsTest {
     private final PoliticalMapView factionsViewMock = mock(PoliticalMapView.class);
@@ -35,59 +37,57 @@ final class PoliticalMapBodyControlsTest {
     class SelectViewSegment {
 
         @Test
-        void switchingToADifferentViewClearsTheFilter() {
+        void switchingToAViewTogglesItThenHealsTheSwitchedInViewsSlot() {
+            // The click toggles the clicked view, then heals that view's own slot so a bloc it stored
+            // but that has since lapsed does not spotlight an empty footprint. It does not clear - each
+            // view keeps its own selection across the switch.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<FilterSelection> selectionMock =
-                            mockStatic(FilterSelection.class)) {
+                    MockedStatic<FilterSelectionHeal> healMock =
+                            mockStatic(FilterSelectionHeal.class)) {
                 stubSelectorViews(registryMock, stringsMock);
-                // Factions was selected before the click, alliances after it - a genuine view switch.
-                when(PoliticalMapViewRegistry.getSelectedView())
-                        .thenReturn(factionsViewMock, alliancesViewMock);
 
                 clickViewSegment(1);
 
                 registryMock.verify(() -> PoliticalMapViewRegistry.toggleView(alliancesViewMock));
-                selectionMock.verify(FilterSelection::clearSelection);
+                healMock.verify(FilterSelectionHeal::healStaleSelectionAgainstActiveView);
             }
         }
 
         @Test
-        void turningTheMapOffLeavesTheFilterIntact() {
-            // Re-picking the lit view turns the map off (no view selected after), so the filter
-            // persists - it may outlive the map being toggled off, judged later against the next view.
+        void switchingViewsNeverClearsAStoredSelection() {
+            // The regression this fix targets: a switch must not wipe the filter. selectViewSegment
+            // touches no view's stored selection at all - the switched-in view loads its own.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<FilterSelectionHeal> healMock =
+                            mockStatic(FilterSelectionHeal.class);
                     MockedStatic<FilterSelection> selectionMock =
                             mockStatic(FilterSelection.class)) {
                 stubSelectorViews(registryMock, stringsMock);
-                when(PoliticalMapViewRegistry.getSelectedView())
-                        .thenReturn(factionsViewMock, (PoliticalMapView) null);
 
-                clickViewSegment(0);
+                clickViewSegment(1);
 
-                selectionMock.verify(FilterSelection::clearSelection, never());
+                selectionMock.verifyNoInteractions();
             }
         }
 
         @Test
-        void turningTheMapOnFromOffLeavesTheFilterIntact() {
-            // With the map off nothing was selected before the click; selecting a view leaves any
-            // persisted filter for the load heal to judge rather than hard-clearing it here.
+        void ignoresASegmentOutsideTheRegisteredViews() {
+            // A stray hit past the last view neither toggles a view nor heals, so it changes nothing.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<FilterSelection> selectionMock =
-                            mockStatic(FilterSelection.class)) {
+                    MockedStatic<FilterSelectionHeal> healMock =
+                            mockStatic(FilterSelectionHeal.class)) {
                 stubSelectorViews(registryMock, stringsMock);
-                when(PoliticalMapViewRegistry.getSelectedView())
-                        .thenReturn(null, factionsViewMock);
 
-                clickViewSegment(0);
+                clickViewSegment(5);
 
-                selectionMock.verify(FilterSelection::clearSelection, never());
+                registryMock.verify(() -> PoliticalMapViewRegistry.toggleView(any()), never());
+                healMock.verifyNoInteractions();
             }
         }
     }

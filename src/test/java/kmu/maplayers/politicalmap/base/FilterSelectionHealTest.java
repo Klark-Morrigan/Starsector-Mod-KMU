@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -47,7 +48,8 @@ final class FilterSelectionHealTest {
 
                 // No active view means no grouping to judge selectability under, so a persisted filter
                 // is left untouched rather than cleared against nothing.
-                selectionMock.verify(() -> FilterSelection.healStaleSelection(any()), never());
+                selectionMock.verify(
+                        () -> FilterSelection.healStaleSelection(any(), any()), never());
             }
         }
 
@@ -60,6 +62,7 @@ final class FilterSelectionHealTest {
                             mockStatic(FilterSelection.class)) {
                 globalMock.when(Global::getSector).thenReturn(sectorMock);
                 registryMock.when(PoliticalMapViewRegistry::getSelectedView).thenReturn(viewMock);
+                when(viewMock.getId()).thenReturn("factions");
                 when(viewMock.resolveSelectableBlocs(sectorMock))
                         .thenReturn(List.of(new SelectableBloc("hegemony", "Hegemony", "crest_heg")));
 
@@ -79,7 +82,62 @@ final class FilterSelectionHealTest {
     private static Predicate<String> capturePredicate(MockedStatic<FilterSelection> selectionMock) {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Predicate<String>> captor = ArgumentCaptor.forClass(Predicate.class);
-        selectionMock.verify(() -> FilterSelection.healStaleSelection(captor.capture()));
+        selectionMock.verify(() -> FilterSelection.healStaleSelection(anyString(), captor.capture()));
         return captor.getValue();
+    }
+
+    @Nested
+    class MigrateLegacySharedSelectionToActiveView {
+
+        @Test
+        void migrateCarriesTheLegacyChoiceIntoTheActiveViewsSlot() {
+            try (MockedStatic<PoliticalMapViewRegistry> registryMock =
+                            mockStatic(PoliticalMapViewRegistry.class);
+                    MockedStatic<FilterSelection> selectionMock =
+                            mockStatic(FilterSelection.class)) {
+                registryMock.when(PoliticalMapViewRegistry::getSelectedView).thenReturn(viewMock);
+                when(viewMock.getId()).thenReturn("factions");
+
+                FilterSelectionHeal.migrateLegacySharedSelectionToActiveView();
+
+                selectionMock.verify(() -> FilterSelection.migrateLegacySharedSelection("factions"));
+            }
+        }
+
+        @Test
+        void migrateFallsBackToTheDefaultViewWhenTheMapWasSavedOff() {
+            // A save made with the map off has no active view to attribute the legacy choice to, so the
+            // migration carries it into the default view's slot rather than dropping it.
+            try (MockedStatic<PoliticalMapViewRegistry> registryMock =
+                            mockStatic(PoliticalMapViewRegistry.class);
+                    MockedStatic<FilterSelection> selectionMock =
+                            mockStatic(FilterSelection.class)) {
+                registryMock.when(PoliticalMapViewRegistry::getSelectedView).thenReturn(null);
+                registryMock.when(PoliticalMapViewRegistry::getDefaultView).thenReturn(viewMock);
+                when(viewMock.getId()).thenReturn("factions");
+
+                FilterSelectionHeal.migrateLegacySharedSelectionToActiveView();
+
+                selectionMock.verify(() -> FilterSelection.migrateLegacySharedSelection("factions"));
+            }
+        }
+
+        @Test
+        void migrateDoesNothingBeforeTheViewsAreRegistered() {
+            // No selected view and no default means the composition root has not registered views yet,
+            // so there is no slot to carry the legacy choice into.
+            try (MockedStatic<PoliticalMapViewRegistry> registryMock =
+                            mockStatic(PoliticalMapViewRegistry.class);
+                    MockedStatic<FilterSelection> selectionMock =
+                            mockStatic(FilterSelection.class)) {
+                registryMock.when(PoliticalMapViewRegistry::getSelectedView).thenReturn(null);
+                registryMock.when(PoliticalMapViewRegistry::getDefaultView).thenReturn(null);
+
+                FilterSelectionHeal.migrateLegacySharedSelectionToActiveView();
+
+                selectionMock.verify(
+                        () -> FilterSelection.migrateLegacySharedSelection(anyString()), never());
+            }
+        }
     }
 }

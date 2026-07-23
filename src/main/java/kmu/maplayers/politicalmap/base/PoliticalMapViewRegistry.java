@@ -104,6 +104,14 @@ public final class PoliticalMapViewRegistry {
     }
 
     /**
+     * @return the view an untouched save (or a stale stored id) resolves to; null before the
+     *         composition root has registered the views at startup
+     */
+    public static PoliticalMapView getDefaultView() {
+        return defaultView;
+    }
+
+    /**
      * @return the stored view pick regardless of which tab is open - the view the radio lights when
      *         the political-map tab is up; the default when the save holds no pick yet or an id from
      *         an older build no longer registered; null when the off sentinel is stored

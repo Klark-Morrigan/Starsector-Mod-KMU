@@ -91,7 +91,7 @@ public final class TerritoryBuilder {
             // ownership provider (which keeps a spotlit bloc drawn wherever it is present), the
             // recede the rest of the sector takes, and the retained filter snapshot all resolve
             // from this one read, exactly like the grouping.
-            var selectedBlocId = FilterSelection.getSelectedBlocId();
+            var selectedBlocId = FilterSelection.getSelectedBlocId(view.getId());
             var isFiltering = selectedBlocId != null;
             // The politics scan walks the whole economy - the priciest content step -
             // so it is profiled and timed on its own, and the owner count logged

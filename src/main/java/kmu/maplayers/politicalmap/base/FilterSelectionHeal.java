@@ -27,12 +27,12 @@ public final class FilterSelectionHeal {
     }
 
     /**
-     * Clears the stored spotlight selection when the active view no longer offers it, a no-op when no
-     * view is selected or the stored bloc is still selectable. Runs on game load, before the overlay
-     * paints, so it clears without requesting a refresh - there is nothing yet to invalidate. Reads
-     * the live sector and the player's current dominance and dev-reveal settings, the same gate the
-     * picker lists blocs under, so a bloc is healed away exactly when it would no longer appear in the
-     * picker.
+     * Clears the active view's stored spotlight selection when that view no longer offers it, a no-op
+     * when no view is selected or the stored bloc is still selectable. Runs on game load and on a view
+     * switch, before the overlay repaints, so it clears without requesting a refresh - the load or the
+     * switch already repaints, so there is nothing extra to invalidate. Reads the live sector and the
+     * player's current dominance and dev-reveal settings, the same gate the picker lists blocs under,
+     * so a bloc is healed away exactly when it would no longer appear in the picker.
      */
     public static void healStaleSelectionAgainstActiveView() {
         var view = PoliticalMapViewRegistry.getSelectedView();
@@ -43,6 +43,25 @@ public final class FilterSelectionHeal {
         for (var bloc : view.resolveSelectableBlocs(Global.getSector())) {
             selectableBlocIds.add(bloc.blocId());
         }
-        FilterSelection.healStaleSelection(selectableBlocIds::contains);
+        FilterSelection.healStaleSelection(view.getId(), selectableBlocIds::contains);
+    }
+
+    /**
+     * Carries a pre-per-view save's single shared spotlight into the slot of the view it was picked
+     * under, then retires the old key. The view is the one active in the save, or - when the save was
+     * made with the map off, so no view is attributable - the default view, so the choice is not lost.
+     * Supplies that view to {@link FilterSelection#migrateLegacySharedSelection}, which stays ignorant
+     * of the registry. A no-op once migrated, on a save that never held a selection, or before the
+     * views are registered. Runs on game load, after the active view is settled and before the heal.
+     */
+    public static void migrateLegacySharedSelectionToActiveView() {
+        var view = PoliticalMapViewRegistry.getSelectedView();
+        if (view == null) {
+            view = PoliticalMapViewRegistry.getDefaultView();
+        }
+        if (view == null) {
+            return;
+        }
+        FilterSelection.migrateLegacySharedSelection(view.getId());
     }
 }
