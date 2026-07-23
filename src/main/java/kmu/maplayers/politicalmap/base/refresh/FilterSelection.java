@@ -56,15 +56,6 @@ public final class FilterSelection {
     }
 
     /**
-     * @param viewId the view whose slot is tested (the active view's id)
-     * @return whether the view has a bloc spotlighted - the gate the render pipeline reads to take
-     *         the filter branch rather than the normal un-filtered pass
-     */
-    public static boolean hasSelection(String viewId) {
-        return resolveSlot(viewId).isSet();
-    }
-
-    /**
      * Spotlights a bloc in one view, persisting the choice in this save and repainting the overlay so
      * the pick shows at once. A no-op before the sector exists, since there is no save to write into
      * and nothing painting to repaint.

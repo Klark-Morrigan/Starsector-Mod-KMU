@@ -79,34 +79,6 @@ final class FilterSelectionTest {
     }
 
     @Nested
-    class HasSelection {
-
-        @Test
-        void hasSelectionIsTrueWhenABlocIsStored() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(SELECTED_BLOC_KEY)).thenReturn(true);
-                when(memoryMock.getString(SELECTED_BLOC_KEY)).thenReturn(BLOC_ID);
-
-                assertThat(FilterSelection.hasSelection(VIEW_ID)).isTrue();
-            }
-        }
-
-        @Test
-        void hasSelectionIsFalseWhenNoBlocIsStored() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-
-                assertThat(FilterSelection.hasSelection(VIEW_ID)).isFalse();
-            }
-        }
-    }
-
-    @Nested
     class SelectBloc {
 
         @Test

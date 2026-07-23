@@ -9,7 +9,7 @@ import static org.mockito.Mockito.mockStatic;
 /**
  * Pins the aggregator's one job: a load runs every political-map save self-heal, so a heal added to
  * the set is covered by construction and the composition root never has to name each one. Each heal's
- * own behaviour is its owner's test; here only the sequencing is pinned, with all five heals stubbed.
+ * own behaviour is its owner's test; here only that each runs is pinned, with all six heals stubbed.
  */
 final class PoliticalMapSaveMigrationsTest {
 
@@ -31,6 +31,8 @@ final class PoliticalMapSaveMigrationsTest {
                 layerMock.verify(PoliticalMapLayer::migrateLegacyStoredId);
                 recedeMock.verify(RecedePreferences::migrateLegacyKeys);
                 recedeMock.verify(RecedePreferences::migrateSharedKeysIntoFilterSet);
+                filterHealMock.verify(
+                        FilterSelectionHeal::migrateLegacySharedSelectionToActiveView);
                 filterHealMock.verify(FilterSelectionHeal::healStaleSelectionAgainstActiveView);
             }
         }

@@ -96,10 +96,11 @@ public final class PoliticalMapLayer implements MapLayer {
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
             var columns = BlocListColumns.fromKeyOrDefault(ColumnSelection.getColumnCountKey());
+            var viewId = selectedView.getId();
             controls.addAll(FilterPickerControl.buildControls(
-                    selectedView.getId(),
+                    viewId,
                     SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
-                    FilterSelection.getSelectedBlocId(selectedView.getId()),
+                    FilterSelection.getSelectedBlocId(viewId),
                     sortMode,
                     sortDirection,
                     columns));
