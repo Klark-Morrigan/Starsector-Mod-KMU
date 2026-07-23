@@ -20,11 +20,9 @@ This is a small Starsector utility and quality of life mod.
 
 #### Political map
 
-An on-map overlay that colours the sector by who controls each system, with a view-selector
-switching between factions, alliances (when Nexerelin is present), and claims. See
-[the political map guide](src/main/java/kmu/maplayers/politicalmap/README.md) for what each view
-shows and how the overlay is drawn - it fans out to the ownership, territory, style, and label
-sub-package docs.
+An on-map overlay that colours the sector by who controls each system. See
+[the political map guide](src/main/java/kmu/maplayers/politicalmap/README.md) for the views it
+offers and how the overlay is drawn.
 
 ## Dependencies
 
