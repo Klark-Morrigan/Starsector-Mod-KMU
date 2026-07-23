@@ -63,7 +63,8 @@ public final class LiveSidebarPlacement {
         var layers = MapLayerRegistry.getLayers();
         var activeLayer = MapLayerRegistry.getActiveLayer();
         // The right margin is unused - the sidebar grows rightward to fit the widest content.
-        var padding = new Padding(KmuLunaSettings.getPoliticalMapSidebarPaddingTop(),
+        var padding = new Padding(
+                KmuLunaSettings.getPoliticalMapSidebarPaddingTop(),
                 0,
                 KmuLunaSettings.getPoliticalMapSidebarPaddingBottom(),
                 KmuLunaSettings.getPoliticalMapSidebarPaddingLeft());
@@ -74,11 +75,16 @@ public final class LiveSidebarPlacement {
                 buildTabsSpec(layers, activeLayer),
                 activeLayer.getBodyControls(),
                 measurer,
-                SidebarPanelController.INSTANCE.getScrollState().getOffset());
+                SidebarPanelController.INSTANCE.getScrollState().getOffset(),
+                // The sidebar stays fully expanded until the collapse handle is wired to it; 0 = no
+                // collapse.
+                0f);
         // Settle the stored scroll request into the list's real range now the layout has resolved the
         // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
         // the render and input passes call this each frame, so the stored offset stays bounded.
-        SidebarPanelController.INSTANCE.getScrollState().clampTo(placement.body().scrollOverflow());
+        SidebarPanelController.INSTANCE
+                .getScrollState()
+                .clampTo(placement.body().scrollOverflow());
         return placement;
     }
 
