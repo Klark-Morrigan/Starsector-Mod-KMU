@@ -45,4 +45,4 @@ on top of the resolved style. This layer owns the desaturation *mechanism* (the 
 `MapPalettes`); the *policy* of which bloc recedes and by how much lives one package up in
 `politicalmap.base` (`RecedePreferences` and the views). The cascade that folds theme and
 adjustment together, and bakes the result into the draw packets, is
-`render.territories.TerritoryBuilder`.
+[`render.territories`](../territories/README.md)`.TerritoryBuilder`.

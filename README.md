@@ -20,12 +20,11 @@ This is a small Starsector utility and quality of life mod.
 
 #### Political map
 
-- [Territory fills and borders](src/main/java/kmu/maplayers/politicalmap/base/render/territories/README.md)
-  - how cells become each faction's coloured region, national border, and province seams.
-- [Render style layer](src/main/java/kmu/maplayers/politicalmap/base/render/style/README.md)
-  - how the overlay turns player settings into each territory's colours, widths, and fill.
-- [Cluster-name overlay](src/main/java/kmu/maplayers/politicalmap/base/render/labels/README.md)
-  - how faction names are placed over the map and drawn.
+An on-map overlay that colours the sector by who controls each system, with a view-selector
+switching between factions, alliances (when Nexerelin is present), and claims. See
+[the political map guide](src/main/java/kmu/maplayers/politicalmap/README.md) for what each view
+shows and how the overlay is drawn - it fans out to the ownership, territory, style, and label
+sub-package docs.
 
 ## Dependencies
 

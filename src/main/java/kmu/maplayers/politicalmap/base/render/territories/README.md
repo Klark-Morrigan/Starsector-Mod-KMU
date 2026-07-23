@@ -12,7 +12,7 @@ Part of Klark Morrigan's Utilities; see the
 - [Building: cells into territories](#building-cells-into-territories)
 - [Borders against empty space](#borders-against-empty-space)
 - [The draw packets](#the-draw-packets)
-- [Spotlit footprint: the split fill](#spotlit-footprint-the-split-fill)
+- [The split fill: solid, hatched, unfilled](#the-split-fill-solid-hatched-unfilled)
 - [Rendering](#rendering)
 - [What is not here](#what-is-not-here)
 
@@ -49,12 +49,18 @@ retained ownership, theme, and filter inputs a re-shape needs. `FactionTerritory
 faction's fill triangles, contested-hatch segments, and border loops; `StyledCell` carries one
 cell's fill, outline, and interior seams.
 
-## Spotlit footprint: the split fill
+## The split fill: solid, hatched, unfilled
 
-When the filter spotlights one bloc, its whole footprint - the systems it dominates plus the ones
-it merely contests - clusters into a single `FactionTerritory` under one national frontier, and the
-fill splits in two: solid where the bloc dominates, a pre-clipped diagonal hatch where it is only
-present ("mine, but contested").
+A bloc's footprint is traced as one border whatever its members' fills; the fill is what varies per
+system inside it, across three states. **Solid** is the default - a bloc that only dominates fills
+its whole region from that one border and pays nothing for the split, the common case. The two
+exceptions each carve a sub-region out of the solid, hatched and unfilled, and both are decided
+upstream in `politics.ownership`; this section is how the draw honours them.
+
+**Hatched.** When the filter spotlights one bloc, its whole footprint - the systems it dominates
+plus the ones it merely contests - clusters into a single `FactionTerritory` under one national
+frontier, and the fill splits: solid where the bloc dominates, a pre-clipped diagonal hatch where it
+is only present ("mine, but contested").
 
 Each of those two states fills from its own traced rings, not from its members' individual cells.
 The footprint's one grouping key is suffixed per state, so the border tracer - which fuses same-key
@@ -74,6 +80,13 @@ over, and would need raw cell edges to draw - untrimmed, so they overshoot the i
 poke out into the border channel. The province seam has neither problem: it is faint, and the cell
 shaper truncates it where it runs into a pulled-in border.
 
+**Unfilled.** A claim extension - a system a bloc claims but does not hold - sits inside its bloc's
+one border for outline and label but paints no fill at all, so the split simply skips it. Same
+shape as the hatch sub-region (one border, a sub-region drawn differently) but the sub-region is
+empty rather than hatched, so a held/claimed boundary reads as the seam where the fill stops inside
+a continuous frontier. Which systems are unfilled is resolved in
+[`politics.ownership`](../../politics/ownership/README.md); this package only honours the set.
+
 ## Rendering
 
 `TerritoryRenderer` is a pure GL loop over an already-baked `PoliticalMapTerritories`: it scales
@@ -83,8 +96,8 @@ settings or how the runs were shaped.
 ## What is not here
 
 The *theme and the styling resolvers* (what colour/width each category and bloc draws in) live in
-`render.style`; this package consumes them, it does not decide them. The *faction-name overlay*
-that sits on top is `render.labels`. The border-ring trace shared with the label anchor search
+[`render.style`](../style/README.md); this package consumes them, it does not decide them. The *faction-name overlay*
+that sits on top is [`render.labels`](../labels/README.md). The border-ring trace shared with the label anchor search
 (`render.PoliticalBorderTrace`) stays at the `render` root because more than one concern uses it;
 the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
 *incremental refresh* that folds per-system ownership changes into the packets is
