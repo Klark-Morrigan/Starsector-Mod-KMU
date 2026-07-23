@@ -253,29 +253,6 @@ public final class TerritoryBuilder {
                 territories.getGlobalStyle().borderSmoothing());
     }
 
-    // Builds every owned faction's territory into the territories, keyed by faction id.
-    // Each faction is independent - its cluster(s) trace only its own cells - so the
-    // incremental refresh rebuilds one faction's entry without touching the rest.
-    //
-    // Membership is the cells a faction draws, not the systems it holds: those differ
-    // wherever a faction's ground includes a cell no star of its own sits in, and it is the
-    // cells that carry the edges a border is traced from.
-    private static void buildAllFactionTerritories(
-            PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache) {
-        for (var faction
-                : resolveCellGrouping(territories, geometryCache).groupCellIdsByKey().entrySet()) {
-            var territory = buildFactionTerritory(
-                    territories,
-                    geometryCache,
-                    faction.getKey(),
-                    faction.getValue());
-            if (territory != null) {
-                territories.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
-            }
-        }
-    }
-
     // Builds one faction's fill and national border from its border rings,
     // traced across all the systems it holds so a multi-system cluster reads as one
     // continuous frontier. The rings are tessellated into fill triangles and flattened
@@ -391,6 +368,47 @@ public final class TerritoryBuilder {
                 (float) style.outerWidth());
     }
 
+    // The fill state one member's system draws in - the pure rule the split turns on, free of
+    // geometry so it can be exercised on plain id sets. Unfilled takes precedence over hatched,
+    // since a system drawn empty is empty however dominance falls; a cell with no star of its own
+    // has no per-system fill state, so it fills solid with the bloc's held ground.
+    static FillState classifyFillState(
+            String systemId, Set<String> contestedSystemIds, Set<String> unfilledSystemIds) {
+        if (systemId == null) {
+            return FillState.SOLID;
+        }
+        if (unfilledSystemIds.contains(systemId)) {
+            return FillState.UNFILLED;
+        }
+        if (contestedSystemIds.contains(systemId)) {
+            return FillState.HATCHED;
+        }
+        return FillState.SOLID;
+    }
+
+    // Builds every owned faction's territory into the territories, keyed by faction id.
+    // Each faction is independent - its cluster(s) trace only its own cells - so the
+    // incremental refresh rebuilds one faction's entry without touching the rest.
+    //
+    // Membership is the cells a faction draws, not the systems it holds: those differ
+    // wherever a faction's ground includes a cell no star of its own sits in, and it is the
+    // cells that carry the edges a border is traced from.
+    private static void buildAllFactionTerritories(
+            PoliticalMapTerritories territories,
+            PoliticalMapGeometryCache geometryCache) {
+        for (var faction
+                : resolveCellGrouping(territories, geometryCache).groupCellIdsByKey().entrySet()) {
+            var territory = buildFactionTerritory(
+                    territories,
+                    geometryCache,
+                    faction.getKey(),
+                    faction.getValue());
+            if (territory != null) {
+                territories.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
+            }
+        }
+    }
+
     // Splits a bloc's footprint fill into its three states: the systems the bloc holds solid
     // tessellate into the solid triangle soup, the contested systems into their own soup the hatch
     // generator then clips diagonal lines to, and the unfilled systems into nothing - held inside
@@ -496,24 +514,6 @@ public final class TerritoryBuilder {
             }
         }
         return new FillSplit(solid, hatched, unfilled);
-    }
-
-    // The fill state one member's system draws in - the pure rule the split turns on, free of
-    // geometry so it can be exercised on plain id sets. Unfilled takes precedence over hatched,
-    // since a system drawn empty is empty however dominance falls; a cell with no star of its own
-    // has no per-system fill state, so it fills solid with the bloc's held ground.
-    static FillState classifyFillState(
-            String systemId, Set<String> contestedSystemIds, Set<String> unfilledSystemIds) {
-        if (systemId == null) {
-            return FillState.SOLID;
-        }
-        if (unfilledSystemIds.contains(systemId)) {
-            return FillState.UNFILLED;
-        }
-        if (contestedSystemIds.contains(systemId)) {
-            return FillState.HATCHED;
-        }
-        return FillState.SOLID;
     }
 
     // Tessellates one of the footprint's states into a GL_TRIANGLES soup from the rings tracing

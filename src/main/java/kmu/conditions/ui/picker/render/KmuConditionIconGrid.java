@@ -25,32 +25,6 @@ public final class KmuConditionIconGrid {
     /** Space reserved on the right so the scroll bar does not overlap grid content. */
     static final float SCROLLBAR_RIGHT_PAD = 18f;
 
-    /** Width of one column slot: button width plus the gap that follows it. */
-    static float computeColumnUnit() {
-        return KmuConditionIconButtonSizing.computeSquareButtonWidth() + CELL_GAP;
-    }
-
-    /** Largest grid width that fits within the scrollable area of a panel of
-     *  {@code containerWidth}, snapped down to a whole number of square-icon columns
-     *  so no column is partially visible. Always returns at least 1. */
-    static float computeGridWidth(float containerWidth) {
-        var availableWidth = Math.max(1f, containerWidth - SCROLLBAR_RIGHT_PAD);
-        var squareButtonWidth = KmuConditionIconButtonSizing.computeSquareButtonWidth();
-        if (availableWidth < squareButtonWidth) {
-            return availableWidth;
-        }
-        var units = (float) Math.floor((availableWidth + CELL_GAP) / computeColumnUnit());
-        return Math.max(squareButtonWidth, units * computeColumnUnit() - CELL_GAP);
-    }
-
-    /** N buttons wide with a gap between each pair, but no trailing gap.
-     *  Clamps to 1 so callers can pass zero without getting a zero-width grid. */
-    static float computeWidthForSquareColumns(int columns) {
-        var safeColumns = Math.max(1, columns);
-        return safeColumns * KmuConditionIconButtonSizing.computeSquareButtonWidth()
-                + (safeColumns - 1) * CELL_GAP;
-    }
-
     /** Total width a surrounding panel must be to show exactly the given number
      *  of square-icon columns, including the scroll bar clearance on the right. */
     public static float computeTotalWidthForSquareColumns(int columns) {
@@ -98,6 +72,32 @@ public final class KmuConditionIconGrid {
 
         tooltip.addCustom(gridPanel, pad);
         return new GridHandle(Collections.singletonList(gridPanel), buttonsByConditionId);
+    }
+
+    /** Width of one column slot: button width plus the gap that follows it. */
+    static float computeColumnUnit() {
+        return KmuConditionIconButtonSizing.computeSquareButtonWidth() + CELL_GAP;
+    }
+
+    /** Largest grid width that fits within the scrollable area of a panel of
+     *  {@code containerWidth}, snapped down to a whole number of square-icon columns
+     *  so no column is partially visible. Always returns at least 1. */
+    static float computeGridWidth(float containerWidth) {
+        var availableWidth = Math.max(1f, containerWidth - SCROLLBAR_RIGHT_PAD);
+        var squareButtonWidth = KmuConditionIconButtonSizing.computeSquareButtonWidth();
+        if (availableWidth < squareButtonWidth) {
+            return availableWidth;
+        }
+        var units = (float) Math.floor((availableWidth + CELL_GAP) / computeColumnUnit());
+        return Math.max(squareButtonWidth, units * computeColumnUnit() - CELL_GAP);
+    }
+
+    /** N buttons wide with a gap between each pair, but no trailing gap.
+     *  Clamps to 1 so callers can pass zero without getting a zero-width grid. */
+    static float computeWidthForSquareColumns(int columns) {
+        var safeColumns = Math.max(1, columns);
+        return safeColumns * KmuConditionIconButtonSizing.computeSquareButtonWidth()
+                + (safeColumns - 1) * CELL_GAP;
     }
 
     /** Left-to-right, top-to-bottom row-wrapping layout. A button that would

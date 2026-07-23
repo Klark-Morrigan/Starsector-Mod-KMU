@@ -126,6 +126,23 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         updateRenderedState(result);
     }
 
+    static Optional<KmuConditionPickerAction> resolveActionFromUiEvent(Object buttonId, Object data) {
+        var directAction = asAction(buttonId);
+        if (directAction.isPresent()) {
+            return directAction;
+        }
+
+        var dataAction = asAction(data);
+        if (dataAction.isPresent()) {
+            return dataAction;
+        }
+
+        if (buttonId instanceof ButtonAPI) {
+            return asAction(((ButtonAPI) buttonId).getCustomData());
+        }
+        return Optional.empty();
+    }
+
     private void refreshBody() {
         if (panel == null) {
             return;
@@ -195,23 +212,6 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         }
         renderedCustomComponents.clear();
         renderResult = null;
-    }
-
-    static Optional<KmuConditionPickerAction> resolveActionFromUiEvent(Object buttonId, Object data) {
-        var directAction = asAction(buttonId);
-        if (directAction.isPresent()) {
-            return directAction;
-        }
-
-        var dataAction = asAction(data);
-        if (dataAction.isPresent()) {
-            return dataAction;
-        }
-
-        if (buttonId instanceof ButtonAPI) {
-            return asAction(((ButtonAPI) buttonId).getCustomData());
-        }
-        return Optional.empty();
     }
 
     private static Optional<KmuConditionPickerAction> asAction(Object value) {
