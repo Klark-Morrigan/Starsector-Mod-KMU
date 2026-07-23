@@ -90,7 +90,7 @@ final class PoliticalMapHoverPublisher {
         var isOverStarIcon = starIcon != null && StarIconHitTest.isWorldPointOverStarIcon(
                 worldPoint,
                 new Vector2f((float) starIcon.anchorX(), (float) starIcon.anchorY()),
-                starIcon.starRadius(),
+                starIcon.iconWorldRadius(),
                 factor);
         PoliticalMapHoverState.getInstance().publishHover(new PoliticalMapHover(
                 hoveredSystemId,

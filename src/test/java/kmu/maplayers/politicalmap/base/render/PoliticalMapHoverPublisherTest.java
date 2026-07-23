@@ -107,9 +107,9 @@ final class PoliticalMapHoverPublisherTest {
         return buildPublisherReading(buildTranslationMatrix(PAN_X, PAN_Y));
     }
 
-    // A full-size star, so its reconstructed icon radius is a round 20 pixels and the on/off-icon
-    // anchors below can be placed by eye against the cursor's world point.
-    private static final float FULL_STAR_RADIUS = 100f;
+    // The captured icon's world radius, small enough that the off-icon anchor below (50 world units
+    // from the cursor) sits clear of it while the on-icon anchor sits on it.
+    private static final float ICON_WORLD_RADIUS = 20f;
 
     // The frame's draw lists with one drawn cell, clustered with a neighbour so a published hover
     // proves it carries the whole territory and not just the cell it resolved.
@@ -120,7 +120,7 @@ final class PoliticalMapHoverPublisherTest {
     // The same one-cell frame, plus a captured star icon at the given anchor, so the icon gate has
     // geometry to test the cursor against.
     private static PoliticalMapCache buildCacheWithStarIconAt(double anchorX, double anchorY) {
-        return buildCacheWith(new StarIconGeometry(anchorX, anchorY, FULL_STAR_RADIUS));
+        return buildCacheWith(new StarIconGeometry(anchorX, anchorY, ICON_WORLD_RADIUS));
     }
 
     private static PoliticalMapCache buildCacheWith(StarIconGeometry starIcon) {
@@ -257,8 +257,8 @@ final class PoliticalMapHoverPublisherTest {
         @Test
         void publishHoverFromLeavesTheStarIconUnflaggedOverTheRestOfTheCell() {
             // The cursor is still in the cell but well clear of the icon at (250, 150) - 50 world
-            // units off, past the icon at this zoom - so the cell stays hovered while the gate
-            // stays down and the tooltip box keeps drawing.
+            // units off, past its world radius - so the cell stays hovered while the gate stays
+            // down and the tooltip box keeps drawing.
             buildPublisherOnALiveMap()
                     .publishHoverFrom(buildCacheWithStarIconAt(250d, 150d), MAP_ZOOM);
 

@@ -10,6 +10,7 @@ import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.starsector.ui.map.StarIconHitTest;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
@@ -401,15 +402,25 @@ public final class TerritoryBuilder {
             PoliticalMapTerritories territories, SectorAPI sector) {
         for (var system : sector.getStarSystems()) {
             var anchor = system.getHyperspaceAnchor();
-            if (anchor == null || anchor.getLocation() == null) {
+            var star = system.getStar();
+            // No anchor to place an icon at, or no body to size one from, means no icon to gate on:
+            // the system's cell still hovers, its tooltip just never steps aside for a star tooltip.
+            // A nebula system's getStar() is its nebula centre, which the icon sizing handles.
+            if (anchor == null || anchor.getLocation() == null || star == null) {
                 continue;
             }
-            var star = system.getStar();
-            var starRadius = star == null ? 0f : star.getRadius();
+            var spec = star.getSpec();
+            var iconWorldRadius = StarIconHitTest.computeIconWorldRadius(
+                    star.getRadius(),
+                    spec.getScaleMultMapIcon(),
+                    star.isStar(),
+                    spec.isNebulaCenter());
             territories.putStarIconGeometry(
                     system.getId(),
                     new StarIconGeometry(
-                            anchor.getLocation().x, anchor.getLocation().y, starRadius));
+                            anchor.getLocation().x,
+                            anchor.getLocation().y,
+                            iconWorldRadius));
         }
     }
 
@@ -431,7 +442,9 @@ public final class TerritoryBuilder {
                     faction.getKey(),
                     faction.getValue());
             if (territory != null) {
-                territories.getFactionTerritoryByFactionId().put(faction.getKey(), territory);
+                territories
+                        .getFactionTerritoryByFactionId()
+                        .put(faction.getKey(), territory);
             }
         }
     }
@@ -674,7 +687,8 @@ public final class TerritoryBuilder {
         }
         return new CategoryStyle(
                 new ElementStyle(
-                        independentStyle.fill().color(), factionStyle.fill().opacity()),
+                        independentStyle.fill().color(),
+                        factionStyle.fill().opacity()),
                 independentStyle.outer(),
                 independentStyle.outerWidth(),
                 independentStyle.inner(),
