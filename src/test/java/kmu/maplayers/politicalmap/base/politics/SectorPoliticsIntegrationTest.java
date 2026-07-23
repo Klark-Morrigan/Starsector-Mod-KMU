@@ -48,6 +48,11 @@ class SectorPoliticsIntegrationTest {
     // entry points instead read the live LunaLib settings only the running game provides.
     private static final DominanceRules STABILITY_WEIGHTED = stabilityWeightedRules();
 
+    // The pass most suites resolve under: the stability-only rule, the normal known-to-player
+    // filter, and the faction (identity) grouping. The grouping-varying suites build their own.
+    private static final DominancePass STABILITY_PASS =
+            new DominancePass(STABILITY_WEIGHTED, false, OwnershipGrouping.identity());
+
     @Nested
     class ResolveDominantOwnerBySystemId {
 
@@ -58,7 +63,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("owned-system", List.of(hegemony, tritachyon),
                     visibleMarket(hegemony, 5), visibleMarket(tritachyon, 3));
 
-            var owners = SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED);
+            var owners = SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS);
 
             // The owner carries the id the renderer styles by, the bright UI color
             // the cell is filled and outlined in, and the dark UI color its
@@ -75,7 +80,7 @@ class SectorPoliticsIntegrationTest {
 
             // An independent-held system resolves to the "independent" id, the one
             // the renderer's fill-alpha rule dims on.
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("frontier-system",
                             new DominantOwner("independent", NEUTRAL_BASE, dark(NEUTRAL_BASE)));
         }
@@ -90,7 +95,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("unrest-system", List.of(hegemony, tritachyon),
                     marketAtStability(hegemony, 5, 4.0f), visibleMarket(tritachyon, 3));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("unrest-system",
                             new DominantOwner("tritachyon", TRITACHYON_BRIGHT, dark(TRITACHYON_BRIGHT)));
         }
@@ -103,7 +108,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("bare-system", List.of(hegemony),
                     market(hegemony, 6, true, false, false));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .doesNotContainKey("bare-system");
         }
 
@@ -111,7 +116,7 @@ class SectorPoliticsIntegrationTest {
         void resolveDominantOwnerSkipsUninhabitedSystems() {
             var sector = sectorWith("empty-system", List.of());
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED)).isEmpty();
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS)).isEmpty();
         }
 
         @Test
@@ -122,7 +127,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("hidden-system", List.of(hegemony),
                     hiddenMarket(hegemony, 5));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("hidden-system",
                             new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
@@ -137,7 +142,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("mixed-system", List.of(hegemony, tritachyon),
                     hiddenMarket(hegemony, 5), visibleMarket(tritachyon, 2));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("mixed-system",
                             new DominantOwner("tritachyon", TRITACHYON_BRIGHT, dark(TRITACHYON_BRIGHT)));
         }
@@ -151,7 +156,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("hidden-faction-system", List.of(hiddenFaction),
                     market(hiddenFaction, 5, false, false, false));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("hidden-faction-system",
                             new DominantOwner("zea_dusk", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
@@ -165,7 +170,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("undiscovered-system", List.of(knights),
                     undiscoveredHiddenMarket(knights, 5));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .doesNotContainKey("undiscovered-system");
         }
 
@@ -179,7 +184,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("revealed-system", List.of(fsf),
                     revealedColonyAwaitingApproach(fsf, 5));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("revealed-system",
                             new DominantOwner("aEP_FSF", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
@@ -194,7 +199,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("tie-system", List.of(hegemony, tritachyon),
                     visibleMarket(hegemony, 5), planetMarket(tritachyon, 5));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("tie-system",
                             new DominantOwner("tritachyon", TRITACHYON_BRIGHT, dark(TRITACHYON_BRIGHT)));
         }
@@ -215,7 +220,7 @@ class SectorPoliticsIntegrationTest {
             placeMarketOnOrbit(hegemonyMarket, 100.0f, star);
             placeMarketOnOrbit(blackrockMarket, 200.0f, star);
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("rama",
                             new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
@@ -242,11 +247,11 @@ class SectorPoliticsIntegrationTest {
 
             // Faction view: hegemony wins. Alliance view: the hegemony-led alliance wins the
             // same system, painted in hegemony's palette under the alliance bloc id.
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("rama",
                             new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(
-                    sector, STABILITY_WEIGHTED, false, grouping))
+                    sector, new DominancePass(STABILITY_WEIGHTED, false, grouping)))
                     .containsEntry("rama", new DominantOwner(
                             "greater_hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
@@ -259,7 +264,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("discovered-system", List.of(knights),
                     market(knights, 5, false, false, false));
 
-            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_PASS))
                     .containsEntry("discovered-system",
                             new DominantOwner("knights_of_selkie", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
@@ -274,7 +279,7 @@ class SectorPoliticsIntegrationTest {
                     visibleMarket(hegemony, 5), visibleMarket(tritachyon, 3));
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(
-                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
+                    sector, STABILITY_PASS))
                     .containsEntry("owned-system",
                             new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
@@ -297,7 +302,7 @@ class SectorPoliticsIntegrationTest {
                     Map.of("alliance-1", "Allied Powers"));
 
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(
-                    sector, STABILITY_WEIGHTED, false, grouping))
+                    sector, new DominancePass(STABILITY_WEIGHTED, false, grouping)))
                     .containsEntry("contested-system",
                             new DominantOwner("alliance-1", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
@@ -315,7 +320,7 @@ class SectorPoliticsIntegrationTest {
 
             // The single-system resolve returns the same winner and palette the bulk
             // pass would put under this system's id.
-            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector), STABILITY_WEIGHTED))
+            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector), STABILITY_PASS))
                     .isEqualTo(new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
 
@@ -323,7 +328,7 @@ class SectorPoliticsIntegrationTest {
         void resolveDominantOwnerReturnsNullForUninhabitedSystem() {
             var sector = sectorWith("empty-system", List.of());
 
-            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector), STABILITY_WEIGHTED)).isNull();
+            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector), STABILITY_PASS)).isNull();
         }
 
         @Test
@@ -334,7 +339,7 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("bare-system", List.of(hegemony),
                     market(hegemony, 6, true, false, false));
 
-            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector), STABILITY_WEIGHTED)).isNull();
+            assertThat(SectorPolitics.resolveDominantOwner(sector, onlySystem(sector), STABILITY_PASS)).isNull();
         }
 
         @Test
@@ -342,12 +347,12 @@ class SectorPoliticsIntegrationTest {
             var sector = sectorWith("owned-system", List.of(faction("hegemony", HEGEMONY_BRIGHT)),
                     visibleMarket(faction("hegemony", HEGEMONY_BRIGHT), 5));
 
-            assertThat(SectorPolitics.resolveDominantOwner(sector, null, STABILITY_WEIGHTED)).isNull();
+            assertThat(SectorPolitics.resolveDominantOwner(sector, null, STABILITY_PASS)).isNull();
         }
 
         @Test
         void resolveDominantOwnerReturnsNullForNullSector() {
-            assertThat(SectorPolitics.resolveDominantOwner(null, mock(StarSystemAPI.class), STABILITY_WEIGHTED)).isNull();
+            assertThat(SectorPolitics.resolveDominantOwner(null, mock(StarSystemAPI.class), STABILITY_PASS)).isNull();
         }
     }
 
@@ -367,7 +372,7 @@ class SectorPoliticsIntegrationTest {
             // At full stability each size point is worth DOMINANCE_WEIGHT_SCALE (1000), so score sums
             // to (5 + 3) * 1000 and market size to the raw 5 + 3.
             assertThat(SectorPolitics.aggregateBlocStats(
-                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
+                    sector, STABILITY_PASS))
                     .containsExactly(entry("hegemony", new BlocStats(2, 2, 8000, 8)));
         }
 
@@ -381,7 +386,7 @@ class SectorPoliticsIntegrationTest {
                     visibleMarket(hegemony, 5), visibleMarket(tritachyon, 3));
 
             assertThat(SectorPolitics.aggregateBlocStats(
-                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
+                    sector, STABILITY_PASS))
                     .containsExactly(
                             entry("hegemony", new BlocStats(1, 1, 5000, 5)),
                             entry("tritachyon", new BlocStats(0, 1, 3000, 3)));
@@ -402,7 +407,7 @@ class SectorPoliticsIntegrationTest {
                     Map.of("alliance-1", "hegemony"),
                     Map.of("alliance-1", "Allied Powers"));
 
-            assertThat(SectorPolitics.aggregateBlocStats(sector, STABILITY_WEIGHTED, false, grouping))
+            assertThat(SectorPolitics.aggregateBlocStats(sector, new DominancePass(STABILITY_WEIGHTED, false, grouping)))
                     .containsExactly(entry("alliance-1", new BlocStats(2, 2, 5000, 5)));
         }
 
@@ -417,7 +422,7 @@ class SectorPoliticsIntegrationTest {
                     systemMarkets("weightless-system", visibleMarket(hegemony, 0)));
 
             assertThat(SectorPolitics.aggregateBlocStats(
-                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity()))
+                    sector, STABILITY_PASS))
                     .containsExactly(entry("hegemony", new BlocStats(1, 1, 0, 0)));
         }
 
@@ -430,13 +435,13 @@ class SectorPoliticsIntegrationTest {
                     systemMarkets("bare-system", market(hegemony, 6, true, false, false)));
 
             assertThat(SectorPolitics.aggregateBlocStats(
-                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity())).isEmpty();
+                    sector, STABILITY_PASS)).isEmpty();
         }
 
         @Test
         void aggregateBlocStatsIsEmptyForNullSector() {
             assertThat(SectorPolitics.aggregateBlocStats(
-                    null, STABILITY_WEIGHTED, false, OwnershipGrouping.identity())).isEmpty();
+                    null, STABILITY_PASS)).isEmpty();
         }
     }
 

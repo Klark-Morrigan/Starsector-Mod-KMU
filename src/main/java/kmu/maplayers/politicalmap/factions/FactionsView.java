@@ -9,6 +9,7 @@ import kmlib.math.hashing.Fingerprints;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.DominancePass;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
@@ -112,10 +113,9 @@ public final class FactionsView implements PoliticalMapView {
         // stats exactly when it holds a market somewhere) to the shared stats read both views draw
         // from, and carrying that bloc's stats onto the option for the picker to sort and label by.
         var grouping = resolveGrouping();
+        var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
         var selectableBlocs = new ArrayList<SelectableBloc>();
-        for (var entry : SectorPolitics
-                .aggregateBlocStats(sector, rules, shouldIncludeUndiscoveredMarkets, grouping)
-                .entrySet()) {
+        for (var entry : SectorPolitics.aggregateBlocStats(sector, pass).entrySet()) {
             var blocId = entry.getKey();
             var faction = sector.getFaction(blocId);
             // The crest is the picker row's icon; a faction with no authored crest simply draws its

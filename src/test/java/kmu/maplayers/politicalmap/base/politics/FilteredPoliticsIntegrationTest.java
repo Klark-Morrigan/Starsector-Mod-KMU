@@ -34,6 +34,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FilteredPoliticsIntegrationTest {
     private static final DominanceRules STABILITY_WEIGHTED = stabilityWeightedRules();
 
+    // The faction-view pass most tests filter under: the stability rule, the normal filter, and the
+    // identity grouping. The alliance-grouping test builds its own pass.
+    private static final DominancePass STABILITY_PASS =
+            new DominancePass(STABILITY_WEIGHTED, false, OwnershipGrouping.identity());
+
     @Nested
     class ResolveFilteredOwnership {
 
@@ -147,8 +152,9 @@ class FilteredPoliticsIntegrationTest {
                     Map.of("alliance-1", "hegemony"),
                     Map.of("alliance-1", "Allied Powers"));
 
-            var owner = FilteredPolitics.resolveFilteredOwnership(sector, STABILITY_WEIGHTED, false,
-                    grouping, "alliance-1").ownerBySystemId().get("contested-system");
+            var owner = FilteredPolitics.resolveFilteredOwnership(
+                    sector, new DominancePass(STABILITY_WEIGHTED, false, grouping), "alliance-1")
+                    .ownerBySystemId().get("contested-system");
 
             assertThat(FilteredPolitics.isSpotlitBloc(owner.factionId())).isTrue();
             assertThat(owner.primaryColor()).isEqualTo(HEGEMONY_BRIGHT);
@@ -159,8 +165,7 @@ class FilteredPoliticsIntegrationTest {
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var sector = sectorWith("owned-system", List.of(hegemony), visibleMarket(hegemony, 5));
 
-            var filtered = FilteredPolitics.resolveFilteredOwnership(
-                    sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity(), null);
+            var filtered = FilteredPolitics.resolveFilteredOwnership(sector, STABILITY_PASS, null);
 
             assertThat(filtered.ownerBySystemId()).isEmpty();
             assertThat(filtered.contestedSystemIds()).isEmpty();
@@ -168,8 +173,8 @@ class FilteredPoliticsIntegrationTest {
 
         @Test
         void isEmptyForNullSector() {
-            var filtered = FilteredPolitics.resolveFilteredOwnership(
-                    null, STABILITY_WEIGHTED, false, OwnershipGrouping.identity(), "hegemony");
+            var filtered =
+                    FilteredPolitics.resolveFilteredOwnership(null, STABILITY_PASS, "hegemony");
 
             assertThat(filtered.ownerBySystemId()).isEmpty();
             assertThat(filtered.contestedSystemIds()).isEmpty();
@@ -180,7 +185,6 @@ class FilteredPoliticsIntegrationTest {
     // the shared stability rule, the shape every faction-view filter test reads.
     private static FilteredPolitics.FilteredOwnership resolveFor(
             SectorAPI sector, String selectedBlocId) {
-        return FilteredPolitics.resolveFilteredOwnership(
-                sector, STABILITY_WEIGHTED, false, OwnershipGrouping.identity(), selectedBlocId);
+        return FilteredPolitics.resolveFilteredOwnership(sector, STABILITY_PASS, selectedBlocId);
     }
 }

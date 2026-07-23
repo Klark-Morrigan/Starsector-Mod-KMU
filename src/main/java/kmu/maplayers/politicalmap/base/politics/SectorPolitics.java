@@ -3,15 +3,12 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
-import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 
 /**
- * Resolves which faction owns each star system and in which colors that owner
+ * Resolves which faction owns each star system and in which colours that owner
  * paints.
  *
  * <p>The dominance-and-palette half of the ownership pipeline: it takes the known
@@ -20,6 +17,11 @@ import java.util.function.BinaryOperator;
  * winner's authored UI shades into a {@link DominantOwner} the render layer draws.
  * Confining the winning owner's {@code FactionAPI} palette lookup here keeps the
  * render layer clear of Starsector economy and faction types.
+ *
+ * <p>The rule, dev reveal, and grouping a pass resolves under travel together as a
+ * {@link DominancePass}: the live entry points read the player's settings into one,
+ * and every explicit caller hands its own down, so a whole pass resolves under one
+ * consistent set of knobs.
  */
 public final class SectorPolitics {
 
@@ -27,19 +29,15 @@ public final class SectorPolitics {
     }
 
     /**
-     * Builds the dominant owner - faction id and draw color - for every inhabited
-     * star system.
+     * Builds the dominant owner - faction id and draw colour - for every inhabited
+     * star system, under the player's live settings and the faction (identity) grouping.
      *
      * <p>The render-ready output of the ownership pipeline: resolving the faction
      * and its palette here confines {@code FactionAPI} access to this adapter, so
      * the render layer consumes a plain {@link DominantOwner} and never reaches
      * into the economy. Both facts come from one dominance pass, and the id is
-     * kept beside the color so per-owner styling - and later per-owner behaviour -
+     * kept beside the colour so per-owner styling - and later per-owner behaviour -
      * reads the same winner the fill was decided by.
-     *
-     * <p>Reads the player's dominance-weighting rules once up front, so every
-     * system in the pass resolves under the same rule even if the player applies
-     * a settings change mid-walk.
      *
      * @param sector the sector whose economy is read; null yields an empty map
      * @return the dominant owner keyed by system id; a system with no owned
@@ -51,7 +49,7 @@ public final class SectorPolitics {
 
     /**
      * Builds the dominant owner for every inhabited star system under an explicit
-     * ownership grouping and the player's live settings.
+     * grouping and the player's live settings.
      *
      * <p>The view-aware live entry point: a political-map view supplies its grouping
      * (identity for the faction view, alliance blocs for the alliances view) and the
@@ -67,96 +65,26 @@ public final class SectorPolitics {
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
             SectorAPI sector, OwnershipGrouping grouping) {
         return resolveDominantOwnerBySystemId(
-                sector,
-                DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(),
-                grouping);
+                sector, DominancePass.readFromLunaSettings(grouping));
     }
 
     /**
      * Builds the dominant owner for every inhabited star system under an explicit
-     * weighting rule, the normal known-to-player filter, and the faction (identity)
-     * grouping.
+     * dominance pass, for a caller that has already sampled the player's settings.
      *
      * @param sector the sector whose economy is read; null yields an empty map
-     * @param rules  the dominance-weighting rules for this pass
-     * @return the dominant owner keyed by system id; a system with no owned
-     *         markets is absent from the map (uninhabited)
-     */
-    public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
-            SectorAPI sector, DominanceRules rules) {
-        return resolveDominantOwnerBySystemId(
-                sector,
-                rules,
-                false,
-                OwnershipGrouping.identity());
-    }
-
-    /**
-     * Builds the dominant owner for every inhabited star system under an explicit
-     * weighting rule and the faction (identity) grouping, for a caller that has
-     * already read the player's toggles for the surrounding pass.
-     *
-     * @param sector                       the sector whose economy is read; null yields
-     *                                     an empty map
-     * @param rules                        the dominance-weighting rules for this pass -
-     *                                     whether stability scales each rating and
-     *                                     whether an attached station lifts it - before
-     *                                     dominance is compared
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward
-     *                                     dominance (the "show all factions" dev reveal);
-     *                                     false applies the normal known-to-player filter
+     * @param pass   the rule, dev reveal, and grouping this pass resolves under
      * @return the dominant owner keyed by system id; a system with no folded
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
-            SectorAPI sector,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
-        return resolveDominantOwnerBySystemId(
-                sector,
-                rules,
-                shouldIncludeUndiscoveredMarkets,
-                OwnershipGrouping.identity());
-    }
-
-    /**
-     * Builds the dominant owner for every inhabited star system under an explicit
-     * weighting rule and ownership grouping, for a caller that has already read the
-     * player's toggles for the surrounding pass.
-     *
-     * @param sector                       the sector whose economy is read; null yields
-     *                                     an empty map
-     * @param rules                        the dominance-weighting rules for this pass -
-     *                                     whether stability scales each rating and
-     *                                     whether an attached station lifts it - before
-     *                                     dominance is compared
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward
-     *                                     dominance (the "show all factions" dev reveal);
-     *                                     false applies the normal known-to-player filter
-     * @param grouping                     the ownership grouping that collapses factions
-     *                                     into blocs before dominance is compared; the
-     *                                     identity grouping resolves the faction view
-     * @return the dominant owner keyed by system id; a system with no folded
-     *         markets is absent from the map (uninhabited)
-     */
-    public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
-            SectorAPI sector,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping) {
+            SectorAPI sector, DominancePass pass) {
         var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
         if (sector == null) {
             return ownerBySystemId;
         }
-
         for (var system : sector.getStarSystems()) {
-            var owner = resolveDominantOwner(
-                    sector,
-                    system,
-                    rules,
-                    shouldIncludeUndiscoveredMarkets,
-                    grouping);
+            var owner = resolveDominantOwner(sector, system, pass);
             if (owner != null) {
                 ownerBySystemId.put(system.getId(), owner);
             }
@@ -165,18 +93,16 @@ public final class SectorPolitics {
     }
 
     /**
-     * Resolves the dominant owner of one star system - the same result the bulk
-     * pass would put under this system's id, computed for it alone.
+     * Resolves the dominant owner of one star system under the player's live settings
+     * and the faction (identity) grouping - the same result the bulk pass would put
+     * under this system's id, computed for it alone.
      *
      * <p>The single-system entry point the incremental refresh path leans on:
      * when one colony's size changes, only that system's ownership can shift, so
      * only it is re-derived rather than re-walking the whole economy. Shares the
      * footprint, dominance rule, and palette lookup with
      * {@link #resolveDominantOwnerBySystemId}, so a system resolves the same
-     * winner and colors whether it is refreshed alone or in the full pass.
-     *
-     * <p>Reads the player's dominance-weighting rules live, so a single-system
-     * refresh resolves under the player's current rule.
+     * winner and colours whether it is refreshed alone or in the full pass.
      *
      * @param sector the sector whose economy is read; null (or a null economy)
      *               yields null
@@ -189,8 +115,8 @@ public final class SectorPolitics {
     }
 
     /**
-     * Resolves the dominant owner of one star system under an explicit ownership
-     * grouping and the player's live settings.
+     * Resolves the dominant owner of one star system under an explicit grouping and
+     * the player's live settings.
      *
      * <p>The view-aware single-system entry point: the incremental refresh path
      * hands in the active view's grouping so a re-derived system resolves the same
@@ -206,136 +132,43 @@ public final class SectorPolitics {
      *         (uninhabited)
      */
     public static DominantOwner resolveDominantOwner(
-            SectorAPI sector,
-            StarSystemAPI system,
-            OwnershipGrouping grouping) {
-        return resolveDominantOwner(
-                sector,
-                system,
-                DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(),
-                grouping);
+            SectorAPI sector, StarSystemAPI system, OwnershipGrouping grouping) {
+        return resolveDominantOwner(sector, system, DominancePass.readFromLunaSettings(grouping));
     }
 
     /**
-     * Resolves the dominant owner of one star system under an explicit weighting
-     * rule, the normal known-to-player filter, and the faction (identity) grouping.
+     * Resolves the dominant owner of one star system under an explicit dominance pass.
      *
-     * @param sector the sector whose economy is read; null (or a null economy)
-     *               yields null
+     * <p>The core of the ownership pipeline: it reads each bloc's footprint under the
+     * pass's grouping (a no-op fold under the identity grouping, a member-summing merge
+     * under an alliance grouping), ranks the blocs, then colours the winning bloc through
+     * the faction the grouping names for its palette. Under identity the bloc id is the
+     * faction id and its colour faction is itself, so the result is the plain faction owner.
+     *
+     * @param sector the sector whose economy is read; null (or a null economy) yields null
      * @param system the system to resolve; null yields null
-     * @param rules  the dominance-weighting rules for this pass
-     * @return the dominant owner, or null when the system holds no owned market
-     *         (uninhabited)
-     */
-    public static DominantOwner resolveDominantOwner(
-            SectorAPI sector,
-            StarSystemAPI system,
-            DominanceRules rules) {
-        return resolveDominantOwner(
-                sector,
-                system,
-                rules,
-                false,
-                OwnershipGrouping.identity());
-    }
-
-    /**
-     * Resolves the dominant owner of one star system under an explicit weighting
-     * rule and the faction (identity) grouping, for a caller that has already read
-     * the player's toggles for the surrounding pass.
-     *
-     * @param sector                       the sector whose economy is read; null (or a
-     *                                     null economy) yields null
-     * @param system                       the system to resolve; null yields null
-     * @param rules                        the dominance-weighting rules for this pass -
-     *                                     whether stability scales each rating and
-     *                                     whether an attached station lifts it - before
-     *                                     dominance is compared
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward
-     *                                     dominance (the "show all factions" dev reveal);
-     *                                     false applies the normal known-to-player filter
+     * @param pass   the rule, dev reveal, and grouping this pass resolves under
      * @return the dominant owner, or null when the system holds no folded market
      *         (uninhabited)
      */
     public static DominantOwner resolveDominantOwner(
-            SectorAPI sector,
-            StarSystemAPI system,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
-        return resolveDominantOwner(
-                sector,
-                system,
-                rules,
-                shouldIncludeUndiscoveredMarkets,
-                OwnershipGrouping.identity());
-    }
-
-    /**
-     * Resolves the dominant owner of one star system under an explicit weighting
-     * rule and ownership grouping, for a caller that has already read the player's
-     * toggles for the surrounding pass.
-     *
-     * <p>The core of the ownership pipeline: it reads each faction's footprint,
-     * regroups those footprints into per-bloc footprints under the grouping (a
-     * no-op fold under the identity grouping, a member-summing merge under an
-     * alliance grouping), ranks the blocs, then colours the winning bloc through
-     * the faction the grouping names for its palette. Under identity the bloc id is
-     * the faction id and its colour faction is itself, so the result is the plain
-     * faction owner.
-     *
-     * @param sector                       the sector whose economy is read; null (or a
-     *                                     null economy) yields null
-     * @param system                       the system to resolve; null yields null
-     * @param rules                        the dominance-weighting rules for this pass -
-     *                                     whether stability scales each rating and
-     *                                     whether an attached station lifts it - before
-     *                                     dominance is compared
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward
-     *                                     dominance (the "show all factions" dev reveal);
-     *                                     false applies the normal known-to-player filter
-     * @param grouping                     the ownership grouping that collapses factions
-     *                                     into blocs before dominance is compared; the
-     *                                     identity grouping resolves the faction view
-     * @return the dominant owner, or null when the system holds no folded market
-     *         (uninhabited)
-     */
-    public static DominantOwner resolveDominantOwner(
-            SectorAPI sector,
-            StarSystemAPI system,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping) {
+            SectorAPI sector, StarSystemAPI system, DominancePass pass) {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
         }
-        var footprintByFactionId = KnownMarketFootprints.readByFaction(
-                sector,
-                system,
-                rules,
-                shouldIncludeUndiscoveredMarkets);
-        var footprintByBlocId = regroupByBloc(
-                footprintByFactionId,
-                grouping,
-                MarketFootprint.EMPTY,
-                MarketFootprint::merge);
+        var footprintByBlocId = pass.readBlocFootprints(sector, system);
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
-                footprintByBlocId,
-                MarketProximityTieBreak.forSystem(
-                        sector,
-                        system,
-                        shouldIncludeUndiscoveredMarkets,
-                        grouping));
+                footprintByBlocId, pass.tieBreakFor(sector, system));
         if (dominantBlocId == null) {
             return null;
         }
-        return resolveBlocOwner(sector, grouping, dominantBlocId);
+        return resolveBlocOwner(sector, pass.grouping(), dominantBlocId);
     }
 
     /**
      * The whole-sector {@link BlocStats} for every bloc holding a visible market somewhere, under a
-     * grouping - the filter picker's selectable set (a bloc present here has presence of at least
-     * one, which is the {@code presence > 0} gate) paired with the four numbers the picker sorts and
+     * pass - the filter picker's selectable set (a bloc present here has presence of at least one,
+     * which is the {@code presence > 0} gate) paired with the four numbers the picker sorts and
      * displays them by, all from one grouped per-system dominance pass.
      *
      * <p>One walk yields all four metrics so the picker never re-reads the economy per number: each
@@ -346,35 +179,19 @@ public final class SectorPolitics {
      * it holds territory it could paint - rather than a second, drifting definition of presence. The
      * order follows the economy walk, which each view then maps into its own picker options.
      *
-     * @param sector                       the sector whose economy is read; null (or a null economy)
-     *                                     yields an empty map
-     * @param rules                        the dominance-weighting rules for this read, read once by
-     *                                     the caller so the whole read resolves under one rule
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count (the "show all
-     *                                     factions" dev reveal); false applies the normal
-     *                                     known-to-player filter
-     * @param grouping                     the ownership grouping that collapses factions into blocs;
-     *                                     the identity grouping keeps every faction its own bloc
+     * @param sector the sector whose economy is read; null (or a null economy) yields an empty map
+     * @param pass   the rule, dev reveal, and grouping this read resolves under, sampled once by the
+     *               caller so the whole read resolves under one set of knobs
      * @return each present bloc's stats, keyed by bloc id in economy-walk order; empty when no bloc
      *         holds a visible market
      */
-    public static Map<String, BlocStats> aggregateBlocStats(
-            SectorAPI sector,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping) {
+    public static Map<String, BlocStats> aggregateBlocStats(SectorAPI sector, DominancePass pass) {
         var statsByBlocId = new LinkedHashMap<String, BlocStats>();
         if (sector == null || sector.getEconomy() == null) {
             return statsByBlocId;
         }
         for (var system : sector.getStarSystems()) {
-            accumulateSystemStats(
-                    statsByBlocId,
-                    sector,
-                    system,
-                    rules,
-                    shouldIncludeUndiscoveredMarkets,
-                    grouping);
+            accumulateSystemStats(statsByBlocId, sector, system, pass);
         }
         return statsByBlocId;
     }
@@ -440,17 +257,15 @@ public final class SectorPolitics {
             Map<String, BlocStats> statsByBlocId,
             SectorAPI sector,
             StarSystemAPI system,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping) {
+            DominancePass pass) {
 
         // One regroup folds the footprint and the raw market size together (a bloc holding markets in
         // several systems, or an alliance's members, accumulates rather than overwrites), then the
         // dominance rule reads the footprint half of each bloc's folded contribution.
         var contributionByBlocId = regroupByBloc(
                 KnownMarketFootprints.readContributionsByFaction(
-                        sector, system, rules, shouldIncludeUndiscoveredMarkets),
-                grouping,
+                        sector, system, pass.rules(), pass.shouldIncludeUndiscoveredMarkets()),
+                pass.grouping(),
                 FactionMarketContribution.EMPTY,
                 FactionMarketContribution::merge);
 
@@ -460,11 +275,7 @@ public final class SectorPolitics {
         // count matches the territory that actually paints.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
                 extractFootprints(contributionByBlocId),
-                MarketProximityTieBreak.forSystem(
-                        sector,
-                        system,
-                        shouldIncludeUndiscoveredMarkets,
-                        grouping));
+                pass.tieBreakFor(sector, system));
         for (var entry : contributionByBlocId.entrySet()) {
             var blocId = entry.getKey();
             var stats = statsByBlocId.getOrDefault(blocId, BlocStats.EMPTY);

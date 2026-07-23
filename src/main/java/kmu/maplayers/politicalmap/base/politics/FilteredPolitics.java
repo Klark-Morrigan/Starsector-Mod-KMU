@@ -3,9 +3,6 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
-import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
-
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -154,16 +151,12 @@ public final class FilteredPolitics {
     public static FilteredOwnership resolveFilteredOwnership(
             SectorAPI sector, OwnershipGrouping grouping, String selectedBlocId) {
         return resolveFilteredOwnership(
-                sector,
-                DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(),
-                grouping,
-                selectedBlocId);
+                sector, DominancePass.readFromLunaSettings(grouping), selectedBlocId);
     }
 
     /**
-     * Builds the presence-aware ownership under an explicit weighting rule and grouping, for a
-     * caller that has already read the player's toggles for the pass.
+     * Builds the presence-aware ownership under an explicit dominance pass, for a caller that has
+     * already sampled the player's settings.
      *
      * <p>Mirrors {@link SectorPolitics#resolveDominantOwnerBySystemId} system for system: each
      * inhabited system resolves to one {@link DominantOwner} the geometry clusters by, but every
@@ -173,37 +166,20 @@ public final class FilteredPolitics {
      * returned contested set, the only place the dominant/contested split lives now that both
      * share a key. A system with no owned markets is absent, exactly as in the normal pass.
      *
-     * @param sector                       the sector whose economy is read; null yields empty
-     *                                     ownership
-     * @param rules                        the dominance-weighting rules for this pass
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count (the dev
-     *                                     reveal); false applies the normal known-to-player
-     *                                     filter
-     * @param grouping                     the active view's grouping that collapses factions into
-     *                                     blocs before dominance is compared
-     * @param selectedBlocId               the spotlighted bloc's id; null yields empty ownership
+     * @param sector         the sector whose economy is read; null yields empty ownership
+     * @param pass           the rule, dev reveal, and grouping this pass resolves under
+     * @param selectedBlocId the spotlighted bloc's id; null yields empty ownership
      * @return the presence-aware ownership: the owner per system and the contested spotlit systems
      */
     public static FilteredOwnership resolveFilteredOwnership(
-            SectorAPI sector,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping,
-            String selectedBlocId) {
+            SectorAPI sector, DominancePass pass, String selectedBlocId) {
         var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
         var contestedSystemIds = new LinkedHashSet<String>();
         if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
             return new FilteredOwnership(ownerBySystemId, contestedSystemIds);
         }
         for (var system : sector.getStarSystems()) {
-            var owner = resolveOwner(
-                    sector,
-                    system,
-                    rules,
-                    shouldIncludeUndiscoveredMarkets,
-                    grouping,
-                    selectedBlocId,
-                    contestedSystemIds);
+            var owner = resolveOwner(sector, system, pass, selectedBlocId, contestedSystemIds);
             if (owner != null) {
                 ownerBySystemId.put(system.getId(), owner);
             }
@@ -248,28 +224,15 @@ public final class FilteredPolitics {
     private static DominantOwner resolveOwner(
             SectorAPI sector,
             StarSystemAPI system,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping,
+            DominancePass pass,
             String selectedBlocId,
             Set<String> contestedSystemIds) {
-        var footprintByBlocId = SectorPolitics.regroupByBloc(
-                KnownMarketFootprints.readByFaction(
-                        sector,
-                        system,
-                        rules,
-                        shouldIncludeUndiscoveredMarkets),
-                grouping,
-                MarketFootprint.EMPTY,
-                MarketFootprint::merge);
+        var footprintByBlocId = pass.readBlocFootprints(sector, system);
         // The proximity tie-break the normal pass uses, so both the "does the selected bloc
         // dominate" call and the receded real-owner fallback settle a tie the same way the base
         // layers do; lazy, so it reads no geometry unless this system actually ties.
-        var tieBreak = MarketProximityTieBreak.forSystem(
-                sector,
-                system,
-                shouldIncludeUndiscoveredMarkets,
-                grouping);
+        var tieBreak = pass.tieBreakFor(sector, system);
+        var grouping = pass.grouping();
         var presence = classifySelectedBlocPresence(footprintByBlocId, selectedBlocId, tieBreak);
         if (presence == SelectedBlocPresence.ABSENT) {
             return resolveRealOwner(sector, grouping, footprintByBlocId, tieBreak);

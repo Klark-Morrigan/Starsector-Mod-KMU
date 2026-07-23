@@ -32,7 +32,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -282,8 +281,7 @@ final class AlliancesViewTest {
             when(leadFactionMock.getCrest()).thenReturn("graphics/rebels_crest.png");
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(
-                        any(), any(), anyBoolean(), any()))
+                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(any(), any()))
                         .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", BlocStats.EMPTY));
 
                 assertThat(view.resolveSelectableBlocs(sectorMock, ANY_RULES, false))

@@ -26,7 +26,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -195,8 +194,7 @@ final class FactionsViewTest {
             when(hegemonyMock.getDisplayName()).thenReturn("Hegemony");
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(
-                        any(), any(), anyBoolean(), any())).thenReturn(Map.of("hegemony", ANY_STATS));
+                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(any(), any())).thenReturn(Map.of("hegemony", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
                         .containsExactly(new SelectableBloc(
@@ -215,8 +213,7 @@ final class FactionsViewTest {
             when(factionMock.getDisplayName()).thenReturn("Path");
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(
-                        any(), any(), anyBoolean(), any()))
+                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(any(), any()))
                         .thenReturn(Map.of("luddic_path", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
@@ -231,8 +228,7 @@ final class FactionsViewTest {
             var sectorMock = mock(SectorAPI.class);
 
             try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(
-                        any(), any(), anyBoolean(), any())).thenReturn(Map.of());
+                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(any(), any())).thenReturn(Map.of());
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
                         .isEmpty();
