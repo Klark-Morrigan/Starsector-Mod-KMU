@@ -71,10 +71,29 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-bloc footprints under the pass's rule, reveal, and grouping: each faction's
-     * known markets folded into its footprint, then regrouped into per-bloc footprints (a no-op
-     * fold under identity, a member-summing merge under an alliance grouping). The one read shared
-     * by the ownership resolve and the filter's presence resolve, so both rank the same footprints.
+     * This system's per-faction footprints under the pass's rule and reveal, before any grouping:
+     * each faction's known markets folded into its own footprint. The ungrouped read the per-bloc
+     * read below builds on, and the one a two-tier standings breakdown needs whole so it can rank a
+     * bloc's members individually - both taking the read from the pass rather than re-deriving it
+     * from the loose knobs.
+     *
+     * @param sector the sector whose economy is read; assumed non-null with a non-null economy,
+     *               which the callers guard before delegating
+     * @param system the system whose markets are folded
+     * @return each present faction's footprint in the system; empty when the system holds no known
+     *         owned market
+     */
+    public Map<String, MarketFootprint> readFootprintsByFaction(
+            SectorAPI sector, StarSystemAPI system) {
+        return KnownMarketFootprints.readByFaction(
+                sector, system, rules, shouldIncludeUndiscoveredMarkets);
+    }
+
+    /**
+     * This system's per-bloc footprints under the pass's rule, reveal, and grouping: the per-faction
+     * footprints regrouped into per-bloc footprints (a no-op fold under identity, a member-summing
+     * merge under an alliance grouping). The one read shared by the ownership resolve and the
+     * filter's presence resolve, so both rank the same footprints.
      *
      * @param sector the sector whose economy is read; assumed non-null with a non-null economy,
      *               which the callers guard before delegating
@@ -83,8 +102,7 @@ public record DominancePass(
      */
     public Map<String, MarketFootprint> readBlocFootprints(SectorAPI sector, StarSystemAPI system) {
         return grouping.regroupByBloc(
-                KnownMarketFootprints.readByFaction(
-                        sector, system, rules, shouldIncludeUndiscoveredMarkets),
+                readFootprintsByFaction(sector, system),
                 MarketFootprint.EMPTY,
                 MarketFootprint::merge);
     }

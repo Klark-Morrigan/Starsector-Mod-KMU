@@ -61,9 +61,7 @@ public final class SystemStandings {
     public static List<GroupStanding> rankByDominationScore(
             SectorAPI sector, StarSystemAPI system, DominancePass pass) {
         return rankByDominationScore(
-                KnownMarketFootprints.readByFaction(
-                        sector, system, pass.rules(), pass.shouldIncludeUndiscoveredMarkets()),
-                pass.grouping());
+                pass.readFootprintsByFaction(sector, system), pass.grouping());
     }
 
     /**

@@ -91,6 +91,36 @@ class SystemStandingsTest {
         }
 
         @Test
+        void breaksAMemberScoreTieByLowestFactionId() {
+            // Both allied members score the same within their bloc, so the lower faction id ranks
+            // first - the id tie-break applies at the member tier as well as the group tier.
+            var footprints = orderedFootprints(
+                    "hegemony", new MarketFootprint(5, 5, 0),
+                    "astral_armada", new MarketFootprint(5, 5, 0));
+
+            var standings = SystemStandings.rankByDominationScore(footprints, allianceGrouping());
+
+            assertThat(standings).hasSize(1);
+            assertThat(standings.get(0).members()).extracting(FactionStanding::factionId)
+                    .containsExactly("astral_armada", "hegemony");
+        }
+
+        @Test
+        void keepsAPresentButWeightlessColonyInTheRanking() {
+            // A colony that folds in at zero weight still marks presence (an unopposed weightless
+            // colony still owns its system), so a zero-score faction stays a group rather than
+            // vanishing from the breakdown.
+            var footprints = orderedFootprints(
+                    "hegemony", new MarketFootprint(0, 0, 0));
+
+            var standings = SystemStandings.rankByDominationScore(
+                    footprints, OwnershipGrouping.identity());
+
+            assertThat(standings).containsExactly(
+                    new GroupStanding("hegemony", 0, List.of(new FactionStanding("hegemony", 0))));
+        }
+
+        @Test
         void ranksABlocAboveALoneFactionNoSingleMemberWouldOutrank() {
             // Neither allied member outscores the outsider alone, but their summed bloc does, so the
             // bloc ranks first - the two-tier sum, not any single member, decides the top tier.
