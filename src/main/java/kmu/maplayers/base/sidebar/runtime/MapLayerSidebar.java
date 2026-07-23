@@ -8,6 +8,7 @@ import com.fs.starfarer.api.util.Misc;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.map.CampaignMapView;
+import kmlib.starsector.ui.render.gl.NotchState;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
 import kmlib.starsector.ui.render.gl.TabStyle;
 import kmlib.starsector.ui.render.gl.VanillaTabColors;
@@ -101,7 +102,10 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         logViewStateOnChange("showing; " + CampaignMapView.describeViewState() + "; screen="
                 + settings.getScreenWidth() + "x" + settings.getScreenHeight()
                 + " box=" + formatRect(placement.body().box()) + " opacity=" + opacity);
-        TabPanelRenderer.render(placement, buildStyle(), borderWidth, opacity);
+        // Rendered fully expanded: this panel drives no collapse handle, so it passes the expanded,
+        // un-hovered notch state rather than a live one.
+        TabPanelRenderer.render(
+                placement, buildStyle(), borderWidth, new NotchState(0f, false), opacity);
     }
 
     // The map sidebar's look, built each frame from the live player colours: a black backdrop, the base
