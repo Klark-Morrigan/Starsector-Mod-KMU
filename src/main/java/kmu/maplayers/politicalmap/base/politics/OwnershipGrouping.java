@@ -1,6 +1,8 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BinaryOperator;
 
 /**
  * The rule that collapses faction ids into "bloc" ids for one ownership pass, so
@@ -74,6 +76,35 @@ public record OwnershipGrouping(
      */
     public String resolveBlocId(String factionId) {
         return blocIdByFactionId.getOrDefault(factionId, factionId);
+    }
+
+    /**
+     * Folds a per-faction map into a per-bloc map under this grouping: each faction's value merges
+     * into its bloc's through {@code merge}, so an alliance's members combine into one entry while
+     * an outsider stays its own bloc. Under the identity grouping every faction is its own bloc and
+     * each value merges into the identity alone, coming out unchanged - the no-op the faction view
+     * relies on. The map-level counterpart of {@link #resolveBlocId}.
+     *
+     * <p>Generic over the folded value so the dominance-only footprint regroup and the picker's
+     * fuller footprint-plus-market-size regroup share one fold rather than two copies of the idiom.
+     * First-seen bloc order is preserved, so the economy-walk ordering flows straight through.
+     *
+     * @param valueByFactionId each faction's value to fold, in walk order
+     * @param identity         the merge identity a bloc's first value combines with
+     * @param merge            combines two same-bloc values into one
+     * @param <T>              the folded value type
+     * @return each bloc's merged value, keyed by bloc id in first-seen order
+     */
+    public <T> Map<String, T> regroupByBloc(
+            Map<String, T> valueByFactionId, T identity, BinaryOperator<T> merge) {
+        var valueByBlocId = new LinkedHashMap<String, T>();
+        for (var entry : valueByFactionId.entrySet()) {
+            var blocId = resolveBlocId(entry.getKey());
+            valueByBlocId.put(
+                    blocId,
+                    merge.apply(valueByBlocId.getOrDefault(blocId, identity), entry.getValue()));
+        }
+        return valueByBlocId;
     }
 
     /**

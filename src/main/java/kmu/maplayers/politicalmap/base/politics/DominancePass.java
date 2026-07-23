@@ -82,10 +82,9 @@ public record DominancePass(
      * @return each present bloc's footprint in the system; empty when no bloc holds a folded market
      */
     public Map<String, MarketFootprint> readBlocFootprints(SectorAPI sector, StarSystemAPI system) {
-        return SectorPolitics.regroupByBloc(
+        return grouping.regroupByBloc(
                 KnownMarketFootprints.readByFaction(
                         sector, system, rules, shouldIncludeUndiscoveredMarkets),
-                grouping,
                 MarketFootprint.EMPTY,
                 MarketFootprint::merge);
     }

@@ -8,8 +8,8 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
+import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
@@ -193,8 +193,9 @@ final class FactionsViewTest {
             when(hegemonyMock.getCrest()).thenReturn("graphics/hegemony_crest.png");
             when(hegemonyMock.getDisplayName()).thenReturn("Hegemony");
 
-            try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(any(), any())).thenReturn(Map.of("hegemony", ANY_STATS));
+            try (MockedStatic<BlocStatsAggregator> aggregatorMock =
+                    mockStatic(BlocStatsAggregator.class)) {
+                aggregatorMock.when(() -> BlocStatsAggregator.aggregateBlocStats(any(), any())).thenReturn(Map.of("hegemony", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
                         .containsExactly(new SelectableBloc(
@@ -212,8 +213,9 @@ final class FactionsViewTest {
             when(factionMock.getCrest()).thenReturn(null);
             when(factionMock.getDisplayName()).thenReturn("Path");
 
-            try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(any(), any()))
+            try (MockedStatic<BlocStatsAggregator> aggregatorMock =
+                    mockStatic(BlocStatsAggregator.class)) {
+                aggregatorMock.when(() -> BlocStatsAggregator.aggregateBlocStats(any(), any()))
                         .thenReturn(Map.of("luddic_path", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
@@ -227,8 +229,9 @@ final class FactionsViewTest {
             // none.
             var sectorMock = mock(SectorAPI.class);
 
-            try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(any(), any())).thenReturn(Map.of());
+            try (MockedStatic<BlocStatsAggregator> aggregatorMock =
+                    mockStatic(BlocStatsAggregator.class)) {
+                aggregatorMock.when(() -> BlocStatsAggregator.aggregateBlocStats(any(), any())).thenReturn(Map.of());
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
                         .isEmpty();

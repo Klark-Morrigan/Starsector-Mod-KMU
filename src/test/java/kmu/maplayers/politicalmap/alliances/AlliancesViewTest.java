@@ -13,8 +13,8 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
+import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
@@ -280,8 +280,9 @@ final class AlliancesViewTest {
             when(sectorMock.getFaction("rebels")).thenReturn(leadFactionMock);
             when(leadFactionMock.getCrest()).thenReturn("graphics/rebels_crest.png");
 
-            try (MockedStatic<SectorPolitics> politicsMock = mockStatic(SectorPolitics.class)) {
-                politicsMock.when(() -> SectorPolitics.aggregateBlocStats(any(), any()))
+            try (MockedStatic<BlocStatsAggregator> aggregatorMock =
+                    mockStatic(BlocStatsAggregator.class)) {
+                aggregatorMock.when(() -> BlocStatsAggregator.aggregateBlocStats(any(), any()))
                         .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", BlocStats.EMPTY));
 
                 assertThat(view.resolveSelectableBlocs(sectorMock, ANY_RULES, false))

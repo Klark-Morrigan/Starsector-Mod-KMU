@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.BinaryOperator;
 
 /**
  * Resolves which faction owns each star system and in which colours that owner
@@ -17,6 +16,10 @@ import java.util.function.BinaryOperator;
  * winner's authored UI shades into a {@link DominantOwner} the render layer draws.
  * Confining the winning owner's {@code FactionAPI} palette lookup here keeps the
  * render layer clear of Starsector economy and faction types.
+ *
+ * <p>Resolves one render owner per system; the picker's whole-sector bloc totals are
+ * {@link BlocStatsAggregator}'s job, walking the same economy through the same
+ * {@link DominancePass} so the two never drift on which blocs hold territory.
  *
  * <p>The rule, dev reveal, and grouping a pass resolves under travel together as a
  * {@link DominancePass}: the live entry points read the player's settings into one,
@@ -166,37 +169,6 @@ public final class SectorPolitics {
     }
 
     /**
-     * The whole-sector {@link BlocStats} for every bloc holding a visible market somewhere, under a
-     * pass - the filter picker's selectable set (a bloc present here has presence of at least one,
-     * which is the {@code presence > 0} gate) paired with the four numbers the picker sorts and
-     * displays them by, all from one grouped per-system dominance pass.
-     *
-     * <p>One walk yields all four metrics so the picker never re-reads the economy per number: each
-     * system's per-faction contributions are regrouped into per-bloc footprints and market sizes, the
-     * one dominant bloc is resolved, and every present bloc takes a present-system entry (the dominant
-     * one also a domination count). Reading the same footprint, dominance inputs, and grouping the
-     * per-system ownership pass uses keeps the selectable gate honest - a bloc is offered exactly when
-     * it holds territory it could paint - rather than a second, drifting definition of presence. The
-     * order follows the economy walk, which each view then maps into its own picker options.
-     *
-     * @param sector the sector whose economy is read; null (or a null economy) yields an empty map
-     * @param pass   the rule, dev reveal, and grouping this read resolves under, sampled once by the
-     *               caller so the whole read resolves under one set of knobs
-     * @return each present bloc's stats, keyed by bloc id in economy-walk order; empty when no bloc
-     *         holds a visible market
-     */
-    public static Map<String, BlocStats> aggregateBlocStats(SectorAPI sector, DominancePass pass) {
-        var statsByBlocId = new LinkedHashMap<String, BlocStats>();
-        if (sector == null || sector.getEconomy() == null) {
-            return statsByBlocId;
-        }
-        for (var system : sector.getStarSystems()) {
-            accumulateSystemStats(statsByBlocId, sector, system, pass);
-        }
-        return statsByBlocId;
-    }
-
-    /**
      * Colours a bloc into a render-ready {@link DominantOwner}: the bloc's id paired with
      * the two shades it paints in.
      *
@@ -225,77 +197,5 @@ public final class SectorPolitics {
             return null;
         }
         return new DominantOwner(blocId, faction.getBrightUIColor(), faction.getDarkUIColor());
-    }
-
-    // Collapses the per-faction values into per-bloc values under the grouping: each faction's value
-    // merges into its bloc's, so an alliance's members fold into one summed unit. Under the identity
-    // grouping every faction is its own bloc and each value merges into the identity, leaving the
-    // per-faction values unchanged, so the winning bloc equals today's winner. Generic over the
-    // folded value so the dominance-only footprint regroup (the render's owner map, the filter's
-    // presence resolver) and the picker's fuller footprint-plus-market-size regroup share one fold
-    // rather than two copies of the same grouping idiom.
-    static <T> Map<String, T> regroupByBloc(
-            Map<String, T> valueByFactionId,
-            OwnershipGrouping grouping,
-            T identity,
-            BinaryOperator<T> merge) {
-        var valueByBlocId = new LinkedHashMap<String, T>();
-        for (var entry : valueByFactionId.entrySet()) {
-            var blocId = grouping.resolveBlocId(entry.getKey());
-            valueByBlocId.put(blocId,
-                    merge.apply(valueByBlocId.getOrDefault(blocId, identity), entry.getValue()));
-        }
-        return valueByBlocId;
-    }
-
-    // Folds one system into the running per-bloc stats: regroups the system's per-faction
-    // contributions into per-bloc footprints and raw market sizes, resolves the one dominant bloc,
-    // then adds a present-system entry to every bloc holding a market here - the dominant one also
-    // taking a domination count. A bloc holding markets in several systems accumulates rather than
-    // overwrites, and under an alliance grouping the members fold into the alliance's one bloc.
-    private static void accumulateSystemStats(
-            Map<String, BlocStats> statsByBlocId,
-            SectorAPI sector,
-            StarSystemAPI system,
-            DominancePass pass) {
-
-        // One regroup folds the footprint and the raw market size together (a bloc holding markets in
-        // several systems, or an alliance's members, accumulates rather than overwrites), then the
-        // dominance rule reads the footprint half of each bloc's folded contribution.
-        var contributionByBlocId = regroupByBloc(
-                KnownMarketFootprints.readContributionsByFaction(
-                        sector, system, pass.rules(), pass.shouldIncludeUndiscoveredMarkets()),
-                pass.grouping(),
-                FactionMarketContribution.EMPTY,
-                FactionMarketContribution::merge);
-
-        // The one winner among the system's present blocs; null only when no bloc is present here,
-        // in which case the loop below has nothing to fold and the system contributes no stats.
-        // Ties resolve by market proximity, the same as the render pass, so a picker's domination
-        // count matches the territory that actually paints.
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(
-                extractFootprints(contributionByBlocId),
-                pass.tieBreakFor(sector, system));
-        for (var entry : contributionByBlocId.entrySet()) {
-            var blocId = entry.getKey();
-            var stats = statsByBlocId.getOrDefault(blocId, BlocStats.EMPTY);
-            statsByBlocId.put(
-                    blocId,
-                    stats.addSystem(
-                            blocId.equals(dominantBlocId),
-                            entry.getValue().footprint().totalWeight(),
-                            entry.getValue().marketSize()));
-        }
-    }
-
-    // The footprint half of each bloc's folded contribution, so the dominance rule - which ranks
-    // footprints alone - reads them without the raw market size the stats pass also carries.
-    private static Map<String, MarketFootprint> extractFootprints(
-            Map<String, FactionMarketContribution> contributionByBlocId) {
-        var footprintByBlocId = new LinkedHashMap<String, MarketFootprint>();
-        for (var entry : contributionByBlocId.entrySet()) {
-            footprintByBlocId.put(entry.getKey(), entry.getValue().footprint());
-        }
-        return footprintByBlocId;
     }
 }
