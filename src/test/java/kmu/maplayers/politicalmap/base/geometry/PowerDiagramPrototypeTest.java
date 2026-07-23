@@ -176,8 +176,10 @@ final class PowerDiagramPrototypeTest {
             return buffed;
         }
 
-        // Each dead star's pocket radius: the largest disk centred on its star that fits in its
-        // cell (min perpendicular distance from the star to a cell edge). Zero when submerged.
+        // Each dead star's keep-out radius: the min distance from its star to a border facing OWNED
+        // territory. Borders facing another dead star are ignored - that side is neutral either way,
+        // so a dead star's pocket merges with its neutral neighbour's rather than being bounded by
+        // it. This is what the buff actually guarantees: clear space before a colony's colour.
         private static List<Double> deadStarPocketRadii(
                 List<LabelledPolygon> cells, List<double[]> sites, List<String> systemIds,
                 Map<String, String> groupKeys) {
@@ -186,18 +188,27 @@ final class PowerDiagramPrototypeTest {
                 if (groupKeys.containsKey(systemIds.get(i))) {
                     continue;
                 }
-                radii.add(pocketRadius(cells.get(i), sites.get(i)));
+                var radius = pocketRadiusVsOwned(cells.get(i), sites.get(i), systemIds, groupKeys);
+                if (!Double.isNaN(radius)) {
+                    radii.add(radius);
+                }
             }
             return radii;
         }
 
-        private static double pocketRadius(LabelledPolygon cell, double[] site) {
+        private static double pocketRadiusVsOwned(
+                LabelledPolygon cell, double[] site, List<String> systemIds,
+                Map<String, String> groupKeys) {
             var v = cell.getVertices();
+            var labels = cell.getEdgeLabels();
             if (v.size() < 3) {
                 return 0.0;
             }
             var minDist = Double.POSITIVE_INFINITY;
             for (var i = 0; i < v.size(); i++) {
+                if (labels[i] < 0 || !groupKeys.containsKey(systemIds.get(labels[i]))) {
+                    continue;
+                }
                 var a = v.get(i);
                 var b = v.get((i + 1) % v.size());
                 var dx = b[0] - a[0];
@@ -208,7 +219,7 @@ final class PowerDiagramPrototypeTest {
                             Math.abs((site[0] - a[0]) * dy - (site[1] - a[1]) * dx) / len);
                 }
             }
-            return minDist == Double.POSITIVE_INFINITY ? 0.0 : minDist;
+            return minDist == Double.POSITIVE_INFINITY ? Double.NaN : minDist;
         }
 
         // The side effect: adjacent (dead star, owned) pairs where the buffed dead star out-weighs

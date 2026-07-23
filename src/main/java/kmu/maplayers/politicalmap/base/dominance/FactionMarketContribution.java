@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.politics;
+package kmu.maplayers.politicalmap.base.dominance;
 
 /**
  * One faction's markets in a single star system, paired: the dominance {@link MarketFootprint} the
@@ -12,11 +12,25 @@ package kmu.maplayers.politicalmap.base.politics;
  * @param footprint  the faction's dominance footprint in the system
  * @param marketSize the faction's summed raw colony size in the system
  */
-record FactionMarketContribution(MarketFootprint footprint, int marketSize) {
+public record FactionMarketContribution(MarketFootprint footprint, int marketSize) {
 
     /** A faction with no counted markets; the identity a market fold begins from. */
-    static final FactionMarketContribution EMPTY =
+    public static final FactionMarketContribution EMPTY =
             new FactionMarketContribution(MarketFootprint.EMPTY, 0);
+
+    /**
+     * Folds another contribution into this one, combining two already-reduced contributions as a
+     * bloc: the footprints merge as the dominance rule expects and the raw market sizes sum. This is
+     * how the grouping collapses an alliance's member factions into the alliance's one contribution.
+     *
+     * @param other the other contribution to combine into this one
+     * @return a new contribution holding both
+     */
+    public FactionMarketContribution merge(FactionMarketContribution other) {
+        return new FactionMarketContribution(
+                footprint.merge(other.footprint()),
+                marketSize + other.marketSize());
+    }
 
     /**
      * Folds one owned market into this contribution: its dominance weight into the footprint and its
@@ -32,19 +46,5 @@ record FactionMarketContribution(MarketFootprint footprint, int marketSize) {
         return new FactionMarketContribution(
                 footprint.addMarket(marketWeight, isPlanetMarket),
                 this.marketSize + marketSize);
-    }
-
-    /**
-     * Folds another contribution into this one, combining two already-reduced contributions as a
-     * bloc: the footprints merge as the dominance rule expects and the raw market sizes sum. This is
-     * how the grouping collapses an alliance's member factions into the alliance's one contribution.
-     *
-     * @param other the other contribution to combine into this one
-     * @return a new contribution holding both
-     */
-    FactionMarketContribution merge(FactionMarketContribution other) {
-        return new FactionMarketContribution(
-                footprint.merge(other.footprint()),
-                marketSize + other.marketSize());
     }
 }

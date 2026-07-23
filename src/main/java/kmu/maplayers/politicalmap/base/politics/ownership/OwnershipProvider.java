@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.politics.ownership;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 
 /**
  * The source a political-map view resolves its per-system ownership from, so the render

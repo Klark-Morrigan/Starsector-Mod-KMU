@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.politics;
+package kmu.maplayers.politicalmap.base.dominance;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -11,7 +11,7 @@ import java.util.Map;
  * faction that holds the most. Keeping it free of {@code MarketAPI} / economy
  * access lets the dominance rule be exercised directly on hand-built inputs,
  * independent of how the live markets are read (that is
- * {@link SectorPolitics}'s job).
+ * {@link KnownMarketFootprints}'s job).
  *
  * <p>Dominance is decided by a four-level comparison of the footprints' weights
  * (each market's stability-scaled worth, not its raw size), each level breaking

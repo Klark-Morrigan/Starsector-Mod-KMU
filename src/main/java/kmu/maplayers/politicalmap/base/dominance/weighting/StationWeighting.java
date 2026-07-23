@@ -1,6 +1,6 @@
-package kmu.maplayers.politicalmap.base.politics.weighting;
+package kmu.maplayers.politicalmap.base.dominance.weighting;
 
-import kmu.maplayers.politicalmap.base.politics.KnownMarketFootprints;
+import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 
 /**
  * The attached-station factor of a dominance pass: whether a defensive station lifts

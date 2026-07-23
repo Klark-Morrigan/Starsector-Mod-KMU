@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.politics;
+package kmu.maplayers.politicalmap.base.dominance;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -6,7 +6,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.markets.Markets;
 
-import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import java.util.LinkedHashMap;
@@ -28,7 +28,7 @@ import java.util.Map;
  * so the map's inhabitation read (a plain presence test) and this weighted
  * dominance read share one definition of a known colony. The pure comparison of
  * the footprints it produces is {@link SystemDominance}'s job; turning the winner
- * into draw colors is {@link SectorPolitics}'s.
+ * into draw colours is a later, separate step.
  */
 public final class KnownMarketFootprints {
 
@@ -129,7 +129,7 @@ public final class KnownMarketFootprints {
      * @return each faction's contribution in the system, keyed by faction id; empty when the system
      *         holds no folded market
      */
-    static Map<String, FactionMarketContribution> readContributionsByFaction(
+    public static Map<String, FactionMarketContribution> readContributionsByFaction(
             SectorAPI sector,
             StarSystemAPI system,
             DominanceRules rules,

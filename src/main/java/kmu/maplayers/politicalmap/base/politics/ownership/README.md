@@ -111,7 +111,7 @@ inhabited systems.
 - The *render split* that turns the three states into triangles, hatch, and skipped fills is
   [`render.territories`](../../render/territories/README.md). This package decides the states; it
   does not draw them.
-- The *grouping* that folds a faction into its alliance bloc is `base.politics.OwnershipGrouping`,
+- The *grouping* that folds a faction into its alliance bloc is `base.dominance.OwnershipGrouping`,
   supplied by the view.
 - The *held resolve* and *filter resolve* the default source delegates to are `SectorPolitics` and
   `FilteredPolitics`, in `base.politics` (no separate README; see the source).

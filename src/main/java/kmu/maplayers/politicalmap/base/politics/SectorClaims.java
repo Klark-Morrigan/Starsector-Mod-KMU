@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.ClaimReader;
 
+import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 

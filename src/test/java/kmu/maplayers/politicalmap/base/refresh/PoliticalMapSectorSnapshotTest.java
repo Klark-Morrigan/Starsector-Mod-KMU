@@ -12,10 +12,10 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
-import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
-import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
-import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 /**
  * Integration coverage for the single-walk snapshot: {@link PoliticalMapSectorSnapshot}
  * driving the real visibility rule ({@link kmu.maplayers.politicalmap.base.PoliticalMapVisibility})
- * and dominance rule ({@link kmu.maplayers.politicalmap.base.politics.SystemDominance}) over a
+ * and dominance rule ({@link kmu.maplayers.politicalmap.base.dominance.SystemDominance}) over a
  * stubbed economy. Exercised together because the point of the snapshot is the
  * separation of shapes: one sector walk yields a scalar visibility fingerprint that
  * moves when the on-map set changes and a per-system owner map that moves when a

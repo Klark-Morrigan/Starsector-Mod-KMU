@@ -1,7 +1,7 @@
-package kmu.maplayers.politicalmap.base.politics.weighting;
+package kmu.maplayers.politicalmap.base.dominance.weighting;
 
-import kmu.maplayers.politicalmap.base.politics.KnownMarketFootprints;
-import kmu.maplayers.politicalmap.base.politics.SystemDominance;
+import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
+import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 import kmu.settings.KmuLunaSettings;
 
 /**

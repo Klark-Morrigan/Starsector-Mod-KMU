@@ -6,7 +6,7 @@ import kmlib.math.hashing.Fingerprints;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimsOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.ownership.OwnershipProvider;
 import kmu.maplayers.politicalmap.factions.FactionsView;

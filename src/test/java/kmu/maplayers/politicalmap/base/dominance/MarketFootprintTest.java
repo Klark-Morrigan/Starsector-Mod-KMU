@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.politics;
+package kmu.maplayers.politicalmap.base.dominance;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics.SelectedBlocPresence;
 
 import org.junit.jupiter.api.Nested;

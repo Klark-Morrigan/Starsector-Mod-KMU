@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 
 /**
  * The view one build painted and the grouping snapshot it resolved ownership under, held

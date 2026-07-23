@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.base.politics.ownership;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
-import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 
 import java.util.Set;

@@ -8,10 +8,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
-import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
-import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import org.lwjgl.util.vector.Vector2f;
@@ -37,16 +37,16 @@ import static org.mockito.Mockito.when;
  * colony" filter and the weight read touch; {@link #faction} comes in a palette-less form for the
  * footprint read that never resolves colours and a palette form for the resolves that do.
  */
-final class PoliticsTestSectors {
+public final class PoliticsTestSectors {
     /** The full-stability value a visible colony carries unless a test varies it. */
-    static final float FULL_STABILITY = 10.0f;
+    public static final float FULL_STABILITY = 10.0f;
 
     // A small stable of authored faction shades, distinct enough that a test telling one palette
     // from another reads clearly. Bright is the fill/border colour; the dark seam shade is derived.
-    static final Color HEGEMONY_BRIGHT = new Color(120, 160, 200);
-    static final Color TRITACHYON_BRIGHT = new Color(140, 180, 220);
-    static final Color PERSEAN_BRIGHT = new Color(160, 200, 240);
-    static final Color NEUTRAL_BASE = new Color(150, 150, 150);
+    public static final Color HEGEMONY_BRIGHT = new Color(120, 160, 200);
+    public static final Color TRITACHYON_BRIGHT = new Color(140, 180, 220);
+    public static final Color PERSEAN_BRIGHT = new Color(160, 200, 240);
+    public static final Color NEUTRAL_BASE = new Color(150, 150, 150);
 
     private PoliticsTestSectors() {
     }
@@ -59,7 +59,7 @@ final class PoliticsTestSectors {
      *
      * @return the shared stability-only weighting rule
      */
-    static DominanceRules stabilityWeightedRules() {
+    public static DominanceRules stabilityWeightedRules() {
         return new DominanceRules(true,
                 new BaseSizeWeighting(1.0, HiddenMarketScalingChoice.FIXED, 1.0, 1.0),
                 new StationWeighting(false, 1.0, 0.5, 0.5),
@@ -74,7 +74,7 @@ final class PoliticsTestSectors {
      * @param bright the faction's bright fill colour
      * @return the derived dark seam shade
      */
-    static Color dark(Color bright) {
+    public static Color dark(Color bright) {
         return bright.darker();
     }
 
@@ -85,7 +85,7 @@ final class PoliticsTestSectors {
      * @param id the faction id
      * @return the faction mock
      */
-    static FactionAPI faction(String id) {
+    public static FactionAPI faction(String id) {
         var factionMock = mock(FactionAPI.class);
         when(factionMock.getId()).thenReturn(id);
         return factionMock;
@@ -99,7 +99,7 @@ final class PoliticsTestSectors {
      * @param bright the faction's bright fill colour
      * @return the faction mock with its palette stubbed
      */
-    static FactionAPI faction(String id, Color bright) {
+    public static FactionAPI faction(String id, Color bright) {
         var factionMock = faction(id);
         when(factionMock.getBrightUIColor()).thenReturn(bright);
         when(factionMock.getDarkUIColor()).thenReturn(dark(bright));
@@ -113,7 +113,7 @@ final class PoliticsTestSectors {
      * @param size    the colony size
      * @return the market mock
      */
-    static MarketAPI visibleMarket(FactionAPI faction, int size) {
+    public static MarketAPI visibleMarket(FactionAPI faction, int size) {
         return market(faction, size, false, false, false, FULL_STABILITY);
     }
 
@@ -126,7 +126,7 @@ final class PoliticsTestSectors {
      * @param stability the market's stability value
      * @return the market mock
      */
-    static MarketAPI marketAtStability(FactionAPI faction, int size, float stability) {
+    public static MarketAPI marketAtStability(FactionAPI faction, int size, float stability) {
         return market(faction, size, false, false, false, stability);
     }
 
@@ -138,7 +138,7 @@ final class PoliticsTestSectors {
      * @param size    the colony size
      * @return the market mock
      */
-    static MarketAPI hiddenMarket(FactionAPI faction, int size) {
+    public static MarketAPI hiddenMarket(FactionAPI faction, int size) {
         return market(faction, size, false, true, false, FULL_STABILITY);
     }
 
@@ -150,7 +150,7 @@ final class PoliticsTestSectors {
      * @param size    the colony size
      * @return the market mock
      */
-    static MarketAPI undiscoveredHiddenMarket(FactionAPI faction, int size) {
+    public static MarketAPI undiscoveredHiddenMarket(FactionAPI faction, int size) {
         return market(faction, size, false, true, true, FULL_STABILITY);
     }
 
@@ -166,7 +166,7 @@ final class PoliticsTestSectors {
      * @param stability       the market's stability value
      * @return the market mock
      */
-    static MarketAPI market(FactionAPI faction, int size, boolean isConditionOnly,
+    public static MarketAPI market(FactionAPI faction, int size, boolean isConditionOnly,
             boolean isHidden, boolean isUndiscovered, float stability) {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.isDiscoverable()).thenReturn(isUndiscovered);
@@ -186,7 +186,7 @@ final class PoliticsTestSectors {
      * @param sector the sector to read
      * @return its sole star system
      */
-    static StarSystemAPI onlySystem(SectorAPI sector) {
+    public static StarSystemAPI onlySystem(SectorAPI sector) {
         return sector.getStarSystems().get(0);
     }
 
@@ -198,7 +198,7 @@ final class PoliticsTestSectors {
      * @param y the star's y location
      * @return the star mock
      */
-    static PlanetAPI starAt(float x, float y) {
+    public static PlanetAPI starAt(float x, float y) {
         var starMock = mock(PlanetAPI.class);
         when(starMock.isStar()).thenReturn(true);
         when(starMock.getLocation()).thenReturn(new Vector2f(x, y));
@@ -213,7 +213,7 @@ final class PoliticsTestSectors {
      * @param focus  the body it orbits
      * @return the orbiting-entity mock
      */
-    static SectorEntityToken orbitingEntity(float radius, SectorEntityToken focus) {
+    public static SectorEntityToken orbitingEntity(float radius, SectorEntityToken focus) {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.getCircularOrbitRadius()).thenReturn(radius);
         when(entityMock.getOrbitFocus()).thenReturn(focus);
@@ -228,7 +228,7 @@ final class PoliticsTestSectors {
      * @param radius the primary entity's circular-orbit radius
      * @param focus  the body the primary entity orbits
      */
-    static void placeMarketOnOrbit(MarketAPI market, float radius, SectorEntityToken focus) {
+    public static void placeMarketOnOrbit(MarketAPI market, float radius, SectorEntityToken focus) {
         // Build the orbiting entity (which stubs its own orbit) before opening the market's
         // stubbing, so the two do not nest into an unfinished-stubbing error.
         var entityMock = orbitingEntity(radius, focus);
@@ -242,7 +242,7 @@ final class PoliticsTestSectors {
      * @param system the system to centre
      * @param star   the star at its centre
      */
-    static void centreSystemOn(StarSystemAPI system, PlanetAPI star) {
+    public static void centreSystemOn(StarSystemAPI system, PlanetAPI star) {
         when(system.getCenter()).thenReturn(star);
         when(system.getPlanets()).thenReturn(List.of(star));
     }
@@ -255,7 +255,7 @@ final class PoliticsTestSectors {
      * @param markets  the markets its economy holds
      * @return the sector mock
      */
-    static SectorAPI sectorWith(String systemId, MarketAPI... markets) {
+    public static SectorAPI sectorWith(String systemId, MarketAPI... markets) {
         var systemMock = mock(StarSystemAPI.class);
         when(systemMock.getId()).thenReturn(systemId);
         var economyMock = mock(EconomyAPI.class);
@@ -275,7 +275,7 @@ final class PoliticsTestSectors {
      * @param markets  the markets its economy holds
      * @return the sector mock
      */
-    static SectorAPI sectorWith(String systemId, List<FactionAPI> factions, MarketAPI... markets) {
+    public static SectorAPI sectorWith(String systemId, List<FactionAPI> factions, MarketAPI... markets) {
         var sectorMock = sectorWith(systemId, markets);
         for (var faction : factions) {
             when(sectorMock.getFaction(faction.getId())).thenReturn(faction);
@@ -292,7 +292,7 @@ final class PoliticsTestSectors {
      * @param systems  each system's id paired with its markets
      * @return the sector mock
      */
-    static SectorAPI sectorWithSystems(List<FactionAPI> factions, SystemMarkets... systems) {
+    public static SectorAPI sectorWithSystems(List<FactionAPI> factions, SystemMarkets... systems) {
         var economyMock = mock(EconomyAPI.class);
         var systemMocks = new ArrayList<StarSystemAPI>();
         for (var system : systems) {
@@ -327,7 +327,7 @@ final class PoliticsTestSectors {
      * @param markets the markets the system's economy holds
      * @return the system-markets pairing
      */
-    static SystemMarkets systemMarkets(String id, MarketAPI... markets) {
+    public static SystemMarkets systemMarkets(String id, MarketAPI... markets) {
         return new SystemMarkets(id, List.of(markets));
     }
 }

@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.politics;
+package kmu.maplayers.politicalmap.base.dominance;
 
 /**
  * One owner's market footprint within a single star system, reduced to the
@@ -11,9 +11,9 @@ package kmu.maplayers.politicalmap.base.politics;
  * so the rule ranks what each market is worth, not merely how big it is.
  *
  * <p>A plain value with no Starsector types so {@link SystemDominance} can be
- * exercised on hand-built inputs: {@link SectorPolitics} reads the live economy
- * and folds each owned market into its owner's footprint, while the rule only
- * ever sees these totals.
+ * exercised on hand-built inputs: {@link KnownMarketFootprints} reads the live
+ * economy and folds each owned market into its owner's footprint, while the rule
+ * only ever sees these totals.
  */
 public record MarketFootprint(int totalWeight, int largestMarketWeight, int planetWeight) {
 

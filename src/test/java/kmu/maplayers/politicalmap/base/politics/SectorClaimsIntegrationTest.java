@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.politics;
 
 import kmlib.testfixtures.starsector.systems.ClaimReaderFake;
 
+import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

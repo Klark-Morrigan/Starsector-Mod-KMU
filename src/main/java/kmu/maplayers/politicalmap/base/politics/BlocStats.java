@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
+
 /**
  * The four whole-sector numbers the filter picker sorts and displays a selectable bloc by, computed
  * once per grouped dominance pass and carried on {@link

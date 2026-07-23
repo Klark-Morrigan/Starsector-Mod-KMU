@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.politics;
+package kmu.maplayers.politicalmap.base.dominance;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
@@ -9,10 +9,10 @@ import com.fs.starfarer.api.impl.campaign.ids.Stats;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import com.fs.starfarer.api.util.DynamicStatsAPI;
 
-import kmu.maplayers.politicalmap.base.politics.weighting.BaseSizeWeighting;
-import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
-import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static kmu.maplayers.politicalmap.base.politics.KnownMarketFootprints.DOMINANCE_WEIGHT_SCALE;
+import static kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints.DOMINANCE_WEIGHT_SCALE;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.faction;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.hiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.market;

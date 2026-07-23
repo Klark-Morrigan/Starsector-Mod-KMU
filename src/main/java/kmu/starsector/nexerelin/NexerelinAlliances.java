@@ -2,7 +2,7 @@ package kmu.starsector.nexerelin;
 
 import com.fs.starfarer.api.Global;
 
-import kmu.maplayers.politicalmap.base.politics.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 
 /**
  * The soft-dependency gate for the political map's alliance grouping: it answers
