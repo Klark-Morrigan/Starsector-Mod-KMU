@@ -5,6 +5,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.politicalmap.base.BlocListColumns;
+import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.SortDirection;
@@ -215,7 +216,8 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
 
                 var picker = pickerOf(FilterPickerControl.buildControls(
-                        VIEW_ID, BLOCS, null, BlocSortMode.DOMINATION, SortDirection.ASCENDING,
+                        VIEW_ID, BLOCS, null,
+                        new BlocSort(BlocSortMode.DOMINATION, SortDirection.ASCENDING),
                         BlocListColumns.ONE));
 
                 assertThat(picker.labels()).containsExactly("Free Traders", "Hegemony");
@@ -306,12 +308,12 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var oneColumn = pickerOf(FilterPickerControl.buildControls(VIEW_ID, BLOCS, null,
-                        BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection(),
-                        BlocListColumns.ONE));
-                var twoColumn = pickerOf(FilterPickerControl.buildControls(VIEW_ID, BLOCS, null,
-                        BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection(),
-                        BlocListColumns.TWO));
+                var defaultSort = new BlocSort(
+                        BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection());
+                var oneColumn = pickerOf(FilterPickerControl.buildControls(
+                        VIEW_ID, BLOCS, null, defaultSort, BlocListColumns.ONE));
+                var twoColumn = pickerOf(FilterPickerControl.buildControls(
+                        VIEW_ID, BLOCS, null, defaultSort, BlocListColumns.TWO));
 
                 assertThat(oneColumn.columnCount()).isEqualTo(1);
                 assertThat(twoColumn.columnCount()).isEqualTo(2);
@@ -375,8 +377,8 @@ final class FilterPickerControlTest {
     // the direction calls the full builder directly.
     private static List<ControlSpec> build(List<SelectableBloc> blocs, String selectedBlocId,
             BlocSortMode mode) {
-        return FilterPickerControl.buildControls(VIEW_ID, blocs, selectedBlocId, mode,
-                mode.defaultDirection(), BlocListColumns.ONE);
+        return FilterPickerControl.buildControls(VIEW_ID, blocs, selectedBlocId,
+                new BlocSort(mode, mode.defaultDirection()), BlocListColumns.ONE);
     }
 
     // The picker list is always the block's last row, so a test reads it from the tail. Read as the

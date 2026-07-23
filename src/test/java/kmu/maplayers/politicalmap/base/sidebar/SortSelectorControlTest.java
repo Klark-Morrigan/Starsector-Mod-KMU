@@ -1,8 +1,10 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
+import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 import kmlib.starsector.ui.controls.TriangleDirection;
 
+import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.refresh.SortSelection;
@@ -37,7 +39,7 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
+                var selector = buildSelector(BlocSortMode.DEFAULT,
                         BlocSortMode.DEFAULT.defaultDirection());
 
                 // A vertical table by type; a sort is always active, so it never deselects - instead a
@@ -51,7 +53,7 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
+                var selector = buildSelector(BlocSortMode.DEFAULT,
                         BlocSortMode.DEFAULT.defaultDirection());
 
                 assertThat(selector.labels())
@@ -64,7 +66,7 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.MARKET_SIZE,
+                var selector = buildSelector(BlocSortMode.MARKET_SIZE,
                         SortDirection.DESCENDING);
 
                 assertThat(selector.selectedIndex()).isEqualTo(MODES.indexOf(BlocSortMode.MARKET_SIZE));
@@ -80,7 +82,7 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DOMINATION,
+                var selector = buildSelector(BlocSortMode.DOMINATION,
                         SortDirection.ASCENDING);
 
                 var nameRow = MODES.indexOf(BlocSortMode.NAME);
@@ -99,7 +101,7 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
 
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
+                var selector = buildSelector(BlocSortMode.DEFAULT,
                         BlocSortMode.DEFAULT.defaultDirection());
 
                 assertThat(selector.hasIconAt(MODES.indexOf(BlocSortMode.DOMINATION))).isFalse();
@@ -117,7 +119,7 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DOMINATION,
+                var selector = buildSelector(BlocSortMode.DOMINATION,
                         SortDirection.DESCENDING);
                 var presenceRow = MODES.indexOf(BlocSortMode.PRESENCE);
 
@@ -141,7 +143,7 @@ final class SortSelectorControlTest {
                         .thenReturn(BlocSortMode.DOMINATION.persistenceKey());
                 selectionMock.when(SortSelection::getSortDirectionKey)
                         .thenReturn(SortDirection.ASCENDING.persistenceKey());
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DOMINATION,
+                var selector = buildSelector(BlocSortMode.DOMINATION,
                         SortDirection.ASCENDING);
                 var dominationRow = MODES.indexOf(BlocSortMode.DOMINATION);
 
@@ -160,7 +162,7 @@ final class SortSelectorControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
                 SortLabelStubs.stubSortLabels(stringsMock);
-                var selector = SortSelectorControl.buildSelector(BlocSortMode.DEFAULT,
+                var selector = buildSelector(BlocSortMode.DEFAULT,
                         BlocSortMode.DEFAULT.defaultDirection());
 
                 selector.action().activateCell(MODES.size());
@@ -170,4 +172,11 @@ final class SortSelectorControlTest {
         }
     }
 
+    // Builds the selector from a mode and direction the tests spell out as a pair, wrapping them into
+    // the BlocSort the production builder now takes, so each call site reads as the mode-and-direction
+    // it exercises rather than a record construction.
+    private static ControlSpec.VerticalTable buildSelector(
+            BlocSortMode mode, SortDirection direction) {
+        return SortSelectorControl.buildSelector(new BlocSort(mode, direction));
+    }
 }

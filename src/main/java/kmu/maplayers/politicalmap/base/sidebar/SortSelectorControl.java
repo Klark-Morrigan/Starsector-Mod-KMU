@@ -4,6 +4,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 import kmlib.starsector.ui.controls.TriangleDirection;
 
+import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.refresh.SortSelection;
@@ -43,13 +44,11 @@ public final class SortSelectorControl {
      * mode's current direction on the lit row, each other mode's default direction on its own row, so
      * every row previews the order picking it would give.
      *
-     * @param activeMode      the mode the list is currently ranked by, which this lights
-     * @param activeDirection the direction the active mode is currently ranking in
+     * @param activeSort the sort the list is currently ranked by - the mode this lights and the
+     *                   direction that mode is ranking in
      * @return the vertical, re-firing sort-selector radio table
      */
-    public static ControlSpec.VerticalTable buildSelector(
-            BlocSortMode activeMode,
-            SortDirection activeDirection) {
+    public static ControlSpec.VerticalTable buildSelector(BlocSort activeSort) {
         var modes = List.of(BlocSortMode.values());
         var labels = new ArrayList<String>(modes.size());
         var directions = new ArrayList<TriangleDirection>(modes.size());
@@ -57,13 +56,15 @@ public final class SortSelectorControl {
             labels.add(KmuStrings.get(mode.labelKey()));
             // The lit mode shows its live direction; every other row previews its own default, so a
             // row reads as "pick me and the list sorts this way".
-            var rowDirection = mode == activeMode ? activeDirection : mode.defaultDirection();
+            var rowDirection = mode == activeSort.mode()
+                    ? activeSort.direction()
+                    : mode.defaultDirection();
             directions.add(resolveTriangleDirection(rowDirection));
         }
         return ControlSpec.VerticalTable.directionTable(
                 labels,
                 directions,
-                modes.indexOf(activeMode),
+                modes.indexOf(activeSort.mode()),
                 cellIndex -> applySelection(modes, cellIndex),
                 ReselectBehaviour.REFIRE);
     }
@@ -84,11 +85,9 @@ public final class SortSelectorControl {
             return;
         }
         var clickedMode = modes.get(cellIndex);
-        var currentMode = BlocSortMode.fromKeyOrDefault(SortSelection.getSortModeKey());
-        if (clickedMode == currentMode) {
-            var currentDirection = SortDirection.fromKeyOrDefault(
-                    SortSelection.getSortDirectionKey(), currentMode.defaultDirection());
-            SortSelection.selectSortDirection(currentDirection.opposite().persistenceKey());
+        var current = BlocSort.resolveStored();
+        if (clickedMode == current.mode()) {
+            SortSelection.selectSortDirection(current.direction().opposite().persistenceKey());
         } else {
             SortSelection.selectSortMode(clickedMode.persistenceKey());
             SortSelection.selectSortDirection(clickedMode.defaultDirection().persistenceKey());

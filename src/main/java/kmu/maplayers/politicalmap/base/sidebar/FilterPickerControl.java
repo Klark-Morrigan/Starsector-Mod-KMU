@@ -3,10 +3,10 @@ package kmu.maplayers.politicalmap.base.sidebar;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.BlocListColumns;
+import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
-import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
 
@@ -52,10 +52,8 @@ public final class FilterPickerControl {
      * @param blocs          the selectable blocs under the active view; order here is immaterial since
      *                       the sort mode reorders them for display
      * @param selectedBlocId the currently spotlighted bloc's id, or null when no filter is active
-     * @param sortMode       the metric the list is ranked by, which also picks each row's trailing
-     *                       value
-     * @param sortDirection  the direction the sort mode runs in, which the ranking follows and the
-     *                       sort selector previews
+     * @param sort           the metric and direction the list is ranked by, which also picks each row's
+     *                       trailing value and the sort selector previews
      * @param columns        how many columns the bloc list wraps its rows across, which the columns
      *                       selector lights and the list lays out under
      * @return the picker body controls, top to bottom; empty when {@code blocs} is empty
@@ -64,8 +62,7 @@ public final class FilterPickerControl {
             String viewId,
             List<SelectableBloc> blocs,
             String selectedBlocId,
-            BlocSortMode sortMode,
-            SortDirection sortDirection,
+            BlocSort sort,
             BlocListColumns columns) {
         if (blocs.isEmpty()) {
             return List.of();
@@ -74,7 +71,7 @@ public final class FilterPickerControl {
         // untouched, so the rows draw in the chosen order and the lit index below is resolved against
         // that same order.
         var rankedBlocs = new ArrayList<>(blocs);
-        rankedBlocs.sort(sortMode.comparator(sortDirection));
+        rankedBlocs.sort(sort.comparator());
         var selectedIndex = resolveSelectedIndex(rankedBlocs, selectedBlocId);
         var controls = new ArrayList<ControlSpec>();
         // A rule heads the block, parting the view-level controls above from the picker below - the
@@ -89,7 +86,7 @@ public final class FilterPickerControl {
         // simply has no visible effect until a bloc is spotlighted, so the knobs stay put whether or not
         // a filter is active.
         controls.add(new ControlSpec.SideBySide(
-                List.of(SortSelectorControl.buildSelector(sortMode, sortDirection)),
+                List.of(SortSelectorControl.buildSelector(sort)),
                 RecedeControl.buildControls(
                         RecedePreferences.FILTER,
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))));
@@ -101,7 +98,7 @@ public final class FilterPickerControl {
                 ControlSpec.VerticalTable.iconList(
                         resolveLabels(rankedBlocs),
                         resolveIconPaths(rankedBlocs),
-                        resolveTrailingValues(rankedBlocs, sortMode),
+                        resolveTrailingValues(rankedBlocs, sort.mode()),
                         selectedIndex,
                         cellIndex -> pickBloc(viewId, rankedBlocs, selectedIndex, cellIndex),
                         columns.columnCount())

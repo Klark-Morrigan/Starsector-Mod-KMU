@@ -8,7 +8,6 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.politicalmap.base.refresh.ColumnSelection;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
-import kmu.maplayers.politicalmap.base.refresh.SortSelection;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
@@ -88,11 +87,9 @@ public final class PoliticalMapLayer implements MapLayer {
             // dominance and dev-reveal settings; empty (no present bloc) contributes no picker. Read
             // through the memo so this per-frame body build reads a cached list rather than re-walking
             // the economy every frame the map is open.
-            // Resolve the direction against the mode's default, so a save with no stored direction (a
-            // pre-direction save, or one that never flipped) reads as the mode's natural order.
-            var sortMode = BlocSortMode.fromKeyOrDefault(SortSelection.getSortModeKey());
-            var sortDirection = SortDirection.fromKeyOrDefault(
-                    SortSelection.getSortDirectionKey(), sortMode.defaultDirection());
+            // The stored sort (mode and direction), resolved live so a save with no stored direction
+            // reads the mode's natural order.
+            var sort = BlocSort.resolveStored();
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
             var columns = BlocListColumns.fromKeyOrDefault(ColumnSelection.getColumnCountKey());
@@ -101,8 +98,7 @@ public final class PoliticalMapLayer implements MapLayer {
                     viewId,
                     SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
                     FilterSelection.getSelectedBlocId(viewId),
-                    sortMode,
-                    sortDirection,
+                    sort,
                     columns));
             controls.addAll(selectedView.getViewBodyControls());
         }
