@@ -8,6 +8,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.util.Misc;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.input.UiCursor;
@@ -17,6 +18,7 @@ import kmlib.starsector.ui.render.gl.BorderedBoxRenderer;
 import kmlib.starsector.ui.render.gl.GlStateGuard;
 import kmlib.starsector.ui.render.gl.LabelRenderer;
 
+import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -73,7 +75,7 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
             return;
         }
         var hover = PoliticalMapHoverState.getInstance().getHover();
-        if (!hover.isHovering()) {
+        if (!shouldDrawTooltipFor(hover)) {
             return;
         }
         var sector = Global.getSector();
@@ -81,12 +83,21 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
             return;
         }
         // The hover carries a system id; resolve it to the live system, tolerating an id that no longer
-        // resolves (a system dropped between the publish and this paint).
-        var system = sector.getStarSystem(hover.hoveredSystemId());
+        // resolves (a system dropped between the publish and this paint). Matched by getId - vanilla's
+        // getStarSystem keys on the optional unique id first and would miss a base-name-keyed system.
+        var system = StarSystems.findById(sector, hover.hoveredSystemId());
         if (system == null) {
             return;
         }
         drawTooltip(sector, system);
+    }
+
+    // Whether the box should draw for this hover: only when a cell is hovered and the cursor is not
+    // on its star icon, where the vanilla star tooltip draws instead - so exactly one box ever
+    // shows. The highlight ignores this gate and stays lit over the icon, since dropping it there
+    // would flicker the territory off exactly when the player is pointing at its heart.
+    static boolean shouldDrawTooltipFor(PoliticalMapHover hover) {
+        return hover.isHovering() && !hover.isOverStarIcon();
     }
 
     // Resolves the box's content - the system name, its owner colour, and the owner line - then draws

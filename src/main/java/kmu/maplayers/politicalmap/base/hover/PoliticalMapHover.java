@@ -14,18 +14,38 @@ import java.util.List;
  * <p>"Nothing hovered" is {@link #NONE} rather than a null hover, so a reader tests a flag instead
  * of guarding a dereference.
  *
+ * <p>The star-icon flag rides along in the same value so a reader gates on it and the hovered cell
+ * as one consistent pair: the tooltip both names the hovered system and steps aside when the cursor
+ * is on that system's star icon, and a torn read could show the box for one frame's cell while
+ * suppressing on another's. The highlight ignores the flag by design - it covers the whole cell,
+ * icon included - so an icon-agnostic hover leaves it false.
+ *
  * @param hoveredSystemId          the system under the cursor, or null when it is over no cell -
  *                                 the channel between cells, or empty space beyond the map
  * @param clusterMemberSystemIds   every system in that cell's contiguous territory, the hovered
  *                                 cell included; empty when nothing is hovered
+ * @param isOverStarIcon           whether the cursor is directly on the hovered system's star icon,
+ *                                 the gate that hands the icon back to the vanilla star tooltip
  */
-public record PoliticalMapHover(String hoveredSystemId, List<String> clusterMemberSystemIds) {
+public record PoliticalMapHover(
+        String hoveredSystemId, List<String> clusterMemberSystemIds, boolean isOverStarIcon) {
 
     /** The cursor is over no cell, so nothing highlights and nothing is broken down. */
     public static final PoliticalMapHover NONE = new PoliticalMapHover(null, List.of());
 
     public PoliticalMapHover {
         clusterMemberSystemIds = List.copyOf(clusterMemberSystemIds);
+    }
+
+    /**
+     * A hover carrying no icon-gate verdict, for a caller with no notion of it - the highlight,
+     * which lights the whole cell, and the {@link #NONE} sentinel.
+     *
+     * @param hoveredSystemId        the system under the cursor, or null when over no cell
+     * @param clusterMemberSystemIds the systems in that cell's contiguous territory
+     */
+    public PoliticalMapHover(String hoveredSystemId, List<String> clusterMemberSystemIds) {
+        this(hoveredSystemId, clusterMemberSystemIds, false);
     }
 
     /**

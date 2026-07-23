@@ -55,6 +55,12 @@ public final class PoliticalMapTerritories {
     // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
     // hover is exactly what the frame painted.
     private final Map<String, List<double[]>> fillPolygonByCellId = new LinkedHashMap<>();
+    // Each system's static star-icon geometry, keyed by system id, captured once per full build.
+    // Kept apart from the fill polygon because it does not churn as cells re-shape - an anchor does
+    // not move and a star does not resize - so it is not paired into putStyledCell but written once
+    // at build and read by id. A hovered cell is always a drawn cell, so an entry for a system that
+    // never draws is simply never read.
+    private final Map<String, StarIconGeometry> starIconBySystemId = new LinkedHashMap<>();
     // Retained derivation inputs. The owner map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
     private final Map<String, DominantOwner> ownerBySystemId;
@@ -139,6 +145,20 @@ public final class PoliticalMapTerritories {
     }
 
     /**
+     * Records one system's star-icon geometry, the input the cursor's icon gate reads by id.
+     *
+     * <p>Written on its own rather than paired into {@link #putStyledCell} because it does not
+     * change when a cell re-shapes: the whole build's set is captured once up front, and the churn
+     * of cells drawing and dropping never touches it.
+     *
+     * @param systemId the system this geometry is for
+     * @param starIcon its anchor and star radius
+     */
+    public void putStarIconGeometry(String systemId, StarIconGeometry starIcon) {
+        starIconBySystemId.put(systemId, starIcon);
+    }
+
+    /**
      * Drops one cell entirely - it draws nothing, so it can be hovered over no more than
      * it can be seen.
      *
@@ -155,6 +175,15 @@ public final class PoliticalMapTerritories {
      */
     public Map<String, List<double[]>> getFillPolygonByCellId() {
         return fillPolygonByCellId;
+    }
+
+    /**
+     * @param systemId the hovered cell's system
+     * @return that system's star-icon geometry, or null when it has none (no anchor, or not
+     *         captured), which the cursor read takes as "not over an icon"
+     */
+    public StarIconGeometry getStarIconGeometry(String systemId) {
+        return starIconBySystemId.get(systemId);
     }
 
     /**

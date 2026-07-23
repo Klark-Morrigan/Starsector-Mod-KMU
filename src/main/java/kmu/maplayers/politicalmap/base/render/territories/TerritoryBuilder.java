@@ -144,6 +144,12 @@ public final class TerritoryBuilder {
                     new ViewGrouping(view, grouping),
                     new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
 
+            // Snapshot every system's star-icon geometry once for the whole build, so the cursor's
+            // icon gate reads a static value by id rather than resolving a system each frame. It is
+            // captured here, off the sector, not paired into the per-cell writes below, because it
+            // never changes as cells re-shape.
+            captureStarIconGeometry(territories, sector);
+
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
             // geometry clusters by grouping key, so hand it each system's faction id as the
             // key. Cells consumed by the inset (fewer than three vertices left) drop out.
@@ -384,6 +390,27 @@ public final class TerritoryBuilder {
             return FillState.HATCHED;
         }
         return FillState.SOLID;
+    }
+
+    // Captures each system's star-icon inputs - its hyperspace anchor and star radius - keyed by
+    // system id. Every system is snapshotted, not only the drawn ones: a hovered cell is always a
+    // drawn one, so a spare entry is harmless, and reading the whole sector once is cheaper and
+    // simpler than filtering to the draw set. A system with no anchor is skipped, and a starless
+    // one keeps a zero radius, which the hit test reads as the smallest icon.
+    private static void captureStarIconGeometry(
+            PoliticalMapTerritories territories, SectorAPI sector) {
+        for (var system : sector.getStarSystems()) {
+            var anchor = system.getHyperspaceAnchor();
+            if (anchor == null || anchor.getLocation() == null) {
+                continue;
+            }
+            var star = system.getStar();
+            var starRadius = star == null ? 0f : star.getRadius();
+            territories.putStarIconGeometry(
+                    system.getId(),
+                    new StarIconGeometry(
+                            anchor.getLocation().x, anchor.getLocation().y, starRadius));
+        }
     }
 
     // Builds every owned faction's territory into the territories, keyed by faction id.

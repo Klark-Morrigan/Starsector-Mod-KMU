@@ -9,6 +9,7 @@ import kmu.maplayers.politicalmap.base.geometry.SystemClusterIndex;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.maplayers.politicalmap.base.render.territories.StarIconGeometry;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,14 +107,29 @@ final class PoliticalMapHoverPublisherTest {
         return buildPublisherReading(buildTranslationMatrix(PAN_X, PAN_Y));
     }
 
+    // A full-size star, so its reconstructed icon radius is a round 20 pixels and the on/off-icon
+    // anchors below can be placed by eye against the cursor's world point.
+    private static final float FULL_STAR_RADIUS = 100f;
+
     // The frame's draw lists with one drawn cell, clustered with a neighbour so a published hover
     // proves it carries the whole territory and not just the cell it resolved.
     private static PoliticalMapCache buildCacheWithOneCell() {
+        return buildCacheWith(null);
+    }
+
+    // The same one-cell frame, plus a captured star icon at the given anchor, so the icon gate has
+    // geometry to test the cursor against.
+    private static PoliticalMapCache buildCacheWithStarIconAt(double anchorX, double anchorY) {
+        return buildCacheWith(new StarIconGeometry(anchorX, anchorY, FULL_STAR_RADIUS));
+    }
+
+    private static PoliticalMapCache buildCacheWith(StarIconGeometry starIcon) {
         var territoriesMock = mock(PoliticalMapTerritories.class);
         when(territoriesMock.getFillPolygonByCellId())
                 .thenReturn(Map.of(HOVERED_SYSTEM_ID, CELL_POLYGON));
         when(territoriesMock.getClusterIndex()).thenReturn(SystemClusterIndex.indexClusters(
                 List.of(List.of(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID))));
+        when(territoriesMock.getStarIconGeometry(HOVERED_SYSTEM_ID)).thenReturn(starIcon);
         var cacheMock = mock(PoliticalMapCache.class);
         when(cacheMock.getTerritories()).thenReturn(territoriesMock);
         return cacheMock;
@@ -226,6 +242,28 @@ final class PoliticalMapHoverPublisherTest {
             buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), UNUSABLE_ZOOM);
 
             assertThat(hoverState.getHover()).isSameAs(PoliticalMapHover.NONE);
+        }
+
+        @Test
+        void publishHoverFromFlagsTheStarIconWhenTheCursorSitsOnIt() {
+            // The star icon sits right where the cursor unprojects to (world 200, 150), so the
+            // gate fires and the tooltip will step aside for the vanilla star tooltip.
+            buildPublisherOnALiveMap()
+                    .publishHoverFrom(buildCacheWithStarIconAt(200d, 150d), MAP_ZOOM);
+
+            assertThat(hoverState.getHover().isOverStarIcon()).isTrue();
+        }
+
+        @Test
+        void publishHoverFromLeavesTheStarIconUnflaggedOverTheRestOfTheCell() {
+            // The cursor is still in the cell but well clear of the icon at (250, 150) - 50 world
+            // units off, past the icon at this zoom - so the cell stays hovered while the gate
+            // stays down and the tooltip box keeps drawing.
+            buildPublisherOnALiveMap()
+                    .publishHoverFrom(buildCacheWithStarIconAt(250d, 150d), MAP_ZOOM);
+
+            assertThat(hoverState.getHover().isHovering()).isTrue();
+            assertThat(hoverState.getHover().isOverStarIcon()).isFalse();
         }
     }
 }
