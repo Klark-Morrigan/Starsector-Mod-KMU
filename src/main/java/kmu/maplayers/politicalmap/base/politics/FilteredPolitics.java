@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -86,8 +87,9 @@ public final class FilteredPolitics {
      * reads - so a bloc marks presence exactly where it could paint. A present bloc that also
      * wins the dominance comparison dominates; a present bloc a rival outranks is present but
      * dominated; a bloc with no footprint is absent. The comparison uses the same
-     * {@link SystemDominance} rule the normal pass does, so "does the selected bloc dominate" is
-     * judged against honest competition under the active grouping.
+     * {@link SystemDominance} rule the normal pass does, breaking a tie by lowest id, so "does
+     * the selected bloc dominate" is judged against honest competition under the active
+     * grouping.
      *
      * @param footprintByBlocId each bloc's footprint in the system, already regrouped under the
      *                          active view's grouping; empty means no owned markets
@@ -96,10 +98,31 @@ public final class FilteredPolitics {
      */
     public static SelectedBlocPresence classifySelectedBlocPresence(
             Map<String, MarketFootprint> footprintByBlocId, String selectedBlocId) {
+        return classifySelectedBlocPresence(
+                footprintByBlocId, selectedBlocId, Comparator.naturalOrder());
+    }
+
+    /**
+     * Classifies how the selected bloc stands in one system, breaking a dominance tie with the
+     * supplied comparator so the spotlight's "dominates" matches the owner the normal pass would
+     * paint - the live filter branch hands in the market-proximity tie-break the normal pass
+     * uses, so a tied system is drawn solid or hatched consistently with the base layers.
+     *
+     * @param footprintByBlocId each bloc's footprint in the system, already regrouped under the
+     *                          active view's grouping; empty means no owned markets
+     * @param selectedBlocId    the spotlighted bloc's id (a faction id, or an alliance id)
+     * @param tieBreak          consulted only when the selected bloc ties a rival on every
+     *                          weight level; the id it orders first dominates the system
+     * @return where the selected bloc stands in this system
+     */
+    public static SelectedBlocPresence classifySelectedBlocPresence(
+            Map<String, MarketFootprint> footprintByBlocId,
+            String selectedBlocId,
+            Comparator<String> tieBreak) {
         if (!footprintByBlocId.containsKey(selectedBlocId)) {
             return SelectedBlocPresence.ABSENT;
         }
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId);
+        var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId, tieBreak);
         return selectedBlocId.equals(dominantBlocId)
                 ? SelectedBlocPresence.DOMINATES
                 : SelectedBlocPresence.PRESENT_BUT_DOMINATED;
@@ -130,9 +153,12 @@ public final class FilteredPolitics {
      */
     public static FilteredOwnership resolveFilteredOwnership(
             SectorAPI sector, OwnershipGrouping grouping, String selectedBlocId) {
-        return resolveFilteredOwnership(sector, DominanceRules.readFromLunaSettings(),
+        return resolveFilteredOwnership(
+                sector,
+                DominanceRules.readFromLunaSettings(),
                 PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(),
-                grouping, selectedBlocId);
+                grouping,
+                selectedBlocId);
     }
 
     /**
@@ -159,51 +185,30 @@ public final class FilteredPolitics {
      * @return the presence-aware ownership: the owner per system and the contested spotlit systems
      */
     public static FilteredOwnership resolveFilteredOwnership(
-            SectorAPI sector, DominanceRules rules, boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping, String selectedBlocId) {
+            SectorAPI sector,
+            DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets,
+            OwnershipGrouping grouping,
+            String selectedBlocId) {
         var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
         var contestedSystemIds = new LinkedHashSet<String>();
         if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
             return new FilteredOwnership(ownerBySystemId, contestedSystemIds);
         }
         for (var system : sector.getStarSystems()) {
-            var owner = resolveOwner(sector, system, rules, shouldIncludeUndiscoveredMarkets,
-                    grouping, selectedBlocId, contestedSystemIds);
+            var owner = resolveOwner(
+                    sector,
+                    system,
+                    rules,
+                    shouldIncludeUndiscoveredMarkets,
+                    grouping,
+                    selectedBlocId,
+                    contestedSystemIds);
             if (owner != null) {
                 ownerBySystemId.put(system.getId(), owner);
             }
         }
         return new FilteredOwnership(ownerBySystemId, contestedSystemIds);
-    }
-
-    // Resolves one system's presence-aware owner: the selected bloc under the spotlit key where
-    // it is present (recording the system as contested when it is present but dominated),
-    // otherwise the system's real dominant owner unchanged (flagged to recede by the caller,
-    // which sees a key isSpotlitBloc rejects). Reads and regroups the footprints once and shares
-    // them with both the classification and the real-owner fallback.
-    private static DominantOwner resolveOwner(SectorAPI sector, StarSystemAPI system,
-            DominanceRules rules, boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping, String selectedBlocId, Set<String> contestedSystemIds) {
-        var footprintByBlocId = SectorPolitics.regroupByBloc(
-                KnownMarketFootprints.readByFaction(sector, system, rules,
-                        shouldIncludeUndiscoveredMarkets),
-                grouping, MarketFootprint.EMPTY, MarketFootprint::merge);
-        var presence = classifySelectedBlocPresence(footprintByBlocId, selectedBlocId);
-        if (presence == SelectedBlocPresence.ABSENT) {
-            return resolveRealOwner(sector, grouping, footprintByBlocId);
-        }
-        var spotlit = resolveSpotlitOwner(sector, grouping, selectedBlocId);
-        // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
-        // case where it vanished mid-session, so the system still draws (as its real receded
-        // owner) rather than dropping off the map - and a system that fell back is not spotlit,
-        // so it is not recorded contested.
-        if (spotlit == null) {
-            return resolveRealOwner(sector, grouping, footprintByBlocId);
-        }
-        if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
-            contestedSystemIds.add(system.getId());
-        }
-        return spotlit;
     }
 
     /**
@@ -223,7 +228,9 @@ public final class FilteredPolitics {
      * @param selectedBlocId the spotlighted bloc to draw the system under
      * @return the spotlight owner, or null when the bloc's colour faction does not resolve
      */
-    public static DominantOwner resolveSpotlitOwner(SectorAPI sector, OwnershipGrouping grouping,
+    public static DominantOwner resolveSpotlitOwner(
+            SectorAPI sector,
+            OwnershipGrouping grouping,
             String selectedBlocId) {
         var paletteOwner = SectorPolitics.resolveBlocOwner(sector, grouping, selectedBlocId);
         if (paletteOwner == null) {
@@ -233,12 +240,64 @@ public final class FilteredPolitics {
                 paletteOwner.primaryColor(), paletteOwner.secondaryColor());
     }
 
+    // Resolves one system's presence-aware owner: the selected bloc under the spotlit key where
+    // it is present (recording the system as contested when it is present but dominated),
+    // otherwise the system's real dominant owner unchanged (flagged to recede by the caller,
+    // which sees a key isSpotlitBloc rejects). Reads and regroups the footprints once and shares
+    // them with both the classification and the real-owner fallback.
+    private static DominantOwner resolveOwner(
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets,
+            OwnershipGrouping grouping,
+            String selectedBlocId,
+            Set<String> contestedSystemIds) {
+        var footprintByBlocId = SectorPolitics.regroupByBloc(
+                KnownMarketFootprints.readByFaction(
+                        sector,
+                        system,
+                        rules,
+                        shouldIncludeUndiscoveredMarkets),
+                grouping,
+                MarketFootprint.EMPTY,
+                MarketFootprint::merge);
+        // The proximity tie-break the normal pass uses, so both the "does the selected bloc
+        // dominate" call and the receded real-owner fallback settle a tie the same way the base
+        // layers do; lazy, so it reads no geometry unless this system actually ties.
+        var tieBreak = MarketProximityTieBreak.forSystem(
+                sector,
+                system,
+                shouldIncludeUndiscoveredMarkets,
+                grouping);
+        var presence = classifySelectedBlocPresence(footprintByBlocId, selectedBlocId, tieBreak);
+        if (presence == SelectedBlocPresence.ABSENT) {
+            return resolveRealOwner(sector, grouping, footprintByBlocId, tieBreak);
+        }
+        var spotlit = resolveSpotlitOwner(sector, grouping, selectedBlocId);
+        // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
+        // case where it vanished mid-session, so the system still draws (as its real receded
+        // owner) rather than dropping off the map - and a system that fell back is not spotlit,
+        // so it is not recorded contested.
+        if (spotlit == null) {
+            return resolveRealOwner(sector, grouping, footprintByBlocId, tieBreak);
+        }
+        if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
+            contestedSystemIds.add(system.getId());
+        }
+        return spotlit;
+    }
+
     // The system's real dominant owner, unchanged from the normal pass, for a system the
     // selected bloc is absent from. Its real key (rejected by isSpotlitBloc) is how the caller
-    // knows to recede it.
-    private static DominantOwner resolveRealOwner(SectorAPI sector, OwnershipGrouping grouping,
-            Map<String, MarketFootprint> footprintByBlocId) {
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId);
+    // knows to recede it. Takes the same proximity tie-break the normal pass uses so a tied
+    // receded system draws the same owner it would off filter.
+    private static DominantOwner resolveRealOwner(
+            SectorAPI sector,
+            OwnershipGrouping grouping,
+            Map<String, MarketFootprint> footprintByBlocId,
+            Comparator<String> tieBreak) {
+        var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId, tieBreak);
         if (dominantBlocId == null) {
             return null;
         }

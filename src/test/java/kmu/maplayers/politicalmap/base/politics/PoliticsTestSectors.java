@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
+import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -12,6 +13,8 @@ import kmu.maplayers.politicalmap.base.politics.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.politics.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
+
+import org.lwjgl.util.vector.Vector2f;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -185,6 +188,63 @@ final class PoliticsTestSectors {
      */
     static StarSystemAPI onlySystem(SectorAPI sector) {
         return sector.getStarSystems().get(0);
+    }
+
+    /**
+     * A star at a location, resolvable as a star, so a distance-from-centre read can pick the
+     * star nearest the system centre.
+     *
+     * @param x the star's x location
+     * @param y the star's y location
+     * @return the star mock
+     */
+    static PlanetAPI starAt(float x, float y) {
+        var starMock = mock(PlanetAPI.class);
+        when(starMock.isStar()).thenReturn(true);
+        when(starMock.getLocation()).thenReturn(new Vector2f(x, y));
+        return starMock;
+    }
+
+    /**
+     * A body on a circular orbit of the given radius around a focus, the unit a distance-from-
+     * centre read sums up the orbit-focus chain.
+     *
+     * @param radius the body's circular-orbit radius
+     * @param focus  the body it orbits
+     * @return the orbiting-entity mock
+     */
+    static SectorEntityToken orbitingEntity(float radius, SectorEntityToken focus) {
+        var entityMock = mock(SectorEntityToken.class);
+        when(entityMock.getCircularOrbitRadius()).thenReturn(radius);
+        when(entityMock.getOrbitFocus()).thenReturn(focus);
+        return entityMock;
+    }
+
+    /**
+     * Re-points a market's primary entity to a body on the given orbit, so a resolve reading
+     * orbit geometry places the market that far from the system centre.
+     *
+     * @param market the market to place
+     * @param radius the primary entity's circular-orbit radius
+     * @param focus  the body the primary entity orbits
+     */
+    static void placeMarketOnOrbit(MarketAPI market, float radius, SectorEntityToken focus) {
+        // Build the orbiting entity (which stubs its own orbit) before opening the market's
+        // stubbing, so the two do not nest into an unfinished-stubbing error.
+        var entityMock = orbitingEntity(radius, focus);
+        when(market.getPrimaryEntity()).thenReturn(entityMock);
+    }
+
+    /**
+     * Centres a system on a star - both its centre and its one star - so a distance-from-centre
+     * read resolves that star as its reference.
+     *
+     * @param system the system to centre
+     * @param star   the star at its centre
+     */
+    static void centreSystemOn(StarSystemAPI system, PlanetAPI star) {
+        when(system.getCenter()).thenReturn(star);
+        when(system.getPlanets()).thenReturn(List.of(star));
     }
 
     /**

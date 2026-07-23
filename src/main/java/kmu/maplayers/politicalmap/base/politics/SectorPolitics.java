@@ -66,8 +66,11 @@ public final class SectorPolitics {
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
             SectorAPI sector, OwnershipGrouping grouping) {
-        return resolveDominantOwnerBySystemId(sector, DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(), grouping);
+        return resolveDominantOwnerBySystemId(
+                sector,
+                DominanceRules.readFromLunaSettings(),
+                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(),
+                grouping);
     }
 
     /**
@@ -82,7 +85,11 @@ public final class SectorPolitics {
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
             SectorAPI sector, DominanceRules rules) {
-        return resolveDominantOwnerBySystemId(sector, rules, false, OwnershipGrouping.identity());
+        return resolveDominantOwnerBySystemId(
+                sector,
+                rules,
+                false,
+                OwnershipGrouping.identity());
     }
 
     /**
@@ -103,9 +110,13 @@ public final class SectorPolitics {
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
-            SectorAPI sector, DominanceRules rules,
+            SectorAPI sector,
+            DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
-        return resolveDominantOwnerBySystemId(sector, rules, shouldIncludeUndiscoveredMarkets,
+        return resolveDominantOwnerBySystemId(
+                sector,
+                rules,
+                shouldIncludeUndiscoveredMarkets,
                 OwnershipGrouping.identity());
     }
 
@@ -130,16 +141,22 @@ public final class SectorPolitics {
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
-            SectorAPI sector, DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets, OwnershipGrouping grouping) {
+            SectorAPI sector,
+            DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets,
+            OwnershipGrouping grouping) {
         var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
         if (sector == null) {
             return ownerBySystemId;
         }
 
         for (var system : sector.getStarSystems()) {
-            var owner = resolveDominantOwner(sector, system, rules,
-                    shouldIncludeUndiscoveredMarkets, grouping);
+            var owner = resolveDominantOwner(
+                    sector,
+                    system,
+                    rules,
+                    shouldIncludeUndiscoveredMarkets,
+                    grouping);
             if (owner != null) {
                 ownerBySystemId.put(system.getId(), owner);
             }
@@ -188,10 +205,16 @@ public final class SectorPolitics {
      * @return the dominant owner, or null when the system holds no owned market
      *         (uninhabited)
      */
-    public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system,
+    public static DominantOwner resolveDominantOwner(
+            SectorAPI sector,
+            StarSystemAPI system,
             OwnershipGrouping grouping) {
-        return resolveDominantOwner(sector, system, DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(), grouping);
+        return resolveDominantOwner(
+                sector,
+                system,
+                DominanceRules.readFromLunaSettings(),
+                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(),
+                grouping);
     }
 
     /**
@@ -205,9 +228,16 @@ public final class SectorPolitics {
      * @return the dominant owner, or null when the system holds no owned market
      *         (uninhabited)
      */
-    public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system,
+    public static DominantOwner resolveDominantOwner(
+            SectorAPI sector,
+            StarSystemAPI system,
             DominanceRules rules) {
-        return resolveDominantOwner(sector, system, rules, false, OwnershipGrouping.identity());
+        return resolveDominantOwner(
+                sector,
+                system,
+                rules,
+                false,
+                OwnershipGrouping.identity());
     }
 
     /**
@@ -228,9 +258,16 @@ public final class SectorPolitics {
      * @return the dominant owner, or null when the system holds no folded market
      *         (uninhabited)
      */
-    public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system,
-            DominanceRules rules, boolean shouldIncludeUndiscoveredMarkets) {
-        return resolveDominantOwner(sector, system, rules, shouldIncludeUndiscoveredMarkets,
+    public static DominantOwner resolveDominantOwner(
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets) {
+        return resolveDominantOwner(
+                sector,
+                system,
+                rules,
+                shouldIncludeUndiscoveredMarkets,
                 OwnershipGrouping.identity());
     }
 
@@ -263,21 +300,83 @@ public final class SectorPolitics {
      * @return the dominant owner, or null when the system holds no folded market
      *         (uninhabited)
      */
-    public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system,
-            DominanceRules rules, boolean shouldIncludeUndiscoveredMarkets,
+    public static DominantOwner resolveDominantOwner(
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets,
             OwnershipGrouping grouping) {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
         }
-        var footprintByFactionId = KnownMarketFootprints.readByFaction(sector, system,
-                rules, shouldIncludeUndiscoveredMarkets);
-        var footprintByBlocId = regroupByBloc(footprintByFactionId, grouping,
-                MarketFootprint.EMPTY, MarketFootprint::merge);
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId);
+        var footprintByFactionId = KnownMarketFootprints.readByFaction(
+                sector,
+                system,
+                rules,
+                shouldIncludeUndiscoveredMarkets);
+        var footprintByBlocId = regroupByBloc(
+                footprintByFactionId,
+                grouping,
+                MarketFootprint.EMPTY,
+                MarketFootprint::merge);
+        var dominantBlocId = SystemDominance.resolveDominantFactionId(
+                footprintByBlocId,
+                MarketProximityTieBreak.forSystem(
+                        sector,
+                        system,
+                        shouldIncludeUndiscoveredMarkets,
+                        grouping));
         if (dominantBlocId == null) {
             return null;
         }
         return resolveBlocOwner(sector, grouping, dominantBlocId);
+    }
+
+    /**
+     * The whole-sector {@link BlocStats} for every bloc holding a visible market somewhere, under a
+     * grouping - the filter picker's selectable set (a bloc present here has presence of at least
+     * one, which is the {@code presence > 0} gate) paired with the four numbers the picker sorts and
+     * displays them by, all from one grouped per-system dominance pass.
+     *
+     * <p>One walk yields all four metrics so the picker never re-reads the economy per number: each
+     * system's per-faction contributions are regrouped into per-bloc footprints and market sizes, the
+     * one dominant bloc is resolved, and every present bloc takes a present-system entry (the dominant
+     * one also a domination count). Reading the same footprint, dominance inputs, and grouping the
+     * per-system ownership pass uses keeps the selectable gate honest - a bloc is offered exactly when
+     * it holds territory it could paint - rather than a second, drifting definition of presence. The
+     * order follows the economy walk, which each view then maps into its own picker options.
+     *
+     * @param sector                       the sector whose economy is read; null (or a null economy)
+     *                                     yields an empty map
+     * @param rules                        the dominance-weighting rules for this read, read once by
+     *                                     the caller so the whole read resolves under one rule
+     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count (the "show all
+     *                                     factions" dev reveal); false applies the normal
+     *                                     known-to-player filter
+     * @param grouping                     the ownership grouping that collapses factions into blocs;
+     *                                     the identity grouping keeps every faction its own bloc
+     * @return each present bloc's stats, keyed by bloc id in economy-walk order; empty when no bloc
+     *         holds a visible market
+     */
+    public static Map<String, BlocStats> aggregateBlocStats(
+            SectorAPI sector,
+            DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets,
+            OwnershipGrouping grouping) {
+        var statsByBlocId = new LinkedHashMap<String, BlocStats>();
+        if (sector == null || sector.getEconomy() == null) {
+            return statsByBlocId;
+        }
+        for (var system : sector.getStarSystems()) {
+            accumulateSystemStats(
+                    statsByBlocId,
+                    sector,
+                    system,
+                    rules,
+                    shouldIncludeUndiscoveredMarkets,
+                    grouping);
+        }
+        return statsByBlocId;
     }
 
     /**
@@ -311,44 +410,25 @@ public final class SectorPolitics {
         return new DominantOwner(blocId, faction.getBrightUIColor(), faction.getDarkUIColor());
     }
 
-    /**
-     * The whole-sector {@link BlocStats} for every bloc holding a visible market somewhere, under a
-     * grouping - the filter picker's selectable set (a bloc present here has presence of at least
-     * one, which is the {@code presence > 0} gate) paired with the four numbers the picker sorts and
-     * displays them by, all from one grouped per-system dominance pass.
-     *
-     * <p>One walk yields all four metrics so the picker never re-reads the economy per number: each
-     * system's per-faction contributions are regrouped into per-bloc footprints and market sizes, the
-     * one dominant bloc is resolved, and every present bloc takes a present-system entry (the dominant
-     * one also a domination count). Reading the same footprint, dominance inputs, and grouping the
-     * per-system ownership pass uses keeps the selectable gate honest - a bloc is offered exactly when
-     * it holds territory it could paint - rather than a second, drifting definition of presence. The
-     * order follows the economy walk, which each view then maps into its own picker options.
-     *
-     * @param sector                       the sector whose economy is read; null (or a null economy)
-     *                                     yields an empty map
-     * @param rules                        the dominance-weighting rules for this read, read once by
-     *                                     the caller so the whole read resolves under one rule
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count (the "show all
-     *                                     factions" dev reveal); false applies the normal
-     *                                     known-to-player filter
-     * @param grouping                     the ownership grouping that collapses factions into blocs;
-     *                                     the identity grouping keeps every faction its own bloc
-     * @return each present bloc's stats, keyed by bloc id in economy-walk order; empty when no bloc
-     *         holds a visible market
-     */
-    public static Map<String, BlocStats> aggregateBlocStats(
-            SectorAPI sector, DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets, OwnershipGrouping grouping) {
-        var statsByBlocId = new LinkedHashMap<String, BlocStats>();
-        if (sector == null || sector.getEconomy() == null) {
-            return statsByBlocId;
+    // Collapses the per-faction values into per-bloc values under the grouping: each faction's value
+    // merges into its bloc's, so an alliance's members fold into one summed unit. Under the identity
+    // grouping every faction is its own bloc and each value merges into the identity, leaving the
+    // per-faction values unchanged, so the winning bloc equals today's winner. Generic over the
+    // folded value so the dominance-only footprint regroup (the render's owner map, the filter's
+    // presence resolver) and the picker's fuller footprint-plus-market-size regroup share one fold
+    // rather than two copies of the same grouping idiom.
+    static <T> Map<String, T> regroupByBloc(
+            Map<String, T> valueByFactionId,
+            OwnershipGrouping grouping,
+            T identity,
+            BinaryOperator<T> merge) {
+        var valueByBlocId = new LinkedHashMap<String, T>();
+        for (var entry : valueByFactionId.entrySet()) {
+            var blocId = grouping.resolveBlocId(entry.getKey());
+            valueByBlocId.put(blocId,
+                    merge.apply(valueByBlocId.getOrDefault(blocId, identity), entry.getValue()));
         }
-        for (var system : sector.getStarSystems()) {
-            accumulateSystemStats(statsByBlocId, sector, system, rules,
-                    shouldIncludeUndiscoveredMarkets, grouping);
-        }
-        return statsByBlocId;
+        return valueByBlocId;
     }
 
     // Folds one system into the running per-bloc stats: regroups the system's per-faction
@@ -356,25 +436,44 @@ public final class SectorPolitics {
     // then adds a present-system entry to every bloc holding a market here - the dominant one also
     // taking a domination count. A bloc holding markets in several systems accumulates rather than
     // overwrites, and under an alliance grouping the members fold into the alliance's one bloc.
-    private static void accumulateSystemStats(Map<String, BlocStats> statsByBlocId, SectorAPI sector,
-            StarSystemAPI system, DominanceRules rules, boolean shouldIncludeUndiscoveredMarkets,
+    private static void accumulateSystemStats(
+            Map<String, BlocStats> statsByBlocId,
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets,
             OwnershipGrouping grouping) {
+
         // One regroup folds the footprint and the raw market size together (a bloc holding markets in
         // several systems, or an alliance's members, accumulates rather than overwrites), then the
         // dominance rule reads the footprint half of each bloc's folded contribution.
         var contributionByBlocId = regroupByBloc(
                 KnownMarketFootprints.readContributionsByFaction(
                         sector, system, rules, shouldIncludeUndiscoveredMarkets),
-                grouping, FactionMarketContribution.EMPTY, FactionMarketContribution::merge);
+                grouping,
+                FactionMarketContribution.EMPTY,
+                FactionMarketContribution::merge);
+
         // The one winner among the system's present blocs; null only when no bloc is present here,
         // in which case the loop below has nothing to fold and the system contributes no stats.
+        // Ties resolve by market proximity, the same as the render pass, so a picker's domination
+        // count matches the territory that actually paints.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
-                extractFootprints(contributionByBlocId));
+                extractFootprints(contributionByBlocId),
+                MarketProximityTieBreak.forSystem(
+                        sector,
+                        system,
+                        shouldIncludeUndiscoveredMarkets,
+                        grouping));
         for (var entry : contributionByBlocId.entrySet()) {
             var blocId = entry.getKey();
             var stats = statsByBlocId.getOrDefault(blocId, BlocStats.EMPTY);
-            statsByBlocId.put(blocId, stats.addSystem(blocId.equals(dominantBlocId),
-                    entry.getValue().footprint().totalWeight(), entry.getValue().marketSize()));
+            statsByBlocId.put(
+                    blocId,
+                    stats.addSystem(
+                            blocId.equals(dominantBlocId),
+                            entry.getValue().footprint().totalWeight(),
+                            entry.getValue().marketSize()));
         }
     }
 
@@ -387,23 +486,5 @@ public final class SectorPolitics {
             footprintByBlocId.put(entry.getKey(), entry.getValue().footprint());
         }
         return footprintByBlocId;
-    }
-
-    // Collapses the per-faction values into per-bloc values under the grouping: each faction's value
-    // merges into its bloc's, so an alliance's members fold into one summed unit. Under the identity
-    // grouping every faction is its own bloc and each value merges into the identity, leaving the
-    // per-faction values unchanged, so the winning bloc equals today's winner. Generic over the
-    // folded value so the dominance-only footprint regroup (the render's owner map, the filter's
-    // presence resolver) and the picker's fuller footprint-plus-market-size regroup share one fold
-    // rather than two copies of the same grouping idiom.
-    static <T> Map<String, T> regroupByBloc(Map<String, T> valueByFactionId,
-            OwnershipGrouping grouping, T identity, BinaryOperator<T> merge) {
-        var valueByBlocId = new LinkedHashMap<String, T>();
-        for (var entry : valueByFactionId.entrySet()) {
-            var blocId = grouping.resolveBlocId(entry.getKey());
-            valueByBlocId.put(blocId,
-                    merge.apply(valueByBlocId.getOrDefault(blocId, identity), entry.getValue()));
-        }
-        return valueByBlocId;
     }
 }

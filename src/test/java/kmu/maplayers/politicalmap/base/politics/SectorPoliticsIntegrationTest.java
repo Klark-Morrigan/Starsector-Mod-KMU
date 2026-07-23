@@ -17,14 +17,17 @@ import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.FULL_
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.NEUTRAL_BASE;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.centreSystemOn;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.dark;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.faction;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.hiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.marketAtStability;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.onlySystem;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.placeMarketOnOrbit;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWith;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.stabilityWeightedRules;
+import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.starAt;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.systemMarkets;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.undiscoveredHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.visibleMarket;
@@ -194,6 +197,58 @@ class SectorPoliticsIntegrationTest {
             assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
                     .containsEntry("tie-system",
                             new DominantOwner("tritachyon", TRITACHYON_BRIGHT, dark(TRITACHYON_BRIGHT)));
+        }
+
+        @Test
+        void resolveDominantOwnerBreaksAFullTieByMarketProximity() {
+            // Two size-5 station colonies tie on every weight level, so the winner falls to the
+            // tie-break. hegemony's market orbits nearer the star, so it takes the system even
+            // though the lowest-id fallback would hand it to blackrock - proximity, not id.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var blackrock = faction("blackrock", TRITACHYON_BRIGHT);
+            var hegemonyMarket = visibleMarket(hegemony, 5);
+            var blackrockMarket = visibleMarket(blackrock, 5);
+            var sector = sectorWith("rama", List.of(hegemony, blackrock),
+                    hegemonyMarket, blackrockMarket);
+            var star = starAt(0.0f, 0.0f);
+            centreSystemOn(onlySystem(sector), star);
+            placeMarketOnOrbit(hegemonyMarket, 100.0f, star);
+            placeMarketOnOrbit(blackrockMarket, 200.0f, star);
+
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+                    .containsEntry("rama",
+                            new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
+        }
+
+        @Test
+        void resolveDominantOwnerResolvesATiedSystemAlikeUnderFactionAndAllianceGrouping() {
+            // The same two tied markets - hegemony's nearer the star than blackrock's - decide
+            // the system, so the hegemony side wins whether hegemony stands alone (faction view)
+            // or folds into an alliance (alliance view). The tie never flips between the views.
+            var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
+            var blackrock = faction("blackrock", TRITACHYON_BRIGHT);
+            var hegemonyMarket = visibleMarket(hegemony, 5);
+            var blackrockMarket = visibleMarket(blackrock, 5);
+            var sector = sectorWith("rama", List.of(hegemony, blackrock),
+                    hegemonyMarket, blackrockMarket);
+            var star = starAt(0.0f, 0.0f);
+            centreSystemOn(onlySystem(sector), star);
+            placeMarketOnOrbit(hegemonyMarket, 100.0f, star);
+            placeMarketOnOrbit(blackrockMarket, 200.0f, star);
+            var grouping = new OwnershipGrouping(
+                    Map.of("hegemony", "greater_hegemony"),
+                    Map.of("greater_hegemony", "hegemony"),
+                    Map.of("greater_hegemony", "Greater Hegemony"));
+
+            // Faction view: hegemony wins. Alliance view: the hegemony-led alliance wins the
+            // same system, painted in hegemony's palette under the alliance bloc id.
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(sector, STABILITY_WEIGHTED))
+                    .containsEntry("rama",
+                            new DominantOwner("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantOwnerBySystemId(
+                    sector, STABILITY_WEIGHTED, false, grouping))
+                    .containsEntry("rama", new DominantOwner(
+                            "greater_hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));
         }
 
         @Test

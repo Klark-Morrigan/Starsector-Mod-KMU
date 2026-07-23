@@ -136,10 +136,7 @@ public final class KnownMarketFootprints {
             boolean shouldIncludeUndiscoveredMarkets) {
         var contributionByFactionId = new LinkedHashMap<String, FactionMarketContribution>();
         for (var market : sector.getEconomy().getMarkets(system)) {
-            if (!Markets.isOwnedColony(market)) {
-                continue;
-            }
-            if (!shouldIncludeUndiscoveredMarkets && !Markets.isKnownToPlayer(market)) {
+            if (!Markets.isCountedAsColony(market, shouldIncludeUndiscoveredMarkets)) {
                 continue;
             }
             var factionId = market.getFaction().getId();
