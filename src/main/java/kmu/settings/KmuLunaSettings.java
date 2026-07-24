@@ -106,6 +106,12 @@ public final class KmuLunaSettings {
             "kmu_politicalMapSidebarBorderWidth";
     private static final String SIDEBAR_OPACITY_FIELD =
             "kmu_politicalMapSidebarOpacity";
+    // Vanilla map-icon collision scales (Political map - compatibility tab): shrink the per-icon
+    // no-tooltip zone so the overlay tooltip returns closer to a star or black hole icon.
+    private static final String ICON_PLANET_COLLISION_SCALE_FIELD =
+            "kmu_politicalMapIconPlanetCollisionScale";
+    private static final String ICON_BLACK_HOLE_COLLISION_SCALE_FIELD =
+            "kmu_politicalMapIconBlackHoleCollisionScale";
     // How long the sidebar's collapse handle takes to fold the body to its docked rail (and
     // unfold it), in seconds; 0 snaps it instantly. Player-facing animation pace, so it sits
     // in the Overlay sidebar section of the visuals tab beside the box's other appearance knobs.
@@ -427,6 +433,11 @@ public final class KmuLunaSettings {
     private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
     private static final int MIN_SIDEBAR_OPACITY_PERCENT = 0;
     private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
+    // Below 1 by default: vanilla sizes an icon's collision from the star's full glow, larger than
+    // the visible icon, so the overlay tooltip is pulled back in to a fraction of it. Mirror the CSV
+    // rows' defaultValues.
+    private static final double DEFAULT_ICON_PLANET_COLLISION_SCALE = 0.35;
+    private static final double DEFAULT_ICON_BLACK_HOLE_COLLISION_SCALE = 0.35;
     // A quarter-second collapse by default. Kept a literal mirroring the CSV defaultValue and
     // TabPanelCollapse.DEFAULT_DURATION_SECONDS - the KMLib holder's own default pace - like the
     // other fallbacks, so this class stays decoupled from the widget library.
@@ -1437,6 +1448,24 @@ public final class KmuLunaSettings {
     public static int getPoliticalMapSidebarBorderWidth() {
         return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_BORDER_WIDTH_FIELD,
                 DEFAULT_SIDEBAR_BORDER_WIDTH);
+    }
+
+    /**
+     * @return the multiplier on a star or planet system's vanilla map-icon collision radius, which
+     *         shrinks the zone where the overlay's system tooltip steps aside for the vanilla one
+     */
+    public static double getMapIconPlanetCollisionScale() {
+        return LunaSettingsReader.getDouble(MOD_ID, ICON_PLANET_COLLISION_SCALE_FIELD,
+                DEFAULT_ICON_PLANET_COLLISION_SCALE);
+    }
+
+    /**
+     * @return the multiplier on a black hole system's vanilla map-icon collision radius, its own
+     *         dial since vanilla sizes a black hole icon on different terms from a star
+     */
+    public static double getMapIconBlackHoleCollisionScale() {
+        return LunaSettingsReader.getDouble(MOD_ID, ICON_BLACK_HOLE_COLLISION_SCALE_FIELD,
+                DEFAULT_ICON_BLACK_HOLE_COLLISION_SCALE);
     }
 
     /**
