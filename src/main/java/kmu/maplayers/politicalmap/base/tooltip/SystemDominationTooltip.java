@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
 import kmlib.starsector.ui.widgets.TooltipRow;
@@ -86,8 +87,7 @@ public final class SystemDominationTooltip implements MapHoverTooltip {
     // live rather than being baked at class load.
     private static CursorTooltipStyle buildStyle() {
         return new CursorTooltipStyle(
-                BODY_FONT,
-                FONT_SIZE,
+                new TextFace(BODY_FONT, FONT_SIZE),
                 OPACITY,
                 BORDER_WIDTH,
                 StarsectorUiColor.BLACK.resolve(),

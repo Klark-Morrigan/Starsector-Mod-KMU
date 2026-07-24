@@ -7,6 +7,7 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
+import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.render.gl.NotchState;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
@@ -168,8 +169,9 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
                 BODY_FONT,
                 new TabStyle(
                         VanillaTabColors.mapTabs(),
-                        LiveSidebarPlacement.TAB_FONT,
-                        ControlStripLayout.TAB_FONT_SIZE));
+                        new TextFace(
+                                LiveSidebarPlacement.TAB_FONT,
+                                ControlStripLayout.TAB_FONT_SIZE)));
     }
 
     // Logs the composed view-state line once per change; the dedupe keeps a steady state to one line while
