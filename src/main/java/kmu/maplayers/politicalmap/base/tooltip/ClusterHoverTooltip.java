@@ -6,20 +6,13 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
-import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.graphics.StarsectorSprites;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.font.LazyFontCache;
-import kmlib.starsector.ui.font.LazyFontMeasurer;
-import kmlib.starsector.ui.input.UiCursor;
-import kmlib.starsector.ui.layout.TooltipBoxLayout;
 import kmlib.starsector.ui.map.CampaignMapView;
-import kmlib.starsector.ui.render.gl.BorderedBoxRenderer;
-import kmlib.starsector.ui.render.gl.GlStateGuard;
-import kmlib.starsector.ui.render.gl.LabelRenderer;
-import kmlib.starsector.ui.render.gl.UiSprite;
+import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
+import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
+import kmlib.starsector.ui.widgets.TooltipRow;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -29,9 +22,6 @@ import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.settings.KmuLunaSettings;
 import kmu.util.KmuStrings;
 
-import org.lazywizard.lazylib.ui.LazyFont;
-
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +39,11 @@ import java.util.List;
  * renders its bloc header above its indented member factions - so one draw path serves both views
  * without knowing which produced the rows.
  *
+ * <p>This class owns only what is the political map's own - the map gate, the hover-state read, the
+ * standings-to-rows build, the faction palette, and the LunaLib toggle. The generic free-floating
+ * tooltip beneath it - sizing the box, following the cursor, and painting the crest-label-value rows -
+ * is {@link CursorTooltipRenderer}, handed a plain row list and a look.
+ *
  * <p>The pass is read-only over the hover state and consumes no input, so the vanilla star-system
  * tooltip keeps drawing alongside this box; the icon gate ({@link #shouldDrawTooltipFor}) steps the
  * box aside only directly over a star icon, where vanilla draws its own, so exactly one box ever
@@ -60,19 +55,14 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
     private static final String BODY_FONT = "insignia15LTaa";
     private static final double FONT_SIZE = 15d;
 
-    // A row's crest is a square the height of one text line, so the icon sits level with its name; the
-    // gap after it parts the crest from the name, the gap before the score keeps a long name off the
-    // right-aligned number, and a member row indents under its bloc header to read as nested.
-    private static final float CREST_SIZE = (float) FONT_SIZE;
-    private static final float CREST_GAP = 6f;
-    private static final float SCORE_GAP = 16f;
+    // A member row indents under its bloc header to read as nested; a top-tier header sits flush at
+    // zero indent.
     private static final float MEMBER_INDENT = 14f;
 
-    // The box's own look. Its padding, line gap, and cursor offset live on TooltipBoxLayout, since the
-    // sizing and the row placement below both read them.
+    // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
+    // opaque black fill, so the breakdown reads over the map without blocking it entirely.
     private static final float BORDER_WIDTH = 1f;
     private static final float OPACITY = 0.9f;
-    private static final Color FILL = StarsectorUiColor.BLACK.resolve();
 
     // The score for a row that carries no number - the empty-state lines naming a system and its
     // status. Rendered as-is it draws nothing and measures zero width, so the score column collapses.
@@ -129,11 +119,11 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
     }
 
     // Ranks the hovered system under the active view's grouping, resolves the ranking into render-ready
-    // rows, and draws them. The grouping and dominance rule are sampled from the same active view and
-    // live settings the map paints under, so the tooltip's numbers and its bloc grouping match the
-    // fills exactly. A system that ranks empty is not skipped - it draws an empty-state box naming the
-    // system and why it holds no standing, so the hover reads as landing on a real but empty system
-    // rather than on nothing.
+    // rows, and hands them to the tooltip widget. The grouping and dominance rule are sampled from the
+    // same active view and live settings the map paints under, so the tooltip's numbers and its bloc
+    // grouping match the fills exactly. A system that ranks empty is not skipped - it draws an
+    // empty-state box naming the system and why it holds no standing, so the hover reads as landing on
+    // a real but empty system rather than on nothing.
     private static void drawTooltip(SectorAPI sector, StarSystemAPI system) {
         var activeView = PoliticalMapViewRegistry.getActiveView();
         if (activeView == null) {
@@ -143,16 +133,21 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
         var pass = DominancePass.readFromLunaSettings(grouping);
         var standings = SystemStandings.rankByDominationScore(sector, system, pass);
         var groupRows = StandingRowResolver.resolveRows(sector, standings, grouping);
-        var face = LazyFontCache.loadByBasename(BODY_FONT);
-        if (face == null) {
-            // No text means no box worth drawing - a blank frame would only mislead.
-            return;
-        }
         var rows = groupRows.isEmpty() ? buildEmptyStateRows(system) : buildRows(groupRows);
-        var box = layOutBox(face, rows);
-        // The map chrome and its tooltips draw after this pass, so the raw-GL box, crests, and text run
-        // inside the shared state save that restores the blend and colour state on the way out.
-        GlStateGuard.bracket(() -> drawRows(box, rows));
+        CursorTooltipRenderer.render(rows, buildStyle());
+    }
+
+    // The tooltip's fixed look: the body font and size every row draws in, the shared opacity, and the
+    // frame over a black fill in the map's own player palette. Built per paint so its colours resolve
+    // live rather than being baked at class load.
+    private static CursorTooltipStyle buildStyle() {
+        return new CursorTooltipStyle(
+                BODY_FONT,
+                FONT_SIZE,
+                OPACITY,
+                BORDER_WIDTH,
+                StarsectorUiColor.BLACK.resolve(),
+                StarsectorUiColor.VANILLA_PLAYER_BASE.resolve());
     }
 
     // Builds the two-line box shown over a system with no ranked presence: the system's own name as the
@@ -209,96 +204,5 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
             }
         }
         return rows;
-    }
-
-    // Paints the frame and each row into the laid-out box, top to bottom: the box first, then a row
-    // per line stepping down by one line height plus the inter-line gap, so the rows stack the way the
-    // sizing measured them.
-    private static void drawRows(Rectangle box, List<TooltipRow> rows) {
-        BorderedBoxRenderer.render(
-                box, BORDER_WIDTH, FILL, StarsectorUiColor.VANILLA_PLAYER_BASE.resolve(), OPACITY);
-        var leftX = box.x() + TooltipBoxLayout.PADDING;
-        var rightX = box.x() + box.width() - TooltipBoxLayout.PADDING;
-        var topY = box.y() + box.height() - TooltipBoxLayout.PADDING;
-        for (var index = 0; index < rows.size(); index++) {
-            var rowTopY = topY - index * ((float) FONT_SIZE + TooltipBoxLayout.LINE_GAP);
-            drawRow(rows.get(index), leftX, rightX, rowTopY);
-        }
-    }
-
-    // Draws one row's crest, name, and right-aligned score at the row's top edge: the crest square in
-    // the reserved icon column (indented for a member), the name just past it, and the score pinned to
-    // the box's right so the rows read as a ranked table. A row with no crest - a null or missing path -
-    // still reserves the column, so its name stays aligned with the crested rows above and below.
-    private static void drawRow(TooltipRow row, float leftX, float rightX, float rowTopY) {
-        var crestX = leftX + row.indent();
-        if (row.crestSpritePath() != null) {
-            var crest = StarsectorSprites.loadSprite(row.crestSpritePath());
-            if (crest != null) {
-                UiSprite.renderQuad(crest, crestX, rowTopY - CREST_SIZE, CREST_SIZE, CREST_SIZE, OPACITY);
-            }
-        }
-        var nameX = crestX + CREST_SIZE + CREST_GAP;
-        LabelRenderer.render(
-                BODY_FONT,
-                row.name(),
-                nameX,
-                rowTopY,
-                LazyFont.TextAnchor.TOP_LEFT,
-                row.nameColor(),
-                OPACITY,
-                FONT_SIZE);
-        LabelRenderer.render(
-                BODY_FONT,
-                row.score(),
-                rightX,
-                rowTopY,
-                LazyFont.TextAnchor.TOP_RIGHT,
-                row.scoreColor(),
-                OPACITY,
-                FONT_SIZE);
-    }
-
-    // Measures the rows and hands the widest across both tiers, the row count, and the live cursor and
-    // screen coordinates to the pure box layout, which sizes and clamps the box on screen.
-    private static Rectangle layOutBox(LazyFont face, List<TooltipRow> rows) {
-        var measurer = new LazyFontMeasurer(face);
-        var contentWidth = measureContentWidth(measurer, rows);
-        var settings = Global.getSettings();
-        return TooltipBoxLayout.computeBox(
-                contentWidth,
-                rows.size(),
-                FONT_SIZE,
-                UiCursor.getUiX(),
-                UiCursor.getUiY(),
-                settings.getScreenWidth(),
-                settings.getScreenHeight());
-    }
-
-    // The widest laid-out row across both tiers: each row is its indent, the crest column, its measured
-    // name, the score gap, and its measured score, so a wide indented member sizes the box just as a
-    // wide header would. The box's content width, before the layout adds its padding.
-    private static double measureContentWidth(LazyFontMeasurer measurer, List<TooltipRow> rows) {
-        var widest = 0d;
-        for (var row : rows) {
-            var nameWidth = measurer.measureLineWidth(row.name(), FONT_SIZE);
-            var scoreWidth = measurer.measureLineWidth(row.score(), FONT_SIZE);
-            var rowWidth = row.indent() + CREST_SIZE + CREST_GAP + nameWidth + SCORE_GAP + scoreWidth;
-            widest = Math.max(widest, rowWidth);
-        }
-        return widest;
-    }
-
-    // One flattened line of the box: a crest column indented for its tier, a coloured name, and a
-    // right-aligned coloured score. Header and member rows differ only in these values - a header sits
-    // at zero indent in the bright colour, a member indents in the text colour - so the draw path reads
-    // one row type and never branches on tier.
-    private record TooltipRow(
-            float indent,
-            String crestSpritePath,
-            String name,
-            Color nameColor,
-            String score,
-            Color scoreColor) {
     }
 }
