@@ -140,7 +140,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // bar is not on screen) is nothing to be over.
     private static boolean isCursorOverSidebar() {
         var placement = LiveSidebarPlacement.resolveCurrentPlacement();
-        return placement != null
-                && placement.body().box().containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
+        if (placement == null) {
+            return false;
+        }
+        var uiX = UiCursor.getUiX();
+        var uiY = UiCursor.getUiY();
+        // The collapse notch protrudes past the body's edge - when the panel is docked it is the
+        // only part still on screen - so a cursor over it is still over the sidebar.
+        return placement.body().box().containsPoint(uiX, uiY)
+                || (placement.notch() != null && placement.notch().containsPoint(uiX, uiY));
     }
 }
