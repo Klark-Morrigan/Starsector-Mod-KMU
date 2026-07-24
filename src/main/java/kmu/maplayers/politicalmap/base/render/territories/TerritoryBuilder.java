@@ -10,7 +10,8 @@ import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.markets.DecivilisedMarkets;
-import kmlib.starsector.ui.map.StarIconHitTest;
+import kmlib.starsector.ui.map.StarIconBodyKind;
+import kmlib.starsector.ui.map.StarMapIcon;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
@@ -33,6 +34,7 @@ import kmu.maplayers.politicalmap.base.render.style.MapCategory;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
+import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
 
@@ -393,35 +395,46 @@ public final class TerritoryBuilder {
         return FillState.SOLID;
     }
 
-    // Captures each system's star-icon inputs - its hyperspace anchor and star radius - keyed by
-    // system id. Every system is snapshotted, not only the drawn ones: a hovered cell is always a
-    // drawn one, so a spare entry is harmless, and reading the whole sector once is cheaper and
-    // simpler than filtering to the draw set. A system with no anchor is skipped, and a starless
-    // one keeps a zero radius, which the hit test reads as the smallest icon.
+    // Captures each system's star-icon inputs - its hyperspace anchor and the icon's world radius -
+    // keyed by system id. Every system is snapshotted, not only the drawn ones: a hovered cell is
+    // always a drawn one, so a spare entry is harmless, and reading the whole sector once is cheaper
+    // and simpler than filtering to the draw set. A system with no anchor or no icon body is skipped,
+    // so its tooltip simply never steps aside for a star tooltip.
     private static void captureStarIconGeometry(
             PoliticalMapTerritories territories, SectorAPI sector) {
         for (var system : sector.getStarSystems()) {
-            var anchor = system.getHyperspaceAnchor();
-            var star = system.getStar();
-            // No anchor to place an icon at, or no body to size one from, means no icon to gate on:
-            // the system's cell still hovers, its tooltip just never steps aside for a star tooltip.
-            // A nebula system's getStar() is its nebula centre, which the icon sizing handles.
-            if (anchor == null || anchor.getLocation() == null || star == null) {
+            // KMLib reconstructs the vanilla icon (body, kind, world radius); KMU only scales it by
+            // the player's per-kind collision dial, so the settings dependency stays out of the
+            // generic reconstruction.
+            var icon = StarMapIcon.reconstructFor(system);
+            if (icon == null) {
                 continue;
             }
-            var spec = star.getSpec();
-            var iconWorldRadius = StarIconHitTest.computeIconWorldRadius(
-                    star.getRadius(),
-                    spec.getScaleMultMapIcon(),
-                    star.isStar(),
-                    spec.isNebulaCenter());
+            var iconWorldRadius = icon.worldRadius() * (float) resolveCollisionScale(icon.bodyKind());
             territories.putStarIconGeometry(
                     system.getId(),
-                    new StarIconGeometry(
-                            anchor.getLocation().x,
-                            anchor.getLocation().y,
-                            iconWorldRadius));
+                    new StarIconGeometry(icon.anchor().x, icon.anchor().y, iconWorldRadius));
+            // Left at DEBUG so the gate can be calibrated against the live map: the kind the radius
+            // is sized from and the vanilla-vs-scaled radii are what a mis-suppressed hover is
+            // diagnosed against. Set KMU log verbosity to DEBUG in LunaLib to see it.
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Star icon captured; system=" + system.getId()
+                        + " kind=" + icon.bodyKind()
+                        + " vanillaRadius=" + icon.worldRadius()
+                        + " iconWorldRadius=" + iconWorldRadius);
+            }
         }
+    }
+
+    // The player's collision-scale dial for this body kind: a black hole and a star/planet each take
+    // their own slider, while a nebula centre keeps the vanilla size (already right, so it has no
+    // dial).
+    private static double resolveCollisionScale(StarIconBodyKind bodyKind) {
+        return switch (bodyKind) {
+            case NEBULA_CENTRE -> 1d;
+            case BLACK_HOLE -> KmuLunaSettings.getMapIconBlackHoleCollisionScale();
+            case STAR, OTHER -> KmuLunaSettings.getMapIconPlanetCollisionScale();
+        };
     }
 
     // Builds every owned faction's territory into the territories, keyed by faction id.

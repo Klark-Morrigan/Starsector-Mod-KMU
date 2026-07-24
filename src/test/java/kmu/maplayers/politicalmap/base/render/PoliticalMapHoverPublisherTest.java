@@ -265,5 +265,16 @@ final class PoliticalMapHoverPublisherTest {
             assertThat(hoverState.getHover().isHovering()).isTrue();
             assertThat(hoverState.getHover().isOverStarIcon()).isFalse();
         }
+
+        @Test
+        void publishHoverFromLeavesTheStarIconUnflaggedWhenNoIconWasCaptured() {
+            // A hovered cell whose system has no captured icon geometry (no anchor, or a body the
+            // capture skipped) must still show its tooltip: the gate reads "not over an icon" rather
+            // than suppressing on a geometry that was never there.
+            buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
+
+            assertThat(hoverState.getHover().isHovering()).isTrue();
+            assertThat(hoverState.getHover().isOverStarIcon()).isFalse();
+        }
     }
 }
