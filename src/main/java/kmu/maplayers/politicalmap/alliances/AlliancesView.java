@@ -16,6 +16,8 @@ import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.politicalmap.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.starsector.nexerelin.NexerelinAlliances;
@@ -23,6 +25,7 @@ import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The alliances view's render rules: allied factions fuse into one bloc per alliance so an
@@ -139,6 +142,13 @@ public final class AlliancesView implements PoliticalMapView {
         // A non-alliance bloc is a lone faction, named exactly as the faction view names it, so the
         // two views can never drift on how a plain faction's label reads.
         return FactionsView.INSTANCE.resolveName(blocId, grouping, sector, nameFormat);
+    }
+
+    @Override
+    public Optional<MapHoverTooltip> resolveHoverTooltip() {
+        // The alliance and faction views share the one domination tooltip: it adapts flat vs nested
+        // off the active grouping, so under this view a bloc reads as its members nested beneath it.
+        return Optional.of(SystemDominationTooltip.INSTANCE);
     }
 
     @Override

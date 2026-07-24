@@ -42,7 +42,7 @@ final class StandingRowResolverTest {
             // A singleton group renders flat: its header is exactly its one member, both carrying the
             // faction's long title and crest.
             assertThat(rows).containsExactly(new StandingGroupRow(
-                    "hegemony", "The Hegemony", "graphics/hegemony_crest.png", 7,
+                    "hegemony", "The Hegemony", "graphics/hegemony_crest.png", 7, false,
                     List.of(new FactionStandingRow(
                             "hegemony", "The Hegemony", "graphics/hegemony_crest.png", 7))));
         }
@@ -60,7 +60,7 @@ final class StandingRowResolverTest {
                     sectorMock, standings, OwnershipGrouping.identity());
 
             assertThat(rows).containsExactly(new StandingGroupRow(
-                    "hegemony", "The Hegemony", null, 7,
+                    "hegemony", "The Hegemony", null, 7, false,
                     List.of(new FactionStandingRow("hegemony", "The Hegemony", null, 7))));
         }
 
@@ -79,7 +79,7 @@ final class StandingRowResolverTest {
             // The header takes the bloc name and its lead (colour) member's crest, and the members
             // stay in the ranking order the standing placed them.
             assertThat(rows).containsExactly(new StandingGroupRow(
-                    "alliance-1", "Allied Powers", "graphics/heg.png", 11,
+                    "alliance-1", "Allied Powers", "graphics/heg.png", 11, true,
                     List.of(
                             new FactionStandingRow("hegemony", "The Hegemony", "graphics/heg.png", 8),
                             new FactionStandingRow(
@@ -102,7 +102,7 @@ final class StandingRowResolverTest {
                     sectorMock, standings, allianceGrouping());
 
             assertThat(rows).containsExactly(new StandingGroupRow(
-                    "alliance-1", "Allied Powers", null, 11,
+                    "alliance-1", "Allied Powers", null, 11, true,
                     List.of(
                             new FactionStandingRow("hegemony", "The Hegemony", null, 8),
                             new FactionStandingRow(
@@ -149,8 +149,25 @@ final class StandingRowResolverTest {
                     sectorMock, standings, OwnershipGrouping.identity());
 
             assertThat(rows).containsExactly(new StandingGroupRow(
-                    "ghost", "ghost", null, 5,
+                    "ghost", "ghost", null, 5, false,
                     List.of(new FactionStandingRow("ghost", "ghost", null, 5))));
+        }
+
+        @Test
+        void resolveRowsSetsNestsMembersTrueForASingleMemberAlliance() {
+            // An alliance with only one member present still nests - the flag is set from the group's
+            // kind, not its size - so the render layer draws the bloc header over its one member
+            // (a tree) rather than collapsing it to a single line.
+            var sectorMock = mock(SectorAPI.class);
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+            var standings = List.of(new GroupStanding(
+                    "alliance-1", 8, List.of(new FactionStanding("hegemony", 8))));
+
+            var rows = StandingRowResolver.resolveRows(sectorMock, standings, allianceGrouping());
+
+            assertThat(rows).containsExactly(new StandingGroupRow(
+                    "alliance-1", "Allied Powers", "graphics/heg.png", 8, true,
+                    List.of(new FactionStandingRow("hegemony", "The Hegemony", "graphics/heg.png", 8))));
         }
     }
 

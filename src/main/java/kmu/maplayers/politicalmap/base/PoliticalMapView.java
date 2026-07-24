@@ -8,9 +8,11 @@ import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.ownership.OwnershipProvider;
+import kmu.maplayers.politicalmap.base.tooltip.MapHoverTooltip;
 import kmu.settings.FactionNameFormatChoice;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The three per-view decisions the shared political-map pipeline reads, gathered into
@@ -207,5 +209,21 @@ public interface PoliticalMapView {
      */
     default List<ControlSpec> getViewBodyControls() {
         return List.of();
+    }
+
+    /**
+     * The hover tooltip this view shows for the star system under the cursor, or empty when it shows
+     * none. The shared hover dispatcher draws whatever a view supplies here and nothing when it
+     * supplies nothing, so a layer opts into a tooltip by injecting one rather than flipping a flag:
+     * the faction and alliance views inject the domination breakdown, and the claims view - whose
+     * ownership that breakdown does not describe - injects none and gets its own surface later.
+     * Defaulting to empty makes "no tooltip" the base case, the same shape as
+     * {@link #resolveSelectableBlocs} defaulting to no spotlight, so a new view opts in only when it
+     * has a tooltip to show.
+     *
+     * @return this view's hover tooltip, or empty for a view that shows none
+     */
+    default Optional<MapHoverTooltip> resolveHoverTooltip() {
+        return Optional.empty();
     }
 }

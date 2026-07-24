@@ -1,15 +1,10 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
-import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.markets.DecivilisedMarkets;
-import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
 import kmlib.starsector.ui.widgets.TooltipRow;
@@ -17,39 +12,33 @@ import kmlib.starsector.ui.widgets.TooltipRow;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
-import kmu.settings.KmuLunaSettings;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Draws a small box at the cursor breaking down who dominates the hovered star system, ranked by the
- * active political-map view. It reads the hovered system the render pass published to
- * {@link PoliticalMapHoverState} and paints it a pass later, in the UI-coords above-tooltips layer -
- * the same layer the map sidebar draws in, the only one composited after the opaque core-UI map and
- * its tooltips.
+ * The domination breakdown a political-map layer shows for the hovered star system: the groups holding
+ * markets there strongest first, each a crest, a name, and a score matching the weights the map paints
+ * its fills by. The one {@link MapHoverTooltip} the faction and alliance views both inject - it adapts
+ * flat vs nested off the active view's grouping, so those two layers share one tooltip that varies its
+ * content rather than each carrying its own.
  *
- * <p>The box is the feature's payload: for the hovered system it lists the groups holding markets
- * there strongest first, each a crest, a name, and a domination score matching the weights the map
- * paints its fills by. The two-tier shape is data-driven off the resolved rows - a singleton group
- * (the faction view, or a lone-member bloc) renders as one flat header, while a multi-member alliance
- * renders its bloc header above its indented member factions - so one draw path serves both views
- * without knowing which produced the rows.
+ * <p>The two-tier shape is data-driven off the resolved rows: a lone-faction group (the faction view)
+ * renders as one flat header, while an alliance bloc renders its header above its indented member
+ * factions - and a one-member alliance still nests, since the {@link StandingGroupRow#nestsMembers()}
+ * flag keys on the group's kind, not its member count. A system that ranks empty is not skipped - it
+ * draws an empty-state box naming the system and why it holds no standing, so the hover reads as
+ * landing on a real but uninhabited system rather than on nothing.
  *
- * <p>This class owns only what is the political map's own - the map gate, the hover-state read, the
- * standings-to-rows build, the faction palette, and the LunaLib toggle. The generic free-floating
- * tooltip beneath it - sizing the box, following the cursor, and painting the crest-label-value rows -
- * is {@link CursorTooltipRenderer}, handed a plain row list and a look.
- *
- * <p>The pass is read-only over the hover state and consumes no input, so the vanilla star-system
- * tooltip keeps drawing alongside this box; the icon gate ({@link #shouldDrawTooltipFor}) steps the
- * box aside only directly over a star icon, where vanilla draws its own, so exactly one box ever
- * shows there while the highlight stays lit regardless.
+ * <p>Stateless - it reads the active view, the live economy, and the settings each paint - so one
+ * shared instance serves both views.
  */
-public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
+public final class SystemDominationTooltip implements MapHoverTooltip {
+
+    /** The one shared instance; stateless, so both views inject it. */
+    public static final SystemDominationTooltip INSTANCE = new SystemDominationTooltip();
+
     // The insignia body face, a graphics/fonts basename the font cache resolves to a loadable path,
     // and the size every row's text renders at - which is also each row's line height for the box fit.
     private static final String BODY_FONT = "insignia15LTaa";
@@ -68,67 +57,22 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
     // status. Rendered as-is it draws nothing and measures zero width, so the score column collapses.
     private static final String NO_SCORE = "";
 
-    @Override
-    public void renderInUICoordsBelowUI(ViewportAPI viewport) {
-        // Below the whole campaign UI - under the map screen. Nothing belongs here.
+    private SystemDominationTooltip() {
     }
 
     @Override
-    public void renderInUICoordsAboveUIBelowTooltips(ViewportAPI viewport) {
-        // Occluded by the opaque core-UI map, like the sidebar's same pass. The box draws above tooltips.
-    }
-
-    @Override
-    public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
-        // Root master switch: with the tooltip turned off in settings the box never draws, whatever
-        // the map state or hover. Read live each frame so toggling it takes effect without a rebuild.
-        if (!KmuLunaSettings.getPoliticalMapHoverTooltipEnabled()) {
-            return;
-        }
-        // Only the sector map with the starscape filter off shows the overlay, so only then is a hover
-        // meaningful; the same gate the sidebar uses.
-        if (!CampaignMapView.isSectorMapWithStarscapeOff()) {
-            return;
-        }
-        var hover = PoliticalMapHoverState.getInstance().getHover();
-        if (!shouldDrawTooltipFor(hover)) {
-            return;
-        }
-        var sector = Global.getSector();
+    public void renderFor(SectorAPI sector, StarSystemAPI system) {
         // The breakdown reads the live economy for each faction's footprint, so a sector without one
         // (never on the open campaign map, but guarded since the read assumes it) has nothing to rank.
-        if (sector == null || sector.getEconomy() == null) {
+        if (sector.getEconomy() == null) {
             return;
         }
-        // The hover carries a system id; resolve it to the live system, tolerating an id that no longer
-        // resolves (a system dropped between the publish and this paint). Matched by getId - vanilla's
-        // getStarSystem keys on the optional unique id first and would miss a base-name-keyed system.
-        var system = StarSystems.findById(sector, hover.hoveredSystemId());
-        if (system == null) {
-            return;
-        }
-        drawTooltip(sector, system);
-    }
-
-    // Whether the box should draw for this hover: only when a cell is hovered and the cursor is not
-    // on its star icon, where the vanilla star tooltip draws instead - so exactly one box ever
-    // shows. The highlight ignores this gate and stays lit over the icon, since dropping it there
-    // would flicker the territory off exactly when the player is pointing at its heart.
-    static boolean shouldDrawTooltipFor(PoliticalMapHover hover) {
-        return hover.isHovering() && !hover.isOverStarIcon();
-    }
-
-    // Ranks the hovered system under the active view's grouping, resolves the ranking into render-ready
-    // rows, and hands them to the tooltip widget. The grouping and dominance rule are sampled from the
-    // same active view and live settings the map paints under, so the tooltip's numbers and its bloc
-    // grouping match the fills exactly. A system that ranks empty is not skipped - it draws an
-    // empty-state box naming the system and why it holds no standing, so the hover reads as landing on
-    // a real but empty system rather than on nothing.
-    private static void drawTooltip(SectorAPI sector, StarSystemAPI system) {
         var activeView = PoliticalMapViewRegistry.getActiveView();
         if (activeView == null) {
             return;
         }
+        // Ranks the hovered system under the active view's grouping and dominance rule - the same the
+        // map paints under - so the tooltip's numbers and its bloc grouping match the fills exactly.
         var grouping = activeView.resolveGrouping();
         var pass = DominancePass.readFromLunaSettings(grouping);
         var standings = SystemStandings.rankByDominationScore(sector, system, pass);
@@ -154,7 +98,7 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
     // header, and under it why it holds no standing - a dead colony the player has already seen reads
     // "Decivilised", any other empty system "Unpopulated". Naming the empty system tells the player the
     // hover registered on a real but uninhabited system, not that it missed. The status carries no crest
-    // or score, so those columns fall empty and only the two lines of text show.
+    // or score, so an all-crestless box lays these two lines flush with no crest gutter.
     private static List<TooltipRow> buildEmptyStateRows(StarSystemAPI system) {
         var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)
                 ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
@@ -177,10 +121,11 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
     }
 
     // Flattens the two-tier group rows into the flat draw rows the box paints top to bottom: a bloc
-    // header per group, and - only for a multi-member bloc - its member factions indented beneath. A
-    // singleton group is its own header (the faction view, and a lone-member alliance), so its one
-    // member adds nothing the header does not already show; the member-count test is what keeps the
-    // faction view flat off the same nested model.
+    // header per group, and - only when the group nests its members - its member factions indented
+    // beneath. A lone-faction group (the faction view) does not nest, so its one member adds nothing
+    // the header does not already show; an alliance bloc nests even with a single member, so it always
+    // draws its members beneath. Branching on the nests-members flag, not the member count, is what
+    // keeps a one-member alliance a tree while the faction view stays flat.
     private static List<TooltipRow> buildRows(List<StandingGroupRow> groupRows) {
         var rows = new ArrayList<TooltipRow>();
         for (var group : groupRows) {
@@ -191,7 +136,7 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
                     StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve(),
                     DominationScoreFormat.formatScore(group.aggregateScore()),
                     StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
-            if (group.members().size() > 1) {
+            if (group.nestsMembers()) {
                 for (var member : group.members()) {
                     rows.add(new TooltipRow(
                             MEMBER_INDENT,

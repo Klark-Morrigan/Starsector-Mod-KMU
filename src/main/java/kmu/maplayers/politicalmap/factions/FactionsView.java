@@ -14,11 +14,14 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
+import kmu.maplayers.politicalmap.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.settings.FactionNameFormatChoice;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The faction-territory view's render rules: every faction is its own bloc, only
@@ -102,6 +105,13 @@ public final class FactionsView implements PoliticalMapView {
         // in the player's chosen form; a faction that will not resolve carries no name.
         var faction = sector.getFaction(blocId);
         return faction == null ? null : resolveFactionName(faction, nameFormat);
+    }
+
+    @Override
+    public Optional<MapHoverTooltip> resolveHoverTooltip() {
+        // The faction and alliance views share the one domination tooltip: it adapts flat vs nested
+        // off the active grouping, so both layers show the same per-system breakdown, flat here.
+        return Optional.of(SystemDominationTooltip.INSTANCE);
     }
 
     @Override

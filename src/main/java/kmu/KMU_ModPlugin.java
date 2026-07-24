@@ -17,7 +17,7 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeL
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin;
-import kmu.maplayers.politicalmap.base.tooltip.ClusterHoverTooltip;
+import kmu.maplayers.politicalmap.base.tooltip.MapLayerCellTooltip;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -299,10 +299,11 @@ public class KMU_ModPlugin extends BaseModPlugin {
         listenerManager.addListener(new SidebarInput(IntelSidebarHost.INSTANCE), true);
     }
 
-    // Registers the render listener that draws the hover tooltip - the box naming the star system
-    // under the cursor on the political overlay. Transient, remove-then-add: it draws only, holds no
-    // save-relevant state, and its cached GL text must never enter a save, so it is re-added fresh each
-    // load and never duplicates. Mirrors the sidebar's contract so exactly one renders.
+    // Registers the hover-tooltip dispatcher - the render listener that draws whichever tooltip the
+    // active political-map view injects for the star system under the cursor. Transient,
+    // remove-then-add: it draws only, holds no save-relevant state, and its cached GL text must never
+    // enter a save, so it is re-added fresh each load and never duplicates. Mirrors the sidebar's
+    // contract so exactly one renders.
     static void installPoliticalMapHoverTooltip(SectorAPI sector) {
         if (sector == null) {
             return;
@@ -313,8 +314,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
             return;
         }
 
-        listenerManager.removeListenerOfClass(ClusterHoverTooltip.class);
-        listenerManager.addListener(new ClusterHoverTooltip(), true);
+        listenerManager.removeListenerOfClass(MapLayerCellTooltip.class);
+        listenerManager.addListener(new MapLayerCellTooltip(), true);
     }
 
     static void installPoliticalMapTerrain(SectorAPI sector) {

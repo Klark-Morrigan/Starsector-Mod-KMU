@@ -66,17 +66,20 @@ public final class StandingRowResolver {
             OwnershipGrouping grouping) {
         var members = resolveMemberRows(sector, standing.members());
         var blocId = standing.blocId();
+        // An alliance bloc nests its members under the header; a lone faction does not. Keyed on the
+        // group's kind, not its size, so a one-member alliance still renders as a tree.
+        var nestsMembers = grouping.isAlliance(blocId);
         String displayName;
         String crestSpritePath;
-        if (grouping.isAlliance(blocId)) {
+        if (nestsMembers) {
             // An alliance header carries the alliance's own name and its lead (colour) member's
             // crest - the same name and crest the alliances view paints the bloc's region by.
             displayName = grouping.resolveAllianceName(blocId);
             crestSpritePath = FactionCrests.resolveCrestPath(
                     sector.getFaction(grouping.resolveColorFactionId(blocId)));
         } else {
-            // A lone-faction group is a singleton, so its header is exactly its one member: reuse
-            // that resolved row rather than reading the faction a second time.
+            // A lone-faction group has one member, so its header is exactly that member: reuse the
+            // resolved row rather than reading the faction a second time.
             var headerMember = members.get(0);
             displayName = headerMember.fullName();
             crestSpritePath = headerMember.crestSpritePath();
@@ -86,6 +89,7 @@ public final class StandingRowResolver {
                 displayName,
                 crestSpritePath,
                 standing.aggregateScore(),
+                nestsMembers,
                 members);
     }
 
