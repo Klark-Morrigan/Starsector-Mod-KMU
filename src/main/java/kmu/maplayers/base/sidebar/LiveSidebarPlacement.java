@@ -65,9 +65,9 @@ public final class LiveSidebarPlacement {
     }
 
     /**
-     * Lays the intel-screen sidebar out over the lit visor: it anchors to the visor's top-left corner
-     * (offset by the player's intel padding) and overlays the visor with the same body the on-map sidebar
-     * lays out.
+     * Lays the intel-screen sidebar out over the lit visor: it sits flush against the visor's left edge
+     * and hangs from the visor top (pushed down by the player's top padding to clear the vanilla map
+     * toggles), overlaying the visor with the same body the on-map sidebar lays out.
      *
      * @param visorRect  the lit visor's screen rectangle, the corner the panel anchors to
      * @param controller the intel panel's own scroll and collapse state, separate from the on-map panel's
@@ -121,20 +121,20 @@ public final class LiveSidebarPlacement {
     }
 
     // The intel-screen anchor, expressed as screen padding so the top-left-anchored layout lands the
-    // panel over the lit visor: the box hangs from the visor's top-left corner, offset in by the player's
-    // intel padding, and its body caps to the visor's bottom edge. In UI coordinates (origin bottom-left)
-    // the visor's top edge is its y plus its height, so the box top sits topPadding below that and its
-    // left leftPadding in from the visor's left. The right margin is unused - the sidebar grows rightward
-    // across the visor.
+    // panel over the lit visor: the box sits flush against the visor's left edge and hangs from the visor
+    // top, pushed down by the player's top padding so it clears the vanilla starscape / fuel-range toggles
+    // at the top of the intel map, and its body caps to the visor's bottom edge so the sidebar never runs
+    // past the visor (a longer list scrolls within). In UI coordinates (origin bottom-left) the visor's
+    // top edge is its y plus its height. The right margin is unused - the sidebar grows rightward across
+    // the visor.
     private static Padding buildIntelPadding(Rectangle visorRect) {
         var screenHeight = Global.getSettings().getScreenHeight();
         var topPadding = KmuLunaSettings.getPoliticalMapIntelSidebarPaddingTop();
-        var leftPadding = KmuLunaSettings.getPoliticalMapIntelSidebarPaddingLeft();
         return new Padding(
                 Math.round(screenHeight - (visorRect.y() + visorRect.height())) + topPadding,
                 0,
                 Math.round(visorRect.y()),
-                Math.round(visorRect.x()) + leftPadding);
+                Math.round(visorRect.x()));
     }
 
     // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
