@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
@@ -69,15 +70,9 @@ public final class IntelSidebarHost implements SidebarHost {
 
     @Override
     public Set<BoxEdge> resolveBorderEdges(TabPanelPlacement placement) {
-        // The box is flush against the visor's left edge, so its left border would double the visor's own
-        // frame - drop it, and keep the top and right, which sit inside the visor and delineate the sidebar.
-        // Drop the bottom too when the box reaches the visor's bottom (flush there as well), and keep it
-        // when the box floats clear of the visor bottom.
-        var edges = EnumSet.of(BoxEdge.TOP, BoxEdge.RIGHT);
-        if (!isBottomFlushWithVisor(placement)) {
-            edges.add(BoxEdge.BOTTOM);
-        }
-        return edges;
+        return decideBorderEdges(
+                placement.body().box().y(),
+                intelScreen.getVisorRect());
     }
 
     @Override
@@ -99,12 +94,18 @@ public final class IntelSidebarHost implements SidebarHost {
         return intelScreen.getVisorRect() != null ? "intel tab; visor lit" : "intel tab; visor blanked";
     }
 
-    // Whether the box's bottom edge sits on the visor's bottom (within the rounding tolerance), so its
-    // bottom border would double the visor's own frame. False when there is no visor to measure against or
-    // the box floats clear of the visor bottom, so the bottom border is kept in that case.
-    private boolean isBottomFlushWithVisor(TabPanelPlacement placement) {
-        var visorRect = intelScreen.getVisorRect();
-        return visorRect != null
-                && placement.body().box().y() <= visorRect.y() + BOTTOM_FLUSH_TOLERANCE;
+    // Which frame edges to stroke for a box anchored to the visor's top-left. The left is always dropped
+    // (the box is flush against the visor's left edge, so its left border would double the visor's frame),
+    // the top and right are always kept (they sit inside the visor and delineate the sidebar), and the
+    // bottom is dropped only when the box's bottom reaches the visor's bottom (flush there too, within the
+    // rounding tolerance) - kept when the box floats clear of it or there is no visor to measure against.
+    static Set<BoxEdge> decideBorderEdges(float boxBottomY, Rectangle visorRect) {
+        var edges = EnumSet.of(BoxEdge.TOP, BoxEdge.RIGHT);
+        var isBottomFlush = visorRect != null
+                && boxBottomY <= visorRect.y() + BOTTOM_FLUSH_TOLERANCE;
+        if (!isBottomFlush) {
+            edges.add(BoxEdge.BOTTOM);
+        }
+        return edges;
     }
 }

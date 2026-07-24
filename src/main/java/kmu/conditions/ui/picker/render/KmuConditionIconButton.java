@@ -9,6 +9,7 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.graphics.StarsectorSprites;
 import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.render.gl.BoxBorder;
 import kmlib.starsector.ui.render.gl.UiBoxes;
 
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
@@ -47,6 +48,7 @@ public final class KmuConditionIconButton {
                 metrics.getButtonHeight(),
                 new IconButtonPanelPlugin(metrics));
         gridPanel.addComponent(buttonPanel).inTL(x, y);
+
         tooltipOwner.addTooltipTo(
                 new KmuConditionEntryTooltipCreator(this::getEntry),
                 buttonPanel,
@@ -61,19 +63,28 @@ public final class KmuConditionIconButton {
         return entry;
     }
 
-    static KmuConditionIconButtonLayout computeKmuConditionIconButtonLayout(KmuConditionPickerEntry entry) {
+    static KmuConditionIconButtonLayout computeKmuConditionIconButtonLayout(
+            KmuConditionPickerEntry entry) {
+
         Objects.requireNonNull(entry, "entry");
         var fallback = KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE;
+
         var icon = entry.getIcon();
         if (!icon.isPresent()) {
-            return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(fallback, fallback);
+            return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(
+                    fallback,
+                    fallback);
         }
 
         var sprite = StarsectorSprites.loadSprite(icon.get());
         if (sprite == null) {
-            return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(fallback, fallback);
+            return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(
+                    fallback,
+                    fallback);
         }
-        return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(sprite.getWidth(), sprite.getHeight());
+        return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(
+                sprite.getWidth(),
+                sprite.getHeight());
     }
 
     private final class IconButtonPanelPlugin extends BaseCustomUIPanelPlugin {
@@ -105,8 +116,21 @@ public final class KmuConditionIconButton {
             var backdropAlpha = style.getBackdropAlpha();
             var borderAlpha = style.getBorderAlpha();
 
-            Misc.renderQuadAlpha(x, y, width, height, backdropColor, backdropAlpha * alphaMult);
-            UiBoxes.renderBorder(x, y, width, height, 1f, borderColor, borderAlpha * alphaMult);
+            Misc.renderQuadAlpha(
+                    x,
+                    y,
+                    width,
+                    height,
+                    backdropColor,
+                    backdropAlpha * alphaMult);
+            UiBoxes.renderBorder(
+                    x,
+                    y,
+                    width,
+                    height,
+                    new BoxBorder(1f),
+                    borderColor,
+                    borderAlpha * alphaMult);
         }
 
         @Override
@@ -150,14 +174,19 @@ public final class KmuConditionIconButton {
             var greyOut = !entry.isPresent();
             float alpha = greyOut ? ABSENT_ICON_ALPHA : 1f;
 
-            sprite.setSize(layout.getIconWidth(), layout.getIconHeight());
+            sprite.setSize(
+                    layout.getIconWidth(),
+                    layout.getIconHeight());
+
             sprite.setColor(greyOut
                     ? StarsectorUiColor.DIM_GRAY.resolve()
                     : StarsectorUiColor.VANILLA_TEXT.resolve());
+
             sprite.setAlphaMult(alpha * alphaMult);
             sprite.render(
                     position.getX() + layout.getIconOffsetX(),
                     position.getY() + layout.getIconOffsetY());
+
             sprite.setColor(previousColor);
             sprite.setAlphaMult(previousAlpha);
             sprite.setSize(previousWidth, previousHeight);

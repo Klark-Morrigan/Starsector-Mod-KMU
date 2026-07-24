@@ -9,6 +9,7 @@ import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.layout.ControlStripLayout;
+import kmlib.starsector.ui.render.gl.BoxBorder;
 import kmlib.starsector.ui.render.gl.NotchState;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
 import kmlib.starsector.ui.render.gl.TabStyle;
@@ -133,16 +134,15 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         var notchState = new NotchState(
                 host.getController().getCollapseFraction(),
                 host.getController().isNotchHovered());
-        // Which frame edges to stroke: the host drops any edge sitting flush against another panel (the
-        // intel overlay omits the borders it shares with the visor) so the sidebar does not draw a second
-        // frame over that panel's own.
-        var borderEdges = host.resolveBorderEdges(placement);
+        // The frame to stroke: the settings width, and the edges the host keeps - it drops any edge sitting
+        // flush against another panel (the intel overlay omits the borders it shares with the visor) so the
+        // sidebar does not draw a second frame over that panel's own.
+        var border = new BoxBorder(borderWidth, host.resolveBorderEdges(placement));
         TabPanelRenderer.render(
                 placement,
                 buildStyle(),
-                borderWidth,
+                border,
                 notchState,
-                borderEdges,
                 opacity);
     }
 

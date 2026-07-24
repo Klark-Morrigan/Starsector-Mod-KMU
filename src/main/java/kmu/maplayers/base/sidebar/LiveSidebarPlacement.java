@@ -79,11 +79,28 @@ public final class LiveSidebarPlacement {
         return resolvePlacement(buildIntelPadding(visorRect), controller);
     }
 
+    // The intel-screen anchor, expressed as screen padding so the top-left-anchored layout lands the panel
+    // over the lit visor: the box sits flush against the visor's left edge and hangs from the visor top,
+    // pushed down by topPadding so it clears the vanilla starscape / fuel-range toggles at the top of the
+    // intel map, and its body caps to the visor's bottom edge so the sidebar never runs past the visor (a
+    // longer list scrolls within). In UI coordinates (origin bottom-left) the visor's top edge is its y plus
+    // its height. The right margin is unused - the sidebar grows rightward across the visor.
+    static Padding computeIntelPadding(Rectangle visorRect, float screenHeight, int topPadding) {
+        return new Padding(
+                Math.round(screenHeight - (visorRect.y() + visorRect.height())) + topPadding,
+                0,
+                Math.round(visorRect.y()),
+                Math.round(visorRect.x()));
+    }
+
     // Lays the panel out for the given anchor and controller - the one path both host entry points share,
     // so the map and intel panels are the same layout differing only in where they anchor. Returns null
     // when the tab font cannot load - the layout snaps tabs to measured text and cannot run without it -
     // so the caller draws nothing and consumes nothing that frame.
-    private static TabPanelPlacement resolvePlacement(Padding padding, TabPanelController controller) {
+    private static TabPanelPlacement resolvePlacement(
+            Padding padding,
+            TabPanelController controller) {
+                
         var measurer = loadTabMeasurer();
         if (measurer == null) {
             return null;
@@ -120,21 +137,13 @@ public final class LiveSidebarPlacement {
                 KmuLunaSettings.getPoliticalMapSidebarPaddingLeft());
     }
 
-    // The intel-screen anchor, expressed as screen padding so the top-left-anchored layout lands the
-    // panel over the lit visor: the box sits flush against the visor's left edge and hangs from the visor
-    // top, pushed down by the player's top padding so it clears the vanilla starscape / fuel-range toggles
-    // at the top of the intel map, and its body caps to the visor's bottom edge so the sidebar never runs
-    // past the visor (a longer list scrolls within). In UI coordinates (origin bottom-left) the visor's
-    // top edge is its y plus its height. The right margin is unused - the sidebar grows rightward across
-    // the visor.
+    // The intel-screen anchor from the live screen height and the player's top padding; the anchor math
+    // (flush-left, hung from the visor top minus the padding, capped to the visor bottom) is computeIntelPadding's.
     private static Padding buildIntelPadding(Rectangle visorRect) {
-        var screenHeight = Global.getSettings().getScreenHeight();
-        var topPadding = KmuLunaSettings.getPoliticalMapIntelSidebarPaddingTop();
-        return new Padding(
-                Math.round(screenHeight - (visorRect.y() + visorRect.height())) + topPadding,
-                0,
-                Math.round(visorRect.y()),
-                Math.round(visorRect.x()));
+        return computeIntelPadding(
+                visorRect,
+                Global.getSettings().getScreenHeight(),
+                KmuLunaSettings.getPoliticalMapIntelSidebarPaddingTop());
     }
 
     // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
