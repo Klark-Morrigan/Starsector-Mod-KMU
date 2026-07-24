@@ -4,8 +4,10 @@ import com.fs.starfarer.api.campaign.CampaignEngineLayers;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
+import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
+import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.settings.KmuLunaSettings;
@@ -113,6 +115,13 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
             PoliticalMapHoverState.getInstance().clearHover();
             return;
         }
+        // The sidebar is drawn over the map, so a cursor on it is not hovering the territory
+        // beneath. Park the hover so the panel neither lights a cell under it nor floats a tooltip
+        // over it.
+        if (isCursorOverSidebar()) {
+            PoliticalMapHoverState.getInstance().clearHover();
+            return;
+        }
         // Recreated lazily like the other collaborators: a save-restored plugin comes back with it
         // null (transient), and it is only wanted once the toggle is on.
         if (hoverPublisher == null) {
@@ -124,5 +133,14 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
         // frame's answer when they draw. It is the one point in the frame with both the live GL
         // matrices it needs and the current draw lists.
         hoverPublisher.publishHoverFrom(cache, factor);
+    }
+
+    // Whether the cursor sits over the map sidebar. Reads the same placement the sidebar draws and
+    // hit-tests, so the hover parks over exactly the box the panel occupies; a null placement (the
+    // bar is not on screen) is nothing to be over.
+    private static boolean isCursorOverSidebar() {
+        var placement = LiveSidebarPlacement.resolveCurrentPlacement();
+        return placement != null
+                && placement.body().box().containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
     }
 }
