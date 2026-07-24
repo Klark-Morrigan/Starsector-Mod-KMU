@@ -5,18 +5,26 @@ import com.fs.starfarer.api.input.InputEventAPI;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
+import kmlib.starsector.ui.render.gl.BoxEdge;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * The intel screen's binding for the political-map sidebar: it shows while the intel screen's embedded map
- * preview (the "visor") is lit, docks the panel in the desc column beside that visor, and has no keyboard
- * role. This is the intel-screen sibling of {@link MapSidebarHost}; the two feed the shared {@link
- * SidebarRenderer} / {@link SidebarInput} and differ only in gate, anchor, controller, and keys.
+ * preview (the "visor") is lit, overlays the panel on that visor anchored to its top-left, and has no
+ * keyboard role. This is the intel-screen sibling of {@link MapSidebarHost}; the two feed the shared {@link
+ * SidebarRenderer} / {@link SidebarInput} and differ only in gate, anchor, controller, keys, and which
+ * frame edges they stroke.
  *
- * <p>Its panel opens docked, so the rail never covers the intel screen's desc column uninvited - the player
- * expands it by the collapse handle when they want the controls. The "is the sidebar live" gate is exactly
+ * <p>Its panel opens docked, so the rail never covers the visor uninvited - the player expands it by the
+ * collapse handle when they want the controls. Because it sits flush against the visor's edges, it omits the
+ * border edges it shares with the visor - the left always, and the bottom when the box reaches the visor's
+ * bottom - so its frame reads as part of the visor rather than a second box drawn over it. The "is the
+ * sidebar live" gate is exactly
  * "is the visor lit": {@link IntelScreenView#getVisorRect()} returns the visor rectangle while it is lit and
  * {@code null} when the intel tab is not showing or a large-description item has blanked the preview, so a
  * non-null rectangle is both the gate and the anchor. The visor rectangle reaches the game's concrete intel
@@ -26,6 +34,11 @@ import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 public final class IntelSidebarHost implements SidebarHost {
     /** The one intel-screen host; the render and input listeners registered for the intel screen reference it. */
     public static final IntelSidebarHost INSTANCE = new IntelSidebarHost();
+
+    // How close the box's bottom must sit to the visor's bottom to count as flush, in pixels: the box lands
+    // on round(visor.y) when its content fills the visor's height, so a one-pixel tolerance absorbs that
+    // rounding while a box floating clear of the visor bottom stays well outside it.
+    private static final float BOTTOM_FLUSH_TOLERANCE = 1f;
 
     // Reads whether the intel tab is up and the lit visor's screen rectangle - the seam into the game's
     // concrete intel panel, failing closed to null when there is no lit visor to draw over.
@@ -55,6 +68,19 @@ public final class IntelSidebarHost implements SidebarHost {
     }
 
     @Override
+    public Set<BoxEdge> resolveBorderEdges(TabPanelPlacement placement) {
+        // The box is flush against the visor's left edge, so its left border would double the visor's own
+        // frame - drop it, and keep the top and right, which sit inside the visor and delineate the sidebar.
+        // Drop the bottom too when the box reaches the visor's bottom (flush there as well), and keep it
+        // when the box floats clear of the visor bottom.
+        var edges = EnumSet.of(BoxEdge.TOP, BoxEdge.RIGHT);
+        if (!isBottomFlushWithVisor(placement)) {
+            edges.add(BoxEdge.BOTTOM);
+        }
+        return edges;
+    }
+
+    @Override
     public TabPanelController getController() {
         return controller;
     }
@@ -71,5 +97,14 @@ public final class IntelSidebarHost implements SidebarHost {
             return "intel tab not showing";
         }
         return intelScreen.getVisorRect() != null ? "intel tab; visor lit" : "intel tab; visor blanked";
+    }
+
+    // Whether the box's bottom edge sits on the visor's bottom (within the rounding tolerance), so its
+    // bottom border would double the visor's own frame. False when there is no visor to measure against or
+    // the box floats clear of the visor bottom, so the bottom border is kept in that case.
+    private boolean isBottomFlushWithVisor(TabPanelPlacement placement) {
+        var visorRect = intelScreen.getVisorRect();
+        return visorRect != null
+                && placement.body().box().y() <= visorRect.y() + BOTTOM_FLUSH_TOLERANCE;
     }
 }

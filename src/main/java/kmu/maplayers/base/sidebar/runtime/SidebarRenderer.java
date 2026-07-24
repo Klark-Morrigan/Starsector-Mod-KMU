@@ -132,7 +132,17 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         var notchState = new NotchState(
                 host.getController().getCollapseFraction(),
                 host.getController().isNotchHovered());
-        TabPanelRenderer.render(placement, buildStyle(), borderWidth, notchState, opacity);
+        // Which frame edges to stroke: the host drops any edge sitting flush against another panel (the
+        // intel overlay omits the borders it shares with the visor) so the sidebar does not draw a second
+        // frame over that panel's own.
+        var borderEdges = host.resolveBorderEdges(placement);
+        TabPanelRenderer.render(
+                placement,
+                buildStyle(),
+                borderWidth,
+                notchState,
+                borderEdges,
+                opacity);
     }
 
     // Real seconds since the previous drawn frame, off the wall clock so the fold keeps animating on the

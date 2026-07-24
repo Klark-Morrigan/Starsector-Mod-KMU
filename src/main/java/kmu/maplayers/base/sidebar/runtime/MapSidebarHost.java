@@ -4,6 +4,7 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.map.CampaignMapView;
+import kmlib.starsector.ui.render.gl.BoxEdge;
 import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabStrip;
@@ -15,6 +16,7 @@ import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The sector map's binding for the political-map sidebar: it shows while the sector map is up with the
@@ -48,6 +50,13 @@ public final class MapSidebarHost implements SidebarHost {
     }
 
     @Override
+    public Set<BoxEdge> resolveBorderEdges(TabPanelPlacement placement) {
+        // The on-map sidebar floats free on the screen, touching no other panel's edge, so it frames all
+        // four sides.
+        return BoxEdge.ALL;
+    }
+
+    @Override
     public TabPanelController getController() {
         return controller;
     }
@@ -68,7 +77,9 @@ public final class MapSidebarHost implements SidebarHost {
     // selecting means (the layer registry).
     private static void switchToBoundLayer(InputEventAPI event) {
         var layers = MapLayerRegistry.getLayers();
-        var tabIndex = TabPanelHotkeys.findTabForKey(event.getEventValue(), layerKeycodes(layers));
+        var tabIndex = TabPanelHotkeys.findTabForKey(
+                event.getEventValue(),
+                layerKeycodes(layers));
         if (tabIndex == TabStrip.NO_TAB) {
             return;
         }

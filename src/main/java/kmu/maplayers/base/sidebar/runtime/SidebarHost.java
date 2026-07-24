@@ -3,7 +3,10 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.starsector.ui.input.TabPanelController;
+import kmlib.starsector.ui.render.gl.BoxEdge;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
+
+import java.util.Set;
 
 /**
  * One screen's binding for the shared political-map sidebar: it answers when the sidebar is live on that
@@ -30,6 +33,15 @@ public interface SidebarHost {
      *         (the tab font cannot load, or the anchor is gone); the caller then draws and consumes nothing
      */
     TabPanelPlacement resolvePlacement();
+
+    /**
+     * @param placement the placement resolved this frame, so a host can decide the edges from the box's
+     *                  laid-out position - an edge sitting flush against another panel is dropped
+     * @return which edges of the panel's frame to stroke this frame; a host framing the whole box returns
+     *         {@link BoxEdge#ALL}, while one drawn flush against another panel omits the shared edges so
+     *         its border does not double that panel's own frame
+     */
+    Set<BoxEdge> resolveBorderEdges(TabPanelPlacement placement);
 
     /**
      * @return this host's panel controller, holding the panel's transient scroll and collapse state across
