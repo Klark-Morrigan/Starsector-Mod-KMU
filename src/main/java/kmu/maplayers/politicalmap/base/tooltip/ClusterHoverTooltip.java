@@ -8,6 +8,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.graphics.StarsectorSprites;
+import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.font.LazyFontCache;
@@ -26,6 +27,7 @@ import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.settings.KmuLunaSettings;
+import kmu.util.KmuStrings;
 
 import org.lazywizard.lazylib.ui.LazyFont;
 
@@ -71,6 +73,10 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
     private static final float BORDER_WIDTH = 1f;
     private static final float OPACITY = 0.9f;
     private static final Color FILL = StarsectorUiColor.BLACK.resolve();
+
+    // The score for a row that carries no number - the empty-state lines naming a system and its
+    // status. Rendered as-is it draws nothing and measures zero width, so the score column collapses.
+    private static final String NO_SCORE = "";
 
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
@@ -125,8 +131,9 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
     // Ranks the hovered system under the active view's grouping, resolves the ranking into render-ready
     // rows, and draws them. The grouping and dominance rule are sampled from the same active view and
     // live settings the map paints under, so the tooltip's numbers and its bloc grouping match the
-    // fills exactly. An uninhabited system ranks empty and draws no box - the empty-state line is a
-    // later concern, so until then the absence of a box is the empty state.
+    // fills exactly. A system that ranks empty is not skipped - it draws an empty-state box naming the
+    // system and why it holds no standing, so the hover reads as landing on a real but empty system
+    // rather than on nothing.
     private static void drawTooltip(SectorAPI sector, StarSystemAPI system) {
         var activeView = PoliticalMapViewRegistry.getActiveView();
         if (activeView == null) {
@@ -136,19 +143,42 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
         var pass = DominancePass.readFromLunaSettings(grouping);
         var standings = SystemStandings.rankByDominationScore(sector, system, pass);
         var groupRows = StandingRowResolver.resolveRows(sector, standings, grouping);
-        if (groupRows.isEmpty()) {
-            return;
-        }
         var face = LazyFontCache.loadByBasename(BODY_FONT);
         if (face == null) {
             // No text means no box worth drawing - a blank frame would only mislead.
             return;
         }
-        var rows = buildRows(groupRows);
+        var rows = groupRows.isEmpty() ? buildEmptyStateRows(system) : buildRows(groupRows);
         var box = layOutBox(face, rows);
         // The map chrome and its tooltips draw after this pass, so the raw-GL box, crests, and text run
         // inside the shared state save that restores the blend and colour state on the way out.
         GlStateGuard.bracket(() -> drawRows(box, rows));
+    }
+
+    // Builds the two-line box shown over a system with no ranked presence: the system's own name as the
+    // header, and under it why it holds no standing - a dead colony the player has already seen reads
+    // "Decivilised", any other empty system "Unpopulated". Naming the empty system tells the player the
+    // hover registered on a real but uninhabited system, not that it missed. The status carries no crest
+    // or score, so those columns fall empty and only the two lines of text show.
+    private static List<TooltipRow> buildEmptyStateRows(StarSystemAPI system) {
+        var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)
+                ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
+                : KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED;
+        return List.of(
+                new TooltipRow(
+                        0f,
+                        null,
+                        system.getName(),
+                        StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve(),
+                        NO_SCORE,
+                        StarsectorUiColor.VANILLA_TEXT.resolve()),
+                new TooltipRow(
+                        MEMBER_INDENT,
+                        null,
+                        KmuStrings.get(statusKey),
+                        StarsectorUiColor.VANILLA_TEXT.resolve(),
+                        NO_SCORE,
+                        StarsectorUiColor.VANILLA_TEXT.resolve()));
     }
 
     // Flattens the two-tier group rows into the flat draw rows the box paints top to bottom: a bloc
@@ -164,7 +194,7 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
                     group.crestSpritePath(),
                     group.displayName(),
                     StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve(),
-                    Integer.toString(group.aggregateScore()),
+                    DominationScoreFormat.formatScore(group.aggregateScore()),
                     StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
             if (group.members().size() > 1) {
                 for (var member : group.members()) {
@@ -173,7 +203,7 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
                             member.crestSpritePath(),
                             member.fullName(),
                             StarsectorUiColor.VANILLA_TEXT.resolve(),
-                            Integer.toString(member.score()),
+                            DominationScoreFormat.formatScore(member.score()),
                             StarsectorUiColor.VANILLA_TEXT.resolve()));
                 }
             }

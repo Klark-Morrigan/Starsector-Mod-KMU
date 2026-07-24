@@ -52,6 +52,8 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_COLUMNS_CAPTION = "political_map_ctl_columns_caption";
     public static final String POLITICAL_MAP_CTL_COLUMNS_ONE = "political_map_ctl_columns_one";
     public static final String POLITICAL_MAP_CTL_COLUMNS_TWO = "political_map_ctl_columns_two";
+    public static final String POLITICAL_MAP_TOOLTIP_DECIVILISED = "political_map_tooltip_decivilised";
+    public static final String POLITICAL_MAP_TOOLTIP_UNPOPULATED = "political_map_tooltip_unpopulated";
 
     private KmuStrings() {
     }
