@@ -6,6 +6,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.util.Misc;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.profiling.Timings;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.render.gl.NotchState;
@@ -15,6 +16,7 @@ import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.render.gl.WidgetStyle;
 
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
+import kmu.maplayers.base.sidebar.SidebarPanelController;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -27,8 +29,9 @@ import java.awt.Color;
  * paint - the bordered frame, the vanilla-styled tab header, the body controls, and the scrollbar - is the
  * renderer's; this class owns only the wiring KMLib cannot: when to draw (the sector map with the
  * starscape filter off), which colours and fonts to draw in (a {@link WidgetStyle} built from the live
- * player colours and settings), flushing the body controls' deferred settings writes when the overlay
- * closes, and the view-state log.
+ * player colours and settings), advancing the collapse handle off a wall clock (the map runs on a paused
+ * game, so a game-time delta would freeze the fold), flushing the body controls' deferred settings writes
+ * when the overlay closes, and the view-state log.
  *
  * <p>The sector map is a vanilla core-UI tab with no seam to attach a mod panel, so the sidebar is drawn
  * in UI coordinates through {@link CampaignUIRenderingListener} - specifically the above-tooltips pass,
@@ -59,6 +62,13 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
     // leaving the overlay is when a map session's edits are flushed to disk.
     private boolean wasOverlayShowing;
 
+    // Wall-clock nanos at the previous drawn frame, so the collapse animation advances by real elapsed
+    // time. A wall clock rather than the campaign's own because the sector map is open on a paused game
+    // where advance() does not tick, so a game-time delta would freeze the fold mid-fold. Zero means "no
+    // previous frame" - the first frame and every re-open after the overlay is hidden - so that frame
+    // advances by nothing rather than by the whole gap since the map was last open.
+    private long previousFrameNanos;
+
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
         // Below the whole campaign UI - under the map screen. Nothing belongs here.
@@ -82,9 +92,18 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         }
         wasOverlayShowing = isOverlayShowing;
         if (!isOverlayShowing) {
+            // Drop the frame clock so the next re-open advances from nothing rather than by the whole gap
+            // the map was closed, which would otherwise snap a half-folded panel straight to its end.
+            previousFrameNanos = 0L;
             logViewStateOnChange("hidden; " + CampaignMapView.describeViewState());
             return;
         }
+        // Step the collapse toward its target by this frame's real elapsed time before laying the panel out,
+        // so the placement resolves at the freshly-advanced fold; the pace is the player's collapse-seconds
+        // setting, with zero meaning an instant snap.
+        SidebarPanelController.INSTANCE.advanceCollapse(
+                elapsedSinceLastFrame(),
+                KmuLunaSettings.getPoliticalMapSidebarCollapseSeconds());
         // The same placement the input listener hit-tests, resolved from one source so the drawn box and
         // the clickable box line up. Null means the tab font could not load - the layout snaps tabs to
         // measured text and cannot run without it - so the panel stays absent, logged once.
@@ -102,10 +121,25 @@ public final class MapLayerSidebar implements CampaignUIRenderingListener {
         logViewStateOnChange("showing; " + CampaignMapView.describeViewState() + "; screen="
                 + settings.getScreenWidth() + "x" + settings.getScreenHeight()
                 + " box=" + formatRect(placement.body().box()) + " opacity=" + opacity);
-        // Rendered fully expanded: this panel drives no collapse handle, so it passes the expanded,
-        // un-hovered notch state rather than a live one.
-        TabPanelRenderer.render(
-                placement, buildStyle(), borderWidth, new NotchState(0f, false), opacity);
+        // The live notch state: the collapse fraction the layout above was resolved at, and whether the
+        // input pass latched the pointer over the notch this frame, so the drawn fold and the lit handle
+        // match what the placement was built from.
+        var notchState = new NotchState(
+                SidebarPanelController.INSTANCE.getCollapseFraction(),
+                SidebarPanelController.INSTANCE.isNotchHovered());
+        TabPanelRenderer.render(placement, buildStyle(), borderWidth, notchState, opacity);
+    }
+
+    // Real seconds since the previous drawn frame, off the wall clock so the fold keeps animating on the
+    // paused sector map. A zeroed frame clock - the first frame and every re-open - reports no elapsed time,
+    // so a re-opened panel resumes from where it was rather than jumping by the whole time the map was shut.
+    private float elapsedSinceLastFrame() {
+        var now = System.nanoTime();
+        var elapsed = previousFrameNanos == 0L
+                ? 0f
+                : (float) Timings.convertNanosToSeconds(now - previousFrameNanos);
+        previousFrameNanos = now;
+        return elapsed;
     }
 
     // The map sidebar's look, built each frame from the live player colours: a black backdrop, the base

@@ -76,9 +76,10 @@ public final class LiveSidebarPlacement {
                 activeLayer.getBodyControls(),
                 measurer,
                 SidebarPanelController.INSTANCE.getScrollState().getOffset(),
-                // The sidebar stays fully expanded until the collapse handle is wired to it; 0 = no
-                // collapse.
-                0f);
+                // The live collapse fraction, so the body lays out at its interpolated width and the notch
+                // rides the shrinking edge; the render pass advances it each frame and both passes resolve
+                // against the same value, so the drawn fold and the hit-tested notch line up.
+                SidebarPanelController.INSTANCE.getCollapseFraction());
         // Settle the stored scroll request into the list's real range now the layout has resolved the
         // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
         // the render and input passes call this each frame, so the stored offset stays bounded.
