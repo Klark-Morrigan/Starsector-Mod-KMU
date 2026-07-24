@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
+import kmlib.starsector.factions.FactionCrests;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -120,7 +121,7 @@ public final class FactionsView implements PoliticalMapView {
             var faction = sector.getFaction(blocId);
             // The crest is the picker row's icon; a faction with no authored crest simply draws its
             // name alone, so a null path is a valid option rather than a dropped one.
-            var crestSpritePath = faction == null ? null : faction.getCrest();
+            var crestSpritePath = FactionCrests.resolveCrestPath(faction);
             // The picker labels a faction by its short name regardless of the map's name-format
             // setting, so a long-form map label never widens the sidebar's option rows.
             var displayName = resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT);

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.relation.StarsectorPlayerRelationshipFormatter;
 
 import kmu.conditions.domain.KmuEditableMarket;
@@ -121,7 +122,7 @@ final class StarsectorConditionPickerLocationFactory {
             color = faction.getColor();
         }
 
-        var crestSprite = normalizeText(faction.getCrest());
+        var crestSprite = FactionCrests.resolveCrestPath(faction);
         var relationship =
                 StarsectorPlayerRelationshipFormatter.formatPlayerRelationship(faction);
         return new KmuPickerFaction(name, color, crestSprite,

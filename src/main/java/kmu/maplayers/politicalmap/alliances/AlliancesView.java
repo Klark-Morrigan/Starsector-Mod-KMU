@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
+import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
@@ -163,7 +164,7 @@ public final class AlliancesView implements PoliticalMapView {
             // resolveColorFactionId names the colour (lead) faction; a member with no authored
             // crest leaves the row to draw its name alone, so a null path is a valid option.
             var colorFaction = sector.getFaction(grouping.resolveColorFactionId(blocId));
-            var crestSpritePath = colorFaction == null ? null : colorFaction.getCrest();
+            var crestSpritePath = FactionCrests.resolveCrestPath(colorFaction);
             // The name comes from the grouping via resolveName, so the format argument never
             // matters here.
             var displayName = resolveName(
