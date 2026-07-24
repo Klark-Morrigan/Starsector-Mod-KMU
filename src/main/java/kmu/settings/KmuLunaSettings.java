@@ -106,6 +106,11 @@ public final class KmuLunaSettings {
             "kmu_politicalMapSidebarBorderWidth";
     private static final String SIDEBAR_OPACITY_FIELD =
             "kmu_politicalMapSidebarOpacity";
+    // How long the sidebar's collapse handle takes to fold the body to its docked rail (and
+    // unfold it), in seconds; 0 snaps it instantly. Player-facing animation pace, so it sits
+    // in the Overlay sidebar section of the visuals tab beside the box's other appearance knobs.
+    private static final String SIDEBAR_COLLAPSE_SECONDS_FIELD =
+            "kmu_politicalMapSidebarCollapseSeconds";
 
     // Faction (core-faction cluster) style fields. Name opacity fades this group's cluster
     // names, applied where the name colour is resolved so the faction group can recede its
@@ -422,6 +427,10 @@ public final class KmuLunaSettings {
     private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
     private static final int MIN_SIDEBAR_OPACITY_PERCENT = 0;
     private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
+    // A quarter-second collapse by default. Kept a literal mirroring the CSV defaultValue and
+    // TabPanelCollapse.DEFAULT_DURATION_SECONDS - the KMLib holder's own default pace - like the
+    // other fallbacks, so this class stays decoupled from the widget library.
+    private static final float DEFAULT_SIDEBAR_COLLAPSE_SECONDS = 0.25f;
     // Full names by default: a cluster label spells the owner's long-form name, the
     // richer reading. The short form is opt-in for tighter clusters. Mirrors the CSV
     // row's defaultValue and the label list the radio offers.
@@ -1440,6 +1449,17 @@ public final class KmuLunaSettings {
         var clamped = Math.max(MIN_SIDEBAR_OPACITY_PERCENT,
                 Math.min(MAX_SIDEBAR_OPACITY_PERCENT, percent));
         return clamped / (float) MAX_SIDEBAR_OPACITY_PERCENT;
+    }
+
+    /**
+     * @return how long the overlay sidebar's collapse handle takes to fold the body to its
+     *         docked rail (and to unfold it), in seconds; 0 snaps it instantly with no
+     *         animation, up to 2 seconds; 0.25 by default. Fed to the collapse holder's
+     *         per-frame advance so the player sets the animation pace
+     */
+    public static float getPoliticalMapSidebarCollapseSeconds() {
+        return (float) LunaSettingsReader.getDouble(MOD_ID, SIDEBAR_COLLAPSE_SECONDS_FIELD,
+                DEFAULT_SIDEBAR_COLLAPSE_SECONDS);
     }
 
     /**
