@@ -8,6 +8,7 @@ import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
+import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.settings.KmuLunaSettings;
@@ -139,7 +140,9 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // hit-tests, so the hover parks over exactly the box the panel occupies; a null placement (the
     // bar is not on screen) is nothing to be over.
     private static boolean isCursorOverSidebar() {
-        var placement = LiveSidebarPlacement.resolveCurrentPlacement();
+        // The on-map sidebar is the one drawn on this screen, so the cursor test reads its placement
+        // through the on-map host's controller - the same controller and layout the render pass draws.
+        var placement = LiveSidebarPlacement.resolveMapPlacement(MapSidebarHost.INSTANCE.getController());
         if (placement == null) {
             return false;
         }

@@ -5,8 +5,10 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
-import kmu.maplayers.base.sidebar.runtime.MapLayerSidebar;
-import kmu.maplayers.base.sidebar.runtime.MapLayerSidebarInput;
+import kmu.maplayers.base.sidebar.runtime.IntelSidebarHost;
+import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
+import kmu.maplayers.base.sidebar.runtime.SidebarInput;
+import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
 import kmu.maplayers.politicalmap.base.PoliticalMapSaveMigrations;
 import kmu.maplayers.politicalmap.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapSectorWatcher;
@@ -270,12 +272,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
         sector.addTransientScript(new PoliticalMapSectorWatcher());
     }
 
-    // Registers the layer bar's two listeners: the UI-coords render listener that draws the
-    // bar on the sector map, and the input listener that reads its clicks and hotkeys. Both
-    // transient: the active-layer pick lives in sector memory and the render listener's cached
-    // GL text must never enter a save, so both are re-added fresh each load. Remove-then-add
-    // keeps the install idempotent and clears any persistent registration an older save
-    // captured, so exactly one of each renders.
+    // Registers the sidebar's render and input listeners for both screens it draws on: the sector
+    // map (MapSidebarHost) and the intel screen (IntelSidebarHost). One SidebarRenderer and one
+    // SidebarInput per host - a render listener that draws the panel and an input listener that reads
+    // its clicks, notch, and hotkeys (a render pass gets no events to consume). All transient: each
+    // host's active-layer pick lives in sector memory and the render listeners' cached GL text must
+    // never enter a save, so all are re-added fresh each load. Remove-then-add per class clears any
+    // persistent registration an older save captured and re-adds both hosts, so exactly one of each
+    // renders per screen.
     static void installPoliticalMapSidebar(SectorAPI sector) {
         if (sector == null) {
             return;
@@ -286,14 +290,13 @@ public class KMU_ModPlugin extends BaseModPlugin {
             return;
         }
 
-        listenerManager.removeListenerOfClass(MapLayerSidebar.class);
-        listenerManager.addListener(new MapLayerSidebar(), true);
+        listenerManager.removeListenerOfClass(SidebarRenderer.class);
+        listenerManager.addListener(new SidebarRenderer(MapSidebarHost.INSTANCE), true);
+        listenerManager.addListener(new SidebarRenderer(IntelSidebarHost.INSTANCE), true);
 
-        // The bar's paint and its input are two listeners: the render listener above draws it,
-        // this input listener reads its clicks and hotkeys (a render pass gets no events to
-        // consume). Same transient, remove-then-add contract, so exactly one of each renders.
-        listenerManager.removeListenerOfClass(MapLayerSidebarInput.class);
-        listenerManager.addListener(new MapLayerSidebarInput(), true);
+        listenerManager.removeListenerOfClass(SidebarInput.class);
+        listenerManager.addListener(new SidebarInput(MapSidebarHost.INSTANCE), true);
+        listenerManager.addListener(new SidebarInput(IntelSidebarHost.INSTANCE), true);
     }
 
     // Registers the render listener that draws the hover tooltip - the box naming the star system

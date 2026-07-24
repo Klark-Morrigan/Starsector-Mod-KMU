@@ -117,6 +117,14 @@ public final class KmuLunaSettings {
     // in the Overlay sidebar section of the visuals tab beside the box's other appearance knobs.
     private static final String SIDEBAR_COLLAPSE_SECONDS_FIELD =
             "kmu_politicalMapSidebarCollapseSeconds";
+    // Intel-screen overlay fields (Political map - visuals tab): the same sidebar box drawn on the
+    // intel screen anchors to the top-left corner of that screen's map preview (the "visor"), not the
+    // screen; these two paddings offset the box in from that corner, so the player positions the intel
+    // overlay independently of the on-map box's screen padding.
+    private static final String INTEL_SIDEBAR_PADDING_TOP_FIELD =
+            "kmu_politicalMapIntelSidebarPaddingTop";
+    private static final String INTEL_SIDEBAR_PADDING_LEFT_FIELD =
+            "kmu_politicalMapIntelSidebarPaddingLeft";
 
     // Faction (core-faction cluster) style fields. Name opacity fades this group's cluster
     // names, applied where the name colour is resolved so the faction group can recede its
@@ -426,6 +434,10 @@ public final class KmuLunaSettings {
     // never runs past this margin, and the bloc list scrolls within what is left. A small
     // margin like the left padding. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_PADDING_BOTTOM = 12;
+    // Intel overlay offset from the visor's top-left corner, pixels: a small inset so the box does not
+    // sit flush against the visor's edge. Mirror the CSV rows' defaultValues.
+    private static final int DEFAULT_INTEL_SIDEBAR_PADDING_TOP = 8;
+    private static final int DEFAULT_INTEL_SIDEBAR_PADDING_LEFT = 8;
     // A one-pixel outer border by default; 0 hides it. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;
     // 80% opaque by default: readable over the map without fully masking what is behind it.
@@ -1439,6 +1451,24 @@ public final class KmuLunaSettings {
     public static int getPoliticalMapSidebarPaddingBottom() {
         return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_PADDING_BOTTOM_FIELD,
                 DEFAULT_SIDEBAR_PADDING_BOTTOM);
+    }
+
+    /**
+     * @return how far down from the top-left corner of the intel screen's map preview (the
+     *         "visor") the overlay sidebar box sits, in pixels; 8 by default
+     */
+    public static int getPoliticalMapIntelSidebarPaddingTop() {
+        return LunaSettingsReader.getInt(MOD_ID, INTEL_SIDEBAR_PADDING_TOP_FIELD,
+                DEFAULT_INTEL_SIDEBAR_PADDING_TOP);
+    }
+
+    /**
+     * @return how far in from the left of the intel screen's map preview (the "visor") the
+     *         overlay sidebar box sits, in pixels; 8 by default
+     */
+    public static int getPoliticalMapIntelSidebarPaddingLeft() {
+        return LunaSettingsReader.getInt(MOD_ID, INTEL_SIDEBAR_PADDING_LEFT_FIELD,
+                DEFAULT_INTEL_SIDEBAR_PADDING_LEFT);
     }
 
     /**

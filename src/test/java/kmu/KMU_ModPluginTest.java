@@ -4,8 +4,8 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
-import kmu.maplayers.base.sidebar.runtime.MapLayerSidebar;
-import kmu.maplayers.base.sidebar.runtime.MapLayerSidebarInput;
+import kmu.maplayers.base.sidebar.runtime.SidebarInput;
+import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.junit.jupiter.api.Nested;
@@ -66,21 +66,22 @@ class KMU_ModPluginTest {
     class InstallPoliticalMapSidebar {
 
         @Test
-        void reinstallsBothBarListenersFreshAsTransient() {
+        void reinstallsEverySidebarListenerFreshAsTransient() {
             var listenerManager = new RecordingListenerManager(false);
 
             KMU_ModPlugin.installPoliticalMapSidebar(sector(listenerManager));
 
-            // Remove-then-add each of the bar's two listeners - the render listener and its
-            // input listener: clears any registration an older save carried, then adds the
-            // fresh instances transiently so neither enters the save.
+            // Remove-then-add the sidebar's render and input listeners: one remove per class clears any
+            // registration an older save carried, then a fresh render+input instance is added for each of
+            // the two hosts (sector map and intel screen) transiently, so none enters the save and exactly
+            // one of each renders per screen.
             assertThat(listenerManager.removedListenerClasses)
-                    .containsExactly(MapLayerSidebar.class, MapLayerSidebarInput.class);
+                    .containsExactly(SidebarRenderer.class, SidebarInput.class);
             assertThat(listenerManager.addedListeners)
-                    .hasSize(2)
-                    .hasAtLeastOneElementOfType(MapLayerSidebar.class)
-                    .hasAtLeastOneElementOfType(MapLayerSidebarInput.class);
-            assertThat(listenerManager.addedTransientFlags).containsExactly(true, true);
+                    .hasSize(4)
+                    .hasAtLeastOneElementOfType(SidebarRenderer.class)
+                    .hasAtLeastOneElementOfType(SidebarInput.class);
+            assertThat(listenerManager.addedTransientFlags).containsExactly(true, true, true, true);
         }
 
         @Test
