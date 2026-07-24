@@ -5,10 +5,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
-import com.fs.starfarer.api.util.Misc;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.graphics.StarsectorSprites;
 import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.input.UiCursor;
@@ -17,40 +18,59 @@ import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.render.gl.BorderedBoxRenderer;
 import kmlib.starsector.ui.render.gl.GlStateGuard;
 import kmlib.starsector.ui.render.gl.LabelRenderer;
+import kmlib.starsector.ui.render.gl.UiSprite;
 
+import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
+import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.settings.KmuLunaSettings;
 
 import org.lazywizard.lazylib.ui.LazyFont;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Draws a small box at the cursor naming the hovered star system while the political overlay is up. It
- * reads the hovered system the render pass published to {@link PoliticalMapHoverState} and paints it a
- * pass later, in the UI-coords above-tooltips layer - the same layer the map sidebar draws in, the only
- * one composited after the opaque core-UI map and its tooltips.
+ * Draws a small box at the cursor breaking down who dominates the hovered star system, ranked by the
+ * active political-map view. It reads the hovered system the render pass published to
+ * {@link PoliticalMapHoverState} and paints it a pass later, in the UI-coords above-tooltips layer -
+ * the same layer the map sidebar draws in, the only one composited after the opaque core-UI map and
+ * its tooltips.
  *
- * <p>The pass is read-only over the hover state and consumes no input, so the vanilla star-system tooltip
- * keeps drawing alongside this box when the cursor is on a star icon - both surfaces coexist rather than
- * one blocking the other. This is the minimal surface: just the system name and, when the system is owned,
- * its dominant faction. The ranked domination breakdown is layered on later; this proves the box draws,
- * follows the cursor, clears off the territory, and coexists with the vanilla tooltip.
+ * <p>The box is the feature's payload: for the hovered system it lists the groups holding markets
+ * there strongest first, each a crest, a name, and a domination score matching the weights the map
+ * paints its fills by. The two-tier shape is data-driven off the resolved rows - a singleton group
+ * (the faction view, or a lone-member bloc) renders as one flat header, while a multi-member alliance
+ * renders its bloc header above its indented member factions - so one draw path serves both views
+ * without knowing which produced the rows.
+ *
+ * <p>The pass is read-only over the hover state and consumes no input, so the vanilla star-system
+ * tooltip keeps drawing alongside this box; the icon gate ({@link #shouldDrawTooltipFor}) steps the
+ * box aside only directly over a star icon, where vanilla draws its own, so exactly one box ever
+ * shows there while the highlight stays lit regardless.
  */
 public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
     // The insignia body face, a graphics/fonts basename the font cache resolves to a loadable path,
-    // and the size the name and owner line render at - which is also each line's height for the box fit.
+    // and the size every row's text renders at - which is also each row's line height for the box fit.
     private static final String BODY_FONT = "insignia15LTaa";
     private static final double FONT_SIZE = 15d;
 
+    // A row's crest is a square the height of one text line, so the icon sits level with its name; the
+    // gap after it parts the crest from the name, the gap before the score keeps a long name off the
+    // right-aligned number, and a member row indents under its bloc header to read as nested.
+    private static final float CREST_SIZE = (float) FONT_SIZE;
+    private static final float CREST_GAP = 6f;
+    private static final float SCORE_GAP = 16f;
+    private static final float MEMBER_INDENT = 14f;
+
     // The box's own look. Its padding, line gap, and cursor offset live on TooltipBoxLayout, since the
-    // sizing and the text placement below both read them.
+    // sizing and the row placement below both read them.
     private static final float BORDER_WIDTH = 1f;
     private static final float OPACITY = 0.9f;
-    private static final Color FILL = Color.BLACK;
+    private static final Color FILL = StarsectorUiColor.BLACK.resolve();
 
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
@@ -79,7 +99,9 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
             return;
         }
         var sector = Global.getSector();
-        if (sector == null) {
+        // The breakdown reads the live economy for each faction's footprint, so a sector without one
+        // (never on the open campaign map, but guarded since the read assumes it) has nothing to rank.
+        if (sector == null || sector.getEconomy() == null) {
             return;
         }
         // The hover carries a system id; resolve it to the live system, tolerating an id that no longer
@@ -100,82 +122,153 @@ public final class ClusterHoverTooltip implements CampaignUIRenderingListener {
         return hover.isHovering() && !hover.isOverStarIcon();
     }
 
-    // Resolves the box's content - the system name, its owner colour, and the owner line - then draws
-    // it. An uninhabited system shows the name alone in the player colour; an owned one colours the name
-    // by its owner and adds the faction line beneath.
+    // Ranks the hovered system under the active view's grouping, resolves the ranking into render-ready
+    // rows, and draws them. The grouping and dominance rule are sampled from the same active view and
+    // live settings the map paints under, so the tooltip's numbers and its bloc grouping match the
+    // fills exactly. An uninhabited system ranks empty and draws no box - the empty-state line is a
+    // later concern, so until then the absence of a box is the empty state.
     private static void drawTooltip(SectorAPI sector, StarSystemAPI system) {
-        var owner = SectorPolitics.resolveDominantOwner(sector, system);
-        var ownerLine = resolveOwnerName(sector, owner);
-        var nameColor = owner != null ? owner.primaryColor() : Misc.getBrightPlayerColor();
-        var name = system.getName();
-
+        var activeView = PoliticalMapViewRegistry.getActiveView();
+        if (activeView == null) {
+            return;
+        }
+        var grouping = activeView.resolveGrouping();
+        var pass = DominancePass.readFromLunaSettings(grouping);
+        var standings = SystemStandings.rankByDominationScore(sector, system, pass);
+        var groupRows = StandingRowResolver.resolveRows(sector, standings, grouping);
+        if (groupRows.isEmpty()) {
+            return;
+        }
         var face = LazyFontCache.loadByBasename(BODY_FONT);
         if (face == null) {
             // No text means no box worth drawing - a blank frame would only mislead.
             return;
         }
-        var box = layOutBox(face, name, ownerLine);
-        // The map chrome and its tooltips draw after this pass, so the raw-GL box and text run inside the
-        // shared state save that restores the blend and colour state on the way out.
-        GlStateGuard.bracket(() -> drawBox(box, name, ownerLine, nameColor));
+        var rows = buildRows(groupRows);
+        var box = layOutBox(face, rows);
+        // The map chrome and its tooltips draw after this pass, so the raw-GL box, crests, and text run
+        // inside the shared state save that restores the blend and colour state on the way out.
+        GlStateGuard.bracket(() -> drawRows(box, rows));
     }
 
-    // Paints the frame and its one or two lines into the laid-out box: the name at the top-left interior
-    // corner, and the owner line one line-height below it when the system is owned.
-    private static void drawBox(Rectangle box, String name, String ownerLine, Color nameColor) {
-        BorderedBoxRenderer.render(box, BORDER_WIDTH, FILL, Misc.getBasePlayerColor(), OPACITY);
+    // Flattens the two-tier group rows into the flat draw rows the box paints top to bottom: a bloc
+    // header per group, and - only for a multi-member bloc - its member factions indented beneath. A
+    // singleton group is its own header (the faction view, and a lone-member alliance), so its one
+    // member adds nothing the header does not already show; the member-count test is what keeps the
+    // faction view flat off the same nested model.
+    private static List<TooltipRow> buildRows(List<StandingGroupRow> groupRows) {
+        var rows = new ArrayList<TooltipRow>();
+        for (var group : groupRows) {
+            rows.add(new TooltipRow(
+                    0f,
+                    group.crestSpritePath(),
+                    group.displayName(),
+                    StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve(),
+                    Integer.toString(group.aggregateScore()),
+                    StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
+            if (group.members().size() > 1) {
+                for (var member : group.members()) {
+                    rows.add(new TooltipRow(
+                            MEMBER_INDENT,
+                            member.crestSpritePath(),
+                            member.fullName(),
+                            StarsectorUiColor.VANILLA_TEXT.resolve(),
+                            Integer.toString(member.score()),
+                            StarsectorUiColor.VANILLA_TEXT.resolve()));
+                }
+            }
+        }
+        return rows;
+    }
+
+    // Paints the frame and each row into the laid-out box, top to bottom: the box first, then a row
+    // per line stepping down by one line height plus the inter-line gap, so the rows stack the way the
+    // sizing measured them.
+    private static void drawRows(Rectangle box, List<TooltipRow> rows) {
+        BorderedBoxRenderer.render(
+                box, BORDER_WIDTH, FILL, StarsectorUiColor.VANILLA_PLAYER_BASE.resolve(), OPACITY);
         var leftX = box.x() + TooltipBoxLayout.PADDING;
+        var rightX = box.x() + box.width() - TooltipBoxLayout.PADDING;
         var topY = box.y() + box.height() - TooltipBoxLayout.PADDING;
+        for (var index = 0; index < rows.size(); index++) {
+            var rowTopY = topY - index * ((float) FONT_SIZE + TooltipBoxLayout.LINE_GAP);
+            drawRow(rows.get(index), leftX, rightX, rowTopY);
+        }
+    }
+
+    // Draws one row's crest, name, and right-aligned score at the row's top edge: the crest square in
+    // the reserved icon column (indented for a member), the name just past it, and the score pinned to
+    // the box's right so the rows read as a ranked table. A row with no crest - a null or missing path -
+    // still reserves the column, so its name stays aligned with the crested rows above and below.
+    private static void drawRow(TooltipRow row, float leftX, float rightX, float rowTopY) {
+        var crestX = leftX + row.indent();
+        if (row.crestSpritePath() != null) {
+            var crest = StarsectorSprites.loadSprite(row.crestSpritePath());
+            if (crest != null) {
+                UiSprite.renderQuad(crest, crestX, rowTopY - CREST_SIZE, CREST_SIZE, CREST_SIZE, OPACITY);
+            }
+        }
+        var nameX = crestX + CREST_SIZE + CREST_GAP;
         LabelRenderer.render(
                 BODY_FONT,
-                name,
-                leftX,
-                topY,
+                row.name(),
+                nameX,
+                rowTopY,
                 LazyFont.TextAnchor.TOP_LEFT,
-                nameColor,
+                row.nameColor(),
                 OPACITY,
                 FONT_SIZE);
-        if (ownerLine != null) {
-            var ownerY = topY - (float) FONT_SIZE - TooltipBoxLayout.LINE_GAP;
-            LabelRenderer.render(
-                    BODY_FONT,
-                    ownerLine,
-                    leftX,
-                    ownerY,
-                    LazyFont.TextAnchor.TOP_LEFT,
-                    Misc.getTextColor(),
-                    OPACITY,
-                    FONT_SIZE);
-        }
+        LabelRenderer.render(
+                BODY_FONT,
+                row.score(),
+                rightX,
+                rowTopY,
+                LazyFont.TextAnchor.TOP_RIGHT,
+                row.scoreColor(),
+                OPACITY,
+                FONT_SIZE);
     }
 
-    // The dominant faction's display name, or null when the system is uninhabited or the faction cannot be
-    // resolved - either way the tooltip falls back to showing just the system name.
-    private static String resolveOwnerName(SectorAPI sector, DominantOwner owner) {
-        if (owner == null) {
-            return null;
-        }
-        var faction = sector.getFaction(owner.factionId());
-        return faction == null ? null : faction.getDisplayName();
-    }
-
-    // Measures the name (and owner line when present) and hands the widths, line count, and live cursor
-    // and screen coordinates to the pure box layout, which sizes and clamps the box.
-    private static Rectangle layOutBox(LazyFont face, String name, String ownerLine) {
+    // Measures the rows and hands the widest across both tiers, the row count, and the live cursor and
+    // screen coordinates to the pure box layout, which sizes and clamps the box on screen.
+    private static Rectangle layOutBox(LazyFont face, List<TooltipRow> rows) {
         var measurer = new LazyFontMeasurer(face);
-        var nameWidth = measurer.measureLineWidth(name, FONT_SIZE);
-        var ownerWidth = ownerLine == null ? 0d : measurer.measureLineWidth(ownerLine, FONT_SIZE);
-        var contentWidth = Math.max(nameWidth, ownerWidth);
-        var lineCount = ownerLine == null ? 1 : 2;
-
+        var contentWidth = measureContentWidth(measurer, rows);
         var settings = Global.getSettings();
         return TooltipBoxLayout.computeBox(
                 contentWidth,
-                lineCount,
+                rows.size(),
                 FONT_SIZE,
                 UiCursor.getUiX(),
                 UiCursor.getUiY(),
                 settings.getScreenWidth(),
                 settings.getScreenHeight());
+    }
+
+    // The widest laid-out row across both tiers: each row is its indent, the crest column, its measured
+    // name, the score gap, and its measured score, so a wide indented member sizes the box just as a
+    // wide header would. The box's content width, before the layout adds its padding.
+    private static double measureContentWidth(LazyFontMeasurer measurer, List<TooltipRow> rows) {
+        var widest = 0d;
+        for (var row : rows) {
+            var nameWidth = measurer.measureLineWidth(row.name(), FONT_SIZE);
+            var scoreWidth = measurer.measureLineWidth(row.score(), FONT_SIZE);
+            var rowWidth = row.indent() + CREST_SIZE + CREST_GAP + nameWidth + SCORE_GAP + scoreWidth;
+            widest = Math.max(widest, rowWidth);
+        }
+        return widest;
+    }
+
+    // One flattened line of the box: a crest column indented for its tier, a coloured name, and a
+    // right-aligned coloured score. Header and member rows differ only in these values - a header sits
+    // at zero indent in the bright colour, a member indents in the text colour - so the draw path reads
+    // one row type and never branches on tier.
+    private record TooltipRow(
+            float indent,
+            String crestSpritePath,
+            String name,
+            Color nameColor,
+            String score,
+            Color scoreColor) {
     }
 }
