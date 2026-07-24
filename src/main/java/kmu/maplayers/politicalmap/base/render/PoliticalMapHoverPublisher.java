@@ -4,7 +4,6 @@ import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.ui.map.CampaignMapTransform;
 import kmlib.starsector.ui.map.ModelviewMatrixReader;
-import kmlib.starsector.ui.map.StarIconHitTest;
 
 import kmu.maplayers.politicalmap.base.geometry.CellHitTest;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
@@ -12,7 +11,6 @@ import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Mouse;
-import org.lwjgl.util.vector.Vector2f;
 
 /**
  * Works out what the cursor is over on the political map and publishes it for the frame.
@@ -82,20 +80,9 @@ final class PoliticalMapHoverPublisher {
             parkHover();
             return;
         }
-        // The tooltip's suppression gate, derived off the same world point: true only when the
-        // cursor is on the hovered system's own star icon, where the vanilla star tooltip draws.
-        // A system with no captured icon geometry reads as "not on an icon", so the box still shows
-        // over the rest of its cell.
-        var starIcon = territories.getStarIconGeometry(hoveredSystemId);
-        var isOverStarIcon = starIcon != null && StarIconHitTest.isWorldPointOverStarIcon(
-                worldPoint,
-                new Vector2f((float) starIcon.anchorX(), (float) starIcon.anchorY()),
-                starIcon.iconWorldRadius(),
-                factor);
         PoliticalMapHoverState.getInstance().publishHover(new PoliticalMapHover(
                 hoveredSystemId,
-                territories.getClusterIndex().findClusterMembersOf(hoveredSystemId),
-                isOverStarIcon));
+                territories.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
         logHoverChange(hoveredSystemId);
     }
 

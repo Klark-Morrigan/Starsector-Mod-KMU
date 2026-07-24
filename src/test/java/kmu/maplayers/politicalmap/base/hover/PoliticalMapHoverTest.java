@@ -57,24 +57,4 @@ final class PoliticalMapHoverTest {
                     .isInstanceOf(UnsupportedOperationException.class);
         }
     }
-
-    @Nested
-    class IsOverStarIcon {
-
-        @Test
-        void isOverStarIconCarriesTheGateThroughTheFullConstructor() {
-            var hover = new PoliticalMapHover("system", List.of("system"), true);
-
-            assertThat(hover.isOverStarIcon()).isTrue();
-        }
-
-        @Test
-        void isOverStarIconDefaultsToFalseForTheIconAgnosticConstructor() {
-            // The highlight and the NONE sentinel build a hover with no notion of the icon gate,
-            // so it reads as not over an icon rather than leaving the tooltip suppressed.
-            var hover = new PoliticalMapHover("system", List.of("system"));
-
-            assertThat(hover.isOverStarIcon()).isFalse();
-        }
-    }
 }

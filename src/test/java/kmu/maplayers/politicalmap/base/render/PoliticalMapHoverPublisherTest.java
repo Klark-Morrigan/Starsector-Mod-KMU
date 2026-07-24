@@ -9,7 +9,6 @@ import kmu.maplayers.politicalmap.base.geometry.SystemClusterIndex;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.maplayers.politicalmap.base.render.territories.StarIconGeometry;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -107,29 +106,14 @@ final class PoliticalMapHoverPublisherTest {
         return buildPublisherReading(buildTranslationMatrix(PAN_X, PAN_Y));
     }
 
-    // The captured icon's world radius, small enough that the off-icon anchor below (50 world units
-    // from the cursor) sits clear of it while the on-icon anchor sits on it.
-    private static final float ICON_WORLD_RADIUS = 20f;
-
     // The frame's draw lists with one drawn cell, clustered with a neighbour so a published hover
     // proves it carries the whole territory and not just the cell it resolved.
     private static PoliticalMapCache buildCacheWithOneCell() {
-        return buildCacheWith(null);
-    }
-
-    // The same one-cell frame, plus a captured star icon at the given anchor, so the icon gate has
-    // geometry to test the cursor against.
-    private static PoliticalMapCache buildCacheWithStarIconAt(double anchorX, double anchorY) {
-        return buildCacheWith(new StarIconGeometry(anchorX, anchorY, ICON_WORLD_RADIUS));
-    }
-
-    private static PoliticalMapCache buildCacheWith(StarIconGeometry starIcon) {
         var territoriesMock = mock(PoliticalMapTerritories.class);
         when(territoriesMock.getFillPolygonByCellId())
                 .thenReturn(Map.of(HOVERED_SYSTEM_ID, CELL_POLYGON));
         when(territoriesMock.getClusterIndex()).thenReturn(SystemClusterIndex.indexClusters(
                 List.of(List.of(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID))));
-        when(territoriesMock.getStarIconGeometry(HOVERED_SYSTEM_ID)).thenReturn(starIcon);
         var cacheMock = mock(PoliticalMapCache.class);
         when(cacheMock.getTerritories()).thenReturn(territoriesMock);
         return cacheMock;
@@ -242,39 +226,6 @@ final class PoliticalMapHoverPublisherTest {
             buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), UNUSABLE_ZOOM);
 
             assertThat(hoverState.getHover()).isSameAs(PoliticalMapHover.NONE);
-        }
-
-        @Test
-        void publishHoverFromFlagsTheStarIconWhenTheCursorSitsOnIt() {
-            // The star icon sits right where the cursor unprojects to (world 200, 150), so the
-            // gate fires and the tooltip will step aside for the vanilla star tooltip.
-            buildPublisherOnALiveMap()
-                    .publishHoverFrom(buildCacheWithStarIconAt(200d, 150d), MAP_ZOOM);
-
-            assertThat(hoverState.getHover().isOverStarIcon()).isTrue();
-        }
-
-        @Test
-        void publishHoverFromLeavesTheStarIconUnflaggedOverTheRestOfTheCell() {
-            // The cursor is still in the cell but well clear of the icon at (250, 150) - 50 world
-            // units off, past its world radius - so the cell stays hovered while the gate stays
-            // down and the tooltip box keeps drawing.
-            buildPublisherOnALiveMap()
-                    .publishHoverFrom(buildCacheWithStarIconAt(250d, 150d), MAP_ZOOM);
-
-            assertThat(hoverState.getHover().isHovering()).isTrue();
-            assertThat(hoverState.getHover().isOverStarIcon()).isFalse();
-        }
-
-        @Test
-        void publishHoverFromLeavesTheStarIconUnflaggedWhenNoIconWasCaptured() {
-            // A hovered cell whose system has no captured icon geometry (no anchor, or a body the
-            // capture skipped) must still show its tooltip: the gate reads "not over an icon" rather
-            // than suppressing on a geometry that was never there.
-            buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
-
-            assertThat(hoverState.getHover().isHovering()).isTrue();
-            assertThat(hoverState.getHover().isOverStarIcon()).isFalse();
         }
     }
 }

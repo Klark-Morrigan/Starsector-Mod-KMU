@@ -245,28 +245,6 @@ final class PoliticalMapTerritoriesTest {
     }
 
     @Nested
-    class GetStarIconGeometry {
-
-        @Test
-        void getStarIconGeometryReturnsTheGeometryCapturedForTheSystem() {
-            var territories = drawablesWith(Map.of(), Map.of());
-            var starIcon = new StarIconGeometry(12d, -34d, 56f);
-            territories.putStarIconGeometry("system", starIcon);
-
-            assertThat(territories.getStarIconGeometry("system")).isSameAs(starIcon);
-        }
-
-        @Test
-        void getStarIconGeometryIsNullForASystemThatWasNeverCaptured() {
-            // A system with no anchor is skipped at build, so its cursor read finds no icon to
-            // gate on rather than a stale one - null is the "not over an icon" answer.
-            var territories = drawablesWith(Map.of(), Map.of());
-
-            assertThat(territories.getStarIconGeometry("uncaptured")).isNull();
-        }
-    }
-
-    @Nested
     class ReindexClusters {
 
         @Test

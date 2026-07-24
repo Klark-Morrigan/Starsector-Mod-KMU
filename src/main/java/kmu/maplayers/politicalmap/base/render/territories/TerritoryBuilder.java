@@ -10,8 +10,6 @@ import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.markets.DecivilisedMarkets;
-import kmlib.starsector.ui.map.StarIconBodyKind;
-import kmlib.starsector.ui.map.StarMapIcon;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
@@ -34,7 +32,6 @@ import kmu.maplayers.politicalmap.base.render.style.MapCategory;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
 
@@ -146,12 +143,6 @@ public final class TerritoryBuilder {
                     new MapStyling(renderStyle, neutralColor, desaturationPalette),
                     new ViewGrouping(view, grouping),
                     new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
-
-            // Snapshot every system's star-icon geometry once for the whole build, so the cursor's
-            // icon gate reads a static value by id rather than resolving a system each frame. It is
-            // captured here, off the sector, not paired into the per-cell writes below, because it
-            // never changes as cells re-shape.
-            captureStarIconGeometry(territories, sector);
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
             // geometry clusters by grouping key, so hand it each system's faction id as the
@@ -393,48 +384,6 @@ public final class TerritoryBuilder {
             return FillState.HATCHED;
         }
         return FillState.SOLID;
-    }
-
-    // Captures each system's star-icon inputs - its hyperspace anchor and the icon's world radius -
-    // keyed by system id. Every system is snapshotted, not only the drawn ones: a hovered cell is
-    // always a drawn one, so a spare entry is harmless, and reading the whole sector once is cheaper
-    // and simpler than filtering to the draw set. A system with no anchor or no icon body is skipped,
-    // so its tooltip simply never steps aside for a star tooltip.
-    private static void captureStarIconGeometry(
-            PoliticalMapTerritories territories, SectorAPI sector) {
-        for (var system : sector.getStarSystems()) {
-            // KMLib reconstructs the vanilla icon (body, kind, world radius); KMU only scales it by
-            // the player's per-kind collision dial, so the settings dependency stays out of the
-            // generic reconstruction.
-            var icon = StarMapIcon.reconstructFor(system);
-            if (icon == null) {
-                continue;
-            }
-            var iconWorldRadius = icon.worldRadius() * (float) resolveCollisionScale(icon.bodyKind());
-            territories.putStarIconGeometry(
-                    system.getId(),
-                    new StarIconGeometry(icon.anchor().x, icon.anchor().y, iconWorldRadius));
-            // Left at DEBUG so the gate can be calibrated against the live map: the kind the radius
-            // is sized from and the vanilla-vs-scaled radii are what a mis-suppressed hover is
-            // diagnosed against. Set KMU log verbosity to DEBUG in LunaLib to see it.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Star icon captured; system=" + system.getId()
-                        + " kind=" + icon.bodyKind()
-                        + " vanillaRadius=" + icon.worldRadius()
-                        + " iconWorldRadius=" + iconWorldRadius);
-            }
-        }
-    }
-
-    // The player's collision-scale dial for this body kind: a black hole and a star/planet each take
-    // their own slider, while a nebula centre keeps the vanilla size (already right, so it has no
-    // dial).
-    private static double resolveCollisionScale(StarIconBodyKind bodyKind) {
-        return switch (bodyKind) {
-            case NEBULA_CENTRE -> 1d;
-            case BLACK_HOLE -> KmuLunaSettings.getMapIconBlackHoleCollisionScale();
-            case STAR, OTHER -> KmuLunaSettings.getMapIconPlanetCollisionScale();
-        };
     }
 
     // Builds every owned faction's territory into the territories, keyed by faction id.
