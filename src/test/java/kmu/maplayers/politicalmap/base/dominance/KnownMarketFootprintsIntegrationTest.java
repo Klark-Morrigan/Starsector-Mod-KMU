@@ -3,8 +3,10 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.combat.StatBonus;
 import com.fs.starfarer.api.fleet.MutableMarketStatsAPI;
+import com.fs.starfarer.api.impl.campaign.ids.MemFlags;
 import com.fs.starfarer.api.impl.campaign.ids.Stats;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import com.fs.starfarer.api.util.DynamicStatsAPI;
@@ -554,6 +556,21 @@ class KnownMarketFootprintsIntegrationTest {
                     .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
             verify(market, never()).getStats();
         }
+
+        @Test
+        void readByFactionSkipsPatrolStrengthForAMarketWithoutThePatrolFlag() {
+            // The patrol-count stats are also written by hidden raider and pather bases
+            // that set no $patrol flag; without a functional patrol HQ the garrison
+            // contributes no dominance, so a size-3 colony folds in at its size alone.
+            var sector = sectorWith("stat-only-garrison-system",
+                    patrolStatOnlyMarket(faction("hegemony"), 3, 2, 1, 0));
+
+            var footprints = KnownMarketFootprints.readByFaction(
+                    sector, onlySystem(sector), rules().withPatrolWeighting().build());
+
+            assertThat(footprints.get("hegemony").totalWeight())
+                    .isEqualTo(3 * DOMINANCE_WEIGHT_SCALE);
+        }
     }
 
     // A hidden market at the given stability, for pinning that its token rating scales
@@ -589,7 +606,8 @@ class KnownMarketFootprintsIntegrationTest {
     }
 
     // A visible owned market that fields the given small/medium/large patrol counts,
-    // stubbed onto its dynamic stats the way vanilla's military industries write them.
+    // stubbed onto its dynamic stats the way vanilla's military industries write them,
+    // with the $patrol flag set so it reads as garrisoned by a functional patrol HQ.
     private static MarketAPI patrolMarket(FactionAPI faction, int size, int small, int medium,
             int large) {
         return withPatrols(visibleMarket(faction, size), small, medium, large);
@@ -602,6 +620,14 @@ class KnownMarketFootprintsIntegrationTest {
         return withPatrols(marketAtStability(faction, size, stability), small, medium, large);
     }
 
+    // A market carrying the patrol-count stats but no $patrol flag - a hidden raider or
+    // pather base, which writes the tier counts without a functional patrol HQ. Pins that
+    // the patrol contribution gates on the flag, not the raw counts.
+    private static MarketAPI patrolStatOnlyMarket(FactionAPI faction, int size, int small,
+            int medium, int large) {
+        return withPatrolStats(visibleMarket(faction, size), small, medium, large);
+    }
+
     // Stubs the market's connected entities - the ownership link the station scan reads -
     // to the given entities.
     private static MarketAPI withConnectedEntities(MarketAPI market,
@@ -610,9 +636,16 @@ class KnownMarketFootprintsIntegrationTest {
         return market;
     }
 
+    // A garrisoned market: the patrol-tier stats a patrol HQ writes plus the $patrol flag
+    // it sets, the pair the gated patrol contribution now requires together.
+    private static MarketAPI withPatrols(MarketAPI market, int small, int medium, int large) {
+        return withPatrolFlag(withPatrolStats(market, small, medium, large));
+    }
+
     // Stubs the market's dynamic stats to report the given patrol-tier counts, the seam
     // the patrol read walks (getStats -> getDynamic -> getMod(tier).computeEffective).
-    private static MarketAPI withPatrols(MarketAPI market, int small, int medium, int large) {
+    // Stats only: a raider base writes these without the $patrol flag.
+    private static MarketAPI withPatrolStats(MarketAPI market, int small, int medium, int large) {
         // Build each tier's mock before the getMod stubbing: patrolMod() stubs a mock
         // of its own, and Mockito rejects a nested when(...) inside a thenReturn(...).
         var smallMod = patrolMod(small);
@@ -625,6 +658,15 @@ class KnownMarketFootprintsIntegrationTest {
         var statsMock = mock(MutableMarketStatsAPI.class);
         when(statsMock.getDynamic()).thenReturn(dynamicMock);
         when(market.getStats()).thenReturn(statsMock);
+        return market;
+    }
+
+    // Stubs the market's $patrol flag on, the signal a functional patrol HQ sets and the
+    // gate the patrol contribution requires alongside the patrol-count stats.
+    private static MarketAPI withPatrolFlag(MarketAPI market) {
+        var memoryMock = mock(MemoryAPI.class);
+        when(memoryMock.getBoolean(MemFlags.MARKET_PATROL)).thenReturn(true);
+        when(market.getMemoryWithoutUpdate()).thenReturn(memoryMock);
         return market;
     }
 

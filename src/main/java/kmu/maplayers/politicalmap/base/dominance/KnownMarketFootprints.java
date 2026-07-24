@@ -21,7 +21,8 @@ import java.util.Map;
  * it is not a bare planet's condition-only placeholder, and the player knows it
  * exists - and weighs each surviving market for dominance. A market's weight is the
  * sum of three factors - its weighted base size (a hidden market counting by its
- * real size or a fixed token), any attached-station bonus, and any patrol strength -
+ * real size or a fixed token), any attached-station bonus, and the patrol strength
+ * of a colony a functional patrol HQ garrisons (the {@code $patrol} gate) -
  * each cut for low stability by its own penalty (the player-facing LunaLib settings,
  * read upstream so this class stays free of settings access). The
  * "counts as a colony" filter itself is {@link kmlib.starsector.markets.Markets},
@@ -234,10 +235,14 @@ public final class KnownMarketFootprints {
 
     // The patrol size bonus a market earns before stability scaling: its small, medium,
     // and large patrol counts each times the player-set weight for that tier, or nothing
-    // when the patrol factor is toggled off. The economy read is skipped while the factor
-    // is off, so a disabled factor costs no dynamic-stat lookups.
+    // when the patrol factor is toggled off or no functional patrol HQ fields patrols
+    // here. The $patrol gate (Markets.fieldsPatrols) confines the bonus to a colony a
+    // patrol HQ actually garrisons: the raw patrol-count stats are also written by hidden
+    // pirate and Luddic Path bases that set no flag, so reading the counts alone would
+    // credit patrol strength vanilla would never spawn. The economy read is skipped while
+    // the factor is off or the flag is absent, so neither costs a dynamic-stat lookup.
     private static double computePatrolStrength(MarketAPI market, DominanceRules rules) {
-        if (!rules.patrols().isWeighted()) {
+        if (!rules.patrols().isWeighted() || !Markets.fieldsPatrols(market)) {
             return 0.0;
         }
         var patrols = Markets.readPatrolCounts(market);
