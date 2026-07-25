@@ -3,10 +3,10 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
-import com.fs.starfarer.api.util.Misc;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
+import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.render.gl.BoxBorder;
@@ -20,8 +20,6 @@ import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
-
-import java.awt.Color;
 
 /**
  * Draws the political-map sidebar for one {@link SidebarHost} as a campaign UI listener: it gates on the
@@ -46,11 +44,6 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // The body face: the insignia body font, a graphics/fonts basename the font cache resolves to a
     // loadable path. The tab face is the resolver's, since it both measures and draws the tabs.
     private static final String BODY_FONT = "insignia15LTaa";
-
-    // The whole panel's backdrop: the bordered box fills its footprint with this, and the tab strip and
-    // body controls draw their player-colour accents over it, so the general fill stays black and only lit
-    // elements carry colour.
-    private static final Color PANEL_FILL = Color.BLACK;
 
     // The screen this renderer draws the sidebar on: its gate, placement, controller, and view-state text.
     private final SidebarHost host;
@@ -158,14 +151,19 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         return elapsed;
     }
 
-    // The sidebar's look, built each frame from the live player colours: a black backdrop, the base and
-    // bright player accents, the map's own tab colour scheme, the orbitron tab face at the layout's tab
-    // size, and the insignia body face.
+    // The sidebar's look, built each frame from the live player colours: the vanilla translucent
+    // player-dark as the body backdrop, the base and bright player accents, the map's own tab colour
+    // scheme, the orbitron tab face at the layout's tab size, and the insignia body face.
     private static WidgetStyle buildStyle() {
         return new WidgetStyle(
-                PANEL_FILL,
-                Misc.getBasePlayerColor(),
-                Misc.getBrightPlayerColor(),
+                // The body backdrop is the player faction's darkUIColor - a translucent dark-blue by
+                // default - so the panel reads as a see-through pane the map shows through (matching the
+                // vanilla tab/tooltip chrome) rather than an opaque black block, and it recolours with the
+                // player faction (Nex, modded factions) the way the accents already do. Its own alpha,
+                // combined with the sidebar opacity setting, sets how much map shows through.
+                StarsectorUiColor.VANILLA_PLAYER_DARK.resolve(), // Panel fill.
+                StarsectorUiColor.VANILLA_PLAYER_BASE.resolve(), // Accent.
+                StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve(), // Bright accent.
                 BODY_FONT,
                 new TabStyle(
                         VanillaTabColors.mapTabs(),
