@@ -8,7 +8,9 @@ import java.util.List;
 /**
  * Feeds pointer and key input to one {@link SidebarHost}'s sidebar panel as a campaign input listener: it
  * gates on the host, resolves the placement the renderer drew, and routes each event - a key press to the
- * host (which jumps to a layer, or ignores it), and a pointer event to the host's reusable KMLib {@link
+ * host (which jumps to a layer, or ignores it) only while the panel is fully expanded, so a docked or
+ * animating panel is not offering its tabs and its hotkeys stay inert, and a pointer event to the host's
+ * reusable KMLib {@link
  * kmlib.starsector.ui.input.TabPanelController}, which routes a header tab press, the notch toggle, the
  * thumb drag, the wheel scroll, and body control hits. One instance per host, so the sector map and the
  * intel screen each route to their own panel.
@@ -53,7 +55,12 @@ public final class SidebarInput implements CampaignInputListener {
                 continue;
             }
             if (event.isKeyDownEvent()) {
-                host.handleKeyPress(event);
+                // A tab hotkey switches layers, so it only fires while the panel is fully expanded. Docked,
+                // docking, or undocking, the panel is not presenting its tabs, so its hotkeys stay inert and
+                // the key falls through unconsumed to whatever else claims it.
+                if (host.getController().isFullyExpanded()) {
+                    host.handleKeyPress(event);
+                }
             } else if (event.isMouseEvent() && placement != null) {
                 host.getController().handlePointer(event, placement);
             }
