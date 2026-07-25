@@ -5,12 +5,15 @@ import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
-import com.fs.starfarer.api.util.Misc;
 
+import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.graphics.StarsectorSprites;
 import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.layout.VanillaPositions;
 import kmlib.starsector.ui.render.gl.BoxBorder;
 import kmlib.starsector.ui.render.gl.UiBoxes;
+import kmlib.starsector.ui.render.gl.UiElementPaint;
+import kmlib.starsector.ui.render.gl.UiFill;
 
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
@@ -36,18 +39,21 @@ public final class KmuConditionIconButton {
     public void addTo(
             CustomPanelAPI gridPanel,
             TooltipMakerAPI tooltipOwner,
-            float x,
-            float y,
+            Rectangle placement,
             KmuConditionIconButtonLayout metrics) {
         Objects.requireNonNull(gridPanel, "gridPanel");
         Objects.requireNonNull(tooltipOwner, "tooltipOwner");
+        Objects.requireNonNull(placement, "placement");
         Objects.requireNonNull(metrics, "metrics");
 
+        // The placement's footprint sizes the button; metrics only lays the icon out within it.
         var buttonPanel = gridPanel.createCustomPanel(
-                metrics.getButtonWidth(),
-                metrics.getButtonHeight(),
+                placement.width(),
+                placement.height(),
                 new IconButtonPanelPlugin(metrics));
-        gridPanel.addComponent(buttonPanel).inTL(x, y);
+        gridPanel
+                .addComponent(buttonPanel)
+                .inTL(placement.x(), placement.y());
 
         tooltipOwner.addTooltipTo(
                 new KmuConditionEntryTooltipCreator(this::getEntry),
@@ -106,31 +112,20 @@ public final class KmuConditionIconButton {
                 return;
             }
 
-            var x = position.getX();
-            var y = position.getY();
-            var width = position.getWidth();
-            var height = position.getHeight();
+            var footprint = VanillaPositions.toRectangle(position);
             var style = KmuConditionIconButtonStyle.forEntry(entry);
             var backdropColor = style.getBackdropColor();
             var borderColor = style.getBorderColor();
             var backdropAlpha = style.getBackdropAlpha();
             var borderAlpha = style.getBorderAlpha();
 
-            Misc.renderQuadAlpha(
-                    x,
-                    y,
-                    width,
-                    height,
-                    backdropColor,
-                    backdropAlpha * alphaMult);
+            UiFill.renderQuad(
+                    footprint,
+                    new UiElementPaint(backdropColor, backdropAlpha * alphaMult));
             UiBoxes.renderBorder(
-                    x,
-                    y,
-                    width,
-                    height,
+                    footprint,
                     new BoxBorder(1f),
-                    borderColor,
-                    borderAlpha * alphaMult);
+                    new UiElementPaint(borderColor, borderAlpha * alphaMult));
         }
 
         @Override

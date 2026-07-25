@@ -66,7 +66,7 @@ public final class KmuConditionIconGrid {
             var placement = placements.get(index);
             var button = new KmuConditionIconButton(entry, actionConsumer);
 
-            button.addTo(gridPanel, tooltip, placement.x(), placement.y(), metrics.get(index));
+            button.addTo(gridPanel, tooltip, placement, metrics.get(index));
             buttonsByConditionId.put(entry.getConditionId(), button);
         }
 
