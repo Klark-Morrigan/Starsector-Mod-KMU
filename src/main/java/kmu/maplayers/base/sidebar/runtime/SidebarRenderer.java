@@ -181,8 +181,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
                 // The body backdrop is black; the opacity setting fades it, so the body reads as a
                 // translucent-black pane the map shows through rather than a solid block. Black, not the
                 // player-dark tint, so the body stays neutral - only the tabs header, accents, and the
-                // notch carry player colour. The header opts out of this fade and paints opaque (see
-                // TabPanelRenderer.HEADER_OPACITY), so it alone stays solid black over the faded body.
+                // notch carry colour. This is the body fill alone; the tabs' own fills live in the
+                // TabStyle below, a separate field, so the body's colour never couples to the header's.
+                // The header also opts out of this opacity fade and paints opaque (see
+                // TabPanelRenderer.HEADER_OPACITY), so the tabs read solid over the faded body.
                 StarsectorUiColor.BLACK.resolve(), // Panel fill.
                 accent,
                 brightAccent,
