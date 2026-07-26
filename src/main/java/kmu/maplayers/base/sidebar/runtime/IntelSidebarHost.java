@@ -2,11 +2,11 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
-import kmlib.starsector.ui.render.gl.BoxEdge;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
@@ -65,7 +65,10 @@ public final class IntelSidebarHost implements SidebarHost {
         if (visorRect == null) {
             return null;
         }
-        return LiveSidebarPlacement.resolveIntelPlacement(visorRect, controller);
+        return LiveSidebarPlacement.resolveIntelPlacement(
+                visorRect,
+                controller,
+                layoutBorderEdges());
     }
 
     @Override
@@ -94,17 +97,28 @@ public final class IntelSidebarHost implements SidebarHost {
         return intelScreen.getVisorRect() != null ? "intel tab; visor lit" : "intel tab; visor blanked";
     }
 
-    // Which frame edges to stroke for a box anchored to the visor's top-left. The left is always dropped
-    // (the box is flush against the visor's left edge, so its left border would double the visor's frame),
-    // the top and right are always kept (they sit inside the visor and delineate the sidebar), and the
-    // bottom is dropped only when the box's bottom reaches the visor's bottom (flush there too, within the
-    // rounding tolerance) - kept when the box floats clear of it or there is no visor to measure against.
+    // Which frame edges the box reserves inset space for, decided before layout so a dropped edge collapses
+    // its strip rather than leaving it bare. The left is always dropped (the box sits flush against the
+    // visor's left edge, so reserving a left border would leave a gap between the visor and the content);
+    // the top and right frame the sidebar inside the visor; the bottom keeps its reserved inset for now -
+    // its stroke still drops when the box reaches the visor bottom (see decideBorderEdges), but collapsing
+    // the bottom strip too is deferred. The left is dropped here and by decideBorderEdges alike, so the
+    // reserved space and the stroke never disagree on it.
+    static Set<BoxEdge> layoutBorderEdges() {
+        return EnumSet.of(BoxEdge.TOP, BoxEdge.RIGHT, BoxEdge.BOTTOM);
+    }
+
+    // Which frame edges to stroke for a box anchored to the visor's top-left: the edges it reserved space
+    // for, minus the bottom when the box's bottom reaches the visor's bottom (flush there, within the
+    // rounding tolerance) so a shared bottom border does not double the visor's frame. Derived from the
+    // reserved edges so the left, dropped there, is never stroked here. The bottom stroke drops on flush
+    // while its reserved inset stays, so a flush box keeps a thin bottom strip until that collapse lands.
     static Set<BoxEdge> decideBorderEdges(float boxBottomY, Rectangle visorRect) {
-        var edges = EnumSet.of(BoxEdge.TOP, BoxEdge.RIGHT);
+        var edges = EnumSet.copyOf(layoutBorderEdges());
         var isBottomFlush = visorRect != null
                 && boxBottomY <= visorRect.y() + BOTTOM_FLUSH_TOLERANCE;
-        if (!isBottomFlush) {
-            edges.add(BoxEdge.BOTTOM);
+        if (isBottomFlush) {
+            edges.remove(BoxEdge.BOTTOM);
         }
         return edges;
     }

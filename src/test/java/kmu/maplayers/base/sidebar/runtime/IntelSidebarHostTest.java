@@ -1,7 +1,7 @@
 package kmu.maplayers.base.sidebar.runtime;
 
+import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.ui.render.gl.BoxEdge;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -64,6 +64,34 @@ final class IntelSidebarHostTest {
             var edges = IntelSidebarHost.decideBorderEdges(400f, null);
 
             assertThat(edges).contains(BoxEdge.BOTTOM);
+        }
+    }
+
+    @Nested
+    class LayoutBorderEdges {
+
+        @Test
+        void layoutBorderEdgesDropsTheLeftEdgeSoTheReservedStripCollapses() {
+            // The box sits flush against the visor's left edge, so it reserves no left inset and the content
+            // meets the visor rather than leaving a bare strip where the border would have been.
+            assertThat(IntelSidebarHost.layoutBorderEdges()).doesNotContain(BoxEdge.LEFT);
+        }
+
+        @Test
+        void layoutBorderEdgesKeepsTheTopRightAndBottomEdges() {
+            // The top and right frame the sidebar inside the visor; the bottom keeps its reserved inset for
+            // now (its stroke drops separately on flush, but collapsing the bottom strip is deferred).
+            assertThat(IntelSidebarHost.layoutBorderEdges())
+                    .contains(BoxEdge.TOP, BoxEdge.RIGHT, BoxEdge.BOTTOM);
+        }
+
+        @Test
+        void layoutBorderEdgesDropsTheLeftEdgeInStepWithTheStroke() {
+            // The reserved edges and the stroked edges must agree on the left, or the box would collapse the
+            // left strip while still stroking the border there (or the reverse). Both drop it.
+            assertThat(IntelSidebarHost.decideBorderEdges(400f, null))
+                    .doesNotContain(BoxEdge.LEFT);
+            assertThat(IntelSidebarHost.layoutBorderEdges()).doesNotContain(BoxEdge.LEFT);
         }
     }
 }

@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
@@ -21,6 +22,7 @@ import org.lwjgl.input.Keyboard;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Resolves a sidebar's placement from the live screen, settings, and active layer - the one placement
@@ -56,12 +58,20 @@ public final class LiveSidebarPlacement {
      * Lays the on-map sidebar out for the current screen, the player's padding, and the active layer's
      * body: it hangs from the screen top-left and grows rightward to fit its content.
      *
-     * @param controller the on-map panel's scroll and collapse state
+     * @param controller    the on-map panel's scroll and collapse state
+     * @param borderedEdges which frame edges the host reserves and strokes; the on-map sidebar frames all
+     *                      four, while a host drawn flush against a neighbour drops the shared edges so the
+     *                      box collapses the strip they would occupy
      * @return the placement to draw and hit-test, or {@code null} when the tab font cannot load (see
      *         {@link #resolvePlacement})
      */
-    public static TabPanelPlacement resolveMapPlacement(TabPanelController controller) {
-        return resolvePlacement(buildMapPadding(), controller);
+    public static TabPanelPlacement resolveMapPlacement(
+            TabPanelController controller,
+            Set<BoxEdge> borderedEdges) {
+        return resolvePlacement(
+                buildMapPadding(),
+                controller,
+                borderedEdges);
     }
 
     /**
@@ -70,13 +80,23 @@ public final class LiveSidebarPlacement {
      * toggles), overlaying the visor with the same body the on-map sidebar lays out.
      *
      * @param visorRect  the lit visor's screen rectangle, the corner the panel anchors to
-     * @param controller the intel panel's own scroll and collapse state, separate from the on-map panel's
+     * @param controller    the intel panel's own scroll and collapse state, separate from the on-map panel's
+     * @param selection     the intel screen's own active-layer pick, separate from the on-map screen's, so a
+     *                      switch on one screen does not move the other's tab
+     * @param borderedEdges which frame edges the intel host reserves and strokes; it drops the edges it
+     *                      shares with the visor so the box collapses the strip they would occupy and sits
+     *                      flush
      * @return the placement to draw and hit-test, or {@code null} when the tab font cannot load (see
      *         {@link #resolvePlacement})
      */
-    public static TabPanelPlacement resolveIntelPlacement(Rectangle visorRect,
-            TabPanelController controller) {
-        return resolvePlacement(buildIntelPadding(visorRect), controller);
+    public static TabPanelPlacement resolveIntelPlacement(
+            Rectangle visorRect,
+            TabPanelController controller,
+            Set<BoxEdge> borderedEdges) {
+        return resolvePlacement(
+                buildIntelPadding(visorRect),
+                controller,
+                borderedEdges);
     }
 
     // The intel-screen anchor, expressed as screen padding so the top-left-anchored layout lands the panel
@@ -99,8 +119,9 @@ public final class LiveSidebarPlacement {
     // so the caller draws nothing and consumes nothing that frame.
     private static TabPanelPlacement resolvePlacement(
             Padding padding,
-            TabPanelController controller) {
-                
+            TabPanelController controller,
+            Set<BoxEdge> borderedEdges) {
+
         var measurer = loadTabMeasurer();
         if (measurer == null) {
             return null;
@@ -112,6 +133,9 @@ public final class LiveSidebarPlacement {
                 settings.getScreenHeight(),
                 padding,
                 KmuLunaSettings.getPoliticalMapSidebarBorderWidth(),
+                // The edges the host frames; a dropped edge collapses its reserved inset so the box sits
+                // flush against the neighbour the host meant to blend into.
+                borderedEdges,
                 buildTabsSpec(layers, activeLayer),
                 activeLayer.getBodyControls(),
                 measurer,
