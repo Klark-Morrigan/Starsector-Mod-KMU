@@ -1,6 +1,8 @@
 package kmu.settings;
 
 import kmlib.logging.KmLogging;
+import kmlib.settings.LabeledChoice;
+import kmlib.settings.LabeledChoices;
 import kmlib.settings.LunaSettingsReader;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -626,23 +628,21 @@ public final class KmuLunaSettings {
      *         or NONE to hide it; the primary (bright) color by default
      */
     public static FactionPaletteChoice getFactionOuterBorderColor() {
-        return readPaletteChoice(FACTION_OUTER_BORDER_COLOR_FIELD, DEFAULT_FACTION_OUTER_BORDER_COLOR);
+        return readChoice(FACTION_OUTER_BORDER_COLOR_FIELD, DEFAULT_FACTION_OUTER_BORDER_COLOR);
     }
 
     /**
      * @return the outer (national) border opacity for faction systems, 0..1
      */
     public static double getFactionOuterBorderOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, FACTION_OUTER_BORDER_OPACITY_FIELD,
-                DEFAULT_FACTION_OUTER_BORDER_OPACITY);
+        return readDouble(FACTION_OUTER_BORDER_OPACITY_FIELD, DEFAULT_FACTION_OUTER_BORDER_OPACITY);
     }
 
     /**
      * @return the outer (national) border line width for faction systems, pixels
      */
     public static double getFactionOuterBorderWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, FACTION_OUTER_BORDER_WIDTH_FIELD,
-                DEFAULT_FACTION_OUTER_BORDER_WIDTH);
+        return readDouble(FACTION_OUTER_BORDER_WIDTH_FIELD, DEFAULT_FACTION_OUTER_BORDER_WIDTH);
     }
 
     /**
@@ -650,15 +650,14 @@ public final class KmuLunaSettings {
      *         in, or NONE to hide them; the secondary (dark) color by default
      */
     public static FactionPaletteChoice getFactionInnerBorderColor() {
-        return readPaletteChoice(FACTION_INNER_BORDER_COLOR_FIELD, DEFAULT_FACTION_INNER_BORDER_COLOR);
+        return readChoice(FACTION_INNER_BORDER_COLOR_FIELD, DEFAULT_FACTION_INNER_BORDER_COLOR);
     }
 
     /**
      * @return the inner (province seam) border opacity for faction systems, 0..1
      */
     public static double getFactionInnerBorderOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, FACTION_INNER_BORDER_OPACITY_FIELD,
-                DEFAULT_FACTION_INNER_BORDER_OPACITY);
+        return readDouble(FACTION_INNER_BORDER_OPACITY_FIELD, DEFAULT_FACTION_INNER_BORDER_OPACITY);
     }
 
     /**
@@ -666,8 +665,7 @@ public final class KmuLunaSettings {
      *         pixels
      */
     public static double getFactionInnerBorderWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, FACTION_INNER_BORDER_WIDTH_FIELD,
-                DEFAULT_FACTION_INNER_BORDER_WIDTH);
+        return readDouble(FACTION_INNER_BORDER_WIDTH_FIELD, DEFAULT_FACTION_INNER_BORDER_WIDTH);
     }
 
     /**
@@ -675,15 +673,14 @@ public final class KmuLunaSettings {
      *         leave it unfilled; the primary (bright) color by default
      */
     public static FactionPaletteChoice getFactionFillColor() {
-        return readPaletteChoice(FACTION_FILL_COLOR_FIELD, DEFAULT_FACTION_FILL_COLOR);
+        return readChoice(FACTION_FILL_COLOR_FIELD, DEFAULT_FACTION_FILL_COLOR);
     }
 
     /**
      * @return the fill opacity for faction systems, 0..1
      */
     public static double getFactionFillOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, FACTION_FILL_OPACITY_FIELD,
-                DEFAULT_FACTION_FILL_OPACITY);
+        return readDouble(FACTION_FILL_OPACITY_FIELD, DEFAULT_FACTION_FILL_OPACITY);
     }
 
     /**
@@ -693,8 +690,7 @@ public final class KmuLunaSettings {
      *         per-frame map-zoom fade the renderer applies still composes on top of this
      */
     public static double getFactionNameOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, FACTION_NAME_OPACITY_FIELD,
-                DEFAULT_FACTION_NAME_OPACITY);
+        return readDouble(FACTION_NAME_OPACITY_FIELD, DEFAULT_FACTION_NAME_OPACITY);
     }
 
     /**
@@ -702,7 +698,8 @@ public final class KmuLunaSettings {
      *         in, or NONE to hide it; the primary (bright) color by default
      */
     public static FactionPaletteChoice getIndependentOuterBorderColor() {
-        return readPaletteChoice(INDEPENDENT_OUTER_BORDER_COLOR_FIELD,
+        return readChoice(
+                INDEPENDENT_OUTER_BORDER_COLOR_FIELD,
                 DEFAULT_INDEPENDENT_OUTER_BORDER_COLOR);
     }
 
@@ -711,7 +708,8 @@ public final class KmuLunaSettings {
      *         0..1
      */
     public static double getIndependentOuterBorderOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_OUTER_BORDER_OPACITY_FIELD,
+        return readDouble(
+                INDEPENDENT_OUTER_BORDER_OPACITY_FIELD,
                 DEFAULT_INDEPENDENT_OUTER_BORDER_OPACITY);
     }
 
@@ -720,7 +718,8 @@ public final class KmuLunaSettings {
      *         pixels
      */
     public static double getIndependentOuterBorderWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_OUTER_BORDER_WIDTH_FIELD,
+        return readDouble(
+                INDEPENDENT_OUTER_BORDER_WIDTH_FIELD,
                 DEFAULT_INDEPENDENT_OUTER_BORDER_WIDTH);
     }
 
@@ -729,7 +728,8 @@ public final class KmuLunaSettings {
      *         draw in, or NONE to hide them; the secondary (dark) color by default
      */
     public static FactionPaletteChoice getIndependentInnerBorderColor() {
-        return readPaletteChoice(INDEPENDENT_INNER_BORDER_COLOR_FIELD,
+        return readChoice(
+                INDEPENDENT_INNER_BORDER_COLOR_FIELD,
                 DEFAULT_INDEPENDENT_INNER_BORDER_COLOR);
     }
 
@@ -738,7 +738,8 @@ public final class KmuLunaSettings {
      *         systems, 0..1
      */
     public static double getIndependentInnerBorderOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_INNER_BORDER_OPACITY_FIELD,
+        return readDouble(
+                INDEPENDENT_INNER_BORDER_OPACITY_FIELD,
                 DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY);
     }
 
@@ -747,7 +748,8 @@ public final class KmuLunaSettings {
      *         systems, pixels
      */
     public static double getIndependentInnerBorderWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_INNER_BORDER_WIDTH_FIELD,
+        return readDouble(
+                INDEPENDENT_INNER_BORDER_WIDTH_FIELD,
                 DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH);
     }
 
@@ -756,15 +758,14 @@ public final class KmuLunaSettings {
      *         to leave it unfilled; the primary (bright) color by default
      */
     public static FactionPaletteChoice getIndependentFillColor() {
-        return readPaletteChoice(INDEPENDENT_FILL_COLOR_FIELD, DEFAULT_INDEPENDENT_FILL_COLOR);
+        return readChoice(INDEPENDENT_FILL_COLOR_FIELD, DEFAULT_INDEPENDENT_FILL_COLOR);
     }
 
     /**
      * @return the fill opacity for independent-held systems, 0..1
      */
     public static double getIndependentFillOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_FILL_OPACITY_FIELD,
-                DEFAULT_INDEPENDENT_FILL_OPACITY);
+        return readDouble(INDEPENDENT_FILL_OPACITY_FIELD, DEFAULT_INDEPENDENT_FILL_OPACITY);
     }
 
     /**
@@ -774,8 +775,7 @@ public final class KmuLunaSettings {
      *         per-frame map-zoom fade the renderer applies still composes on top of this
      */
     public static double getIndependentNameOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, INDEPENDENT_NAME_OPACITY_FIELD,
-                DEFAULT_INDEPENDENT_NAME_OPACITY);
+        return readDouble(INDEPENDENT_NAME_OPACITY_FIELD, DEFAULT_INDEPENDENT_NAME_OPACITY);
     }
 
     /**
@@ -784,39 +784,35 @@ public final class KmuLunaSettings {
      *         presence, so it draws unless the player hides it)
      */
     public static NeutralColorChoice getDecivilisedBorderColor() {
-        return readNeutralChoice(DECIVILISED_BORDER_COLOR_FIELD, DEFAULT_DECIVILISED_BORDER_COLOR);
+        return readChoice(DECIVILISED_BORDER_COLOR_FIELD, DEFAULT_DECIVILISED_BORDER_COLOR);
     }
 
     /**
      * @return the outline opacity for decivilised systems, 0..1
      */
     public static double getDecivilisedBorderOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, DECIVILISED_BORDER_OPACITY_FIELD,
-                DEFAULT_DECIVILISED_BORDER_OPACITY);
+        return readDouble(DECIVILISED_BORDER_OPACITY_FIELD, DEFAULT_DECIVILISED_BORDER_OPACITY);
     }
 
     /**
      * @return the outline line width for decivilised systems, pixels
      */
     public static double getDecivilisedBorderWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, DECIVILISED_BORDER_WIDTH_FIELD,
-                DEFAULT_DECIVILISED_BORDER_WIDTH);
+        return readDouble(DECIVILISED_BORDER_WIDTH_FIELD, DEFAULT_DECIVILISED_BORDER_WIDTH);
     }
 
     /**
      * @return the outline opacity for uninhabited systems, 0..1
      */
     public static double getUninhabitedBorderOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, UNINHABITED_BORDER_OPACITY_FIELD,
-                DEFAULT_UNINHABITED_BORDER_OPACITY);
+        return readDouble(UNINHABITED_BORDER_OPACITY_FIELD, DEFAULT_UNINHABITED_BORDER_OPACITY);
     }
 
     /**
      * @return the outline line width for uninhabited systems, pixels
      */
     public static double getUninhabitedBorderWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, UNINHABITED_BORDER_WIDTH_FIELD,
-                DEFAULT_UNINHABITED_BORDER_WIDTH);
+        return readDouble(UNINHABITED_BORDER_WIDTH_FIELD, DEFAULT_UNINHABITED_BORDER_WIDTH);
     }
 
     /**
@@ -826,7 +822,8 @@ public final class KmuLunaSettings {
      *         the sidebar Mute toggle is off. Supplementary to that sidebar-only toggle
      */
     public static double getPoliticalMapAllianceMutedOpacityModifier() {
-        return LunaSettingsReader.getDouble(MOD_ID, ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD,
+        return readDouble(
+                ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD,
                 DEFAULT_ALLIANCE_MUTED_OPACITY_MODIFIER);
     }
 
@@ -838,8 +835,7 @@ public final class KmuLunaSettings {
      *         flags only whether a bloc desaturates, never how dark
      */
     public static double getPoliticalMapDesaturationDarkening() {
-        return LunaSettingsReader.getDouble(MOD_ID, DESATURATION_DARKENING_FIELD,
-                DEFAULT_DESATURATION_DARKENING);
+        return readDouble(DESATURATION_DARKENING_FIELD, DEFAULT_DESATURATION_DARKENING);
     }
 
     /**
@@ -850,8 +846,7 @@ public final class KmuLunaSettings {
      *         small colonies and above 1 sharpens it
      */
     public static double getColonySizeWeight() {
-        return LunaSettingsReader.getDouble(MOD_ID, COLONY_SIZE_WEIGHT_FIELD,
-                DEFAULT_COLONY_SIZE_WEIGHT);
+        return readDouble(COLONY_SIZE_WEIGHT_FIELD, DEFAULT_COLONY_SIZE_WEIGHT);
     }
 
     /**
@@ -861,10 +856,7 @@ public final class KmuLunaSettings {
      *         outweigh the open colonies around it
      */
     public static HiddenMarketScalingChoice getHiddenMarketScaling() {
-        return HiddenMarketScalingChoice.fromLabel(
-                LunaSettingsReader.getString(MOD_ID, HIDDEN_MARKET_SCALING_FIELD,
-                        DEFAULT_HIDDEN_MARKET_SCALING.getLabel()),
-                DEFAULT_HIDDEN_MARKET_SCALING);
+        return readChoice(HIDDEN_MARKET_SCALING_FIELD, DEFAULT_HIDDEN_MARKET_SCALING);
     }
 
     /**
@@ -873,8 +865,7 @@ public final class KmuLunaSettings {
      *         stability apply; 1.0 by default. Unread while the scaling is NORMAL
      */
     public static double getHiddenMarketFixedWeight() {
-        return LunaSettingsReader.getDouble(MOD_ID, HIDDEN_MARKET_FIXED_WEIGHT_FIELD,
-                DEFAULT_HIDDEN_MARKET_FIXED_WEIGHT);
+        return readDouble(HIDDEN_MARKET_FIXED_WEIGHT_FIELD, DEFAULT_HIDDEN_MARKET_FIXED_WEIGHT);
     }
 
     /**
@@ -883,8 +874,7 @@ public final class KmuLunaSettings {
      *         off ranks colonies by their raw weighted size, station, and patrol sum
      */
     public static boolean shouldWeighDominanceByStability() {
-        return LunaSettingsReader.getBoolean(MOD_ID, STABILITY_WEIGHS_DOMINANCE_FIELD,
-                DEFAULT_STABILITY_WEIGHS_DOMINANCE);
+        return readBoolean(STABILITY_WEIGHS_DOMINANCE_FIELD, DEFAULT_STABILITY_WEIGHS_DOMINANCE);
     }
 
     /**
@@ -894,8 +884,7 @@ public final class KmuLunaSettings {
      *         weighting is on
      */
     public static double getNormalLowStabilityPenalty() {
-        return LunaSettingsReader.getDouble(MOD_ID, NORMAL_LOW_STABILITY_PENALTY_FIELD,
-                DEFAULT_NORMAL_LOW_STABILITY_PENALTY);
+        return readDouble(NORMAL_LOW_STABILITY_PENALTY_FIELD, DEFAULT_NORMAL_LOW_STABILITY_PENALTY);
     }
 
     /**
@@ -904,8 +893,7 @@ public final class KmuLunaSettings {
      *         ranks markets without any station bonus
      */
     public static boolean shouldWeighDominanceByStation() {
-        return LunaSettingsReader.getBoolean(MOD_ID, STATION_WEIGHS_DOMINANCE_FIELD,
-                DEFAULT_STATION_WEIGHS_DOMINANCE);
+        return readBoolean(STATION_WEIGHS_DOMINANCE_FIELD, DEFAULT_STATION_WEIGHS_DOMINANCE);
     }
 
     /**
@@ -915,8 +903,7 @@ public final class KmuLunaSettings {
      *         hidden market earns this scaled by the hidden-market station fraction
      */
     public static double getStationWeight() {
-        return LunaSettingsReader.getDouble(MOD_ID, STATION_WEIGHT_FIELD,
-                DEFAULT_STATION_WEIGHT);
+        return readDouble(STATION_WEIGHT_FIELD, DEFAULT_STATION_WEIGHT);
     }
 
     /**
@@ -925,8 +912,7 @@ public final class KmuLunaSettings {
      *         market without matching an openly held stationed colony; half by default
      */
     public static double getStationHiddenMarketRate() {
-        return LunaSettingsReader.getDouble(MOD_ID, STATION_HIDDEN_MARKET_RATE_FIELD,
-                DEFAULT_STATION_HIDDEN_MARKET_RATE);
+        return readDouble(STATION_HIDDEN_MARKET_RATE_FIELD, DEFAULT_STATION_HIDDEN_MARKET_RATE);
     }
 
     /**
@@ -935,7 +921,8 @@ public final class KmuLunaSettings {
      *         stability; 0.5 by default. Applied only while stability weighting is on
      */
     public static double getStationLowStabilityPenalty() {
-        return LunaSettingsReader.getDouble(MOD_ID, STATION_LOW_STABILITY_PENALTY_FIELD,
+        return readDouble(
+                STATION_LOW_STABILITY_PENALTY_FIELD,
                 DEFAULT_STATION_LOW_STABILITY_PENALTY);
     }
 
@@ -945,8 +932,7 @@ public final class KmuLunaSettings {
      *         strength does not sway dominance until the player opts in
      */
     public static boolean shouldWeighDominanceByPatrols() {
-        return LunaSettingsReader.getBoolean(MOD_ID, PATROL_WEIGHS_DOMINANCE_FIELD,
-                DEFAULT_PATROL_WEIGHS_DOMINANCE);
+        return readBoolean(PATROL_WEIGHS_DOMINANCE_FIELD, DEFAULT_PATROL_WEIGHS_DOMINANCE);
     }
 
     /**
@@ -955,8 +941,7 @@ public final class KmuLunaSettings {
      *         0.25 by default. Unread while patrol weighting is off
      */
     public static double getPatrolSmallWeight() {
-        return LunaSettingsReader.getDouble(MOD_ID, PATROL_SMALL_WEIGHT_FIELD,
-                DEFAULT_PATROL_SMALL_WEIGHT);
+        return readDouble(PATROL_SMALL_WEIGHT_FIELD, DEFAULT_PATROL_SMALL_WEIGHT);
     }
 
     /**
@@ -965,8 +950,7 @@ public final class KmuLunaSettings {
      *         default. Unread while patrol weighting is off
      */
     public static double getPatrolMediumWeight() {
-        return LunaSettingsReader.getDouble(MOD_ID, PATROL_MEDIUM_WEIGHT_FIELD,
-                DEFAULT_PATROL_MEDIUM_WEIGHT);
+        return readDouble(PATROL_MEDIUM_WEIGHT_FIELD, DEFAULT_PATROL_MEDIUM_WEIGHT);
     }
 
     /**
@@ -975,8 +959,7 @@ public final class KmuLunaSettings {
      *         1.0 by default. Unread while patrol weighting is off
      */
     public static double getPatrolLargeWeight() {
-        return LunaSettingsReader.getDouble(MOD_ID, PATROL_LARGE_WEIGHT_FIELD,
-                DEFAULT_PATROL_LARGE_WEIGHT);
+        return readDouble(PATROL_LARGE_WEIGHT_FIELD, DEFAULT_PATROL_LARGE_WEIGHT);
     }
 
     /**
@@ -985,7 +968,8 @@ public final class KmuLunaSettings {
      *         of stability; 0.5 by default. Applied only while stability weighting is on
      */
     public static double getPatrolLowStabilityPenalty() {
-        return LunaSettingsReader.getDouble(MOD_ID, PATROL_LOW_STABILITY_PENALTY_FIELD,
+        return readDouble(
+                PATROL_LOW_STABILITY_PENALTY_FIELD,
                 DEFAULT_PATROL_LOW_STABILITY_PENALTY);
     }
 
@@ -996,8 +980,7 @@ public final class KmuLunaSettings {
      *         trades a faceted frontier for fewer vertices
      */
     public static int getPoliticalMapCellBoundSegments() {
-        return LunaSettingsReader.getInt(MOD_ID, CELL_BOUND_SEGMENTS_FIELD,
-                DEFAULT_CELL_BOUND_SEGMENTS);
+        return readInt(CELL_BOUND_SEGMENTS_FIELD, DEFAULT_CELL_BOUND_SEGMENTS);
     }
 
     /**
@@ -1007,7 +990,7 @@ public final class KmuLunaSettings {
      *         lower pulls every territory in tight around its own systems
      */
     public static double getPoliticalMapCellRadius() {
-        return LunaSettingsReader.getDouble(MOD_ID, CELL_RADIUS_FIELD, DEFAULT_CELL_RADIUS);
+        return readDouble(CELL_RADIUS_FIELD, DEFAULT_CELL_RADIUS);
     }
 
     /**
@@ -1015,8 +998,7 @@ public final class KmuLunaSettings {
      *         units; higher rounds the cluster outline more
      */
     public static double getPoliticalMapBorderCornerRadius() {
-        return LunaSettingsReader.getDouble(MOD_ID, BORDER_CORNER_RADIUS_FIELD,
-                DEFAULT_BORDER_CORNER_RADIUS);
+        return readDouble(BORDER_CORNER_RADIUS_FIELD, DEFAULT_BORDER_CORNER_RADIUS);
     }
 
     /**
@@ -1024,8 +1006,7 @@ public final class KmuLunaSettings {
      *         smoother
      */
     public static int getPoliticalMapBorderCornerSegments() {
-        return LunaSettingsReader.getInt(MOD_ID, BORDER_CORNER_SEGMENTS_FIELD,
-                DEFAULT_BORDER_CORNER_SEGMENTS);
+        return readInt(BORDER_CORNER_SEGMENTS_FIELD, DEFAULT_BORDER_CORNER_SEGMENTS);
     }
 
     /**
@@ -1034,7 +1015,7 @@ public final class KmuLunaSettings {
      *         degrees and converted here, since the rounding math works in radians)
      */
     public static double getPoliticalMapBorderChamferAngleRadians() {
-        return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, BORDER_CHAMFER_ANGLE_FIELD,
+        return Math.toRadians(readDouble(BORDER_CHAMFER_ANGLE_FIELD,
                 DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES));
     }
 
@@ -1044,7 +1025,7 @@ public final class KmuLunaSettings {
      *         it up
      */
     public static double getPoliticalMapHatchSpacing() {
-        return LunaSettingsReader.getDouble(MOD_ID, HATCH_SPACING_FIELD, DEFAULT_HATCH_SPACING);
+        return readDouble(HATCH_SPACING_FIELD, DEFAULT_HATCH_SPACING);
     }
 
     /**
@@ -1053,8 +1034,7 @@ public final class KmuLunaSettings {
      *         works in radians)
      */
     public static double getPoliticalMapHatchAngleRadians() {
-        return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, HATCH_ANGLE_FIELD,
-                DEFAULT_HATCH_ANGLE_DEGREES));
+        return Math.toRadians(readDouble(HATCH_ANGLE_FIELD, DEFAULT_HATCH_ANGLE_DEGREES));
     }
 
     /**
@@ -1062,7 +1042,7 @@ public final class KmuLunaSettings {
      *         contested texture read heavier without touching the solid fill or the line spacing
      */
     public static double getPoliticalMapHatchWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH);
+        return readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH);
     }
 
     /**
@@ -1070,7 +1050,7 @@ public final class KmuLunaSettings {
      *         cursor read and every highlight pass; on by default
      */
     public static boolean getPoliticalMapHoverEnabled() {
-        return LunaSettingsReader.getBoolean(MOD_ID, HOVER_ENABLED_FIELD, DEFAULT_HOVER_ENABLED);
+        return readBoolean(HOVER_ENABLED_FIELD, DEFAULT_HOVER_ENABLED);
     }
 
     /**
@@ -1079,8 +1059,7 @@ public final class KmuLunaSettings {
      *         master switch read live each frame so toggling it needs no rebuild
      */
     public static boolean getPoliticalMapHoverTooltipEnabled() {
-        return LunaSettingsReader.getBoolean(MOD_ID, HOVER_TOOLTIP_ENABLED_FIELD,
-                DEFAULT_HOVER_TOOLTIP_ENABLED);
+        return readBoolean(HOVER_TOOLTIP_ENABLED_FIELD, DEFAULT_HOVER_TOOLTIP_ENABLED);
     }
 
     /**
@@ -1089,7 +1068,7 @@ public final class KmuLunaSettings {
      *         the enable toggle's job, not a color choice
      */
     public static FactionPaletteChoice getPoliticalMapHoverHighlightColor() {
-        return readPaletteChoice(HOVER_HIGHLIGHT_COLOR_FIELD, DEFAULT_HOVER_HIGHLIGHT_COLOR);
+        return readChoice(HOVER_HIGHLIGHT_COLOR_FIELD, DEFAULT_HOVER_HIGHLIGHT_COLOR);
     }
 
     /**
@@ -1097,8 +1076,7 @@ public final class KmuLunaSettings {
      *         which the outer layers fade away from
      */
     public static double getPoliticalMapHoverGlowOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, HOVER_GLOW_OPACITY_FIELD,
-                DEFAULT_HOVER_GLOW_OPACITY);
+        return readDouble(HOVER_GLOW_OPACITY_FIELD, DEFAULT_HOVER_GLOW_OPACITY);
     }
 
     /**
@@ -1106,8 +1084,7 @@ public final class KmuLunaSettings {
      *         of its widest, faintest stroke
      */
     public static double getPoliticalMapHoverGlowWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, HOVER_GLOW_WIDTH_FIELD,
-                DEFAULT_HOVER_GLOW_WIDTH);
+        return readDouble(HOVER_GLOW_WIDTH_FIELD, DEFAULT_HOVER_GLOW_WIDTH);
     }
 
     /**
@@ -1115,8 +1092,7 @@ public final class KmuLunaSettings {
      *         at a stroke of the whole frontier apiece
      */
     public static int getPoliticalMapHoverGlowLayers() {
-        return LunaSettingsReader.getInt(MOD_ID, HOVER_GLOW_LAYERS_FIELD,
-                DEFAULT_HOVER_GLOW_LAYERS);
+        return readInt(HOVER_GLOW_LAYERS_FIELD, DEFAULT_HOVER_GLOW_LAYERS);
     }
 
     /**
@@ -1124,8 +1100,7 @@ public final class KmuLunaSettings {
      *         0 holds it steady
      */
     public static double getPoliticalMapHoverGlowPulseStrength() {
-        return LunaSettingsReader.getDouble(MOD_ID, HOVER_GLOW_PULSE_STRENGTH_FIELD,
-                DEFAULT_HOVER_GLOW_PULSE_STRENGTH);
+        return readDouble(HOVER_GLOW_PULSE_STRENGTH_FIELD, DEFAULT_HOVER_GLOW_PULSE_STRENGTH);
     }
 
     /**
@@ -1133,16 +1108,14 @@ public final class KmuLunaSettings {
      *         the pulse strength is 0
      */
     public static double getPoliticalMapHoverGlowPulsePeriod() {
-        return LunaSettingsReader.getDouble(MOD_ID, HOVER_GLOW_PULSE_PERIOD_FIELD,
-                DEFAULT_HOVER_GLOW_PULSE_PERIOD_SECONDS);
+        return readDouble(HOVER_GLOW_PULSE_PERIOD_FIELD, DEFAULT_HOVER_GLOW_PULSE_PERIOD_SECONDS);
     }
 
     /**
      * @return the alpha the hovered cell's wash brightens its painted extent by, 0..1
      */
     public static double getPoliticalMapHoverWashOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, HOVER_WASH_OPACITY_FIELD,
-                DEFAULT_HOVER_WASH_OPACITY);
+        return readDouble(HOVER_WASH_OPACITY_FIELD, DEFAULT_HOVER_WASH_OPACITY);
     }
 
     /**
@@ -1150,16 +1123,14 @@ public final class KmuLunaSettings {
      *         surrounded by its own faction has, so it reads apart from the wash
      */
     public static double getPoliticalMapHoverWashOutlineOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, HOVER_WASH_OUTLINE_OPACITY_FIELD,
-                DEFAULT_HOVER_WASH_OUTLINE_OPACITY);
+        return readDouble(HOVER_WASH_OUTLINE_OPACITY_FIELD, DEFAULT_HOVER_WASH_OUTLINE_OPACITY);
     }
 
     /**
      * @return the line width the hovered cell's outline traces at, in pixels
      */
     public static double getPoliticalMapHoverWashOutlineWidth() {
-        return LunaSettingsReader.getDouble(MOD_ID, HOVER_WASH_OUTLINE_WIDTH_FIELD,
-                DEFAULT_HOVER_WASH_OUTLINE_WIDTH);
+        return readDouble(HOVER_WASH_OUTLINE_WIDTH_FIELD, DEFAULT_HOVER_WASH_OUTLINE_WIDTH);
     }
 
     /**
@@ -1168,8 +1139,7 @@ public final class KmuLunaSettings {
      *         go missing, lowered if distinct corners merge
      */
     public static double getPoliticalMapBorderWeldTolerance() {
-        return LunaSettingsReader.getDouble(MOD_ID, BORDER_WELD_TOLERANCE_FIELD,
-                DEFAULT_BORDER_WELD_TOLERANCE);
+        return readDouble(BORDER_WELD_TOLERANCE_FIELD, DEFAULT_BORDER_WELD_TOLERANCE);
     }
 
     /**
@@ -1178,8 +1148,7 @@ public final class KmuLunaSettings {
      *         no inward spikes), higher keeps crisper points
      */
     public static double getPoliticalMapBorderMiterLimit() {
-        return LunaSettingsReader.getDouble(MOD_ID, BORDER_MITER_LIMIT_FIELD,
-                DEFAULT_BORDER_MITER_LIMIT);
+        return readDouble(BORDER_MITER_LIMIT_FIELD, DEFAULT_BORDER_MITER_LIMIT);
     }
 
     /**
@@ -1188,8 +1157,7 @@ public final class KmuLunaSettings {
      *         than this is real shape and is kept. Zero disables the spike pass
      */
     public static double getPoliticalMapBorderSpikeHeight() {
-        return LunaSettingsReader.getDouble(MOD_ID, BORDER_SPIKE_HEIGHT_FIELD,
-                DEFAULT_BORDER_SPIKE_HEIGHT);
+        return readDouble(BORDER_SPIKE_HEIGHT_FIELD, DEFAULT_BORDER_SPIKE_HEIGHT);
     }
 
     /**
@@ -1198,7 +1166,8 @@ public final class KmuLunaSettings {
      *         Zero disables the spike pass
      */
     public static double getPoliticalMapBorderSpikeAngleRadians() {
-        return Math.toRadians(LunaSettingsReader.getDouble(MOD_ID, BORDER_SPIKE_ANGLE_FIELD,
+        return Math.toRadians(readDouble(
+                BORDER_SPIKE_ANGLE_FIELD,
                 DEFAULT_BORDER_SPIKE_ANGLE_DEGREES));
     }
 
@@ -1210,8 +1179,7 @@ public final class KmuLunaSettings {
      *         corner-rounding pass, so the whole map's corners round or not together
      */
     public static boolean shouldRoundBorderCorners() {
-        return LunaSettingsReader.getBoolean(MOD_ID, ROUND_CORNERS_FIELD,
-                DEFAULT_ROUND_CORNERS);
+        return readBoolean(ROUND_CORNERS_FIELD, DEFAULT_ROUND_CORNERS);
     }
 
     /**
@@ -1220,8 +1188,7 @@ public final class KmuLunaSettings {
      *         or cusp protrusions are left in the border for the rounding to meet
      */
     public static boolean shouldSandBorderSpikes() {
-        return LunaSettingsReader.getBoolean(MOD_ID, SAND_SPIKES_FIELD,
-                DEFAULT_SAND_SPIKES);
+        return readBoolean(SAND_SPIKES_FIELD, DEFAULT_SAND_SPIKES);
     }
 
     /**
@@ -1232,8 +1199,7 @@ public final class KmuLunaSettings {
      *         axis, and the preferred slant are always searched on top of the fan
      */
     public static int getPoliticalMapAnchorDirectionCount() {
-        return LunaSettingsReader.getInt(MOD_ID, ANCHOR_DIRECTION_COUNT_FIELD,
-                DEFAULT_ANCHOR_DIRECTION_COUNT);
+        return readInt(ANCHOR_DIRECTION_COUNT_FIELD, DEFAULT_ANCHOR_DIRECTION_COUNT);
     }
 
     /**
@@ -1244,7 +1210,8 @@ public final class KmuLunaSettings {
      *         centred line per direction
      */
     public static int getPoliticalMapAnchorOffsetCount() {
-        return LunaSettingsReader.getInt(MOD_ID, ANCHOR_OFFSET_COUNT_FIELD,
+        return readInt(
+                ANCHOR_OFFSET_COUNT_FIELD,
                 DEFAULT_ANCHOR_OFFSET_COUNT);
     }
 
@@ -1255,7 +1222,8 @@ public final class KmuLunaSettings {
      *         longest line regardless of slope and 1 scores a vertical line zero
      */
     public static double getPoliticalMapAnchorVerticalPenaltyStrength() {
-        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD,
+        return readDouble(
+                ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD,
                 DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH);
     }
 
@@ -1267,7 +1235,8 @@ public final class KmuLunaSettings {
      *         scale got backwards
      */
     public static double getPoliticalMapAnchorVerticalPenaltyExponent() {
-        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD,
+        return readDouble(
+                ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD,
                 DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT);
     }
 
@@ -1279,8 +1248,7 @@ public final class KmuLunaSettings {
      *         dead-horizontal labels, 90 lets a label follow its axis to vertical
      */
     public static double getPoliticalMapAnchorMaxSlantDegrees() {
-        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_MAX_SLANT_DEGREES_FIELD,
-                DEFAULT_ANCHOR_MAX_SLANT_DEGREES);
+        return readDouble(ANCHOR_MAX_SLANT_DEGREES_FIELD, DEFAULT_ANCHOR_MAX_SLANT_DEGREES);
     }
 
     /**
@@ -1290,8 +1258,7 @@ public final class KmuLunaSettings {
      *         this collapses to the dot
      */
     public static double getPoliticalMapAnchorEndInsetMultiple() {
-        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_END_INSET_MULTIPLE_FIELD,
-                DEFAULT_ANCHOR_END_INSET_MULTIPLE);
+        return readDouble(ANCHOR_END_INSET_MULTIPLE_FIELD, DEFAULT_ANCHOR_END_INSET_MULTIPLE);
     }
 
     /**
@@ -1301,8 +1268,7 @@ public final class KmuLunaSettings {
      *         fitted once in world space
      */
     public static double getPoliticalMapAnchorIconClearance() {
-        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_ICON_CLEARANCE_FIELD,
-                DEFAULT_ANCHOR_ICON_CLEARANCE);
+        return readDouble(ANCHOR_ICON_CLEARANCE_FIELD, DEFAULT_ANCHOR_ICON_CLEARANCE);
     }
 
     /**
@@ -1311,8 +1277,7 @@ public final class KmuLunaSettings {
      *         this tall anywhere collapses to the dot and shows no name
      */
     public static double getPoliticalMapNameMinFontSize() {
-        return LunaSettingsReader.getDouble(MOD_ID, NAME_MIN_FONT_SIZE_FIELD,
-                DEFAULT_NAME_MIN_FONT_SIZE);
+        return readDouble(NAME_MIN_FONT_SIZE_FIELD, DEFAULT_NAME_MIN_FONT_SIZE);
     }
 
     /**
@@ -1321,8 +1286,7 @@ public final class KmuLunaSettings {
      *         the font-height search
      */
     public static double getPoliticalMapNameMaxFontSize() {
-        return LunaSettingsReader.getDouble(MOD_ID, NAME_MAX_FONT_SIZE_FIELD,
-                DEFAULT_NAME_MAX_FONT_SIZE);
+        return readDouble(NAME_MAX_FONT_SIZE_FIELD, DEFAULT_NAME_MAX_FONT_SIZE);
     }
 
     /**
@@ -1332,8 +1296,7 @@ public final class KmuLunaSettings {
      *         lines would. 1 forces single-line names
      */
     public static int getPoliticalMapNameMaxLines() {
-        return LunaSettingsReader.getInt(MOD_ID, NAME_MAX_LINES_FIELD,
-                DEFAULT_NAME_MAX_LINES);
+        return readInt(NAME_MAX_LINES_FIELD, DEFAULT_NAME_MAX_LINES);
     }
 
     /**
@@ -1342,8 +1305,7 @@ public final class KmuLunaSettings {
      *         at least 1 (lines flush)
      */
     public static double getPoliticalMapNameLineSpacing() {
-        return LunaSettingsReader.getDouble(MOD_ID, NAME_LINE_SPACING_FIELD,
-                DEFAULT_NAME_LINE_SPACING);
+        return readDouble(NAME_LINE_SPACING_FIELD, DEFAULT_NAME_LINE_SPACING);
     }
 
     /**
@@ -1352,8 +1314,7 @@ public final class KmuLunaSettings {
      *         the whole point of drawing the band is to see it kiss or clear the border
      */
     public static double getPoliticalMapAnchorBandOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_OPACITY_FIELD,
-                DEFAULT_ANCHOR_BAND_OPACITY);
+        return readDouble(ANCHOR_BAND_OPACITY_FIELD, DEFAULT_ANCHOR_BAND_OPACITY);
     }
 
     /**
@@ -1362,8 +1323,7 @@ public final class KmuLunaSettings {
      *         from the fill alpha so the outline stays legible over a faint band wash
      */
     public static double getPoliticalMapAnchorBandLineOpacity() {
-        return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_LINE_OPACITY_FIELD,
-                DEFAULT_ANCHOR_BAND_LINE_OPACITY);
+        return readDouble(ANCHOR_BAND_LINE_OPACITY_FIELD, DEFAULT_ANCHOR_BAND_LINE_OPACITY);
     }
 
     /**
@@ -1371,8 +1331,7 @@ public final class KmuLunaSettings {
      *         in pixels; 46 by default (clearing the sector map's own tab strip)
      */
     public static int getPoliticalMapSidebarPaddingTop() {
-        return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_PADDING_TOP_FIELD,
-                DEFAULT_SIDEBAR_PADDING_TOP);
+        return readInt(SIDEBAR_PADDING_TOP_FIELD, DEFAULT_SIDEBAR_PADDING_TOP);
     }
 
     /**
@@ -1380,8 +1339,7 @@ public final class KmuLunaSettings {
      *         in pixels; 12 by default
      */
     public static int getPoliticalMapSidebarPaddingLeft() {
-        return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_PADDING_LEFT_FIELD,
-                DEFAULT_SIDEBAR_PADDING_LEFT);
+        return readInt(SIDEBAR_PADDING_LEFT_FIELD, DEFAULT_SIDEBAR_PADDING_LEFT);
     }
 
     /**
@@ -1390,8 +1348,7 @@ public final class KmuLunaSettings {
      *         scrolls within the room left; 12 by default
      */
     public static int getPoliticalMapSidebarPaddingBottom() {
-        return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_PADDING_BOTTOM_FIELD,
-                DEFAULT_SIDEBAR_PADDING_BOTTOM);
+        return readInt(SIDEBAR_PADDING_BOTTOM_FIELD, DEFAULT_SIDEBAR_PADDING_BOTTOM);
     }
 
     /**
@@ -1401,8 +1358,7 @@ public final class KmuLunaSettings {
      *         left edge and its height caps to the visor's bottom, so only this top offset is exposed
      */
     public static int getPoliticalMapIntelSidebarPaddingTop() {
-        return LunaSettingsReader.getInt(MOD_ID, INTEL_SIDEBAR_PADDING_TOP_FIELD,
-                DEFAULT_INTEL_SIDEBAR_PADDING_TOP);
+        return readInt(INTEL_SIDEBAR_PADDING_TOP_FIELD, DEFAULT_INTEL_SIDEBAR_PADDING_TOP);
     }
 
     /**
@@ -1410,8 +1366,7 @@ public final class KmuLunaSettings {
      *         pixels; 1 by default, 0 draws no border
      */
     public static int getPoliticalMapSidebarBorderWidth() {
-        return LunaSettingsReader.getInt(MOD_ID, SIDEBAR_BORDER_WIDTH_FIELD,
-                DEFAULT_SIDEBAR_BORDER_WIDTH);
+        return readInt(SIDEBAR_BORDER_WIDTH_FIELD, DEFAULT_SIDEBAR_BORDER_WIDTH);
     }
 
     /**
@@ -1419,9 +1374,11 @@ public final class KmuLunaSettings {
      *         stores it as a 0..100 percentage); 0.8 by default
      */
     public static float getPoliticalMapSidebarBackgroundOpacity() {
-        var percent = LunaSettingsReader.getInt(MOD_ID, SIDEBAR_OPACITY_FIELD,
+        var percent = readInt(
+                SIDEBAR_OPACITY_FIELD,
                 DEFAULT_SIDEBAR_OPACITY_PERCENT);
-        var clamped = Math.max(MIN_SIDEBAR_OPACITY_PERCENT,
+        var clamped = Math.max(
+                MIN_SIDEBAR_OPACITY_PERCENT,
                 Math.min(MAX_SIDEBAR_OPACITY_PERCENT, percent));
         return clamped / (float) MAX_SIDEBAR_OPACITY_PERCENT;
     }
@@ -1433,7 +1390,8 @@ public final class KmuLunaSettings {
      *         per-frame advance so the player sets the animation pace
      */
     public static float getPoliticalMapSidebarCollapseSeconds() {
-        return (float) LunaSettingsReader.getDouble(MOD_ID, SIDEBAR_COLLAPSE_SECONDS_FIELD,
+        return (float) readDouble(
+                SIDEBAR_COLLAPSE_SECONDS_FIELD,
                 DEFAULT_SIDEBAR_COLLAPSE_SECONDS);
     }
 
@@ -1443,9 +1401,8 @@ public final class KmuLunaSettings {
      *         pointer); the gold by default
      */
     public static NotchChevronColorChoice getPoliticalMapSidebarChevronColor() {
-        return NotchChevronColorChoice.fromLabel(
-                LunaSettingsReader.getString(MOD_ID, SIDEBAR_CHEVRON_COLOR_FIELD,
-                        DEFAULT_SIDEBAR_CHEVRON_COLOR.getLabel()),
+        return readChoice(
+                SIDEBAR_CHEVRON_COLOR_FIELD,
                 DEFAULT_SIDEBAR_CHEVRON_COLOR);
     }
 
@@ -1462,7 +1419,7 @@ public final class KmuLunaSettings {
      * @return the LWJGL keycode the layer's tab jumps to, or 0 when the shortcut is unbound
      */
     public static int getPoliticalMapLayerShortcut(String settingKey, int defaultKeycode) {
-        return LunaSettingsReader.getInt(MOD_ID, settingKey, defaultKeycode);
+        return readInt(settingKey, defaultKeycode);
     }
 
     /**
@@ -1473,8 +1430,7 @@ public final class KmuLunaSettings {
      *         inspecting the whole sector's politics
      */
     public static boolean getPoliticalMapShowAllFactions() {
-        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_ALL_FACTIONS_FIELD,
-                DEFAULT_SHOW_ALL_FACTIONS);
+        return readBoolean(SHOW_ALL_FACTIONS_FIELD, DEFAULT_SHOW_ALL_FACTIONS);
     }
 
     /**
@@ -1484,8 +1440,7 @@ public final class KmuLunaSettings {
      *         reveal aid for inspecting the full cell partition
      */
     public static boolean shouldForceAllSystemsOnMap() {
-        return LunaSettingsReader.getBoolean(MOD_ID, FORCE_ALL_SYSTEMS_ON_MAP_FIELD,
-                DEFAULT_FORCE_ALL_SYSTEMS_ON_MAP);
+        return readBoolean(FORCE_ALL_SYSTEMS_ON_MAP_FIELD, DEFAULT_FORCE_ALL_SYSTEMS_ON_MAP);
     }
 
     /**
@@ -1496,8 +1451,7 @@ public final class KmuLunaSettings {
      *         unbiased-axis toggles below only add lines while this is on
      */
     public static boolean getPoliticalMapShowClusterAnchors() {
-        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_CLUSTER_ANCHORS_FIELD,
-                DEFAULT_SHOW_CLUSTER_ANCHORS);
+        return readBoolean(SHOW_CLUSTER_ANCHORS_FIELD, DEFAULT_SHOW_CLUSTER_ANCHORS);
     }
 
     /**
@@ -1508,8 +1462,7 @@ public final class KmuLunaSettings {
      *         anchors themselves draw
      */
     public static boolean getPoliticalMapShowRejectedAxes() {
-        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_REJECTED_AXES_FIELD,
-                DEFAULT_SHOW_REJECTED_AXES);
+        return readBoolean(SHOW_REJECTED_AXES_FIELD, DEFAULT_SHOW_REJECTED_AXES);
     }
 
     /**
@@ -1521,8 +1474,7 @@ public final class KmuLunaSettings {
      *         meaningful only while the cluster anchors themselves draw
      */
     public static boolean getPoliticalMapShowUnbiasedAxes() {
-        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_UNBIASED_AXES_FIELD,
-                DEFAULT_SHOW_UNBIASED_AXES);
+        return readBoolean(SHOW_UNBIASED_AXES_FIELD, DEFAULT_SHOW_UNBIASED_AXES);
     }
 
     /**
@@ -1532,8 +1484,7 @@ public final class KmuLunaSettings {
      *         gates, so a stage draws only when its pass ran
      */
     public static boolean shouldTraceBordersForDebug() {
-        return LunaSettingsReader.getBoolean(MOD_ID, DEBUG_BORDER_TRACING_FIELD,
-                DEFAULT_DEBUG_BORDER_TRACING);
+        return readBoolean(DEBUG_BORDER_TRACING_FIELD, DEFAULT_DEBUG_BORDER_TRACING);
     }
 
     /**
@@ -1542,23 +1493,37 @@ public final class KmuLunaSettings {
      *         so non-planetary conditions (such as decivilisation) are offered too
      */
     public static boolean shouldOfferAllConditions() {
-        return LunaSettingsReader.getBoolean(MOD_ID, OFFER_ALL_CONDITIONS_FIELD,
-                DEFAULT_OFFER_ALL_CONDITIONS);
+        return readBoolean(OFFER_ALL_CONDITIONS_FIELD, DEFAULT_OFFER_ALL_CONDITIONS);
     }
 
-    // Reads a faction/independent palette Radio and maps its label to a choice,
-    // falling back on that field's default when unset or unreadable.
-    private static FactionPaletteChoice readPaletteChoice(String fieldId,
-            FactionPaletteChoice fallback) {
-        return FactionPaletteChoice.fromLabel(
-                LunaSettingsReader.getString(MOD_ID, fieldId, fallback.getLabel()), fallback);
+    // Reads any Radio field and maps its stored label back to a choice, falling back on that
+    // field's default when unset, unreadable, or left over from an option that no longer exists.
+    // A Radio stores the selected option's label whatever the enum behind it, so one read serves
+    // every choice-backed setting; the constants to match against come off the fallback itself, so
+    // a caller names the field and its default and nothing else.
+    private static <T extends Enum<T> & LabeledChoice> T readChoice(String fieldId, T fallback) {
+        return LabeledChoices.fromLabel(
+                fallback.getDeclaringClass().getEnumConstants(),
+                readString(fieldId, fallback.getLabel()),
+                fallback);
     }
 
-    // Reads a factionless neutral-color Radio and maps its label to a choice,
-    // falling back on that field's default when unset or unreadable.
-    private static NeutralColorChoice readNeutralChoice(String fieldId,
-            NeutralColorChoice fallback) {
-        return NeutralColorChoice.fromLabel(
-                LunaSettingsReader.getString(MOD_ID, fieldId, fallback.getLabel()), fallback);
+    // The typed reads, each binding this mod's LunaLib settings id once. Every getter above names
+    // only its own field and default, so the mod id appears here rather than at each of them, and
+    // the LunaLib coupling narrows to these four lines.
+    private static boolean readBoolean(String fieldId, boolean fallback) {
+        return LunaSettingsReader.getBoolean(MOD_ID, fieldId, fallback);
+    }
+
+    private static double readDouble(String fieldId, double fallback) {
+        return LunaSettingsReader.getDouble(MOD_ID, fieldId, fallback);
+    }
+
+    private static int readInt(String fieldId, int fallback) {
+        return LunaSettingsReader.getInt(MOD_ID, fieldId, fallback);
+    }
+
+    private static String readString(String fieldId, String fallback) {
+        return LunaSettingsReader.getString(MOD_ID, fieldId, fallback);
     }
 }

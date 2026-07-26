@@ -1,7 +1,6 @@
 package kmu.settings;
 
 import kmlib.settings.LabeledChoice;
-import kmlib.settings.LabeledChoices;
 
 /**
  * Whether a factionless political-map category (decivilised or uninhabited
@@ -10,9 +9,9 @@ import kmlib.settings.LabeledChoices;
  *
  * <p>These systems have no owning faction, so there is no palette to pick from:
  * the only choice is the shared neutral color or {@link #NONE} to hide them. This
- * names the two options and maps LunaLib's stored Radio label back to a choice,
- * so the render layer decides whether to draw the outline without matching raw
- * strings. The labels here must match the {@code secondaryValue} options in
+ * names the two options, and the settings reader maps LunaLib's stored Radio label
+ * back to one, so the render layer decides whether to draw the outline without
+ * matching raw strings. The labels here must match the {@code secondaryValue} options in
  * data/config/LunaSettings.csv exactly.
  */
 public enum NeutralColorChoice implements LabeledChoice {
@@ -41,15 +40,4 @@ public enum NeutralColorChoice implements LabeledChoice {
         return this != NONE;
     }
 
-    /**
-     * Maps a stored Radio label back to its choice.
-     *
-     * @param label    the label LunaLib returned for the field
-     * @param fallback the choice to use when {@code label} matches no option
-     *                 (unset, unreadable, or a stale label from an old config)
-     * @return the matching choice, or {@code fallback} when none matches
-     */
-    public static NeutralColorChoice fromLabel(String label, NeutralColorChoice fallback) {
-        return LabeledChoices.fromLabel(values(), label, fallback);
-    }
 }

@@ -6,37 +6,18 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link NotchChevronColorChoice}: each option round-trips through its LunaLib Radio label,
- * and an unknown or missing label falls back to the caller's default.
+ * Pins {@link NotchChevronColorChoice}'s LunaLib Radio labels - the strings the CSV's options must
+ * spell, since a Radio stores its selected option's label and the read matches on it.
  */
 final class NotchChevronColorChoiceTest {
 
     @Nested
-    class FromLabel {
+    class GetLabel {
 
         @Test
-        void fromLabelReturnsGoldForItsLabel() {
-            assertThat(NotchChevronColorChoice.fromLabel("Gold", NotchChevronColorChoice.PANEL_ACCENT))
-                    .isEqualTo(NotchChevronColorChoice.GOLD);
-        }
-
-        @Test
-        void fromLabelReturnsPanelAccentForItsLabel() {
-            assertThat(NotchChevronColorChoice.fromLabel("Panel accent", NotchChevronColorChoice.GOLD))
-                    .isEqualTo(NotchChevronColorChoice.PANEL_ACCENT);
-        }
-
-        @Test
-        void fromLabelReturnsTheFallbackForAnUnknownLabel() {
-            // A stale label from an older config must not silently repaint the handle.
-            assertThat(NotchChevronColorChoice.fromLabel("Highlight gold", NotchChevronColorChoice.GOLD))
-                    .isEqualTo(NotchChevronColorChoice.GOLD);
-        }
-
-        @Test
-        void fromLabelReturnsTheFallbackForNull() {
-            assertThat(NotchChevronColorChoice.fromLabel(null, NotchChevronColorChoice.PANEL_ACCENT))
-                    .isEqualTo(NotchChevronColorChoice.PANEL_ACCENT);
+        void getLabelReturnsTheLunaLibOptionLabel() {
+            assertThat(NotchChevronColorChoice.GOLD.getLabel()).isEqualTo("Gold");
+            assertThat(NotchChevronColorChoice.PANEL_ACCENT.getLabel()).isEqualTo("Panel accent");
         }
     }
 }

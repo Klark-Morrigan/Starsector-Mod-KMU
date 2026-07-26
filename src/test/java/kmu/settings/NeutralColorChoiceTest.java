@@ -6,37 +6,19 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link NeutralColorChoice}: each option round-trips through its LunaLib
- * Radio label, an unknown or missing label falls back to the caller's default,
- * and only NONE reads as not drawn.
+ * Pins {@link NeutralColorChoice}: its LunaLib Radio labels - the strings the CSV's options must
+ * spell, since a Radio stores its selected option's label and the read matches on it - and that
+ * only NONE reads as not drawn.
  */
 final class NeutralColorChoiceTest {
 
     @Nested
-    class FromLabel {
+    class GetLabel {
 
         @Test
-        void fromLabelReturnsNeutralForItsLabel() {
-            assertThat(NeutralColorChoice.fromLabel("Neutral color", NeutralColorChoice.NONE))
-                    .isEqualTo(NeutralColorChoice.NEUTRAL);
-        }
-
-        @Test
-        void fromLabelReturnsNoneForItsLabel() {
-            assertThat(NeutralColorChoice.fromLabel("No color", NeutralColorChoice.NEUTRAL))
-                    .isEqualTo(NeutralColorChoice.NONE);
-        }
-
-        @Test
-        void fromLabelReturnsTheFallbackForAnUnknownLabel() {
-            assertThat(NeutralColorChoice.fromLabel("Faction color", NeutralColorChoice.NEUTRAL))
-                    .isEqualTo(NeutralColorChoice.NEUTRAL);
-        }
-
-        @Test
-        void fromLabelReturnsTheFallbackForNull() {
-            assertThat(NeutralColorChoice.fromLabel(null, NeutralColorChoice.NONE))
-                    .isEqualTo(NeutralColorChoice.NONE);
+        void getLabelReturnsTheLunaLibOptionLabel() {
+            assertThat(NeutralColorChoice.NEUTRAL.getLabel()).isEqualTo("Neutral color");
+            assertThat(NeutralColorChoice.NONE.getLabel()).isEqualTo("No color");
         }
     }
 
