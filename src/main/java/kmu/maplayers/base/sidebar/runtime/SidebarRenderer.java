@@ -170,19 +170,20 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         return elapsed;
     }
 
-    // The sidebar's look, built each frame from the live player colours: the vanilla translucent
-    // player-dark as the body backdrop, the base and bright player accents, the map's own tab colour
-    // scheme, the orbitron tab face at the layout's tab size, and the insignia body face.
+    // The sidebar's look, built each frame from the live player colours: a black body backdrop (faded
+    // by the opacity setting), the base and bright player accents, the map's own tab colour scheme, the
+    // orbitron tab face at the layout's tab size, the insignia body face, and the collapse handle's
+    // chevron shades for the colour the player picked for it.
     private static WidgetStyle buildStyle() {
         var accent = StarsectorUiColor.VANILLA_PLAYER_BASE.resolve();
         var brightAccent = StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve();
         return new WidgetStyle(
-                // The body backdrop is the player faction's darkUIColor - a translucent dark-blue by
-                // default - so the panel reads as a see-through pane the map shows through (matching the
-                // vanilla tab/tooltip chrome) rather than an opaque black block, and it recolours with the
-                // player faction (Nex, modded factions) the way the accents already do. Its own alpha,
-                // combined with the sidebar opacity setting, sets how much map shows through.
-                StarsectorUiColor.VANILLA_PLAYER_DARK.resolve(), // Panel fill.
+                // The body backdrop is black; the opacity setting fades it, so the body reads as a
+                // translucent-black pane the map shows through rather than a solid block. Black, not the
+                // player-dark tint, so the body stays neutral - only the tabs header, accents, and the
+                // notch carry player colour. The header opts out of this fade and paints opaque (see
+                // TabPanelRenderer.HEADER_OPACITY), so it alone stays solid black over the faded body.
+                StarsectorUiColor.BLACK.resolve(), // Panel fill.
                 accent,
                 brightAccent,
                 BODY_FONT,
