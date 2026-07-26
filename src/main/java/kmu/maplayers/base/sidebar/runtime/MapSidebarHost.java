@@ -2,9 +2,9 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.map.CampaignMapView;
-import kmlib.starsector.ui.render.gl.BoxEdge;
 import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabStrip;
@@ -55,7 +55,8 @@ public final class MapSidebarHost implements SidebarHost {
         // full set its stroke uses.
         return LiveSidebarPlacement.resolveMapPlacement(
                 controller,
-                layerSelection);
+                layerSelection,
+                BoxEdge.ALL);
     }
 
     @Override

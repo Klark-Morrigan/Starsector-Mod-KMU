@@ -2,8 +2,8 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.TabPanelController;
-import kmlib.starsector.ui.render.gl.BoxEdge;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import java.util.Set;
