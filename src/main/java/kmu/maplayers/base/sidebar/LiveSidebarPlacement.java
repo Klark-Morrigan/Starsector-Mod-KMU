@@ -13,6 +13,7 @@ import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
+import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuLunaSettings;
@@ -59,6 +60,8 @@ public final class LiveSidebarPlacement {
      * body: it hangs from the screen top-left and grows rightward to fit its content.
      *
      * @param controller    the on-map panel's scroll and collapse state
+     * @param selection     the on-map screen's own active-layer pick, read for the lit tab and body and
+     *                      written when a tab is clicked
      * @param borderedEdges which frame edges the host reserves and strokes; the on-map sidebar frames all
      *                      four, while a host drawn flush against a neighbour drops the shared edges so the
      *                      box collapses the strip they would occupy
@@ -67,10 +70,12 @@ public final class LiveSidebarPlacement {
      */
     public static TabPanelPlacement resolveMapPlacement(
             TabPanelController controller,
+            ActiveLayerSelection selection,
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
                 buildMapPadding(),
                 controller,
+                selection,
                 borderedEdges);
     }
 
@@ -92,10 +97,12 @@ public final class LiveSidebarPlacement {
     public static TabPanelPlacement resolveIntelPlacement(
             Rectangle visorRect,
             TabPanelController controller,
+            ActiveLayerSelection selection,
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
                 buildIntelPadding(visorRect),
                 controller,
+                selection,
                 borderedEdges);
     }
 
@@ -120,6 +127,7 @@ public final class LiveSidebarPlacement {
     private static TabPanelPlacement resolvePlacement(
             Padding padding,
             TabPanelController controller,
+            ActiveLayerSelection selection,
             Set<BoxEdge> borderedEdges) {
 
         var measurer = loadTabMeasurer();
@@ -128,7 +136,9 @@ public final class LiveSidebarPlacement {
         }
         var settings = Global.getSettings();
         var layers = MapLayerRegistry.getLayers();
-        var activeLayer = MapLayerRegistry.getActiveLayer();
+        // The active layer comes from the calling screen's own selection, not one shared value, so the lit
+        // tab and the body are this screen's pick and a switch here never moves the other screen's tab.
+        var activeLayer = selection.getActiveLayer();
         var placement = TabPanelLayout.computePlacement(
                 settings.getScreenHeight(),
                 padding,
@@ -136,7 +146,7 @@ public final class LiveSidebarPlacement {
                 // The edges the host frames; a dropped edge collapses its reserved inset so the box sits
                 // flush against the neighbour the host meant to blend into.
                 borderedEdges,
-                buildTabsSpec(layers, activeLayer),
+                buildTabsSpec(layers, activeLayer, selection),
                 activeLayer.getBodyControls(),
                 measurer,
                 controller.getScrollState().getOffset(),
@@ -174,7 +184,10 @@ public final class LiveSidebarPlacement {
     // registry order, the active layer lit, and an action that selects the layer at the clicked index.
     // Baking the switch into the action means the placement's tabs, the renderer's lit index, and the
     // click all index the same registry row, and no separate tab callback is threaded through the input.
-    private static ControlSpec.Tabs buildTabsSpec(List<MapLayer> layers, MapLayer activeLayer) {
+    private static ControlSpec.Tabs buildTabsSpec(
+            List<MapLayer> layers,
+            MapLayer activeLayer,
+            ActiveLayerSelection selection) {
         var labels = new ArrayList<String>(layers.size());
         var shortcuts = new ArrayList<String>(layers.size());
         for (var layer : layers) {
@@ -185,7 +198,7 @@ public final class LiveSidebarPlacement {
                 labels,
                 shortcuts,
                 layers.indexOf(activeLayer),
-                cell -> MapLayerRegistry.selectLayer(layers.get(cell)));
+                cell -> selection.selectLayer(layers.get(cell)));
     }
 
     // The display name of a layer's shortcut key, or null when it has none - an unbound keycode (0,

@@ -37,7 +37,7 @@ final class PoliticalMapViewRegistryTest {
     // literals so a rename - which would silently reset every existing save to the default - fails
     // this test rather than shipping.
     private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
-    private static final String ACTIVE_LAYER_KEY = "$kmu_political_active_layer";
+    private static final String ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
 
     private final PoliticalMapView firstViewMock = mock(PoliticalMapView.class);
     private final PoliticalMapView secondViewMock = mock(PoliticalMapView.class);

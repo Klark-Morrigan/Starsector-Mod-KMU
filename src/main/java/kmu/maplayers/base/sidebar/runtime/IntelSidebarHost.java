@@ -9,6 +9,8 @@ import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
+import kmu.maplayers.base.layer.ActiveLayerSelection;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 
 import java.util.EnumSet;
@@ -27,10 +29,12 @@ import java.util.Set;
  * bottom - so its frame reads as part of the visor rather than a second box drawn over it. The "is the
  * sidebar live" gate is exactly
  * "is the visor lit": {@link IntelScreenView#getVisorRect()} returns the visor rectangle while it is lit and
- * {@code null} when the intel tab is not showing or a large-description item has blanked the preview, so a
- * non-null rectangle is both the gate and the anchor. The visor rectangle reaches the game's concrete intel
- * panel through the KMLib seam, which fails closed to {@code null}, so a missing link simply hides the
- * sidebar.
+ * {@code null} when the intel tab is not showing, one of the sub-tabs that share it (Planets, Factions) is up
+ * instead, or a large-description item has blanked the preview, so a non-null rectangle is both the gate and
+ * the anchor. Gating on the rectangle rather than on {@link IntelScreenView#isIntelTabOpen()} is what keeps
+ * the sidebar off those sibling sub-tabs, which are the same core tab but carry no visor. The visor rectangle
+ * reaches the game's concrete intel panel through the KMLib seam, which fails closed to {@code null}, so a
+ * missing link simply hides the sidebar.
  */
 public final class IntelSidebarHost implements SidebarHost {
     /** The one intel-screen host; the render and input listeners registered for the intel screen reference it. */
@@ -48,6 +52,12 @@ public final class IntelSidebarHost implements SidebarHost {
     // The intel panel's scroll and collapse state, opening docked so the rail stays out of the desc column
     // until the player expands it. Its own controller, separate from the on-map panel's.
     private final TabPanelController controller = TabPanelController.createStartingDocked();
+
+    // The intel screen's active-layer pick: the registry's own persisted selection under the intel key,
+    // so it is the intel screen's own tab - a switch on the map screen leaves it where it was, and
+    // reopening the intel screen returns to this pick rather than inheriting the map's. Persisted like the
+    // map's, so it survives reload the same way.
+    private final ActiveLayerSelection layerSelection = MapLayerRegistry.getIntelSelection();
 
     private IntelSidebarHost() {
     }
@@ -68,6 +78,7 @@ public final class IntelSidebarHost implements SidebarHost {
         return LiveSidebarPlacement.resolveIntelPlacement(
                 visorRect,
                 controller,
+                layerSelection,
                 layoutBorderEdges());
     }
 
@@ -94,7 +105,12 @@ public final class IntelSidebarHost implements SidebarHost {
         if (!intelScreen.isIntelTabOpen()) {
             return "intel tab not showing";
         }
-        return intelScreen.getVisorRect() != null ? "intel tab; visor lit" : "intel tab; visor blanked";
+        // The seam reports the visor's absence as one state, so the diagnostic names both ways it can
+        // arise rather than claiming one: a sibling sub-tab (Planets, Factions) is showing, or a
+        // large-description item has blanked the preview.
+        return intelScreen.getVisorRect() != null
+                ? "intel tab; visor lit"
+                : "intel tab; no visor (sub-tab or blanked preview)";
     }
 
     // Which frame edges the box reserves inset space for, decided before layout so a dropped edge collapses

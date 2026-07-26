@@ -1,28 +1,42 @@
 package kmu.maplayers.base.layer;
 
-import com.fs.starfarer.api.campaign.rules.MemoryAPI;
-
-import kmlib.starsector.memory.SectorMemoryAccess;
-
 import java.util.List;
 
 /**
- * The map-layer registry and the single source of truth for which layer is active. The layer
- * bar composes its tabs from {@link #getLayers()}, the input listener switches the pick with
- * {@link #selectLayer}, and each layer's own state reads {@link #isActive} to decide whether
- * it is the one to draw - so all agree on one selection without sharing state directly.
+ * The map-layer registry and the holder of each screen's active-layer pick. The layer bar
+ * composes its tabs from {@link #getLayers()}, a screen's own selection ({@link #getMapSelection()}
+ * or {@link #getIntelSelection()}) stores its pick, and each layer's own state reads {@link #isActive}
+ * to decide whether it is the one to draw - so all agree on the map screen's selection without sharing
+ * state directly. The map screen's pick is the one the map overlay follows. Each screen's pick is its
+ * own {@link PersistedActiveLayerSelection} under its own key, so a switch on one screen survives reload
+ * without moving the other's; the registry holds both so their keys and the one-time legacy migration
+ * live in a single place.
  *
  * <p>This is the feature-agnostic framework half: it knows nothing of any concrete layer.
  * The set of layers and the default pick are supplied once at startup by a composition root
  * through {@link #registerLayers}, so a new view is added by registering it rather than by
- * editing this class. The active pick lives in sector memory under a stable key, so it
- * serialises into the save and survives reload; an untouched save resolves to the registered
- * default.
+ * editing this class. Each pick lives in sector memory under a stable key, so it serialises into
+ * the save and survives reload; an untouched save resolves to the registered default. A pre-split
+ * save stored one shared pick under an un-suffixed key; {@link #migrateLegacyActiveLayerKey} fans
+ * that into both screens' keys on load and clears it, so no leftover key lingers.
  */
 public final class MapLayerRegistry {
-    // Save-serialised identity of the active pick; frozen once shipped, since renaming it
-    // silently resets every existing save to the default.
-    private static final String ACTIVE_LAYER_KEY = "$kmu_political_active_layer";
+    // Save-serialised identity of each screen's active pick; frozen once shipped, since renaming one
+    // silently resets every existing save under it to the default.
+    private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
+    private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
+
+    // The un-suffixed key a pre-split save stored the single shared pick under, before the map and
+    // intel screens each took their own key. Fanned into both screens' keys on load, then cleared.
+    private static final String LEGACY_ACTIVE_LAYER_KEY = "$kmu_political_active_layer";
+
+    // Each screen's pick, persisted under its own frozen key. The map host draws through the map
+    // selection and the overlay follows it; the intel host draws through the intel selection. Held here
+    // so both keys and the legacy migration that seeds them sit in one place.
+    private static final PersistedActiveLayerSelection MAP_SELECTION =
+            new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY);
+    private static final PersistedActiveLayerSelection INTEL_SELECTION =
+            new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY);
 
     // The registered layers, in tab order, and the pick an untouched save resolves to. Empty
     // until a composition root registers them at startup, before any sector map can open.
@@ -50,70 +64,60 @@ public final class MapLayerRegistry {
         return orderedLayers;
     }
 
-    /**
-     * @return the active layer, resolved from sector memory; the default when the save holds
-     *         no pick yet or an id from an older build no longer registered
-     */
-    public static MapLayer getActiveLayer() {
-        var storedId = readStoredLayerId();
-        if (storedId == null) {
-            return defaultLayer;
-        }
-        for (var layer : orderedLayers) {
-            if (layer.getId().equals(storedId)) {
-                return layer;
-            }
-        }
-        // Stale id from a build that shipped a layer since removed: fall back rather than
-        // leave the bar pointing at nothing.
+    /** @return the pick an untouched save resolves to, the fallback for an absent or stale stored pick. */
+    public static MapLayer getDefaultLayer() {
         return defaultLayer;
     }
 
-    /** @return whether {@code layer} is the active pick. */
+    /**
+     * @return the map screen's active-layer pick, for the map host to draw through and switch, so the
+     *         host and the overlay read one selection rather than each resolving their own
+     */
+    public static ActiveLayerSelection getMapSelection() {
+        return MAP_SELECTION;
+    }
+
+    /**
+     * @return the intel screen's active-layer pick, its own selection under its own key, so the intel
+     *         sidebar's tab is independent of the map screen's and survives reload on its own
+     */
+    public static ActiveLayerSelection getIntelSelection() {
+        return INTEL_SELECTION;
+    }
+
+    /** @return whether {@code layer} is the map screen's active pick. */
     public static boolean isActive(MapLayer layer) {
         // Layers are singletons, so identity settles it without an id compare.
-        return getActiveLayer() == layer;
+        return MAP_SELECTION.getActiveLayer() == layer;
     }
 
     /**
-     * Records {@code layer} as the active pick in sector memory. A no-op before the sector
-     * exists, since there is no save to write into yet.
+     * Fans a pre-split save's shared active-layer pick from the un-suffixed legacy key into both screens'
+     * keys, then clears the legacy key, so an upgraded save keeps its pick on both screens (each then
+     * diverging independently) and no un-suffixed key lingers. A no-op on a save with no legacy key. Call
+     * once on game load, before {@link #migrateStoredLayerId} so a layer-id rewrite lands on the
+     * carried-over value.
      */
-    public static void selectLayer(MapLayer layer) {
-        var memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null) {
-            return;
-        }
-        memory.set(ACTIVE_LAYER_KEY, layer.getId());
+    public static void migrateLegacyActiveLayerKey() {
+        PersistedActiveLayerSelection.migrateLegacyKeyInto(
+                LEGACY_ACTIVE_LAYER_KEY,
+                MAP_SELECTION,
+                INTEL_SELECTION);
     }
 
     /**
-     * Rewrites the stored active pick from a layer's former id to its current one, so a save
-     * written before a layer's id was renamed tracks the current id in place rather than falling
-     * back to the default and leaving the stale id in the save. The mechanism only - the caller
-     * (which owns the concrete rename) supplies the ids, so this framework stays agnostic to which
-     * layers exist. A no-op before the sector exists or when the stored pick is not {@code legacyId}.
+     * Rewrites each screen's stored pick from a layer's former id to its current one, so a save written
+     * before a layer's id was renamed tracks the current id in place rather than falling back to the
+     * default and leaving the stale id in the save. Both screens' keys are rewritten, so a pick fanned
+     * into both by {@link #migrateLegacyActiveLayerKey} tracks the rename on each. The mechanism only -
+     * the caller (which owns the concrete rename) supplies the ids, so this framework stays agnostic to
+     * which layers exist. A no-op before the sector exists or when a stored pick is not {@code legacyId}.
      *
      * @param legacyId  the id the layer stored before it was renamed
      * @param currentId the layer's current id to rewrite the stored pick to
      */
     public static void migrateStoredLayerId(String legacyId, String currentId) {
-        var memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || !memory.contains(ACTIVE_LAYER_KEY)) {
-            return;
-        }
-        if (legacyId.equals(memory.getString(ACTIVE_LAYER_KEY))) {
-            memory.set(ACTIVE_LAYER_KEY, currentId);
-        }
-    }
-
-    // Reads the stored layer id, or null when the sector is absent or the key was never
-    // written - the caller resolves either to the default.
-    private static String readStoredLayerId() {
-        MemoryAPI memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || !memory.contains(ACTIVE_LAYER_KEY)) {
-            return null;
-        }
-        return memory.getString(ACTIVE_LAYER_KEY);
+        MAP_SELECTION.migrateStoredLayerId(legacyId, currentId);
+        INTEL_SELECTION.migrateStoredLayerId(legacyId, currentId);
     }
 }

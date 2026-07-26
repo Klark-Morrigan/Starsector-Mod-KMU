@@ -9,6 +9,7 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabStrip;
 
+import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
@@ -36,6 +37,10 @@ public final class MapSidebarHost implements SidebarHost {
     // own state, separate from the intel panel's.
     private final TabPanelController controller = new TabPanelController();
 
+    // The on-map screen's active-layer pick: the registry's own persisted selection, the one the map
+    // overlay follows. Held here so the map's tab is its own, unmoved by a switch on the intel screen.
+    private final ActiveLayerSelection layerSelection = MapLayerRegistry.getMapSelection();
+
     private MapSidebarHost() {
     }
 
@@ -46,7 +51,11 @@ public final class MapSidebarHost implements SidebarHost {
 
     @Override
     public TabPanelPlacement resolvePlacement() {
-        return LiveSidebarPlacement.resolveMapPlacement(controller);
+        // The on-map sidebar floats free on the screen, so it frames and reserves all four edges - the same
+        // full set its stroke uses.
+        return LiveSidebarPlacement.resolveMapPlacement(
+                controller,
+                layerSelection);
     }
 
     @Override
@@ -72,10 +81,10 @@ public final class MapSidebarHost implements SidebarHost {
     }
 
     // Switches to the layer whose bound key was pressed and consumes the event, so the key does not also
-    // trigger a campaign binding sharing it. The pure key-to-tab mapping (skipping unbound layers) is the
-    // reusable panel binder; KMU owns only where the keycodes come from (the layer settings) and what
-    // selecting means (the layer registry).
-    private static void switchToBoundLayer(InputEventAPI event) {
+    // trigger a campaign binding sharing it. The switch writes this host's own selection, so a hotkey moves
+    // the map's tab alone. The pure key-to-tab mapping (skipping unbound layers) is the reusable panel
+    // binder; KMU owns only where the keycodes come from (the layer settings) and what selecting means.
+    private void switchToBoundLayer(InputEventAPI event) {
         var layers = MapLayerRegistry.getLayers();
         var tabIndex = TabPanelHotkeys.findTabForKey(
                 event.getEventValue(),
@@ -83,7 +92,7 @@ public final class MapSidebarHost implements SidebarHost {
         if (tabIndex == TabStrip.NO_TAB) {
             return;
         }
-        MapLayerRegistry.selectLayer(layers.get(tabIndex));
+        layerSelection.selectLayer(layers.get(tabIndex));
         event.consume();
     }
 
