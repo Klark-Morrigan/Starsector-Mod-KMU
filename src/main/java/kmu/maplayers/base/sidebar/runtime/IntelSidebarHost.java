@@ -28,7 +28,7 @@ import java.util.Set;
  * border edges it shares with the visor - the left always, and the bottom when the box reaches the visor's
  * bottom - so its frame reads as part of the visor rather than a second box drawn over it. The "is the
  * sidebar live" gate is exactly
- * "is the visor lit": {@link IntelScreenView#getVisorRect()} returns the visor rectangle while it is lit and
+ * "is the visor lit": {@link IntelScreenView#getMapVisorRect()} returns the visor rectangle while it is lit and
  * {@code null} when the intel tab is not showing, one of the sub-tabs that share it (Planets, Factions) is up
  * instead, or a large-description item has blanked the preview, so a non-null rectangle is both the gate and
  * the anchor. Gating on the rectangle rather than on {@link IntelScreenView#isIntelTabOpen()} is what keeps
@@ -37,8 +37,11 @@ import java.util.Set;
  * missing link simply hides the sidebar.
  */
 public final class IntelSidebarHost implements SidebarHost {
-    /** The one intel-screen host; the render and input listeners registered for the intel screen reference it. */
-    public static final IntelSidebarHost INSTANCE = new IntelSidebarHost();
+    /**
+     * The one intel-screen host; the render and input listeners registered for the intel screen reference it.
+     * This is where the live intel-screen binding is chosen, the host itself naming only the role.
+     */
+    public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(new VanillaIntelScreenView());
 
     // How close the box's bottom must sit to the visor's bottom to count as flush, in pixels: the box lands
     // on round(visor.y) when its content fills the visor's height, so a one-pixel tolerance absorbs that
@@ -46,8 +49,10 @@ public final class IntelSidebarHost implements SidebarHost {
     private static final float BOTTOM_FLUSH_TOLERANCE = 1f;
 
     // Reads whether the intel tab is up and the lit visor's screen rectangle - the seam into the game's
-    // concrete intel panel, failing closed to null when there is no lit visor to draw over.
-    private final IntelScreenView intelScreen = new VanillaIntelScreenView();
+    // concrete intel panel, failing closed to null when there is no lit visor to draw over. Handed in
+    // rather than constructed here, so the host depends on the intel-screen role and nothing else knows
+    // which binding backs it; INSTANCE is where the live one is named.
+    private final IntelScreenView intelScreen;
 
     // The intel panel's scroll and collapse state, opening docked so the rail stays out of the desc column
     // until the player expands it. Its own controller, separate from the on-map panel's.
@@ -59,24 +64,25 @@ public final class IntelSidebarHost implements SidebarHost {
     // map's, so it survives reload the same way.
     private final ActiveLayerSelection layerSelection = MapLayerRegistry.getIntelSelection();
 
-    private IntelSidebarHost() {
+    IntelSidebarHost(IntelScreenView intelScreen) {
+        this.intelScreen = intelScreen;
     }
 
     @Override
     public boolean isOverlayShowing() {
         // The sidebar is live exactly while the visor is lit; a null rectangle covers the intel tab not
         // showing and a blanked preview both.
-        return intelScreen.getVisorRect() != null;
+        return intelScreen.getMapVisorRect() != null;
     }
 
     @Override
     public TabPanelPlacement resolvePlacement() {
-        var visorRect = intelScreen.getVisorRect();
-        if (visorRect == null) {
+        var mapVisorRect = intelScreen.getMapVisorRect();
+        if (mapVisorRect == null) {
             return null;
         }
         return LiveSidebarPlacement.resolveIntelPlacement(
-                visorRect,
+                mapVisorRect,
                 controller,
                 layerSelection,
                 layoutBorderEdges());
@@ -86,7 +92,7 @@ public final class IntelSidebarHost implements SidebarHost {
     public Set<BoxEdge> resolveBorderEdges(TabPanelPlacement placement) {
         return decideBorderEdges(
                 placement.body().box().y(),
-                intelScreen.getVisorRect());
+                intelScreen.getMapVisorRect());
     }
 
     @Override
@@ -108,7 +114,7 @@ public final class IntelSidebarHost implements SidebarHost {
         // The seam reports the visor's absence as one state, so the diagnostic names both ways it can
         // arise rather than claiming one: a sibling sub-tab (Planets, Factions) is showing, or a
         // large-description item has blanked the preview.
-        return intelScreen.getVisorRect() != null
+        return intelScreen.getMapVisorRect() != null
                 ? "intel tab; visor lit"
                 : "intel tab; no visor (sub-tab or blanked preview)";
     }
@@ -129,10 +135,10 @@ public final class IntelSidebarHost implements SidebarHost {
     // rounding tolerance) so a shared bottom border does not double the visor's frame. Derived from the
     // reserved edges so the left, dropped there, is never stroked here. The bottom stroke drops on flush
     // while its reserved inset stays, so a flush box keeps a thin bottom strip until that collapse lands.
-    static Set<BoxEdge> decideBorderEdges(float boxBottomY, Rectangle visorRect) {
+    static Set<BoxEdge> decideBorderEdges(float boxBottomY, Rectangle mapVisorRect) {
         var edges = EnumSet.copyOf(layoutBorderEdges());
-        var isBottomFlush = visorRect != null
-                && boxBottomY <= visorRect.y() + BOTTOM_FLUSH_TOLERANCE;
+        var isBottomFlush = mapVisorRect != null
+                && boxBottomY <= mapVisorRect.y() + BOTTOM_FLUSH_TOLERANCE;
         if (isBottomFlush) {
             edges.remove(BoxEdge.BOTTOM);
         }

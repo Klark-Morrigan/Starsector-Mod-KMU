@@ -84,7 +84,7 @@ public final class LiveSidebarPlacement {
      * and hangs from the visor top (pushed down by the player's top padding to clear the vanilla map
      * toggles), overlaying the visor with the same body the on-map sidebar lays out.
      *
-     * @param visorRect  the lit visor's screen rectangle, the corner the panel anchors to
+     * @param mapVisorRect  the lit visor's screen rectangle, the corner the panel anchors to
      * @param controller    the intel panel's own scroll and collapse state, separate from the on-map panel's
      * @param selection     the intel screen's own active-layer pick, separate from the on-map screen's, so a
      *                      switch on one screen does not move the other's tab
@@ -95,12 +95,12 @@ public final class LiveSidebarPlacement {
      *         {@link #resolvePlacement})
      */
     public static TabPanelPlacement resolveIntelPlacement(
-            Rectangle visorRect,
+            Rectangle mapVisorRect,
             TabPanelController controller,
             ActiveLayerSelection selection,
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
-                buildIntelPadding(visorRect),
+                buildIntelPadding(mapVisorRect),
                 controller,
                 selection,
                 borderedEdges);
@@ -112,12 +112,12 @@ public final class LiveSidebarPlacement {
     // intel map, and its body caps to the visor's bottom edge so the sidebar never runs past the visor (a
     // longer list scrolls within). In UI coordinates (origin bottom-left) the visor's top edge is its y plus
     // its height. The right margin is unused - the sidebar grows rightward across the visor.
-    static Padding computeIntelPadding(Rectangle visorRect, float screenHeight, int topPadding) {
+    static Padding computeIntelPadding(Rectangle mapVisorRect, float screenHeight, int topPadding) {
         return new Padding(
-                Math.round(screenHeight - (visorRect.y() + visorRect.height())) + topPadding,
+                Math.round(screenHeight - (mapVisorRect.y() + mapVisorRect.height())) + topPadding,
                 0,
-                Math.round(visorRect.y()),
-                Math.round(visorRect.x()));
+                Math.round(mapVisorRect.y()),
+                Math.round(mapVisorRect.x()));
     }
 
     // Lays the panel out for the given anchor and controller - the one path both host entry points share,
@@ -173,9 +173,9 @@ public final class LiveSidebarPlacement {
 
     // The intel-screen anchor from the live screen height and the player's top padding; the anchor math
     // (flush-left, hung from the visor top minus the padding, capped to the visor bottom) is computeIntelPadding's.
-    private static Padding buildIntelPadding(Rectangle visorRect) {
+    private static Padding buildIntelPadding(Rectangle mapVisorRect) {
         return computeIntelPadding(
-                visorRect,
+                mapVisorRect,
                 Global.getSettings().getScreenHeight(),
                 KmuLunaSettings.getPoliticalMapIntelSidebarPaddingTop());
     }

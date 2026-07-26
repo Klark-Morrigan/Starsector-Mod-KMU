@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class LiveSidebarPlacementTest {
     // A visor whose left edge is x = 100, bottom edge y = 50, and top edge y + height = 650.
-    private static final Rectangle VISOR = new Rectangle(100f, 50f, 800f, 600f);
+    private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
 
     @Nested
     class ComputeIntelPadding {
@@ -24,21 +24,21 @@ final class LiveSidebarPlacementTest {
         void computeIntelPaddingHangsTheBoxFromTheVisorTopPushedDownByTheTopPadding() {
             // Visor top edge = 650; screen 1200 tall; the box top sits 40px below the visor top, so its
             // distance from the screen top is (1200 - 650) + 40 = 590.
-            var padding = LiveSidebarPlacement.computeIntelPadding(VISOR, 1200f, 40);
+            var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
 
             assertThat(padding.top()).isEqualTo(590);
         }
 
         @Test
         void computeIntelPaddingHangsTheBoxAtTheVisorTopWhenTheTopPaddingIsZero() {
-            var padding = LiveSidebarPlacement.computeIntelPadding(VISOR, 1200f, 0);
+            var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 0);
 
             assertThat(padding.top()).isEqualTo(550);
         }
 
         @Test
         void computeIntelPaddingSitsFlushAgainstTheVisorLeftEdgeAndGrowsRightward() {
-            var padding = LiveSidebarPlacement.computeIntelPadding(VISOR, 1200f, 40);
+            var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
 
             assertThat(padding.left()).isEqualTo(100);
             assertThat(padding.right()).isZero();
@@ -46,7 +46,7 @@ final class LiveSidebarPlacementTest {
 
         @Test
         void computeIntelPaddingCapsTheBodyToTheVisorBottom() {
-            var padding = LiveSidebarPlacement.computeIntelPadding(VISOR, 1200f, 40);
+            var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
 
             assertThat(padding.bottom()).isEqualTo(50);
         }
