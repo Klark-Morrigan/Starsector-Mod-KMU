@@ -143,6 +143,8 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // player-dark as the body backdrop, the base and bright player accents, the map's own tab colour
     // scheme, the orbitron tab face at the layout's tab size, and the insignia body face.
     private static WidgetStyle buildStyle() {
+        var accent = StarsectorUiColor.VANILLA_PLAYER_BASE.resolve();
+        var brightAccent = StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve();
         return new WidgetStyle(
                 // The body backdrop is the player faction's darkUIColor - a translucent dark-blue by
                 // default - so the panel reads as a see-through pane the map shows through (matching the
@@ -150,14 +152,18 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
                 // player faction (Nex, modded factions) the way the accents already do. Its own alpha,
                 // combined with the sidebar opacity setting, sets how much map shows through.
                 StarsectorUiColor.VANILLA_PLAYER_DARK.resolve(), // Panel fill.
-                StarsectorUiColor.VANILLA_PLAYER_BASE.resolve(), // Accent.
-                StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve(), // Bright accent.
+                accent,
+                brightAccent,
                 BODY_FONT,
                 new TabStyle(
                         VanillaTabColors.mapTabs(),
                         new TextFace(
                                 LiveSidebarPlacement.TAB_FONT,
-                                ControlStripLayout.TAB_FONT_SIZE)));
+                                ControlStripLayout.TAB_FONT_SIZE)),
+                SidebarPalettes.resolveNotchStyle(
+                        KmuLunaSettings.getPoliticalMapSidebarChevronColor(),
+                        accent,
+                        brightAccent));
     }
 
     // Logs the composed view-state line once per change; the dedupe keeps a steady state to one line while

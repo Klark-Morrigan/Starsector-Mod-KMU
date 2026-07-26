@@ -102,6 +102,11 @@ public final class KmuLunaSettings {
     // in the Overlay sidebar section of the visuals tab beside the box's other appearance knobs.
     private static final String SIDEBAR_COLLAPSE_SECONDS_FIELD =
             "kmu_politicalMapSidebarCollapseSeconds";
+    // Which colour the collapse handle's chevron draws in: the vanilla highlight gold, so the cue
+    // stands off the frame it sits on, or the panel's own accents so the handle reads as chrome.
+    // Appearance only, so it sits with the box's other looks in the Overlay sidebar section.
+    private static final String SIDEBAR_CHEVRON_COLOR_FIELD =
+            "kmu_politicalMapSidebarChevronColor";
     // Intel-screen overlay field (Political map - visuals tab): the same sidebar box drawn on the intel
     // screen sits flush against the left edge of that screen's map preview (the "visor") and hangs from
     // the visor top; this top padding pushes it down to clear the vanilla starscape / fuel-range toggles
@@ -426,6 +431,11 @@ public final class KmuLunaSettings {
     // TabPanelCollapse.DEFAULT_DURATION_SECONDS - the KMLib holder's own default pace - like the
     // other fallbacks, so this class stays decoupled from the widget library.
     private static final float DEFAULT_SIDEBAR_COLLAPSE_SECONDS = 0.25f;
+    // The highlight gold by default: the collapse handle hangs off the frame over the map, so its
+    // chevron reads clearest pitched against the panel's accents rather than painted in them.
+    // Mirrors the CSV row's defaultValue.
+    private static final NotchChevronColorChoice DEFAULT_SIDEBAR_CHEVRON_COLOR =
+            NotchChevronColorChoice.GOLD;
     private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_OUTER_BORDER_OPACITY = 1.0;
@@ -1425,6 +1435,18 @@ public final class KmuLunaSettings {
     public static float getPoliticalMapSidebarCollapseSeconds() {
         return (float) LunaSettingsReader.getDouble(MOD_ID, SIDEBAR_COLLAPSE_SECONDS_FIELD,
                 DEFAULT_SIDEBAR_COLLAPSE_SECONDS);
+    }
+
+    /**
+     * @return which colour the overlay sidebar's collapse-handle chevron draws in: the vanilla
+     *         highlight gold, or the panel's own player-faction accents (brightening under the
+     *         pointer); the gold by default
+     */
+    public static NotchChevronColorChoice getPoliticalMapSidebarChevronColor() {
+        return NotchChevronColorChoice.fromLabel(
+                LunaSettingsReader.getString(MOD_ID, SIDEBAR_CHEVRON_COLOR_FIELD,
+                        DEFAULT_SIDEBAR_CHEVRON_COLOR.getLabel()),
+                DEFAULT_SIDEBAR_CHEVRON_COLOR);
     }
 
     /**
