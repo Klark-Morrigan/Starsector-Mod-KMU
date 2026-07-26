@@ -1,7 +1,7 @@
-package kmu.maplayers.base.sidebar.runtime;
+package kmu.maplayers.base.sidebar.style;
 
 import kmlib.starsector.ui.color.StarsectorUiColor;
-import kmlib.starsector.ui.render.gl.NotchStyle;
+import kmlib.starsector.ui.render.gl.NotchColors;
 
 import kmu.settings.NotchChevronColorChoice;
 
@@ -33,7 +33,7 @@ public final class SidebarPalettes {
      * @param brightAccent the panel's brighter accent, taken on hover when the choice follows the panel
      * @return the handle's resting and hovered chevron shades
      */
-    public static NotchStyle resolveNotchStyle(
+    public static NotchColors resolveNotchColors(
             NotchChevronColorChoice choice,
             Color accent,
             Color brightAccent) {
@@ -41,9 +41,9 @@ public final class SidebarPalettes {
         return switch (choice) {
             case GOLD -> {
                 var gold = StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve();
-                yield new NotchStyle(gold, gold);
+                yield new NotchColors(gold, gold);
             }
-            case PANEL_ACCENT -> new NotchStyle(accent, brightAccent);
+            case PANEL_ACCENT -> new NotchColors(accent, brightAccent);
         };
     }
 }

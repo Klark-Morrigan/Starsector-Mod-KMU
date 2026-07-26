@@ -17,6 +17,7 @@ import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.render.gl.WidgetStyle;
 
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
+import kmu.maplayers.base.sidebar.style.SidebarPalettes;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -160,7 +161,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
                         new TextFace(
                                 LiveSidebarPlacement.TAB_FONT,
                                 ControlStripLayout.TAB_FONT_SIZE)),
-                SidebarPalettes.resolveNotchStyle(
+                SidebarPalettes.resolveNotchColors(
                         KmuLunaSettings.getPoliticalMapSidebarChevronColor(),
                         accent,
                         brightAccent));

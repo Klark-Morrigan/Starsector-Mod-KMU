@@ -1,4 +1,4 @@
-package kmu.maplayers.base.sidebar.runtime;
+package kmu.maplayers.base.sidebar.style;
 
 import com.fs.starfarer.api.util.Misc;
 
@@ -42,30 +42,30 @@ final class SidebarPalettesTest {
     }
 
     @Nested
-    class ResolveNotchStyle {
+    class ResolveNotchColors {
 
         @Test
-        void resolveNotchStyleTakesTheVanillaHighlightForTheGoldChoice() {
-            var style = SidebarPalettes.resolveNotchStyle(
+        void resolveNotchColorsTakesTheVanillaHighlightForTheGoldChoice() {
+            var colors = SidebarPalettes.resolveNotchColors(
                     NotchChevronColorChoice.GOLD, ACCENT, BRIGHT_ACCENT);
-            assertThat(style.chevron()).isEqualTo(GOLD);
+            assertThat(colors.chevron()).isEqualTo(GOLD);
         }
 
         @Test
-        void resolveNotchStyleHoldsTheGoldAcrossRestAndHover() {
+        void resolveNotchColorsHoldsTheGoldAcrossRestAndHover() {
             // Gold has no brighter sibling to step to, so the notch's own accent wash answers the
             // pointer and the glyph keeps its colour.
-            var style = SidebarPalettes.resolveNotchStyle(
+            var colors = SidebarPalettes.resolveNotchColors(
                     NotchChevronColorChoice.GOLD, ACCENT, BRIGHT_ACCENT);
-            assertThat(style.chevronHovered()).isEqualTo(style.chevron());
+            assertThat(colors.chevronHovered()).isEqualTo(colors.chevron());
         }
 
         @Test
-        void resolveNotchStyleTakesThePanelAccentsForThePanelAccentChoice() {
-            var style = SidebarPalettes.resolveNotchStyle(
+        void resolveNotchColorsTakesThePanelAccentsForThePanelAccentChoice() {
+            var colors = SidebarPalettes.resolveNotchColors(
                     NotchChevronColorChoice.PANEL_ACCENT, ACCENT, BRIGHT_ACCENT);
-            assertThat(style.chevron()).isEqualTo(ACCENT);
-            assertThat(style.chevronHovered()).isEqualTo(BRIGHT_ACCENT);
+            assertThat(colors.chevron()).isEqualTo(ACCENT);
+            assertThat(colors.chevronHovered()).isEqualTo(BRIGHT_ACCENT);
         }
     }
 }
