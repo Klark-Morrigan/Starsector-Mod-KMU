@@ -2,7 +2,6 @@ package kmu.settings;
 
 import kmlib.logging.KmLogging;
 import kmlib.settings.LunaSettingsReader;
-import kmlib.settings.LunaSettingsWriter;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,9 +20,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * independent space - each get a fill, an outer (national) border, and an inner
  * (province seam) border, every one with a palette-color choice, an opacity, and
  * (for the borders) a line width. Factionless categories - decivilised and
- * uninhabited systems - draw only a single outline, so they get just a neutral
- * color choice (or none, to hide them), an opacity, and a width. All are tuned
- * under the LunaLib "Visuals customisation" tab.
+ * uninhabited systems - draw only a single outline, so they get just an opacity
+ * and a width, plus (for decivilised) a neutral color choice or none to hide it.
+ * Whether the uninhabited outline draws at all is the on-map sidebar's checkbox
+ * rather than a field here, so the setting screen never duplicates that control.
+ * All are tuned under the LunaLib "Visuals customisation" tab.
  *
  * <p>The national-border geometry is exposed separately under the "Dev" tab: it
  * shapes the frontier rather than recoloring it, so it is a tuning surface for
@@ -88,10 +89,6 @@ public final class KmuLunaSettings {
     // faction map's names today and the alliance layer's names when it lands.
     private static final String SHOW_NAMES_FIELD =
             "kmu_politicalMapShowNames";
-    // Whether each cluster label spells its owner's full name or its short name; the
-    // short form fits a tighter cluster at a larger font.
-    private static final String FACTION_NAME_FORMAT_FIELD =
-            "kmu_politicalMapFactionNameFormat";
     // Overlay sidebar fields (Political map - visuals tab): the small on-map box carrying
     // the overlay's tabs and controls. Padding places the box from the screen's top-left
     // corner; border width frames it (0 = no border); opacity is its background
@@ -166,8 +163,6 @@ public final class KmuLunaSettings {
             "kmu_politicalMapDecivilisedBorderOpacity";
     private static final String DECIVILISED_BORDER_WIDTH_FIELD =
             "kmu_politicalMapDecivilisedBorderWidth";
-    private static final String UNINHABITED_BORDER_COLOR_FIELD =
-            "kmu_politicalMapUninhabitedBorderColor";
     private static final String UNINHABITED_BORDER_OPACITY_FIELD =
             "kmu_politicalMapUninhabitedBorderOpacity";
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
@@ -440,11 +435,6 @@ public final class KmuLunaSettings {
     // TabPanelCollapse.DEFAULT_DURATION_SECONDS - the KMLib holder's own default pace - like the
     // other fallbacks, so this class stays decoupled from the widget library.
     private static final float DEFAULT_SIDEBAR_COLLAPSE_SECONDS = 0.25f;
-    // Full names by default: a cluster label spells the owner's long-form name, the
-    // richer reading. The short form is opt-in for tighter clusters. Mirrors the CSV
-    // row's defaultValue and the label list the radio offers.
-    private static final FactionNameFormatChoice DEFAULT_FACTION_NAME_FORMAT =
-            FactionNameFormatChoice.FULL;
     private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOR =
             FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_OUTER_BORDER_OPACITY = 1.0;
@@ -475,10 +465,6 @@ public final class KmuLunaSettings {
             NeutralColorChoice.NEUTRAL;
     private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.35;
     private static final double DEFAULT_DECIVILISED_BORDER_WIDTH = 3.0;
-    // Uninhabited defaults to No color (hidden), so only faction-held, independent,
-    // and decivilised systems draw unless the player turns uninhabited on.
-    private static final NeutralColorChoice DEFAULT_UNINHABITED_BORDER_COLOR =
-            NeutralColorChoice.NONE;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
     // Half strength by default: Mute dims a non-allied bloc to half its normal opacity.
@@ -814,28 +800,6 @@ public final class KmuLunaSettings {
     public static double getDecivilisedBorderWidth() {
         return LunaSettingsReader.getDouble(MOD_ID, DECIVILISED_BORDER_WIDTH_FIELD,
                 DEFAULT_DECIVILISED_BORDER_WIDTH);
-    }
-
-    /**
-     * @return whether uninhabited systems draw their outline in the neutral color
-     *         or not at all; NONE (hidden) by default, so only faction-held,
-     *         independent, and decivilised systems draw unless the player turns
-     *         uninhabited on
-     */
-    public static NeutralColorChoice getUninhabitedBorderColor() {
-        return readNeutralChoice(UNINHABITED_BORDER_COLOR_FIELD, DEFAULT_UNINHABITED_BORDER_COLOR);
-    }
-
-    /**
-     * Writes the uninhabited-systems outline choice back to LunaLib, so the on-map sidebar's
-     * checkbox drives the same stored value the settings screen's Radio edits and both stay in
-     * step. The field stores the choice's option label (a Radio's stored form).
-     *
-     * @param choice whether uninhabited systems draw their outline ({@link NeutralColorChoice#NEUTRAL})
-     *               or stay hidden ({@link NeutralColorChoice#NONE})
-     */
-    public static void setUninhabitedBorderColor(NeutralColorChoice choice) {
-        LunaSettingsWriter.putStringDeferred(MOD_ID, UNINHABITED_BORDER_COLOR_FIELD, choice.getLabel());
     }
 
     /**
@@ -1496,38 +1460,6 @@ public final class KmuLunaSettings {
      */
     public static int getPoliticalMapLayerShortcut(String settingKey, int defaultKeycode) {
         return LunaSettingsReader.getInt(MOD_ID, settingKey, defaultKeycode);
-    }
-
-    /**
-     * @return whether each cluster label spells its owner's full name or its short
-     *         name; the full (long-form) name by default
-     */
-    public static FactionNameFormatChoice getPoliticalMapFactionNameFormat() {
-        return FactionNameFormatChoice.fromLabel(
-                LunaSettingsReader.getString(MOD_ID, FACTION_NAME_FORMAT_FIELD,
-                        DEFAULT_FACTION_NAME_FORMAT.getLabel()),
-                DEFAULT_FACTION_NAME_FORMAT);
-    }
-
-    /**
-     * Writes the cluster-label name format back to LunaLib, so the on-map sidebar's Short/Full
-     * radio drives the same stored value the settings screen's Radio edits and both stay in step.
-     * The field stores the choice's option label (a Radio's stored form).
-     *
-     * @param choice whether each cluster label spells the owner's full or short name
-     */
-    public static void setPoliticalMapFactionNameFormat(FactionNameFormatChoice choice) {
-        LunaSettingsWriter.putStringDeferred(MOD_ID, FACTION_NAME_FORMAT_FIELD, choice.getLabel());
-    }
-
-    /**
-     * Persists any pending sidebar-control writes to disk. The on-map controls write through
-     * LunaLib's deferred path - the value goes live and the map redraws at once, but the file
-     * write batches - so this is called when the player leaves the overlay to land a map
-     * session's edits in one write rather than one per click.
-     */
-    public static void flushPendingWrites() {
-        LunaSettingsWriter.flush(MOD_ID);
     }
 
     /**

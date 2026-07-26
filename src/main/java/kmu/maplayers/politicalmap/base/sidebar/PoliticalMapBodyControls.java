@@ -2,12 +2,12 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
+import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.settings.FactionNameFormatChoice;
-import kmu.settings.KmuLunaSettings;
-import kmu.settings.NeutralColorChoice;
+import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -17,13 +17,13 @@ import java.util.List;
  * The political-map tab's body controls: the view-selector radio that picks which view paints, and
  * the view-agnostic sub-options both a faction and a later alliances view honour - the
  * uninhabited-systems checkbox and the Short/Full name-format radio. The sub-options read and write
- * the same LunaLib settings every view respects, so they live here on the tab rather than on any one
- * view; the selector reads the shared {@link PoliticalMapViewRegistry}. The host tab composes these
- * into its full body.
+ * the same per-save preferences every view respects, so they live here on the tab rather than on any
+ * one view; the selector reads the shared {@link PoliticalMapViewRegistry}. The host tab composes
+ * these into its full body.
  *
  * <p>The specs carry resolved display strings and the controls' live lit state, since the layout
  * snaps each control to its measured text and the renderer draws each in its current state; they
- * are rebuilt per call so a settings change shows immediately.
+ * are rebuilt per call so a flipped toggle shows immediately.
  */
 public final class PoliticalMapBodyControls {
     // The name-format radio's segments, in the order the layout lays them out left to right: Short
@@ -43,10 +43,11 @@ public final class PoliticalMapBodyControls {
         return List.of(
                 ControlSpec.Checkbox.lit(
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
-                        KmuLunaSettings.getUninhabitedBorderColor().isDrawn(),
+                        UninhabitedOutlinePreference.isOutlineDrawn(),
                         cellIndex -> toggleUninhabitedSystems()),
                 ControlSpec.HorizontalRadio.uniform(
-                        List.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
+                        List.of(
+                                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL)),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES),
                         nameFormatRadioState(),
@@ -92,14 +93,12 @@ public final class PoliticalMapBodyControls {
         FilterSelectionHeal.healStaleSelectionAgainstActiveView();
     }
 
-    // Flips the uninhabited-systems outline on or off: if it currently draws (the neutral colour),
-    // hide it; otherwise draw it. Written back to LunaLib, which fires the settings-changed event so
-    // the settings screen and the live map both follow the sidebar's checkbox.
+    // Flips the uninhabited-systems outline on or off: if it currently draws, hide it; otherwise draw
+    // it. The preference persists the flip in this save and requests the restyle, so the live map
+    // follows the checkbox on the next frame.
     private static void toggleUninhabitedSystems() {
-        var next = KmuLunaSettings.getUninhabitedBorderColor().isDrawn()
-                ? NeutralColorChoice.NONE
-                : NeutralColorChoice.NEUTRAL;
-        KmuLunaSettings.setUninhabitedBorderColor(next);
+        UninhabitedOutlinePreference.setOutlineDrawn(
+                !UninhabitedOutlinePreference.isOutlineDrawn());
     }
 
     // Writes the name format for the clicked radio segment - Short for segment 0, Full for segment 1
@@ -107,16 +106,16 @@ public final class PoliticalMapBodyControls {
     // ignored, so a stray hit outside the two known segments changes nothing.
     private static void selectNameFormatSegment(int segmentIndex) {
         if (segmentIndex == NAME_SHORT_SEGMENT) {
-            KmuLunaSettings.setPoliticalMapFactionNameFormat(FactionNameFormatChoice.SHORT);
+            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT);
         } else if (segmentIndex == NAME_FULL_SEGMENT) {
-            KmuLunaSettings.setPoliticalMapFactionNameFormat(FactionNameFormatChoice.FULL);
+            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL);
         }
     }
 
     // The radio lights the segment for the active name format, matching the Short-then-Full
     // segment order the labels are supplied in.
     private static int nameFormatRadioState() {
-        return KmuLunaSettings.getPoliticalMapFactionNameFormat() == FactionNameFormatChoice.SHORT
+        return NameFormatPreference.getSelectedNameFormat() == FactionNameFormatChoice.SHORT
                 ? NAME_SHORT_SEGMENT
                 : NAME_FULL_SEGMENT;
     }

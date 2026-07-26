@@ -3,9 +3,12 @@ package kmu.maplayers.politicalmap.base.sidebar;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
+import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
+import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
+import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
 
@@ -17,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -28,6 +32,10 @@ import static org.mockito.Mockito.when;
  * view's stored selection. The registry, the strings, the filter selection, and the selection heal are
  * stubbed so this drives the selector's click action and pins only what it does, not how the view or the
  * filter persist.
+ *
+ * <p>The shared sub-options are pinned the same way: each lights off its per-save preference and writes
+ * the flipped or clicked value back through it, with the preferences stubbed so the wiring is what is
+ * asserted rather than how either choice persists.
  */
 final class PoliticalMapBodyControlsTest {
     private final PoliticalMapView factionsViewMock = mock(PoliticalMapView.class);
@@ -126,6 +134,59 @@ final class PoliticalMapBodyControlsTest {
                 assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.DESELECT);
             }
         }
+    }
+
+    @Nested
+    class BuildSharedControls {
+
+        @Test
+        void theUninhabitedCheckboxLightsAndFlipsThePerSaveOutlinePreference() {
+            // Both toggles are per-save preferences rather than settings fields, so the checkbox has
+            // to light off the preference and write the opposite back through it - the wiring that
+            // keeps the sidebar the single control for the outline.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<UninhabitedOutlinePreference> preferenceMock =
+                            mockStatic(UninhabitedOutlinePreference.class)) {
+                stubControlLabels(stringsMock);
+                preferenceMock.when(UninhabitedOutlinePreference::isOutlineDrawn).thenReturn(true);
+
+                var checkbox = (ControlSpec.Checkbox) PoliticalMapBodyControls.buildSharedControls()
+                        .get(0);
+                checkbox.action().activateCell(0);
+
+                assertThat(checkbox.isLit()).isTrue();
+                preferenceMock.verify(() -> UninhabitedOutlinePreference.setOutlineDrawn(false));
+            }
+        }
+
+        @Test
+        void theNameFormatRadioLightsAndSelectsThroughThePerSaveFormatPreference() {
+            // Short is the first segment and Full the second, so the lit segment and the segment a
+            // click writes must both follow that order or the radio would report and set the
+            // opposite format.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<NameFormatPreference> preferenceMock =
+                            mockStatic(NameFormatPreference.class)) {
+                stubControlLabels(stringsMock);
+                preferenceMock.when(NameFormatPreference::getSelectedNameFormat)
+                        .thenReturn(FactionNameFormatChoice.SHORT);
+
+                var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
+                        .buildSharedControls().get(1);
+                radio.action().activateCell(1);
+
+                assertThat(radio.selectedIndex()).isZero();
+                preferenceMock.verify(() ->
+                        NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL));
+            }
+        }
+    }
+
+    // Stubs every control caption to one placeholder, since the shared controls' specs hold their
+    // resolved strings and the radio rejects a null label. What a caption reads is the strings table's
+    // concern, not this class's, so one stand-in covers them all.
+    private static void stubControlLabels(MockedStatic<KmuStrings> stringsMock) {
+        stringsMock.when(() -> KmuStrings.get(anyString())).thenReturn("caption");
     }
 
     // Fires the selector's click action for the segment at the given index, the path a click on that

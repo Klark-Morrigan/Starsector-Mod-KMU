@@ -10,6 +10,8 @@ import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
+import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
@@ -19,8 +21,6 @@ import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.Label
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
-import kmu.settings.FactionNameFormatChoice;
-import kmu.settings.KmuLunaSettings;
 
 import org.lazywizard.lazylib.ui.LazyFont;
 
@@ -66,21 +66,37 @@ final class ClusterLabelStyling {
     // split then picks the group's name opacity, further scaled by the adjustment's opacity
     // multiplier, and fades the resolved colour by the product (the debug dot, sharing this
     // colour, dims and recolours with the name).
-    static Color resolveLabelColor(DominantOwner owner, LabelAnchorSpecification spec,
-            Predicate<String> usesIndependentStyleByBlocId, BlocStyleAdjustment adjustment,
+    static Color resolveLabelColor(
+            DominantOwner owner,
+            LabelAnchorSpecification spec,
+            Predicate<String> usesIndependentStyleByBlocId,
+            BlocStyleAdjustment adjustment,
             FactionPalette desaturationPalette) {
+
         var usesIndependentStyle = usesIndependentStyleByBlocId.test(owner.factionId());
+
         // One group pick drives both the name's colour choice and its opacity, so the two
         // can never be read from different groups.
-        var nameStyle = usesIndependentStyle ? spec.independentNames() : spec.factionNames();
+        var nameStyle = usesIndependentStyle
+                ? spec.independentNames()
+                : spec.factionNames();
         var choice = nameStyle.color();
+
         // The name resolves against the same two shades the border does, off the one
         // "desaturate swaps the palette" decision MapPalettes owns - so the name can
         // never drift from the fill and border it labels.
-        var palette = MapPalettes.resolveEffectivePalette(adjustment, owner, desaturationPalette);
+        var palette = MapPalettes.resolveEffectivePalette(
+                adjustment,
+                owner,
+                desaturationPalette);
         var color = MapPalettes.pickPaletteColor(
-                choice, palette.primaryColor(), palette.secondaryColor());
-        var resolved = color != null ? color : palette.primaryColor();
+                choice,
+                palette.primaryColor(),
+                palette.secondaryColor());
+        var resolved = color != null
+                ? color
+                : palette.primaryColor();
+
         // The name mutes through the same one rule the fill and border do, so a receded name
         // dims in lockstep with the space it labels.
         var mutedOpacity = adjustment.muteOpacity(nameStyle.opacity());
@@ -92,12 +108,20 @@ final class ClusterLabelStyling {
     // rules under one), cached per bloc id like the name estimator resolver below, since every
     // cluster of a bloc shares one decision and the two label lambdas both read it.
     static Function<String, BlocStyleDecision> newBlocStyleDecisionResolver(
-            boolean isFiltering, PoliticalMapView view, OwnershipGrouping grouping,
+            boolean isFiltering,
+            PoliticalMapView view,
+            OwnershipGrouping grouping,
             BlocStyleAdjustment recedeAdjustment) {
+
         var decisionByBlocId = new HashMap<String, BlocStyleDecision>();
-        return blocId -> decisionByBlocId.computeIfAbsent(blocId,
+        return blocId -> decisionByBlocId.computeIfAbsent(
+                blocId,
                 id -> BlocStyleResolver.resolveBlocStyleDecision(
-                        isFiltering, id, view, grouping, recedeAdjustment));
+                        isFiltering,
+                        id,
+                        view,
+                        grouping,
+                        recedeAdjustment));
     }
 
     // The per-bloc name estimators one rebuild fits against: each bloc's display name
@@ -111,7 +135,7 @@ final class ClusterLabelStyling {
         var font = LabelFonts.loadMapLabelFont();
         // Read once per rebuild, like the font: every cluster of a bloc spells its name
         // the same way, so the full/short choice is resolved here rather than per bloc.
-        var nameFormat = KmuLunaSettings.getPoliticalMapFactionNameFormat();
+        var nameFormat = NameFormatPreference.getSelectedNameFormat();
         var estimatorByBlocId = new HashMap<String, LabelLengthEstimator>();
         return blocId -> estimatorByBlocId.computeIfAbsent(blocId,
                 id -> resolveNameEstimator(sector, view, grouping, font, nameFormat,
@@ -122,9 +146,14 @@ final class ClusterLabelStyling {
     // spotlight key (the view cannot name a synthetic id), the group key itself otherwise. The whole
     // spotlit footprint shares one key, so each disjoint spotlit cluster still carries its own
     // per-cluster label spelling the selected bloc's name.
-    private static String resolveNameBlocId(boolean isFiltering, String blocId,
+    private static String resolveNameBlocId(
+            boolean isFiltering,
+            String blocId,
             String selectedBlocId) {
-        return isFiltering && FilteredPolitics.isSpotlitBloc(blocId) ? selectedBlocId : blocId;
+
+        return isFiltering && FilteredPolitics.isSpotlitBloc(blocId)
+                ? selectedBlocId
+                : blocId;
     }
 
     // One bloc's name estimator: font-measured when both the font and a non-blank name
@@ -132,9 +161,13 @@ final class ClusterLabelStyling {
     // it wraps no lines, so no label is minted from it). The active view resolves the name
     // for the bloc - a faction id is not always what the label reads (an alliance bloc id
     // is not a faction id), so the lookup goes through the view, not straight to the sector.
-    private static LabelLengthEstimator resolveNameEstimator(SectorAPI sector,
-            PoliticalMapView view, OwnershipGrouping grouping, LazyFont font,
-            FactionNameFormatChoice nameFormat, String blocId) {
+    private static LabelLengthEstimator resolveNameEstimator(
+            SectorAPI sector,
+            PoliticalMapView view,
+            OwnershipGrouping grouping,
+            LazyFont font,
+            FactionNameFormatChoice nameFormat,
+            String blocId) {
         if (font == null) {
             return new AspectLabelLengthEstimator(FALLBACK_NAME_ASPECT);
         }
@@ -145,6 +178,8 @@ final class ClusterLabelStyling {
         // LazyFontMeasurer (KMLib) reads the concrete font's calcWidth behind the
         // LineWidthMeasurer port, so the name-measuring estimator stays independent of
         // the font itself.
-        return new FontLabelLengthEstimator(new LazyFontMeasurer(font), name);
+        return new FontLabelLengthEstimator(
+                new LazyFontMeasurer(font),
+                name);
     }
 }

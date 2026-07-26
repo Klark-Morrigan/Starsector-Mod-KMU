@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
-import kmu.settings.NeutralColorChoice;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -18,7 +18,9 @@ import java.util.Map;
  * <p>The two owned categories - core factions and independent space - carry a full
  * fill/outer/inner style. The two factionless categories - decivilised and uninhabited -
  * carry only an outline, so their bundles set fill and inner seam to "No color" and draw a
- * single border in the shared neutral color.
+ * single border in the shared neutral color. Whether the uninhabited outline draws at all is
+ * the player's sidebar checkbox rather than a settings field, so that one input is read from
+ * the per-save preference; every other input here is a LunaLib knob.
  */
 public final class RenderStyleReader {
 
@@ -112,13 +114,16 @@ public final class RenderStyleReader {
     // seam - only its single outline draws, in the neutral color both palette slots
     // will carry, or "No color" to hide it.
     public static CategoryStyle readDecivilisedStyle() {
-        return neutralStyle(KmuLunaSettings.getDecivilisedBorderColor(),
+        return neutralStyle(KmuLunaSettings.getDecivilisedBorderColor().isDrawn(),
                 KmuLunaSettings.getDecivilisedBorderOpacity(),
                 KmuLunaSettings.getDecivilisedBorderWidth());
     }
 
+    // The uninhabited outline's on/off is the one style input that is not a LunaLib field: it is
+    // the sidebar's uninhabited-systems checkbox, a per-save preference, so it is read from there
+    // while the opacity and width it strokes at stay settings-screen knobs.
     public static CategoryStyle readUninhabitedStyle() {
-        return neutralStyle(KmuLunaSettings.getUninhabitedBorderColor(),
+        return neutralStyle(UninhabitedOutlinePreference.isOutlineDrawn(),
                 KmuLunaSettings.getUninhabitedBorderOpacity(),
                 KmuLunaSettings.getUninhabitedBorderWidth());
     }
@@ -127,10 +132,20 @@ public final class RenderStyleReader {
     // neutral color via a PRIMARY choice, or NONE to hide it), with no fill and no
     // inner seam. Both slots hold the neutral color at draw time, so PRIMARY and
     // SECONDARY would paint identically; PRIMARY is the drawn arm here.
-    private static CategoryStyle neutralStyle(NeutralColorChoice color, double opacity,
+    private static CategoryStyle neutralStyle(
+            boolean isOutlineDrawn,
+            double opacity,
             double width) {
-        var outerColor = color.isDrawn() ? FactionPaletteChoice.PRIMARY : FactionPaletteChoice.NONE;
-        return new CategoryStyle(ElementStyle.NOT_DRAWN, new ElementStyle(outerColor, opacity),
-                width, ElementStyle.NOT_DRAWN, 0);
+
+        var outerColor = isOutlineDrawn
+                ? FactionPaletteChoice.PRIMARY
+                : FactionPaletteChoice.NONE;
+
+        return new CategoryStyle(
+                ElementStyle.NOT_DRAWN,
+                new ElementStyle(outerColor, opacity),
+                width,
+                ElementStyle.NOT_DRAWN,
+                0);
     }
 }

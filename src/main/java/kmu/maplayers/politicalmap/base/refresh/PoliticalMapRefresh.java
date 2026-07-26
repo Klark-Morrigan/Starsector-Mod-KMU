@@ -51,6 +51,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * mode orthogonal to the active view (either view can be filtered), so a bump repaints the overlay
  * under whichever view is up without each view naming the filter.
  *
+ * <p>How the map draws the sidebar's two shared appearance toggles - whether uninhabited
+ * systems draw their outline, and whether a cluster label spells its owner's full or short
+ * name - is a sixth coarse signal, tracked with a single {@code mapStyleRevision} counter.
+ * Both toggles are sidebar-only sector-memory state rather than LunaLib fields, so flipping
+ * one never bumps {@code settingsRevision}; each setter bumps this counter instead. Folded in
+ * at the pipeline level like the filter revision, since both toggles restyle the whole map
+ * under whichever view is up rather than belonging to any single view.
+ *
  * <p>A counter and a set rather than direct calls because the producers (a
  * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)
  * are created independently, with no shared owner to wire together. The set is
@@ -64,6 +72,7 @@ public final class PoliticalMapRefresh {
     private static final AtomicInteger allianceRevision = new AtomicInteger();
     private static final AtomicInteger recedeStyleRevision = new AtomicInteger();
     private static final AtomicInteger filterRevision = new AtomicInteger();
+    private static final AtomicInteger mapStyleRevision = new AtomicInteger();
     private static final Set<String> politicsStaleSystemIds = ConcurrentHashMap.newKeySet();
 
     private PoliticalMapRefresh() {
@@ -156,6 +165,30 @@ public final class PoliticalMapRefresh {
         // whether the request was even issued.
         var revision = filterRevision.incrementAndGet();
         LOG.debug("Political map filter refresh requested; filterRevision=" + revision);
+    }
+
+    /**
+     * @return a counter that advances when a shared appearance toggle (the uninhabited-systems
+     *         outline, the full/short name format) flips, so the overlay restyles; folded into the
+     *         content token at the pipeline level, since either toggle changes how the map draws
+     *         under whichever view is up
+     */
+    public static int getMapStyleRevision() {
+        return mapStyleRevision.get();
+    }
+
+    /**
+     * Marks the map's shared styling stale: the player flipped the uninhabited-systems outline or the
+     * full/short name format on the sidebar. This is the live-invalidation seam both toggles use in
+     * place of {@code settingsRevision}, since each is sidebar-only sector-memory state rather than a
+     * LunaLib field.
+     */
+    public static void requestMapStyleRefresh() {
+        // The seam the two shared appearance toggles' setters funnel through, mirroring
+        // requestRecedeStyleRefresh. Logged with the resulting counter so a toggle that failed to
+        // repaint can be traced to whether the request was even issued.
+        var revision = mapStyleRevision.incrementAndGet();
+        LOG.debug("Political map style refresh requested; mapStyleRevision=" + revision);
     }
 
     /**

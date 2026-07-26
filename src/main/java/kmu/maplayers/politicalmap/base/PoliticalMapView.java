@@ -9,7 +9,6 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.ownership.OwnershipProvider;
 import kmu.maplayers.politicalmap.base.tooltip.MapHoverTooltip;
-import kmu.settings.FactionNameFormatChoice;
 
 import java.util.List;
 import java.util.Optional;

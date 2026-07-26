@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.NeutralColorChoice;
@@ -15,7 +16,8 @@ import static org.mockito.Mockito.mockStatic;
  * Pins how the political-map settings fold into one theme: each owned category threads its
  * eight settings into the matching {@link CategoryStyle} slots (a swapped fill/outer/inner or
  * opacity/width would show here), a factionless category collapses to a single outline drawn
- * or hidden by its neutral-color choice, the {@link GlobalStyle} global tier gathers the hatch,
+ * or hidden by its own on/off input - the decivilised neutral-color choice, the uninhabited
+ * sidebar toggle - the {@link GlobalStyle} global tier gathers the hatch,
  * smoothing, and desaturation knobs, and {@code readRenderStyle} carries all four categories
  * plus the global tier as one snapshot.
  */
@@ -151,10 +153,14 @@ final class RenderStyleReaderTest {
     class ReadUninhabitedStyle {
 
         @Test
-        void readUninhabitedStyleDrawsTheOutlineInTheNeutralColorWhenTheChoiceIsDrawn() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getUninhabitedBorderColor)
-                        .thenReturn(NeutralColorChoice.NEUTRAL);
+        void readUninhabitedStyleDrawsTheOutlineInTheNeutralColorWhenTheSidebarToggleIsOn() {
+            // The on/off comes from the sidebar preference rather than a settings field, so this
+            // category reads two sources; both are stubbed so neither can satisfy the assertion
+            // alone.
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
+                    MockedStatic<UninhabitedOutlinePreference> preferenceMock =
+                            mockStatic(UninhabitedOutlinePreference.class)) {
+                preferenceMock.when(UninhabitedOutlinePreference::isOutlineDrawn).thenReturn(true);
                 settingsMock.when(KmuLunaSettings::getUninhabitedBorderOpacity)
                         .thenReturn(NEUTRAL_OPACITY);
                 settingsMock.when(KmuLunaSettings::getUninhabitedBorderWidth)
@@ -172,10 +178,11 @@ final class RenderStyleReaderTest {
         }
 
         @Test
-        void readUninhabitedStyleHidesTheOutlineButKeepsItsGeometryWhenTheChoiceIsNone() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getUninhabitedBorderColor)
-                        .thenReturn(NeutralColorChoice.NONE);
+        void readUninhabitedStyleHidesTheOutlineButKeepsItsGeometryWhenTheSidebarToggleIsOff() {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
+                    MockedStatic<UninhabitedOutlinePreference> preferenceMock =
+                            mockStatic(UninhabitedOutlinePreference.class)) {
+                preferenceMock.when(UninhabitedOutlinePreference::isOutlineDrawn).thenReturn(false);
                 settingsMock.when(KmuLunaSettings::getUninhabitedBorderOpacity)
                         .thenReturn(NEUTRAL_OPACITY);
                 settingsMock.when(KmuLunaSettings::getUninhabitedBorderWidth)
@@ -183,6 +190,8 @@ final class RenderStyleReaderTest {
 
                 var style = RenderStyleReader.readUninhabitedStyle();
 
+                // The outer slot turns off, yet its opacity and width still pass through so the
+                // sole difference from the drawn case is the slot.
                 assertThat(style.outer().color()).isEqualTo(FactionPaletteChoice.NONE);
                 assertThat(style.outer().opacity()).isEqualTo(NEUTRAL_OPACITY);
                 assertThat(style.outerWidth()).isEqualTo(NEUTRAL_WIDTH);
@@ -301,12 +310,12 @@ final class RenderStyleReaderTest {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
                 settingsMock.when(KmuLunaSettings::getPoliticalMapDesaturationDarkening)
                         .thenReturn(0.3);
-                // The two factionless categories dereference their neutral-color choice, so give
-                // them a concrete one; every other getter can default since the assertions below
-                // only check that each category slot is populated, not its values.
+                // The decivilised category dereferences its neutral-color choice, so give it a
+                // concrete one; every other getter can default since the assertions below only
+                // check that each category slot is populated, not its values. The uninhabited
+                // category needs no stub: its toggle reads sector memory, which is absent here and
+                // resolves to off.
                 settingsMock.when(KmuLunaSettings::getDecivilisedBorderColor)
-                        .thenReturn(NeutralColorChoice.NEUTRAL);
-                settingsMock.when(KmuLunaSettings::getUninhabitedBorderColor)
                         .thenReturn(NeutralColorChoice.NEUTRAL);
 
                 var renderStyle = RenderStyleReader.readRenderStyle();

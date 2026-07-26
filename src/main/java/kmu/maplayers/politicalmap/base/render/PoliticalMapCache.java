@@ -158,7 +158,8 @@ final class PoliticalMapCache {
         // systems seed a cell, so a flip must reseed the partition here rather than only restyle it
         // through the content revision below.
         var devOverrides = PoliticalMapDevOverrides.readFromLunaSettings();
-        if (geometryRevision != lastGeometryRevision || boundSegments != lastBoundSegments
+        if (geometryRevision != lastGeometryRevision
+                || boundSegments != lastBoundSegments
                 || cellRadius != lastCellRadius
                 || devOverrides.isShowingAllFactions() != lastShowsAllFactions
                 || devOverrides.isForcingAllSystemsOnMap() != lastForcesAllSystemsOnMap) {
@@ -190,7 +191,8 @@ final class PoliticalMapCache {
         // Both views null means neither has been built this session, so the first frame forces the
         // build even if the content revision happens to match its -1 seed.
         var contentRevision = computeContentRevision(view);
-        if (rebuiltCells || (territories == null && debugTerritories == null)
+        if (rebuiltCells
+                || (territories == null && debugTerritories == null)
                 || contentRevision != lastContentRevision) {
             var drawablesStart = System.nanoTime();
             // Build one view or the other, never both: the debug overlay replaces the normal
@@ -202,19 +204,31 @@ final class PoliticalMapCache {
             // none behind.
             if (KmuLunaSettings.shouldTraceBordersForDebug()) {
                 debugTerritories = DebugBorderTracingBuilder.buildDebugDrawables(
-                        geometryCache, Global.getSector());
+                        geometryCache,
+                        Global.getSector());
                 territories = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                        clusterAnchors, geometryCache, Global.getSector(), view);
+                        clusterAnchors,
+                        geometryCache,
+                        Global.getSector(),
+                        view);
             } else {
                 territories = TerritoryBuilder.buildTerritories(
-                        geometryCache, Global.getSector(), view);
+                        geometryCache,
+                        Global.getSector(),
+                        view);
                 debugTerritories = null;
-                ClusterAnchorsBuilder.rebuildClusterAnchors(clusterAnchors, geometryCache,
-                        territories.getOwnerBySystemId(), Global.getSector(),
-                        territories.getDesaturationPalette(), view,
-                        territories.getGrouping(), territories.isFiltering(),
-                        territories.getRecedeAdjustment(), territories.getSelectedBlocId());
+                ClusterAnchorsBuilder.rebuildClusterAnchors(
+                        clusterAnchors,
+                        geometryCache,
+                        territories.getOwnerBySystemId(),
+                        Global.getSector(),
+                        territories.getDesaturationPalette(),
+                        view,
+                        territories.getGrouping(),
+                        territories.isFiltering(),
+                        territories.getRecedeAdjustment(),
+                        territories.getSelectedBlocId());
             }
             // The name labels are minted from the placements just rebuilt (empty when the names
             // toggle is off), keeping them in step with the fills and borders and reusing the one
@@ -238,8 +252,11 @@ final class PoliticalMapCache {
         // and corrupt the spotlight, so a filtered map defers ownership changes to the next full
         // rebuild instead.
         if (territories != null && !territories.isFiltering()) {
-            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(territories, clusterAnchors,
-                    factionLabels, geometryCache);
+            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
+                    territories,
+                    clusterAnchors,
+                    factionLabels,
+                    geometryCache);
         } else {
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
         }
@@ -249,7 +266,11 @@ final class PoliticalMapCache {
     // time, so a wrong or empty render can be confirmed against what was built. The count reported
     // is whichever view was built this rebuild - the normal styled cells or the debug overlay's
     // base loops.
-    private void logContentRebuild(boolean rebuiltCells, int contentRevision, long drawablesStart) {
+    private void logContentRebuild(
+            boolean rebuiltCells,
+            int contentRevision,
+            long drawablesStart) {
+
         if (!LOG.isDebugEnabled()) {
             return;
         }
@@ -280,18 +301,22 @@ final class PoliticalMapCache {
     // rebuilds the territories even though no setting moved. The faction view samples nothing live
     // and contributes a constant, so an alliance change never churns it; the pipeline stays
     // view-neutral by reading this off the view rather than naming the alliance revision itself. The
-    // filter and recede-style revisions are folded in at this pipeline level rather than through any
-    // view, since each is a mode either view can be under: a filter pick or clear, or a recede
-    // Mute/Desaturate flip, bumps its revision and rebuilds the territories under whichever view is
-    // up, with no view naming it. Objects.hash is the JDK's standard 31-multiply fold, so the inputs
-    // separate without a bespoke combine here.
+    // filter, recede-style, and map-style revisions are folded in at this pipeline level rather than
+    // through any view, since each is a mode or an appearance toggle either view can be under: a
+    // filter pick or clear, a recede Mute/Desaturate flip, or a flip of the sidebar's shared
+    // appearance toggles (the uninhabited outline, the full/short name format) bumps its revision and
+    // rebuilds the territories under whichever view is up, with no view naming it. Those toggles are
+    // sector-memory state rather than LunaLib fields, so settingsRevision above does not cover them.
+    // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
+    // combine here.
     private static int computeContentRevision(PoliticalMapView view) {
         return Objects.hash(
                 KmuLunaSettings.getSettingsRevision(),
                 view.getId(),
                 view.getContentRevision(),
                 PoliticalMapRefresh.getFilterRevision(),
-                PoliticalMapRefresh.getRecedeStyleRevision());
+                PoliticalMapRefresh.getRecedeStyleRevision(),
+                PoliticalMapRefresh.getMapStyleRevision());
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
@@ -300,11 +325,21 @@ final class PoliticalMapCache {
     // cache the currently-moving systems so they are left out of the partition (they seed no cell
     // and clip no neighbour), and the dev reveal overrides so a forced or undiscovered-colony
     // system joins the drawn set.
-    private void rebuildGeometry(int boundSegments, double cellRadius,
+    private void rebuildGeometry(
+            int boundSegments,
+            double cellRadius,
             PoliticalMapDevOverrides overrides) {
+
         var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
-        KmuProfiling.getProfiler().measure("politicalMap.updateGeometry",
-                () -> geometryCache.updateFromSector(
-                        Global.getSector(), movingSystemIds, boundSegments, cellRadius, overrides));
+        KmuProfiling
+                .getProfiler()
+                .measure(
+                        "politicalMap.updateGeometry",
+                        () -> geometryCache.updateFromSector(
+                                Global.getSector(),
+                                movingSystemIds,
+                                boundSegments,
+                                cellRadius,
+                                overrides));
     }
 }
