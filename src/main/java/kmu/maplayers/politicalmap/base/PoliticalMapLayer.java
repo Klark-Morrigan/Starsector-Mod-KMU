@@ -71,8 +71,8 @@ public final class PoliticalMapLayer implements MapLayer {
     @Override
     public List<ControlSpec> getBodyControls() {
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
-        // view-selector radio that picks which view paints - one segment per registered view, and
-        // the map's on/off since clicking the lit view deselects it.
+        // view-selector radio that picks which view paints - one segment per registered view. The
+        // radio only switches between views; turning the map off is the tab bar's No Layer pick.
         var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls());
         controls.add(PoliticalMapBodyControls.buildViewSelector());
         // Then the spotlight picker and the selected view's own controls, so the body shows the

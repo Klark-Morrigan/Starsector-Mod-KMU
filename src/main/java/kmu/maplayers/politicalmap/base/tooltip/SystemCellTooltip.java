@@ -63,7 +63,15 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         }
         var rows = new ArrayList<TooltipRow>();
         rows.add(buildHeaderRow(system));
-        rows.addAll(bodyRows);
+
+        // The body opens a section under the title, so the name is parted from what follows it rather
+        // than reading as the first entry of the list. Set here, not by each layer: every cell tooltip
+        // is a title over a body, so the parting belongs to that shape rather than to any one body.
+        rows.add(bodyRows
+                .get(0)
+                .opensSection());
+
+        rows.addAll(bodyRows.subList(1, bodyRows.size()));
         CursorTooltipRenderer.render(rows, buildStyle());
     }
 
@@ -88,12 +96,10 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * @return the row, ready to add to a body
      */
     protected static TooltipRow buildTopTierRow(String crestSpritePath, String text, String value) {
-        return TooltipRow.createFlushRow(
-                crestSpritePath,
-                text,
-                StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve(),
-                value,
-                StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
+        return TooltipRow
+                .createRow(text, StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve())
+                .carriesCrest(crestSpritePath)
+                .carriesValue(value, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 
     /**
@@ -106,20 +112,41 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * @return the row, ready to add to a body
      */
     protected static TooltipRow buildNestedRow(String crestSpritePath, String text, String value) {
-        return TooltipRow.createIndentedRow(
-                MEMBER_INDENT,
-                crestSpritePath,
-                text,
-                StarsectorUiColor.VANILLA_TEXT.resolve(),
-                value,
-                StarsectorUiColor.VANILLA_TEXT.resolve());
+        var textColour = StarsectorUiColor.VANILLA_TEXT.resolve();
+        return TooltipRow
+                .createRow(text, textColour)
+                .carriesCrest(crestSpritePath)
+                .carriesValue(value, textColour)
+                .indentsBy(MEMBER_INDENT);
     }
 
-    // The header every cell tooltip opens with: the hovered system's own name, top-tier and crestless,
-    // so the body below it never has to repeat which system it describes. It carries no number, and a
-    // row with no value paints none, so the tier's value colour never shows here.
+    /**
+     * Builds a nested row whose label carries a trailing marker in the highlight colour - a status or
+     * flag called out on the line it qualifies, rather than stated on a line of its own. One place
+     * decides that a marker reads gold, so two layers marking different facts still mark them alike.
+     *
+     * @param crestSpritePath the leading crest's texture path, or null for a crestless row
+     * @param text            the row's label
+     * @param marker          the qualifier drawn just after the label, in the highlight colour
+     * @param value           the right-aligned value, or {@link #NO_SCORE} for a row carrying none
+     * @return the row, ready to add to a body
+     */
+    protected static TooltipRow buildMarkedNestedRow(
+            String crestSpritePath, String text, String marker, String value) {
+        return buildNestedRow(crestSpritePath, text, value)
+                .carriesMarker(marker, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
+    }
+
+    // The header every cell tooltip opens with: the hovered system's own name, bright and crestless, so
+    // the body below it never has to repeat which system it describes. It steps out of the crest column
+    // the crested rows below reserve, since it titles the box rather than sitting in their table - an
+    // indent under an empty crest square would read as the name belonging to the list.
     private static TooltipRow buildHeaderRow(StarSystemAPI system) {
-        return buildTopTierRow(null, system.getName(), NO_SCORE);
+        return TooltipRow
+                .createRow(
+                        system.getName(),
+                        StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve())
+                .clearsCrestColumn();
     }
 
     // The tooltip's fixed look: the body font and size every row draws in, the shared opacity, and the

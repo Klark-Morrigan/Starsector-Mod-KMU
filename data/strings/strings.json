@@ -45,6 +45,14 @@
     "political_map_ctl_columns_two": "2",
 
     "political_map_tooltip_decivilised": "Decivilised",
-    "political_map_tooltip_unpopulated": "Unpopulated"
+    "political_map_tooltip_unpopulated": "Unpopulated",
+    "political_map_tooltip_core_territory": "core territory",
+    "political_map_tooltip_core_marker": "(core)",
+    "political_map_tooltip_claim_none": "None",
+
+    "political_map_tooltip_section_claim": "Claim:",
+    "political_map_tooltip_section_contested": "Contested by:",
+    "political_map_tooltip_section_non_territorial": "Non-territorial:",
+    "political_map_tooltip_section_dominated": "Dominated by:"
   }
 }

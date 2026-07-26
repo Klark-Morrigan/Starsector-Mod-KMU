@@ -103,18 +103,10 @@ public final class StandingRowResolver {
             var faction = sector.getFaction(member.factionId());
             rows.add(new FactionStandingRow(
                     member.factionId(),
-                    resolveFactionName(faction, member.factionId()),
+                    TooltipFactionNames.resolveLongName(faction, member.factionId()),
                     FactionCrests.resolveCrestPath(faction),
                     member.score()));
         }
         return rows;
-    }
-
-    // A faction's long display title, falling back to its id when the faction will not resolve, so a
-    // member row is never nameless even for a footprint id the sector no longer knows. A tooltip row
-    // shows one faction per line, so a bare id reads better than the null the picker tolerates for a
-    // stand-in band.
-    private static String resolveFactionName(FactionAPI faction, String factionId) {
-        return faction == null ? factionId : faction.getDisplayNameLong();
     }
 }

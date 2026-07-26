@@ -59,6 +59,9 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE, "Hidden");
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
         stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED, "Decivilised");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED, "Unpopulated");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY, "core territory");
         return stringsByKey;
     }
 }

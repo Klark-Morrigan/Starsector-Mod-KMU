@@ -55,6 +55,14 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_COLUMNS_TWO = "political_map_ctl_columns_two";
     public static final String POLITICAL_MAP_TOOLTIP_DECIVILISED = "political_map_tooltip_decivilised";
     public static final String POLITICAL_MAP_TOOLTIP_UNPOPULATED = "political_map_tooltip_unpopulated";
+    public static final String POLITICAL_MAP_TOOLTIP_CORE_TERRITORY = "political_map_tooltip_core_territory";
+    public static final String POLITICAL_MAP_TOOLTIP_CORE_MARKER = "political_map_tooltip_core_marker";
+    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_NONE = "political_map_tooltip_claim_none";
+    public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
+    public static final String POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED = "political_map_tooltip_section_contested";
+    public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL =
+            "political_map_tooltip_section_non_territorial";
+    public static final String POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED = "political_map_tooltip_section_dominated";
 
     private KmuStrings() {
     }

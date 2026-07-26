@@ -3,13 +3,11 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.widgets.TooltipRow;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
-import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,18 +49,26 @@ public final class SystemDominationTooltip extends SystemCellTooltip {
         var pass = DominancePass.readFromLunaSettings(grouping);
         var standings = SystemStandings.rankByDominationScore(sector, system, pass);
         var groupRows = StandingRowResolver.resolveRows(sector, standings, grouping);
-        return groupRows.isEmpty() ? buildEmptyStateRows(system) : buildRows(groupRows);
+        return groupRows.isEmpty()
+                ? buildEmptyStateRows(sector, system, pass)
+                : buildRows(groupRows);
     }
 
-    // The one line shown under the system name for a system with no ranked presence: why it holds no
-    // standing - a dead colony the player has already seen reads "Decivilised", any other empty system
-    // "Unpopulated". The status carries no crest or score, so an all-crestless box lays it flush with
-    // the name above it and no crest gutter.
-    private static List<TooltipRow> buildEmptyStateRows(StarSystemAPI system) {
-        var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)
-                ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
-                : KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED;
-        return List.of(buildNestedRow(null, KmuStrings.get(statusKey), NO_SCORE));
+    // The one line shown under the system name for a system with no ranked presence: the shared status
+    // row saying why it holds no standing. It resolves under this pass's reveal, the same filter the
+    // standings above were ranked through, so the system counts as empty here exactly when the ranking
+    // found nothing to show.
+    private static List<TooltipRow> buildEmptyStateRows(
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominancePass pass) {
+                
+        return SystemStatusRow.resolveStatusRow(
+                sector,
+                system,
+                pass.shouldIncludeUndiscoveredMarkets())
+                .map(List::of)
+                .orElseGet(List::of);
     }
 
     // Flattens the two-tier group rows into the flat draw rows the box paints top to bottom: a bloc
