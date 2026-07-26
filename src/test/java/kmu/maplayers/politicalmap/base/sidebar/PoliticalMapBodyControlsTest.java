@@ -27,7 +27,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the view selector's switch rule: each view remembers its own spotlight, so switching toggles the
+ * Pins the view selector's switch rule: each view remembers its own spotlight, so switching selects the
  * clicked view and heals the switched-in view's slot against its current blocs - never clearing another
  * view's stored selection. The registry, the strings, the filter selection, and the selection heal are
  * stubbed so this drives the selector's click action and pins only what it does, not how the view or the
@@ -45,8 +45,8 @@ final class PoliticalMapBodyControlsTest {
     class SelectViewSegment {
 
         @Test
-        void switchingToAViewTogglesItThenHealsTheSwitchedInViewsSlot() {
-            // The click toggles the clicked view, then heals that view's own slot so a bloc it stored
+        void switchingToAViewSelectsItThenHealsTheSwitchedInViewsSlot() {
+            // The click selects the clicked view, then heals that view's own slot so a bloc it stored
             // but that has since lapsed does not spotlight an empty footprint. It does not clear - each
             // view keeps its own selection across the switch.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
@@ -58,7 +58,7 @@ final class PoliticalMapBodyControlsTest {
 
                 clickViewSegment(1);
 
-                registryMock.verify(() -> PoliticalMapViewRegistry.toggleView(alliancesViewMock));
+                registryMock.verify(() -> PoliticalMapViewRegistry.selectView(alliancesViewMock));
                 healMock.verify(FilterSelectionHeal::healStaleSelectionAgainstActiveView);
             }
         }
@@ -84,7 +84,7 @@ final class PoliticalMapBodyControlsTest {
 
         @Test
         void ignoresASegmentOutsideTheRegisteredViews() {
-            // A stray hit past the last view neither toggles a view nor heals, so it changes nothing.
+            // A stray hit past the last view neither selects a view nor heals, so it changes nothing.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
@@ -94,7 +94,7 @@ final class PoliticalMapBodyControlsTest {
 
                 clickViewSegment(5);
 
-                registryMock.verify(() -> PoliticalMapViewRegistry.toggleView(any()), never());
+                registryMock.verify(() -> PoliticalMapViewRegistry.selectView(any()), never());
                 healMock.verifyNoInteractions();
             }
         }
@@ -121,9 +121,9 @@ final class PoliticalMapBodyControlsTest {
         }
 
         @Test
-        void deselectsOnARepickSoRelightingTheViewTurnsTheMapOff() {
-            // Re-picking the lit view must reach the action to turn the overlay off, so the selector
-            // carries DESELECT rather than a plain option pair's inert re-pick.
+        void staysLitOnARepickSoTheViewAxisIsNeverLeftEmpty() {
+            // Re-picking the lit view must not clear it: the No Layer tab is the one control that
+            // turns the map off, so the selector carries INERT rather than a deselecting row.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
@@ -131,7 +131,7 @@ final class PoliticalMapBodyControlsTest {
 
                 var selector = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls.buildViewSelector();
 
-                assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.DESELECT);
+                assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.INERT);
             }
         }
     }

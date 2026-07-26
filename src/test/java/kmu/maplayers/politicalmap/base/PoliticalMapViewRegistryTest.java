@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the political-map view registry's contract with fake views and a fake host tab: the view
  * order it hands back, the pick an untouched save resolves to, the off sentinel that turns the map
- * dark, the id it stores on a toggle, and the active-view read the terrain plugin gates on - which
+ * dark, the id it stores on a pick, and the active-view read the terrain plugin gates on - which
  * additionally requires the host tab to be the active pick. The concrete view set is the composition
  * root's concern; this names none.
  */
@@ -179,33 +179,34 @@ final class PoliticalMapViewRegistryTest {
     }
 
     @Nested
-    class ToggleView {
+    class SelectView {
 
         @Test
-        void toggleViewStoresThePickedViewsIdWhenItIsNotTheCurrentSelection() {
+        void selectViewStoresThePickedViewsIdWhenItIsNotTheCurrentSelection() {
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 linkSectorMemoryTo(globalMock, memoryMock);
-                // Default selection is the first view, so toggling the second switches to it.
+                // Default selection is the first view, so picking the second switches to it.
                 when(memoryMock.contains(ACTIVE_VIEW_KEY)).thenReturn(false);
 
-                PoliticalMapViewRegistry.toggleView(secondViewMock);
+                PoliticalMapViewRegistry.selectView(secondViewMock);
 
                 verify(memoryMock).set(ACTIVE_VIEW_KEY, "second");
             }
         }
 
         @Test
-        void toggleViewStoresTheOffSentinelWhenTheViewIsAlreadySelected() {
+        void selectViewKeepsTheViewSelectedWhenItIsAlreadyTheCurrentSelection() {
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 linkSectorMemoryTo(globalMock, memoryMock);
-                // The first view is the default selection, so toggling it turns the map off.
+                // The first view is the default selection, so re-picking it must rewrite the same id
+                // rather than fall to the off sentinel - the view axis is never left empty.
                 when(memoryMock.contains(ACTIVE_VIEW_KEY)).thenReturn(false);
 
-                PoliticalMapViewRegistry.toggleView(firstViewMock);
+                PoliticalMapViewRegistry.selectView(firstViewMock);
 
-                verify(memoryMock).set(ACTIVE_VIEW_KEY, "");
+                verify(memoryMock).set(ACTIVE_VIEW_KEY, "first");
             }
         }
     }

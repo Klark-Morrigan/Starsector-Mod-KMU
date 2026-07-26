@@ -30,6 +30,9 @@ public final class PoliticalMapBodyControls {
     // then Full. The lit segment index maps back to this order.
     private static final int NAME_SHORT_SEGMENT = 0;
     private static final int NAME_FULL_SEGMENT = 1;
+    // The trailing caption a radio carries when its segment labels are self-describing - the blank
+    // the spec reads as "draw no caption after the row".
+    private static final String NO_CAPTION = "";
 
     private PoliticalMapBodyControls() {
     }
@@ -56,40 +59,41 @@ public final class PoliticalMapBodyControls {
 
     /**
      * The view-selector radio: one side-by-side segment per registered political-map view (Factions |
-     * Alliances on one row), the lit segment the active view, or none when the map is off. It deselects
-     * on a re-pick, so clicking the lit view turns the overlay off while the tab stays open - the
-     * behaviour the old faction toggle had. With only the faction view registered the radio is one
-     * segment, reading as the political-map on/off.
+     * Alliances | Claims on one row), the lit segment the active view. A re-pick of the lit view is
+     * inert, so the radio always holds a view once one is picked - the tab selector (No Layer) is the
+     * one control that turns the map off, and the view axis has no "none" a player can fall into by
+     * clicking twice.
      *
-     * @return the horizontal, deselectable view-selector radio
+     * @return the horizontal, always-on view-selector radio
      */
     public static ControlSpec buildViewSelector() {
         var labels = new ArrayList<String>();
         for (var view : PoliticalMapViewRegistry.getViews()) {
             labels.add(KmuStrings.get(view.getSegmentLabelKey()));
         }
-        return ControlSpec.HorizontalRadio.deselectable(
+        // Blank caption: the segment labels already name the views, so a trailing word would only
+        // repeat what the row reads as.
+        return ControlSpec.HorizontalRadio.uniform(
                 labels,
+                NO_CAPTION,
                 PoliticalMapViewRegistry.getSelectedViewIndex(),
                 PoliticalMapBodyControls::selectViewSegment);
     }
 
-    // Toggles the view its clicked segment names - activating it, or turning the map off when it is
-    // already the active view. Any index outside the registered views is ignored, so a stray hit
-    // changes nothing. Each view remembers its own spotlight (a faction id under the factions view, an
-    // alliance id under the alliances view), so a switch loads the switched-in view's stored bloc
-    // rather than clearing - the choice survives moving between views and the map being toggled off.
-    // The switched-in view's slot is then healed against its current selectable blocs, so a bloc that
-    // lapsed since it was last shown (a faction removed, an alliance dissolved) does not spotlight an
-    // empty footprint; the heal is a no-op when the map toggled off, since no view is active to
-    // validate against, and the switch itself repaints so the cleared spotlight shows without its own
-    // refresh request.
+    // Activates the view its clicked segment names. Any index outside the registered views is ignored,
+    // so a stray hit changes nothing. Each view remembers its own spotlight (a faction id under the
+    // factions view, an alliance id under the alliances view), so a switch loads the switched-in view's
+    // stored bloc rather than clearing - the choice survives moving between views and the tab being
+    // switched away from. The switched-in view's slot is then healed against its current selectable
+    // blocs, so a bloc that lapsed since it was last shown (a faction removed, an alliance dissolved)
+    // does not spotlight an empty footprint; the switch itself repaints, so the cleared spotlight shows
+    // without its own refresh request.
     private static void selectViewSegment(int segmentIndex) {
         List<PoliticalMapView> views = PoliticalMapViewRegistry.getViews();
         if (segmentIndex < 0 || segmentIndex >= views.size()) {
             return;
         }
-        PoliticalMapViewRegistry.toggleView(views.get(segmentIndex));
+        PoliticalMapViewRegistry.selectView(views.get(segmentIndex));
         FilterSelectionHeal.healStaleSelectionAgainstActiveView();
     }
 

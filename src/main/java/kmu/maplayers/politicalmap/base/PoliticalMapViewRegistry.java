@@ -14,7 +14,7 @@ import java.util.List;
  * generalisation of the old faction on/off toggle into a selection among the registered views
  * (faction, later alliances). The view-selector radio composes its segments from
  * {@link #getViews()}, lights the one {@link #getSelectedViewIndex()} reports, and writes a click
- * through {@link #toggleView}; the shared terrain plugin reads {@link #getActiveView()} to decide
+ * through {@link #selectView}; the shared terrain plugin reads {@link #getActiveView()} to decide
  * both whether to paint and which view's rules to paint under - so the plugin names no concrete
  * view and stays view-neutral.
  *
@@ -41,8 +41,10 @@ public final class PoliticalMapViewRegistry {
     // selection, then shed; kept as a literal only for that self-heal.
     private static final String LEGACY_FACTION_OVERLAY_KEY = "$kmu_political_faction_overlay_on";
 
-    // The stored value meaning "no view paints" - the map is off while the political-map tab stays
-    // open. Empty because no view id is empty, so it never collides with a real pick.
+    // The stored value meaning "no view paints" - the map is dark while the political-map tab stays
+    // open. Empty because no view id is empty, so it never collides with a real pick. Only the
+    // legacy-overlay self-heal writes it: the view radio always lands on a view, and turning the map
+    // off is the No Layer tab's job.
     private static final String OFF_SELECTION = "";
 
     // The active-view pick's sector-memory slot, keyed by the frozen id above; reads resolve an
@@ -161,20 +163,12 @@ public final class PoliticalMapViewRegistry {
     }
 
     /**
-     * Toggles the view a radio segment names: selecting it when it is not the current pick, or
-     * turning the map off when it already is - the view radio's "click the lit row to switch off"
-     * behaviour. A no-op before the sector exists, since there is no save to write into yet.
+     * Stores the view a radio segment names as the pick. Selecting the already-selected view rewrites
+     * the same id rather than clearing, so the radio always lands on a view - the map is turned off by
+     * switching to the No Layer tab, not by re-clicking the lit view. A no-op before the sector
+     * exists, since there is no save to write into yet.
      */
-    public static void toggleView(PoliticalMapView view) {
-        if (getSelectedView() == view) {
-            writeSelection(OFF_SELECTION);
-        } else {
-            writeSelection(view.getId());
-        }
-    }
-
-    // Writes the active-view selection to sector memory, or does nothing before the sector exists.
-    private static void writeSelection(String selection) {
-        activeViewSelection.set(selection);
+    public static void selectView(PoliticalMapView view) {
+        activeViewSelection.set(view.getId());
     }
 }
