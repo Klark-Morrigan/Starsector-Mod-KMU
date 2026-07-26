@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import kmlib.testfixtures.starsector.systems.ClaimReaderFake;
+import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 

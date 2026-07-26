@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.base.politics.ownership;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.systems.ClaimReader;
-import kmlib.starsector.systems.VanillaClaimReader;
+import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.VanillaClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
