@@ -24,9 +24,10 @@
     "political_map_tab_political_map": "Political Map",
 
     "political_map_ctl_uninhabited": "Uninhabited systems",
-    "political_map_ctl_name_short": "Short",
     "political_map_ctl_name_full": "Full",
-    "political_map_ctl_faction_names": "Faction names",
+    "political_map_ctl_name_short": "Short",
+    "political_map_ctl_name_none": "No",
+    "political_map_ctl_faction_names": "faction names",
     "political_map_ctl_factions": "Factions",
     "political_map_ctl_alliances": "Alliances",
     "political_map_ctl_claims": "Claims",

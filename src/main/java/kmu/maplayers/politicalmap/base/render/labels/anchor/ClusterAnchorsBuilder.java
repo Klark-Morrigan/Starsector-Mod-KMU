@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
@@ -70,7 +71,7 @@ public final class ClusterAnchorsBuilder {
             BlocStyleAdjustment recedeAdjustment,
             String selectedBlocId) {
         anchors.clear();
-        if (!KmuLunaSettings.getPoliticalMapShowNames()
+        if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }

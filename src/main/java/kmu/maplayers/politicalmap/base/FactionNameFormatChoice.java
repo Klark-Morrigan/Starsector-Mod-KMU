@@ -1,23 +1,28 @@
 package kmu.maplayers.politicalmap.base;
 
 /**
- * Whether a cluster's label spells out its owner's full name or its short name - the player's
- * choice behind the sidebar's Short/Full name-format radio.
+ * How a cluster's label spells out its owner's name - its full name, its short name, or not at all -
+ * the player's choice behind the sidebar's Full/Short/No name radio.
  *
  * <p>A faction supplies two authored names: a long form (its full title) and a short form (an
- * abbreviation). The political map lets the player pick which one each cluster label carries,
- * since the short form fits a tighter cluster at a larger font. This names the options and, like
- * {@link SortDirection}, owns the save-stable key each persists under, so the stored choice
- * resolves back without matching a display string that is free to change.
+ * abbreviation). The political map lets the player pick which one each cluster label carries, since
+ * the short form fits a tighter cluster at a larger font, or turn the names off entirely and read
+ * the map by colour alone. Whether names draw is part of this one choice rather than a separate
+ * gate, so the single control the player sees maps to a single stored state. This names the options
+ * and, like {@link SortDirection}, owns the save-stable key each persists under, so the stored
+ * choice resolves back without matching a display string that is free to change.
  */
 public enum FactionNameFormatChoice {
-    FULL("full"),
-    SHORT("short");
+    FULL("full", true),
+    SHORT("short", true),
+    NONE("none", false);
 
     private final String persistenceKey;
+    private final boolean areNamesDrawn;
 
-    FactionNameFormatChoice(String persistenceKey) {
+    FactionNameFormatChoice(String persistenceKey, boolean areNamesDrawn) {
         this.persistenceKey = persistenceKey;
+        this.areNamesDrawn = areNamesDrawn;
     }
 
     /**
@@ -44,5 +49,17 @@ public enum FactionNameFormatChoice {
      */
     public String persistenceKey() {
         return persistenceKey;
+    }
+
+    /**
+     * The gate the label passes read before they build anything: a choice that draws no name skips
+     * the whole label pipeline (the anchor fit as well as the strings), so no work is done for text
+     * that would not be drawn.
+     *
+     * @return whether a cluster label draws a name under this choice - false only for
+     *         {@link #NONE}, the two named forms both draw
+     */
+    public boolean areNamesDrawn() {
+        return areNamesDrawn;
     }
 }

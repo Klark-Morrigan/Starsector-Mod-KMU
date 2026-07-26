@@ -34,7 +34,7 @@ public final class LabelRenderer {
     }
 
     // Draws every cached label for one map frame, scaled into world space. Empty (nothing
-    // emitted) unless the names toggle built labels, so the normal map pays only an
+    // emitted) unless the name choice built labels, so the normal map pays only an
     // empty-list check; a fully faded-out map (alphaMult 0) emits nothing rather than
     // drawing invisible text. Profiled like the other map passes since it runs every frame
     // the map is open.

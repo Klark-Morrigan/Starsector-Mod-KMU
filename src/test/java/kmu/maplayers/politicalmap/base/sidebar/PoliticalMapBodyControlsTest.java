@@ -160,10 +160,10 @@ final class PoliticalMapBodyControlsTest {
         }
 
         @Test
-        void theNameFormatRadioLightsAndSelectsThroughThePerSaveFormatPreference() {
-            // Short is the first segment and Full the second, so the lit segment and the segment a
-            // click writes must both follow that order or the radio would report and set the
-            // opposite format.
+        void theNameRadioLightsAndSelectsThroughThePerSaveNamePreference() {
+            // Full is the first segment, Short the second, No the third, so the lit segment and the
+            // segment a click writes must both follow that order or the radio would report and set
+            // the wrong choice.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<NameFormatPreference> preferenceMock =
                             mockStatic(NameFormatPreference.class)) {
@@ -173,11 +173,33 @@ final class PoliticalMapBodyControlsTest {
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
                         .buildSharedControls().get(1);
-                radio.action().activateCell(1);
+                radio.action().activateCell(0);
 
-                assertThat(radio.selectedIndex()).isZero();
+                assertThat(radio.selectedIndex()).isEqualTo(1);
                 preferenceMock.verify(() ->
                         NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL));
+            }
+        }
+
+        @Test
+        void theNameRadiosNoSegmentTurnsTheNamesOffThroughTheSamePreference() {
+            // No is a choice on the same radio rather than a control of its own, so clicking it must
+            // write NONE through the one preference - the wiring that replaced the separate names
+            // toggle.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<NameFormatPreference> preferenceMock =
+                            mockStatic(NameFormatPreference.class)) {
+                stubControlLabels(stringsMock);
+                preferenceMock.when(NameFormatPreference::getSelectedNameFormat)
+                        .thenReturn(FactionNameFormatChoice.NONE);
+
+                var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
+                        .buildSharedControls().get(1);
+                radio.action().activateCell(2);
+
+                assertThat(radio.selectedIndex()).isEqualTo(2);
+                preferenceMock.verify(() ->
+                        NameFormatPreference.selectNameFormat(FactionNameFormatChoice.NONE));
             }
         }
     }

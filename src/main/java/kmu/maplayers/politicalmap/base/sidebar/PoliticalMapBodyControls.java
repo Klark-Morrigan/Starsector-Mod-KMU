@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * The political-map tab's body controls: the view-selector radio that picks which view paints, and
  * the view-agnostic sub-options both a faction and a later alliances view honour - the
- * uninhabited-systems checkbox and the Short/Full name-format radio. The sub-options read and write
+ * uninhabited-systems checkbox and the Full/Short/No name radio. The sub-options read and write
  * the same per-save preferences every view respects, so they live here on the tab rather than on any
  * one view; the selector reads the shared {@link PoliticalMapViewRegistry}. The host tab composes
  * these into its full body.
@@ -26,21 +26,25 @@ import java.util.List;
  * are rebuilt per call so a flipped toggle shows immediately.
  */
 public final class PoliticalMapBodyControls {
-    // The name-format radio's segments, in the order the layout lays them out left to right: Short
-    // then Full. The lit segment index maps back to this order.
-    private static final int NAME_SHORT_SEGMENT = 0;
-    private static final int NAME_FULL_SEGMENT = 1;
     // The trailing caption a radio carries when its segment labels are self-describing - the blank
     // the spec reads as "draw no caption after the row".
     private static final String NO_CAPTION = "";
+
+    // The name radio's segments, in the order the layout lays them out left to right: the two drawn
+    // forms longest-first, then No. The lit segment opens the sentence its trailing caption closes -
+    // "Full faction names", "No faction names" - which is why that caption is lowercase. The lit
+    // segment index maps back to this order.
+    private static final int NAME_FULL_SEGMENT = 0;
+    private static final int NAME_SHORT_SEGMENT = 1;
+    private static final int NAME_NONE_SEGMENT = 2;
 
     private PoliticalMapBodyControls() {
     }
 
     /**
      * @return the tab's view-agnostic sub-options, top to bottom: the uninhabited-systems checkbox
-     *         (lit when uninhabited systems draw), then the Short/Full name-format radio (its lit
-     *         segment the active format) with its trailing "Names" label
+     *         (lit when uninhabited systems draw), then the Full/Short/No name radio (its lit
+     *         segment the active choice) with its trailing "faction names" label
      */
     public static List<ControlSpec> buildSharedControls() {
         return List.of(
@@ -50,8 +54,9 @@ public final class PoliticalMapBodyControls {
                         cellIndex -> toggleUninhabitedSystems()),
                 ControlSpec.HorizontalRadio.uniform(
                         List.of(
+                                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL),
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
-                                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL)),
+                                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_NONE)),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES),
                         nameFormatRadioState(),
                         PoliticalMapBodyControls::selectNameFormatSegment));
@@ -105,22 +110,27 @@ public final class PoliticalMapBodyControls {
                 !UninhabitedOutlinePreference.isOutlineDrawn());
     }
 
-    // Writes the name format for the clicked radio segment - Short for segment 0, Full for segment 1
-    // - matching the Short-then-Full segment order the labels are supplied in. Any other index is
-    // ignored, so a stray hit outside the two known segments changes nothing.
+    // Writes the name choice for the clicked radio segment, matching the Full-Short-No segment order
+    // the labels are supplied in. No is a choice like the other two rather than a separate gate, so
+    // turning the names off is the same one write. Any other index is ignored, so a stray hit outside
+    // the three known segments changes nothing.
     private static void selectNameFormatSegment(int segmentIndex) {
-        if (segmentIndex == NAME_SHORT_SEGMENT) {
-            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT);
-        } else if (segmentIndex == NAME_FULL_SEGMENT) {
+        if (segmentIndex == NAME_FULL_SEGMENT) {
             NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL);
+        } else if (segmentIndex == NAME_SHORT_SEGMENT) {
+            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT);
+        } else if (segmentIndex == NAME_NONE_SEGMENT) {
+            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.NONE);
         }
     }
 
-    // The radio lights the segment for the active name format, matching the Short-then-Full
-    // segment order the labels are supplied in.
+    // The radio lights the segment for the active name choice, matching the Full-Short-No segment
+    // order the labels are supplied in.
     private static int nameFormatRadioState() {
-        return NameFormatPreference.getSelectedNameFormat() == FactionNameFormatChoice.SHORT
-                ? NAME_SHORT_SEGMENT
-                : NAME_FULL_SEGMENT;
+        return switch (NameFormatPreference.getSelectedNameFormat()) {
+            case FULL -> NAME_FULL_SEGMENT;
+            case SHORT -> NAME_SHORT_SEGMENT;
+            case NONE -> NAME_NONE_SEGMENT;
+        };
     }
 }

@@ -73,7 +73,7 @@ final class PoliticalMapOverlayRenderer {
         }
         // The faction names draw last of the map passes, so a name reads over its territory and the
         // debug band, but still beneath the vanilla star and constellation names (drawn after every
-        // terrain renderOnMap). The list is empty unless the names toggle is on, so this is an
+        // terrain renderOnMap). The list is empty unless the name choice draws names, so this is an
         // empty-list check when they are off.
         LabelRenderer.renderOnMap(cache.getFactionLabels(), factor, alphaMult);
     }

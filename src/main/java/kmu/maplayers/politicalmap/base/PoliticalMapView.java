@@ -133,7 +133,9 @@ public interface PoliticalMapView {
      * @param blocId     the winning bloc to name, as resolved under {@code grouping}
      * @param grouping   the grouping this pass resolved
      * @param sector     the sector, from which a faction bloc's display name is read
-     * @param nameFormat whether a faction name reads in its short or full form
+     * @param nameFormat whether a faction name reads in its short or full form; one of the
+     *                   drawn forms, since the whole label build is skipped when the player's
+     *                   choice draws no name at all
      * @return the bloc's display name, or null when none resolves
      */
     String resolveName(

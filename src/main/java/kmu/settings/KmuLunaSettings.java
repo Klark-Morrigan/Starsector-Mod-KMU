@@ -83,12 +83,6 @@ public final class KmuLunaSettings {
     private static final String LOGGER_ROOT = "kmu";
     private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
 
-    // Name-label field (Political map - visuals tab): whether each contiguous cluster
-    // draws its owner's name across it, HOI4-style. On by default - the names are the
-    // point of the merged-territory look, not a diagnostic. Layer-agnostic: gates the
-    // faction map's names today and the alliance layer's names when it lands.
-    private static final String SHOW_NAMES_FIELD =
-            "kmu_politicalMapShowNames";
     // Overlay sidebar fields (Political map - visuals tab): the small on-map box carrying
     // the overlay's tabs and controls. Padding places the box from the screen's top-left
     // corner; border width frames it (0 = no border); opacity is its background
@@ -409,9 +403,6 @@ public final class KmuLunaSettings {
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
     // data/config/LunaSettings.csv and must be kept in step with it.
-    // On by default: the cluster names are the payoff of the merged-territory map, so
-    // they show unless the player turns them off.
-    private static final boolean DEFAULT_SHOW_NAMES = true;
     // Placement from the screen's top-left corner, pixels. The top padding clears the
     // sector map's own tab strip; the left padding gives a small margin. Mirror the CSV
     // rows' defaultValues.
@@ -1363,16 +1354,6 @@ public final class KmuLunaSettings {
     public static double getPoliticalMapAnchorBandLineOpacity() {
         return LunaSettingsReader.getDouble(MOD_ID, ANCHOR_BAND_LINE_OPACITY_FIELD,
                 DEFAULT_ANCHOR_BAND_LINE_OPACITY);
-    }
-
-    /**
-     * @return whether each contiguous cluster draws its owner's name across it,
-     *         HOI4-style; on by default. Independent of the debug anchor overlay - the
-     *         two share the placement search but draw under their own toggles
-     */
-    public static boolean getPoliticalMapShowNames() {
-        return LunaSettingsReader.getBoolean(MOD_ID, SHOW_NAMES_FIELD,
-                DEFAULT_SHOW_NAMES);
     }
 
     /**

@@ -6,6 +6,7 @@ import kmlib.math.geometry.Segment;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchor;
 import kmu.settings.KmuLunaSettings;
 
@@ -43,14 +44,14 @@ public final class LabelsBuilder {
     }
 
     // Rebuilds the label list in place from the current placements: disposes the standing
-    // strings (they hold GL buffers), clears, and - only when the names toggle is on -
+    // strings (they hold GL buffers), clears, and - only when the name choice draws names -
     // mints one string per planned line. Profiled and timed on its own so the label
     // build's cost is visible next to the drawables and anchor builds; a failed font load
     // leaves the list empty. Runs at rebuild time only, never per frame.
     public static void rebuildLabels(List<Label> labels, List<ClusterAnchor> anchors) {
         disposeAll(labels);
         labels.clear();
-        if (!KmuLunaSettings.getPoliticalMapShowNames()) {
+        if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()) {
             return;
         }
         var resolvedFont = LabelFonts.loadMapLabelFont();
