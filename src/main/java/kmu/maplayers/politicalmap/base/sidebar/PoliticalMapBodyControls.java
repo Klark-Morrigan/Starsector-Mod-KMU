@@ -26,10 +26,6 @@ import java.util.List;
  * are rebuilt per call so a flipped toggle shows immediately.
  */
 public final class PoliticalMapBodyControls {
-    // The trailing caption a radio carries when its segment labels are self-describing - the blank
-    // the spec reads as "draw no caption after the row".
-    private static final String NO_CAPTION = "";
-
     // The name radio's segments, in the order the layout lays them out left to right: the two drawn
     // forms longest-first, then No. The lit segment opens the sentence its trailing caption closes -
     // "Full faction names", "No faction names" - which is why that caption is lowercase. The lit
@@ -52,14 +48,14 @@ public final class PoliticalMapBodyControls {
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
                         UninhabitedOutlinePreference.isOutlineDrawn(),
                         cellIndex -> toggleUninhabitedSystems()),
-                ControlSpec.HorizontalRadio.uniform(
+                ControlSpec.HorizontalRadio.of(
                         List.of(
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL),
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_NONE)),
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES),
                         nameFormatRadioState(),
-                        PoliticalMapBodyControls::selectNameFormatSegment));
+                        PoliticalMapBodyControls::selectNameFormatSegment)
+                        .showsCaption(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES)));
     }
 
     /**
@@ -76,11 +72,10 @@ public final class PoliticalMapBodyControls {
         for (var view : PoliticalMapViewRegistry.getViews()) {
             labels.add(KmuStrings.get(view.getSegmentLabelKey()));
         }
-        // Blank caption: the segment labels already name the views, so a trailing word would only
-        // repeat what the row reads as.
-        return ControlSpec.HorizontalRadio.uniform(
+        // No caption: the segment labels already name the views, so a trailing word would only repeat
+        // what the row reads as.
+        return ControlSpec.HorizontalRadio.of(
                 labels,
-                NO_CAPTION,
                 PoliticalMapViewRegistry.getSelectedViewIndex(),
                 PoliticalMapBodyControls::selectViewSegment);
     }

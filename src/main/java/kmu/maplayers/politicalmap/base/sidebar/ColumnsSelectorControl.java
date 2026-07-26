@@ -38,11 +38,11 @@ public final class ColumnsSelectorControl {
         for (var choice : choices) {
             labels.add(KmuStrings.get(choice.labelKey()));
         }
-        return ControlSpec.HorizontalRadio.uniform(
+        return ControlSpec.HorizontalRadio.of(
                 labels,
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_COLUMNS_CAPTION),
                 choices.indexOf(activeColumns),
-                cellIndex -> applySelection(choices, cellIndex));
+                cellIndex -> applySelection(choices, cellIndex))
+                .showsCaption(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_COLUMNS_CAPTION));
     }
 
     // Persists the column count for the clicked segment. Any index outside the two segments is ignored,
