@@ -6,6 +6,8 @@ import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
+import kmu.maplayers.base.sidebar.SidebarFoldSelection;
+
 import java.util.Set;
 
 /**
@@ -15,10 +17,12 @@ import java.util.Set;
  * so the same panel draws and routes on the sector map and on the intel screen with only the host differing
  * - one gate, one anchor, one controller per screen.
  *
- * <p>Each host owns its own {@link TabPanelController}, so the two screens' panels keep separate scroll and
- * collapse state (the on-map panel opens expanded, the intel panel docked) even though they share one
- * layout and one set of political-map controls. What a key press means is the host's too: the on-map host
- * jumps to a layer by its shortcut, while a host with no keyboard role ignores it.
+ * <p>Each host owns its own {@link TabPanelController} and its own {@link SidebarFoldSelection}, so the two
+ * screens' panels keep separate scroll and collapse state - and reopen at their own folds - even though
+ * they share one layout and one set of political-map controls. What a key press means is the host's too:
+ * the on-map host jumps to a layer by its shortcut, while a host with no keyboard role ignores it.
+ * {@link BaseSidebarHost} carries the plumbing common to every host, leaving a concrete host only the
+ * questions that genuinely differ between screens.
  */
 public interface SidebarHost {
 
@@ -48,6 +52,13 @@ public interface SidebarHost {
      *         frames
      */
     TabPanelController getController();
+
+    /**
+     * @return where this host's panel fold is read from and recorded to. A caller offers it the settled fold
+     *         each frame the panel draws; whether that outlives the session is the selection's business, not
+     *         the caller's
+     */
+    SidebarFoldSelection getFoldSelection();
 
     /**
      * Handles a key press while the sidebar is live, for a host with a keyboard role (the on-map host jumps

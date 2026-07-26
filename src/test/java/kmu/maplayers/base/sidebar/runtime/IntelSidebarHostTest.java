@@ -1,24 +1,41 @@
 package kmu.maplayers.base.sidebar.runtime;
 
+import com.fs.starfarer.api.campaign.rules.MemoryAPI;
+
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
- * Pins the intel overlay's gate and the frame edges it strokes. The gate is the map visor's rectangle
- * rather than the tab-open read, so the sidebar stays off the sub-tabs that share the intel tab. The
- * edges drop the borders shared with the visor - the left always (flush against the visor's left edge)
- * and the bottom only when the box reaches the visor's bottom - and keep the top and right, which sit
- * inside the visor.
+ * Pins the intel overlay's gate, the frame edges it strokes, and the fold it opens at. The gate is the map
+ * visor's rectangle rather than the tab-open read, so the sidebar stays off the sub-tabs that share the
+ * intel tab. The edges drop the borders shared with the visor - the left always (flush against the visor's
+ * left edge) and the bottom only when the box reaches the visor's bottom - and keep the top and right,
+ * which sit inside the visor. The frozen fold key is pinned as a literal, since renaming it silently
+ * re-docks every existing save.
  */
 final class IntelSidebarHostTest {
     // A visor with its bottom edge at y = 50, so a box bottom at or within a pixel of 50 is flush with it.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
+
+    // The live fold key, pinned as a literal: a rename must break this test rather than shipping and
+    // quietly re-docking every save that had the rail open.
+    private static final String DOCKED_KEY = "$kmu_political_intel_sidebar_docked";
+
+    private static final float FULLY_DOCKED = 1f;
+    private static final float FULLY_EXPANDED = 0f;
+    private static final float TOLERANCE = 0.0001f;
 
     @Nested
     class IsOverlayShowing {
@@ -130,4 +147,85 @@ final class IntelSidebarHostTest {
             assertThat(IntelSidebarHost.layoutBorderEdges()).doesNotContain(BoxEdge.LEFT);
         }
     }
+
+    @Nested
+    class RestoreFoldFromSave {
+
+        @Test
+        void restoreFoldFromSaveOpensDockedWhenTheSaveHoldsNoChoiceYet() {
+            // A fresh save has never written the key, so the default applies and the rail stays clear of
+            // the visor until the player expands it.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(DOCKED_KEY)).thenReturn(false);
+
+                var host = new IntelSidebarHost(new IntelScreenViewFake());
+                host.restoreFoldFromSave();
+
+                assertThat(host.getController().getCollapseFraction())
+                        .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
+            }
+        }
+
+        @Test
+        void restoreFoldFromSaveOpensExpandedWhenTheSaveWasLeftWithTheRailOpen() {
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(false);
+
+                var host = new IntelSidebarHost(new IntelScreenViewFake());
+                host.restoreFoldFromSave();
+
+                assertThat(host.getController().getCollapseFraction())
+                        .isCloseTo(FULLY_EXPANDED, within(TOLERANCE));
+                assertThat(host.getController().isFullyExpanded()).isTrue();
+            }
+        }
+
+        @Test
+        void restoreFoldFromSaveOpensDockedWhenTheSaveWasLeftDocked() {
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(true);
+
+                var host = new IntelSidebarHost(new IntelScreenViewFake());
+                host.restoreFoldFromSave();
+
+                assertThat(host.getController().getCollapseFraction())
+                        .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
+            }
+        }
+
+        @Test
+        void restoreFoldFromSaveDropsTheFoldTheHostCarriedFromAPreviousSave() {
+            // Loading a second save in one run must not inherit the first save's rail: the host is a
+            // process-lifetime singleton, so the reseed is the only thing that clears the old fold.
+            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
+                    mockStatic(SectorMemoryAccess.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
+                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(false);
+
+                var host = new IntelSidebarHost(new IntelScreenViewFake());
+                host.restoreFoldFromSave();
+                assertThat(host.getController().isFullyExpanded()).isTrue();
+
+                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(true);
+                host.restoreFoldFromSave();
+
+                assertThat(host.getController().getCollapseFraction())
+                        .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
+            }
+        }
+    }
+
 }

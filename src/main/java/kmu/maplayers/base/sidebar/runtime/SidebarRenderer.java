@@ -45,6 +45,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // loadable path. The tab face is the resolver's, since it both measures and draws the tabs.
     private static final String BODY_FONT = "insignia15LTaa";
 
+    // The collapse fraction a fully docked body reports; the eased curve lands exactly on it at the end,
+    // so an equality-or-above test reads "settled at the docked rail" rather than "still folding".
+    private static final float FULLY_DOCKED_FRACTION = 1f;
+
     // The screen this renderer draws the sidebar on: its gate, placement, controller, and view-state text.
     private final SidebarHost host;
 
@@ -94,6 +98,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         host.getController().advanceCollapse(
                 elapsedSinceLastFrame(),
                 KmuLunaSettings.getPoliticalMapSidebarCollapseSeconds());
+        // Offer the freshly-advanced fold to the host's fold selection, which decides for itself whether
+        // that end is worth storing. Here rather than in the input pass because a fold is only unambiguous
+        // once it settles, which happens frames after the handle press that started it.
+        recordSettledFold(host);
         // The same placement the input listener hit-tests, resolved from one source so the drawn box and the
         // clickable box line up. Null means there is nothing to draw - the tab font could not load, or the
         // host's anchor is gone - so the panel stays absent, logged once.
@@ -126,6 +134,28 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
                 border,
                 notchState,
                 opacity);
+    }
+
+    // Offers the host's fold selection the end its panel has settled at, and nothing at all while the panel
+    // is still folding. Which end that is comes from the two things the panel publishes: the collapse
+    // fraction, which reaches its docked end exactly, and the fully-expanded flag, which already separates
+    // a panel resting open from one that has just turned away from that end without moving yet.
+    static void recordSettledFold(SidebarHost host) {
+        var settledFold = resolveSettledFold(
+                host.getController().getCollapseFraction(),
+                host.getController().isFullyExpanded());
+        if (settledFold != null) {
+            host.getFoldSelection().recordFold(settledFold);
+        }
+    }
+
+    // Which end the panel has settled at, or null while it has reached neither and there is nothing to
+    // record.
+    static Boolean resolveSettledFold(float collapseFraction, boolean isFullyExpanded) {
+        if (collapseFraction >= FULLY_DOCKED_FRACTION) {
+            return Boolean.TRUE;
+        }
+        return isFullyExpanded ? Boolean.FALSE : null;
     }
 
     // Real seconds since the previous drawn frame, off the wall clock so the fold keeps animating on the

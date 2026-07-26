@@ -130,6 +130,17 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         try {
+            // Open both sidebars at the folds this save was left at. Per load rather than at construction:
+            // the hosts are process-lifetime singletons built before any sector exists, so this is the only
+            // point they can read the save - and it also stops the previous save's folds leaking into this
+            // one. Each host reads its own key, so the two screens' folds stay independent.
+            MapSidebarHost.INSTANCE.restoreFoldFromSave();
+            IntelSidebarHost.INSTANCE.restoreFoldFromSave();
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to restore KMU political map sidebar folds", exception);
+        }
+
+        try {
             installPoliticalMapHoverTooltip(Global.getSector());
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU political map hover tooltip", exception);

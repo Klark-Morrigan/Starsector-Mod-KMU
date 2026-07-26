@@ -3,7 +3,6 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
-import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
@@ -13,6 +12,7 @@ import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
+import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
@@ -25,23 +25,27 @@ import java.util.Set;
  * key. This is the on-map sibling of {@link IntelSidebarHost}; the two differ only in gate, anchor,
  * controller, and keyboard role, and both feed the shared {@link SidebarRenderer} / {@link SidebarInput}.
  *
- * <p>Its panel opens expanded, since the on-map sidebar is the player's primary way in to the political map
- * and has the screen width to sit open. The bound layer shortcuts are the on-map host's alone - the intel
- * host has none - so the key-to-layer jump lives here, not in the shared input listener.
+ * <p>Its panel reopens at the fold this save was left at, and a save that has never folded it opens out,
+ * since the on-map sidebar is the player's primary way in to the political map and has the screen width to
+ * sit open. The bound layer shortcuts are the on-map host's alone - the intel host has none - so the
+ * key-to-layer jump lives here, not in the shared input listener.
  */
-public final class MapSidebarHost implements SidebarHost {
+public final class MapSidebarHost extends BaseSidebarHost {
     /** The one on-map host; the render and input listeners registered for the sector map reference it. */
     public static final MapSidebarHost INSTANCE = new MapSidebarHost();
 
-    // The on-map panel's scroll and collapse state, opening expanded. Held here so the map panel keeps its
-    // own state, separate from the intel panel's.
-    private final TabPanelController controller = new TabPanelController();
+    // Save-serialised key of this panel's resting fold; frozen once shipped, since renaming it silently
+    // returns every existing save to the opening default.
+    private static final String MAP_SIDEBAR_DOCKED_KEY = "$kmu_political_map_sidebar_docked";
 
     // The on-map screen's active-layer pick: the registry's own persisted selection, the one the map
     // overlay follows. Held here so the map's tab is its own, unmoved by a switch on the intel screen.
     private final ActiveLayerSelection layerSelection = MapLayerRegistry.getMapSelection();
 
     private MapSidebarHost() {
+        // Opens out on a save that has never folded it: this panel is the player's primary way in to the
+        // political map and has the screen width to sit open, so out is the useful first sight of it.
+        super(new PersistedSidebarFold(MAP_SIDEBAR_DOCKED_KEY, false));
     }
 
     @Override
@@ -54,7 +58,7 @@ public final class MapSidebarHost implements SidebarHost {
         // The on-map sidebar floats free on the screen, so it frames and reserves all four edges - the same
         // full set its stroke uses.
         return LiveSidebarPlacement.resolveMapPlacement(
-                controller,
+                getController(),
                 layerSelection,
                 BoxEdge.ALL);
     }
@@ -64,11 +68,6 @@ public final class MapSidebarHost implements SidebarHost {
         // The on-map sidebar floats free on the screen, touching no other panel's edge, so it frames all
         // four sides.
         return BoxEdge.ALL;
-    }
-
-    @Override
-    public TabPanelController getController() {
-        return controller;
     }
 
     @Override
