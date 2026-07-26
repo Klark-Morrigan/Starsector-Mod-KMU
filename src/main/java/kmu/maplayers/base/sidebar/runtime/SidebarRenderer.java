@@ -29,9 +29,8 @@ import org.apache.log4j.Logger;
  * renderer's; this class owns only the wiring KMLib cannot: when to draw (the host's gate), which colours
  * and fonts to draw in (a {@link WidgetStyle} built from the live player colours and settings), advancing
  * the collapse off real time (the campaign is paused while these screens are open, so a game-time delta
- * would freeze the fold), flushing the body controls' deferred settings writes when the overlay closes, and
- * the view-state log. One instance per host, so the sector map and the intel screen each get their own frame
- * clock and log dedupe.
+ * would freeze the fold), and the view-state log. One instance per host, so the sector map and the intel
+ * screen each get their own frame clock and log dedupe.
  *
  * <p>Both screens are vanilla core-UI surfaces with no seam to attach a mod panel, so the sidebar is drawn
  * in UI coordinates through {@link CampaignUIRenderingListener} - specifically the above-tooltips pass, the
@@ -53,11 +52,6 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // steady state is one line, every change a fresh one. Null to start, so the first pass logs and thereby
     // proves the listener is registered and fires.
     private String lastLoggedLine;
-
-    // Whether the overlay was on screen last pass, so the transition to off can be caught. The body
-    // controls write their settings through LunaLib's deferred path (live value, batched disk write), so
-    // leaving the overlay is when a session's edits are flushed to disk.
-    private boolean wasOverlayShowing;
 
     // Wall-clock nanos at the previous drawn frame, so the collapse animation advances by real elapsed
     // time. A wall clock rather than the campaign's own because these screens are open on a paused game
@@ -86,12 +80,6 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // The only pass composited after the entire core screen (and its tooltips), so it is the sole layer
         // the opaque core-UI screen cannot occlude - the panel has to draw here.
         boolean isOverlayShowing = host.isOverlayShowing();
-        // On the pass the overlay turns off - the player left the screen or a signal blanked it - persist
-        // the body controls' deferred writes, collapsing the session's edits into one write.
-        if (wasOverlayShowing && !isOverlayShowing) {
-            KmuLunaSettings.flushPendingWrites();
-        }
-        wasOverlayShowing = isOverlayShowing;
         if (!isOverlayShowing) {
             // Drop the frame clock so the next re-open advances from nothing rather than by the whole gap
             // the screen was closed, which would otherwise snap a half-folded panel straight to its end.
