@@ -18,8 +18,8 @@ import java.util.Set;
 
 /**
  * The intel screen's binding for the political-map sidebar: it shows while the intel screen's embedded map
- * preview (the "visor") is lit, overlays the panel on that visor anchored to its top-left, and has no
- * keyboard role. This is the intel-screen sibling of {@link MapSidebarHost}; the two feed the shared {@link
+ * preview (the "visor") is lit and drawing the ordinary map, overlays the panel on that visor anchored to
+ * its top-left, and has no keyboard role. This is the intel-screen sibling of {@link MapSidebarHost}; the two feed the shared {@link
  * SidebarRenderer} / {@link SidebarInput} and differ only in gate, anchor, controller, keys, and which
  * frame edges they stroke.
  *
@@ -30,14 +30,17 @@ import java.util.Set;
  * Because it sits flush against the visor's edges, it omits the
  * border edges it shares with the visor - the left always, and the bottom when the box reaches the visor's
  * bottom - so its frame reads as part of the visor rather than a second box drawn over it. The "is the
- * sidebar live" gate is exactly
- * "is the visor lit": {@link IntelScreenView#getMapVisorRect()} returns the visor rectangle while it is lit and
+ * sidebar live" gate is "is there a live canvas under it":
+ * {@link IntelScreenView#getMapVisorRect()} returns the visor rectangle while it is lit and
  * {@code null} when the intel tab is not showing, one of the sub-tabs that share it (Planets, Factions) is up
  * instead, or a large-description item has blanked the preview, so a non-null rectangle is both the gate and
  * the anchor. Gating on the rectangle rather than on {@link IntelScreenView#isIntelTabOpen()} is what keeps
- * the sidebar off those sibling sub-tabs, which are the same core tab but carry no visor. The visor rectangle
- * reaches the game's concrete intel panel through the KMLib seam, which fails closed to {@code null}, so a
- * missing link simply hides the sidebar.
+ * the sidebar off those sibling sub-tabs, which are the same core tab but carry no visor. Starscape mode on
+ * that visor ({@link IntelScreenView#isMapStarscapeModeOn()}) hides the sidebar too: the game paints the
+ * starfield in place of the map and suppresses the terrain layers the political overlay rides, leaving the
+ * controls nothing visible to drive. The intel screen carries its own starscape filter, so this follows the
+ * visor's own setting and not the full campaign map's. Both reads reach the game's concrete intel panel
+ * through the KMLib seam, which fails closed, so a missing link simply hides the sidebar.
  */
 public final class IntelSidebarHost extends BaseSidebarHost {
     /**
@@ -78,9 +81,12 @@ public final class IntelSidebarHost extends BaseSidebarHost {
 
     @Override
     public boolean isOverlayShowing() {
-        // The sidebar is live exactly while the visor is lit; a null rectangle covers the intel tab not
-        // showing and a blanked preview both.
-        return intelScreen.getMapVisorRect() != null;
+        // Two readings, both asking whether there is a live canvas under the panel. The rectangle covers
+        // the intel tab not showing and a blanked preview alike, and starscape mode covers the visor being
+        // lit but drawing the starfield: the game paints that in place of the ordinary map and suppresses
+        // the terrain layers above it, so the political overlay these controls drive is not on screen and
+        // the sidebar steps aside until the filter goes off again.
+        return intelScreen.getMapVisorRect() != null && !intelScreen.isMapStarscapeModeOn();
     }
 
     @Override
@@ -117,9 +123,14 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         // The seam reports the visor's absence as one state, so the diagnostic names both ways it can
         // arise rather than claiming one: a sibling sub-tab (Planets, Factions) is showing, or a
         // large-description item has blanked the preview.
-        return intelScreen.getMapVisorRect() != null
-                ? "intel tab; visor lit"
-                : "intel tab; no visor (sub-tab or blanked preview)";
+        if (intelScreen.getMapVisorRect() == null) {
+            return "intel tab; no visor (sub-tab or blanked preview)";
+        }
+        // A lit visor still gates on the starscape filter, so the log says which of the two hid a sidebar
+        // that is missing from a screen plainly showing the map.
+        return intelScreen.isMapStarscapeModeOn()
+                ? "intel tab; visor lit; starscape on"
+                : "intel tab; visor lit; starscape off";
     }
 
     // Which frame edges the box reserves inset space for, decided before layout so a dropped edge collapses

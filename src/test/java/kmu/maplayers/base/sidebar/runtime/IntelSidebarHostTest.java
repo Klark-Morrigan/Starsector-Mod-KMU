@@ -20,7 +20,8 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the intel overlay's gate, the frame edges it strokes, and the fold it opens at. The gate is the map
  * visor's rectangle rather than the tab-open read, so the sidebar stays off the sub-tabs that share the
- * intel tab. The edges drop the borders shared with the visor - the left always (flush against the visor's
+ * intel tab, and it drops again when that visor turns to the starscape, which leaves the controls no
+ * visible overlay to drive. The edges drop the borders shared with the visor - the left always (flush against the visor's
  * left edge) and the bottom only when the box reaches the visor's bottom - and keep the top and right,
  * which sit inside the visor. The frozen fold key is pinned as a literal, since renaming it silently
  * re-docks every existing save.
@@ -41,10 +42,11 @@ final class IntelSidebarHostTest {
     class IsOverlayShowing {
 
         @Test
-        void isOverlayShowingIsTrueWhileTheMapVisorIsLit() {
+        void isOverlayShowingIsTrueWhileTheMapVisorIsLitAndOutOfStarscapeMode() {
             var intelScreenFake = new IntelScreenViewFake();
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(MAP_VISOR);
+            intelScreenFake.setMapStarscapeModeOn(false);
 
             assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing()).isTrue();
         }
@@ -57,6 +59,18 @@ final class IntelSidebarHostTest {
             var intelScreenFake = new IntelScreenViewFake();
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(null);
+
+            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing()).isFalse();
+        }
+
+        @Test
+        void isOverlayShowingIsFalseWhenTheLitVisorIsInStarscapeMode() {
+            // Starscape mode replaces the map with the starfield and suppresses the terrain layers the
+            // political overlay rides, so the visor is lit with nothing for the controls to drive.
+            var intelScreenFake = new IntelScreenViewFake();
+            intelScreenFake.setIntelTabOpen(true);
+            intelScreenFake.setMapVisorRect(MAP_VISOR);
+            intelScreenFake.setMapStarscapeModeOn(true);
 
             assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing()).isFalse();
         }
