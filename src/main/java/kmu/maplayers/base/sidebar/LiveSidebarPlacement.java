@@ -12,6 +12,7 @@ import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
+import kmlib.starsector.ui.widgets.tabs.TabStyle;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
@@ -31,11 +32,12 @@ import java.util.Set;
  * screen. Both passes resolve through here each frame rather than each computing its own, so the tabs a
  * click resolves against are the tabs that were drawn; without a single source the two could drift (a
  * settings change landing between the render and the input pass would move the drawn box out from under
- * the hit-test). The two entry points differ only in where the panel anchors:
+ * the hit-test). The two entry points differ in where the panel anchors and how tall it stands its tabs:
  * {@link #resolveMapPlacement} hangs it from the screen top-left for the on-map sidebar, and {@link
  * #resolveIntelPlacement} anchors it to the visor's top-left, overlaying the intel screen's map preview.
  * Both lay out the same body; each takes the host's own {@link TabPanelController}, so the map and intel
- * panels keep separate scroll and collapse state while sharing one layout.
+ * panels keep separate scroll and collapse state while sharing one layout, and each injects its own
+ * {@link TabStyle}, so the two size their tab bands to the chrome they sit beside.
  *
  * <p>The layer selector is one {@link ControlSpec.Tabs} control whose action selects the layer at
  * the clicked index, so the layer switch rides on the control itself and the input listener needs no tab
@@ -51,6 +53,14 @@ public final class LiveSidebarPlacement {
      * measured them in.
      */
     public static final String TAB_FONT = "orbitron20aa";
+
+    // The two screens size their tab bands differently because they sit in different company. The on-map
+    // sidebar floats free beside the vanilla Sector/System tabs and matches their weight, while the intel
+    // sidebar overlays the visor under the map toggles and reads tighter so it crowds the preview less.
+    // Both heights are content-space: each panel strokes its own top border above the band, so the drawn
+    // strip stands the configured border width taller than the number here.
+    private static final TabStyle MAP_TAB_STYLE = new TabStyle(19f);
+    private static final TabStyle INTEL_TAB_STYLE = new TabStyle(17f);
 
     private LiveSidebarPlacement() {
     }
@@ -74,6 +84,7 @@ public final class LiveSidebarPlacement {
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
                 buildMapPadding(),
+                MAP_TAB_STYLE,
                 controller,
                 selection,
                 borderedEdges);
@@ -101,6 +112,7 @@ public final class LiveSidebarPlacement {
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
                 buildIntelPadding(mapVisorRect),
+                INTEL_TAB_STYLE,
                 controller,
                 selection,
                 borderedEdges);
@@ -120,12 +132,14 @@ public final class LiveSidebarPlacement {
                 Math.round(mapVisorRect.x()));
     }
 
-    // Lays the panel out for the given anchor and controller - the one path both host entry points share,
-    // so the map and intel panels are the same layout differing only in where they anchor. Returns null
-    // when the tab font cannot load - the layout snaps tabs to measured text and cannot run without it -
-    // so the caller draws nothing and consumes nothing that frame.
+    // Lays the panel out for the given anchor, tab style, and controller - the one path both host entry
+    // points share, so the map and intel panels are the same layout differing only in where they anchor and
+    // how tall they stand their tab band. Returns null when the tab font cannot load - the layout snaps tabs
+    // to measured text and cannot run without it - so the caller draws nothing and consumes nothing that
+    // frame.
     private static TabPanelPlacement resolvePlacement(
             Padding padding,
+            TabStyle tabStyle,
             TabPanelController controller,
             ActiveLayerSelection selection,
             Set<BoxEdge> borderedEdges) {
@@ -146,6 +160,7 @@ public final class LiveSidebarPlacement {
                 // The edges the host frames; a dropped edge collapses its reserved inset so the box sits
                 // flush against the neighbour the host meant to blend into.
                 borderedEdges,
+                tabStyle,
                 buildTabsSpec(layers, activeLayer, selection),
                 activeLayer.getBodyControls(),
                 measurer,
