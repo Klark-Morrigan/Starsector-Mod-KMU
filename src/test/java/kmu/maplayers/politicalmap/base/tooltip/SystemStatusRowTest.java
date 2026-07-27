@@ -11,6 +11,8 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.ui.widgets.TooltipLabelPlacement;
+
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -96,8 +98,8 @@ final class SystemStatusRowTest {
                     .orElseThrow();
 
             assertThat(row.indent()).isCloseTo(NO_INDENT, within(TOLERANCE));
-            assertThat(row.isOutsideCrestColumn()).isTrue();
-            assertThat(row.crestSpritePath()).isNull();
+            assertThat(row.labelPlacement()).isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
+            assertThat(row.hasCrest()).isFalse();
             assertThat(row.value()).isEmpty();
         }
 
