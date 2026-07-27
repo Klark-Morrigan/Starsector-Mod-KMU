@@ -4,7 +4,7 @@ The faction names drawn across the political map, and the geometry that decides 
 sits. An *independent overlay*: it is layered over whichever base view is live and is not part of
 the production fills and borders, so it owns none of the territory draw packets.
 
-Part of Klark Morrigan's Utilities; see the
+Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; see the
 [mod README](../../../../../../../../../README.md) for project context.
 
 ## Index

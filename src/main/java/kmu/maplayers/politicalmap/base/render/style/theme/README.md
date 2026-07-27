@@ -4,7 +4,7 @@ The player's authored choices, as value types. Everything here is a record (plus
 behaviour beyond `ElementStyle.isDrawn` - what the player picked, held in the shape the rest of the
 map reads it in.
 
-Part of Klark Morrigan's Utilities; see the
+Part of [the render style layer](../README.md), in Klark Morrigan's Utilities; see the
 [mod README](../../../../../../../../../../README.md) for project context.
 
 ## Index

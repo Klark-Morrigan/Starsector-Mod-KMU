@@ -4,7 +4,7 @@ The production draw of the political map: each faction's coloured region, its na
 and the per-cell province seams and factionless outlines. This is the base layer the labels
 overlay sits over - what the player reads as "who holds what".
 
-Part of Klark Morrigan's Utilities; see the
+Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; see the
 [mod README](../../../../../../../../../README.md) for project context.
 
 ## Index

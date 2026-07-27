@@ -5,7 +5,7 @@ into the concrete colours, widths, and line patterns each territory draws in. Ev
 read once per map rebuild and baked into the flat draw packets, so the renderer downstream stays
 a pure GL loop with no knowledge of settings.
 
-Part of Klark Morrigan's Utilities; see the
+Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; see the
 [mod README](../../../../../../../../../README.md) for project context.
 
 ## Index
