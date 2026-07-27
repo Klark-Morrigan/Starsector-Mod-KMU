@@ -18,6 +18,7 @@ Part of [map layers](../README.md); see the
 - [Claim extensions](#claim-extensions)
 - [How a view drives the pipeline](#how-a-view-drives-the-pipeline)
 - [Where each part lives](#where-each-part-lives)
+- [When the map is rebuilt](#when-the-map-is-rebuilt)
 
 ## What the player sees
 
@@ -102,9 +103,21 @@ fill states are [ownership resolution](base/politics/ownership/README.md).
 - **[Render style layer](base/render/style/README.md)** - how player settings become each
   territory's colours, widths, and opacities.
 - **[Cluster-name overlay](base/render/labels/README.md)** - how bloc names are placed and drawn.
+- **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters everything above is
+  shaped out of.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
-`geometry`, `visibility`, `refresh`, `hover`, `tooltip`, and `sidebar` - the last being this layer's
-own body controls, not the box they sit in, which is [the sidebar](../base/sidebar/README.md) one
-level up. The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
+`visibility`, `refresh`, `hover`, `tooltip`, and `sidebar` - the last being this layer's own body
+controls, not the box they sit in, which is [the sidebar](../base/sidebar/README.md) one level up. The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
 up; how a layer is picked and what each screen remembers is [map layers](../README.md).
+
+## When the map is rebuilt
+
+Nothing above is redrawn from scratch per frame. The overlay holds its cells, its territories, and
+its labels, and a frame's normal cost is a few int compares against the revisions each was built
+against. A colony changing hands re-shapes that system and its neighbours; a settings or toggle
+change restyles over the standing cells; only a change to the *set* of drawn systems rebuilds the
+partition.
+
+[The caching notes](../../../../../../docs/dev/caching.md) own that model in full - the signals, the
+caches, and the four rebuild paths.
