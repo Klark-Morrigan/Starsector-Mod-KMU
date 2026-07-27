@@ -8,12 +8,8 @@ import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.font.StarsectorFont;
-import kmlib.starsector.ui.font.TextFace;
-import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.render.gl.NotchState;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
-import kmlib.starsector.ui.render.gl.TabRenderStyle;
-import kmlib.starsector.ui.render.gl.VanillaTabColors;
 import kmlib.starsector.ui.render.gl.WidgetStyle;
 import kmlib.starsector.ui.widgets.BoxBorder;
 
@@ -180,9 +176,9 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     }
 
     // The sidebar's look, built each frame from the live player colours: a black body backdrop (faded
-    // by the opacity setting), the base and bright player accents, the map's own tab colour scheme, the
-    // orbitron tab face at the layout's tab size, the insignia body face, and the collapse handle's
-    // chevron shades for the colour the player picked for it.
+    // by the opacity setting), the base and bright player accents, the map's own tab style (its colour
+    // scheme and orbitron face; the paint pass reads no band height, each screen having laid its own out),
+    // the insignia body face, and the collapse handle's chevron shades for the colour the player picked.
     private static WidgetStyle buildStyle() {
         var accent = StarsectorUiColor.VANILLA_PLAYER_BASE.resolve();
         var brightAccent = StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve();
@@ -191,19 +187,14 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
                 // translucent-black pane the map shows through rather than a solid block. Black, not the
                 // player-dark tint, so the body stays neutral - only the tabs header, accents, and the
                 // notch carry colour. This is the body fill alone; the tabs' own fills live in the
-                // TabRenderStyle below, a separate field, so the body's colour never couples to the
-                // header's.
+                // TabStyle below, a separate field, so the body's colour never couples to the header's.
                 // The header also opts out of this opacity fade and paints opaque (see
                 // TabPanelRenderer.HEADER_OPACITY), so the tabs read solid over the faded body.
                 StarsectorUiColor.BLACK.resolve(), // Panel fill.
                 accent,
                 brightAccent,
                 BODY_FONT,
-                new TabRenderStyle(
-                        VanillaTabColors.mapTabs(),
-                        new TextFace(
-                                LiveSidebarPlacement.TAB_FONT,
-                                ControlStripLayout.TAB_FONT_SIZE)),
+                LiveSidebarPlacement.buildMapTabStyle(),
                 SidebarPalettes.resolveNotchColors(
                         KmuLunaSettings.getPoliticalMapSidebarChevronColor(),
                         accent,

@@ -126,9 +126,14 @@ the previous save's scroll offset in the same move.
 ## Styling
 
 `SidebarRenderer.buildStyle` composes the `WidgetStyle` each frame from live values: a black body
-fill faded by the opacity setting, the player faction's base and bright accents, `VanillaTabColors`
-for the tab scheme, the `orbitron20aa` tab face (`LiveSidebarPlacement.TAB_FONT`, shared with the
-measurer so a snapped tab matches its text) and the `insignia15LTaa` body face.
+fill faded by the opacity setting, the player faction's base and bright accents, the insignia body
+face, and `LiveSidebarPlacement.buildMapTabStyle()` for the tabs.
+
+That one `TabStyle` carries a strip end to end - band height, `VanillaTabColors` scheme, and the
+orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
+from and a snapped tab width cannot part from the text drawn into it. The two screens differ only in
+band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the paint pass does not
+read. Both faces are named through KMLib's `StarsectorFont` enum rather than by atlas basename.
 
 `style/SidebarPalettes` maps the player's `NotchChevronColorChoice` to the chevron's resting and
 hovered shades. It is kept out of the renderer so the "which colour does this choice mean" rules

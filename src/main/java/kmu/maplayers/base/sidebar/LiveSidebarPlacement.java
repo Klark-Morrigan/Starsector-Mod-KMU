@@ -9,13 +9,16 @@ import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.input.TabPanelController;
+import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
 import kmlib.starsector.ui.widgets.tabs.TabStyle;
+import kmlib.starsector.ui.widgets.tabs.VanillaTabColors;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
@@ -45,16 +48,14 @@ import java.util.Set;
  * <p>The layer selector is one {@link ControlSpec.Tabs} control whose action selects the layer at
  * the clicked index, so the layer switch rides on the control itself and the input listener needs no tab
  * callback. Layout snaps each tab to its measured label, so the placement needs the tab font's width
- * measurer; the face lives here as the single source both this measurement and the renderer's tab
- * paint read, so a snapped tab width matches the text drawn into it.
+ * measurer; the face travels inside the same {@link TabStyle} the renderer paints from, so a snapped tab
+ * width matches the text drawn into it.
  */
 public final class LiveSidebarPlacement {
-    /**
-     * The tabs read in the sector map's own orbitron face - the AA orbitron atlas vanilla uses for
-     * its map tabs, scaled to the tab size. Public so the renderer paints the tabs in the same face
-     * this measured them in.
-     */
-    public static final StarsectorFont TAB_FONT = StarsectorFont.VANILLA_ORBITRON_20AA;
+    // The tabs read in the sector map's own orbitron face - the AA orbitron atlas vanilla uses for its
+    // map tabs, scaled to the tab size. The measurer loads it and both tab styles below carry it, so a
+    // snapped tab width matches the text drawn into it.
+    private static final StarsectorFont TAB_FONT = StarsectorFont.VANILLA_ORBITRON_20AA;
 
     // The two screens size their tab bands differently because they sit in different company. The on-map
     // sidebar floats free beside the vanilla Sector/System tabs and matches their weight, while the intel
@@ -62,11 +63,24 @@ public final class LiveSidebarPlacement {
     // Both heights are content-space: each panel strokes its own top border above the band, so the drawn
     // strip stands the configured border width taller than the number here.
     // Package-private, as the intel anchor math beside them is, so the divergence the two screens depend on
-    // is checkable without standing up a live sector.
-    static final TabStyle MAP_TAB_STYLE = new TabStyle(19f);
-    static final TabStyle INTEL_TAB_STYLE = new TabStyle(17f);
+    // is checkable without standing up a live sector - the styles built from them resolve live colours and
+    // so cannot be reached without a sector.
+    static final float MAP_HEADER_BAND_HEIGHT = 19f;
+    static final float INTEL_HEADER_BAND_HEIGHT = 17f;
 
     private LiveSidebarPlacement() {
+    }
+
+    /**
+     * The on-map sidebar's tab look: the map band height over the vanilla map-tab colour scheme and the
+     * orbitron face. Public because the render pass paints its tabs from the same value the layout
+     * measured them against, so a drawn tab cannot part from the band it was snapped into. Resolves the
+     * live palette on each call, so the scheme tracks a player-faction recolour.
+     *
+     * @return the on-map sidebar's tab style
+     */
+    public static TabStyle buildMapTabStyle() {
+        return buildTabStyle(MAP_HEADER_BAND_HEIGHT);
     }
 
     /**
@@ -88,7 +102,7 @@ public final class LiveSidebarPlacement {
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
                 buildMapPadding(),
-                MAP_TAB_STYLE,
+                buildMapTabStyle(),
                 controller,
                 selection,
                 borderedEdges);
@@ -116,10 +130,18 @@ public final class LiveSidebarPlacement {
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
                 buildIntelPadding(mapVisorRect),
-                INTEL_TAB_STYLE,
+                buildIntelTabStyle(),
                 controller,
                 selection,
                 borderedEdges);
+    }
+
+    // The intel sidebar's tab look: the tighter intel band over the same colour scheme and face the map
+    // strip reads in, the two screens differing today only in how tall they stand the band.
+    // Package-private beside the intel anchor math it belongs with - only this class lays the intel panel
+    // out, and the render pass paints both screens' tabs in the map scheme.
+    static TabStyle buildIntelTabStyle() {
+        return buildTabStyle(INTEL_HEADER_BAND_HEIGHT);
     }
 
     // The intel-screen anchor, expressed as screen padding so the top-left-anchored layout lands the panel
@@ -203,6 +225,17 @@ public final class LiveSidebarPlacement {
                 mapVisorRect,
                 Global.getSettings().getScreenHeight(),
                 KmuLunaSettings.getPoliticalMapIntelSidebarPaddingTop());
+    }
+
+    // A tab style at the given band height, over the shared paint: the vanilla map-tab colour scheme,
+    // resolved live so it tracks a player-faction recolour, and the orbitron face at the layout's tab
+    // size - the same face the measurer snaps tabs with. One helper rather than each screen naming the
+    // paint, so the two can only differ in the height they are asked for.
+    private static TabStyle buildTabStyle(float headerBandHeight) {
+        return new TabStyle(
+                headerBandHeight,
+                VanillaTabColors.mapTabs(),
+                new TextFace(TAB_FONT, ControlStripLayout.TAB_FONT_SIZE));
     }
 
     // Builds the layer selector as one tabs control: each layer's label and current shortcut key in

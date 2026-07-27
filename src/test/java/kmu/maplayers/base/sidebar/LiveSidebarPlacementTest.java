@@ -54,24 +54,24 @@ final class LiveSidebarPlacementTest {
     }
 
     @Nested
-    class TabStyles {
+    class TabBandHeights {
 
         @Test
-        void tabStylesStandTheIntelBandShorterThanTheMapBand() {
+        void tabBandHeightsStandTheIntelBandShorterThanTheMapBand() {
             // The intel sidebar overlays the visor beneath the vanilla map toggles and reads tighter than the
-            // on-map one, which floats free beside the Sector/System tabs. Wiring both screens to one style
+            // on-map one, which floats free beside the Sector/System tabs. Wiring both screens to one height
             // would lay out and draw without complaint, so the divergence is pinned here rather than left to
             // be noticed on screen.
-            assertThat(LiveSidebarPlacement.INTEL_TAB_STYLE.headerBandHeight())
-                    .isLessThan(LiveSidebarPlacement.MAP_TAB_STYLE.headerBandHeight());
+            assertThat(LiveSidebarPlacement.INTEL_HEADER_BAND_HEIGHT)
+                    .isLessThan(LiveSidebarPlacement.MAP_HEADER_BAND_HEIGHT);
         }
 
         @Test
-        void tabStylesStandBothBandsTallEnoughToDraw() {
+        void tabBandHeightsStandBothBandsTallEnoughToDraw() {
             // A band clamped to nothing would leave a panel with no tab row and no way to switch layer, so
             // neither screen may be configured down to a bandless header.
-            assertThat(LiveSidebarPlacement.MAP_TAB_STYLE.headerBandHeight()).isPositive();
-            assertThat(LiveSidebarPlacement.INTEL_TAB_STYLE.headerBandHeight()).isPositive();
+            assertThat(LiveSidebarPlacement.MAP_HEADER_BAND_HEIGHT).isPositive();
+            assertThat(LiveSidebarPlacement.INTEL_HEADER_BAND_HEIGHT).isPositive();
         }
     }
 }
