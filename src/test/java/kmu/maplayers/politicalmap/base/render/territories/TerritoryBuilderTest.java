@@ -74,6 +74,9 @@ final class TerritoryBuilderTest {
         private static final double INDEPENDENT_INNER_WIDTH = 2.0;
 
         private static final String SYSTEM_ID = "hegemony-system";
+        // The one system in the factionless fixture's decivilised set, so a test can address
+        // either factionless category by which id it builds the cell as.
+        private static final String DECIVILISED_SYSTEM_ID = "some-decivilised-system";
         private static final Color OWNER_PRIMARY = Color.RED;
         private static final Color OWNER_SECONDARY = Color.BLUE;
         private static final Color DESATURATED_PRIMARY = Color.GREEN;
@@ -220,21 +223,66 @@ final class TerritoryBuilderTest {
             assertThat(styled.outer().color()).isEqualTo(FACTIONLESS_NEUTRAL);
         }
 
+        @Test
+        void buildStyledCellForSystemFillsADecivilisedCellInTheNeutralColor() {
+            // Dead colonies carry a fill of their own - factionless ground fills per cell, since
+            // it never fuses into a cluster with a tessellated region to fill from - so both the
+            // paint and the baked triangles have to come back off the cell itself.
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
+                    factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
+                    DECIVILISED_SYSTEM_ID, ownedCell());
+
+            assertThat(styled.fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(styled.fillTriangles()).isNotEmpty();
+        }
+
+        @Test
+        void buildStyledCellForSystemKeepsAFactionlessCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
+            // The outline's opacity is its only on/off, so zeroing it must not take the fill down
+            // with it: the cell is kept for whichever of the two still puts ink on the map.
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
+                    factionlessDrawablesWith(fillOnlyStyle(), drawnOutlineStyle()),
+                    DECIVILISED_SYSTEM_ID, ownedCell());
+
+            assertThat(styled).isNotNull();
+            assertThat(styled.fillTriangles()).isNotEmpty();
+            assertThat(styled.outer().isHidden()).isTrue();
+        }
+
+        @Test
+        void buildStyledCellForSystemBakesNoFillTrianglesForAnOutlineOnlyFactionlessCell() {
+            // Uninhabited ground covers everything nothing else holds, so triangulating a fill it
+            // never paints would be the rebuild's largest wasted cost - the geometry stays unbuilt.
+            var styled = TerritoryBuilder.buildStyledCellForSystem(
+                    factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
+                    "never-settled-system", ownedCell());
+
+            assertThat(styled).isNotNull();
+            assertThat(styled.fillTriangles()).isEmpty();
+        }
+
         // A pass whose uninhabited category draws a visible outline and whose decivilised category
         // is "No color", over a non-empty (immutable) decivilised set. A cell with no star resolves
         // as uninhabited here; the immutable set would throw on a contains(null), so a clean result
         // also witnesses the null-id guard.
         private static PoliticalMapTerritories factionlessDrawables() {
+            return factionlessDrawablesWith(noColorStyle(), drawnOutlineStyle());
+        }
+
+        // The same factionless backdrop under a chosen pair of factionless category styles, so a
+        // test names the two styles whose interplay it is about and shares everything else.
+        private static PoliticalMapTerritories factionlessDrawablesWith(
+                CategoryStyle decivilisedStyle, CategoryStyle uninhabitedStyle) {
             Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
             categories.put(MapCategory.FACTION, STYLE);
             categories.put(MapCategory.INDEPENDENT, STYLE);
-            categories.put(MapCategory.DECIVILISED, noColorStyle());
-            categories.put(MapCategory.UNINHABITED, drawnOutlineStyle());
+            categories.put(MapCategory.DECIVILISED, decivilisedStyle);
+            categories.put(MapCategory.UNINHABITED, uninhabitedStyle);
             // An immutable owner map AND an immutable decivilised set, both null-hostile: a clean
             // result proves the null-star path reads neither - it resolves no owner and is not
             // taken for decivilised without ever probing a map with the null key.
             return new PoliticalMapTerritories(
-                    Map.of(), Set.of("some-decivilised-system"), Set.of(),
+                    Map.of(), Set.of(DECIVILISED_SYSTEM_ID), Set.of(),
                     new MapStyling(
                             new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
                                     new BorderSmoothingStyle(false, false, 0, 0, 0),
@@ -252,6 +300,24 @@ final class TerritoryBuilderTest {
             return new CategoryStyle(
                     new ElementStyle(FactionPaletteChoice.NONE, 1.0),
                     new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0), 3.0,
+                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+        }
+
+        // The decivilised shape: both a fill and an outline drawn, each in the neutral colour a
+        // factionless cell resolves a PRIMARY slot to.
+        private static CategoryStyle filledOutlineStyle() {
+            return new CategoryStyle(
+                    new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0),
+                    new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0), 3.0,
+                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+        }
+
+        // A fill with its outline zeroed out - the one setting combination that can hide a
+        // factionless outline now that neither element carries a colour choice.
+        private static CategoryStyle fillOnlyStyle() {
+            return new CategoryStyle(
+                    new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0),
+                    new ElementStyle(FactionPaletteChoice.PRIMARY, 0.0), 3.0,
                     new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
         }
 

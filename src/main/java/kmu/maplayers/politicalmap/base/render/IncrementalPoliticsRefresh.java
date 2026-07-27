@@ -196,8 +196,8 @@ final class IncrementalPoliticsRefresh {
     }
 
     // Re-shapes one cell against the now-updated owners and replaces its draw record, or
-    // drops it when the cell contributes nothing (inset-collapsed, or factionless with a
-    // "No color" outline).
+    // drops it when the cell contributes nothing (inset-collapsed, or factionless with
+    // neither its fill nor its outline drawn).
     private static void reshapeCellInPlace(
             PoliticalMapTerritories territories,
             PoliticalMapGeometryCache geometryCache,

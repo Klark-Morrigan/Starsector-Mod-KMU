@@ -3,8 +3,9 @@ package kmu.maplayers.politicalmap.base.render.style;
 /**
  * One category's political-map style, read once per rebuild and applied to every cluster
  * of that category: the fill, outer-border, and inner-seam elements, plus the width each
- * border strokes at. A factionless category leaves its fill and inner seam not drawn, so
- * only its outline paints.
+ * border strokes at. A factionless category always leaves its inner seam not drawn - its
+ * cells never fuse into clusters, so there are no province divisions to stroke - and draws
+ * its fill only where the ground was once settled.
  *
  * <p>The per-category tier of the {@link RenderStyle} theme, keyed by {@link MapCategory}.
  */

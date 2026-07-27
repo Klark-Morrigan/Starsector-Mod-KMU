@@ -63,7 +63,6 @@ final class LunaSettingsCsvIntegrationTest {
         return Stream.of(
                 Arguments.of("kmu_politicalMapSidebarChevronColor", NotchChevronColorChoice.values()),
                 Arguments.of("kmu_politicalMapHiddenMarketScaling", HiddenMarketScalingChoice.values()),
-                Arguments.of("kmu_politicalMapDecivilisedBorderColor", NeutralColorChoice.values()),
                 Arguments.of("kmu_politicalMapFactionOuterBorderColor", FactionPaletteChoice.values()),
                 Arguments.of("kmu_politicalMapFactionInnerBorderColor", FactionPaletteChoice.values()),
                 Arguments.of("kmu_politicalMapFactionFillColor", FactionPaletteChoice.values()),

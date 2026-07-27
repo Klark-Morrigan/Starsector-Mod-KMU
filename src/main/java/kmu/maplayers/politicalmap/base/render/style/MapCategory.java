@@ -3,7 +3,8 @@ package kmu.maplayers.politicalmap.base.render.style;
 /**
  * The four political-map territory categories a per-category {@link CategoryStyle} is
  * keyed by. Two are owned (a coloured fill, national border, and interior seams) and two
- * are factionless (an outline only): a bloc paints in {@link #FACTION} or, where it
+ * are factionless (a neutral-coloured outline, and a fill where the ground was once
+ * settled): a bloc paints in {@link #FACTION} or, where it
  * recedes to independent-held space, {@link #INDEPENDENT}; a system with no owner draws in
  * {@link #DECIVILISED} when a revealed dead world sits there and {@link #UNINHABITED}
  * otherwise. Making the category a type (rather than four hardcoded reader methods and

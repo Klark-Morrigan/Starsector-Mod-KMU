@@ -8,9 +8,10 @@ import kmu.diagnostics.KmuProfiling;
 import org.lwjgl.opengl.GL11;
 
 /**
- * Paints the political map's pre-built draw lists on the sector (M) map: the faction
- * fills first, then the interior seams, factionless outlines, and national borders
- * over them. The debug cluster anchors are not drawn here: they are an independent
+ * Paints the political map's pre-built draw lists on the sector (M) map: every fill first -
+ * the faction clusters' and then the factionless cells' - and over them the interior seams,
+ * factionless outlines, and national borders. The debug cluster anchors are not drawn here:
+ * they are an independent
  * overlay ({@link kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorRenderer}) the terrain
  * plugin layers over whichever
  * base view is live.
@@ -30,19 +31,27 @@ public final class TerritoryRenderer {
     // system and constellation names stay on top; a state push/pop isolates the blend
     // and line settings from the rest of the map render. An empty overlay skips the
     // push entirely.
-    public static void renderOnMap(PoliticalMapTerritories territories, float factor,
+    public static void renderOnMap(
+            PoliticalMapTerritories territories,
+            float factor,
             float alphaMult) {
+
         // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would
         // emit every run at zero effective alpha - all cost, nothing on screen - so the
         // whole GL pass is skipped, not just left to blend away.
         if (territories.isEmpty() || alphaMult <= 0f) {
             return;
         }
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT
-                | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_LINE_BIT | GL11.GL_HINT_BIT);
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT
+                | GL11.GL_CURRENT_BIT
+                | GL11.GL_COLOR_BUFFER_BIT
+                | GL11.GL_LINE_BIT
+                | GL11.GL_HINT_BIT);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GL11.glBlendFunc(
+                GL11.GL_SRC_ALPHA,
+                GL11.GL_ONE_MINUS_SRC_ALPHA);
 
         // Time only the per-frame GL emission; the surrounding state push/pop is
         // negligible. Broken into the two passes so the profiler shows which one costs,
@@ -50,8 +59,11 @@ public final class TerritoryRenderer {
         // accumulated view is affordable here, never a per-frame log line.
         var profiler = KmuProfiling.getProfiler();
         profiler.measure("politicalMap.render", () -> {
-            profiler.measure("politicalMap.render.fills", () -> drawFills(territories, factor, alphaMult));
-            profiler.measure("politicalMap.render.borders",
+            profiler.measure(
+                    "politicalMap.render.fills",
+                    () -> drawFills(territories, factor, alphaMult));
+            profiler.measure(
+                    "politicalMap.render.borders",
                     () -> drawBorders(territories, factor, alphaMult));
         });
 
@@ -59,15 +71,16 @@ public final class TerritoryRenderer {
     }
 
     // Fills each owned faction's cluster(s) with the faction's resolved fill color at
-    // its opacity. The fill is the cluster's rounded region pre-tessellated into a
-    // triangle soup, so a concave cluster (or one with an enclave) fills correctly and
-    // exactly matches the stroked border. A hidden fill (UiElementPaint.isHidden) is
+    // its opacity, then each factionless cell that carries a fill of its own. Both are
+    // pre-tessellated triangle soups, so a concave cluster (or one with an enclave) fills
+    // correctly and exactly matches the stroked border. A hidden fill (UiElementPaint.isHidden) is
     // skipped, its geometry kept to shape its neighbours but never emitted. The spotlighted
     // bloc splits its one footprint into both runs at once - solid triangles where it
     // dominates and pre-clipped diagonal hatch lines where it is contested, in the same colour
     // and opacity - so its contested pocket reads as "mine but contested" within one frontier;
     // every other territory carries an empty hatch run and paints only its triangles.
     private static void drawFills(PoliticalMapTerritories territories, float factor, float alphaMult) {
+
         // The hatch fills the contested pocket in the fill colour but strokes as GL_LINES, so its
         // own pixel width tunes the contested texture apart from the solid fill. The width is
         // sector-wide, so set it once here off the theme's global tier rather than per territory;
@@ -83,6 +96,18 @@ public final class TerritoryRenderer {
             GlRuns.drawScaled(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
             GlRuns.drawScaled(GL11.GL_LINES, territory.hatchSegments(), factor);
         }
+        // Then the factionless cells' own fills - dead colonies washed in the neutral colour.
+        // They fill per cell rather than per cluster because factionless ground never fuses
+        // into one, and they cover no faction's region, so drawing them after the cluster
+        // fills is a matter of grouping the fill pass rather than of layering.
+        for (var cell : territories.getStyledCellByCellId().values()) {
+            var fill = cell.fillPaint();
+            if (fill.isHidden()) {
+                continue;
+            }
+            GlColor.set(fill.color(), alphaMult * fill.alpha());
+            GlRuns.drawScaled(GL11.GL_TRIANGLES, cell.fillTriangles(), factor);
+        }
     }
 
     // Strokes the interior province seams first, then the factionless outlines, then the
@@ -91,10 +116,13 @@ public final class TerritoryRenderer {
     // per element, and a hidden element (UiElementPaint.isHidden) is skipped - its geometry
     // stays baked to shape its neighbours, but nothing invisible is emitted. An owned
     // cluster's national border is its border ring (in factionTerritories), so the
-    // per-cell outline only carries factionless cells; an owned cell contributes only its
-    // seams and a factionless cell only its outline.
-    private static void drawBorders(PoliticalMapTerritories territories, float factor,
+    // per-cell outline only carries factionless cells; of the runs this pass strokes an
+    // owned cell contributes only its seams and a factionless cell only its outline.
+    private static void drawBorders(
+            PoliticalMapTerritories territories,
+            float factor,
             float alphaMult) {
+
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 

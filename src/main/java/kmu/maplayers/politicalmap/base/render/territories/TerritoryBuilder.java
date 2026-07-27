@@ -70,8 +70,8 @@ public final class TerritoryBuilder {
     private TerritoryBuilder() {
     }
 
-    // Shapes the cached raw cells into merged clusters and partitions them into filled
-    // (owned) and outline-only (decivilised/uninhabited) draw lists, baking in each
+    // Shapes the cached raw cells into merged clusters and partitions them into the
+    // cluster-filled (owned) and per-cell (decivilised/uninhabited) draw lists, baking in each
     // cell's colors, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category, not
     // per cell. The active view supplies the ownership grouping the pass resolves under
@@ -81,18 +81,22 @@ public final class TerritoryBuilder {
             PoliticalMapGeometryCache geometryCache,
             SectorAPI sector,
             PoliticalMapView view) {
+
         var profiler = KmuProfiling.getProfiler();
         return profiler.measure("politicalMap.rebuildTerritories", () -> {
+
             // Sample the view's grouping once for the whole pass (the alliances view reads
             // Nexerelin), so every stage keys off one snapshot and the retained copy the
             // incremental re-shape reads matches the ownership this build resolved.
             var grouping = view.resolveGrouping();
+
             // The spotlighted bloc, read once so the whole pass keys off one snapshot - the
             // ownership provider (which keeps a spotlit bloc drawn wherever it is present), the
             // recede the rest of the sector takes, and the retained filter snapshot all resolve
             // from this one read, exactly like the grouping.
             var selectedBlocId = FilterSelection.getSelectedBlocId(view.getId());
             var isFiltering = selectedBlocId != null;
+
             // The politics scan walks the whole economy - the priciest content step -
             // so it is profiled and timed on its own, and the owner count logged
             // independent of the profiler's accumulated view. Under a filter it also reports
@@ -104,6 +108,7 @@ public final class TerritoryBuilder {
                             .resolveOwnership(sector, grouping, selectedBlocId));
             var ownerBySystemId = resolution.ownerBySystemId();
             var contestedSystemIds = resolution.contestedSystemIds();
+
             // The owned systems this resolution paints no fill for - held by their bloc but drawn
             // empty inside its one border. Empty for the faction/alliance and filter paths today;
             // the split reads it so a source that populates it needs no further wiring.
@@ -125,11 +130,13 @@ public final class TerritoryBuilder {
             // re-shapes cells against the same snapshot this pass used.
             var renderStyle = RenderStyleReader.readRenderStyle();
             var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
+
             // The receded background desaturates to a uniform Independent-based grey, darkened by the
             // live setting so it sits below genuine independent-held space - a spotlit bloc, even
             // Independent at full strength, therefore reads distinctly against it.
             var desaturationPalette = MapPalettes.resolveDesaturationPalette(
                     sector, renderStyle.global().desaturationDarkening());
+
             // The styling every non-spotlighted bloc recedes to, resolved once from the filter recede
             // toggles - the "rest of the sector" set, shared across both views under a filter; the
             // identity adjustment off filter, so a normal pass touches no bloc.
@@ -189,10 +196,10 @@ public final class TerritoryBuilder {
     }
 
     // Builds one cell's draw record from its shaped cell, or null when the
-    // cell draws nothing: an inset-collapsed cell, or a factionless cell whose outline
-    // is "No color". An owned cell keeps only its interior seams (its fill and national
-    // border are per-cluster, in factionTerritories); a factionless cell keeps its own
-    // inset fill and outline, since factionless cells do not fuse. Shared by the full
+    // cell draws nothing: an inset-collapsed cell, or a factionless cell with neither its
+    // fill nor its outline drawn. An owned cell keeps only its interior seams (its fill and
+    // national border are per-cluster, in factionTerritories); a factionless cell keeps its
+    // own inset fill and outline, since factionless cells do not fuse. Shared by the full
     // rebuild and the incremental re-shape so both classify a cell identically.
     //
     // Takes the system the cell draws as rather than the cell itself, since everything it
@@ -232,14 +239,15 @@ public final class TerritoryBuilder {
                     styling.style(), false, styling.adjustment(),
                     territories.getGlobalStyle().borderSmoothing());
         }
-        // Factionless: decivilised or (otherwise) uninhabited. Its style fills neither
-        // palette slot, so both resolve to the shared neutral color and only its
-        // per-cell outline draws; drop it when that outline is "No color". Factionless
-        // cells are not blocs the view classifies, so they never carry an adjustment.
+        // Factionless: decivilised or (otherwise) uninhabited. Its style names no faction
+        // palette, so both slots resolve to the shared neutral color, and it draws its own
+        // per-cell fill and outline; drop it only when neither of those puts ink down, since
+        // a cell is kept for its fill as readily as for its outline. Factionless cells are not
+        // blocs the view classifies, so they never carry an adjustment.
         var style = systemId != null && territories.getDecivilisedSystemIds().contains(systemId)
                 ? territories.getCategoryStyle(MapCategory.DECIVILISED)
                 : territories.getCategoryStyle(MapCategory.UNINHABITED);
-        if (!style.outer().isDrawn()) {
+        if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
         var neutralColor = territories.getNeutralColor();
@@ -266,7 +274,9 @@ public final class TerritoryBuilder {
             PoliticalMapGeometryCache geometryCache,
             String factionId,
             List<String> memberCellIds) {
+
         var cellGrouping = resolveCellGrouping(territories, geometryCache);
+
         // The grouping key here is a bloc id (a faction id under the faction view, or one of the
         // filter's synthetic spotlight keys), so its style and per-bloc adjustment come from the
         // same styling resolver a per-cell owner does. A desaturated bloc's fill and border swap
@@ -274,10 +284,12 @@ public final class TerritoryBuilder {
         var styling = resolveBlocStyling(territories, factionId);
         var style = styling.style();
         var adjustment = styling.adjustment();
+
         // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
         // one key, so it clusters into this single territory outlined by one frontier, then splits
         // its fill per cell below. Every other territory fills solid as one region.
         var isSpotlit = FilteredPolitics.isSpotlitBloc(factionId);
+
         // How each of this territory's members fills: solid, hatched (a spotlit bloc's contested
         // systems), or unfilled (systems held for border and label but drawn empty). Resolved once
         // so both the fast-path decision and the split read the same partition.
@@ -286,6 +298,7 @@ public final class TerritoryBuilder {
                 memberCellIds,
                 territories.getContestedSystemIds(),
                 territories.getUnfilledSystemIds());
+
         // Every system of a faction shares its palette, so any member resolves the same
         // fill and border colors.
         var owner = territories.getOwnerBySystemId()
@@ -305,6 +318,7 @@ public final class TerritoryBuilder {
         if (fillColor == null && borderColor == null) {
             return null;
         }
+
         // One trace for the whole territory: the national border's rings, and - for a spotlit
         // footprint - the per-state sub-region rings its fill splits into, so border and fill
         // offset under identical parameters and cannot drift apart.
@@ -500,6 +514,7 @@ public final class TerritoryBuilder {
             List<String> memberCellIds,
             Set<String> contestedSystemIds,
             Set<String> unfilledSystemIds) {
+
         var solid = new FillMembers(new LinkedHashSet<>(), new LinkedHashSet<>());
         var hatched = new FillMembers(new LinkedHashSet<>(), new LinkedHashSet<>());
         var unfilled = new FillMembers(new LinkedHashSet<>(), new LinkedHashSet<>());
@@ -535,6 +550,7 @@ public final class TerritoryBuilder {
             FillMembers subRegion,
             Map<String, String> subRegionKeyBySystemId,
             Set<String> coincidentSystemIds) {
+
         if (subRegion.cellIds().isEmpty()) {
             return GlVertexRuns.NO_VERTICES;
         }
@@ -665,7 +681,9 @@ public final class TerritoryBuilder {
     // keeps its own inset fill and outline. That outline's corners are rounded - with the
     // same corner settings and gate the cluster borders use, so a lone dead system reads
     // as smoothly as a cluster when rounding is on and stays a sharp Voronoi cell when it
-    // is off. Each color resolves against the two palette shades, null for a "No color"
+    // is off - and the fill is triangulated from that same rounded ring, so it cannot spill
+    // past the line its own outline strokes. Each color resolves against the two palette
+    // shades, null for a "No color"
     // choice, so the draw pass skips it. Every seam's opacity is muted by the caller's
     // resolved per-bloc {@code adjustment} through its one muteOpacity rule (BlocStyleAdjustment.NONE
     // for a factionless cell, which carries no adjustment, so its opacity passes unchanged).
@@ -677,15 +695,20 @@ public final class TerritoryBuilder {
             boolean perCellFillAndBorder,
             BlocStyleAdjustment adjustment,
             BorderSmoothingStyle borderSmoothing) {
+                
         // Gate the corner rounding outside the round call: on rounds this cell's outline
         // in step with the cluster borders, off leaves its raw inset outline.
         var outline = shaped.fillPolygon();
         if (perCellFillAndBorder && borderSmoothing.shouldRoundCorners()) {
             outline = roundCellOutline(shaped, borderSmoothing);
         }
+        // Tessellate the fill only when it will actually be painted: uninhabited ground is
+        // outline-only and covers most of the sector, so triangulating every one of its cells
+        // for a fill no pass emits would be the map's largest wasted rebuild cost.
+        var isFillDrawn = perCellFillAndBorder && style.fill().isDrawn();
         return new StyledCell(
-                perCellFillAndBorder
-                        ? GlVertexRuns.flattenVertices(shaped.fillPolygon())
+                isFillDrawn
+                        ? PolygonTessellator.tessellateToTriangles(List.of(outline))
                         : GlVertexRuns.NO_VERTICES,
                 perCellFillAndBorder
                         ? GlVertexRuns.flattenClosedLoopAsSegments(outline)

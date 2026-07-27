@@ -22,8 +22,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * independent space - each get a fill, an outer (national) border, and an inner
  * (province seam) border, every one with a palette-color choice, an opacity, and
  * (for the borders) a line width. Factionless categories - decivilised and
- * uninhabited systems - draw only a single outline, so they get just an opacity
- * and a width, plus (for decivilised) a neutral color choice or none to hide it.
+ * uninhabited systems - have no faction palette to choose from, so they carry no
+ * color field at all and always paint in the shared neutral color: decivilised
+ * systems get an outline opacity and width plus a fill opacity, and uninhabited
+ * systems just the outline pair. Each opacity doubles as that element's on/off,
+ * since zero opacity is the only way to hide a shade with no alternative.
  * Whether the uninhabited outline draws at all is the on-map sidebar's checkbox
  * rather than a field here, so the setting screen never duplicates that control.
  * All are tuned under the LunaLib "Visuals customisation" tab.
@@ -157,13 +160,15 @@ public final class KmuLunaSettings {
     private static final String INDEPENDENT_NAME_OPACITY_FIELD =
             "kmu_politicalMapIndependentNameOpacity";
 
-    // Decivilised and uninhabited (factionless outline) style fields.
-    private static final String DECIVILISED_BORDER_COLOR_FIELD =
-            "kmu_politicalMapDecivilisedBorderColor";
+    // Decivilised and uninhabited (factionless) style fields. Neither has a colour choice:
+    // factionless ground has no faction palette to pick from, so it always paints in the
+    // shared neutral colour and the opacity knobs alone decide what shows.
     private static final String DECIVILISED_BORDER_OPACITY_FIELD =
             "kmu_politicalMapDecivilisedBorderOpacity";
     private static final String DECIVILISED_BORDER_WIDTH_FIELD =
             "kmu_politicalMapDecivilisedBorderWidth";
+    private static final String DECIVILISED_FILL_OPACITY_FIELD =
+            "kmu_politicalMapDecivilisedFillOpacity";
     private static final String UNINHABITED_BORDER_OPACITY_FIELD =
             "kmu_politicalMapUninhabitedBorderOpacity";
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
@@ -464,10 +469,12 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.2;
     // Fully opaque by default: independent names draw at full colour strength unless faded.
     private static final double DEFAULT_INDEPENDENT_NAME_OPACITY = 1.0;
-    private static final NeutralColorChoice DEFAULT_DECIVILISED_BORDER_COLOR =
-            NeutralColorChoice.NEUTRAL;
     private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.35;
     private static final double DEFAULT_DECIVILISED_BORDER_WIDTH = 3.0;
+    // A faint wash by default: a dead colony is real ground, so it fills rather than reading
+    // as a bare ring, but stays well behind a living faction's fill (0.4) and independent
+    // space's (0.2 at full colour) since nothing holds it. Mirrors the CSV row's defaultValue.
+    private static final double DEFAULT_DECIVILISED_FILL_OPACITY = 0.2;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
     // Half strength by default: Mute dims a non-allied bloc to half its normal opacity.
@@ -779,16 +786,8 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return whether decivilised systems draw their outline in the neutral color
-     *         or not at all; the neutral color by default (a known dead colony is
-     *         presence, so it draws unless the player hides it)
-     */
-    public static NeutralColorChoice getDecivilisedBorderColor() {
-        return readChoice(DECIVILISED_BORDER_COLOR_FIELD, DEFAULT_DECIVILISED_BORDER_COLOR);
-    }
-
-    /**
-     * @return the outline opacity for decivilised systems, 0..1
+     * @return the outline opacity for decivilised systems, 0..1; 0 hides the outline,
+     *         since the neutral colour is the only shade factionless ground has
      */
     public static double getDecivilisedBorderOpacity() {
         return readDouble(DECIVILISED_BORDER_OPACITY_FIELD, DEFAULT_DECIVILISED_BORDER_OPACITY);
@@ -799,6 +798,14 @@ public final class KmuLunaSettings {
      */
     public static double getDecivilisedBorderWidth() {
         return readDouble(DECIVILISED_BORDER_WIDTH_FIELD, DEFAULT_DECIVILISED_BORDER_WIDTH);
+    }
+
+    /**
+     * @return the neutral-colour fill opacity for decivilised systems, 0..1; 0 leaves
+     *         them unfilled so only the outline draws
+     */
+    public static double getDecivilisedFillOpacity() {
+        return readDouble(DECIVILISED_FILL_OPACITY_FIELD, DEFAULT_DECIVILISED_FILL_OPACITY);
     }
 
     /**

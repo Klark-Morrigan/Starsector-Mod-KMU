@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render.style;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
-import kmu.settings.NeutralColorChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,11 +14,11 @@ import static org.mockito.Mockito.mockStatic;
 /**
  * Pins how the political-map settings fold into one theme: each owned category threads its
  * eight settings into the matching {@link CategoryStyle} slots (a swapped fill/outer/inner or
- * opacity/width would show here), a factionless category collapses to a single outline drawn
- * or hidden by its own on/off input - the decivilised neutral-color choice, the uninhabited
- * sidebar toggle - the {@link GlobalStyle} global tier gathers the hatch,
- * smoothing, and desaturation knobs, and {@code readRenderStyle} carries all four categories
- * plus the global tier as one snapshot.
+ * opacity/width would show here), a factionless category collapses to neutral-colour elements
+ * with no colour choice - decivilised ground a fill plus an outline, uninhabited ground an
+ * outline whose on/off is the sidebar toggle - the {@link GlobalStyle} global tier gathers the
+ * hatch, smoothing, and desaturation knobs, and {@code readRenderStyle} carries all four
+ * categories plus the global tier as one snapshot.
  */
 final class RenderStyleReaderTest {
 
@@ -32,6 +31,7 @@ final class RenderStyleReaderTest {
     private static final double INNER_WIDTH = 5.5;
     private static final double NEUTRAL_OPACITY = 0.66;
     private static final double NEUTRAL_WIDTH = 7.7;
+    private static final double NEUTRAL_FILL_OPACITY = 0.88;
 
     @Nested
     class ReadFactionStyle {
@@ -106,10 +106,10 @@ final class RenderStyleReaderTest {
     class ReadDecivilisedStyle {
 
         @Test
-        void readDecivilisedStyleDrawsTheOutlineInTheNeutralColorWhenTheChoiceIsDrawn() {
+        void readDecivilisedStyleDrawsTheFillAndOutlineInTheNeutralColor() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getDecivilisedBorderColor)
-                        .thenReturn(NeutralColorChoice.NEUTRAL);
+                settingsMock.when(KmuLunaSettings::getDecivilisedFillOpacity)
+                        .thenReturn(NEUTRAL_FILL_OPACITY);
                 settingsMock.when(KmuLunaSettings::getDecivilisedBorderOpacity)
                         .thenReturn(NEUTRAL_OPACITY);
                 settingsMock.when(KmuLunaSettings::getDecivilisedBorderWidth)
@@ -117,10 +117,11 @@ final class RenderStyleReaderTest {
 
                 var style = RenderStyleReader.readDecivilisedStyle();
 
-                // A factionless category is outline-only: the drawn choice routes to the
-                // outer border via a PRIMARY palette slot, with fill and inner seam off.
+                // Both drawn elements route through a PRIMARY palette slot (which resolves to
+                // the neutral colour for factionless ground), with only the inner seam off -
+                // and each takes its own opacity, so a swapped pair would show as a value swap.
                 assertThat(style).isEqualTo(new CategoryStyle(
-                        ElementStyle.NOT_DRAWN,
+                        new ElementStyle(FactionPaletteChoice.PRIMARY, NEUTRAL_FILL_OPACITY),
                         new ElementStyle(FactionPaletteChoice.PRIMARY, NEUTRAL_OPACITY),
                         NEUTRAL_WIDTH,
                         ElementStyle.NOT_DRAWN,
@@ -129,10 +130,9 @@ final class RenderStyleReaderTest {
         }
 
         @Test
-        void readDecivilisedStyleHidesTheOutlineButKeepsItsGeometryWhenTheChoiceIsNone() {
+        void readDecivilisedStyleLeavesTheFillUndrawnAtZeroOpacity() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getDecivilisedBorderColor)
-                        .thenReturn(NeutralColorChoice.NONE);
+                settingsMock.when(KmuLunaSettings::getDecivilisedFillOpacity).thenReturn(0.0);
                 settingsMock.when(KmuLunaSettings::getDecivilisedBorderOpacity)
                         .thenReturn(NEUTRAL_OPACITY);
                 settingsMock.when(KmuLunaSettings::getDecivilisedBorderWidth)
@@ -140,11 +140,10 @@ final class RenderStyleReaderTest {
 
                 var style = RenderStyleReader.readDecivilisedStyle();
 
-                // The "No color" choice turns the outer slot off, yet its opacity and width
-                // still pass through so the sole difference from the drawn case is the slot.
-                assertThat(style.outer().color()).isEqualTo(FactionPaletteChoice.NONE);
-                assertThat(style.outer().opacity()).isEqualTo(NEUTRAL_OPACITY);
-                assertThat(style.outerWidth()).isEqualTo(NEUTRAL_WIDTH);
+                // The fill opacity is the fill's only on/off - factionless ground has no colour
+                // choice to turn off - so zero has to read as "not drawn" all the way down.
+                assertThat(style.fill().isDrawn()).isFalse();
+                assertThat(style.outer().isDrawn()).isTrue();
             }
         }
     }
@@ -310,13 +309,9 @@ final class RenderStyleReaderTest {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
                 settingsMock.when(KmuLunaSettings::getPoliticalMapDesaturationDarkening)
                         .thenReturn(0.3);
-                // The decivilised category dereferences its neutral-color choice, so give it a
-                // concrete one; every other getter can default since the assertions below only
-                // check that each category slot is populated, not its values. The uninhabited
-                // category needs no stub: its toggle reads sector memory, which is absent here and
-                // resolves to off.
-                settingsMock.when(KmuLunaSettings::getDecivilisedBorderColor)
-                        .thenReturn(NeutralColorChoice.NEUTRAL);
+                // Every category getter can default here: the assertions below only check that
+                // each category slot is populated, not its values. The uninhabited category's
+                // toggle reads sector memory, which is absent here and resolves to off.
 
                 var renderStyle = RenderStyleReader.readRenderStyle();
 

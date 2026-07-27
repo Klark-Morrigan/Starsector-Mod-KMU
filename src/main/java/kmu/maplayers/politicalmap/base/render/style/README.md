@@ -25,6 +25,14 @@ A `RenderStyle` is the whole theme, in two tiers:
   `ElementStyle` (a palette choice paired with the opacity it paints at), plus the width each
   border strokes at.
 
+The two *factionless* categories are the shape's degenerate case. Decivilised and uninhabited
+ground has no owner, so there is no faction palette to choose a shade from: both categories paint
+in the shared neutral colour and expose no colour field at all, leaving each element's opacity as
+its only on/off. Decivilised ground draws a fill and an outline (a dead colony is settled ground,
+so it reads as occupied rather than as a bare ring); uninhabited ground draws an outline alone,
+since filling it would wash every corner of the sector nothing else holds. Neither has an inner
+seam: factionless cells never fuse into clusters, so there are no province divisions to stroke.
+
 `RenderStyleReader` is the ONE seam that reads the theme, almost all of it out of LunaLib. A new
 sector-wide knob is added to the matching `GlobalStyle` sub-record and read there - never fetched ad
 hoc in a builder. The single exception is whether the uninhabited outline draws at all: that is the

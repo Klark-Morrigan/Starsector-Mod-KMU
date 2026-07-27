@@ -17,10 +17,12 @@ import java.util.Map;
  *
  * <p>The two owned categories - core factions and independent space - carry a full
  * fill/outer/inner style. The two factionless categories - decivilised and uninhabited -
- * carry only an outline, so their bundles set fill and inner seam to "No color" and draw a
- * single border in the shared neutral color. Whether the uninhabited outline draws at all is
- * the player's sidebar checkbox rather than a settings field, so that one input is read from
- * the per-save preference; every other input here is a LunaLib knob.
+ * have no faction palette, so both paint in the shared neutral color and neither carries a
+ * colour choice: decivilised ground draws a fill and an outline, uninhabited ground an
+ * outline alone, and both set their inner seam to "No color" since factionless cells never
+ * fuse into clusters. Whether the uninhabited outline draws at all is the player's sidebar
+ * checkbox rather than a settings field, so that one input is read from the per-save
+ * preference; every other input here is a LunaLib knob.
  */
 public final class RenderStyleReader {
 
@@ -110,41 +112,52 @@ public final class RenderStyleReader {
                 KmuLunaSettings.getIndependentInnerBorderWidth());
     }
 
-    // A factionless category resolves to the same style with no fill and no inner
-    // seam - only its single outline draws, in the neutral color both palette slots
-    // will carry, or "No color" to hide it.
+    // Dead colonies keep both a neutral fill and a neutral outline: the ground was settled
+    // once, so it reads as occupied space rather than a bare ring around nothing. Neither
+    // element has a colour choice - factionless ground has no palette to pick from - so the
+    // outline is unconditionally drawn and each opacity is its element's own on/off.
     public static CategoryStyle readDecivilisedStyle() {
-        return neutralStyle(KmuLunaSettings.getDecivilisedBorderColor().isDrawn(),
+        return neutralStyle(
+                new ElementStyle(
+                        FactionPaletteChoice.PRIMARY,
+                        KmuLunaSettings.getDecivilisedFillOpacity()),
+                true,
                 KmuLunaSettings.getDecivilisedBorderOpacity(),
                 KmuLunaSettings.getDecivilisedBorderWidth());
     }
 
-    // The uninhabited outline's on/off is the one style input that is not a LunaLib field: it is
-    // the sidebar's uninhabited-systems checkbox, a per-save preference, so it is read from there
-    // while the opacity and width it strokes at stay settings-screen knobs.
+    // Never-settled space stays outline-only: filling it would wash the whole sector, since
+    // uninhabited cells cover everything no faction and no dead colony holds. Its outline's
+    // on/off is the one style input that is not a LunaLib field - the sidebar's
+    // uninhabited-systems checkbox, a per-save preference - while the opacity and width it
+    // strokes at stay settings-screen knobs.
     public static CategoryStyle readUninhabitedStyle() {
-        return neutralStyle(UninhabitedOutlinePreference.isOutlineDrawn(),
+        return neutralStyle(
+                ElementStyle.NOT_DRAWN,
+                UninhabitedOutlinePreference.isOutlineDrawn(),
                 KmuLunaSettings.getUninhabitedBorderOpacity(),
                 KmuLunaSettings.getUninhabitedBorderWidth());
     }
 
-    // Assembles a factionless outline's style: its outline as the outer border (in the
-    // neutral color via a PRIMARY choice, or NONE to hide it), with no fill and no
-    // inner seam. Both slots hold the neutral color at draw time, so PRIMARY and
-    // SECONDARY would paint identically; PRIMARY is the drawn arm here.
+    // Assembles a factionless category's style: the given fill, its outline as the outer
+    // border (in the neutral color via a PRIMARY choice, or NONE to hide it), and no inner
+    // seam - factionless cells do not fuse into clusters, so they have no province seams to
+    // stroke. Both palette slots hold the neutral color at draw time, so PRIMARY and
+    // SECONDARY would paint identically; PRIMARY is the drawn arm throughout.
     private static CategoryStyle neutralStyle(
+            ElementStyle fill,
             boolean isOutlineDrawn,
-            double opacity,
-            double width) {
+            double outlineOpacity,
+            double outlineWidth) {
 
         var outerColor = isOutlineDrawn
                 ? FactionPaletteChoice.PRIMARY
                 : FactionPaletteChoice.NONE;
 
         return new CategoryStyle(
-                ElementStyle.NOT_DRAWN,
-                new ElementStyle(outerColor, opacity),
-                width,
+                fill,
+                new ElementStyle(outerColor, outlineOpacity),
+                outlineWidth,
                 ElementStyle.NOT_DRAWN,
                 0);
     }

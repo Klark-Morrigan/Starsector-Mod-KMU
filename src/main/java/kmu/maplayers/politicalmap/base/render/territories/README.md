@@ -33,8 +33,13 @@ organised entity (a rival faction or an alliance) and against *empty* space alik
 an uncontrolled star with no owner, whether never-settled or decivilised - the edge
 keeps the mutual midline plus its inward border channel. So a faction cuts off
 halfway to a dead star exactly as it does halfway to a rival, and the dead star's
-own cell draws its inset outline in the neutral style on the far side of that
-channel.
+own cell draws its inset outline - and, for a decivilised system, its neutral fill -
+in the neutral style on the far side of that channel.
+
+Those factionless fills are per cell rather than per cluster: factionless ground never fuses into
+a cluster, so it has no traced region to fill from and each cell tessellates its own outline
+instead. Which is why `StyledCell` carries fill triangles at all, where an owned cell leaves them
+empty and takes its fill from its `FactionTerritory`.
 
 The two player settings under Territory reach on the **Political map - visuals**
 tab - *Uncontrolled systems give way to faction territory* and *Frontier keep-out* -
