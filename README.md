@@ -18,9 +18,16 @@ This is a small Starsector utility and quality of life mod.
 
 ### Map layers
 
+A control box over the campaign map picks one overlay at a time from a strip of
+tabs. It draws on both screens that show the sector map: the full map screen (M)
+and the map preview embedded in the intel screen, each keeping its own tab. See
+[the map layers guide](src/main/java/kmu/maplayers/README.md) for the layers on
+offer and what each screen remembers.
+
 #### Political map
 
-An on-map overlay that colours the sector by who controls each system. See
+Colours the sector by who controls each system, from any of three views -
+factions, Nexerelin alliances, or vanilla system claims. See
 [the political map guide](src/main/java/kmu/maplayers/politicalmap/README.md) for the views it
 offers and how the overlay is drawn.
 

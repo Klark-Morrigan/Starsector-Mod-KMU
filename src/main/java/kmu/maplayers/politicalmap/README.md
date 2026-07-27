@@ -1,13 +1,14 @@
 # Political map (`politicalmap`)
 
-An on-map overlay. It colours the sector by who controls it. Each bloc's territory shows as a
-filled, bordered, named region over the campaign map.
+An overlay that colours the sector by who controls it. Each bloc's territory shows as a filled,
+bordered, named region over the campaign map, on the full map screen and on the intel screen's
+map preview alike.
 
-The political map is one of the layers the on-map bar offers. When you pick it, a view-selector
-radio appears at the top. The radio changes *what* "controls" means. It does not change how the
-map is drawn.
+The political map is one of the layers the tab strip offers; picking its tab opens a
+view-selector radio in the body below. The radio changes *what* "controls" means. It does not
+change how the map is drawn.
 
-Part of Klark Morrigan's Utilities; see the
+Part of [map layers](../README.md); see the
 [mod README](../../../../../../README.md) for project context.
 
 ## Index
@@ -27,11 +28,14 @@ For each controlling bloc the overlay draws four things:
 - faint seams inside it,
 - the bloc's name across it.
 
-A radio at the top of the tab picks the view. A filter picker below it can spotlight one bloc.
-When a bloc is spotlighted, the rest fade into a muted background.
+The tab body picks the view by radio, and a filter picker below it can spotlight one bloc. When a
+bloc is spotlighted, the rest fade into a muted background. The radio always lists the views in
+the same order: **Factions**, then **Alliances** (only with Nexerelin), then **Claims**.
 
-The radio always lists the views in the same order: **Factions**, then **Alliances** (only with
-Nexerelin), then **Claims**.
+The controls read and write one shared set of values, so the two screens the overlay draws on
+always agree on what is painted; only which tab each screen has lit is its own. The box those
+controls sit in - where it anchors on each screen, and how it folds away - is
+[the sidebar](../base/sidebar/README.md).
 
 ## The views
 
@@ -100,5 +104,7 @@ fill states are [ownership resolution](base/politics/ownership/README.md).
 - **[Cluster-name overlay](base/render/labels/README.md)** - how bloc names are placed and drawn.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
-`geometry`, `visibility`, `refresh`, `hover`, `tooltip`, and `sidebar`. The class that names and
-orders the views is `kmu.maplayers.MapLayers`, one level up.
+`geometry`, `visibility`, `refresh`, `hover`, `tooltip`, and `sidebar` - the last being this layer's
+own body controls, not the box they sit in, which is [the sidebar](../base/sidebar/README.md) one
+level up. The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
+up; how a layer is picked and what each screen remembers is [map layers](../README.md).

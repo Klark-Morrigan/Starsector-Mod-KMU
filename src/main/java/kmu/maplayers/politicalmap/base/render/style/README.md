@@ -29,7 +29,7 @@ A `RenderStyle` is the whole theme, in two tiers:
 sector-wide knob is added to the matching `GlobalStyle` sub-record and read there - never fetched ad
 hoc in a builder. The single exception is whether the uninhabited outline draws at all: that is the
 overlay sidebar's checkbox (`UninhabitedOutlinePreference`, per-save sector memory), because a
-LunaLib field would duplicate the on-map control on the settings screen. Its opacity and width stay
+LunaLib field would duplicate that control on the settings screen. Its opacity and width stay
 LunaLib knobs.
 
 ## The resolvers: choices into colours
