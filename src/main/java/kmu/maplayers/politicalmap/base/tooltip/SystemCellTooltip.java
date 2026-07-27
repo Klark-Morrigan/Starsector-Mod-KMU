@@ -152,15 +152,16 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
                 .clearsCrestColumn();
     }
 
-    // The header every cell tooltip opens with: the hovered system's own name, bright and crestless, so
-    // the body below it never has to repeat which system it describes. Centred over the box rather than
-    // laid into the columns below it, since it titles the whole box rather than sitting in its table -
-    // which also frees it of the crest gutter and the value column those rows align to.
+    // The header every cell tooltip opens with: the hovered system's own name, crestless and drawn in
+    // the highlight colour, so the body below it never has to repeat which system it describes and the
+    // one proper name in the box is the one span that reads gold. Centred over the box rather than laid
+    // into the columns below it, since it titles the whole box rather than sitting in its table - which
+    // also frees it of the crest gutter and the value column those rows align to.
     private static TooltipRow buildHeaderRow(StarSystemAPI system) {
         return TooltipRow
                 .createRow(
                         system.getName(),
-                        StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve())
+                        StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve())
                 .centred();
     }
 
