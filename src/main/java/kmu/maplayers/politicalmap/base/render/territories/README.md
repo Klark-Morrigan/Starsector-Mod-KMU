@@ -62,6 +62,13 @@ its whole region from that one border and pays nothing for the split, the common
 exceptions each carve a sub-region out of the solid, hatched and unfilled, and both are decided
 upstream in `politics.ownership`; this section is how the draw honours them.
 
+Two classes own it, split along the line between deciding and drawing. `FillSplit` is the pure
+partition - which state each member system draws in, decidable from plain id sets, plus the
+coincident-neighbour rule below. `SplitFillBuilder` turns that partition into triangles and hatch
+lines; it is built per territory around the trace context the whole fill shares (the cells, their
+grouping, the border trace, the smoothed border loops), and it also owns the choice of whether a
+territory splits at all or fills solid as one region.
+
 **Hatched.** When the filter spotlights one bloc, its whole footprint - the systems it dominates
 plus the ones it merely contests - clusters into a single `FactionTerritory` under one national
 frontier, and the fill splits: solid where the bloc dominates, a pre-clipped diagonal hatch where it

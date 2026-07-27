@@ -35,8 +35,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the builder's off-engine, deterministic pieces: an owned cell's style-adjustment
- * application (palette swap and opacity scale), and the pure rule that classifies which fill
- * state a system draws in. The
+ * application (palette swap and opacity scale) and a factionless cell's neutral fill and
+ * outline. The footprint fill's partition rule is pinned by {@link FillSplitTest}. The
  * shared styling resolvers it used to hold now live in
  * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes} and
  * {@link kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver} with their own suites;
@@ -394,43 +394,4 @@ final class TerritoryBuilderTest {
         }
     }
 
-    @Nested
-    class ClassifyFillState {
-
-        private static final String SYSTEM = "some-system";
-
-        @Test
-        void classifyFillStateReturnsSolidWhenTheSystemIsNeitherContestedNorUnfilled() {
-            assertThat(TerritoryBuilder.classifyFillState(SYSTEM, Set.of(), Set.of()))
-                    .isEqualTo(TerritoryBuilder.FillState.SOLID);
-        }
-
-        @Test
-        void classifyFillStateReturnsHatchedWhenTheSystemIsContested() {
-            assertThat(TerritoryBuilder.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of()))
-                    .isEqualTo(TerritoryBuilder.FillState.HATCHED);
-        }
-
-        @Test
-        void classifyFillStateReturnsUnfilledWhenTheSystemIsUnfilled() {
-            assertThat(TerritoryBuilder.classifyFillState(SYSTEM, Set.of(), Set.of(SYSTEM)))
-                    .isEqualTo(TerritoryBuilder.FillState.UNFILLED);
-        }
-
-        @Test
-        void classifyFillStateFavoursUnfilledOverHatchedWhenTheSystemIsBoth() {
-            // A system drawn empty is empty however dominance falls, so unfilled wins the tie.
-            assertThat(TerritoryBuilder.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of(SYSTEM)))
-                    .isEqualTo(TerritoryBuilder.FillState.UNFILLED);
-        }
-
-        @Test
-        void classifyFillStateReturnsSolidForACellWithNoStarOfItsOwn() {
-            // A null system id has no per-system fill state, so it fills solid with the bloc's held
-            // ground rather than probing either exception set with a null key.
-            assertThat(TerritoryBuilder.classifyFillState(
-                    null, Set.of("other"), Set.of("other")))
-                    .isEqualTo(TerritoryBuilder.FillState.SOLID);
-        }
-    }
 }
