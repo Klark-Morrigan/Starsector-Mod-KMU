@@ -27,9 +27,9 @@ Part of Klark Morrigan's Utilities; see the
 
 No Layer leads the strip as a first-class tab rather than an off switch, so the strip always shows
 what is and is not drawn and an empty map reads as a choice. The political map is the pick an
-untouched save resolves to, so the overlay is up the first time the sector map opens. On the sector
-map each tab also answers a LunaLib-rebindable shortcut, printed on the tab; the intel screen's box
-has no keyboard role, since that screen has bindings of its own.
+untouched save resolves to, so the overlay is up the first time the sector map opens. Each tab also
+answers a LunaLib-rebindable shortcut, printed on the tab, on both screens the box draws; since the
+picks are per-screen, a shortcut moves only the tab of the screen it was pressed on.
 
 ## Two screens, two picks
 

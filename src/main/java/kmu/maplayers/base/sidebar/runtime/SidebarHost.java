@@ -19,10 +19,10 @@ import java.util.Set;
  *
  * <p>Each host owns its own {@link TabPanelController} and its own {@link SidebarFoldSelection}, so the two
  * screens' panels keep separate scroll and collapse state - and reopen at their own folds - even though
- * they share one layout and one set of political-map controls. What a key press means is the host's too:
- * the on-map host jumps to a layer by its shortcut, while a host with no keyboard role ignores it.
- * {@link BaseSidebarHost} carries the plumbing common to every host, leaving a concrete host only the
- * questions that genuinely differ between screens.
+ * they share one layout and one set of political-map controls. {@link BaseSidebarHost} carries the plumbing
+ * common to every host - including the shortcut key that jumps to a layer, since the panel offers the same
+ * tabs wherever it draws - leaving a concrete host only the questions that genuinely differ between
+ * screens.
  */
 public interface SidebarHost {
 
@@ -61,8 +61,8 @@ public interface SidebarHost {
     SidebarFoldSelection getFoldSelection();
 
     /**
-     * Handles a key press while the sidebar is live, for a host with a keyboard role (the on-map host jumps
-     * to a layer by its shortcut); a host with none leaves the event untouched.
+     * Handles a key press while the sidebar is live: a key bound to a layer jumps this screen's pick to it
+     * and is consumed, and any other key is left untouched to reach the screen underneath.
      *
      * @param event the key-down event
      */

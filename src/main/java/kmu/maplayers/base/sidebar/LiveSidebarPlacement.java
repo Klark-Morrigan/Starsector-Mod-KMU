@@ -45,8 +45,8 @@ import java.util.Set;
  * <p>The layer selector is one {@link ControlSpec.Tabs} control whose action selects the layer at
  * the clicked index, so the layer switch rides on the control itself and the input listener needs no tab
  * callback. Layout snaps each tab to its measured label, so the placement needs the tab font's width
- * measurer; the font basename lives here as the single source both this measurement and the renderer's
- * tab paint read, so a snapped tab width matches the text drawn into it.
+ * measurer; the face lives here as the single source both this measurement and the renderer's tab
+ * paint read, so a snapped tab width matches the text drawn into it.
  */
 public final class LiveSidebarPlacement {
     /**

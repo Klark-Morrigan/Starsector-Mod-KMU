@@ -1,14 +1,11 @@
 package kmu.maplayers.base.sidebar.runtime;
 
-import com.fs.starfarer.api.input.InputEventAPI;
-
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
-import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
@@ -18,9 +15,9 @@ import java.util.Set;
 
 /**
  * The intel screen's binding for the political-map sidebar: it shows while the intel screen's embedded map
- * preview (the "visor") is lit and drawing the ordinary map, overlays the panel on that visor anchored to
- * its top-left, and has no keyboard role. This is the intel-screen sibling of {@link MapSidebarHost}; the two feed the shared {@link
- * SidebarRenderer} / {@link SidebarInput} and differ only in gate, anchor, controller, keys, and which
+ * preview (the "visor") is lit and drawing the ordinary map, and overlays the panel on that visor anchored
+ * to its top-left. This is the intel-screen sibling of {@link MapSidebarHost}; the two feed the shared
+ * {@link SidebarRenderer} / {@link SidebarInput} and differ only in gate, anchor, controller, and which
  * frame edges they stroke.
  *
  * <p>Its panel opens at the fold this save was left at, and a save holding no choice yet opens docked, so
@@ -66,16 +63,14 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // which binding backs it; INSTANCE is where the live one is named.
     private final IntelScreenView intelScreen;
 
-    // The intel screen's active-layer pick: the registry's own persisted selection under the intel key,
-    // so it is the intel screen's own tab - a switch on the map screen leaves it where it was, and
-    // reopening the intel screen returns to this pick rather than inheriting the map's. Persisted like the
-    // map's, so it survives reload the same way.
-    private final ActiveLayerSelection layerSelection = MapLayerRegistry.getIntelSelection();
-
     IntelSidebarHost(IntelScreenView intelScreen) {
         // Opens folded to the rail on a save that has never moved it, so the panel never covers the visor
-        // uninvited - the player expands it by the collapse handle when they want the controls.
-        super(new PersistedSidebarFold(INTEL_SIDEBAR_DOCKED_KEY, true));
+        // uninvited - the player expands it by the collapse handle when they want the controls. The intel
+        // screen's own pick goes with it: a switch on the map screen leaves it where it was, and reopening
+        // the intel screen returns to this pick rather than inheriting the map's.
+        super(
+                new PersistedSidebarFold(INTEL_SIDEBAR_DOCKED_KEY, true),
+                MapLayerRegistry.getIntelSelection());
         this.intelScreen = intelScreen;
     }
 
@@ -98,7 +93,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         return LiveSidebarPlacement.resolveIntelPlacement(
                 mapVisorRect,
                 getController(),
-                layerSelection,
+                getLayerSelection(),
                 layoutBorderEdges());
     }
 
@@ -107,12 +102,6 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         return decideBorderEdges(
                 placement.body().box().y(),
                 intelScreen.getMapVisorRect());
-    }
-
-    @Override
-    public void handleKeyPress(InputEventAPI event) {
-        // No keyboard role on the intel screen: the layer shortcuts are the on-map host's, and the intel
-        // screen has its own key bindings, so a key press falls through to the screen untouched.
     }
 
     @Override

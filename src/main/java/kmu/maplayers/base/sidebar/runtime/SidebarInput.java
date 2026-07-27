@@ -8,12 +8,11 @@ import java.util.List;
 /**
  * Feeds pointer and key input to one {@link SidebarHost}'s sidebar panel as a campaign input listener: it
  * gates on the host, resolves the placement the renderer drew, and routes each event - a key press to the
- * host (which jumps to a layer, or ignores it) only while the panel is fully expanded, so a docked or
- * animating panel is not offering its tabs and its hotkeys stay inert, and a pointer event to the host's
- * reusable KMLib {@link
- * kmlib.starsector.ui.input.TabPanelController}, which routes a header tab press, the notch toggle, the
- * thumb drag, the wheel scroll, and body control hits. One instance per host, so the sector map and the
- * intel screen each route to their own panel.
+ * host (which jumps to the layer it is bound to, if any) only while the panel is fully expanded, so a
+ * docked or animating panel is not offering its tabs and its hotkeys stay inert, and a pointer event to the
+ * host's reusable KMLib {@link kmlib.starsector.ui.input.TabPanelController}, which routes a header tab
+ * press, the notch toggle, the thumb drag, the wheel scroll, and body control hits. One instance per host,
+ * so the sector map and the intel screen each route to their own panel.
  *
  * <p>A render pass cannot consume input, so this listener runs in {@code processCampaignInputPreCore}, which
  * fires before the screen's own widgets each frame it is open; consuming there stops a click reaching the

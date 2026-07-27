@@ -19,9 +19,9 @@ Part of [map layers](../../README.md); see the
 ## Hosts: what differs per screen
 
 `SidebarHost` is the per-screen role: the gate, the anchor, the framed edges, the panel controller,
-the fold selection, the keyboard role, and the view-state text. `BaseSidebarHost` holds the
-plumbing common to both (controller, fold selection, the per-load reseed), leaving each concrete
-host only the genuine differences.
+the fold selection, the layer selection, and the view-state text. `BaseSidebarHost` holds the
+plumbing common to both (controller, fold selection, layer selection, the per-load reseed, and the
+shortcut jump), leaving each concrete host only the genuine differences.
 
 | | `MapSidebarHost` | `IntelSidebarHost` |
 | --- | --- | --- |
@@ -29,8 +29,17 @@ host only the genuine differences.
 | Anchor | screen top-left, by the padding settings | the visor rect's top-left, flush left, below the top-padding setting |
 | Height cap | bottom padding setting | the visor's bottom edge |
 | Framed edges | `BoxEdge.ALL` | `TOP`, `RIGHT`, and `BOTTOM` until the box reaches the visor bottom |
-| Keys | switches layer on a bound shortcut | none; events fall through |
 | Fold default | expanded | docked |
+
+Keys are not in that table because the panel offers the same tabs wherever it draws, so
+`BaseSidebarHost.handleKeyPress` serves both: a bound key jumps that host's own pick to its layer
+and is consumed, and any other key falls through. Because the pick is per-screen, a shortcut moves
+only the tab of the screen it was pressed on.
+
+Consuming happens pre-core (see below), so a KM shortcut wins over whatever the screen underneath
+binds to the same key. On the intel screen that matters: item action buttons bind `T`, `U`, and `G`,
+and the tag filter uses `Q` and `Ctrl+S`. The defaults (`N`, `P`) avoid all of them, and the
+LunaLib Keycode fields are the way out of any clash a mod's intel item introduces.
 
 Both gates ask the same question - is there a live canvas under the panel. The visor rect is absent
 when the intel tab is not showing, when a sibling sub-tab (Planets, Factions) holds the column, or
