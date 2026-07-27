@@ -12,7 +12,7 @@ This is a small Starsector utility and quality of life mod.
   - [Versioning](#versioning)
   - [Build And Release](#build-and-release)
   - [Local linting](#local-linting)
-  - [Documentation Status](#documentation-status)
+  - [Documentation](#documentation)
 
 ## Features
 
@@ -39,7 +39,7 @@ offers and how the overlay is drawn.
 ### Versioning
 
 KMU follows the consumer-mod rules in
-[KMLib's versioning policy](https://github.com/<owner>/KMLib/blob/main/docs/dev/versioning.md).
+[KMLib's versioning policy](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/main/docs/dev/versioning.md).
 In short: MAJOR for save-breaking changes, MINOR for save-safe new features,
 PATCH for fixes and tweaks. The same policy defines how KMU pins the KMLib
 dependency in both `mod_info.json` and `.github/workflows/*.yml`.
@@ -103,8 +103,13 @@ the `check-sh-executable` gate stays green.
 `gradlew` to LF, `*.bat` and `gradlew.bat` to CRLF - and leaves binary / data
 assets to git's own detection.
 
-### Documentation Status
+### Documentation
 
-Development docs live under `docs/dev`. Package-level Mermaid diagrams live
-beside the Java packages they describe under `src/main/java/kmu`, with shared
-diagram conventions in `src/main/java/kmu/diagram-style.md`.
+Development docs live under [docs/dev](docs/dev). Package documentation lives
+beside the Java packages it describes under
+[src/main/java/kmu](src/main/java/kmu): a README per package that owns
+behaviour worth explaining, each with Mermaid diagrams inline where a picture
+carries more than prose. Start from [map layers](src/main/java/kmu/maplayers/README.md).
+
+Diagrams are Mermaid, written inline in the README that needs them. There is no
+separate diagram source format and no standalone diagram files to keep in sync.
