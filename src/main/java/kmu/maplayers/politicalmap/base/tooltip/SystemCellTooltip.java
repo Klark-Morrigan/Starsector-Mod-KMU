@@ -5,10 +5,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.font.StarsectorFont;
-import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
+import kmlib.starsector.ui.text.TextStyle;
 import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.TooltipStyle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,10 +41,9 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // choice of builder at the call site rather than an indent every caller has to remember.
     private static final float MEMBER_INDENT = 14f;
 
-    // The insignia body face, and the size every row's text renders at - which is also each row's
+    // The insignia body face every row's text renders at its own native size - which is also each row's
     // line height for the box fit.
     private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
-    private static final double FONT_SIZE = 15d;
 
     // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
     // opaque black fill, so the content reads over the map without blocking it entirely.
@@ -172,12 +172,17 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
                 .centred();
     }
 
-    // The tooltip's fixed look: the body font and size every row draws in, the shared opacity, and the
-    // frame over a black fill in the map's own player palette. Built per paint so its colours resolve
-    // live rather than being baked at class load.
+    // The tooltip's fixed look: the typography every row draws in, the shared opacity, and the frame
+    // over a black fill in the map's own player palette. Built per paint so its colours resolve live
+    // rather than being baked at class load.
+    //
+    // Both kinds of line draw in the body face: the box has always been one face throughout, and giving
+    // its title a face of its own is a change to how it looks rather than to how it is wired, so it is
+    // made where it can be reviewed as such.
     private static CursorTooltipStyle buildStyle() {
+        var bodyStyle = TextStyle.createStyle(BODY_FONT);
         return new CursorTooltipStyle(
-                new TextFace(BODY_FONT, FONT_SIZE),
+                new TooltipStyle(bodyStyle, bodyStyle),
                 OPACITY,
                 BORDER_WIDTH,
                 StarsectorUiColor.BLACK.resolve(),
