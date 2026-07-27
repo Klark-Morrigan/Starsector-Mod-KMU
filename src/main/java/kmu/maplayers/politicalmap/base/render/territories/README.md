@@ -18,17 +18,20 @@ Part of Klark Morrigan's Utilities; see the
 
 ## Building: cells into territories
 
-`TerritoryBuilder` drives the pass: it resolves who holds each system, shapes the cells into
-merged clusters, and traces one national border per cluster. It delegates the per-item baking to
-two builders, and those two are the shared primitives an incremental re-shape reuses - so a full
-rebuild and a single-system refresh style a cell identically.
+`TerritoryBuilder` is the orchestration only: it resolves who holds each system, reads the theme,
+shapes the cached cells into merged clusters, and drives the two per-item builders. Its job is to
+sample every input exactly once so the whole pass keys off one snapshot - which is what lets an
+incremental re-shape reuse those same builders on a handful of cells and land on a result
+identical to a full rebuild.
 
 - `StyledCellBuilder` bakes one cell. An **owned** cell contributes only its interior seams,
   because its fill and national border belong to the cluster it fuses into. A **factionless**
   cell (decivilised, or uninhabited) does not fuse, so it keeps its own fill and outline and
   resolves both palette slots to the shared neutral colour.
-- `SplitFillBuilder` bakes one bloc's fill from the `FillSplit` partition - see
-  [the split fill](#the-split-fill-solid-hatched-unfilled) below.
+- `FactionTerritoryBuilder` bakes one bloc: its national border, traced across every system it
+  holds, and its fill - which it hands to `SplitFillBuilder`, see
+  [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and border come from the
+  same loops, so they cannot drift apart.
 
 `BorderSmoothing` sands spikes and rounds corners of the traced borders; `VertexRuns` flattens
 shaped cells into GL vertex runs. Element colours, opacities, and widths come from cascading the

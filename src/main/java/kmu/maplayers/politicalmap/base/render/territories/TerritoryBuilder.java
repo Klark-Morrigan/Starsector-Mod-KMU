@@ -3,12 +3,9 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.opengl.GlVertexRuns;
-import kmlib.opengl.PolygonTessellator;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.markets.DecivilisedMarkets;
-import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
@@ -18,30 +15,23 @@ import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.geometry.CellShaper;
 import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
-import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Turns the raw cached cells and the current sector ownership into the political
- * map's draw lists: it resolves who holds each system, shapes the cells into merged
- * clusters, and bakes each element's colors, opacities, and widths from the current
- * settings into GL-ready vertex runs.
+ * Runs one full political-map rebuild: resolves who holds each system, reads the theme,
+ * shapes the cached cells into merged clusters, and drives the two per-item builders over
+ * every cell and every owned bloc to produce a fresh {@link PoliticalMapTerritories}.
  *
- * <p>The full {@link #buildTerritories} pass produces a fresh {@link PoliticalMapTerritories}
- * from scratch, driving the two per-item builders over every cell and every owned bloc. Those
- * builders - {@link StyledCellBuilder#buildStyledCellForSystem} and this class's own
- * {@link #buildFactionTerritory} - are the shared primitives the incremental refresh reuses to
- * rebuild just the cells and factions an ownership change touched, so a full rebuild and an
- * incremental re-shape classify and style a cell identically.
+ * <p>The orchestration only - each stage's actual work belongs to a collaborator, and this
+ * class's job is to sample every input exactly once so the whole pass keys off one snapshot.
+ * That is what lets an incremental re-shape reuse those same builders
+ * ({@link StyledCellBuilder} and {@link FactionTerritoryBuilder}) on a handful of cells and
+ * get a result identical to a full rebuild.
  */
 public final class TerritoryBuilder {
     private static final Logger LOG = Global.getLogger(TerritoryBuilder.class);
@@ -165,7 +155,8 @@ public final class TerritoryBuilder {
             // chaining, smoothing, and tessellating every faction's outline is comparable
             // in cost to shaping the cells.
             profiler.measure("politicalMap.buildFactionTerritories",
-                    () -> buildAllFactionTerritories(territories, geometryCache));
+                    () -> FactionTerritoryBuilder.buildAllFactionTerritories(
+                            territories, geometryCache));
 
             LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
                     + " styledCells=" + territories.getStyledCellByCellId().size()
@@ -173,147 +164,6 @@ public final class TerritoryBuilder {
                     + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
             return territories;
         });
-    }
-
-    // Builds one faction's fill and national border from its border rings,
-    // traced across all the systems it holds so a multi-system cluster reads as one
-    // continuous frontier. The rings are tessellated into fill triangles and flattened
-    // into border loops - the same geometry - so the fill exactly matches the stroked
-    // border. Disjoint clusters and enclaves each come back as their own ring, so
-    // rebuilding a faction from its current members alone re-splits or re-merges its
-    // clusters when the incremental refresh gains or loses one. Returns null when the
-    // faction has no fill and no border color, or no borderable geometry.
-    public static FactionTerritory buildFactionTerritory(
-            PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache,
-            String factionId,
-            List<String> memberCellIds) {
-
-        var cellGrouping = resolveCellGrouping(territories, geometryCache);
-
-        // The grouping key here is a bloc id (a faction id under the faction view, or one of the
-        // filter's synthetic spotlight keys), so its style and per-bloc adjustment come from the
-        // same styling resolver a per-cell owner does. A desaturated bloc's fill and border swap
-        // to the pass's shared desaturation palette instead of its own two shades.
-        var styling = territories.resolveBlocStyling(factionId);
-        var style = styling.style();
-        var adjustment = styling.adjustment();
-
-        // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
-        // one key, so it clusters into this single territory outlined by one frontier, then splits
-        // its fill per cell below. Every other territory fills solid as one region.
-        var isSpotlit = FilteredPolitics.isSpotlitBloc(factionId);
-
-        // How each of this territory's members fills: solid, hatched (a spotlit bloc's contested
-        // systems), or unfilled (systems held for border and label but drawn empty). Resolved once
-        // so both the fast-path decision and the split read the same partition.
-        var fillSplit = FillSplit.splitMembersByFillState(
-                cellGrouping,
-                memberCellIds,
-                territories.getContestedSystemIds(),
-                territories.getUnfilledSystemIds());
-
-        // Every system of a faction shares its palette, so any member resolves the same
-        // fill and border colors.
-        var owner = territories.getOwnerBySystemId()
-                .get(cellGrouping.resolveDrawnSystemIdOf(memberCellIds.get(0)));
-        var palette = MapPalettes.resolveEffectivePalette(
-                adjustment,
-                owner,
-                territories.getDesaturationPalette());
-        var fillColor = MapPalettes.pickPaletteColor(
-                style.fill().color(),
-                palette.primaryColor(),
-                palette.secondaryColor());
-        var borderColor = MapPalettes.pickPaletteColor(
-                style.outer().color(),
-                palette.primaryColor(),
-                palette.secondaryColor());
-        if (fillColor == null && borderColor == null) {
-            return null;
-        }
-
-        // One trace for the whole territory: the national border's rings, and - for a spotlit
-        // footprint - the per-state sub-region rings its fill splits into, so border and fill
-        // offset under identical parameters and cannot drift apart.
-        var borderTrace = PoliticalBorderTrace.readFromLunaSettings();
-        var insetRings = borderTrace.traceRings(
-                memberCellIds,
-                geometryCache.getCellEdgesByCellId(),
-                cellGrouping);
-        if (insetRings.isEmpty()) {
-            return null;
-        }
-        // Resolve the inset rings to their clean outer envelope first (positive winding
-        // drops any neck self-crossing), then run each smoothing pass only when its
-        // Dev-tab gate is on: sand the spikes, then round the corners. Smoothing before
-        // the resolve would have any arc clipped off at the crossing and left a sharp
-        // corner, and sanding must precede rounding so the arc meets clean geometry.
-        // Fill and border are the same loops (triangulated vs its boundary loops), so
-        // they match exactly whichever passes ran.
-        var borderLoops = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
-        var borderSmoothing = territories.getGlobalStyle().borderSmoothing();
-        if (borderSmoothing.shouldSandSpikes()) {
-            borderLoops = BorderSmoothing.sandBorderSpikes(borderLoops);
-        }
-        if (borderSmoothing.shouldRoundCorners()) {
-            borderLoops = BorderSmoothing.roundBorderCorners(borderLoops);
-        }
-        // The fill, built off the same smoothed loops the border below strokes so the two match
-        // exactly. Whether it takes the per-state split or fills as one solid region is the fill
-        // builder's own call, made from the footprint's partition and whether it is spotlit.
-        var fill = new SplitFillBuilder(
-                territories,
-                geometryCache,
-                cellGrouping,
-                borderTrace,
-                borderLoops)
-                .buildFill(isSpotlit, fillSplit, factionId, fillColor);
-
-        var borderRuns = new ArrayList<float[]>();
-        if (borderColor != null) {
-            for (var loop : PolygonTessellator.tessellateToBoundaryLoops(borderLoops)) {
-                borderRuns.add(GlVertexRuns.flattenVertices(loop));
-            }
-        }
-        return new FactionTerritory(
-                fill.solidTriangles(),
-                fill.hatchSegments(),
-                new UiElementPaint(
-                        fillColor,
-                        adjustment.muteOpacity(style.fill().opacity())),
-                borderRuns,
-                new UiElementPaint(
-                        borderColor,
-                        adjustment.muteOpacity(style.outer().opacity())),
-                (float) style.outerWidth());
-    }
-
-    // Builds every owned faction's territory into the territories, keyed by faction id.
-    // Each faction is independent - its cluster(s) trace only its own cells - so the
-    // incremental refresh rebuilds one faction's entry without touching the rest.
-    //
-    // Membership is the cells a faction draws, not the systems it holds: those differ
-    // wherever a faction's ground includes a cell no star of its own sits in, and it is the
-    // cells that carry the edges a border is traced from.
-    private static void buildAllFactionTerritories(
-            PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache) {
-        for (var faction
-                : resolveCellGrouping(territories, geometryCache)
-                        .groupCellIdsByKey()
-                        .entrySet()) {
-            var territory = buildFactionTerritory(
-                    territories,
-                    geometryCache,
-                    faction.getKey(),
-                    faction.getValue());
-            if (territory != null) {
-                territories
-                        .getFactionTerritoryByFactionId()
-                        .put(faction.getKey(), territory);
-            }
-        }
     }
 
     // The drawn cells' grouping this pass shapes and traces against: which system each cell draws

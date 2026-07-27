@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.opengl.GlColor;
 import kmlib.opengl.GlRuns;
+import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
 
@@ -88,26 +89,32 @@ public final class TerritoryRenderer {
         // non-empty hatch run.
         GL11.glLineWidth((float) territories.getGlobalStyle().hatch().width());
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
-            var fill = territory.fill();
-            if (fill.isHidden()) {
-                continue;
-            }
-            GlColor.set(fill.color(), alphaMult * fill.alpha());
-            GlRuns.drawScaled(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
-            GlRuns.drawScaled(GL11.GL_LINES, territory.hatchSegments(), factor);
+            emitIfVisible(territory.fill(), alphaMult, () -> {
+                GlRuns.drawScaled(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
+                GlRuns.drawScaled(GL11.GL_LINES, territory.hatchSegments(), factor);
+            });
         }
         // Then the factionless cells' own fills - dead colonies washed in the neutral colour.
         // They fill per cell rather than per cluster because factionless ground never fuses
         // into one, and they cover no faction's region, so drawing them after the cluster
         // fills is a matter of grouping the fill pass rather than of layering.
         for (var cell : territories.getStyledCellByCellId().values()) {
-            var fill = cell.fillPaint();
-            if (fill.isHidden()) {
-                continue;
-            }
-            GlColor.set(fill.color(), alphaMult * fill.alpha());
-            GlRuns.drawScaled(GL11.GL_TRIANGLES, cell.fillTriangles(), factor);
+            emitIfVisible(cell.fillPaint(), alphaMult,
+                    () -> GlRuns.drawScaled(GL11.GL_TRIANGLES, cell.fillTriangles(), factor));
         }
+    }
+
+    // Binds one element's colour and emits its runs, or skips both when the element puts no ink
+    // on the map. Every pass here does exactly this, so binding and the hidden test travel
+    // together rather than being restated per loop - which is what keeps a new run from being
+    // added with the colour bound but the hidden test forgotten, drawing an invisible element in
+    // the previous one's colour.
+    private static void emitIfVisible(UiElementPaint paint, float alphaMult, Runnable emitRuns) {
+        if (paint.isHidden()) {
+            return;
+        }
+        GlColor.set(paint.color(), alphaMult * paint.alpha());
+        emitRuns.run();
     }
 
     // Strokes the interior province seams first, then the factionless outlines, then the
@@ -127,36 +134,27 @@ public final class TerritoryRenderer {
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
         for (var cell : territories.getStyledCellByCellId().values()) {
-            var inner = cell.inner();
-            if (inner.isHidden()) {
-                continue;
-            }
-            GL11.glLineWidth(cell.innerWidth());
-            GlColor.set(inner.color(), alphaMult * inner.alpha());
-            GlRuns.drawScaled(GL11.GL_LINES, cell.interiorEdges(), factor);
+            emitIfVisible(cell.inner(), alphaMult, () -> {
+                GL11.glLineWidth(cell.innerWidth());
+                GlRuns.drawScaled(GL11.GL_LINES, cell.interiorEdges(), factor);
+            });
         }
         for (var cell : territories.getStyledCellByCellId().values()) {
-            var outer = cell.outer();
-            if (outer.isHidden()) {
-                continue;
-            }
-            GL11.glLineWidth(cell.outerWidth());
-            GlColor.set(outer.color(), alphaMult * outer.alpha());
-            GlRuns.drawScaled(GL11.GL_LINES, cell.boundaryEdges(), factor);
+            emitIfVisible(cell.outer(), alphaMult, () -> {
+                GL11.glLineWidth(cell.outerWidth());
+                GlRuns.drawScaled(GL11.GL_LINES, cell.boundaryEdges(), factor);
+            });
         }
         // The national border in its own style, over the interior seams so the frontier dominates
         // where they meet. Each border ring is a closed rounded loop, so it strokes as one
         // continuous GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
-            var border = territory.border();
-            if (border.isHidden()) {
-                continue;
-            }
-            GL11.glLineWidth(territory.borderWidth());
-            GlColor.set(border.color(), alphaMult * border.alpha());
-            for (var loop : territory.borderLoops()) {
-                GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
-            }
+            emitIfVisible(territory.border(), alphaMult, () -> {
+                GL11.glLineWidth(territory.borderWidth());
+                for (var loop : territory.borderLoops()) {
+                    GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
+                }
+            });
         }
     }
 

@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * The two national-border smoothing passes, shared by the production
- * {@link TerritoryBuilder} and the debug border-tracing builder (in the parent
+ * {@link FactionTerritoryBuilder} and the debug border-tracing builder (in the parent
  * {@code render} package) so both smooth identical geometry from one source.
  *
  * <p>Each pass is honest mechanism - it always does what its name says. The on/off

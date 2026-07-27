@@ -16,9 +16,9 @@ import kmu.maplayers.politicalmap.base.render.labels.LabelsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchor;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
+import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
-import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 
 import org.apache.log4j.Logger;
 
@@ -37,8 +37,9 @@ import java.util.Set;
  * <p>A resize that does not flip a system's owner costs just the re-derivation; a flip
  * re-shapes the ring of cells around it (each neighbour's shared edge flips between a
  * same-faction seam and a national border) and rebuilds the two factions' territories
- * (the old owner's and the new one's) through the same {@link TerritoryBuilder}
- * primitives a full rebuild uses, so the incremental result matches a full rebuild.
+ * (the old owner's and the new one's) through the same {@link StyledCellBuilder} and
+ * {@link FactionTerritoryBuilder} primitives a full rebuild uses, so the incremental result
+ * matches a full rebuild.
  */
 final class IncrementalPoliticsRefresh {
     private static final Logger LOG = Global.getLogger(IncrementalPoliticsRefresh.class);
@@ -247,7 +248,7 @@ final class IncrementalPoliticsRefresh {
             List<String> memberCellIds) {
         var territory = memberCellIds == null || memberCellIds.isEmpty()
                 ? null
-                : TerritoryBuilder.buildFactionTerritory(
+                : FactionTerritoryBuilder.buildFactionTerritory(
                         territories,
                         geometryCache,
                         factionId,
