@@ -17,7 +17,7 @@ import java.util.Optional;
  *
  * <p>A shared row rather than each tooltip's own empty state, because the emptiness is a fact about
  * the system, not about the layer looking at it - a layer that says nothing else about a dead system
- * still has to say that much, and two layers wording or indenting it differently would read as two
+ * still has to say that much, and two layers wording or placing it differently would read as two
  * different facts. The row resolves empty for a populated system, so a body can offer the status
  * unconditionally and let the system decide whether it appears.
  */
@@ -50,11 +50,9 @@ public final class SystemStatusRow {
                 ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
                 : KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED;
 
-        // Crestless and scoreless, nested under the system name the box is headed with: the status
-        // qualifies that name rather than opening a block of its own.
-        return Optional.of(SystemCellTooltip.buildNestedRow(
-                null,
-                KmuStrings.get(statusKey),
-                SystemCellTooltip.NO_SCORE));
+        // Flush under the system name the box is headed with, crestless and scoreless: the status
+        // qualifies the whole system rather than being one entry of a list, so it reads as a standalone
+        // line rather than as the first - indented - row of a breakdown that has none.
+        return Optional.of(SystemCellTooltip.buildStandaloneRow(KmuStrings.get(statusKey)));
     }
 }

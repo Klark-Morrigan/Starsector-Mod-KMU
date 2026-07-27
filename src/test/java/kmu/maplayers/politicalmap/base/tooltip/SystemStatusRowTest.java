@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * Pins {@link SystemStatusRow}: a populated system yields no status at all, an empty one names itself
  * Decivilised or Unpopulated depending on whether the player has seen a dead colony there, and the
  * reveal decides whether an undiscovered colony already counts as populating the system. The row's
- * shape is pinned too - crestless, scoreless, and centred at no indent - since that is what lets it
+ * shape is pinned too - crestless, scoreless, and flush at no indent - since that is what lets it
  * read as a standalone line under the system-name header rather than as an entry of a list.
  */
 final class SystemStatusRowTest {
@@ -89,14 +89,14 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowCentresTheStatusWithoutAnIndentCrestOrScore() {
+        void resolveStatusRowLaysTheStatusFlushWithoutAnIndentCrestOrScore() {
             var system = systemWithPlanets();
 
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false)
                     .orElseThrow();
 
-            assertThat(row.isLabelCentred()).isTrue();
             assertThat(row.indent()).isCloseTo(NO_INDENT, within(TOLERANCE));
+            assertThat(row.isOutsideCrestColumn()).isTrue();
             assertThat(row.crestSpritePath()).isNull();
             assertThat(row.value()).isEmpty();
         }

@@ -137,16 +137,31 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
                 .carriesMarker(marker, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 
+    /**
+     * Builds a standalone row: flush at the box's left content edge, outside the crest column, in the
+     * plain text colour and carrying neither crest nor value - for a line stating something about the
+     * hovered system as a whole. Flush rather than inset, since an indent would read as the line
+     * belonging to an entry above it, and there is no entry for it to belong to.
+     *
+     * @param text the row's label
+     * @return the row, ready to add to a body
+     */
+    protected static TooltipRow buildStandaloneRow(String text) {
+        return TooltipRow
+                .createRow(text, StarsectorUiColor.VANILLA_TEXT.resolve())
+                .clearsCrestColumn();
+    }
+
     // The header every cell tooltip opens with: the hovered system's own name, bright and crestless, so
-    // the body below it never has to repeat which system it describes. It steps out of the crest column
-    // the crested rows below reserve, since it titles the box rather than sitting in their table - an
-    // indent under an empty crest square would read as the name belonging to the list.
+    // the body below it never has to repeat which system it describes. Centred over the box rather than
+    // laid into the columns below it, since it titles the whole box rather than sitting in its table -
+    // which also frees it of the crest gutter and the value column those rows align to.
     private static TooltipRow buildHeaderRow(StarSystemAPI system) {
         return TooltipRow
                 .createRow(
                         system.getName(),
                         StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve())
-                .clearsCrestColumn();
+                .centred();
     }
 
     // The tooltip's fixed look: the body font and size every row draws in, the shared opacity, and the
