@@ -34,17 +34,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the builder's off-engine, deterministic pieces: an owned cell's style-adjustment
- * application (palette swap and opacity scale) and a factionless cell's neutral fill and
- * outline. The footprint fill's partition rule is pinned by {@link FillSplitTest}. The
- * shared styling resolvers it used to hold now live in
- * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes} and
- * {@link kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver} with their own suites;
- * the rest shapes cells and reads settings that
- * only resolve in-engine, and the cluster-anchor fit is pinned by
- * {@link kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder}.
+ * Pins how one shaped cell is baked into its draw record: an owned cell threading its bloc's
+ * palette and adjustment into the interior seam it contributes, and a factionless cell resolving
+ * both palette slots to the neutral colour for the fill and outline it keeps for itself.
+ *
+ * <p>The style cascade these read through is pinned by
+ * {@link kmu.maplayers.politicalmap.base.render.style.BlocStylingTest}, the palette rules by
+ * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes}'s own suite, and the footprint
+ * fill's partition by {@link FillSplitTest}.
  */
-final class TerritoryBuilderTest {
+final class StyledCellBuilderTest {
     // An inert hover highlight: the builder bakes draw lists, and nothing it produces is
     // hovered here, so the style is carried untouched and its values never read.
     private static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
@@ -64,14 +63,6 @@ final class TerritoryBuilderTest {
 
     @Nested
     class BuildStyledCellForSystem {
-
-        // The two owned categories' fill opacities, kept distinct (and neither 1.0, which the
-        // shared STYLE already uses) so an observed fill alpha names the category it came from.
-        private static final double FACTION_FILL_OPACITY = 0.4;
-        private static final double INDEPENDENT_FILL_OPACITY = 0.2;
-        // A seam width only the independent bundle carries, so it witnesses that the rest of that
-        // bundle survives a desaturated pass rather than being replaced wholesale.
-        private static final double INDEPENDENT_INNER_WIDTH = 2.0;
 
         private static final String SYSTEM_ID = "hegemony-system";
         // The one system in the factionless fixture's decivilised set, so a test can address
@@ -96,7 +87,7 @@ final class TerritoryBuilderTest {
 
         @Test
         void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheOwnerPaletteWhenNotDesaturated() {
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, false))),
                     SYSTEM_ID, ownedCell());
 
@@ -106,7 +97,7 @@ final class TerritoryBuilderTest {
 
         @Test
         void buildStyledCellForSystemDesaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(1.0, true))),
                     SYSTEM_ID, ownedCell());
 
@@ -116,7 +107,7 @@ final class TerritoryBuilderTest {
 
         @Test
         void buildStyledCellForSystemMutesAndDesaturatesTogetherWhenBothAreSet() {
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, true))),
                     SYSTEM_ID, ownedCell());
 
@@ -125,10 +116,8 @@ final class TerritoryBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemReproducesCurrentOutputForTheNoneAdjustment() {
-            // Regression pin: the identity adjustment leaves the owner's own palette and
-            // the style's own opacity untouched, exactly as before Step 3.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
+        void buildStyledCellForSystemLeavesTheOwnerPaletteAndOpacityUntouchedForTheNoneAdjustment() {
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
                     SYSTEM_ID, ownedCell());
 
@@ -136,77 +125,32 @@ final class TerritoryBuilderTest {
             assertThat(styled.inner().alpha()).isEqualTo(1.0f);
         }
 
-        // A view stub that paints in the full faction style (never independent) and
-        // returns the given adjustment for any bloc, so each test names only the
-        // adjustment it exercises.
-        private static PoliticalMapView viewMockAdjusting(BlocStyleAdjustment adjustment) {
-            return viewMockDeciding(false, adjustment);
+        @Test
+        void buildStyledCellForSystemDefersAnOwnedCellsFillAndOutlineToItsCluster() {
+            // An owned cell's fill and national border are the cluster's, so the cell bakes no
+            // geometry for them and resolves no colour - nothing of them is emitted per cell.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                    drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
+                    SYSTEM_ID, ownedCell());
+
+            assertThat(styled.fillTriangles()).isEmpty();
+            assertThat(styled.boundaryEdges()).isEmpty();
+            assertThat(styled.fillPaint().isHidden()).isTrue();
+            assertThat(styled.outer().isHidden()).isTrue();
         }
 
         @Test
-        void buildStyledCellForSystemFillsADesaturatedIndependentStyledBlocAtTheFactionOpacity() {
-            // Desaturated ground holds the one faction fill opacity, so the whole desaturated
-            // surface reads uniform rather than splitting into two weights of grey.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
-                    independentStyledDrawablesWith(new BlocStyleAdjustment(1.0, true)),
+        void buildStyledCellForSystemRecedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
+            // Under an active filter the view's per-bloc seams are bypassed: a real (non-spotlit)
+            // owner takes the pass's shared recede, not whatever the view would have said. The view
+            // stub returns the identity adjustment, so seeing the recede applied proves the filter,
+            // not the view, styled the cell.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                    filteringDrawablesWith(new BlocStyleAdjustment(0.5, true)),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(styled.fillPaint().alpha()).isEqualTo((float) FACTION_FILL_OPACITY);
-        }
-
-        @Test
-        void buildStyledCellForSystemFillsAnUndesaturatedIndependentStyledBlocAtItsOwnOpacity() {
-            // In full colour the independent bundle keeps its own lighter fill, so independent
-            // space still recedes behind faction ground.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
-                    independentStyledDrawablesWith(BlocStyleAdjustment.NONE),
-                    SYSTEM_ID, ownedCell());
-
-            assertThat(styled.fillPaint().alpha()).isEqualTo((float) INDEPENDENT_FILL_OPACITY);
-        }
-
-        @Test
-        void buildStyledCellForSystemKeepsTheIndependentSeamWidthWhenDesaturated() {
-            // Only the fill opacity crosses over: the rest of the independent bundle still
-            // applies, so independent ground keeps its own borders and seams.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
-                    independentStyledDrawablesWith(new BlocStyleAdjustment(1.0, true)),
-                    SYSTEM_ID, ownedCell());
-
-            assertThat(styled.innerWidth()).isEqualTo((float) INDEPENDENT_INNER_WIDTH);
-        }
-
-        // An un-filtered pass whose view recedes every bloc to the independent style, over a theme
-        // whose two owned categories fill at different opacities - the backdrop that can tell which
-        // category the fill opacity was sourced from.
-        private static PoliticalMapTerritories independentStyledDrawablesWith(
-                BlocStyleAdjustment adjustment) {
-            Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
-            categories.put(MapCategory.FACTION, styleFilling(FACTION_FILL_OPACITY, 1.0));
-            categories.put(MapCategory.INDEPENDENT,
-                    styleFilling(INDEPENDENT_FILL_OPACITY, INDEPENDENT_INNER_WIDTH));
-            categories.put(MapCategory.DECIVILISED, STYLE);
-            categories.put(MapCategory.UNINHABITED, STYLE);
-            return new PoliticalMapTerritories(
-                    Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of(),
-                    new MapStyling(
-                            new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
-                                    new BorderSmoothingStyle(false, false, 0, 0, 0), NO_HOVER_HIGHLIGHT, 0.3),
-                                    categories),
-                            Color.GRAY,
-                            new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
-                    new ViewGrouping(viewMockDeciding(true, adjustment),
-                            OwnershipGrouping.identity()),
-                    new FilterSnapshot(null, BlocStyleAdjustment.NONE, Set.of()));
-        }
-
-        // A category style identified solely by the two values these tests read back, so an
-        // assertion on either one names which category the builder sourced it from.
-        private static CategoryStyle styleFilling(double fillOpacity, double innerWidth) {
-            return new CategoryStyle(
-                    new ElementStyle(FactionPaletteChoice.NONE, fillOpacity),
-                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 3.0,
-                    new ElementStyle(FactionPaletteChoice.SECONDARY, 1.0), innerWidth);
+            assertThat(styled.inner().color()).isEqualTo(DESATURATED_SECONDARY);
+            assertThat(styled.inner().alpha()).isEqualTo(0.5f);
         }
 
         @Test
@@ -216,8 +160,9 @@ final class TerritoryBuilderTest {
             // paints as plain uninhabited ground. The null star must resolve through the draws-as
             // map without being taken for decivilised: the decivilised category is "No color"
             // here, so had the null id been routed there the cell would have dropped to null.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
-                    factionlessDrawables(), null, ownedCell());
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                    factionlessDrawablesWith(noColorStyle(), drawnOutlineStyle()),
+                    null, ownedCell());
 
             assertThat(styled).isNotNull();
             assertThat(styled.outer().color()).isEqualTo(FACTIONLESS_NEUTRAL);
@@ -228,7 +173,7 @@ final class TerritoryBuilderTest {
             // Dead colonies carry a fill of their own - factionless ground fills per cell, since
             // it never fuses into a cluster with a tessellated region to fill from - so both the
             // paint and the baked triangles have to come back off the cell itself.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
                     factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
@@ -240,7 +185,7 @@ final class TerritoryBuilderTest {
         void buildStyledCellForSystemKeepsAFactionlessCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
             // The outline's opacity is its only on/off, so zeroing it must not take the fill down
             // with it: the cell is kept for whichever of the two still puts ink on the map.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
                     factionlessDrawablesWith(fillOnlyStyle(), drawnOutlineStyle()),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
@@ -253,7 +198,7 @@ final class TerritoryBuilderTest {
         void buildStyledCellForSystemBakesNoFillTrianglesForAnOutlineOnlyFactionlessCell() {
             // Uninhabited ground covers everything nothing else holds, so triangulating a fill it
             // never paints would be the rebuild's largest wasted cost - the geometry stays unbuilt.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
                     factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
                     "never-settled-system", ownedCell());
 
@@ -261,16 +206,27 @@ final class TerritoryBuilderTest {
             assertThat(styled.fillTriangles()).isEmpty();
         }
 
-        // A pass whose uninhabited category draws a visible outline and whose decivilised category
-        // is "No color", over a non-empty (immutable) decivilised set. A cell with no star resolves
-        // as uninhabited here; the immutable set would throw on a contains(null), so a clean result
-        // also witnesses the null-id guard.
-        private static PoliticalMapTerritories factionlessDrawables() {
-            return factionlessDrawablesWith(noColorStyle(), drawnOutlineStyle());
+        @Test
+        void buildStyledCellForSystemDropsAFactionlessCellThatDrawsNothing() {
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                    factionlessDrawablesWith(noColorStyle(), drawnOutlineStyle()),
+                    DECIVILISED_SYSTEM_ID, ownedCell());
+
+            assertThat(styled).isNull();
         }
 
-        // The same factionless backdrop under a chosen pair of factionless category styles, so a
-        // test names the two styles whose interplay it is about and shares everything else.
+        // A view stub that paints in the full faction style (never independent) and
+        // returns the given adjustment for any bloc, so each test names only the
+        // adjustment it exercises.
+        private static PoliticalMapView viewMockAdjusting(BlocStyleAdjustment adjustment) {
+            return viewMockDeciding(false, adjustment);
+        }
+
+        // The factionless backdrop under a chosen pair of factionless category styles, so a test
+        // names the two styles whose interplay it is about and shares everything else. Carries an
+        // immutable owner map AND an immutable decivilised set, both null-hostile: a clean result
+        // for a null system proves that path reads neither - it resolves no owner and is not taken
+        // for decivilised without ever probing a map with the null key.
         private static PoliticalMapTerritories factionlessDrawablesWith(
                 CategoryStyle decivilisedStyle, CategoryStyle uninhabitedStyle) {
             Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
@@ -278,9 +234,6 @@ final class TerritoryBuilderTest {
             categories.put(MapCategory.INDEPENDENT, STYLE);
             categories.put(MapCategory.DECIVILISED, decivilisedStyle);
             categories.put(MapCategory.UNINHABITED, uninhabitedStyle);
-            // An immutable owner map AND an immutable decivilised set, both null-hostile: a clean
-            // result proves the null-star path reads neither - it resolves no owner and is not
-            // taken for decivilised without ever probing a map with the null key.
             return new PoliticalMapTerritories(
                     Map.of(), Set.of(DECIVILISED_SYSTEM_ID), Set.of(),
                     new MapStyling(
@@ -330,20 +283,6 @@ final class TerritoryBuilderTest {
                     new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
         }
 
-        @Test
-        void buildStyledCellForSystemRecedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
-            // Under an active filter the view's per-bloc seams are bypassed: a real (non-spotlit)
-            // owner takes the pass's shared recede, not whatever the view would have said. The view
-            // stub returns the identity adjustment, so seeing the recede applied proves the filter,
-            // not the view, styled the cell.
-            var styled = TerritoryBuilder.buildStyledCellForSystem(
-                    filteringDrawablesWith(new BlocStyleAdjustment(0.5, true)),
-                    SYSTEM_ID, ownedCell());
-
-            assertThat(styled.inner().color()).isEqualTo(DESATURATED_SECONDARY);
-            assertThat(styled.inner().alpha()).isEqualTo(0.5f);
-        }
-
         // An un-filtered pass over one owned system, styled by the given view stub - the backdrop
         // the view-driven adjustment tests read.
         private static PoliticalMapTerritories drawablesWith(PoliticalMapView viewMock) {
@@ -385,7 +324,7 @@ final class TerritoryBuilderTest {
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never
-        // fires; its edges are all interior seams, which this owned-cell path never reads.
+        // fires; its edges are all interior seams, which the owned-cell path never reads.
         private static ShapedCell ownedCell() {
             return new ShapedCell(
                     List.of(new double[] {0, 0}, new double[] {10, 0},
@@ -393,5 +332,4 @@ final class TerritoryBuilderTest {
                     new boolean[] {false, false, false, false});
         }
     }
-
 }

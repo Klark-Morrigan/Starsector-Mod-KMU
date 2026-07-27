@@ -18,13 +18,22 @@ Part of Klark Morrigan's Utilities; see the
 
 ## Building: cells into territories
 
-`TerritoryBuilder` turns the cached cells and the current ownership into the draw packets: it
-resolves who holds each system, shapes the cells into merged clusters, traces one national border
-per cluster, and bakes each element's colours, opacities, and widths by cascading the
-`render.style` theme with each bloc's recede adjustment. `BorderSmoothing` sands spikes and rounds
-corners of those borders; `VertexRuns` flattens shaped cells into GL vertex runs. The per-cell and
-per-faction build steps are the shared primitives an incremental re-shape reuses, so a full
+`TerritoryBuilder` drives the pass: it resolves who holds each system, shapes the cells into
+merged clusters, and traces one national border per cluster. It delegates the per-item baking to
+two builders, and those two are the shared primitives an incremental re-shape reuses - so a full
 rebuild and a single-system refresh style a cell identically.
+
+- `StyledCellBuilder` bakes one cell. An **owned** cell contributes only its interior seams,
+  because its fill and national border belong to the cluster it fuses into. A **factionless**
+  cell (decivilised, or uninhabited) does not fuse, so it keeps its own fill and outline and
+  resolves both palette slots to the shared neutral colour.
+- `SplitFillBuilder` bakes one bloc's fill from the `FillSplit` partition - see
+  [the split fill](#the-split-fill-solid-hatched-unfilled) below.
+
+`BorderSmoothing` sands spikes and rounds corners of the traced borders; `VertexRuns` flattens
+shaped cells into GL vertex runs. Element colours, opacities, and widths come from cascading the
+`render.style` theme with each bloc's recede adjustment, asked for through
+`PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc resolves from one read.
 
 ## Borders against empty space
 

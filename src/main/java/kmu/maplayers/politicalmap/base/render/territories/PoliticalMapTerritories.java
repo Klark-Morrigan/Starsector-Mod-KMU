@@ -9,6 +9,8 @@ import kmu.maplayers.politicalmap.base.geometry.CellEdge;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterIndex;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
+import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
 import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
 import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapCategory;
@@ -224,6 +226,28 @@ public final class PoliticalMapTerritories {
     // tier when a cell or territory of that category is built.
     public CategoryStyle getCategoryStyle(MapCategory category) {
         return styling.renderStyle().categoryStyle(category);
+    }
+
+    /**
+     * The concrete style and adjustment one bloc draws under this pass, cascading the retained
+     * view, grouping, filter state, and theme in one step.
+     *
+     * <p>Asked of the territories rather than assembled by each builder from six separate
+     * getters: every input is this build's own retained snapshot, so a bloc's fill, its national
+     * border, and its cells' interior seams all resolve from the same read and cannot diverge.
+     *
+     * @param blocId the bloc to style - a faction id, or one of the filter's synthetic keys
+     * @return the category bundle and the adjustment applied over it
+     */
+    public BlocStyling resolveBlocStyling(String blocId) {
+        return BlocStyling.resolveFrom(
+                getRenderStyle(),
+                BlocStyleResolver.resolveBlocStyleDecision(
+                        isFiltering(),
+                        blocId,
+                        getView(),
+                        getGrouping(),
+                        getRecedeAdjustment()));
     }
 
     public PoliticalMapView getView() {

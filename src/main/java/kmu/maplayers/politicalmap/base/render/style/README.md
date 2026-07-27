@@ -49,6 +49,15 @@ the space it labels:
   palette, which slot, and what a desaturated bloc recolours to.
 - `BlocStyleResolver` - resolves the shared per-bloc decision (independent-vs-faction style and
   the adjustment a bloc draws under) into a `BlocStyleDecision`.
+- `BlocStyling` - maps that decision onto the pass's actual theme, giving the concrete bundle
+  plus adjustment a bloc draws under. It owns the one field that crosses between bundles: a
+  desaturated bloc's fill is held at the *faction* opacity, so a desaturated surface reads as
+  one uniform grey rather than splitting into two weights of empty.
+
+The decision and the mapping are deliberately two steps. `BlocStyleResolver` stays theme-free so
+the label path and the fill path resolve the same answer; `BlocStyling` is where a theme is
+finally required. Callers ask for the pair through `PoliticalMapTerritories.resolveBlocStyling`,
+which composes both off one retained snapshot.
 
 ## What is not here
 
