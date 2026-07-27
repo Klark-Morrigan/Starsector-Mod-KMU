@@ -42,8 +42,8 @@ public final class MapSidebarHost extends BaseSidebarHost {
 
     @Override
     public TabPanelPlacement resolvePlacement() {
-        // The on-map sidebar floats free on the screen, so it frames and reserves all four edges - the same
-        // full set its stroke uses.
+        // Reserves inset space for all four edges, the same full set resolveBorderEdges strokes, so the
+        // reserved strips and the stroke never disagree.
         return LiveSidebarPlacement.resolveMapPlacement(
                 getController(),
                 getLayerSelection(),

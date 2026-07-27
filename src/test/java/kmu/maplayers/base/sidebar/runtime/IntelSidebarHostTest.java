@@ -1,20 +1,30 @@
 package kmu.maplayers.base.sidebar.runtime;
 
+import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
+import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
+import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.settings.KmuLunaSettings;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -33,6 +43,15 @@ final class IntelSidebarHostTest {
     // The live fold key, pinned as a literal: a rename must break this test rather than shipping and
     // quietly re-docking every save that had the rail open.
     private static final String DOCKED_KEY = "$kmu_political_intel_sidebar_docked";
+
+    // The frozen key this screen's active-layer pick is stored under, pinned here so the shortcut is shown
+    // writing the intel screen's own pick rather than the sector map's.
+    private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
+
+    // A stand-in layer binding: which layers exist is the composition root's business, so the shortcut is
+    // pinned against a registered fake rather than a concrete view's real key.
+    private static final String SHORTCUT_SETTING_KEY = "kmu_testLayerKey";
+    private static final int SHORTCUT_KEYCODE = 25;
 
     private static final float FULLY_DOCKED = 1f;
     private static final float FULLY_EXPANDED = 0f;
@@ -159,6 +178,38 @@ final class IntelSidebarHostTest {
             assertThat(IntelSidebarHost.decideBorderEdges(400f, null))
                     .doesNotContain(BoxEdge.LEFT);
             assertThat(IntelSidebarHost.layoutBorderEdges()).doesNotContain(BoxEdge.LEFT);
+        }
+    }
+
+    @Nested
+    class HandleKeyPress {
+
+        @Test
+        void handleKeyPressWritesTheIntelScreensOwnPick() {
+            // The shared jump reads whichever selection its host was built with, so this pins the wiring
+            // that makes a shortcut pressed on the intel screen move the intel tab: swapping the two hosts'
+            // selections would leave every other test green while the key moved the sector map's tab.
+            var layerMock = mock(MapLayer.class);
+            when(layerMock.getId()).thenReturn("political_map");
+            when(layerMock.getShortcutSettingKey()).thenReturn(SHORTCUT_SETTING_KEY);
+            when(layerMock.getDefaultShortcutKeycode()).thenReturn(SHORTCUT_KEYCODE);
+            MapLayerRegistry.registerLayers(List.of(layerMock), layerMock);
+            var eventMock = mock(InputEventAPI.class);
+            when(eventMock.getEventValue()).thenReturn(SHORTCUT_KEYCODE);
+
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
+                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                var sectorMock = mock(SectorAPI.class);
+                when(sectorMock.getMemoryWithoutUpdate()).thenReturn(memoryMock);
+                globalMock.when(Global::getSector).thenReturn(sectorMock);
+                settingsMock.when(() -> KmuLunaSettings.getPoliticalMapLayerShortcut(
+                        SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE)).thenReturn(SHORTCUT_KEYCODE);
+
+                new IntelSidebarHost(new IntelScreenViewFake()).handleKeyPress(eventMock);
+
+                verify(memoryMock).set(INTEL_ACTIVE_LAYER_KEY, "political_map");
+            }
         }
     }
 
