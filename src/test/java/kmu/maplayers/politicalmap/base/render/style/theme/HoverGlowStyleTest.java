@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.style;
+package kmu.maplayers.politicalmap.base.render.style.theme;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

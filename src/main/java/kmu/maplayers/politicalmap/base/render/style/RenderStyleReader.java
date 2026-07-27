@@ -1,6 +1,16 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
+import kmu.maplayers.politicalmap.base.render.style.theme.BorderSmoothingStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.GlobalStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.HatchStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.HoverGlowStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.HoverHighlightStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.HoverWashStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.MapCategory;
+import kmu.maplayers.politicalmap.base.render.style.theme.RenderStyle;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 

@@ -10,35 +10,32 @@ Part of Klark Morrigan's Utilities; see the
 
 ## Index
 
-- [The theme: player choices, tiered](#the-theme-player-choices-tiered)
+- [Layout](#layout)
+- [The reader: the one seam](#the-reader-the-one-seam)
 - [The resolvers: choices into colours](#the-resolvers-choices-into-colours)
 - [What is not here](#what-is-not-here)
 
-## The theme: player choices, tiered
+## Layout
 
-A `RenderStyle` is the whole theme, in two tiers:
+The layer splits along the line between *what the player chose* and *what that means in paint*:
 
-- `GlobalStyle` - sector-wide, identical for every territory: the contested-fill `HatchStyle`,
-  the national-border `BorderSmoothingStyle`, and the desaturation profile.
-- `Map<MapCategory, CategoryStyle>` - one style per category (faction, independent, decivilised,
-  uninhabited). Each holds its three drawn elements - fill, outer border, inner seam - as an
-  `ElementStyle` (a palette choice paired with the opacity it paints at), plus the width each
-  border strokes at.
+- [`theme`](theme/README.md) - the choices as inert value types (`RenderStyle` and its tiers).
+  A leaf: it depends on nothing here, so a record can be read without dragging the settings layer
+  in behind it.
+- this package - the behaviour. One reader that populates the theme, and the resolvers that turn a
+  choice plus a bloc's recede into concrete shades. Plus `PoliticalMapStyle`, the fixed
+  border-channel geometry that is deliberately *not* player-tunable, since it decides where fills
+  meet rather than how they look.
 
-The two *factionless* categories are the shape's degenerate case. Decivilised and uninhabited
-ground has no owner, so there is no faction palette to choose a shade from: both categories paint
-in the shared neutral colour and expose no colour field at all, leaving each element's opacity as
-its only on/off. Decivilised ground draws a fill and an outline (a dead colony is settled ground,
-so it reads as occupied rather than as a bare ring); uninhabited ground draws an outline alone,
-since filling it would wash every corner of the sector nothing else holds. Neither has an inner
-seam: factionless cells never fuse into clusters, so there are no province divisions to stroke.
+## The reader: the one seam
 
-`RenderStyleReader` is the ONE seam that reads the theme, almost all of it out of LunaLib. A new
-sector-wide knob is added to the matching `GlobalStyle` sub-record and read there - never fetched ad
-hoc in a builder. The single exception is whether the uninhabited outline draws at all: that is the
-overlay sidebar's checkbox (`UninhabitedOutlinePreference`, per-save sector memory), because a
-LunaLib field would duplicate that control on the settings screen. Its opacity and width stay
-LunaLib knobs.
+`RenderStyleReader` is the ONE place the theme is read, almost all of it out of LunaLib. A new knob
+is read here and lands on the matching theme record - never fetched ad hoc in a builder, which is
+what lets an incremental re-shape restyle against the same snapshot the full build used.
+
+The single exception is whether the uninhabited outline draws at all: that is the overlay sidebar's
+checkbox (`UninhabitedOutlinePreference`, per-save sector memory), because a LunaLib field would
+duplicate that control on the settings screen. Its opacity and width stay LunaLib knobs.
 
 ## The resolvers: choices into colours
 
@@ -66,6 +63,6 @@ on top of the resolved style. This layer owns the desaturation *mechanism* (the 
 `MapPalettes`); the *policy* of which bloc recedes and by how much lives one package up in
 `politicalmap.base` (`RecedePreferences` and the views). *Baking* the resolved style into the draw
 packets is [`render.territories`](../territories/README.md) - its `StyledCellBuilder` and
-`FactionTerritoryBuilder`. What makes the "once per map
-rebuild" above actually happen - which settings change is noticed, and how it reaches this layer -
-is [the caching notes](../../../../../../../../../docs/dev/caching.md).
+`FactionTerritoryBuilder`. What makes the "once per map rebuild" above actually happen - which
+settings change is noticed, and how it reaches this layer - is
+[the caching notes](../../../../../../../../../docs/dev/caching.md).

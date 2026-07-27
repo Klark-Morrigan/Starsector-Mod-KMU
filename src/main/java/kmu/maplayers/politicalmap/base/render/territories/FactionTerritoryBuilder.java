@@ -9,8 +9,8 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
-import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
+import kmu.maplayers.politicalmap.base.render.style.theme.BorderSmoothingStyle;
 
 import java.awt.Color;
 import java.util.ArrayList;

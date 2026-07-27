@@ -11,10 +11,10 @@ import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
-import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
-import kmu.maplayers.politicalmap.base.render.style.GlobalStyle;
-import kmu.maplayers.politicalmap.base.render.style.MapCategory;
-import kmu.maplayers.politicalmap.base.render.style.RenderStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.GlobalStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.MapCategory;
+import kmu.maplayers.politicalmap.base.render.style.theme.RenderStyle;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;

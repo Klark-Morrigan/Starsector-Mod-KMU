@@ -1,6 +1,10 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
+import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.GlobalStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.MapCategory;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 

@@ -15,8 +15,8 @@ import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.Ancho
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LeanScoring;
-import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
+import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;

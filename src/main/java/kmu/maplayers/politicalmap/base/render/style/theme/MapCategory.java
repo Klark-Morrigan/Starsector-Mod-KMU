@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.style;
+package kmu.maplayers.politicalmap.base.render.style.theme;
 
 /**
  * The four political-map territory categories a per-category {@link CategoryStyle} is

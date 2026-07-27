@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
 
 /**
  * The view-agnostic style decision the fill and label paths share: whether a bloc recedes to

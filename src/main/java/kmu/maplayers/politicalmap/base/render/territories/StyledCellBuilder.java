@@ -9,11 +9,11 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.maplayers.politicalmap.base.render.style.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.render.style.CategoryStyle;
-import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
-import kmu.maplayers.politicalmap.base.render.style.MapCategory;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
+import kmu.maplayers.politicalmap.base.render.style.theme.BorderSmoothingStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.MapCategory;
 
 import java.util.List;
 

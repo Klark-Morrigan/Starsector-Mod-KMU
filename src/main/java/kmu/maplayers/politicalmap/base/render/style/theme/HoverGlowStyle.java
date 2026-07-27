@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.style;
+package kmu.maplayers.politicalmap.base.render.style.theme;
 
 /**
  * The halo the hovered territory's frontier blooms with - the outer edge of the contiguous

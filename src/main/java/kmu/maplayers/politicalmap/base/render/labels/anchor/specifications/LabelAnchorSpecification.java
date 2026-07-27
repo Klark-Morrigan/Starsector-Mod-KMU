@@ -3,8 +3,8 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor.specifications;
 import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
-import kmu.maplayers.politicalmap.base.render.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
+import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
 import kmu.settings.KmuLunaSettings;
 
 /**
