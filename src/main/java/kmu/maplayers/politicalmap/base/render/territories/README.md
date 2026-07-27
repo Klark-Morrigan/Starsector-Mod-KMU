@@ -57,6 +57,11 @@ rest of the sector". The alliances view's non-allied recede describes factions, 
 ground is not, so it leaves it alone. Off filter the pass's recede is the identity, so an
 unfiltered map draws its dead worlds untouched.
 
+The rule itself is not here: `StyledCellBuilder` asks
+[`FactionlessStyleResolver`](../style/README.md), which also decides which of the two factionless
+categories a cell falls in. One classification drives both, so a cell cannot take the decivilised
+style yet miss the recede that style draws under.
+
 ## Borders against empty space
 
 Every border edge is shaped the same way, whatever sits across it. Against another

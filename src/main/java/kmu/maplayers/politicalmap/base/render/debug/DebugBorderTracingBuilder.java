@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.BorderSmoothing;
@@ -58,11 +59,15 @@ public final class DebugBorderTracingBuilder {
     public static PoliticalMapDebugTerritories buildDebugDrawables(
             PoliticalMapGeometryCache geometryCache,
             SectorAPI sector) {
+
         var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
+
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its faction id.
         var cellGrouping = DominantOwner.mapCellGrouping(
-                geometryCache.getSystemIdByCellId(), ownerBySystemId);
+                geometryCache.getSystemIdByCellId(),
+                ownerBySystemId);
+
         var decivilisedSystemIds = DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector);
         var weldTolerance = KmuLunaSettings.getPoliticalMapBorderWeldTolerance();
         var miterLimit = KmuLunaSettings.getPoliticalMapBorderMiterLimit();
@@ -71,6 +76,7 @@ public final class DebugBorderTracingBuilder {
         var baseLoops = new ArrayList<float[]>();
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
+
         for (var memberCellIds : cellGrouping.groupCellIdsByKey().values()) {
             // Whole clusters, so no neighbour is coincident: every boundary edge takes the
             // uniform channel, exactly as the drawn national border does.
@@ -85,6 +91,7 @@ public final class DebugBorderTracingBuilder {
             if (insetRings.isEmpty()) {
                 continue;
             }
+
             // Same pipeline as buildFactionTerritory, but keep each stage. Base first, then
             // sand and round only when gated on, so what is captured is exactly what would
             // have been drawn.
@@ -107,7 +114,11 @@ public final class DebugBorderTracingBuilder {
                 isRoundingOn,
                 baseLoops,
                 roundedLoops);
-        return new PoliticalMapDebugTerritories(baseLoops, despikedLoops, roundedLoops);
+
+        return new PoliticalMapDebugTerritories(
+                baseLoops,
+                despikedLoops,
+                roundedLoops);
     }
 
     // Appends each drawn factionless cell's outline as a base loop and, when rounding is
@@ -123,8 +134,11 @@ public final class DebugBorderTracingBuilder {
             boolean isRoundingOn,
             List<float[]> baseLoops,
             List<float[]> roundedLoops) {
-        var decivilisedStyle = RenderStyleReader.readDecivilisedStyle();
-        var uninhabitedStyle = RenderStyleReader.readUninhabitedStyle();
+                
+        // The whole theme rather than the two factionless bundles separately, so a category
+        // resolved by the shared rule indexes straight into it - the same lookup the production
+        // draw makes, which is what keeps the overlay showing the cells the map would show.
+        var renderStyle = RenderStyleReader.readRenderStyle();
         for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
             if (cellGrouping.resolveGroupKeyOf(entry.getKey()) != null) {
                 continue;
@@ -132,9 +146,8 @@ public final class DebugBorderTracingBuilder {
             // A factionless cell resolves its decivilised/uninhabited style through the system
             // it draws as; a cell with no system of its own is uninhabited ground.
             var drawnSystemId = cellGrouping.resolveDrawnSystemIdOf(entry.getKey());
-            var style = drawnSystemId != null && decivilisedSystemIds.contains(drawnSystemId)
-                    ? decivilisedStyle
-                    : uninhabitedStyle;
+            var style = renderStyle.categoryStyle(FactionlessStyleResolver.resolveCategoryOf(
+                    decivilisedSystemIds, drawnSystemId));
             if (!style.outer().isDrawn()) {
                 continue;
             }

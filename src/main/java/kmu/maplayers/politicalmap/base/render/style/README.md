@@ -42,10 +42,14 @@ duplicate that control on the settings screen. Its opacity and width stay LunaLi
 Pure rules that both the fills and the cluster-name labels read, so a name can never drift from
 the space it labels:
 
-- `MapPalettes` - resolves a style choice plus a bloc's recede into concrete shades: which
-  palette, which slot, and what a desaturated bloc recolours to.
+- `MapPalettes` - resolves a style choice plus a recede into concrete shades: which palette, which
+  slot, and what a desaturated subject recolours to. Stated over a palette rather than over an
+  owner, so ownerless ground recolours by the same rule a bloc does.
 - `BlocStyleResolver` - resolves the shared per-bloc decision (independent-vs-faction style and
   the adjustment a bloc draws under) into a `BlocStyleDecision`.
+- `FactionlessStyleResolver` - the counterpart for ground with no owner, which has no bloc to carry
+  a decision: which factionless category it draws in, and whether the pass's recede reaches it
+  (decivilised ground yes, uninhabited ground no).
 - `BlocStyling` - maps that decision onto the pass's actual theme, giving the concrete bundle
   plus adjustment a bloc draws under. It owns the one field that crosses between bundles: a
   desaturated bloc's fill is held at the *faction* opacity, so a desaturated surface reads as
@@ -58,10 +62,11 @@ which composes both off one retained snapshot.
 
 ## What is not here
 
-*Muting and desaturation* are a separate, dynamic axis: a per-bloc `BlocStyleAdjustment` applied
-on top of the resolved style. This layer owns the desaturation *mechanism* (the palette swap in
-`MapPalettes`); the *policy* of which bloc recedes and by how much lives one package up in
-`politicalmap.base` (`RecedePreferences` and the views). *Baking* the resolved style into the draw
+*Muting and desaturation* are a separate, dynamic axis: a `BlocStyleAdjustment` applied on top of
+the resolved style, per bloc or per piece of ownerless ground. This layer owns the desaturation
+*mechanism* (the palette swap in `MapPalettes`) and the rule for which factionless ground it
+reaches (`FactionlessStyleResolver`); the *policy* of which bloc recedes and by how much lives one
+package up in `politicalmap.base` (`RecedePreferences` and the views). *Baking* the resolved style into the draw
 packets is [`render.territories`](../territories/README.md) - its `StyledCellBuilder` and
 `FactionTerritoryBuilder`. What makes the "once per map rebuild" above actually happen - which
 settings change is noticed, and how it reaches this layer - is

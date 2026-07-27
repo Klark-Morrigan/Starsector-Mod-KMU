@@ -93,7 +93,7 @@ second reader.
 | `geometryRevision` | [`PoliticalMapRefresh`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapRefresh.java) | the drawn-system set or moving-system set changing | the geometry cache |
 | stale-system id set | `PoliticalMapRefresh` | colony events + the watcher's owner diff | the incremental politics refresh |
 | `allianceRevision` | `PoliticalMapRefresh` | the alliance-set fingerprint moving | the alliances view only |
-| `recedeStyleRevision` | `PoliticalMapRefresh` | the Mute / Desaturate sidebar toggles | views that recede ground |
+| `recedeStyleRevision` | `PoliticalMapRefresh` | the Mute / Desaturate sidebar toggles | the pipeline, under any view (the receded blocs and decivilised ground), plus the alliances view for its own non-allied recede |
 | `filterRevision` | `PoliticalMapRefresh` | picking or clearing the spotlight bloc | the pipeline, under any view |
 | `mapStyleRevision` | `PoliticalMapRefresh` | the uninhabited-outline and name-format toggles | the pipeline, under any view |
 | `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the territories rebuild |

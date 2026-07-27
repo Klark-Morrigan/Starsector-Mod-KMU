@@ -9,11 +9,10 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.theme.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
 import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.MapCategory;
 
 import java.util.List;
 
@@ -114,8 +113,13 @@ public final class StyledCellBuilder {
             String systemId,
             ShapedCell shaped) {
 
-        var isDecivilised = isDecivilisedSystem(territories, systemId);
-        var style = resolveFactionlessStyleOf(territories, isDecivilised);
+        // One classification drives both the bundle and the recede, so a cell cannot take the
+        // decivilised style yet miss the recede that style is meant to draw under.
+        var category = FactionlessStyleResolver.resolveCategoryOf(
+                territories.getDecivilisedSystemIds(),
+                systemId);
+
+        var style = territories.getCategoryStyle(category);
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
@@ -123,13 +127,20 @@ public final class StyledCellBuilder {
         // whichever slot an element names, it paints neutral - unless the recede desaturates the
         // cell, in which case it recolours off the pass's desaturation palette exactly as a
         // receded bloc does.
-        var adjustment = resolveFactionlessAdjustment(territories, isDecivilised);
+        var adjustment = FactionlessStyleResolver.resolveRecedeOf(
+                category,
+                territories.getRecedeAdjustment());
+
         var neutralColor = territories.getNeutralColor();
         var palette = MapPalettes.resolveEffectivePalette(
                 adjustment,
                 new FactionPalette(neutralColor, neutralColor),
                 territories.getDesaturationPalette());
-        var outline = resolveOutlineOf(shaped, territories.getGlobalStyle().borderSmoothing());
+
+        var outline = resolveOutlineOf(
+                shaped,
+                territories.getGlobalStyle().borderSmoothing());
+                
         // Tessellate the fill only when it will actually be painted: uninhabited ground is
         // outline-only and covers most of the sector, so triangulating every one of its cells
         // for a fill no pass emits would be the map's largest wasted rebuild cost.
@@ -144,42 +155,6 @@ public final class StyledCellBuilder {
                 resolvePaintOf(style.inner(), palette, adjustment),
                 (float) style.outerWidth(),
                 (float) style.innerWidth());
-    }
-
-    // How far a factionless cell recedes this pass. Decivilised ground is part of the "rest of the
-    // sector" a spotlight recedes: a dead colony is a political feature drawn in a fill of its own,
-    // so leaving it at full strength lets it out-read the bloc the spotlight is meant to isolate.
-    // It therefore takes the pass's shared recede, which is the identity off filter, so an
-    // unfiltered map draws its dead worlds exactly as before. Uninhabited ground is the empty
-    // backdrop the whole map is drawn over rather than anything the spotlight competes with, and
-    // its faint outline is what gives the sector its shape, so it never recedes.
-    private static BlocStyleAdjustment resolveFactionlessAdjustment(
-            PoliticalMapTerritories territories,
-            boolean isDecivilised) {
-
-        return isDecivilised ? territories.getRecedeAdjustment() : BlocStyleAdjustment.NONE;
-    }
-
-    // Which factionless category a cell falls under: decivilised where a revealed dead colony
-    // sits, uninhabited everywhere else.
-    private static CategoryStyle resolveFactionlessStyleOf(
-            PoliticalMapTerritories territories,
-            boolean isDecivilised) {
-
-        return isDecivilised
-                ? territories.getCategoryStyle(MapCategory.DECIVILISED)
-                : territories.getCategoryStyle(MapCategory.UNINHABITED);
-    }
-
-    // Whether a revealed dead colony sits in the system a cell draws as - the one test both the
-    // category and the recede read, so a cell cannot take the decivilised style yet miss its
-    // recede. A cell with no star of its own names no system to test, so it never reaches the
-    // decivilised set - which may be immutable and null-hostile.
-    private static boolean isDecivilisedSystem(
-            PoliticalMapTerritories territories,
-            String systemId) {
-
-        return systemId != null && territories.getDecivilisedSystemIds().contains(systemId);
     }
 
     // One element's paint as this cell resolves it: its colour picked from the cell's own two

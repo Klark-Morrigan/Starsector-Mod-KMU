@@ -1,17 +1,18 @@
 package kmu.maplayers.politicalmap.base;
 
 /**
- * The two orthogonal per-bloc styling knobs the shared political-map pipeline honours
- * without knowing why a view asked for them, so a view can dim or recolour a bloc while
- * the render code stays a pure applier.
+ * The two orthogonal styling knobs the shared political-map pipeline honours without knowing
+ * why anything asked for them, so a caller can dim or recolour a piece of the map while the
+ * render code stays a pure applier.
  *
  * <p>A view resolves one of these per bloc through
- * {@link PoliticalMapView#resolveBlocStyleAdjustment}. {@code opacityMultiplier} scales
- * the bloc's fills, borders, and name alpha; {@code desaturate} swaps its palette for the
+ * {@link PoliticalMapView#resolveBlocStyleAdjustment}, and ownerless ground takes one by its
+ * own rule - a bloc is the usual subject, not the only one. {@code opacityMultiplier} scales
+ * the subject's fills, borders, and name alpha; {@code desaturate} swaps its palette for the
  * shared desaturation-profile palette the pipeline resolves. The adjustment names no
  * target colour - what {@code desaturate} maps to is the pipeline's business (an authored
- * profile setting), so the view flags only <em>whether</em> a bloc desaturates and stays
- * out of the profile decision. {@link #NONE} is the identity: draw the bloc exactly as its
+ * profile setting), so a caller flags only <em>whether</em> its subject desaturates and stays
+ * out of the profile decision. {@link #NONE} is the identity: draw the subject exactly as its
  * style classification says.
  *
  * @param opacityMultiplier the fraction of its normal opacity the bloc's fills, borders,

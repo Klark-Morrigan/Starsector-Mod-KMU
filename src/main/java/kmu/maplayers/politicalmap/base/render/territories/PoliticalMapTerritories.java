@@ -270,8 +270,9 @@ public final class PoliticalMapTerritories {
         return filter.selectedBlocId();
     }
 
-    // The styling every non-spotlighted bloc recedes to this pass; BlocStyleAdjustment.NONE off
-    // filter, so a bloc no filter recedes draws untouched.
+    // The styling every non-spotlighted bloc recedes to this pass - and, through
+    // FactionlessStyleResolver, decivilised ground with it; BlocStyleAdjustment.NONE off filter,
+    // so anything no filter recedes draws untouched.
     public BlocStyleAdjustment getRecedeAdjustment() {
         return filter.recedeAdjustment();
     }

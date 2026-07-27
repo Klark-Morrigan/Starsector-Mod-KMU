@@ -187,13 +187,31 @@ final class StyledCellBuilderTest {
         void buildStyledCellForSystemRecedesADecivilisedCellUnderTheFiltersRecede() {
             // A dead colony is part of the "rest of the sector" a spotlight recedes, so its own
             // fill dims and recolours to the pass's desaturation palette exactly as a non-spotlit
-            // bloc's does - otherwise it out-reads the bloc the spotlight is meant to isolate.
+            // bloc's does - otherwise it out-reads the bloc the spotlight is meant to isolate. Its
+            // outline recedes with it: the two are the whole of what the cell puts on the map, so
+            // one receding without the other would leave a bright ring around a sunken fill.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                     filteringFactionlessDrawablesWith(
                             filledOutlineStyle(), new BlocStyleAdjustment(0.5, true)),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
             assertThat(styled.fillPaint().color()).isEqualTo(DESATURATED_PRIMARY);
+            assertThat(styled.fillPaint().alpha()).isEqualTo(0.5f);
+            assertThat(styled.outer().color()).isEqualTo(DESATURATED_PRIMARY);
+            assertThat(styled.outer().alpha()).isEqualTo(0.5f);
+        }
+
+        @Test
+        void buildStyledCellForSystemDimsADecivilisedCellWithoutRecolouringItWhenOnlyMuteIsSet() {
+            // Mute and Desaturate are independent toggles, and Mute alone is the commoner setting:
+            // the dead colony sinks in weight while staying the neutral colour it reads as when
+            // nothing is spotlighted.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                    filteringFactionlessDrawablesWith(
+                            filledOutlineStyle(), new BlocStyleAdjustment(0.5, false)),
+                    DECIVILISED_SYSTEM_ID, ownedCell());
+
+            assertThat(styled.fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
             assertThat(styled.fillPaint().alpha()).isEqualTo(0.5f);
         }
 
