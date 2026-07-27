@@ -10,10 +10,10 @@ import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.graphics.StarsectorSprites;
 import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.layout.VanillaPositions;
-import kmlib.starsector.ui.render.gl.BoxBorder;
 import kmlib.starsector.ui.render.gl.UiBoxes;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmlib.starsector.ui.render.gl.UiFill;
+import kmlib.starsector.ui.widgets.BoxBorder;
 
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;

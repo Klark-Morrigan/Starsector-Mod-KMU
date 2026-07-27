@@ -11,7 +11,9 @@ import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
+import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
+import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
 import kmlib.starsector.ui.widgets.tabs.TabStyle;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
@@ -59,8 +61,10 @@ public final class LiveSidebarPlacement {
     // sidebar overlays the visor under the map toggles and reads tighter so it crowds the preview less.
     // Both heights are content-space: each panel strokes its own top border above the band, so the drawn
     // strip stands the configured border width taller than the number here.
-    private static final TabStyle MAP_TAB_STYLE = new TabStyle(19f);
-    private static final TabStyle INTEL_TAB_STYLE = new TabStyle(17f);
+    // Package-private, as the intel anchor math beside them is, so the divergence the two screens depend on
+    // is checkable without standing up a live sector.
+    static final TabStyle MAP_TAB_STYLE = new TabStyle(19f);
+    static final TabStyle INTEL_TAB_STYLE = new TabStyle(17f);
 
     private LiveSidebarPlacement() {
     }
@@ -156,19 +160,19 @@ public final class LiveSidebarPlacement {
         var placement = TabPanelLayout.computePlacement(
                 settings.getScreenHeight(),
                 padding,
-                KmuLunaSettings.getPoliticalMapSidebarBorderWidth(),
-                // The edges the host frames; a dropped edge collapses its reserved inset so the box sits
-                // flush against the neighbour the host meant to blend into.
-                borderedEdges,
+                // The player's border width over the edges the host frames; a dropped edge collapses its
+                // reserved inset so the box sits flush against the neighbour the host meant to blend into.
+                new BoxBorder(KmuLunaSettings.getPoliticalMapSidebarBorderWidth(), borderedEdges),
                 tabStyle,
                 buildTabsSpec(layers, activeLayer, selection),
                 activeLayer.getBodyControls(),
                 measurer,
-                controller.getScrollState().getOffset(),
-                // The live collapse fraction, so the body lays out at its interpolated width and the notch
-                // rides the shrinking edge; the render pass advances it each frame and both passes resolve
-                // against the same value, so the drawn fold and the hit-tested notch line up.
-                controller.getCollapseFraction());
+                // The live scroll and fold, so the body lays out at its interpolated width and the notch
+                // rides the shrinking edge; the render pass advances the fold each frame and both passes
+                // resolve against the same value, so the drawn fold and the hit-tested notch line up.
+                new TabPanelViewState(
+                        controller.getScrollState().getOffset(),
+                        controller.getCollapseFraction()));
         // Settle the stored scroll request into the list's real range now the layout has resolved the
         // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
         // the render and input passes call this each frame, so the stored offset stays bounded.
