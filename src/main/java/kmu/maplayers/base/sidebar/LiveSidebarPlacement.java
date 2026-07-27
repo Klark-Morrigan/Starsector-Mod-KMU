@@ -8,6 +8,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
@@ -50,11 +51,10 @@ import java.util.Set;
 public final class LiveSidebarPlacement {
     /**
      * The tabs read in the sector map's own orbitron face - the AA orbitron atlas vanilla uses for
-     * its map tabs, scaled to the tab size. A {@code graphics/fonts} basename the font cache
-     * resolves to a loadable path; public so the renderer paints the tabs in the same face this
-     * measured them in.
+     * its map tabs, scaled to the tab size. Public so the renderer paints the tabs in the same face
+     * this measured them in.
      */
-    public static final String TAB_FONT = "orbitron20aa";
+    public static final StarsectorFont TAB_FONT = StarsectorFont.VANILLA_ORBITRON_20AA;
 
     // The two screens size their tab bands differently because they sit in different company. The on-map
     // sidebar floats free beside the vanilla Sector/System tabs and matches their weight, while the intel
@@ -154,9 +154,11 @@ public final class LiveSidebarPlacement {
         }
         var settings = Global.getSettings();
         var layers = MapLayerRegistry.getLayers();
+
         // The active layer comes from the calling screen's own selection, not one shared value, so the lit
         // tab and the body are this screen's pick and a switch here never moves the other screen's tab.
         var activeLayer = selection.getActiveLayer();
+
         var placement = TabPanelLayout.computePlacement(
                 settings.getScreenHeight(),
                 padding,
@@ -173,10 +175,14 @@ public final class LiveSidebarPlacement {
                 new TabPanelViewState(
                         controller.getScrollState().getOffset(),
                         controller.getCollapseFraction()));
+
         // Settle the stored scroll request into the list's real range now the layout has resolved the
         // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
         // the render and input passes call this each frame, so the stored offset stays bounded.
-        controller.getScrollState().clampTo(placement.body().scrollOverflow());
+        controller
+                .getScrollState()
+                .clampTo(placement.body().scrollOverflow());
+
         return placement;
     }
 
@@ -207,6 +213,7 @@ public final class LiveSidebarPlacement {
             List<MapLayer> layers,
             MapLayer activeLayer,
             ActiveLayerSelection selection) {
+
         var labels = new ArrayList<String>(layers.size());
         var shortcuts = new ArrayList<String>(layers.size());
         for (var layer : layers) {
@@ -238,7 +245,7 @@ public final class LiveSidebarPlacement {
     // fit inside boxes snapped to this face, so the body reads correctly and only the tabs, drawn in
     // this same face, need it to match exactly.
     private static LineWidthMeasurer loadTabMeasurer() {
-        var font = LazyFontCache.loadByBasename(TAB_FONT);
+        var font = LazyFontCache.loadByFace(TAB_FONT);
         if (font == null) {
             return null;
         }

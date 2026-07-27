@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
@@ -39,9 +40,9 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // choice of builder at the call site rather than an indent every caller has to remember.
     private static final float MEMBER_INDENT = 14f;
 
-    // The insignia body face, a graphics/fonts basename the font cache resolves to a loadable path,
-    // and the size every row's text renders at - which is also each row's line height for the box fit.
-    private static final String BODY_FONT = "insignia15LTaa";
+    // The insignia body face, and the size every row's text renders at - which is also each row's
+    // line height for the box fit.
+    private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
     private static final double FONT_SIZE = 15d;
 
     // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
@@ -132,9 +133,15 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * @return the row, ready to add to a body
      */
     protected static TooltipRow buildMarkedNestedRow(
-            String crestSpritePath, String text, String marker, String value) {
+            String crestSpritePath,
+            String text,
+            String marker,
+            String value) {
+
         return buildNestedRow(crestSpritePath, text, value)
-                .carriesMarker(marker, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
+                .carriesMarker(
+                        marker,
+                        StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 
     /**

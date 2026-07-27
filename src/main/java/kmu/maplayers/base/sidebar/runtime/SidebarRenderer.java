@@ -7,6 +7,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
 import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.render.gl.NotchState;
@@ -41,9 +42,9 @@ import org.apache.log4j.Logger;
 public final class SidebarRenderer implements CampaignUIRenderingListener {
     private static final Logger LOG = Global.getLogger(SidebarRenderer.class);
 
-    // The body face: the insignia body font, a graphics/fonts basename the font cache resolves to a
-    // loadable path. The tab face is the resolver's, since it both measures and draws the tabs.
-    private static final String BODY_FONT = "insignia15LTaa";
+    // The body face: the insignia body font. The tab face is the resolver's, since it both measures
+    // and draws the tabs.
+    private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
 
     // The collapse fraction a fully docked body reports; the eased curve lands exactly on it at the end,
     // so an equality-or-above test reads "settled at the docked rail" rather than "still folding".
@@ -82,26 +83,31 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
 
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
+
         // The only pass composited after the entire core screen (and its tooltips), so it is the sole layer
         // the opaque core-UI screen cannot occlude - the panel has to draw here.
         boolean isOverlayShowing = host.isOverlayShowing();
         if (!isOverlayShowing) {
+
             // Drop the frame clock so the next re-open advances from nothing rather than by the whole gap
             // the screen was closed, which would otherwise snap a half-folded panel straight to its end.
             previousFrameNanos = 0L;
             logViewStateOnChange("hidden; " + host.describeViewState());
             return;
         }
+
         // Step the collapse toward its target by this frame's real elapsed time before laying the panel out,
         // so the placement resolves at the freshly-advanced fold; the pace is the player's collapse-seconds
         // setting, with zero meaning an instant snap.
         host.getController().advanceCollapse(
                 elapsedSinceLastFrame(),
                 KmuLunaSettings.getPoliticalMapSidebarCollapseSeconds());
+
         // Offer the freshly-advanced fold to the host's fold selection, which decides for itself whether
         // that end is worth storing. Here rather than in the input pass because a fold is only unambiguous
         // once it settles, which happens frames after the handle press that started it.
         recordSettledFold(host);
+
         // The same placement the input listener hit-tests, resolved from one source so the drawn box and the
         // clickable box line up. Null means there is nothing to draw - the tab font could not load, or the
         // host's anchor is gone - so the panel stays absent, logged once.
@@ -113,17 +119,20 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         var settings = Global.getSettings();
         var borderWidth = KmuLunaSettings.getPoliticalMapSidebarBorderWidth();
         var opacity = KmuLunaSettings.getPoliticalMapSidebarBackgroundOpacity();
+
         // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated in but
         // never seen is diagnosed from the numbers rather than another run.
         logViewStateOnChange("showing; " + host.describeViewState() + "; screen="
                 + settings.getScreenWidth() + "x" + settings.getScreenHeight()
                 + " box=" + formatRect(placement.body().box()) + " opacity=" + opacity);
+
         // The live notch state: the collapse fraction the layout above was resolved at, and whether the
         // input pass latched the pointer over the notch this frame, so the drawn fold and the lit handle
         // match what the placement was built from.
         var notchState = new NotchState(
                 host.getController().getCollapseFraction(),
                 host.getController().isNotchHovered());
+                
         // The frame to stroke: the settings width, and the edges the host keeps - it drops any edge sitting
         // flush against another panel (the intel overlay omits the borders it shares with the visor) so the
         // sidebar does not draw a second frame over that panel's own.
