@@ -36,7 +36,9 @@ import static org.mockito.Mockito.when;
 /**
  * Pins how one shaped cell is baked into its draw record: an owned cell threading its bloc's
  * palette and adjustment into the interior seam it contributes, and a factionless cell resolving
- * both palette slots to the neutral colour for the fill and outline it keeps for itself.
+ * both palette slots to the neutral colour for the fill and outline it keeps for itself - with
+ * decivilised ground alone taking the pass's recede over that neutral, and uninhabited ground
+ * never doing so.
  *
  * <p>The style cascade these read through is pinned by
  * {@link kmu.maplayers.politicalmap.base.render.style.BlocStylingTest}, the palette rules by
@@ -182,6 +184,46 @@ final class StyledCellBuilderTest {
         }
 
         @Test
+        void buildStyledCellForSystemRecedesADecivilisedCellUnderTheFiltersRecede() {
+            // A dead colony is part of the "rest of the sector" a spotlight recedes, so its own
+            // fill dims and recolours to the pass's desaturation palette exactly as a non-spotlit
+            // bloc's does - otherwise it out-reads the bloc the spotlight is meant to isolate.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                    filteringFactionlessDrawablesWith(
+                            filledOutlineStyle(), new BlocStyleAdjustment(0.5, true)),
+                    DECIVILISED_SYSTEM_ID, ownedCell());
+
+            assertThat(styled.fillPaint().color()).isEqualTo(DESATURATED_PRIMARY);
+            assertThat(styled.fillPaint().alpha()).isEqualTo(0.5f);
+        }
+
+        @Test
+        void buildStyledCellForSystemLeavesUninhabitedGroundUntouchedByTheFiltersRecede() {
+            // Uninhabited ground is the backdrop the map is drawn over rather than something the
+            // spotlight competes with, so the same receding pass leaves its outline at full
+            // neutral strength - the sector keeps its shape.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                    filteringFactionlessDrawablesWith(
+                            filledOutlineStyle(), new BlocStyleAdjustment(0.5, true)),
+                    "never-settled-system", ownedCell());
+
+            assertThat(styled.outer().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(styled.outer().alpha()).isEqualTo(1.0f);
+        }
+
+        @Test
+        void buildStyledCellForSystemKeepsADecivilisedCellAtFullStrengthWithNoRecedeInThePass() {
+            // Off filter the pass's recede is the identity, so a dead colony draws in the neutral
+            // colour at its style opacity - an unfiltered map is unchanged by the recede path.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                    factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
+                    DECIVILISED_SYSTEM_ID, ownedCell());
+
+            assertThat(styled.fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(styled.fillPaint().alpha()).isEqualTo(1.0f);
+        }
+
+        @Test
         void buildStyledCellForSystemKeepsAFactionlessCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
             // The outline's opacity is its only on/off, so zeroing it must not take the fill down
             // with it: the cell is kept for whichever of the two still puts ink on the map.
@@ -222,13 +264,33 @@ final class StyledCellBuilderTest {
             return viewMockDeciding(false, adjustment);
         }
 
-        // The factionless backdrop under a chosen pair of factionless category styles, so a test
-        // names the two styles whose interplay it is about and shares everything else. Carries an
-        // immutable owner map AND an immutable decivilised set, both null-hostile: a clean result
-        // for a null system proves that path reads neither - it resolves no owner and is not taken
-        // for decivilised without ever probing a map with the null key.
+        // The unfiltered factionless backdrop under a chosen pair of factionless category styles,
+        // so a test names the two styles whose interplay it is about and shares everything else.
         private static PoliticalMapTerritories factionlessDrawablesWith(
                 CategoryStyle decivilisedStyle, CategoryStyle uninhabitedStyle) {
+            return factionlessDrawablesWith(
+                    decivilisedStyle, uninhabitedStyle, null, BlocStyleAdjustment.NONE);
+        }
+
+        // A filtered pass over the factionless backdrop, receding by the given adjustment, with one
+        // style shared by both factionless categories - so which of the two a test builds decides
+        // the outcome and the styles themselves cannot account for it.
+        private static PoliticalMapTerritories filteringFactionlessDrawablesWith(
+                CategoryStyle factionlessStyle, BlocStyleAdjustment recede) {
+            return factionlessDrawablesWith(
+                    factionlessStyle, factionlessStyle, "selected-bloc", recede);
+        }
+
+        // The shared factionless backdrop: the two factionless styles plus the pass's spotlight
+        // state, since a factionless cell's recede is the filter's. Carries an immutable owner map
+        // AND an immutable decivilised set, both null-hostile: a clean result for a null system
+        // proves that path reads neither - it resolves no owner and is not taken for decivilised
+        // without ever probing a map with the null key.
+        private static PoliticalMapTerritories factionlessDrawablesWith(
+                CategoryStyle decivilisedStyle,
+                CategoryStyle uninhabitedStyle,
+                String selectedBlocId,
+                BlocStyleAdjustment recede) {
             Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
             categories.put(MapCategory.FACTION, STYLE);
             categories.put(MapCategory.INDEPENDENT, STYLE);
@@ -244,7 +306,7 @@ final class StyledCellBuilderTest {
                             new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
                     new ViewGrouping(viewMockAdjusting(BlocStyleAdjustment.NONE),
                             OwnershipGrouping.identity()),
-                    new FilterSnapshot(null, BlocStyleAdjustment.NONE, Set.of()));
+                    new FilterSnapshot(selectedBlocId, recede, Set.of()));
         }
 
         // A category whose outer outline is drawn (a real palette slot, resolved to the neutral

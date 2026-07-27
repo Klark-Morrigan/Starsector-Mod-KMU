@@ -37,9 +37,29 @@ public final class MapPalettes {
             BlocStyleAdjustment adjustment,
             DominantOwner owner,
             FactionPalette desaturationPalette) {
+        return resolveEffectivePalette(
+                adjustment,
+                new FactionPalette(owner.primaryColor(), owner.secondaryColor()),
+                desaturationPalette);
+    }
+
+    /**
+     * The two shades any piece of ground paints in under its style adjustment, stated over the
+     * shades themselves rather than over whoever holds them: the ground's own pair normally, the
+     * pass's shared desaturation palette once the adjustment desaturates it.
+     *
+     * <p>Ground with no owner has shades all the same - a factionless cell's two neutral slots -
+     * yet still recolours by the same rule, so the swap is expressed over a palette and the
+     * owner-keyed form above resolves to this one. That keeps "desaturate swaps the palette" a
+     * single rule no matter what the un-desaturated shades came from.
+     */
+    public static FactionPalette resolveEffectivePalette(
+            BlocStyleAdjustment adjustment,
+            FactionPalette ownPalette,
+            FactionPalette desaturationPalette) {
         return adjustment.desaturate()
                 ? desaturationPalette
-                : new FactionPalette(owner.primaryColor(), owner.secondaryColor());
+                : ownPalette;
     }
 
     /**

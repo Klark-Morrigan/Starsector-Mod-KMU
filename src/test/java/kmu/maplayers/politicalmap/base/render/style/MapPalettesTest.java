@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.color.Colors;
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.settings.FactionPaletteChoice;
 
@@ -22,8 +23,8 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the shared palette resolution both the fills and the cluster-name labels read: the
  * palette-color pick that maps a player's colour choice to a palette shade, the owner-shade
- * pick that falls back to neutral for unowned ground, and the desaturation-palette resolver
- * that a receded bloc recolours through.
+ * pick that falls back to neutral for unowned ground, the effective-palette swap a receding
+ * piece of ground takes, and the desaturation-palette resolver it recolours through.
  */
 final class MapPalettesTest {
 
@@ -88,6 +89,57 @@ final class MapPalettesTest {
                     FactionPaletteChoice.NONE, OWNER, NEUTRAL)).isNull();
             assertThat(MapPalettes.pickOwnerPaletteColor(
                     FactionPaletteChoice.NONE, null, NEUTRAL)).isNull();
+        }
+    }
+
+    @Nested
+    class ResolveEffectivePalette {
+
+        // The pass's shared desaturation shades, distinct from every other colour here so a swap
+        // to them is unmistakable.
+        private static final FactionPalette DESATURATION =
+                new FactionPalette(Color.GREEN, Color.YELLOW);
+        private static final DominantOwner OWNER =
+                new DominantOwner("hegemony", PRIMARY, SECONDARY);
+        // The one pair a factionless cell holds: neutral in both slots, since it names no faction.
+        private static final FactionPalette NEUTRAL_PAIR =
+                new FactionPalette(Color.GRAY, Color.GRAY);
+
+        @Test
+        void resolveEffectivePaletteKeepsTheOwnersOwnShadesWhenTheAdjustmentDoesNotDesaturate() {
+            var palette = MapPalettes.resolveEffectivePalette(
+                    new BlocStyleAdjustment(0.5, false), OWNER, DESATURATION);
+
+            assertThat(palette.primaryColor()).isEqualTo(PRIMARY);
+            assertThat(palette.secondaryColor()).isEqualTo(SECONDARY);
+        }
+
+        @Test
+        void resolveEffectivePaletteSwapsAnOwnersShadesForThePassPaletteWhenItDesaturates() {
+            // Muting is orthogonal: the multiplier scales opacity elsewhere and never touches
+            // which two shades are painted.
+            var palette = MapPalettes.resolveEffectivePalette(
+                    new BlocStyleAdjustment(1.0, true), OWNER, DESATURATION);
+
+            assertThat(palette).isEqualTo(DESATURATION);
+        }
+
+        @Test
+        void resolveEffectivePaletteSwapsUnownedNeutralShadesForThePassPaletteWhenItDesaturates() {
+            // Ground with no owner recolours by the same rule: a receding decivilised cell leaves
+            // its neutral pair for the desaturation palette rather than staying neutral.
+            var palette = MapPalettes.resolveEffectivePalette(
+                    new BlocStyleAdjustment(1.0, true), NEUTRAL_PAIR, DESATURATION);
+
+            assertThat(palette).isEqualTo(DESATURATION);
+        }
+
+        @Test
+        void resolveEffectivePaletteKeepsUnownedNeutralShadesForTheNoneAdjustment() {
+            var palette = MapPalettes.resolveEffectivePalette(
+                    BlocStyleAdjustment.NONE, NEUTRAL_PAIR, DESATURATION);
+
+            assertThat(palette).isEqualTo(NEUTRAL_PAIR);
         }
     }
 

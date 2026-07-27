@@ -10,6 +10,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 ## Index
 
 - [Building: cells into territories](#building-cells-into-territories)
+- [What recedes](#what-recedes)
 - [Borders against empty space](#borders-against-empty-space)
 - [The draw packets](#the-draw-packets)
 - [The split fill: solid, hatched, unfilled](#the-split-fill-solid-hatched-unfilled)
@@ -27,7 +28,8 @@ identical to a full rebuild.
 - `StyledCellBuilder` bakes one cell. An **owned** cell contributes only its interior seams,
   because its fill and national border belong to the cluster it fuses into. A **factionless**
   cell (decivilised, or uninhabited) does not fuse, so it keeps its own fill and outline and
-  resolves both palette slots to the shared neutral colour.
+  resolves both palette slots to the shared neutral colour. Of the two, only decivilised ground
+  takes the pass's recede - see [what recedes](#what-recedes) below.
 - `FactionTerritoryBuilder` bakes one bloc: its national border, traced across every system it
   holds, and its fill - which it hands to `SplitFillBuilder`, see
   [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and border come from the
@@ -37,6 +39,23 @@ identical to a full rebuild.
 shaped cells into GL vertex runs. Element colours, opacities, and widths come from cascading the
 `render.style` theme with each bloc's recede adjustment, asked for through
 `PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc resolves from one read.
+
+## What recedes
+
+The Mute and Desaturate toggles sink the background behind a spotlighted bloc. Every non-spotlit
+**bloc** recedes through `resolveBlocStyling`, and so does **decivilised** ground: a dead colony
+carries a fill of its own, so leaving it at full strength lets it out-read the bloc the spotlight
+is meant to isolate. Muting dims it; desaturating recolours it off the same desaturation palette a
+receded bloc uses, rather than the neutral colour it paints in normally.
+
+**Uninhabited** ground is the exception. It is the empty backdrop the whole map is drawn over
+rather than something the spotlight competes with, and its faint outline is what gives the sector
+its shape, so it stays at full strength under every recede.
+
+Only the *filter* recede reaches decivilised ground - it is the one whose receded ground is "the
+rest of the sector". The alliances view's non-allied recede describes factions, which decivilised
+ground is not, so it leaves it alone. Off filter the pass's recede is the identity, so an
+unfiltered map draws its dead worlds untouched.
 
 ## Borders against empty space
 
