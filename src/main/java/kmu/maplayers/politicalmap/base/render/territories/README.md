@@ -107,4 +107,6 @@ that sits on top is [`render.labels`](../labels/README.md). The border-ring trac
 the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
 *incremental refresh* that folds per-system ownership changes into the packets is
 `render.IncrementalPoliticsRefresh`, at the render root alongside the plugin and the per-frame
-cache that drives it - the composition root that wires these feature packages together.
+cache that drives it - the composition root that wires these feature packages together. *Which*
+change triggers a full rebuild here and which one only re-shapes a handful of cells is
+[the caching notes](../../../../../../../../../docs/dev/caching.md).

@@ -41,6 +41,11 @@ disagree.
 draws the diagnostic anchor overlay (the candidate axes, accepted and rejected) when that toggle is
 on. Both read the anchors the placement produced rather than recomputing them.
 
+A `Label` owns a GL vertex buffer, so the builder disposes the standing list whenever it rebuilds -
+which is why this overlay's text is minted here rather than fetched from KMLib's shared glyph cache,
+whose runs are never disposed. When a rebuild happens at all is
+[the caching notes](../../../../../../../../../docs/dev/caching.md).
+
 ## What is not here
 
 The *colours and names* a label draws in come from [`render.style`](../style/README.md) (`MapPalettes` and the shared

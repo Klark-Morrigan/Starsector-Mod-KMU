@@ -12,6 +12,7 @@ This is a small Starsector utility and quality of life mod.
   - [Versioning](#versioning)
   - [Build And Release](#build-and-release)
   - [Local linting](#local-linting)
+  - [Caching](#caching)
   - [Documentation](#documentation)
 
 ## Features
@@ -109,6 +110,16 @@ the `check-sh-executable` gate stays green.
 [.gitattributes](.gitattributes) pins line endings surgically - `*.sh` and
 `gradlew` to LF, `*.bat` and `gradlew.bat` to CRLF - and leaves binary / data
 assets to git's own detection.
+
+### Caching
+
+The political map derives an expensive drawing from live campaign state and
+repaints it every frame, so nearly everything it shows is held between frames and
+rebuilt as narrowly as the change allows. [docs/dev/caching.md](docs/dev/caching.md)
+is the single description of that model: what notices a change, the revision
+counters it announces itself through, each cache and what it keys on, and the four
+rebuild paths a frame can take. Read it before adding a live input to the overlay -
+an input no counter reports is the one way to leave the map silently stale.
 
 ### Documentation
 

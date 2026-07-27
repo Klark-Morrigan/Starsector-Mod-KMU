@@ -57,4 +57,6 @@ on top of the resolved style. This layer owns the desaturation *mechanism* (the 
 `MapPalettes`); the *policy* of which bloc recedes and by how much lives one package up in
 `politicalmap.base` (`RecedePreferences` and the views). The cascade that folds theme and
 adjustment together, and bakes the result into the draw packets, is
-[`render.territories`](../territories/README.md)`.TerritoryBuilder`.
+[`render.territories`](../territories/README.md)`.TerritoryBuilder`. What makes the "once per map
+rebuild" above actually happen - which settings change is noticed, and how it reaches this layer -
+is [the caching notes](../../../../../../../../../docs/dev/caching.md).
