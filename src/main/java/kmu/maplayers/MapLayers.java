@@ -1,5 +1,7 @@
 package kmu.maplayers;
 
+import kmlib.starsector.ui.intel.VanillaIntelScreenView;
+
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.politicalmap.alliances.AlliancesView;
@@ -35,6 +37,10 @@ public final class MapLayers {
     public static void registerAll() {
         MapLayerRegistry.registerLayers(
                 List.of(NoLayer.INSTANCE, PoliticalMapLayer.INSTANCE), PoliticalMapLayer.INSTANCE);
+        // Each screen keeps its own tab, so the overlay has to follow the tab of the screen being
+        // looked at rather than one fixed screen's. This is the live binding that tells the two apart;
+        // naming it here keeps the registry ignorant of any concrete screen.
+        MapLayerRegistry.registerIntelScreen(new VanillaIntelScreenView());
         PoliticalMapViewRegistry.registerViews(
                 selectPoliticalMapViews(), FactionsView.INSTANCE, PoliticalMapLayer.INSTANCE);
     }

@@ -1,16 +1,23 @@
 package kmu.maplayers.base.layer;
 
+import kmlib.starsector.ui.intel.IntelScreenView;
+
 import java.util.List;
 
 /**
  * The map-layer registry and the holder of each screen's active-layer pick. The layer bar
  * composes its tabs from {@link #getLayers()}, a screen's own selection ({@link #getMapSelection()}
  * or {@link #getIntelSelection()}) stores its pick, and each layer's own state reads {@link #isActive}
- * to decide whether it is the one to draw - so all agree on the map screen's selection without sharing
- * state directly. The map screen's pick is the one the map overlay follows. Each screen's pick is its
- * own {@link PersistedActiveLayerSelection} under its own key, so a switch on one screen survives reload
- * without moving the other's; the registry holds both so their keys and the one-time legacy migration
- * live in a single place.
+ * to decide whether it is the one to draw - so all agree on the live selection without sharing
+ * state directly. Each screen's pick is its own {@link PersistedActiveLayerSelection} under its own
+ * key, so a switch on one screen survives reload without moving the other's; the registry holds both
+ * so their keys and the one-time legacy migration live in a single place.
+ *
+ * <p>Because the picks are per-screen, "which pick is live" is a per-frame question rather than a
+ * fixed answer: the same map widget draws on the sector map and inside the intel screen's visor, so an
+ * overlay reading one fixed screen's pick would paint the sector map's choice onto the intel screen
+ * and ignore the tab the player is looking at. {@link #isActive} settles it by reading which screen is
+ * up, through the intel-screen seam {@link #registerIntelScreen} supplies.
  *
  * <p>This is the feature-agnostic framework half: it knows nothing of any concrete layer.
  * The set of layers and the default pick are supplied once at startup by a composition root
@@ -43,6 +50,11 @@ public final class MapLayerRegistry {
     private static List<MapLayer> orderedLayers = List.of();
     private static MapLayer defaultLayer;
 
+    // Reads whether the intel screen is the one up, which is what decides whose pick is live. Null
+    // until the composition root supplies it, which resolves every read to the map screen's pick - the
+    // answer a registry with no screen wired yet should give, since the sector map is the overlay's home.
+    private static IntelScreenView intelScreen;
+
     private MapLayerRegistry() {
     }
 
@@ -57,6 +69,18 @@ public final class MapLayerRegistry {
     public static void registerLayers(List<MapLayer> layers, MapLayer defaultLayer) {
         orderedLayers = List.copyOf(layers);
         MapLayerRegistry.defaultLayer = defaultLayer;
+    }
+
+    /**
+     * Records the intel-screen seam that tells the registry which screen is up, so {@link #isActive}
+     * can answer from the pick belonging to the screen the player is looking at. Called by the
+     * composition root, the one place a concrete screen binding is named. Only the intel screen is
+     * asked: the two screens are never up together, so "not the intel screen" is the sector map.
+     *
+     * @param intelScreen reads whether the intel screen is the one showing
+     */
+    public static void registerIntelScreen(IntelScreenView intelScreen) {
+        MapLayerRegistry.intelScreen = intelScreen;
     }
 
     /** @return the registered layers in tab order, left to right. */
@@ -85,10 +109,15 @@ public final class MapLayerRegistry {
         return INTEL_SELECTION;
     }
 
-    /** @return whether {@code layer} is the map screen's active pick. */
+    /**
+     * @return whether {@code layer} is the active pick of the screen showing this frame - the gate an
+     *         overlay reads to decide whether to draw. It follows the live screen rather than one fixed
+     *         screen, so switching the intel screen's own tab changes what paints on that screen's map
+     *         while the sector map keeps its own pick
+     */
     public static boolean isActive(MapLayer layer) {
         // Layers are singletons, so identity settles it without an id compare.
-        return MAP_SELECTION.getActiveLayer() == layer;
+        return resolveLiveSelection().getActiveLayer() == layer;
     }
 
     /**
@@ -119,5 +148,15 @@ public final class MapLayerRegistry {
     public static void migrateStoredLayerId(String legacyId, String currentId) {
         MAP_SELECTION.migrateStoredLayerId(legacyId, currentId);
         INTEL_SELECTION.migrateStoredLayerId(legacyId, currentId);
+    }
+
+    // The pick of the screen that is up: the intel screen's while its tab is the one open, the map
+    // screen's otherwise. The map screen is the fallback because the sector map is the overlay's home
+    // surface, so a read taken elsewhere - or before the composition root has wired the seam - lands on
+    // the pick that surface has always followed.
+    private static ActiveLayerSelection resolveLiveSelection() {
+        return intelScreen != null && intelScreen.isIntelTabOpen()
+                ? INTEL_SELECTION
+                : MAP_SELECTION;
     }
 }
