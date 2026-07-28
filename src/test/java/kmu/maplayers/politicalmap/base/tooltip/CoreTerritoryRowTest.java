@@ -4,6 +4,10 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.ui.text.TextSpan;
+import kmlib.starsector.ui.widgets.RowSlot;
+import kmlib.starsector.ui.widgets.TooltipRow;
+
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -37,6 +41,12 @@ final class CoreTerritoryRowTest {
     private static final int CORE_STATUS_RUN = 1;
 
     private MockedStatic<Misc> miscMock;
+
+    // One of the line's label runs, by position. The runs are a sequence read as one sentence, so a
+    // test names which stretch of the line it is about rather than reaching through the row's content.
+    private static TextSpan readLabelRun(TooltipRow row, int runIndex) {
+        return row.labelledRow().labelTextSpans().get(runIndex);
+    }
 
     @BeforeEach
     void installStringsAndColours() {
@@ -74,8 +84,8 @@ final class CoreTerritoryRowTest {
 
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sector, "hegemony").orElseThrow();
 
-            assertThat(row.labelTextSpans().get(FACTION_NAME_RUN).text()).isEqualTo("The Hegemony");
-            assertThat(row.crestSpritePath()).isEqualTo(CREST);
+            assertThat(readLabelRun(row, FACTION_NAME_RUN).text()).isEqualTo("The Hegemony");
+            assertThat(row.labelledRow().leadingRowSlot()).isEqualTo(new RowSlot.Image(CREST));
         }
 
         @Test
@@ -85,19 +95,20 @@ final class CoreTerritoryRowTest {
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
                     .orElseThrow();
 
-            assertThat(row.labelTextSpans().get(CORE_STATUS_RUN).text()).isEqualTo("core territory");
-            assertThat(row.labelTextSpans().get(CORE_STATUS_RUN).colour()).isEqualTo(HIGHLIGHT);
-            assertThat(row.labelTextSpans().get(FACTION_NAME_RUN).colour())
-                    .isEqualTo(Color.LIGHT_GRAY);
+            assertThat(readLabelRun(row, CORE_STATUS_RUN).text()).isEqualTo("core territory");
+            assertThat(readLabelRun(row, CORE_STATUS_RUN).colour()).isEqualTo(HIGHLIGHT);
+            assertThat(readLabelRun(row, FACTION_NAME_RUN).colour()).isEqualTo(Color.LIGHT_GRAY);
         }
 
         @Test
         void resolveCoreTerritoryRowCarriesNoScore() {
-            // A core is held by decree, not won by a number, so the row leaves the value column empty.
+            // A core is held by decree, not won by a number, so the row's value comes out blank and is
+            // charged no column - the trailing slot is filled with a run that draws nothing.
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
                     .orElseThrow();
 
-            assertThat(row.valueTextSpan().hasText()).isFalse();
+            assertThat(row.labelledRow().trailingRowSlot())
+                    .isEqualTo(new RowSlot.Text(TextSpan.createBlank(Color.LIGHT_GRAY)));
         }
 
         @Test
@@ -117,9 +128,8 @@ final class CoreTerritoryRowTest {
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sectorMock, "ghost_faction")
                     .orElseThrow();
 
-            assertThat(row.labelTextSpans().get(FACTION_NAME_RUN).text())
-                    .isEqualTo("ghost_faction");
-            assertThat(row.crestSpritePath()).isNull();
+            assertThat(readLabelRun(row, FACTION_NAME_RUN).text()).isEqualTo("ghost_faction");
+            assertThat(row.labelledRow().leadingRowSlot()).isEqualTo(RowSlot.EMPTY);
         }
     }
 

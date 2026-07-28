@@ -11,7 +11,10 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.ui.text.TextSpan;
+import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.TooltipLabelPlacement;
+import kmlib.starsector.ui.widgets.TooltipRow;
 
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -46,6 +49,12 @@ final class SystemStatusRowTest {
 
     private MockedStatic<Misc> miscMock;
 
+    // One of the line's label runs, by position. The runs are a sequence read as one sentence, so a
+    // test names which stretch of the line it is about rather than reaching through the row's content.
+    private static TextSpan readLabelRun(TooltipRow row, int runIndex) {
+        return row.labelledRow().labelTextSpans().get(runIndex);
+    }
+
     @BeforeEach
     void installStringsAndColours() {
         // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
@@ -79,7 +88,7 @@ final class SystemStatusRowTest {
 
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
 
-            assertThat(row.orElseThrow().labelTextSpans().get(STATUS_RUN).text())
+            assertThat(readLabelRun(row.orElseThrow(), STATUS_RUN).text())
                     .isEqualTo("Unpopulated");
         }
 
@@ -91,7 +100,7 @@ final class SystemStatusRowTest {
 
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
 
-            assertThat(row.orElseThrow().labelTextSpans().get(STATUS_RUN).text())
+            assertThat(readLabelRun(row.orElseThrow(), STATUS_RUN).text())
                     .isEqualTo("Decivilised");
         }
 
@@ -105,7 +114,7 @@ final class SystemStatusRowTest {
             assertThat(row.indent()).isCloseTo(NO_INDENT, within(TOLERANCE));
             assertThat(row.labelPlacement()).isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
             assertThat(row.hasCrest()).isFalse();
-            assertThat(row.valueTextSpan().hasText()).isFalse();
+            assertThat(row.labelledRow().trailingRowSlot()).isEqualTo(RowSlot.EMPTY);
         }
 
         @Test
