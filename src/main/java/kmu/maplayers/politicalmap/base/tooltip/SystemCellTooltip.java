@@ -7,6 +7,7 @@ import kmlib.starsector.ui.color.StarsectorUiColor;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
+import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.text.TextStyle;
 import kmlib.starsector.ui.widgets.TooltipRow;
 import kmlib.starsector.ui.widgets.TooltipStyle;
@@ -96,11 +97,15 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * @param value           the right-aligned value, or {@link #NO_SCORE} for a row carrying none
      * @return the row, ready to add to a body
      */
-    protected static TooltipRow buildTopTierRow(String crestSpritePath, String text, String value) {
+    protected static TooltipRow.TableRow buildTopTierRow(
+            String crestSpritePath,
+            String text,
+            String value) {
+
         return TooltipRow
-                .createRow(text, StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve())
+                .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve()))
                 .carriesCrest(crestSpritePath)
-                .carriesValue(value, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
+                .carriesValue(new TextSpan(value, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
     }
 
     /**
@@ -112,12 +117,16 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * @param value           the right-aligned value, or {@link #NO_SCORE} for a row carrying none
      * @return the row, ready to add to a body
      */
-    protected static TooltipRow buildNestedRow(String crestSpritePath, String text, String value) {
+    protected static TooltipRow.TableRow buildNestedRow(
+            String crestSpritePath,
+            String text,
+            String value) {
+
         var textColour = StarsectorUiColor.VANILLA_TEXT.resolve();
         return TooltipRow
-                .createRow(text, textColour)
+                .createRow(new TextSpan(text, textColour))
                 .carriesCrest(crestSpritePath)
-                .carriesValue(value, textColour)
+                .carriesValue(new TextSpan(value, textColour))
                 .indentsBy(MEMBER_INDENT);
     }
 
@@ -133,16 +142,16 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * @param value              the right-aligned value, or {@link #NO_SCORE} for a row carrying none
      * @return the row, ready to add to a body
      */
-    protected static TooltipRow buildNestedRowWithHighlightedRun(
+    protected static TooltipRow.TableRow buildNestedRowWithHighlightedRun(
             String crestSpritePath,
             String text,
             String highlightedRunText,
             String value) {
 
         return buildNestedRow(crestSpritePath, text, value)
-                .continuesWith(
+                .continuesWith(new TextSpan(
                         highlightedRunText,
-                        StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
+                        StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
     }
 
     /**
@@ -154,9 +163,9 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * @param text the row's label
      * @return the row, ready to add to a body
      */
-    protected static TooltipRow buildStandaloneRow(String text) {
+    protected static TooltipRow.TableRow buildStandaloneRow(String text) {
         return TooltipRow
-                .createRow(text, StarsectorUiColor.VANILLA_TEXT.resolve())
+                .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_TEXT.resolve()))
                 .clearsCrestColumn();
     }
 
@@ -165,12 +174,10 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // one proper name in the box is the one span that reads gold. Centred over the box rather than laid
     // into the columns below it, since it titles the whole box rather than sitting in its table - which
     // also frees it of the crest gutter and the value column those rows align to.
-    private static TooltipRow buildHeaderRow(StarSystemAPI system) {
-        return TooltipRow
-                .createRow(
-                        system.getName(),
-                        StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve())
-                .centred();
+    private static TooltipRow.CentredRow buildHeaderRow(StarSystemAPI system) {
+        return TooltipRow.createCentredRow(new TextSpan(
+                system.getName(),
+                StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
     }
 
     // The tooltip's fixed look: the typography every row draws in, the shared opacity, and the frame

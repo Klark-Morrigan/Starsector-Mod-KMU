@@ -32,7 +32,7 @@ public final class CoreTerritoryRow {
      *                      blank) when no decree holds it
      * @return the core-territory row, or empty when there is no core faction
      */
-    public static Optional<TooltipRow> resolveCoreTerritoryRow(
+    public static Optional<TooltipRow.TableRow> resolveCoreTerritoryRow(
             SectorAPI sector,
             String coreFactionId) {
 

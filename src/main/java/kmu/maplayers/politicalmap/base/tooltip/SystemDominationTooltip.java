@@ -67,7 +67,7 @@ public final class SystemDominationTooltip extends SystemCellTooltip {
                 sector,
                 system,
                 pass.shouldIncludeUndiscoveredMarkets())
-                .map(List::of)
+                .map(List::<TooltipRow>of)
                 .orElseGet(List::of);
     }
 

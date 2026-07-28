@@ -38,7 +38,7 @@ public final class SystemStatusRow {
      *                                         calling a system empty that the body below it fills
      * @return the Decivilised or Unpopulated row, or empty when the system holds a counted colony
      */
-    public static Optional<TooltipRow> resolveStatusRow(
+    public static Optional<TooltipRow.TableRow> resolveStatusRow(
             SectorAPI sector,
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets) {

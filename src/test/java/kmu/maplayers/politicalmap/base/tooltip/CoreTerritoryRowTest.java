@@ -45,7 +45,7 @@ final class CoreTerritoryRowTest {
     // One of the line's label runs, by position. The runs are a sequence read as one sentence, so a
     // test names which stretch of the line it is about rather than reaching through the row's content.
     private static TextSpan readLabelRun(TooltipRow row, int runIndex) {
-        return row.labelledRow().labelTextSpans().get(runIndex);
+        return row.labelTextSpans().get(runIndex);
     }
 
     @BeforeEach
