@@ -76,7 +76,7 @@ final class SystemStatusRowTest {
 
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
 
-            assertThat(row.orElseThrow().label().text()).isEqualTo("Unpopulated");
+            assertThat(row.orElseThrow().labelTextSpan().text()).isEqualTo("Unpopulated");
         }
 
         @Test
@@ -87,7 +87,7 @@ final class SystemStatusRowTest {
 
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
 
-            assertThat(row.orElseThrow().label().text()).isEqualTo("Decivilised");
+            assertThat(row.orElseThrow().labelTextSpan().text()).isEqualTo("Decivilised");
         }
 
         @Test
@@ -100,7 +100,7 @@ final class SystemStatusRowTest {
             assertThat(row.indent()).isCloseTo(NO_INDENT, within(TOLERANCE));
             assertThat(row.labelPlacement()).isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
             assertThat(row.hasCrest()).isFalse();
-            assertThat(row.value().hasText()).isFalse();
+            assertThat(row.valueTextSpan().hasText()).isFalse();
         }
 
         @Test
