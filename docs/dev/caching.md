@@ -36,7 +36,7 @@ every cell edge as an interior seam or a national border, shaping each cell into
 its cluster polygon, tracing the cluster border rings, and fitting a name into
 each cluster. The partition alone is O(n^3) in the number of systems.
 
-The map is repainted every frame it is open, and the terrain plugin's refresh runs
+The map is repainted every frame it is open, and the layer renderer's refresh runs
 on that same per-frame cadence. So the design is the inverse of "recompute what is
 shown": everything drawn is held, and the work per frame is deciding which small
 part of it - usually none - has to be built again.
@@ -221,10 +221,19 @@ Per frame, in increasing cost:
 ## Persistence: none of it is saved
 
 Everything described here is derived from the sector and holds record types
-XStream cannot serialise, so the whole cache is transient: the plugin's reference
-to it is not saved, a save-restored plugin recreates it, and every revision starts
-at a rebuild-forcing seed so the first frame after a load rebuilds both halves from
-scratch.
+XStream cannot serialise. None of it can reach a save: the cache hangs off the
+political map's layer renderer, which is reached through the registered layer and
+so is never serialised - no transient marking required.
+
+That lifetime is longer than a sector's, though, since a player can load a second
+save without restarting. Nothing else would notice the change of sector: the
+revision counters are process-wide and do not move across a load, and the geometry
+cache reconciles by diffing system *ids*, so a system present in both saves at a
+different position reads as unchanged. So the cache is discarded whole on load
+rather than reconciled - `discardStateFromPreviousSave`, called from `onGameLoad`
+beside the sidebar folds, which are process-lifetime singletons for the same
+reason. Every revision then starts at a rebuild-forcing seed, so the first frame
+against the new sector rebuilds both halves from scratch.
 
 What *is* persisted is only the player's choices that feed it - the active layer,
 the sidebar fold, the spotlight selection, the shared toggles - and those live in

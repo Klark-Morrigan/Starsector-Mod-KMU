@@ -6,6 +6,7 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
 import org.junit.jupiter.api.AfterEach;
@@ -51,9 +52,7 @@ final class PoliticalMapTerrainPluginTest {
 
     @AfterEach
     void restoreARegisteredLayer() {
-        // The registry is static, and one test here deliberately empties it; restoring a roster stops
-        // that emptied state from outliving this class.
-        MapLayerRegistry.registerLayers(List.of(drawingLayerMock), drawingLayerMock);
+        MapLayerRosters.restoreNonEmptyRoster();
     }
 
     @Nested

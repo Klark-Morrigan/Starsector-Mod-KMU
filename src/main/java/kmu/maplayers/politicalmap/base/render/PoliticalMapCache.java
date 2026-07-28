@@ -42,10 +42,12 @@ import java.util.Objects;
  * switching a color or dragging an opacity slider takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
  *
- * <p>Everything held here is derived from the sector and holds record types XStream cannot
- * serialise, so this whole object is transient (the plugin's reference to it is): a save-restored
- * plugin recreates it fresh, and every revision starts at its rebuild-forcing seed so the first
- * frame rebuilds both halves from scratch.
+ * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder is
+ * reached through a registered map layer and lives for the session, so no field needs transient
+ * marking. That lifetime is longer than a sector's, though - a player can load a second save without
+ * restarting - so a cache is discarded and rebuilt whole per load rather than reconciled. Every
+ * revision starts at its rebuild-forcing seed, so the first frame against a new sector rebuilds both
+ * halves from scratch.
  */
 final class PoliticalMapCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapCache.class);
@@ -117,6 +119,32 @@ final class PoliticalMapCache {
     /** @return the cached faction-name labels */
     public List<Label> getFactionLabels() {
         return factionLabels;
+    }
+
+    /**
+     * Empties every cached half and returns each revision to its rebuild-forcing seed, so the next
+     * {@link #refresh} builds the whole map from scratch rather than diffing against draw lists that
+     * describe a different sector. Call once per game load.
+     *
+     * <p>The labels' GL buffers are released as part of it: they are freed at the moment the lists
+     * are dropped rather than left to LazyLib's finalizer sweep.
+     */
+    public void discardCachedState() {
+        LabelsBuilder.disposeAll(factionLabels);
+        factionLabels.clear();
+        clusterAnchors.clear();
+        territories = null;
+        debugTerritories = null;
+        geometryCache.clearCachedCells();
+        lastGeometryRevision = -1;
+        lastContentRevision = -1;
+        lastBoundSegments = -1;
+        lastCellRadius = Double.NaN;
+        lastShowsAllFactions = false;
+        lastForcesAllSystemsOnMap = false;
+        // Per-system staleness names systems of the sector being left, so it is dropped rather than
+        // replayed against the next one - the rebuild this discard forces re-derives every system.
+        PoliticalMapRefresh.drainStalePoliticsSystemIds();
     }
 
     /**

@@ -18,6 +18,7 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonizatio
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
+import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin;
 import kmu.maplayers.politicalmap.base.tooltip.MapLayerCellTooltip;
 import kmu.settings.KmuLunaSettings;
@@ -142,6 +143,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
             IntelSidebarHost.INSTANCE.restoreFoldFromSave();
         } catch (RuntimeException exception) {
             LOG.error("Failed to restore KMU political map sidebar folds", exception);
+        }
+
+        try {
+            // Same reason as the folds above, for the overlay's derived state: the layer renderer is
+            // a process-lifetime singleton, so without this the sector just left keeps painting over
+            // the one being loaded.
+            PoliticalMapLayerRenderer.INSTANCE.discardStateFromPreviousSave();
+        } catch (RuntimeException exception) {
+            LOG.error("Failed to discard KMU political map state from the previous save", exception);
         }
 
         try {

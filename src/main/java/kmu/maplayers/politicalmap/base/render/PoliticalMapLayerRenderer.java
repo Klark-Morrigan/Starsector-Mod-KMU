@@ -35,7 +35,8 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // The freshness cache and the overlay compositor this renderer delegates to. Plain final fields:
     // a layer renderer is reached through a registered layer, so it lives for the session and never
     // enters a save, and neither collaborator needs the transient marking or lazy rebuild a
-    // save-serialised holder would.
+    // save-serialised holder would. The cache holds one sector's derived state and is emptied per
+    // load rather than replaced; see discardStateFromPreviousSave.
     private final PoliticalMapCache cache = new PoliticalMapCache();
     private final PoliticalMapOverlayRenderer overlayRenderer = new PoliticalMapOverlayRenderer();
 
@@ -45,6 +46,25 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     private PoliticalMapHoverPublisher hoverPublisher;
 
     private PoliticalMapLayerRenderer() {
+    }
+
+    /**
+     * Drops everything derived from the sector being left, so the next frame rebuilds against the
+     * sector just loaded. Call once per game load.
+     *
+     * <p>This renderer outlives any one save - it is reached through a registered layer, and a player
+     * can load a second save without restarting - while its cache is only meaningful for the sector
+     * it was built from. Nothing else would catch the difference: the staleness counters are
+     * process-wide and do not move across a load, and the geometry cache reconciles by diffing system
+     * <em>ids</em>, so a system present in both saves at a different position is not seen to have
+     * changed. Without this the previous save's territories would paint over the new sector and stay
+     * until the player happened to trip a rebuild.
+     */
+    public void discardStateFromPreviousSave() {
+        cache.discardCachedState();
+        // The hover names a system id from the sector being left, so it is parked rather than left
+        // to light a cell - or float a tooltip - that the new sector may not even contain.
+        PoliticalMapHoverState.getInstance().clearHover();
     }
 
     @Override

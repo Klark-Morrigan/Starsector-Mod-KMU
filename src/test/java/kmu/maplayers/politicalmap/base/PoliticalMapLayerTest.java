@@ -8,6 +8,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 
@@ -45,6 +46,18 @@ final class PoliticalMapLayerTest {
 
     private final PoliticalMapView viewWithControlsMock = mock(PoliticalMapView.class);
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);
+
+    @Nested
+    class GetMapRenderer {
+
+        @Test
+        void getMapRendererReturnsThePoliticalMapsOwnRenderer() {
+            // The counterpart to No Layer's null: this tab is the one that draws, and it hands the map
+            // surface one view-neutral renderer rather than branching on the view roster.
+            assertThat(PoliticalMapLayer.INSTANCE.getMapRenderer())
+                    .isSameAs(PoliticalMapLayerRenderer.INSTANCE);
+        }
+    }
 
     @Nested
     class GetBodyControls {

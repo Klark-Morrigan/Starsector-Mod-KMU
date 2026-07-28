@@ -89,6 +89,23 @@ public final class PoliticalMapGeometryCache {
     private double lastCellRadius = Double.NaN;
 
     /**
+     * Empties the cached partition and returns the seed inputs to their rebuild-forcing values, so
+     * the next update builds every cell from scratch instead of diffing against what is held.
+     *
+     * <p>Wanted when the cells belong to a sector that is no longer the live one. The incremental
+     * path cannot get there on its own: it reconciles by comparing system <em>ids</em>, so a system
+     * that appears in both sectors at a different position is not seen as a change and would keep the
+     * cell built around its old position.
+     */
+    public void clearCachedCells() {
+        siteBySystemId.clear();
+        cellEdgesByCellId.clear();
+        systemIdByCellId.clear();
+        lastBoundSegments = -1;
+        lastCellRadius = Double.NaN;
+    }
+
+    /**
      * Brings the cache in line with the sector's current on-map systems,
      * rebuilding only the outlines affected by systems that joined or left the
      * partition - including a system that entered or left it by starting or stopping

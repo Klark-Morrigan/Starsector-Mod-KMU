@@ -60,9 +60,7 @@ final class MapLayerRegistryTest {
 
     @AfterEach
     void restoreARegisteredRoster() {
-        // The registry is static, and one test here deliberately empties it; restoring a roster stops
-        // that emptied state from outliving this class.
-        MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), secondLayerMock);
+        MapLayerRosters.restoreNonEmptyRoster();
     }
 
     @Nested
