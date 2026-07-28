@@ -68,6 +68,22 @@ def nexJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/Exereli
 // supplies it at runtime - compileOnly. Globbed so a version bump does not break
 // the path.
 def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['xstream-*.jar'])
+// The obfuscated core, carrying the concrete campaign classes the published API only exposes as
+// interfaces. KMU compiles against one of them: CampaignTerrain, which the political map's
+// starscape terrain entity subclasses so it can report the terrain type the sector map draws over
+// the starfield. The API side has nothing to subclass - LocationAPI.addTerrain always builds a
+// plain CampaignTerrain - so the concrete class is the only way in. compileOnly, like the API jar:
+// the game classloader supplies it at runtime.
+//
+// Deliberately not on testCompileOnly. These classes carry members whose names are not legal Java
+// identifiers, so a verifying JVM outside the game refuses to load them; keeping them off the test
+// compile classpath is what stops a type that cannot run there from being named there.
+//
+// Both jars are needed to name one type: starfarer_obf.jar has CampaignTerrain itself, and
+// fs.common_obf.jar has the DoNotObfuscate and LayeredRenderable its supertype chain reaches -
+// javac resolves the whole chain of anything it is asked to subclass.
+def obfJars = fileTree(dir: "${starsectorRoot}/starsector-core",
+        include: ['starfarer_obf.jar', 'fs.common_obf.jar'])
 // LWJGL, which carries the GLU tessellator the render layer resolves a territory's winding with.
 // The utils tooling runs that same geometry outside the game to draw and to write SVGs, so it
 // needs the jar at RUNTIME - the game classloader is not there to hand it over. Compiling without
@@ -80,6 +96,7 @@ dependencies {
     compileOnly consoleCommandsJars
     compileOnly nexJars
     compileOnly xstreamJars
+    compileOnly obfJars
     // KMLib is a hard dependency in mod_info.json; Starsector's mod
     // classloader provides the jar at runtime so compileOnly is enough.
     // KMU drives its logging through KMLib's KmLogging, so the LunaLib

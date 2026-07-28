@@ -2,6 +2,8 @@ package kmu;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.CampaignTerrainAPI;
+import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
@@ -88,10 +90,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
         x.alias(PoliticalMapTerrainPlugin.class.getName(), PoliticalMapTerrainPlugin.class);
     }
 
-    // Terrain type registered in data/campaign/terrain.json that hosts the
-    // political map overlay's renderOnMapAbove draw. Serialised into saves;
-    // do not rename.
-    static final String POLITICAL_MAP_TERRAIN_TYPE = "kmu_political_terrain";
+    // Terrain type registered in data/campaign/terrain.json whose plugin paints the map layers on
+    // the sector map, through renderOnMap. The id is serialised into saves, so an existing save
+    // holds an entity under whatever id it was written with; removeStaleSectorMapLayerTerrain is
+    // what retires one left behind by a former id, and this constant is the only id installed.
+    // Renaming it again is survivable only because that sweep runs on every load.
+    static final String SECTOR_MAP_LAYER_TERRAIN_TYPE = "kmu_sector_map_layer_terrain";
 
     @Override
     public void onGameLoad(boolean newGame) {
@@ -112,9 +116,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         try {
-            installPoliticalMapTerrain(Global.getSector());
+            installSectorMapLayerTerrain(Global.getSector());
         } catch (RuntimeException exception) {
-            LOG.error("Failed to install KMU political map terrain", exception);
+            LOG.error("Failed to install KMU sector map layer terrain", exception);
         }
 
         try {
@@ -329,7 +333,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         listenerManager.addListener(new MapLayerCellTooltip(), true);
     }
 
-    static void installPoliticalMapTerrain(SectorAPI sector) {
+    static void installSectorMapLayerTerrain(SectorAPI sector) {
         if (sector == null) {
             return;
         }
@@ -339,21 +343,61 @@ public class KMU_ModPlugin extends BaseModPlugin {
             return;
         }
 
+        // Retire anything left under a former type id before counting what is present, so a save
+        // written before a rename ends up with one live entity rather than the stale one plus a
+        // freshly added replacement.
+        removeStaleSectorMapLayerTerrain(hyperspace);
+
         // One terrain instance per save: a reloaded save already carries it
         // (terrain persists), so skip if a copy is present to avoid stacking.
-        for (var terrain : hyperspace.getTerrainCopy()) {
-            if (POLITICAL_MAP_TERRAIN_TYPE.equals(terrain.getType())) {
-                return;
-            }
+        if (hasSectorMapLayerTerrain(hyperspace)) {
+            return;
         }
 
         // No params: the plugin is purely a map drawer and reads system
         // positions itself, so it needs nothing passed in.
-        hyperspace.addTerrain(POLITICAL_MAP_TERRAIN_TYPE, null);
+        hyperspace.addTerrain(SECTOR_MAP_LAYER_TERRAIN_TYPE, null);
 
         // One-shot install diagnostic. DEBUG so it stays silent at the WARN
         // default; set KMU log verbosity to DEBUG in LunaLib to see it.
-        LOG.debug("Political map terrain installed; star systems="
+        LOG.debug("Sector map layer terrain installed; star systems="
                 + sector.getStarSystems().size());
+    }
+
+    // Retires map-layer terrain carrying a type id this mod no longer installs. The id is
+    // serialised into the save, so a save written before a rename still holds an entity under the
+    // old one, whose spec no longer resolves; leaving it would also slip past the presence check
+    // and stack a second overlay on top of it, painting every fill at doubled alpha.
+    private static void removeStaleSectorMapLayerTerrain(LocationAPI hyperspace) {
+        // getTerrainCopy hands back a copy, so removing while walking it is safe.
+        for (var terrain : hyperspace.getTerrainCopy()) {
+            if (isSectorMapLayerTerrain(terrain)
+                    && !SECTOR_MAP_LAYER_TERRAIN_TYPE.equals(terrain.getType())) {
+                hyperspace.removeEntity(terrain);
+                LOG.debug("Retired sector map layer terrain under former type id "
+                        + terrain.getType());
+            }
+        }
+    }
+
+    private static boolean hasSectorMapLayerTerrain(LocationAPI hyperspace) {
+        for (var terrain : hyperspace.getTerrainCopy()) {
+            if (isSectorMapLayerTerrain(terrain)
+                    && SECTOR_MAP_LAYER_TERRAIN_TYPE.equals(terrain.getType())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Whether this terrain is the map layers' own, identified by its plugin rather than by its
+    // type id: the id is the thing a rename changes, so matching on it would make the sweep blind
+    // to exactly the entities it exists to find. The class is compared exactly rather than with
+    // instanceof because the starscape half's plugin is a subclass of this one, and each half owns
+    // and installs its own entity.
+    private static boolean isSectorMapLayerTerrain(CampaignTerrainAPI terrain) {
+        return terrain != null
+                && terrain.getPlugin() != null
+                && terrain.getPlugin().getClass() == PoliticalMapTerrainPlugin.class;
     }
 }
