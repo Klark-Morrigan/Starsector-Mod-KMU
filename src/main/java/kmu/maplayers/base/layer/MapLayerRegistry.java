@@ -110,14 +110,23 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * @return whether {@code layer} is the active pick of the screen showing this frame - the gate an
-     *         overlay reads to decide whether to draw. It follows the live screen rather than one fixed
-     *         screen, so switching the intel screen's own tab changes what paints on that screen's map
-     *         while the sector map keeps its own pick
+     * @return the active pick of the screen showing this frame, or null before a composition root has
+     *         registered any layers. This is what the map surface dispatches its render pass through,
+     *         so the paint follows the tab the player is looking at without the surface naming a
+     *         layer; it follows the live screen rather than one fixed screen, so the intel screen's
+     *         own tab governs what paints there while the sector map keeps its own pick
+     */
+    public static MapLayer getActiveLayer() {
+        return resolveLiveSelection().getActiveLayer();
+    }
+
+    /**
+     * @return whether {@code layer} is the active pick of the screen showing this frame - the gate a
+     *         layer's own state reads to decide whether it is the one in play
      */
     public static boolean isActive(MapLayer layer) {
         // Layers are singletons, so identity settles it without an id compare.
-        return resolveLiveSelection().getActiveLayer() == layer;
+        return getActiveLayer() == layer;
     }
 
     /**

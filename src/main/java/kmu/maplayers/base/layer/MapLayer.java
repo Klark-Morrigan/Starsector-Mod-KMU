@@ -2,6 +2,8 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.render.MapLayerRenderer;
+
 import java.util.List;
 
 /**
@@ -13,9 +15,9 @@ import java.util.List;
  * <p>The framework exists so a new view (Nexerelin alliances is the next planned one) is a
  * matter of adding an implementation and registering it: the bar draws its tab, the input
  * listener hit-tests it, and its hotkey switches to it, all with no change to the UI code.
- * A layer here is a descriptor - id, tab label, body controls, hotkey - not a renderer; the
- * territory paint lives in a terrain plugin, which reads the active pick to decide whether
- * its view is the one to draw.
+ * A layer here is a descriptor - id, tab label, body controls, hotkey - not a renderer; drawing is
+ * a separate role a layer may fill, supplied through {@link #getMapRenderer()} and driven by the
+ * terrain surface that owns the map's render pass.
  */
 public interface MapLayer {
 
@@ -45,4 +47,13 @@ public interface MapLayer {
 
     /** @return the LunaLib field id holding the player's rebound shortcut keycode. */
     String getShortcutSettingKey();
+
+    /**
+     * @return what draws this layer's overlay while it is the active pick, or null for a layer that
+     *         draws nothing - a switch-only tab, which the map surface reads as nothing to draw.
+     *         Declared here rather than defaulted to null so every layer answers the question
+     *         deliberately; a new view that forgets to draw fails to compile rather than coming up
+     *         blank
+     */
+    MapLayerRenderer getMapRenderer();
 }

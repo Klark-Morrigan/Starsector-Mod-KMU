@@ -4,29 +4,19 @@ import com.fs.starfarer.api.campaign.CampaignEngineLayers;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
-import kmlib.starsector.ui.input.UiCursor;
-import kmlib.starsector.ui.map.ModelviewMatrixReaders;
-
-import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
-import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
-import kmu.settings.KmuLunaSettings;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 
 import java.util.EnumSet;
 
 /**
- * Terrain plugin that paints the political map on the sector (M) map as merged HOI4-style
- * clusters, where adjacent same-grouping systems fuse into one solid national region. It is the
- * shared political-map terrain surface, living in {@code base.render} so any political-map view
- * reuses one grouping-agnostic pipeline; it draws whichever view
- * {@link PoliticalMapViewRegistry#getActiveView()} reports, or stays dark when none is active.
+ * The map's render surface: the terrain plugin that owns the sector (M) map's overlay render pass
+ * and hands each frame to whichever map layer the player has selected. It names no layer of its own -
+ * it reads the active pick from {@link MapLayerRegistry}, asks it for a renderer, and draws through
+ * that - so a new layer draws here by registering rather than by being named here.
  *
- * <p>This class is only the terrain adapter: it satisfies Starsector's terrain contract and, each
- * frame the map is open, asks its {@link PoliticalMapCache} to bring the cached draw lists up to
- * date, has its {@link PoliticalMapHoverPublisher} resolve what the cursor is over, and hands the
- * draw lists to its {@link PoliticalMapOverlayRenderer} to paint. All the real work - keeping the
- * draw lists fresh with the least work per frame, reading the cursor, and composing the overlay
- * layers - lives in those three collaborators.
+ * <p>A layer that supplies no renderer, and a frame with no active pick at all, are the same answer:
+ * nothing to draw. That is what makes the "show nothing" tab an ordinary layer rather than a special
+ * case in this class.
  *
  * <p>Terrain is the surface because the sector map renders terrain through {@code renderOnMap} -
  * the same hook the vanilla nebulae draw with. A custom campaign entity has no map-render hook, so
@@ -34,10 +24,9 @@ import java.util.EnumSet;
  * {@code renderOnMapAbove}) keeps the territory beneath system and constellation names, matching
  * its role as a quiet background layer.
  *
- * <p>The three collaborators are {@code transient}: they hold record types XStream cannot serialise
- * and are rebuilt each session, so they must never enter the save. A save-restored plugin comes
- * back with them null - XStream skips transient fields and runs no field initialisers - so they
- * are created lazily in {@link #renderOnMap} rather than in a field initialiser.
+ * <p>This plugin is serialised into the save with its terrain entity, so it deliberately holds no
+ * state: everything a frame needs lives behind the layer's renderer, which is reached through a
+ * registered layer and never enters a save.
  */
 public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // Map rendering ignores this (the map calls the map hooks regardless), but BaseTerrain
@@ -51,14 +40,6 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
     // what lets addTerrain succeed on a fresh game; omitting it crashes onGameLoad.
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
             EnumSet.noneOf(CampaignEngineLayers.class);
-
-    // The freshness cache, the cursor read, and the overlay compositor the plugin delegates to.
-    // Transient: they hold record types XStream cannot serialise and are derived each session, so
-    // they stay out of the save. Null until the first render this session (and after a save
-    // restore), then created lazily.
-    private transient PoliticalMapCache cache;
-    private transient PoliticalMapOverlayRenderer overlayRenderer;
-    private transient PoliticalMapHoverPublisher hoverPublisher;
 
     @Override
     public EnumSet<CampaignEngineLayers> getActiveLayers() {
@@ -83,73 +64,17 @@ public class PoliticalMapTerrainPlugin extends BaseTerrain {
 
     @Override
     public void renderOnMap(float factor, float alphaMult) {
-        // Paints whichever political-map view is active, or nothing when none is - the map is off
-        // (No Layer tab) or dark (political-map tab open, view deselected). Gating the whole draw
-        // (and its refresh) on one view read keeps a hidden overlay near-free per frame, and reading
-        // the view - not a named faction gate - is what lets any registered view paint here.
-        var view = PoliticalMapViewRegistry.getActiveView();
-        if (view == null) {
+        // Draws through the pick of whichever screen is showing this frame, so switching a tab
+        // switches what paints with no per-layer branch here. Null before a composition root has
+        // registered any layers - the same nothing-to-draw answer as a layer with no painter.
+        var activeLayer = MapLayerRegistry.getActiveLayer();
+        if (activeLayer == null) {
             return;
         }
-        // Recreated lazily: a save-restored plugin comes back with both null (transient), so the
-        // first render this session rebuilds them before any draw.
-        if (cache == null) {
-            cache = new PoliticalMapCache();
-        }
-        if (overlayRenderer == null) {
-            overlayRenderer = new PoliticalMapOverlayRenderer();
-        }
-        cache.refresh(view);
-        publishHoverIfEnabled(factor);
-        overlayRenderer.renderOnMap(cache, factor, alphaMult);
-    }
-
-    // Runs the cursor read only while the hover highlight is switched on. The whole feature - the
-    // map-matrix read (bridged, and a per-frame render-thread hop under Fast Rendering), the
-    // unproject, and the cell hit test - hangs off this call, so gating it here is what makes the
-    // toggle a real off switch rather than one that draws nothing while still paying to resolve the
-    // hover every frame. When off, the hover is parked so nothing downstream keeps a stale cell lit,
-    // and the publisher (and the renderer binding it holds) is never created.
-    private void publishHoverIfEnabled(float factor) {
-        if (!KmuLunaSettings.getPoliticalMapHoverEnabled()) {
-            PoliticalMapHoverState.getInstance().clearHover();
+        var layerRenderer = activeLayer.getMapRenderer();
+        if (layerRenderer == null) {
             return;
         }
-        // The sidebar is drawn over the map, so a cursor on it is not hovering the territory
-        // beneath. Park the hover so the panel neither lights a cell under it nor floats a tooltip
-        // over it.
-        if (isCursorOverSidebar()) {
-            PoliticalMapHoverState.getInstance().clearHover();
-            return;
-        }
-        // Recreated lazily like the other collaborators: a save-restored plugin comes back with it
-        // null (transient), and it is only wanted once the toggle is on.
-        if (hoverPublisher == null) {
-            hoverPublisher = new PoliticalMapHoverPublisher(
-                    ModelviewMatrixReaders.selectForActiveRenderer());
-        }
-        // The cursor read sits between the refresh and the draw: after, so it tests against the
-        // shapes this frame actually paints, and before, so the highlight layers already have the
-        // frame's answer when they draw. It is the one point in the frame with both the live GL
-        // matrices it needs and the current draw lists.
-        hoverPublisher.publishHoverFrom(cache, factor);
-    }
-
-    // Whether the cursor sits over the map sidebar. Reads the same placement the sidebar draws and
-    // hit-tests, so the hover parks over exactly the box the panel occupies; a null placement (the
-    // bar is not on screen) is nothing to be over.
-    private static boolean isCursorOverSidebar() {
-        // The on-map sidebar is the one drawn on this screen, so the cursor test reads the on-map host's
-        // own placement - the same host, controller, layer selection, and layout the render pass draws.
-        var placement = MapSidebarHost.INSTANCE.resolvePlacement();
-        if (placement == null) {
-            return false;
-        }
-        var uiX = UiCursor.getUiX();
-        var uiY = UiCursor.getUiY();
-        // The collapse notch protrudes past the body's edge - when the panel is docked it is the
-        // only part still on screen - so a cursor over it is still over the sidebar.
-        return placement.body().box().containsPoint(uiX, uiY)
-                || (placement.notch() != null && placement.notch().containsPoint(uiX, uiY));
+        layerRenderer.renderOnMap(factor, alphaMult);
     }
 }

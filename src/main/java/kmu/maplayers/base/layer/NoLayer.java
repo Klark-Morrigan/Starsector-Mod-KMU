@@ -2,6 +2,7 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.util.KmuStrings;
 
 import org.lwjgl.input.Keyboard;
@@ -48,5 +49,12 @@ public final class NoLayer implements MapLayer {
     @Override
     public String getShortcutSettingKey() {
         return SHORTCUT_FIELD;
+    }
+
+    @Override
+    public MapLayerRenderer getMapRenderer() {
+        // No renderer is the "show nothing" pick expressed to the map surface: it draws whatever the
+        // active layer draws, and this layer draws nothing.
+        return null;
     }
 }

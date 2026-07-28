@@ -23,21 +23,18 @@ import java.util.function.BooleanSupplier;
  * actually on screen. Exactly one of the pair paints in any frame, which is what keeps the picture
  * identical between the two looks - two halves painting would double every translucent fill.
  *
- * <p>Subclassing is what keeps the pair one renderer: the view read, the cache refresh, the hover
- * publish and the overlay draw are all inherited, so a change to what the political map paints
- * reaches both surfaces without either half being told the other exists. The price is duplication,
- * since the pair is two plugin instances and each lazily builds its own cache, overlay renderer and
- * hover publisher: two sets of draw lists, and with faction names on, two live sets of labels each
- * holding a font buffer. Sharing one cache between them would make it a collaborator the base has to
- * be handed, which is exactly the awareness this arrangement exists to keep out of the base.
+ * <p>Subclassing is what keeps the pair one renderer: the dispatch to the active layer's renderer is
+ * inherited, so a change to what any layer draws reaches both surfaces without either half being
+ * told the other exists. The pair costs nothing beyond the second entity, since the renderer it
+ * dispatches to is reached through the registered layer rather than held per plugin - so both halves
+ * drive one layer renderer, over one set of draw lists.
  */
 public class StarscapeMapTerrainPlugin extends PoliticalMapTerrainPlugin {
     // Whether a starscape map is on screen, held rather than re-resolved per frame. Transient and
-    // non-final for the same reason the inherited collaborators are: this plugin is serialised into
-    // the save with the terrain entity holding it, and the binding behind this field is not
-    // something XStream can carry. A save-restored plugin therefore comes back with it null -
-    // XStream skips transient fields and runs no field initialisers - so it is created lazily in
-    // renderOnMap rather than in a field initialiser.
+    // non-final because this plugin is serialised into the save with the terrain entity holding it,
+    // and the binding behind this field is not something XStream can carry. A save-restored plugin
+    // therefore comes back with it null - XStream skips transient fields and runs no field
+    // initialisers - so it is created lazily in renderOnMap rather than in a field initialiser.
     private transient BooleanSupplier isStarscapeMapShowing;
 
     /**

@@ -106,7 +106,7 @@ sector memory rather than as LunaLib fields, so flipping one does *not* bump
 `settingsRevision`. Each setter bumps its own counter instead, which is what makes
 those toggles repaint the overlay live despite never touching the settings screen.
 
-The **content revision** is the seam that keeps the shared plugin from naming any
+The **content revision** is the seam that keeps the shared pipeline from naming any
 concrete view: a view folds its own live inputs into one int, so the alliances view
 can invalidate on an alliance-membership change while the faction view - which
 samples nothing live - returns a constant and never forces a rebuild on its own.
@@ -116,8 +116,8 @@ samples nothing live - returns a constant and never forces a rebuild on its own.
 ### The overlay cache
 
 [`PoliticalMapCache`](../../src/main/java/kmu/maplayers/politicalmap/base/render/PoliticalMapCache.java)
-is the owner: the terrain plugin holds one and asks it to `refresh` each frame the
-map is open. It holds both halves (geometry and built draw lists) plus the
+is the owner: the political map's painter holds one and asks it to `refresh` each
+frame the map is open. It holds both halves (geometry and built draw lists) plus the
 revisions each half was built against, and rebuilds only the stale half.
 
 It is also where rebuild faults are contained: a failing rebuild is logged once

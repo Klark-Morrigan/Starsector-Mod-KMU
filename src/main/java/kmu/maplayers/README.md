@@ -69,6 +69,9 @@ about what the overlay means.
 
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`.
+- **`base/render`** - `MapLayerRenderer`, the seam a layer draws through. The terrain surface that
+  owns the map's render pass asks the active layer for one and hands it the frame, so it names no
+  layer; a layer that only switches (No Layer) supplies none, which is read as nothing to draw.
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the

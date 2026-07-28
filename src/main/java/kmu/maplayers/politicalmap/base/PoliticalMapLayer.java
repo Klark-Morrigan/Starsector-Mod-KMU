@@ -6,8 +6,10 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.politicalmap.base.refresh.ColumnSelection;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
+import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
@@ -113,5 +115,12 @@ public final class PoliticalMapLayer implements MapLayer {
     @Override
     public String getShortcutSettingKey() {
         return SHORTCUT_FIELD;
+    }
+
+    @Override
+    public MapLayerRenderer getMapRenderer() {
+        // View-neutral here as everywhere else on this tab: the renderer resolves which view is up,
+        // so the tab hands over one renderer rather than branching on the view roster.
+        return PoliticalMapLayerRenderer.INSTANCE;
     }
 }

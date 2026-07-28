@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,13 @@ final class MapLayerRegistryTest {
         MapLayerRegistry.registerIntelScreen(intelScreenFake);
     }
 
+    @AfterEach
+    void restoreARegisteredRoster() {
+        // The registry is static, and one test here deliberately empties it; restoring a roster stops
+        // that emptied state from outliving this class.
+        MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), secondLayerMock);
+    }
+
     @Nested
     class GetLayers {
 
@@ -95,6 +103,37 @@ final class MapLayerRegistryTest {
                 MapLayerRegistry.getIntelSelection().selectLayer(firstLayerMock);
 
                 verify(memoryMock).set(INTEL_ACTIVE_LAYER_KEY, "first");
+            }
+        }
+    }
+
+    @Nested
+    class GetActiveLayer {
+
+        @Test
+        void getActiveLayerAnswersFromTheShowingScreensPick() {
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                var memoryMock = mock(MemoryAPI.class);
+                linkSectorMemoryTo(globalMock, memoryMock);
+                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY)).thenReturn(true);
+                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY)).thenReturn("second");
+                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY)).thenReturn(true);
+                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY)).thenReturn("first");
+                intelScreenFake.setIntelTabOpen(true);
+
+                assertThat(MapLayerRegistry.getActiveLayer()).isSameAs(firstLayerMock);
+            }
+        }
+
+        @Test
+        void getActiveLayerIsNullBeforeAnyLayerIsRegistered() {
+            // The map surface can be asked for a frame before the composition root has run, so the
+            // registry has to answer "no pick" rather than leave a caller to find out by throwing.
+            MapLayerRegistry.registerLayers(List.of(), null);
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                globalMock.when(Global::getSector).thenReturn(null);
+
+                assertThat(MapLayerRegistry.getActiveLayer()).isNull();
             }
         }
     }
