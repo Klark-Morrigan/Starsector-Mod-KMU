@@ -62,15 +62,18 @@ def lazyLibJarFile = file("${starsectorRoot}/mods/lw_lazylib/jars/LazyLib.jar")
 // mod-enabled check so a Nex-free install never resolves the type.
 def nexJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/ExerelinCore.jar'])
 // XStream backs Starsector's save serialisation. KMU compiles against it to
-// override configureXStream and alias the political-map terrain plugin's former
-// class name, so saves written before the rename still resolve. It ships inside
+// override configureXStream and alias the map-layer terrain plugin's former
+// class names, so saves written before each rename still resolve. It ships inside
 // starsector-core (always present with the game), so the game classloader
-// supplies it at runtime - compileOnly. Globbed so a version bump does not break
-// the path.
+// supplies it at runtime - compileOnly for the mod itself. The tests need it on
+// their own runtime classpath as well: the alias test stands an XStream in for
+// the game's and verifies what the mod registers on it, which needs the real
+// class present to stand in for. Globbed so a version bump does not break the
+// path.
 def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['xstream-*.jar'])
 // The obfuscated core, carrying the concrete campaign classes the published API only exposes as
-// interfaces. KMU compiles against one of them: CampaignTerrain, which the political map's
-// starscape terrain entity subclasses so it can report the terrain type the sector map draws over
+// interfaces. KMU compiles against one of them: CampaignTerrain, which the map layers' starscape
+// terrain entity subclasses so it can report the terrain type the sector map draws over
 // the starfield. The API side has nothing to subclass - LocationAPI.addTerrain always builds a
 // plain CampaignTerrain - so the concrete class is the only way in. compileOnly, like the API jar:
 // the game classloader supplies it at runtime.
@@ -112,6 +115,7 @@ dependencies {
     testCompileOnly files(lazyLibJarFile)
     testRuntimeOnly consoleCommandsJars
     testRuntimeOnly nexJars
+    testRuntimeOnly xstreamJars
     testRuntimeOnly files(kmlibJarFile)
     testRuntimeOnly files(lazyLibJarFile)
 

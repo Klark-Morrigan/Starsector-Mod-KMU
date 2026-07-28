@@ -1,21 +1,20 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.base.render;
 
 import kmlib.starsector.ui.map.StarscapeMapPresence;
 
 import java.util.function.BooleanSupplier;
 
 /**
- * Paints the political map while a map is drawing the Starscape starfield - the mode the base
- * political-map terrain is suppressed in. It is the second half of a pair: the same draw, from the
- * same renderer, reached through a second terrain entity whose reported type the map widget lets
- * through.
+ * Draws the active map layer while a map is showing the Starscape starfield - the mode the base
+ * map-layer terrain is suppressed in. It is the second half of a pair: the same draw, from the same
+ * renderer, reached through a second terrain entity whose reported type the map widget lets through.
  *
  * <p>The widget wraps every terrain entity in a render wrapper whose visibility test and
  * {@code renderOnMap} call share one condition - the map is not in starscape mode, or the entity's
  * terrain type is the literal {@code "slipstream"}. That is a raw string equality against one
  * literal, with no set, tag or alias behind it, so a terrain that wants to draw over the starfield
- * has to report exactly that type. Reporting it is {@link StarscapeMapTerrain}'s job; this plugin is
- * what that entity's spec resolves to.
+ * has to report exactly that type. Reporting it is {@link SectorMapLayerStarscapeTerrain}'s job;
+ * this plugin is what that entity's spec resolves to.
  *
  * <p>Passing the widget's check in <em>both</em> modes is why this half stands itself down. The base
  * half is suppressed by the engine whenever its host is in starscape and so needs no starscape
@@ -29,7 +28,7 @@ import java.util.function.BooleanSupplier;
  * dispatches to is reached through the registered layer rather than held per plugin - so both halves
  * drive one layer renderer, over one set of draw lists.
  */
-public class StarscapeMapTerrainPlugin extends PoliticalMapTerrainPlugin {
+public class SectorMapLayerStarscapeTerrainPlugin extends SectorMapLayerTerrainPlugin {
     // Whether a starscape map is on screen, held rather than re-resolved per frame. Transient and
     // non-final because this plugin is serialised into the save with the terrain entity holding it,
     // and the binding behind this field is not something XStream can carry. A save-restored plugin
@@ -42,11 +41,11 @@ public class StarscapeMapTerrainPlugin extends PoliticalMapTerrainPlugin {
      * The read is left unset here and resolved on the first render, since a save-restored plugin
      * arrives with it unset regardless and one lazy path then covers both arrivals.
      */
-    public StarscapeMapTerrainPlugin() {
+    public SectorMapLayerStarscapeTerrainPlugin() {
     }
 
     /** Binds the starscape read explicitly instead of letting the first render resolve it. */
-    StarscapeMapTerrainPlugin(BooleanSupplier isStarscapeMapShowing) {
+    SectorMapLayerStarscapeTerrainPlugin(BooleanSupplier isStarscapeMapShowing) {
         this.isStarscapeMapShowing = isStarscapeMapShowing;
     }
 

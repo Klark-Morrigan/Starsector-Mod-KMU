@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.base.render;
 
 import com.fs.starfarer.api.Global;
 
@@ -7,7 +7,6 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
-import kmu.maplayers.base.render.MapLayerRenderer;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.when;
  * The draw-list build and GL emission live behind that renderer and are covered there; the emission
  * itself runs only in-engine.
  */
-final class PoliticalMapTerrainPluginTest {
+final class SectorMapLayerTerrainPluginTest {
     private final MapLayer drawingLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
     private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
@@ -60,7 +59,7 @@ final class PoliticalMapTerrainPluginTest {
 
         @Test
         void getActiveLayersReturnsEmptyWithoutThrowing() {
-            var plugin = new PoliticalMapTerrainPlugin();
+            var plugin = new SectorMapLayerTerrainPlugin();
 
             assertThatCode(plugin::getActiveLayers).doesNotThrowAnyException();
             assertThat(plugin.getActiveLayers()).isEmpty();
@@ -76,7 +75,7 @@ final class PoliticalMapTerrainPluginTest {
                 // No sector means no stored pick, so the registry resolves to the registered default.
                 globalMock.when(Global::getSector).thenReturn(null);
 
-                new PoliticalMapTerrainPlugin().renderOnMap(1.5f, 0.25f);
+                new SectorMapLayerTerrainPlugin().renderOnMap(1.5f, 0.25f);
 
                 verify(layerRendererMock).renderOnMap(1.5f, 0.25f);
             }
@@ -92,7 +91,7 @@ final class PoliticalMapTerrainPluginTest {
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 globalMock.when(Global::getSector).thenReturn(null);
 
-                new PoliticalMapTerrainPlugin().renderOnMap(1f, 1f);
+                new SectorMapLayerTerrainPlugin().renderOnMap(1f, 1f);
 
                 verifyNoInteractions(layerRendererMock);
             }
@@ -105,7 +104,7 @@ final class PoliticalMapTerrainPluginTest {
             MapLayerRegistry.registerLayers(List.of(), null);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 globalMock.when(Global::getSector).thenReturn(null);
-                var plugin = new PoliticalMapTerrainPlugin();
+                var plugin = new SectorMapLayerTerrainPlugin();
 
                 assertThatCode(() -> plugin.renderOnMap(1f, 1f)).doesNotThrowAnyException();
                 verifyNoInteractions(layerRendererMock);

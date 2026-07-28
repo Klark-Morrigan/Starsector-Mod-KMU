@@ -1,12 +1,12 @@
 {
 	# A purely-visual terrain whose renderOnMap paints the sector map's layers -
-	# the political map's merged faction territories. Terrain is the only
-	# surface the sector map invokes for custom world-space drawing (the
-	# nebulae use the same hook). The type ids are serialised into saves; a
-	# rename needs the sweep in KMU_ModPlugin to retire the entity an existing
-	# save still holds under the old id.
+	# whichever map layer the player has selected. Terrain is the only surface
+	# the sector map invokes for custom world-space drawing (the nebulae use the
+	# same hook). The type ids are serialised into saves; a rename needs the
+	# sweep in KMU_ModPlugin to retire the entity an existing save still holds
+	# under the old id.
 	"kmu_sector_map_layer_terrain":{
-		"plugin":"kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin",
+		"plugin":"kmu.maplayers.base.render.SectorMapLayerTerrainPlugin",
 	},
 	# The starscape half of the pair. The map widget skips every terrain while
 	# the Starscape filter is on except one whose entity reports the terrain
@@ -15,6 +15,6 @@
 	# aside whenever no starscape map is on screen, leaving exactly one of the
 	# two painting in any frame.
 	"kmu_sector_map_layer_starscape_terrain":{
-		"plugin":"kmu.maplayers.politicalmap.base.render.StarscapeMapTerrainPlugin",
+		"plugin":"kmu.maplayers.base.render.SectorMapLayerStarscapeTerrainPlugin",
 	},
 }

@@ -7,10 +7,10 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmu.maplayers.base.render.SectorMapLayerStarscapeTerrainPlugin;
+import kmu.maplayers.base.render.SectorMapLayerTerrainPlugin;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
-import kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin;
-import kmu.maplayers.politicalmap.base.render.StarscapeMapTerrainPlugin;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.junit.jupiter.api.Nested;
@@ -25,6 +25,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -39,6 +40,16 @@ class KMU_ModPluginTest {
     // the other side: this is the string the load-time sweep has to recognise as stale.
     private static final String LEGACY_TERRAIN_TYPE = "kmu_political_terrain";
 
+    // Every fully-qualified name the terrain plugin has been saved under. Restated here as literals
+    // rather than read from the production list: a constant read from the class under test would be
+    // renamed alongside it and go on agreeing with itself, while these are what a save file on disk
+    // actually holds and so cannot be allowed to move.
+    private static final List<String> FORMER_TERRAIN_PLUGIN_CLASSES = List.of(
+            "kmu.politicalmap.render.PoliticalMapTerrainPlugin",
+            "kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin",
+            "kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin",
+            "kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin");
+
     @Nested
     class ModIdentity {
 
@@ -51,6 +62,49 @@ class KMU_ModPluginTest {
         @Test
         void extendsStarsectorBaseModPlugin() {
             assertThat(new KMU_ModPlugin()).isInstanceOf(BaseModPlugin.class);
+        }
+    }
+
+    // What the mod registers on the engine's XStream is checked against a stand-in rather than a
+    // real one: constructing an XStream fails outright on a modern JVM, its TreeMapConverter
+    // reflecting into java.util internals that are no longer open, and the game supplies the
+    // instance anyway - the mod only ever configures one it is handed. XStream is fully qualified
+    // for the reason the production call site fully qualifies it: com.thoughtworks belongs to no
+    // import group the checkstyle order recognises.
+    @Nested
+    class ConfigureXStream {
+
+        @Test
+        void configureXStreamAliasesEveryFormerTerrainPluginNameToTheLiveClass() {
+            // Each of these is a class name a shipped save may still hold. Without its alias the
+            // save does not load at all - XStream fails the whole read with
+            // CannotResolveClassException - so an alias dropped by a later edit is a save-breaking
+            // regression that nothing else would catch until a player reported it.
+            var xstreamMock = mock(com.thoughtworks.xstream.XStream.class);
+
+            new KMU_ModPlugin().configureXStream(xstreamMock);
+
+            for (var formerClass : FORMER_TERRAIN_PLUGIN_CLASSES) {
+                verify(xstreamMock).alias(formerClass, SectorMapLayerTerrainPlugin.class);
+            }
+        }
+
+        @Test
+        void configureXStreamAliasesTheLiveClassNameLastSoResavedGamesShedTheFormerNames() {
+            // Order is the whole contract here: XStream keeps one name per class for writing, so
+            // whichever alias is registered last decides what a re-saved game is written under.
+            // Registered after the former names, the self-alias means a save sheds them; registered
+            // before, every re-save would silently pin a dead class name back into the file.
+            var xstreamMock = mock(com.thoughtworks.xstream.XStream.class);
+
+            new KMU_ModPlugin().configureXStream(xstreamMock);
+
+            var aliasOrder = inOrder(xstreamMock);
+            aliasOrder.verify(xstreamMock).alias(
+                    FORMER_TERRAIN_PLUGIN_CLASSES.get(FORMER_TERRAIN_PLUGIN_CLASSES.size() - 1),
+                    SectorMapLayerTerrainPlugin.class);
+            aliasOrder.verify(xstreamMock).alias(
+                    SectorMapLayerTerrainPlugin.class.getName(), SectorMapLayerTerrainPlugin.class);
         }
     }
 
@@ -127,7 +181,7 @@ class KMU_ModPluginTest {
             // Terrain persists, so a reloaded save already carries it; adding another would paint
             // the same overlay twice and double the alpha of every fill.
             var hyperspaceMock = hyperspaceCarrying(
-                    terrainMock(CURRENT_TERRAIN_TYPE, new PoliticalMapTerrainPlugin()));
+                    terrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin()));
 
             KMU_ModPlugin.installSectorMapLayerTerrain(sectorWithHyperspace(hyperspaceMock));
 
@@ -140,7 +194,7 @@ class KMU_ModPluginTest {
             // The type id is serialised, so a save written before the rename holds an entity under
             // the old id whose spec no longer resolves. It has to go, or the save ends up with the
             // stale entity plus the freshly added one.
-            var staleTerrainMock = terrainMock(LEGACY_TERRAIN_TYPE, new PoliticalMapTerrainPlugin());
+            var staleTerrainMock = terrainMock(LEGACY_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
             var hyperspaceMock = hyperspaceCarrying(staleTerrainMock);
 
             KMU_ModPlugin.installSectorMapLayerTerrain(sectorWithHyperspace(hyperspaceMock));
@@ -168,7 +222,8 @@ class KMU_ModPluginTest {
             // The starscape plugin subclasses the base one, so an instanceof match here would let
             // this sweep retire the other half's entity - which reports a type id this one never
             // installs, and so looks stale to any test that is not exact about the class.
-            var starscapeTerrainMock = terrainMock("slipstream", new StarscapeMapTerrainPlugin());
+            var starscapeTerrainMock =
+                    terrainMock("slipstream", new SectorMapLayerStarscapeTerrainPlugin());
             var hyperspaceMock = hyperspaceCarrying(starscapeTerrainMock);
 
             KMU_ModPlugin.installSectorMapLayerTerrain(sectorWithHyperspace(hyperspaceMock));

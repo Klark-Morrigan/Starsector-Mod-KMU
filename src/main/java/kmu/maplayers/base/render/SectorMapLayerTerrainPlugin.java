@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.base.render;
 
 import com.fs.starfarer.api.campaign.CampaignEngineLayers;
 import com.fs.starfarer.api.combat.ViewportAPI;
@@ -28,7 +28,7 @@ import java.util.EnumSet;
  * state: everything a frame needs lives behind the layer's renderer, which is reached through a
  * registered layer and never enters a save.
  */
-public class PoliticalMapTerrainPlugin extends BaseTerrain {
+public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     // Map rendering ignores this (the map calls the map hooks regardless), but BaseTerrain
     // requires the override; large so the terrain is never treated as a tiny point elsewhere.
     private static final float RENDER_RANGE = 1_000_000f;

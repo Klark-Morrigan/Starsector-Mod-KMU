@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.base.render;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
@@ -14,7 +14,7 @@ import static org.mockito.Mockito.mockStatic;
  * inherited draw is observed at its first act, the active-layer read, which is as far as it gets here
  * since no layer is registered.
  */
-final class StarscapeMapTerrainPluginTest {
+final class SectorMapLayerStarscapeTerrainPluginTest {
     private static final float FACTOR = 1f;
     private static final float ALPHA_MULT = 1f;
 
@@ -25,7 +25,7 @@ final class StarscapeMapTerrainPluginTest {
         void renderOnMapDrawsThroughWhileAStarscapeMapIsShowing() {
             try (MockedStatic<MapLayerRegistry> layerRegistryMock =
                     mockStatic(MapLayerRegistry.class)) {
-                new StarscapeMapTerrainPlugin(() -> true).renderOnMap(FACTOR, ALPHA_MULT);
+                new SectorMapLayerStarscapeTerrainPlugin(() -> true).renderOnMap(FACTOR, ALPHA_MULT);
 
                 layerRegistryMock.verify(MapLayerRegistry::getActiveLayer);
             }
@@ -37,7 +37,7 @@ final class StarscapeMapTerrainPluginTest {
             // keeping it off the map while the base half is the one already drawing there.
             try (MockedStatic<MapLayerRegistry> layerRegistryMock =
                     mockStatic(MapLayerRegistry.class)) {
-                new StarscapeMapTerrainPlugin(() -> false).renderOnMap(FACTOR, ALPHA_MULT);
+                new SectorMapLayerStarscapeTerrainPlugin(() -> false).renderOnMap(FACTOR, ALPHA_MULT);
 
                 layerRegistryMock.verifyNoInteractions();
             }
