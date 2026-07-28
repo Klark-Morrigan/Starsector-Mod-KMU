@@ -40,8 +40,8 @@ public final class CoreTerritoryRow {
             return Optional.empty();
         }
         var faction = sector.getFaction(coreFactionId);
-        
-        return Optional.of(SystemCellTooltip.buildMarkedNestedRow(
+
+        return Optional.of(SystemCellTooltip.buildNestedRowWithHighlightedRun(
                 FactionCrests.resolveCrestPath(faction),
                 TooltipFactionNames.resolveLongName(faction, coreFactionId),
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY),

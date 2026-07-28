@@ -122,25 +122,26 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     }
 
     /**
-     * Builds a nested row whose label carries a trailing marker in the highlight colour - a status or
+     * Builds a nested row whose label runs on into a second run in the highlight colour - a status or
      * flag called out on the line it qualifies, rather than stated on a line of its own. One place
-     * decides that a marker reads gold, so two layers marking different facts still mark them alike.
+     * decides that such a qualifier reads gold, so two layers calling out different facts still call
+     * them out alike.
      *
-     * @param crestSpritePath the leading crest's texture path, or null for a crestless row
-     * @param text            the row's label
-     * @param marker          the qualifier drawn just after the label, in the highlight colour
-     * @param value           the right-aligned value, or {@link #NO_SCORE} for a row carrying none
+     * @param crestSpritePath    the leading crest's texture path, or null for a crestless row
+     * @param text               the row's label
+     * @param highlightedRunText the qualifier continuing the label, in the highlight colour
+     * @param value              the right-aligned value, or {@link #NO_SCORE} for a row carrying none
      * @return the row, ready to add to a body
      */
-    protected static TooltipRow buildMarkedNestedRow(
+    protected static TooltipRow buildNestedRowWithHighlightedRun(
             String crestSpritePath,
             String text,
-            String marker,
+            String highlightedRunText,
             String value) {
 
         return buildNestedRow(crestSpritePath, text, value)
-                .carriesMarker(
-                        marker,
+                .continuesWith(
+                        highlightedRunText,
                         StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 

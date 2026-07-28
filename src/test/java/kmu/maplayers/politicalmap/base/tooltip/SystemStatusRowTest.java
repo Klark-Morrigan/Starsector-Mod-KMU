@@ -41,6 +41,9 @@ final class SystemStatusRowTest {
     private static final float NO_INDENT = 0f;
     private static final float TOLERANCE = 0.001f;
 
+    // The status line is one plain run, so its label is read at the first of them.
+    private static final int STATUS_RUN = 0;
+
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
@@ -76,7 +79,8 @@ final class SystemStatusRowTest {
 
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
 
-            assertThat(row.orElseThrow().labelTextSpan().text()).isEqualTo("Unpopulated");
+            assertThat(row.orElseThrow().labelTextSpans().get(STATUS_RUN).text())
+                    .isEqualTo("Unpopulated");
         }
 
         @Test
@@ -87,7 +91,8 @@ final class SystemStatusRowTest {
 
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
 
-            assertThat(row.orElseThrow().labelTextSpan().text()).isEqualTo("Decivilised");
+            assertThat(row.orElseThrow().labelTextSpans().get(STATUS_RUN).text())
+                    .isEqualTo("Decivilised");
         }
 
         @Test

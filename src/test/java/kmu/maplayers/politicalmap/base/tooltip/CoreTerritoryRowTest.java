@@ -31,6 +31,11 @@ final class CoreTerritoryRowTest {
     private static final float MEMBER_INDENT = 14f;
     private static final float TOLERANCE = 0.001f;
 
+    // The two runs the line reads as: the faction named plainly, then the status it holds the system
+    // under, picked out beside it.
+    private static final int FACTION_NAME_RUN = 0;
+    private static final int CORE_STATUS_RUN = 1;
+
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
@@ -69,20 +74,21 @@ final class CoreTerritoryRowTest {
 
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sector, "hegemony").orElseThrow();
 
-            assertThat(row.labelTextSpan().text()).isEqualTo("The Hegemony");
+            assertThat(row.labelTextSpans().get(FACTION_NAME_RUN).text()).isEqualTo("The Hegemony");
             assertThat(row.crestSpritePath()).isEqualTo(CREST);
         }
 
         @Test
         void resolveCoreTerritoryRowMarksTheCoreStatusInTheHighlightColour() {
             // The status is the point of the line, so it is picked out beside the plainly-coloured
-            // faction name rather than blending into it.
+            // faction name rather than blending into it - one line read in two colours.
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
                     .orElseThrow();
 
-            assertThat(row.markerTextSpan().text()).isEqualTo("core territory");
-            assertThat(row.markerTextSpan().colour()).isEqualTo(HIGHLIGHT);
-            assertThat(row.labelTextSpan().colour()).isEqualTo(Color.LIGHT_GRAY);
+            assertThat(row.labelTextSpans().get(CORE_STATUS_RUN).text()).isEqualTo("core territory");
+            assertThat(row.labelTextSpans().get(CORE_STATUS_RUN).colour()).isEqualTo(HIGHLIGHT);
+            assertThat(row.labelTextSpans().get(FACTION_NAME_RUN).colour())
+                    .isEqualTo(Color.LIGHT_GRAY);
         }
 
         @Test
@@ -111,7 +117,8 @@ final class CoreTerritoryRowTest {
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sectorMock, "ghost_faction")
                     .orElseThrow();
 
-            assertThat(row.labelTextSpan().text()).isEqualTo("ghost_faction");
+            assertThat(row.labelTextSpans().get(FACTION_NAME_RUN).text())
+                    .isEqualTo("ghost_faction");
             assertThat(row.crestSpritePath()).isNull();
         }
     }
