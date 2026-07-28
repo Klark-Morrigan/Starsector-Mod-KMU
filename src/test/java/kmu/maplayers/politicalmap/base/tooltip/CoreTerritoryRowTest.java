@@ -69,7 +69,7 @@ final class CoreTerritoryRowTest {
 
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sector, "hegemony").orElseThrow();
 
-            assertThat(row.text()).isEqualTo("The Hegemony");
+            assertThat(row.label().text()).isEqualTo("The Hegemony");
             assertThat(row.crestSpritePath()).isEqualTo(CREST);
         }
 
@@ -80,9 +80,9 @@ final class CoreTerritoryRowTest {
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
                     .orElseThrow();
 
-            assertThat(row.marker()).isEqualTo("core territory");
-            assertThat(row.markerColor()).isEqualTo(HIGHLIGHT);
-            assertThat(row.textColor()).isEqualTo(Color.LIGHT_GRAY);
+            assertThat(row.marker().text()).isEqualTo("core territory");
+            assertThat(row.marker().colour()).isEqualTo(HIGHLIGHT);
+            assertThat(row.label().colour()).isEqualTo(Color.LIGHT_GRAY);
         }
 
         @Test
@@ -91,7 +91,7 @@ final class CoreTerritoryRowTest {
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
                     .orElseThrow();
 
-            assertThat(row.value()).isEmpty();
+            assertThat(row.value().hasText()).isFalse();
         }
 
         @Test
@@ -111,7 +111,7 @@ final class CoreTerritoryRowTest {
             var row = CoreTerritoryRow.resolveCoreTerritoryRow(sectorMock, "ghost_faction")
                     .orElseThrow();
 
-            assertThat(row.text()).isEqualTo("ghost_faction");
+            assertThat(row.label().text()).isEqualTo("ghost_faction");
             assertThat(row.crestSpritePath()).isNull();
         }
     }
