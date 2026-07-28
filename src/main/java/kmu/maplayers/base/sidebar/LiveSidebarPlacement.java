@@ -15,6 +15,7 @@ import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.widgets.BoxBorder;
+import kmlib.starsector.ui.widgets.tabs.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
 import kmlib.starsector.ui.widgets.tabs.TabStyle;
@@ -228,13 +229,19 @@ public final class LiveSidebarPlacement {
     }
 
     // A tab style at the given band height, over the shared paint: the vanilla map-tab colour scheme,
-    // resolved live so it tracks a player-faction recolour, and the orbitron face at the layout's tab
-    // size - the same face the measurer snaps tabs with. One helper rather than each screen naming the
-    // paint, so the two can only differ in the height they are asked for.
+    // resolved live so it tracks a player-faction recolour, the underlined-key hotkey convention, and the
+    // orbitron face at the layout's tab size - the same face the measurer snaps tabs with. One helper
+    // rather than each screen naming the paint, so the two can only differ in the height they are asked
+    // for.
+    // The underlined key is the sector map's own convention: our strip sits one tab-height below the
+    // vanilla Sector/System tabs, which draw a line under the bracketed letter, so a bare key reads as a
+    // mismatch against the row above it. The line costs no width - it is a quad under a glyph, not part
+    // of the measured display string - so no tab moves for it.
     private static TabStyle buildTabStyle(float headerBandHeight) {
         return new TabStyle(
                 headerBandHeight,
                 VanillaTabColors.mapTabs(),
+                HotkeyStyle.createUnderlined(),
                 new TextFace(TAB_FONT, ControlStripLayout.TAB_FONT_SIZE));
     }
 
