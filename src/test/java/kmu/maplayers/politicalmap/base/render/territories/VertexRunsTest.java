@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.opengl.GlVertexRuns;
 
-import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
+import kmu.maplayers.base.geometry.ShapedCell;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

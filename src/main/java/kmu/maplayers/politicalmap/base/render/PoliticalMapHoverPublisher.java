@@ -5,7 +5,7 @@ import com.fs.starfarer.api.Global;
 import kmlib.starsector.ui.map.CampaignMapTransform;
 import kmlib.starsector.ui.map.ModelviewMatrixReader;
 
-import kmu.maplayers.politicalmap.base.geometry.CellHitTest;
+import kmu.maplayers.base.geometry.CellHitTest;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
 import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 

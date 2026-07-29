@@ -4,8 +4,8 @@ import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.Hatching;
 import kmlib.opengl.PolygonTessellator;
 
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
-import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.territories.FillSplit.FillState;

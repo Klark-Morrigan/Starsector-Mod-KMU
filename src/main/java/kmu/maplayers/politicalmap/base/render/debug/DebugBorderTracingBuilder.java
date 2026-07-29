@@ -6,10 +6,10 @@ import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
-import kmu.maplayers.politicalmap.base.geometry.CellShaper;
-import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
-import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
+import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;

@@ -1,9 +1,9 @@
 package kmu.maplayers.politicalmap.base.render;
 
-import kmu.maplayers.politicalmap.base.geometry.CellEdge;
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
-import kmu.maplayers.politicalmap.base.geometry.EdgeTarget;
-import kmu.maplayers.politicalmap.base.geometry.SystemClusterBorders;
+import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.EdgeTarget;
+import kmu.maplayers.base.geometry.SystemClusterBorders;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 
 import org.junit.jupiter.api.Nested;

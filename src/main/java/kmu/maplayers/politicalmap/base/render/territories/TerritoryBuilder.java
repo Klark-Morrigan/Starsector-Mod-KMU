@@ -8,12 +8,12 @@ import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
-import kmu.maplayers.politicalmap.base.geometry.CellShaper;
-import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;

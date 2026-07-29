@@ -5,9 +5,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.geometry.CellShaper;
-import kmu.maplayers.politicalmap.base.geometry.EdgeTarget;
-import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.EdgeTarget;
+import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;

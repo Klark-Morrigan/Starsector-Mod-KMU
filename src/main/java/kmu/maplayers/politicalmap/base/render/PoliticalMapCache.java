@@ -5,9 +5,9 @@ import com.fs.starfarer.api.Global;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;

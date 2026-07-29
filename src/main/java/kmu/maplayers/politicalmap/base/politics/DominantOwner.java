@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.CellGrouping;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;

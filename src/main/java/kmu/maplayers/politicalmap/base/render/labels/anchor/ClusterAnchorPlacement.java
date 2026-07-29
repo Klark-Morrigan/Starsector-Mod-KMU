@@ -11,9 +11,9 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.LabelBoxFitter;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
+import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
-import kmu.maplayers.politicalmap.base.geometry.CellEdge;
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 

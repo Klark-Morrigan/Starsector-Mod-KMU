@@ -2,12 +2,12 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.SystemClusterIndex;
+import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.geometry.CellEdge;
-import kmu.maplayers.politicalmap.base.geometry.SystemClusterIndex;
-import kmu.maplayers.politicalmap.base.geometry.SystemClusters;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;

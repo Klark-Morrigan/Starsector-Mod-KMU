@@ -4,8 +4,8 @@ import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
-import kmu.maplayers.politicalmap.base.geometry.CellGrouping;
-import kmu.maplayers.politicalmap.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;

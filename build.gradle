@@ -170,14 +170,14 @@ tasks.withType(JavaCompile).configureEach {
     }
 }
 
-// Opens the political map's geometry in an interactive window, rebuilt live as its knobs
+// Opens the map layers' cell geometry in an interactive window, rebuilt live as its knobs
 // move. A dev tool, not part of `build`: the knobs it drives are geometric, and their effect
 // is only legible as a shape rather than as a number in a settings file.
 tasks.register('viewSectorGeometry', JavaExec) {
     group = 'help'
     description = 'Opens the sector geometry viewer (live sliders over a real sector).'
     classpath = sourceSets.utils.runtimeClasspath
-    mainClass = 'kmu.maplayers.politicalmap.base.geometry.SectorGeometryViewer'
+    mainClass = 'kmu.maplayers.base.geometry.SectorGeometryViewer'
 }
 
 // The same shapes the viewer draws, written straight to file with the frontier off and on. The
@@ -187,5 +187,5 @@ tasks.register('writeSectorSvg', JavaExec) {
     group = 'help'
     description = 'Writes every sector fixture to SVG, frontier off and on, into build/reports.'
     classpath = sourceSets.utils.runtimeClasspath
-    mainClass = 'kmu.maplayers.politicalmap.base.geometry.SectorSvgDump'
+    mainClass = 'kmu.maplayers.base.geometry.SectorSvgDump'
 }

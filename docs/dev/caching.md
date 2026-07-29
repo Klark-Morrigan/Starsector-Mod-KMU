@@ -127,7 +127,7 @@ null draw list. The last good draw lists stay on screen in the meantime.
 
 ### Cell geometry
 
-[`PoliticalMapGeometryCache`](../../src/main/java/kmu/maplayers/politicalmap/base/geometry/PoliticalMapGeometryCache.java)
+[`PoliticalMapGeometryCache`](../../src/main/java/kmu/maplayers/base/geometry/PoliticalMapGeometryCache.java)
 holds the raw Voronoi cells keyed by system id. It is updated by *diffing* the
 reachable set against what it holds and rebuilding only the affected cells: adding
 or removing one site changes that site's cell and the cells within twice the cell
@@ -157,7 +157,7 @@ indistinguishable from a rebuilt one.
 
 ### Hover lookups
 
-[`SystemClusterIndex`](../../src/main/java/kmu/maplayers/politicalmap/base/geometry/SystemClusterIndex.java)
+[`SystemClusterIndex`](../../src/main/java/kmu/maplayers/base/geometry/SystemClusterIndex.java)
 indexes each cluster by its members once per rebuild, so the hover highlight
 resolves a hit system to its whole contiguous territory with a lookup instead of
 re-running the cluster search per frame. Deriving it from the same clustering the
@@ -265,7 +265,7 @@ carries the previous shape.
   the font and glyph caches KMU draws through, and the `Fingerprints` primitive.
 - [Political map](../../src/main/java/kmu/maplayers/politicalmap/README.md) - what
   the overlay shows and how it is drawn.
-- [Cell geometry](../../src/main/java/kmu/maplayers/politicalmap/base/geometry/README.md) -
+- [Cell geometry](../../src/main/java/kmu/maplayers/base/geometry/README.md) -
   the cells, edges, and clusters the geometry cache holds.
 - [Territory fills and borders](../../src/main/java/kmu/maplayers/politicalmap/base/render/territories/README.md) -
   what a territories rebuild actually produces.

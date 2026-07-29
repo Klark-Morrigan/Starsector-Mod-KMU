@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.opengl.GlVertexRuns;
 
-import kmu.maplayers.politicalmap.base.geometry.ShapedCell;
+import kmu.maplayers.base.geometry.ShapedCell;
 
 /**
  * Packs a shaped cell's classified edges into the flat GL_LINES runs the renderer
