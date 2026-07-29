@@ -79,6 +79,8 @@ about what the overlay means.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
   how it is drawn. What the name reads and what shade it takes arrive from the layer as functions
   of a grouping key, so the overlay names nothing itself.
+- **[The theme records](base/style/README.md)** - the player's appearance choices as inert value
+  types, read once per rebuild. A layer brings its own reader to populate them.
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the

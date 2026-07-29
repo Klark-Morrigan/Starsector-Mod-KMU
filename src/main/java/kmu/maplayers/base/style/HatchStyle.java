@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.style.theme;
+package kmu.maplayers.base.style;
 
 /**
  * The sector-wide hatch pattern that fills the filter's contested territory - the

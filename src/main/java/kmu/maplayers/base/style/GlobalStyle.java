@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.style.theme;
+package kmu.maplayers.base.style;
 
 /**
  * The sector-wide render style - the tier of the {@link RenderStyle} theme that does not

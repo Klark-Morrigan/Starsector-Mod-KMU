@@ -1,9 +1,9 @@
-package kmu.maplayers.politicalmap.base.render.style.theme;
+package kmu.maplayers.base.style;
 
 import java.util.Map;
 
 /**
- * The whole political-map theme, read once per rebuild: the {@link GlobalStyle} global tier
+ * The whole theme a map layer paints under, read once per rebuild: the {@link GlobalStyle} tier
  * and the per-{@link MapCategory} {@link CategoryStyle} tier. The builders resolve each
  * element's concrete draw attributes by cascading these two tiers (global + the element's
  * category) at build time, so the renderer stays a flat draw loop that never re-reads

@@ -7,12 +7,12 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.ShapedCell;
+import kmu.maplayers.base.style.BorderSmoothingStyle;
+import kmu.maplayers.base.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
-import kmu.maplayers.politicalmap.base.render.style.theme.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
 
 import java.util.List;
 

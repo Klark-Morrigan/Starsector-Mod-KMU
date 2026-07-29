@@ -6,11 +6,11 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.style.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
-import kmu.maplayers.politicalmap.base.render.style.theme.BorderSmoothingStyle;
 
 import java.awt.Color;
 import java.util.ArrayList;

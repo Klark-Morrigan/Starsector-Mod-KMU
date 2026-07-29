@@ -27,7 +27,7 @@ import java.util.List;
  * both stop at the same frontier the border strokes, and the states tile the footprint inside one
  * frontier so its border stays a single continuous outline whichever states it carries. The width
  * the hatch strokes at is sector-wide, so it lives on the theme's global tier
- * ({@link kmu.maplayers.politicalmap.base.render.style.theme.GlobalStyle}) and the renderer sets it once,
+ * ({@link kmu.maplayers.base.style.GlobalStyle}) and the renderer sets it once,
  * not per territory.
  *
  * <p>The footprint's interior divisions - the transitions between fill states included - carry no

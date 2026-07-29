@@ -1,10 +1,10 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmu.maplayers.base.style.CategoryStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
-import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
 
 /**
  * Resolves the shared per-bloc style decision - whether a bloc recedes to the independent

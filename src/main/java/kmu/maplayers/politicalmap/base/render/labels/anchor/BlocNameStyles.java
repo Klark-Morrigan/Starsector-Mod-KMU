@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
-import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
+import kmu.maplayers.base.style.ElementStyle;
 import kmu.settings.KmuLunaSettings;
 
 /**

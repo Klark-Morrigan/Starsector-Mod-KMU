@@ -1,10 +1,10 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmu.maplayers.base.style.CategoryStyle;
+import kmu.maplayers.base.style.ElementStyle;
+import kmu.maplayers.base.style.MapCategory;
+import kmu.maplayers.base.style.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
-import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.MapCategory;
-import kmu.maplayers.politicalmap.base.render.style.theme.RenderStyle;
 
 /**
  * The concrete style one bloc draws under this pass: the category bundle it paints from,

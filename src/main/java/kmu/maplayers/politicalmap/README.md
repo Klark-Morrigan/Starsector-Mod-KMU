@@ -106,8 +106,9 @@ fill states are [ownership resolution](base/politics/ownership/README.md).
   active view's name for the bloc, and the outer border its group inherits. Both are resolved here
   and handed to the framework's overlay, which places and draws them.
 
-Everything above is shaped out of [cell geometry](../base/geometry/README.md) and named by the
-[cluster-name overlay](../base/labels/README.md), both of which belong to the framework rather than
+Everything above is shaped out of [cell geometry](../base/geometry/README.md), styled against the
+[theme records](../base/style/README.md), and named by the
+[cluster-name overlay](../base/labels/README.md), all of which belong to the framework rather than
 to this layer: they work on an opaque grouping key, and the views decide that the key names a bloc.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),

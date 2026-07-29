@@ -37,7 +37,7 @@ identical to a full rebuild.
 
 `BorderSmoothing` sands spikes and rounds corners of the traced borders; `VertexRuns` flattens
 shaped cells into GL vertex runs. Element colours, opacities, and widths come from cascading the
-`render.style` theme with each bloc's recede adjustment, asked for through
+`base.style` records with each bloc's recede adjustment, asked for through
 `PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc resolves from one read.
 
 ## What recedes
@@ -143,8 +143,10 @@ settings or how the runs were shaped.
 
 ## What is not here
 
-The *theme and the styling resolvers* (what colour/width each category and bloc draws in) live in
-[`render.style`](../style/README.md); this package consumes them, it does not decide them. The *name overlay*
+The *styling resolvers* (what colour/width each category and bloc draws in) live in
+[`render.style`](../style/README.md), over the framework's
+[`base.style`](../../../../base/style/README.md) records they read the player's choices
+out of; this package consumes both, it does not decide either. The *name overlay*
 that sits on top is the framework's [`base.labels`](../../../../base/labels/README.md), fed the
 names and shades this layer resolves in `render.labels.anchor`. The border-ring trace shared with the label anchor search
 (`render.PoliticalBorderTrace`) stays at the `render` root because more than one concern uses it;

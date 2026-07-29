@@ -1,16 +1,16 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmu.maplayers.base.style.BorderSmoothingStyle;
+import kmu.maplayers.base.style.CategoryStyle;
+import kmu.maplayers.base.style.ElementStyle;
+import kmu.maplayers.base.style.GlobalStyle;
+import kmu.maplayers.base.style.HatchStyle;
+import kmu.maplayers.base.style.HoverGlowStyle;
+import kmu.maplayers.base.style.HoverHighlightStyle;
+import kmu.maplayers.base.style.HoverWashStyle;
+import kmu.maplayers.base.style.MapCategory;
+import kmu.maplayers.base.style.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
-import kmu.maplayers.politicalmap.base.render.style.theme.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.CategoryStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.GlobalStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.HatchStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.HoverGlowStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.HoverHighlightStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.HoverWashStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.MapCategory;
-import kmu.maplayers.politicalmap.base.render.style.theme.RenderStyle;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;

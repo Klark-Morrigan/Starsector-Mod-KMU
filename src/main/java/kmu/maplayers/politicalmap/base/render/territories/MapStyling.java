@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.starsector.factions.FactionPalette;
 
-import kmu.maplayers.politicalmap.base.render.style.theme.RenderStyle;
+import kmu.maplayers.base.style.RenderStyle;
 
 import java.awt.Color;
 

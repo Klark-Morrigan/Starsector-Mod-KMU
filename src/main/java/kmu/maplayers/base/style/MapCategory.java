@@ -1,7 +1,7 @@
-package kmu.maplayers.politicalmap.base.render.style.theme;
+package kmu.maplayers.base.style;
 
 /**
- * The four political-map territory categories a per-category {@link CategoryStyle} is
+ * The four territory categories a per-category {@link CategoryStyle} is
  * keyed by. Two are owned (a coloured fill, national border, and interior seams) and two
  * are factionless (a neutral-coloured outline, and a fill where the ground was once
  * settled): a bloc paints in {@link #FACTION} or, where it

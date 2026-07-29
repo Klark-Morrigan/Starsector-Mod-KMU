@@ -17,15 +17,15 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 
 ## Layout
 
-The layer splits along the line between *what the player chose* and *what that means in paint*:
+*What the player chose* and *what that means in paint* are split across two packages:
 
-- [`theme`](theme/README.md) - the choices as inert value types (`RenderStyle` and its tiers).
-  A leaf: it depends on nothing here, so a record can be read without dragging the settings layer
-  in behind it.
-- this package - the behaviour. One reader that populates the theme, and the resolvers that turn a
-  choice plus a bloc's recede into concrete shades. Plus `PoliticalMapStyle`, the fixed
-  border-channel geometry that is deliberately *not* player-tunable, since it decides where fills
-  meet rather than how they look.
+- [`base.style`](../../../../base/style/README.md) - the choices as inert value types
+  (`RenderStyle` and its tiers), in the framework rather than here, since a theme's shape is not
+  political. This package reads them and never writes back.
+- this package - the behaviour, all of it political. One reader that populates the theme, and the
+  resolvers that turn a choice plus a bloc's recede into concrete shades. Plus `PoliticalMapStyle`,
+  the fixed border-channel geometry that is deliberately *not* player-tunable, since it decides
+  where fills meet rather than how they look.
 
 ## The reader: the one seam
 

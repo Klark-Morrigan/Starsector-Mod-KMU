@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.style.theme;
+package kmu.maplayers.base.style;
 
 import kmu.settings.FactionPaletteChoice;
 

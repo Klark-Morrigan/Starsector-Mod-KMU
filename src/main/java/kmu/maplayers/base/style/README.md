@@ -1,11 +1,20 @@
-# The theme records (`render.style.theme`)
+# The theme records (`base.style`)
 
 The player's authored choices, as value types. Everything here is a record (plus one enum) with no
 behaviour beyond `ElementStyle.isDrawn` - what the player picked, held in the shape the rest of the
 map reads it in.
 
-Part of [the render style layer](../README.md), in Klark Morrigan's Utilities; see the
-[mod README](../../../../../../../../../../README.md) for project context.
+A leaf of the framework rather than of any one layer: the *tiers* describe how a map is styled -
+sector-wide knobs plus one bundle per category - and say nothing about what a bundle is painting.
+
+The *categories* are the exception, and the one place this package is not yet general.
+`MapCategory` enumerates the political map's four, so a layer whose ground divides some other way
+has no key to hang its own bundles off. Making the key an interface the layer supplies constants
+for is what would finish the job; until then a second layer reuses the tiers and inherits these
+four names.
+
+Part of [the map-layer framework](../../README.md); see the
+[mod README](../../../../../../../README.md) for project context.
 
 ## Index
 
@@ -53,6 +62,11 @@ province divisions to stroke.
 
 These records are inert - nothing here reads a setting or resolves a colour. *Populating* them
 from LunaLib is `RenderStyleReader`, and *turning a choice into a concrete shade* is `MapPalettes`,
-both one level up in [`render.style`](../README.md). This package has no dependency back on that
-one, which is what keeps it a leaf: a record here can be read by anything without dragging the
-settings layer in behind it.
+both in the political map's own
+[`render.style`](../../politicalmap/base/render/style/README.md). Both stay there because both
+name factions: the reader's knobs and its per-save uninhabited-outline preference are the political
+map's, and the palettes resolve a bloc's recede. A second layer populating these records would
+bring its own reader rather than share that one.
+
+This package has no dependency back on either, which is what keeps it a leaf: a record here can be
+read by anything without dragging the settings layer in behind it.
