@@ -46,6 +46,18 @@ final class ClusterLabelStylingTest {
     private static final double FULL_OPACITY = 1.0;
     private static final double HALF_OPACITY = 0.5;
 
+    // The two classifications under an identity adjustment, so a colour test names only the
+    // branch it exercises.
+    private static final BlocStyleDecision FACTION_STYLED = factionStyled(BlocStyleAdjustment.NONE);
+    private static final BlocStyleDecision INDEPENDENT_STYLED =
+            new BlocStyleDecision(true, BlocStyleAdjustment.NONE);
+
+    // A faction-styled bloc under a given recede, for the tests that vary the adjustment
+    // rather than the classification.
+    private static BlocStyleDecision factionStyled(BlocStyleAdjustment adjustment) {
+        return new BlocStyleDecision(false, adjustment);
+    }
+
     // Both groups pointed at the same choice and opacity, so a test that varies neither reads
     // one shade whichever branch the classification took.
     private static BlocNameStyles nameStyles(FactionPaletteChoice factionOuterColor) {
@@ -73,8 +85,7 @@ final class ClusterLabelStylingTest {
             // The default outer-border choice is the bright primary shade, so the name
             // (and its debug dot) inherits it - RED here.
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY), false,
-                    BlocStyleAdjustment.NONE, UNUSED_PALETTE);
+                    nameStyles(FactionPaletteChoice.PRIMARY), FACTION_STYLED, UNUSED_PALETTE);
 
             assertThat(color).isEqualTo(PRIMARY);
         }
@@ -84,8 +95,7 @@ final class ClusterLabelStylingTest {
             // Point the outer border at the secondary (dark) shade and the name follows
             // it - BLUE - so the label reads as the border's own colour, not a fixed pick.
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
-                    nameStyles(FactionPaletteChoice.SECONDARY), false,
-                    BlocStyleAdjustment.NONE, UNUSED_PALETTE);
+                    nameStyles(FactionPaletteChoice.SECONDARY), FACTION_STYLED, UNUSED_PALETTE);
 
             assertThat(color).isEqualTo(SECONDARY);
         }
@@ -95,8 +105,7 @@ final class ClusterLabelStylingTest {
             // A hidden outer border ("No color") resolves to no colour, but a name still
             // needs one, so it falls back to the bright primary shade rather than vanishing.
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
-                    nameStyles(FactionPaletteChoice.NONE), false,
-                    BlocStyleAdjustment.NONE, UNUSED_PALETTE);
+                    nameStyles(FactionPaletteChoice.NONE), FACTION_STYLED, UNUSED_PALETTE);
 
             assertThat(color).isEqualTo(PRIMARY);
         }
@@ -111,7 +120,7 @@ final class ClusterLabelStylingTest {
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
                     nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.SECONDARY,
                             FULL_OPACITY, FULL_OPACITY),
-                    true, BlocStyleAdjustment.NONE, UNUSED_PALETTE);
+                    INDEPENDENT_STYLED, UNUSED_PALETTE);
 
             assertThat(color).isEqualTo(SECONDARY);
         }
@@ -123,7 +132,7 @@ final class ClusterLabelStylingTest {
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
                     nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             HALF_OPACITY, FULL_OPACITY),
-                    false, BlocStyleAdjustment.NONE, UNUSED_PALETTE);
+                    FACTION_STYLED, UNUSED_PALETTE);
 
             assertThat(color.getAlpha())
                     .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
@@ -138,7 +147,7 @@ final class ClusterLabelStylingTest {
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
                     nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             FULL_OPACITY, HALF_OPACITY),
-                    false, BlocStyleAdjustment.NONE, UNUSED_PALETTE);
+                    FACTION_STYLED, UNUSED_PALETTE);
 
             assertThat(color).isEqualTo(PRIMARY);
         }
@@ -151,7 +160,7 @@ final class ClusterLabelStylingTest {
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
                     nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
                             FULL_OPACITY, HALF_OPACITY),
-                    true, BlocStyleAdjustment.NONE, UNUSED_PALETTE);
+                    INDEPENDENT_STYLED, UNUSED_PALETTE);
 
             assertThat(color.getAlpha())
                     .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
@@ -164,8 +173,8 @@ final class ClusterLabelStylingTest {
             // fades the resolved shade's alpha to half and leaves its RGB intact - the same
             // fold applied wherever the style classification is read.
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY), false,
-                    new BlocStyleAdjustment(HALF_OPACITY, false), UNUSED_PALETTE);
+                    nameStyles(FactionPaletteChoice.PRIMARY),
+                    factionStyled(new BlocStyleAdjustment(HALF_OPACITY, false)), UNUSED_PALETTE);
 
             assertThat(color.getAlpha())
                     .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
@@ -177,8 +186,8 @@ final class ClusterLabelStylingTest {
             // A desaturated bloc's label follows the pass's shared desaturation palette
             // instead of the owner's own shades, at full alpha since mute is off here.
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY), false,
-                    new BlocStyleAdjustment(FULL_OPACITY, true),
+                    nameStyles(FactionPaletteChoice.PRIMARY),
+                    factionStyled(new BlocStyleAdjustment(FULL_OPACITY, true)),
                     new FactionPalette(Color.GREEN, Color.YELLOW));
 
             assertThat(color).isEqualTo(Color.GREEN);
@@ -190,7 +199,7 @@ final class ClusterLabelStylingTest {
             // unmuted and undesaturated no matter what the pass's palette holds, since the
             // adjustment (not the palette alone) gates whether either applies.
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY), false, BlocStyleAdjustment.NONE,
+                    nameStyles(FactionPaletteChoice.PRIMARY), FACTION_STYLED,
                     new FactionPalette(Color.GREEN, Color.YELLOW));
 
             assertThat(color).isEqualTo(PRIMARY);
@@ -207,7 +216,7 @@ final class ClusterLabelStylingTest {
             var desaturationPalette = new FactionPalette(Color.GREEN, Color.YELLOW);
 
             var labelColor = ClusterLabelStyling.resolveLabelColor(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY), false, recede,
+                    nameStyles(FactionPaletteChoice.PRIMARY), factionStyled(recede),
                     desaturationPalette);
 
             // The shade MapPalettes resolves the same bloc's fill to under the same recede.

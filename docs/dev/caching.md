@@ -190,9 +190,11 @@ with each other even when both lag the economy slightly.
 ### Per-rebuild memos
 
 Smaller memos live for one rebuild and die with it. `ClusterLabelStyling` resolves
-each bloc's style decision and name estimator once per bloc id rather than once per
-cluster, since every cluster of a bloc shares one name and one style; the label font
-and the name-format choice are likewise read once per rebuild rather than per label.
+each bloc's style decision, label colour, and name estimator once per bloc id rather
+than once per cluster, since every cluster of a bloc shares one name, one shade, and
+one style - a bloc with a homeland and three colonies is asked four times and answers
+once. The label font and the name-format choice are likewise read once per rebuild
+rather than per label.
 
 The map's name labels are the one place KMU mints its own GL text. Each
 [`Label`](../../src/main/java/kmu/maplayers/base/labels/Label.java)

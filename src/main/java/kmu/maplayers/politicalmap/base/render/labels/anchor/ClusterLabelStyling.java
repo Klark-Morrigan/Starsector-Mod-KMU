@@ -69,13 +69,12 @@ final class ClusterLabelStyling {
     static Color resolveLabelColor(
             DominantOwner owner,
             BlocNameStyles nameStyles,
-            boolean usesIndependentStyle,
-            BlocStyleAdjustment adjustment,
+            BlocStyleDecision styleDecision,
             FactionPalette desaturationPalette) {
 
         // One group pick drives both the name's colour choice and its opacity, so the two
         // can never be read from different groups.
-        var nameStyle = usesIndependentStyle
+        var nameStyle = styleDecision.usesIndependentStyle()
                 ? nameStyles.independentNameStyle()
                 : nameStyles.factionNameStyle();
         var choice = nameStyle.color();
@@ -84,7 +83,7 @@ final class ClusterLabelStyling {
         // "desaturate swaps the palette" decision MapPalettes owns - so the name can
         // never drift from the fill and border it labels.
         var palette = MapPalettes.resolveEffectivePalette(
-                adjustment,
+                styleDecision.adjustment(),
                 owner,
                 desaturationPalette);
         var color = MapPalettes.pickPaletteColor(
@@ -97,7 +96,7 @@ final class ClusterLabelStyling {
 
         // The name mutes through the same one rule the fill and border do, so a receded name
         // dims in lockstep with the space it labels.
-        var mutedOpacity = adjustment.muteOpacity(nameStyle.opacity());
+        var mutedOpacity = styleDecision.adjustment().muteOpacity(nameStyle.opacity());
         return Colors.scaleAlpha(resolved, mutedOpacity);
     }
 
@@ -113,16 +112,11 @@ final class ClusterLabelStyling {
             FactionPalette desaturationPalette) {
 
         var ownerByBlocId = mapOwnerByBlocId(ownerBySystemId);
-        var colorByBlocId = new HashMap<String, Color>();
-        return blocId -> colorByBlocId.computeIfAbsent(blocId, id -> {
-            var decision = styleDecisionByBlocId.apply(id);
-            return resolveLabelColor(
-                    ownerByBlocId.get(id),
-                    nameStyles,
-                    decision.usesIndependentStyle(),
-                    decision.adjustment(),
-                    desaturationPalette);
-        });
+        return memoisePerBlocId(blocId -> resolveLabelColor(
+                ownerByBlocId.get(blocId),
+                nameStyles,
+                styleDecisionByBlocId.apply(blocId),
+                desaturationPalette));
     }
 
     // The per-bloc style decisions one rebuild applies: each bloc's independent-style and
@@ -135,15 +129,12 @@ final class ClusterLabelStyling {
             OwnershipGrouping grouping,
             BlocStyleAdjustment recedeAdjustment) {
 
-        var decisionByBlocId = new HashMap<String, BlocStyleDecision>();
-        return blocId -> decisionByBlocId.computeIfAbsent(
+        return memoisePerBlocId(blocId -> BlocStyleResolver.resolveBlocStyleDecision(
+                isFiltering,
                 blocId,
-                id -> BlocStyleResolver.resolveBlocStyleDecision(
-                        isFiltering,
-                        id,
-                        view,
-                        grouping,
-                        recedeAdjustment));
+                view,
+                grouping,
+                recedeAdjustment));
     }
 
     // The per-bloc name estimators one rebuild fits against: each bloc's display name
@@ -162,16 +153,22 @@ final class ClusterLabelStyling {
         // Read once per rebuild, like the font: every cluster of a bloc spells its name
         // the same way, so the full/short choice is resolved here rather than per bloc.
         var nameFormat = NameFormatPreference.getSelectedNameFormat();
-        var estimatorByBlocId = new HashMap<String, LabelLengthEstimator>();
-        return blocId -> estimatorByBlocId.computeIfAbsent(
-                blocId,
-                id -> resolveNameEstimator(
-                        sector,
-                        view,
-                        grouping,
-                        font,
-                        nameFormat,
-                        resolveNameBlocId(isFiltering, id, selectedBlocId)));
+        return memoisePerBlocId(blocId -> resolveNameEstimator(
+                sector,
+                view,
+                grouping,
+                font,
+                nameFormat,
+                resolveNameBlocId(isFiltering, blocId, selectedBlocId)));
+    }
+
+    // Caches a per-bloc resolution for the life of one rebuild. Every resolution here is
+    // asked once per cluster but answers per bloc - a bloc with a homeland and three colonies
+    // asks four times and gets one answer - so each is wrapped once rather than each growing
+    // its own map and lookup. Single-threaded, like the rebuild that holds it.
+    private static <T> Function<String, T> memoisePerBlocId(Function<String, T> resolver) {
+        var valueByBlocId = new HashMap<String, T>();
+        return blocId -> valueByBlocId.computeIfAbsent(blocId, resolver);
     }
 
     // One owner per bloc id, so a bloc's shade can be resolved from its id alone. Every system
