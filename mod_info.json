@@ -11,7 +11,8 @@
   "dependencies": [
     {
       "id": "kmlib",
-      "name": "Klark Morrigan's Library"
+      "name": "Klark Morrigan's Library",
+      "version": "0.1.0"
     },
     {
       "id": "lunalib",

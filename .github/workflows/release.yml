@@ -1,13 +1,19 @@
-# Detects version bumps on master and drives the full release pipeline.
+# KMU's release entry point. Triggers on push to master and delegates the
+# whole pipeline to KMLib's reusable mod-release workflow, which derives every
+# mod-specific value (mod id, version, runner label, zip name, jar path, and
+# the repos its Gradle build needs beside the checkout) from this repo's
+# mod_info.json - so this caller passes no inputs.
 #
-# Triggered by: push to master.
+# The pipeline only does real work when mod_info.json's version differs from
+# the latest git tag, so an ordinary push (no version bump) costs one cheap
+# config job and stops. On a bump it re-runs the PR gates against the exact
+# commit being released, packages the mod zip, tags, and publishes a GitHub
+# release whose body is this repo's CHANGELOG.md section for that version.
 #
-# Jobs run only when the version in mod_info.json differs from the latest
-# git tag. All jobs run on the self-hosted kmu-runner VM. See
-# docs/dev/release.md for runner setup.
-#
-# Job chain:
-#   version-check -> {ci-bash, ci-gradle} -> prepare-artifact -> create-tag -> create-release
+# Pinned to a KMLib tag rather than a branch so an unrelated KMLib commit
+# cannot change how KMU releases after the fact. This pin and the kmlib
+# dependency version in mod_info.json move together, in the same commit -
+# see KMLib's docs/dev/versioning.md.
 name: Release
 
 on:
@@ -15,131 +21,15 @@ on:
     branches:
       - master
 
+# A reusable workflow's permissions are capped by its caller, so the tag and
+# release the pipeline publishes need the grant repeated here.
 permissions:
   contents: write
 
 jobs:
-  version-check:
-    runs-on: [self-hosted, kmu-runner]
-    outputs:
-      version_updated: ${{ steps.check.outputs.version_updated }}
-      version: ${{ steps.check.outputs.version }}
-
-    steps:
-      - name: Check out source
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-        with:
-          fetch-tags: true
-
-      - name: Compare mod_info.json version to latest tag
-        id: check
-        run: bash .github/scripts/check_version.sh
-
-  # Re-run the same per-domain gates the PR ran, before publishing. The
-  # bash gate and the Gradle build are separate workflows now (no bundled
-  # ci.yml), so the release path calls each.
-  ci-bash:
-    needs: version-check
-    if: needs.version-check.outputs.version_updated == 'true'
-    uses: ./.github/workflows/ci-bash.yml
-
-  ci-gradle:
-    needs: version-check
-    if: needs.version-check.outputs.version_updated == 'true'
-    uses: ./.github/workflows/ci-gradle.yml
+  release:
+    uses: Klark-Morrigan/Starsector-Mod-KMLib/.github/workflows/mod-release.yml@0.1.0
+    # Forwards sibling_checkout_token when this repo defines one, so the
+    # pipeline can clone the private neighbours KMU's build applies shared
+    # Gradle scripts from; absent, those clones fall back to github.token.
     secrets: inherit
-
-  prepare-artifact:
-    needs: [version-check, ci-bash, ci-gradle]
-    runs-on: [self-hosted, kmu-runner]
-
-    steps:
-      - name: Check out source
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-
-      - name: Set up Java 17
-        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5.3.0
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x gradlew
-
-      # Tests already passed in the ci job; rebuild the jar only.
-      - name: Build jar
-        run: ./gradlew jar
-
-      # Assemble only the runtime payload - no source, tests, docs/dev,
-      # build caches, or Gradle wrapper files.
-      - name: Assemble dist/KMU
-        run: |
-          DIST=dist/KMU
-          mkdir -p "$DIST/jars"
-          cp mod_info.json "$DIST/"
-          [ -f README.md ]    && cp README.md    "$DIST/" || true
-          [ -f CHANGELOG.md ] && cp CHANGELOG.md "$DIST/" || true
-          [ -f LICENSE ]      && cp LICENSE       "$DIST/" || true
-          [ -d data ]         && cp -r data       "$DIST/" || true
-          [ -d graphics ]     && cp -r graphics   "$DIST/" || true
-          [ -d sounds ]       && cp -r sounds     "$DIST/" || true
-          cp jars/KMU.jar "$DIST/jars/"
-
-      - name: Create release zip
-        id: zip
-        run: |
-          VERSION="${{ needs.version-check.outputs.version }}"
-          cd dist
-          zip -r "../KMU-${VERSION}.zip" KMU/
-          echo "zip_name=KMU-${VERSION}.zip" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: ${{ steps.zip.outputs.zip_name }}
-          path: ${{ steps.zip.outputs.zip_name }}
-          if-no-files-found: error
-
-  create-tag:
-    needs: [version-check, prepare-artifact]
-    runs-on: [self-hosted, kmu-runner]
-
-    steps:
-      - name: Check out source
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-
-      - name: Push version tag
-        run: |
-          VERSION="${{ needs.version-check.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "$VERSION"
-          git push origin "$VERSION"
-
-  create-release:
-    needs: [version-check, prepare-artifact, create-tag]
-    runs-on: [self-hosted, kmu-runner]
-
-    steps:
-      - name: Check out source
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-
-      - name: Download release artifact
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
-        with:
-          name: KMU-${{ needs.version-check.outputs.version }}.zip
-
-      # Extract the section for the current version from CHANGELOG.md.
-      # Fails if the section is missing so the release body is never empty.
-      - name: Extract changelog section
-        run: bash .github/scripts/extract_changelog.sh "${{ needs.version-check.outputs.version }}"
-
-      - name: Create GitHub release
-        run: |
-          VERSION="${{ needs.version-check.outputs.version }}"
-          gh release create "$VERSION" \
-            --title "$VERSION" \
-            --notes-file release-notes.md \
-            "KMU-${VERSION}.zip"
-        env:
-          GH_TOKEN: ${{ github.token }}

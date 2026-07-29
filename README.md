@@ -67,6 +67,15 @@ Local build commands:
 The Gradle wrapper is the supported local and CI build path. Pass the install
 root via `STARSECTOR_HOME` or `-PstarsectorRoot=<path>`.
 
+Releases are cut by KMLib's reusable pipeline, which
+[release.yml](.github/workflows/release.yml) calls on every push to `master`
+with no inputs - the pipeline reads `mod_info.json` for everything it needs.
+A push whose version matches the latest git tag stops after one cheap job;
+a version bump re-runs the PR gates on that commit, packages
+`KMU-<version>.zip`, pushes the tag, and publishes a GitHub release whose body
+is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version - so a
+release with no changelog section fails rather than shipping empty notes.
+
 ### Local linting
 
 Two delegating CI workflows lint the repo's non-Gradle surface on every pull

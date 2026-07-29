@@ -1,8 +1,10 @@
 # KMU's Gradle build/test gate - a thin caller into Common-Java's reusable
 # _ci-gradle engine, the JVM counterpart to ci-bash.yml / ci-yaml.yml. It
-# triggers on PRs and is workflow_call-able so release.yml can re-run the
-# build before publishing. Shell/bats tests are handled by ci-bash.yml; this
-# file is purely the Gradle build.
+# triggers on PRs only: the release path re-runs the build through KMLib's
+# reusable mod-release workflow, which calls the same _ci-gradle engine with
+# arguments derived from mod_info.json rather than routing back through this
+# caller. Shell/bats tests are handled by ci-bash.yml; this file is purely
+# the Gradle build.
 #
 # Runs on the self-hosted kmu-runner: JDK 17 is installed system-wide
 # (Infrastructure-Vm-Provisioner's javaDevKit step), so setup-java is left
@@ -21,7 +23,7 @@ name: Common-Java
 
 on:
   pull_request:
-  workflow_call:
+  workflow_dispatch:
 
 jobs:
   gradle:
