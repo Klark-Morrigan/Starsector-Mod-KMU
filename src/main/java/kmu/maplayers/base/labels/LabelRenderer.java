@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.base.labels;
 
 import kmlib.color.Colors;
 

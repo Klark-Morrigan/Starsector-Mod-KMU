@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.base.labels;
 
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -6,11 +6,10 @@ import kmlib.starsector.ui.font.StarsectorFont;
 import org.lazywizard.lazylib.ui.LazyFont;
 
 /**
- * Resolves the political-map label font. One home for the resolve so both consumers
- * see the same face: the anchor search ({@link ClusterAnchorsBuilder}) measures names
- * with its glyph metrics, and the label build ({@link LabelsBuilder}) mints the drawn
- * strings from it - the box the search sizes is the box those glyphs fill only because
- * both read the font here.
+ * Resolves the map-label font. One home for the resolve so measuring and drawing see the
+ * same face: a name is measured with its glyph metrics to size the box it will occupy, and
+ * the drawn string is minted from it - the box the fit sizes is the box those glyphs fill
+ * only because both read the font here.
  *
  * <p>The face is fixed rather than a player choice. A name is stretched to span its
  * cluster, far past the face's glyph-atlas resolution, so only the highest-resolution

@@ -9,6 +9,7 @@ import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
+import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -16,8 +17,6 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
-import kmu.maplayers.politicalmap.base.render.labels.LabelFonts;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
@@ -26,14 +25,15 @@ import org.lazywizard.lazylib.ui.LazyFont;
 
 import java.awt.Color;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Resolves a cluster label's non-geometric attributes - its colour and its name - the way
  * the fills resolve theirs, so a label never drifts from the territory it names. The
- * placement search ({@link ClusterAnchorPlacement}) owns where a label sits; this owns what
- * shade it draws in and which bloc's name it spells.
+ * placement search owns where a label sits; this owns what shade it draws in and which
+ * bloc's name it spells, and hands the search both as plain functions of a bloc id so the
+ * search itself stays ignorant of blocs.
  *
  * <p>Both attributes follow the active view off filter and the filter rules under one. The
  * colour is baked from the same {@link MapPalettes} mapping the border uses,
@@ -68,18 +68,16 @@ final class ClusterLabelStyling {
     // colour, dims and recolours with the name).
     static Color resolveLabelColor(
             DominantOwner owner,
-            LabelAnchorSpecification spec,
-            Predicate<String> usesIndependentStyleByBlocId,
+            BlocNameStyles nameStyles,
+            boolean usesIndependentStyle,
             BlocStyleAdjustment adjustment,
             FactionPalette desaturationPalette) {
-
-        var usesIndependentStyle = usesIndependentStyleByBlocId.test(owner.factionId());
 
         // One group pick drives both the name's colour choice and its opacity, so the two
         // can never be read from different groups.
         var nameStyle = usesIndependentStyle
-                ? spec.independentNames()
-                : spec.factionNames();
+                ? nameStyles.independentNameStyle()
+                : nameStyles.factionNameStyle();
         var choice = nameStyle.color();
 
         // The name resolves against the same two shades the border does, off the one
@@ -103,10 +101,34 @@ final class ClusterLabelStyling {
         return Colors.scaleAlpha(resolved, mutedOpacity);
     }
 
+    // The per-bloc label colours one rebuild draws in, as the plain colour-by-key function the
+    // placement search takes. Each bloc's shade is resolved from any one of its owners (every
+    // system of a bloc carries the same two palette shades, so the first one found speaks for
+    // the whole bloc) under that bloc's shared style decision, and cached per bloc id since
+    // every cluster of a bloc draws its name the same.
+    static Function<String, Color> newLabelColorResolver(
+            Map<String, DominantOwner> ownerBySystemId,
+            BlocNameStyles nameStyles,
+            Function<String, BlocStyleDecision> styleDecisionByBlocId,
+            FactionPalette desaturationPalette) {
+
+        var ownerByBlocId = mapOwnerByBlocId(ownerBySystemId);
+        var colorByBlocId = new HashMap<String, Color>();
+        return blocId -> colorByBlocId.computeIfAbsent(blocId, id -> {
+            var decision = styleDecisionByBlocId.apply(id);
+            return resolveLabelColor(
+                    ownerByBlocId.get(id),
+                    nameStyles,
+                    decision.usesIndependentStyle(),
+                    decision.adjustment(),
+                    desaturationPalette);
+        });
+    }
+
     // The per-bloc style decisions one rebuild applies: each bloc's independent-style and
     // adjustment call as the shared resolver makes it (the active view's off filter, the filter
     // rules under one), cached per bloc id like the name estimator resolver below, since every
-    // cluster of a bloc shares one decision and the two label lambdas both read it.
+    // cluster of a bloc shares one decision and the two label consumers both read it.
     static Function<String, BlocStyleDecision> newBlocStyleDecisionResolver(
             boolean isFiltering,
             PoliticalMapView view,
@@ -130,16 +152,39 @@ final class ClusterLabelStyling {
     // the font or the name will not resolve. Cached per bloc id because every cluster of a
     // bloc shares one name, so its wrap is measured once per rebuild, not per cluster.
     static Function<String, LabelLengthEstimator> newNameEstimatorResolver(
-            SectorAPI sector, PoliticalMapView view, OwnershipGrouping grouping,
-            boolean isFiltering, String selectedBlocId) {
+            SectorAPI sector,
+            PoliticalMapView view,
+            OwnershipGrouping grouping,
+            boolean isFiltering,
+            String selectedBlocId) {
+
         var font = LabelFonts.loadMapLabelFont();
         // Read once per rebuild, like the font: every cluster of a bloc spells its name
         // the same way, so the full/short choice is resolved here rather than per bloc.
         var nameFormat = NameFormatPreference.getSelectedNameFormat();
         var estimatorByBlocId = new HashMap<String, LabelLengthEstimator>();
-        return blocId -> estimatorByBlocId.computeIfAbsent(blocId,
-                id -> resolveNameEstimator(sector, view, grouping, font, nameFormat,
+        return blocId -> estimatorByBlocId.computeIfAbsent(
+                blocId,
+                id -> resolveNameEstimator(
+                        sector,
+                        view,
+                        grouping,
+                        font,
+                        nameFormat,
                         resolveNameBlocId(isFiltering, id, selectedBlocId)));
+    }
+
+    // One owner per bloc id, so a bloc's shade can be resolved from its id alone. Every system
+    // of a bloc resolves to the same two palette shades, so which of them is kept is
+    // immaterial; first seen wins.
+    private static Map<String, DominantOwner> mapOwnerByBlocId(
+            Map<String, DominantOwner> ownerBySystemId) {
+
+        var ownerByBlocId = new HashMap<String, DominantOwner>();
+        for (var owner : ownerBySystemId.values()) {
+            ownerByBlocId.putIfAbsent(owner.factionId(), owner);
+        }
+        return ownerByBlocId;
     }
 
     // The bloc id whose name a cluster's label reads: the selected bloc under the filter's synthetic
@@ -168,6 +213,7 @@ final class ClusterLabelStyling {
             LazyFont font,
             FactionNameFormatChoice nameFormat,
             String blocId) {
+                
         if (font == null) {
             return new AspectLabelLengthEstimator(FALLBACK_NAME_ASPECT);
         }

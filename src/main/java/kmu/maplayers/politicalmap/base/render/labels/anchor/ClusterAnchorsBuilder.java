@@ -6,13 +6,15 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.base.geometry.SystemClusters;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
+import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.KmuLunaSettings;
@@ -26,10 +28,12 @@ import java.util.Map;
  * resolvers, and hands it all to the pure {@link ClusterAnchorPlacement} search - then keeps
  * the resulting overlay list current in place.
  *
- * <p>The three collaborators split by responsibility so this one stays the thin, settings-fed
- * seam: {@link ClusterLabelStyling} resolves each label's colour and name (view off filter,
- * filter rules under one), {@link ClusterAnchorPlacement} runs the pure geometric search over
- * injected data, and {@link LabelAnchorSpecification} carries the tuning both read.
+ * <p>The collaborators split by responsibility so this one stays the thin, settings-fed seam:
+ * {@link ClusterLabelStyling} resolves each label's colour and name (view off filter, filter
+ * rules under one), {@link ClusterAnchorPlacement} runs the pure geometric search over the
+ * plain functions of a bloc id those resolvers hand it, and {@link LabelAnchorSpecification}
+ * carries the search's tuning. This is the whole of what the political map contributes to a
+ * label: everything from the resolved colour and name onward is layer-agnostic framework.
  *
  * <p>Apart from
  * {@link kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder} because the anchors
@@ -71,43 +75,56 @@ public final class ClusterAnchorsBuilder {
             boolean isFiltering,
             BlocStyleAdjustment recedeAdjustment,
             String selectedBlocId) {
+
         anchors.clear();
         if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }
+
         // The agnostic clustering and border trace group the drawn cells, resolving each to
         // the system it draws as and that system to its bloc id; the owner map is still
         // carried for the per-owner colour. Under a filter that key is a synthetic spotlight
         // key, so the solid and contested clusters trace as their own territories exactly as
         // the fills do.
         var cellGrouping = DominantOwner.mapCellGrouping(
-                geometryCache.getSystemIdByCellId(), ownerBySystemId);
+                geometryCache.getSystemIdByCellId(),
+                ownerBySystemId);
         var clusters = SystemClusters.findClusters(
                 geometryCache.getCellEdgesByCellId(),
                 cellGrouping);
+
         // The desaturation palette is handed in already resolved - off the production build's
         // drawables, or by the debug path from the same profile seam - so a desaturated bloc's
         // name matches its recolored fill and border exactly without re-reading the profile here.
         // The style decision every label follows is the same one the fills read
-        // (BlocStyleResolver.resolveBlocStyleDecision), cached per bloc since its two label
-        // consumers - the independent-style test and the adjustment - both read it: under a
-        // filter it recedes every non-spotlit bloc and leaves the spotlit one full, so a receded
-        // name matches its receded fill and a spotlit name stays full, the drift a filter opens.
+        // (BlocStyleResolver.resolveBlocStyleDecision), cached per bloc since the colour
+        // resolver reads both halves of it - the independent-style test and the adjustment:
+        // under a filter it recedes every non-spotlit bloc and leaves the spotlit one full, so a
+        // receded name matches its receded fill and a spotlit name stays full, the drift a
+        // filter opens.
         var styleDecisionByBlocId = ClusterLabelStyling.newBlocStyleDecisionResolver(
-                isFiltering, view, grouping, recedeAdjustment);
+                isFiltering,
+                view,
+                grouping,
+                recedeAdjustment);
         anchors.addAll(ClusterAnchorPlacement.computeClusterAnchors(
                 clusters,
                 geometryCache.getCellEdgesByCellId(),
                 geometryCache.getSiteBySystemId(),
-                ownerBySystemId,
                 cellGrouping,
                 LabelAnchorSpecification.readFromLunaSettings(),
-                blocId -> styleDecisionByBlocId.apply(blocId).usesIndependentStyle(),
-                blocId -> styleDecisionByBlocId.apply(blocId).adjustment(),
-                desaturationPalette,
+                ClusterLabelStyling.newLabelColorResolver(
+                        ownerBySystemId,
+                        BlocNameStyles.readFromLunaSettings(),
+                        styleDecisionByBlocId,
+                        desaturationPalette),
                 ClusterLabelStyling.newNameEstimatorResolver(
-                        sector, view, grouping, isFiltering, selectedBlocId)));
+                        sector,
+                        view,
+                        grouping,
+                        isFiltering,
+                        selectedBlocId)));
     }
 
     // The rebuild for a path with no owner map at hand - the debug border-tracing view,
@@ -119,19 +136,23 @@ public final class ClusterAnchorsBuilder {
             PoliticalMapGeometryCache geometryCache,
             SectorAPI sector,
             PoliticalMapView view) {
+
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }
+
         // Sample the view's grouping once and resolve ownership under it, so the anchors
         // key off the same snapshot their names and colours are classified against.
         var grouping = view.resolveGrouping();
+
         // This path builds no drawables to borrow the palette from, so resolve it here - through
         // the same darkening seam the theme reads, so the debug names desaturate exactly as
         // production does and the setting still has a single reader.
         var desaturationPalette = MapPalettes.resolveDesaturationPalette(
                 sector,
                 RenderStyleReader.readGlobalStyle().desaturationDarkening());
+                
         // The debug border-tracing path never filters - it resolves real dominant owners from the
         // sector - so it recedes nothing and names no synthetic spotlight key.
         rebuildClusterAnchors(

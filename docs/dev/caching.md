@@ -195,7 +195,7 @@ cluster, since every cluster of a bloc shares one name and one style; the label 
 and the name-format choice are likewise read once per rebuild rather than per label.
 
 The map's name labels are the one place KMU mints its own GL text. Each
-[`Label`](../../src/main/java/kmu/maplayers/politicalmap/base/render/labels/Label.java)
+[`Label`](../../src/main/java/kmu/maplayers/base/labels/Label.java)
 owns a `DrawableString` and its vertex buffer, and `LabelsBuilder` **disposes** the
 standing list whenever it rebuilds. This is the opposite lifetime to KMLib's
 process-lifetime glyph cache, and the two must not be crossed: text that a rebuild

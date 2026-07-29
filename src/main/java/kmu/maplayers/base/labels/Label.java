@@ -1,6 +1,6 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.base.labels;
 
-import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 
 import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 

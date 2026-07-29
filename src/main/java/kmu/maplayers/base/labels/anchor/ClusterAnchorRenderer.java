@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels.anchor;
+package kmu.maplayers.base.labels.anchor;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
@@ -20,12 +20,11 @@ import java.util.function.Function;
  * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's anchor
  * dot plus its accepted, rejected, and unbiased label lines.
  *
- * <p>Its own renderer, apart from {@link kmu.maplayers.politicalmap.base.render.TerritoryRenderer},
- * because the anchors are
- * an independent overlay: the terrain plugin draws them after whichever base view is
- * live - the normal political map or the debug border-tracing overlay - so turning
- * border tracing on never hides them. Pure GL emission over an already-built anchor
- * list, in the same below-UI map pass and coordinate convention the base renderers use.
+ * <p>Its own renderer, apart from whatever draws the territories themselves, because the
+ * anchors are an independent overlay: they are drawn after whichever base view is live -
+ * a layer's normal render or its debug overlay - so turning a debug view on never hides
+ * them. Pure GL emission over an already-built anchor list, in the same below-UI map pass
+ * and coordinate convention the base renderers use.
  */
 public final class ClusterAnchorRenderer {
     // The anchor dot's diameter in screen pixels (GL_POINTS sizes in pixels, so it
@@ -51,8 +50,8 @@ public final class ClusterAnchorRenderer {
     // Draws the whole anchor overlay for one map frame. The lines layer bottom to top by
     // verdict - rejected candidates in red, unbiased comparisons in yellow, accepted
     // label lines in green - one color pass across all anchors per layer, so where lines
-    // overlap the accepted verdict always reads on top; the dots, in each owner's bright
-    // faction shade, go over everything to keep the anchor marker visible even under a
+    // overlap the accepted verdict always reads on top; the dots, in each cluster's own
+    // resolved shade, go over everything to keep the anchor marker visible even under a
     // pile of lines. Empty (nothing emitted) unless the dev toggle built the anchors, so
     // the normal map pays only an empty-list check; a state push/pop isolates the blend,
     // line, and point settings from the rest of the map render.

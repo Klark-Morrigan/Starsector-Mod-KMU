@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels.anchor;
+package kmu.maplayers.base.labels.anchor;
 
 import kmlib.math.geometry.PrincipalAxis;
 

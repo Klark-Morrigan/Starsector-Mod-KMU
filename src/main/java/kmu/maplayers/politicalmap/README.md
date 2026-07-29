@@ -102,11 +102,13 @@ fill states are [ownership resolution](base/politics/ownership/README.md).
   bloc's coloured region, border, seams, and split fill.
 - **[Render style layer](base/render/style/README.md)** - how player settings become each
   territory's colours, widths, and opacities.
-- **[Cluster-name overlay](base/render/labels/README.md)** - how bloc names are placed and drawn.
+- **`base/render/labels/anchor`** - what a cluster's name reads and what shade it draws in: the
+  active view's name for the bloc, and the outer border its group inherits. Both are resolved here
+  and handed to the framework's overlay, which places and draws them.
 
-Everything above is shaped out of [cell geometry](../base/geometry/README.md), which belongs to the
-framework rather than to this layer: it partitions the sector on an opaque grouping key, and the
-views decide that the key names a bloc.
+Everything above is shaped out of [cell geometry](../base/geometry/README.md) and named by the
+[cluster-name overlay](../base/labels/README.md), both of which belong to the framework rather than
+to this layer: they work on an opaque grouping key, and the views decide that the key names a bloc.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
 `visibility`, `refresh`, `hover`, `tooltip`, and `sidebar` - the last being this layer's own body

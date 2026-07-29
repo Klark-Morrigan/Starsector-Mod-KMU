@@ -6,15 +6,16 @@ import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.labels.Label;
+import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
 import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapDebugTerritories;
-import kmu.maplayers.politicalmap.base.render.labels.Label;
-import kmu.maplayers.politicalmap.base.render.labels.LabelsBuilder;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchor;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
@@ -172,16 +173,21 @@ final class PoliticalMapCache {
     // rules, so a view switch (folded into the content revision) rebuilds the territories under
     // the newly-selected view.
     private void rebuildStaleHalves(PoliticalMapView view) {
+
         var rebuiltCells = false;
         var geometryRevision = PoliticalMapRefresh.getGeometryRevision();
+
         // The frontier resolution is a geometry input, not just a style: a change reseeds every
         // cell, so it makes the geometry stale the same way an access change does. Read once here
         // and let updateFromSector do the reseed.
+
         var boundSegments = KmuLunaSettings.getPoliticalMapCellBoundSegments();
         // The cell reach is a geometry input for the same reason as the resolution: it sets how
         // far each cell extends into empty space, so a change reseeds every cell and must rebuild
         // the partition here rather than only restyle it below.
+        
         var cellRadius = KmuLunaSettings.getPoliticalMapCellRadius();
+
         // The two dev reveal overrides are geometry inputs for the same reason: each changes which
         // systems seed a cell, so a flip must reseed the partition here rather than only restyle it
         // through the content revision below.
@@ -191,6 +197,7 @@ final class PoliticalMapCache {
                 || cellRadius != lastCellRadius
                 || devOverrides.isShowingAllFactions() != lastShowsAllFactions
                 || devOverrides.isForcingAllSystemsOnMap() != lastForcesAllSystemsOnMap) {
+
             // Transition trace: a stale cell or one left behind after an access change can be tied
             // to the revision step - or segment count or cell reach - that drove it.
             LOG.debug("Political map geometry stale; rebuilding from revision "
@@ -201,6 +208,7 @@ final class PoliticalMapCache {
                     + devOverrides.isShowingAllFactions()
                     + ", forceAllSystems " + lastForcesAllSystemsOnMap + " to "
                     + devOverrides.isForcingAllSystemsOnMap());
+
             rebuildGeometry(boundSegments, cellRadius, devOverrides);
             lastGeometryRevision = geometryRevision;
             lastBoundSegments = boundSegments;
@@ -223,6 +231,7 @@ final class PoliticalMapCache {
                 || (territories == null && debugTerritories == null)
                 || contentRevision != lastContentRevision) {
             var drawablesStart = System.nanoTime();
+
             // Build one view or the other, never both: the debug overlay replaces the normal
             // render, so in debug mode the production draw lists are not built at all, and the
             // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
@@ -258,11 +267,18 @@ final class PoliticalMapCache {
                         territories.getRecedeAdjustment(),
                         territories.getSelectedBlocId());
             }
+
             // The name labels are minted from the placements just rebuilt (empty when the names
             // toggle is off), keeping them in step with the fills and borders and reusing the one
-            // placement search both consumers share.
-            LabelsBuilder.rebuildLabels(factionLabels, clusterAnchors);
+            // placement search both consumers share. The name choice is read here rather than
+            // inside the build, since whether names draw at all is this layer's own answer.
+            LabelsBuilder.rebuildLabels(
+                    factionLabels,
+                    clusterAnchors,
+                    NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
+                    
             lastContentRevision = contentRevision;
+
             // A full rebuild re-derives every system, so any pending per-system staleness is
             // already reflected - drain and discard it rather than re-processing the same systems
             // immediately after.

@@ -76,6 +76,9 @@ about what the overlay means.
   supplies none, which is read as nothing to draw.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
+- **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
+  how it is drawn. What the name reads and what shade it takes arrive from the layer as functions
+  of a grouping key, so the overlay names nothing itself.
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the

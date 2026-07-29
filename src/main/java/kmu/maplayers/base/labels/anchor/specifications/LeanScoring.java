@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels.anchor.specifications;
+package kmu.maplayers.base.labels.anchor.specifications;
 
 /**
  * How the search scores a candidate line by how far it leans from the cluster's preferred

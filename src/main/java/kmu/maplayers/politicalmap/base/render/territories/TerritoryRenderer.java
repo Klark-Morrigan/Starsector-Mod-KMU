@@ -13,7 +13,7 @@ import org.lwjgl.opengl.GL11;
  * the faction clusters' and then the factionless cells' - and over them the interior seams,
  * factionless outlines, and national borders. The debug cluster anchors are not drawn here:
  * they are an independent
- * overlay ({@link kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorRenderer}) the terrain
+ * overlay ({@link kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer}) the terrain
  * plugin layers over whichever
  * base view is live.
  *

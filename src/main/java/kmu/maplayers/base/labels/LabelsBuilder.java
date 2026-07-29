@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels;
+package kmu.maplayers.base.labels;
 
 import com.fs.starfarer.api.Global;
 
@@ -6,8 +6,7 @@ import kmlib.math.geometry.Segment;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -44,14 +43,20 @@ public final class LabelsBuilder {
     }
 
     // Rebuilds the label list in place from the current placements: disposes the standing
-    // strings (they hold GL buffers), clears, and - only when the name choice draws names -
-    // mints one string per planned line. Profiled and timed on its own so the label
-    // build's cost is visible next to the drawables and anchor builds; a failed font load
-    // leaves the list empty. Runs at rebuild time only, never per frame.
-    public static void rebuildLabels(List<Label> labels, List<ClusterAnchor> anchors) {
+    // strings (they hold GL buffers), clears, and - only when names are drawn at all - mints
+    // one string per planned line. Whether they are is the caller's answer, not a setting read
+    // here: the placements can be built for the debug overlay alone, and only the layer that
+    // asked for them knows whether its names are showing. Profiled and timed on its own so the
+    // label build's cost is visible next to the drawables and anchor builds; a failed font
+    // load leaves the list empty. Runs at rebuild time only, never per frame.
+    public static void rebuildLabels(
+            List<Label> labels,
+            List<ClusterAnchor> anchors,
+            boolean areNamesDrawn) {
+
         disposeAll(labels);
         labels.clear();
-        if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()) {
+        if (!areNamesDrawn) {
             return;
         }
         var resolvedFont = LabelFonts.loadMapLabelFont();
@@ -63,12 +68,21 @@ public final class LabelsBuilder {
             // The plan step (each line's text, colour, hang point, slant, and font size)
             // is pure computation; only the mint below touches GL, so the stacking
             // geometry stays a self-contained calculation apart from GL resource creation.
-            for (var plan : planLabels(anchors,
+            for (var plan : planLabels(
+                    anchors,
                     KmuLunaSettings.getPoliticalMapNameLineSpacing())) {
-                var text = resolvedFont.createText(plan.text(), plan.color(),
+
+                var text = resolvedFont.createText(
+                        plan.text(),
+                        plan.color(),
                         plan.fontHeight());
+
                 text.setAnchor(LazyFont.TextAnchor.CENTER);
-                labels.add(new Label(text, plan.color(), plan.hangX(), plan.hangY(),
+                labels.add(new Label(
+                        text,
+                        plan.color(),
+                        plan.hangX(),
+                        plan.hangY(),
                         plan.slantDegrees()));
             }
         });
@@ -86,8 +100,13 @@ public final class LabelsBuilder {
      * holding the placement-to-line geometry as plain data, separate from the GL string
      * minting that consumes it.
      */
-    public record LabelPlan(String text, Color color, float hangX, float hangY,
-            float slantDegrees, float fontHeight) {
+    public record LabelPlan(
+            String text,
+            Color color,
+            float hangX,
+            float hangY,
+            float slantDegrees,
+            float fontHeight) {
     }
 
     // Plans every label line: skipping a collapsed placement (dot only, no accepted
@@ -97,7 +116,10 @@ public final class LabelsBuilder {
     // centred on the anchor, first line on the upper side so the block reads top-down.
     // The slant is folded upright first, so the stacking normal is taken from the
     // direction the text actually reads in. Pure - no GL, no font, no sector.
-    public static List<LabelPlan> planLabels(List<ClusterAnchor> anchors, double lineSpacing) {
+    public static List<LabelPlan> planLabels(
+            List<ClusterAnchor> anchors,
+            double lineSpacing) {
+
         var plans = new ArrayList<LabelPlan>(anchors.size());
         for (var anchor : anchors) {
             if (anchor.acceptedAxis() == null || anchor.nameLines().isEmpty()) {
@@ -123,21 +145,30 @@ public final class LabelsBuilder {
     // the whole stack centred on the anchor point, first line highest. The distance
     // from first to last centre plus one line height is exactly the band thickness the
     // fit reserved, so the block fills the fitted box.
-    private static void planBlockLines(List<LabelPlan> plans, ClusterAnchor anchor,
-            float slantDegrees, double lineSpacing) {
+    private static void planBlockLines(
+            List<LabelPlan> plans,
+            ClusterAnchor anchor,
+            float slantDegrees,
+            double lineSpacing) {
+
         var lines = anchor.nameLines();
         var slantRadians = Math.toRadians(slantDegrees);
+
         // The unit perpendicular on the reading direction's upper side: for an upright
         // slant (|slant| <= 90) its y-component is non-negative, so "up" is screen-up.
         var upX = (float) -Math.sin(slantRadians);
         var upY = (float) Math.cos(slantRadians);
         var lineStep = (float) (anchor.fontHeight() * lineSpacing);
+
         for (var lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
             // Offsets run from +((L-1)/2)*step for the first line down to its negative
             // for the last, symmetric about the anchor.
             var offset = ((lines.size() - 1) / 2f - lineIndex) * lineStep;
-            plans.add(new LabelPlan(lines.get(lineIndex), anchor.color(),
-                    anchor.anchorX() + upX * offset, anchor.anchorY() + upY * offset,
+            plans.add(new LabelPlan(
+                    lines.get(lineIndex),
+                    anchor.color(),
+                    anchor.anchorX() + upX * offset,
+                    anchor.anchorY() + upY * offset,
                     slantDegrees, anchor.fontHeight()));
         }
     }

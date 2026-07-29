@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels.anchor;
+package kmu.maplayers.base.labels.anchor;
 
 import kmlib.math.geometry.DirectedLine;
 import kmlib.math.geometry.Limits;
@@ -7,97 +7,97 @@ import kmlib.math.geometry.PrincipalAxis;
 import kmlib.math.geometry.RegionChord;
 import kmlib.math.geometry.Segment;
 import kmlib.math.solving.Picks;
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.LabelBoxFitter;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.specifications.LabelAnchorSpecification;
+import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
- * Fits the label placements: one {@link ClusterAnchor} per contiguous same-faction
- * cluster, its label box the highest-scoring of many candidate lines swept across the
- * cluster. This class generates the candidates (a direction fan crossed at parallel
- * offsets) and selects among them; {@link LabelBoxFitter} sizes each into the largest
- * box holding the owner's name - clipped inside the national border, trimmed clear of
- * system icons, pulled short of the border at both ends, and stacked into extra lines
- * where that buys a bigger font. The name is measured with the label font's own metrics,
- * so the accepted box is sized for the glyphs that will actually fill it; where the font
- * or the owner's name will not resolve, an aspect stand-in keeps the debug band meaningful
- * and no name draws. Boxes that lean along the cluster's own axis are favoured over ones
- * that stray from it by a font-height-versus-slope score ({@link LabelSlantPreference})
- * rather than by bending any direction before the fit; the preferred lean is capped short
- * of vertical and fades to level for round clusters whose axis carries no real direction.
+ * Fits the label placements: one {@link ClusterAnchor} per contiguous same-key cluster, its
+ * label box the highest-scoring of many candidate lines swept across the cluster. This class
+ * generates the candidates (a direction fan crossed at parallel offsets) and selects among
+ * them; {@link LabelBoxFitter} sizes each into the largest box holding the cluster's name -
+ * clipped inside the cluster's border, trimmed clear of system icons, pulled short of the
+ * border at both ends, and stacked into extra lines where that buys a bigger font. The name is
+ * measured with the label font's own metrics, so the accepted box is sized for the glyphs that
+ * will actually fill it; where the font or the name will not resolve, an aspect stand-in keeps
+ * the debug band meaningful and no name draws. Boxes that lean along the cluster's own axis are
+ * favoured over ones that stray from it by a font-height-versus-slope score
+ * ({@link LabelSlantPreference}) rather than by bending any direction before the fit; the
+ * preferred lean is capped short of vertical and fades to level for round clusters whose axis
+ * carries no real direction.
  *
- * <p>Pure geometry: every per-bloc attribute - the name to size against, the style
- * classification, the colour to draw in - arrives injected, resolved upstream by
- * {@link ClusterLabelStyling}, so the search reads no settings, view, or filter state and
- * is exercised on hand-built clusters. It draws over both the normal render and the debug
- * border-tracing overlay, so {@link ClusterAnchorsBuilder} drives it from either.
+ * <p>Pure geometry over opaque grouping keys: what a key means, what its name reads and what
+ * shade it draws in all arrive injected as plain functions of the key, so the search reads no
+ * settings, ownership, or filter state, names nothing on the map, and is exercised on
+ * hand-built clusters.
  */
-final class ClusterAnchorPlacement {
+public final class ClusterAnchorPlacement {
 
     // Searches only; never instantiated.
     private ClusterAnchorPlacement() {
     }
 
-    // Fits one label anchor to each contiguous cluster by searching over candidate lines
-    // (searchClusterAnchor). The site centroid supplies the cluster's own principal axis
-    // - one candidate direction among the fan, and the dot's fallback position - but has
-    // no privileged pull on the accepted line, which is free to sit off-centre wherever
-    // the cluster is roomiest. Each cluster's fit sizes against its owner's name via the
-    // injected resolver, and the name (and its debug dot) draws in the shade the injected
-    // colour resolver (ClusterLabelStyling) hands it, so the name reads as its border's own
-    // colour; the candidate lines use a fixed diagnostic palette instead, painted by the
-    // renderer. The style classifier - bound to the pass by the caller - decides which of
-    // the two outer-border colour choices each cluster follows.
-    static List<ClusterAnchor> computeClusterAnchors(
+    /**
+     * Fits one label anchor to each contiguous cluster by searching over candidate lines. The
+     * site centroid supplies the cluster's own principal axis - one candidate direction among
+     * the fan, and the dot's fallback position - but has no privileged pull on the accepted
+     * line, which is free to sit off-centre wherever the cluster is roomiest.
+     *
+     * <p>A cluster's two non-geometric attributes are looked up by its grouping key, taken
+     * from the first member's key since every member of a cluster shares one: the name the fit
+     * sizes and wraps against, and the shade the name (and its debug dot) draws in. Both are
+     * plain functions of the key, so the search never asks what a key means; the candidate
+     * lines use a fixed diagnostic palette instead, painted by the renderer.
+     *
+     * @param clusters                 each contiguous cluster's member system ids
+     * @param edgesByCellId            each cell's raw edges - the geometry lines are clipped
+     *                                 against
+     * @param siteBySystemId           each system's world position, for the axis fit and the
+     *                                 icon keep-outs
+     * @param grouping                 which system each cell draws as and each system's
+     *                                 grouping key
+     * @param spec                     the search's whole tuning surface
+     * @param labelColorByGroupKey     the shade a group's name and dot draw in
+     * @param nameEstimatorByGroupKey  the name measurement a group's boxes are sized against
+     * @return one anchor per cluster with a site to fit, in cluster order
+     */
+    public static List<ClusterAnchor> computeClusterAnchors(
             List<List<String>> clusters,
             Map<String, List<CellEdge>> edgesByCellId,
             Map<String, double[]> siteBySystemId,
-            Map<String, DominantOwner> ownerBySystemId,
             CellGrouping grouping,
             LabelAnchorSpecification spec,
-            Predicate<String> usesIndependentStyleByBlocId,
-            Function<String, BlocStyleAdjustment> blocStyleAdjustmentByBlocId,
-            FactionPalette desaturationPalette,
-            Function<String, LabelLengthEstimator> nameEstimatorByFactionId) {
+            Function<String, Color> labelColorByGroupKey,
+            Function<String, LabelLengthEstimator> nameEstimatorByGroupKey) {
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         for (var memberSystemIds : clusters) {
             var sites = collectClusterSites(memberSystemIds, siteBySystemId);
             if (sites.isEmpty()) {
                 continue;
             }
-            var owner = ownerBySystemId.get(memberSystemIds.get(0));
+            var groupKey = grouping.groupKeyBySystemId().get(memberSystemIds.get(0));
             var axis = resolveClusterAxis(memberSystemIds, edgesByCellId, sites);
             var rings = spec.search().borderTrace().traceRings(
                     memberSystemIds,
                     edgesByCellId,
                     grouping);
-            var adjustment = blocStyleAdjustmentByBlocId.apply(owner.factionId());
             anchors.add(
                     searchClusterAnchor(
                         rings,
                         siteBySystemId,
                         axis,
-                        ClusterLabelStyling.resolveLabelColor(
-                            owner,
-                            spec,
-                            usesIndependentStyleByBlocId,
-                            adjustment,
-                            desaturationPalette),
+                        labelColorByGroupKey.apply(groupKey),
                         spec,
-                        nameEstimatorByFactionId.apply(owner.factionId())));
+                        nameEstimatorByGroupKey.apply(groupKey)));
         }
         return anchors;
     }

@@ -1,10 +1,9 @@
-package kmu.maplayers.politicalmap.base.render.labels.anchor.specifications;
+package kmu.maplayers.base.labels.anchor.specifications;
 
 import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
-import kmu.maplayers.politicalmap.base.render.style.theme.ElementStyle;
 import kmu.settings.KmuLunaSettings;
 
 /**
@@ -14,35 +13,30 @@ import kmu.settings.KmuLunaSettings;
  *
  * <p>The tuning splits into the search's own knobs - where it generates candidate lines
  * ({@link AnchorSearch}), how it scores their lean ({@link LeanScoring}), and which debug
- * lines each cluster carries ({@link AnchorDiagnostics}) - and how a chosen anchor's name
- * is drawn: how it is sized ({@link NameFitSpecification}) and, per owner group, coloured and
- * faded (an {@link ElementStyle}, the same colour-and-opacity pair every drawn element of the
- * map carries). The placement search reads the first three and the name fit; the label styling
- * reads only the two group styles.
+ * lines each cluster carries ({@link AnchorDiagnostics}) - and how a chosen anchor's name is
+ * sized into the box the fit accepted ({@link NameFitSpecification}). What shade that name
+ * then draws in is deliberately absent: colour is a per-group decision, resolved by whoever
+ * knows what a group means and handed to the search already resolved, so the tuning of the
+ * geometry never carries a notion of who owns anything.
  *
- * @param search           where the search generates and clips its candidate lines
- * @param scoring          how the search scores a candidate by its lean
- * @param diagnostics      which debug lines each cluster carries
- * @param nameFit          how a chosen anchor's name is sized into its box
- * @param factionNames     how a core faction's names are coloured and faded
- * @param independentNames how independent space's names are coloured and faded
+ * @param search      where the search generates and clips its candidate lines
+ * @param scoring     how the search scores a candidate by its lean
+ * @param diagnostics which debug lines each cluster carries
+ * @param nameFit     how a chosen anchor's name is sized into its box
  */
 public record LabelAnchorSpecification(
         AnchorSearch search,
         LeanScoring scoring,
         AnchorDiagnostics diagnostics,
-        NameFitSpecification nameFit,
-        ElementStyle factionNames,
-        ElementStyle independentNames) {
+        NameFitSpecification nameFit) {
 
     // Reads the live tuning into its sub-records: the search geometry and scoring knobs
     // from the Dev "Label anchors" section (the end-inset multiple resolved against the
     // fixed border channel here, so the search works in plain distances), the diagnostic
-    // toggles that let the search skip the extra candidates while no one is looking, the
-    // name-fit knobs from the visuals "Faction names" section, and per owner group the
-    // outer-border colour choice the name inherits (the same the national border reads)
-    // beside that group's name opacity. The border trace comes from the same source the
-    // national border renders with, so the anchor clips against the rings the player sees.
+    // toggles that let the search skip the extra candidates while no one is looking, and the
+    // name-fit knobs from the visuals "Faction names" section. The border trace comes from
+    // the same source the drawn border renders with, so the anchor clips against the rings
+    // the player sees.
     public static LabelAnchorSpecification readFromLunaSettings() {
         return new LabelAnchorSpecification(
                 new AnchorSearch(
@@ -63,12 +57,6 @@ public record LabelAnchorSpecification(
                         KmuLunaSettings.getPoliticalMapNameMinFontSize(),
                         KmuLunaSettings.getPoliticalMapNameMaxFontSize(),
                         KmuLunaSettings.getPoliticalMapNameMaxLines(),
-                        KmuLunaSettings.getPoliticalMapNameLineSpacing()),
-                new ElementStyle(
-                        KmuLunaSettings.getFactionOuterBorderColor(),
-                        KmuLunaSettings.getFactionNameOpacity()),
-                new ElementStyle(
-                        KmuLunaSettings.getIndependentOuterBorderColor(),
-                        KmuLunaSettings.getIndependentNameOpacity()));
+                        KmuLunaSettings.getPoliticalMapNameLineSpacing()));
     }
 }

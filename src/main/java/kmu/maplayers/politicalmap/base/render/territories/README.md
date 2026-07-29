@@ -144,8 +144,9 @@ settings or how the runs were shaped.
 ## What is not here
 
 The *theme and the styling resolvers* (what colour/width each category and bloc draws in) live in
-[`render.style`](../style/README.md); this package consumes them, it does not decide them. The *faction-name overlay*
-that sits on top is [`render.labels`](../labels/README.md). The border-ring trace shared with the label anchor search
+[`render.style`](../style/README.md); this package consumes them, it does not decide them. The *name overlay*
+that sits on top is the framework's [`base.labels`](../../../../base/labels/README.md), fed the
+names and shades this layer resolves in `render.labels.anchor`. The border-ring trace shared with the label anchor search
 (`render.PoliticalBorderTrace`) stays at the `render` root because more than one concern uses it;
 the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
 *incremental refresh* that folds per-system ownership changes into the packets is

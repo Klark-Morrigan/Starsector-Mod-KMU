@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.labels.anchor.specifications;
+package kmu.maplayers.base.labels.anchor.specifications;
 
 /**
  * The two debug-line toggles the search reads: whether a cluster also carries the best
