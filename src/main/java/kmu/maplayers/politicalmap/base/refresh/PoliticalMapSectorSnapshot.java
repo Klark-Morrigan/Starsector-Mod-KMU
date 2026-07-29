@@ -5,12 +5,12 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
+import kmu.maplayers.base.visibility.PoliticalMapVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.visibility.PoliticalMapVisibility;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

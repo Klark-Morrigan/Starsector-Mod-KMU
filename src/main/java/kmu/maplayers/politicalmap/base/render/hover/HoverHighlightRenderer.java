@@ -4,10 +4,11 @@ import kmlib.opengl.GlColor;
 import kmlib.opengl.GlRuns;
 import kmlib.profiling.Timings;
 
+import kmu.maplayers.base.hover.HoverHighlight;
+import kmu.maplayers.base.hover.PoliticalMapHover;
 import kmu.maplayers.base.style.HoverGlowStyle;
 import kmu.maplayers.base.style.HoverHighlightStyle;
 import kmu.maplayers.base.style.HoverWashStyle;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 

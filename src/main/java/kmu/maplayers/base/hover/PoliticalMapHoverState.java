@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.hover;
+package kmu.maplayers.base.hover;
 
 /**
  * The shared seam joining the one pass that can work out what the cursor is over to the passes that
@@ -8,9 +8,8 @@ package kmu.maplayers.politicalmap.base.hover;
  * point needs the map widget's GL matrices, which exist for the instant that pass runs and nowhere
  * else. The highlight draws in the same pass, but the tooltip draws later, in the UI pass composited
  * over the map - a separate listener the map render knows nothing about. Neither owns the other, so
- * the frame's answer is published here for whoever needs it, the same seam
- * {@link kmu.maplayers.politicalmap.base.refresh.MovingSystems} provides between the sector watcher
- * and the geometry cache.
+ * the frame's answer is published here for whoever needs it: a shared holder standing between a
+ * single writer and its unrelated readers, rather than one of them owning the other.
  *
  * <p>Ordering falls out of the frame: the map's terrain pass runs before the UI passes, so a hover
  * published during the render is already current by the time anything downstream reads it.

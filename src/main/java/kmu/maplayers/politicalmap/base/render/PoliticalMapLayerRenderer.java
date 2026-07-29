@@ -3,10 +3,10 @@ package kmu.maplayers.politicalmap.base.render;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
+import kmu.maplayers.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.settings.KmuLunaSettings;
 
 /**

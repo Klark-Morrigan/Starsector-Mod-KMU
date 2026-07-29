@@ -5,7 +5,8 @@ import kmlib.math.geometry.PolygonRegions;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
+import kmu.maplayers.base.hover.HoverHighlight;
+import kmu.maplayers.base.hover.PoliticalMapHover;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritory;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 

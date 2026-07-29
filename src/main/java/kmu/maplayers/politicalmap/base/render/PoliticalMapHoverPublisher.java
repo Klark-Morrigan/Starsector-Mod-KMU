@@ -6,8 +6,8 @@ import kmlib.starsector.ui.map.CampaignMapTransform;
 import kmlib.starsector.ui.map.ModelviewMatrixReader;
 
 import kmu.maplayers.base.geometry.CellHitTest;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
+import kmu.maplayers.base.hover.PoliticalMapHover;
+import kmu.maplayers.base.hover.PoliticalMapHoverState;
 
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Mouse;

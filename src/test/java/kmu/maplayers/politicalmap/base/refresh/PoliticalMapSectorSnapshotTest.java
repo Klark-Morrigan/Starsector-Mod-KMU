@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Integration coverage for the single-walk snapshot: {@link PoliticalMapSectorSnapshot}
- * driving the real visibility rule ({@link kmu.maplayers.politicalmap.base.PoliticalMapVisibility})
+ * driving the real visibility rule ({@link kmu.maplayers.base.visibility.PoliticalMapVisibility})
  * and dominance rule ({@link kmu.maplayers.politicalmap.base.dominance.SystemDominance}) over a
  * stubbed economy. Exercised together because the point of the snapshot is the
  * separation of shapes: one sector walk yields a scalar visibility fingerprint that

@@ -8,9 +8,9 @@ import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.map.VanillaMapTooltip;
 
+import kmu.maplayers.base.hover.PoliticalMapHover;
+import kmu.maplayers.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.settings.KmuLunaSettings;
 
 /**

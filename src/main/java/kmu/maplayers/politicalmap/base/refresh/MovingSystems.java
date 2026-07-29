@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.SystemMotionTracker;
 
+import kmu.maplayers.base.visibility.DrawnSystemPositions;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
-import kmu.maplayers.politicalmap.base.visibility.DrawnSystemPositions;
 
 import java.util.Set;
 

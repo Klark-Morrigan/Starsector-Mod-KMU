@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
+import kmu.maplayers.base.hover.PoliticalMapHover;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

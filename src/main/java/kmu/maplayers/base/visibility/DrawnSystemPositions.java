@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.visibility;
+package kmu.maplayers.base.visibility;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;

@@ -106,13 +106,17 @@ fill states are [ownership resolution](base/politics/ownership/README.md).
   active view's name for the bloc, and the outer border its group inherits. Both are resolved here
   and handed to the framework's overlay, which places and draws them.
 
-Everything above is shaped out of [cell geometry](../base/geometry/README.md), styled against the
-[theme records](../base/style/README.md), and named by the
-[cluster-name overlay](../base/labels/README.md), all of which belong to the framework rather than
-to this layer: they work on an opaque grouping key, and the views decide that the key names a bloc.
+Everything above is drawn over the systems the framework's `base/visibility` admits, shaped out of
+[cell geometry](../base/geometry/README.md), styled against the
+[theme records](../base/style/README.md), named by the
+[cluster-name overlay](../base/labels/README.md), and hovered through `base/hover` - all of which
+belong to the framework rather than to this layer: they work on an opaque grouping key, and the views
+decide that the key names a bloc.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
-`visibility`, `refresh`, `hover`, `tooltip`, and `sidebar` - the last being this layer's own body
+`refresh`, `render/hover` (which of a faction's border loops a hovered cell sits inside, and the
+owner's colour the highlight burns in - the political half of a hover, over the framework's values),
+`tooltip`, and `sidebar` - the last being this layer's own body
 controls, not the box they sit in, which is [the sidebar](../base/sidebar/README.md) one level up. The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
 up; how a layer is picked and what each screen remembers is [map layers](../README.md).
 

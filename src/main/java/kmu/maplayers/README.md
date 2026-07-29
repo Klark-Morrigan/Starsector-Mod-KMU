@@ -74,6 +74,10 @@ about what the overlay means.
   reaches the same draw while the Starscape filter is on). The surface asks the active layer for a
   renderer and hands it the frame, so it names no layer; a layer that only switches (No Layer)
   supplies none, which is read as nothing to draw.
+- **`base/visibility`** - which star systems a layer draws at all: `PoliticalMapVisibility` admits a
+  system on either of two paths (reachable and drawn by the vanilla map, or inhabited) and hashes the
+  admitted set into the fingerprint that says it moved; `DrawnSystemPositions` exposes that rule as
+  one predicate every walk shares, and each drawn system's live hyperspace position.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
@@ -81,6 +85,11 @@ about what the overlay means.
   of a grouping key, so the overlay names nothing itself.
 - **[The theme records](base/style/README.md)** - the player's appearance choices as inert value
   types, read once per rebuild. A layer brings its own reader to populate them.
+- **`base/hover`** - what the cursor is over, as values: `PoliticalMapHover` (the hovered cell and
+  the cluster around it), `PoliticalMapHoverState` (the shared holder the map render pass publishes
+  to and the later UI passes read, since only that pass can invert a cursor pixel to a world point),
+  and `HoverHighlight` (the loops and triangles one hover lights up). Resolving a hover into that
+  geometry, and what colour it burns in, stay with the layer that owns the regions.
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the

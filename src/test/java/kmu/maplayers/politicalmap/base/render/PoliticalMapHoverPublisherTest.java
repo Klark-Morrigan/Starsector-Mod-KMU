@@ -6,8 +6,8 @@ import com.fs.starfarer.api.SettingsAPI;
 import kmlib.testfixtures.starsector.ui.map.ModelviewMatrixReaderFake;
 
 import kmu.maplayers.base.geometry.SystemClusterIndex;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHover;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
+import kmu.maplayers.base.hover.PoliticalMapHover;
+import kmu.maplayers.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 
 import org.junit.jupiter.api.AfterEach;

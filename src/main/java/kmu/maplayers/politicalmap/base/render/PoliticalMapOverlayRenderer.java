@@ -2,9 +2,9 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmu.maplayers.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
-import kmu.maplayers.politicalmap.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapStaticDebugRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.HoverHighlightRenderer;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer;

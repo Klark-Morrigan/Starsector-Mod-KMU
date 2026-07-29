@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.hover;
+package kmu.maplayers.base.hover;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

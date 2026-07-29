@@ -7,8 +7,8 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
 
+import kmu.maplayers.base.visibility.DrawnSystemPositions;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
-import kmu.maplayers.politicalmap.base.visibility.DrawnSystemPositions;
 
 import org.apache.log4j.Logger;
 

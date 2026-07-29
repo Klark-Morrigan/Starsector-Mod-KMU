@@ -1,13 +1,13 @@
-package kmu.maplayers.politicalmap.base.hover;
+package kmu.maplayers.base.hover;
 
 import java.util.List;
 
 /**
- * What the cursor is over on the political map: the one system whose cell covers it, and the whole
- * contiguous territory that cell belongs to.
+ * What the cursor is over on a map layer: the one system whose cell covers it, and the whole
+ * contiguous cluster that cell belongs to.
  *
- * <p>Two nested scopes rather than one because the map answers a hover at two levels - the cell is
- * the scope a per-system breakdown is about, while the cluster is the scope a territorial highlight
+ * <p>Two nested scopes rather than one because a map answers a hover at two levels - the cell is
+ * the scope a per-system breakdown is about, while the cluster is the scope a region-wide highlight
  * reads at. Carried together in one value so every reader sees one consistent pair: a cell and the
  * cluster around it can never be from different frames.
  *
@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @param hoveredSystemId        the system under the cursor, or null when it is over no cell -
  *                               the channel between cells, or empty space beyond the map
- * @param clusterMemberSystemIds every system in that cell's contiguous territory, the hovered
+ * @param clusterMemberSystemIds every system in that cell's contiguous cluster, the hovered
  *                               cell included; empty when nothing is hovered
  */
 public record PoliticalMapHover(String hoveredSystemId, List<String> clusterMemberSystemIds) {

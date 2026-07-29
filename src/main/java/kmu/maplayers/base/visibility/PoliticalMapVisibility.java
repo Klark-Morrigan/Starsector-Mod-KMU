@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.visibility;
+package kmu.maplayers.base.visibility;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -54,8 +54,14 @@ public final class PoliticalMapVisibility {
      * @param system the system to test
      * @return true when the system should seed a political-map cell
      */
-    public static boolean shouldAppearOnMap(SectorAPI sector, StarSystemAPI system) {
-        return shouldAppearOnMap(sector, system, VisibleStars.scan(sector));
+    public static boolean shouldAppearOnMap(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
+        return shouldAppearOnMap(
+                sector,
+                system,
+                VisibleStars.scan(sector));
     }
 
     /**
@@ -66,9 +72,16 @@ public final class PoliticalMapVisibility {
      *                     once by the caller
      * @return true when the system should seed a political-map cell
      */
-    public static boolean shouldAppearOnMap(SectorAPI sector, StarSystemAPI system,
+    public static boolean shouldAppearOnMap(
+            SectorAPI sector,
+            StarSystemAPI system,
             VisibleStars visibleStars) {
-        return shouldAppearOnMap(sector, system, visibleStars, PoliticalMapDevOverrides.NONE);
+                
+        return shouldAppearOnMap(
+                sector,
+                system,
+                visibleStars,
+                PoliticalMapDevOverrides.NONE);
     }
 
     /**
@@ -85,34 +98,30 @@ public final class PoliticalMapVisibility {
      *                     inhabitation read, force-all-systems admits the system outright
      * @return true when the system should seed a political-map cell
      */
-    public static boolean shouldAppearOnMap(SectorAPI sector, StarSystemAPI system,
-            VisibleStars visibleStars, PoliticalMapDevOverrides overrides) {
-        return shouldAppearOnMap(system, visibleStars,
-                isInhabited(sector, system, overrides.isShowingAllFactions()),
+    public static boolean shouldAppearOnMap(
+            SectorAPI sector,
+            StarSystemAPI system,
+            VisibleStars visibleStars,
+            PoliticalMapDevOverrides overrides) {
+
+        return shouldAppearOnMap(
+                system,
+                visibleStars,
+                isInhabited(
+                        sector,
+                        system,
+                        overrides.isShowingAllFactions()),
                 overrides.isForcingAllSystemsOnMap());
     }
 
     /**
      * Decides map membership from an inhabitation flag the caller already has,
-     * rather than re-reading the economy to recompute it. The single-walk
-     * fingerprint scan reads each system's markets once - to size dominance and to
-     * know if it is inhabited - so it passes that flag straight in here instead of
-     * paying for a second economy read through {@link #isInhabited}.
+     * rather than re-reading the economy to recompute it, with a dev force override
+     * that admits the system outright.
      *
-     * @param system       the system to test
-     * @param visibleStars the index of systems whose star the map draws
-     * @param isInhabited   whether the system holds a known colony or a revealed
-     *                      dead colony, decided by the caller
-     * @return true when the system should seed a political-map cell
-     */
-    public static boolean shouldAppearOnMap(StarSystemAPI system, VisibleStars visibleStars,
-            boolean isInhabited) {
-        return shouldAppearOnMap(system, visibleStars, isInhabited, false);
-    }
-
-    /**
-     * Decides map membership from an inhabitation flag the caller already has, with a
-     * dev force override that admits the system outright.
+     * <p>The single-walk fingerprint scan reads each system's markets once - to size
+     * dominance and to know if it is inhabited - so it passes that flag straight in
+     * here instead of paying for a second economy read through {@link #isInhabited}.
      *
      * @param system          the system to test
      * @param visibleStars    the index of systems whose star the map draws
@@ -122,9 +131,15 @@ public final class PoliticalMapVisibility {
      *                        system regardless of access or inhabitation
      * @return true when the system should seed a political-map cell
      */
-    public static boolean shouldAppearOnMap(StarSystemAPI system, VisibleStars visibleStars,
-            boolean isInhabited, boolean isForcedOntoMap) {
-        return isForcedOntoMap || hasVisibleMapAccess(system, visibleStars) || isInhabited;
+    public static boolean shouldAppearOnMap(
+            StarSystemAPI system,
+            VisibleStars visibleStars,
+            boolean isInhabited,
+            boolean isForcedOntoMap) {
+
+        return isForcedOntoMap
+                || hasVisibleMapAccess(system, visibleStars)
+                || isInhabited;
     }
 
     /**
@@ -136,8 +151,14 @@ public final class PoliticalMapVisibility {
      * @param system the system to test; null yields false
      * @return true when the system holds a colony or a known dead colony
      */
-    public static boolean isInhabited(SectorAPI sector, StarSystemAPI system) {
-        return isInhabited(sector, system, false);
+    public static boolean isInhabited(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
+        return isInhabited(
+                sector,
+                system,
+                false); // Should not include undiscovered colonies by default.
     }
 
     /**
@@ -153,10 +174,15 @@ public final class PoliticalMapVisibility {
      *                                     reveal); false applies the normal filter
      * @return true when the system holds a colony or a known dead colony
      */
-    public static boolean isInhabited(SectorAPI sector, StarSystemAPI system,
+    public static boolean isInhabited(
+            SectorAPI sector,
+            StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets) {
-        return StarSystems.hasKnownOwnedMarket(sector, system,
-                        shouldIncludeUndiscoveredMarkets)
+
+        return StarSystems.hasKnownOwnedMarket(
+                    sector,
+                    system,
+                    shouldIncludeUndiscoveredMarkets)
                 || DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
     }
 
@@ -180,8 +206,10 @@ public final class PoliticalMapVisibility {
      *                              live-to-dead flip is caught
      * @return the value to add into the visibility fingerprint
      */
-    public static int computeVisibilityContribution(String systemId,
+    public static int computeVisibilityContribution(
+            String systemId,
             boolean isRevealedDecivilised) {
+
         // Seed, fold the draw class in, then avalanche before the caller sums it.
         // Summing raw id hashes lets structured values cancel - hashes that are
         // small or related can net to no change across a swap - so the drawn set
@@ -191,14 +219,19 @@ public final class PoliticalMapVisibility {
         // fmix32's lone fixed point at 0, so a 0-hash id still contributes non-zero.
         var idHash = systemId.hashCode();
         var drawClassSalt = isRevealedDecivilised ? DECIVILISED_FINGERPRINT_SALT : 0;
+
         return Avalanche.mixBits(idHash ^ FINGERPRINT_SEED ^ drawClassSalt);
     }
 
     // The access path onto the map: the system is reachable AND the vanilla map
     // draws it. Composing reachability with the draw check here keeps
     // StarSystems.isReachable about reachability alone.
-    private static boolean hasVisibleMapAccess(StarSystemAPI system, VisibleStars visibleStars) {
-        return StarSystems.isReachable(system) && isDrawnOnMap(system, visibleStars);
+    private static boolean hasVisibleMapAccess(
+            StarSystemAPI system,
+            VisibleStars visibleStars) {
+
+        return StarSystems.isReachable(system)
+                && isDrawnOnMap(system, visibleStars);
     }
 
     // Whether the vanilla map draws the system at all: as its star (a visible
@@ -207,7 +240,10 @@ public final class PoliticalMapVisibility {
     // keeps a reachable nebula on the political map. A deliberately hidden star
     // (star_hidden_on_map, an abyssal rogue object) has neither a visible anchor
     // nor the nebula flag, so it stays off - mirroring what the player sees drawn.
-    private static boolean isDrawnOnMap(StarSystemAPI system, VisibleStars visibleStars) {
-        return visibleStars.isStarVisibleForSystem(system) || system.isNebula();
+    private static boolean isDrawnOnMap(
+            StarSystemAPI system,
+            VisibleStars visibleStars) {
+        return visibleStars.isStarVisibleForSystem(system)
+                || system.isNebula();
     }
 }

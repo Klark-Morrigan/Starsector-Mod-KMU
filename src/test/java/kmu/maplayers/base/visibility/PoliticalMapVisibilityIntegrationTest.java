@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.visibility;
+package kmu.maplayers.base.visibility;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.JumpPointAPI;
@@ -17,8 +17,6 @@ import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
 
-import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
@@ -31,7 +29,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Integration coverage for the on-map rule: {@link PoliticalMapVisibility}
- * composing the real {@link StarSystems}, {@link SectorPolitics}, and
+ * composing the real {@link StarSystems}, {@link VisibleStars}, and
  * {@link DecivilisedMarkets}. A reachable system appears; an unreachable one
  * appears once inhabited - a discovered colony or a revealed decivilised planet -
  * and otherwise stays off; and the fingerprint shifts when a system joins the
@@ -221,7 +219,7 @@ class PoliticalMapVisibilityIntegrationTest {
     }
 
     // Wires a single-system sector whose economy returns the given markets for
-    // that system - the read SectorPolitics makes when judging faction presence.
+    // that system - the read the inhabitation rule makes when judging colonies.
     private static SectorAPI sectorWith(StarSystemAPI system, MarketAPI... markets) {
         var economyMock = mock(EconomyAPI.class);
         when(economyMock.getMarkets(system)).thenReturn(List.of(markets));
@@ -335,7 +333,7 @@ class PoliticalMapVisibilityIntegrationTest {
     }
 
     // A discovered, openly owned colony: faction set, not condition-only, its
-    // entity no longer discoverable - what SectorPolitics counts as presence.
+    // entity no longer discoverable - what StarSystems counts as a known colony.
     private static MarketAPI ownedMarket() {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.isDiscoverable()).thenReturn(false);
