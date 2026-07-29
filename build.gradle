@@ -44,7 +44,7 @@ sourceSets {
 // The shared conventions expose the resolved install root so KMU can locate
 // its own extra dependencies without re-deriving the path.
 def starsectorRoot = project.ext.starsectorRoot
-def consoleCommandsJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/lw_Console.jar'])
+def consoleCommandsJars = findModJars('lw_Console.jar')
 // KMLib hosts shared helpers (palette, localisation lookups). Resolved via
 // the install root because the mod always lives at <starsector>/mods/KMLib,
 // the directory layout the launcher expects.
@@ -60,7 +60,7 @@ def lazyLibJarFile = file("${starsectorRoot}/mods/lw_lazylib/jars/LazyLib.jar")
 // in a Nex war; the mod classloader supplies the jar at runtime when Nex is
 // installed, and NexerelinInvasionListenerInstaller gates the listener behind a
 // mod-enabled check so a Nex-free install never resolves the type.
-def nexJars = fileTree(dir: "${starsectorRoot}/mods", include: ['**/jars/ExerelinCore.jar'])
+def nexJars = findModJars('ExerelinCore.jar')
 // XStream backs Starsector's save serialisation. KMU compiles against it to
 // override configureXStream and alias the map-layer terrain plugin's former
 // class names, so saves written before each rename still resolve. It ships inside
