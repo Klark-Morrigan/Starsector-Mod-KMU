@@ -24,6 +24,21 @@ import java.util.Map;
  * layer keys by dominant-faction id), so the same clustering serves any layer.
  */
 public final class CellShaper {
+    /**
+     * The inward inset every border edge takes, so two neighbouring clusters leave a uniform
+     * {@code 2 * inset} channel between them.
+     *
+     * <p>Fixed rather than player-tunable, because it is geometry and not look: it decides
+     * where two clusters' fills stop, so anything that traces or clips against a shaped cell
+     * has to inset by this exact value or its line lands somewhere the fills do not. It lives
+     * here, on the shaping that applies it, so that agreement is a named dependency rather
+     * than two call sites happening to pass the same number.
+     *
+     * <p>The border's rounding shape - corner radius, segments, chamfer angle, and vertex weld
+     * tolerance - is player-tunable under the LunaLib "Dev" tab instead, read from
+     * {@link kmu.settings.KmuLunaSettings}.
+     */
+    public static final double BORDER_INSET_DISTANCE = 150.0;
 
     private CellShaper() {
     }

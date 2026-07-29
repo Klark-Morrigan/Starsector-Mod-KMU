@@ -114,8 +114,9 @@ belong to the framework rather than to this layer: they work on an opaque groupi
 decide that the key names a bloc.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
-`refresh`, `render/hover` (which of a faction's border loops a hovered cell sits inside, and the
-owner's colour the highlight burns in - the political half of a hover, over the framework's values),
+`refresh`, `render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers to the three
+questions the framework's highlight asks about the cell under the cursor: the extent this frame
+painted there, the owner's border loops it might sit inside, and the shade its ground draws in),
 `tooltip`, and `sidebar` - the last being this layer's own body
 controls, not the box they sit in, which is [the sidebar](../base/sidebar/README.md) one level up. The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
 up; how a layer is picked and what each screen remembers is [map layers](../README.md).

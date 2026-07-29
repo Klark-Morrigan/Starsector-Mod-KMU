@@ -1,7 +1,7 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.base.render.regions;
 
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.politicalmap.base.render.territories.FillSplit.FillState;
+import kmu.maplayers.base.render.regions.FillSplit.FillState;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

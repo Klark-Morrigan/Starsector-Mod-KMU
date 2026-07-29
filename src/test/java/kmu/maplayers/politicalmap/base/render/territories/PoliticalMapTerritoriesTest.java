@@ -1,10 +1,10 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.starsector.factions.FactionPalette;
-import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.EdgeTarget;
+import kmu.maplayers.base.render.regions.StyledCell;
 import kmu.maplayers.base.style.BorderSmoothingStyle;
 import kmu.maplayers.base.style.CategoryStyle;
 import kmu.maplayers.base.style.ElementStyle;
@@ -326,11 +326,11 @@ final class PoliticalMapTerritoriesTest {
     // A territories holding the given owners, the one input the cluster index is derived from;
     // every other slot is an inert placeholder.
     private static PoliticalMapTerritories ownedBy(Map<String, String> factionIdBySystemId) {
-        var territories = drawablesWith(Map.of(), Map.of());
+        var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
         for (var entry : factionIdBySystemId.entrySet()) {
-            territories.getOwnerBySystemId().put(entry.getKey(), ownerOf(entry.getValue()));
+            ownerBySystemId.put(entry.getKey(), ownerOf(entry.getValue()));
         }
-        return territories;
+        return PoliticalMapTestTerritories.createTerritoriesOwnedBy(ownerBySystemId);
     }
 
     // Clustering keys off the faction id alone, so the palette shades are inert here.
@@ -366,37 +366,24 @@ final class PoliticalMapTerritoriesTest {
         return List.of(new double[] {0, 0}, new double[] {2, 0}, new double[] {0, 2});
     }
 
-    // A territories whose only varying inputs are the two draw lists; the retained inputs
-    // are inert placeholders, since isEmpty reads only the draw lists.
+    // A territories whose only varying inputs are the two draw lists; the retained inputs are the
+    // shared fixture's inert placeholders, since isEmpty reads only the draw lists.
     private static PoliticalMapTerritories drawablesWith(Map<String, StyledCell> styledCells,
             Map<String, FactionTerritory> territories) {
-        PoliticalMapView viewMock = mock(PoliticalMapView.class);
-        var drawables = new PoliticalMapTerritories(new LinkedHashMap<>(), new LinkedHashSet<>(),
-                new LinkedHashSet<>(),
-                new MapStyling(null, Color.GRAY, null),
-                new ViewGrouping(viewMock, OwnershipGrouping.identity()),
-                new FilterSnapshot(null, BlocStyleAdjustment.NONE, new LinkedHashSet<>()));
-        // The draw lists are no longer constructor inputs; fill the internally-created maps so
+        var drawables = PoliticalMapTestTerritories.createTerritoriesOwnedBy(Map.of());
+        // The draw lists are not constructor inputs; fill the internally-created maps so
         // this fixture's only varying state is what isEmpty reads.
         drawables.getStyledCellByCellId().putAll(styledCells);
         drawables.getFactionTerritoryByFactionId().putAll(territories);
         return drawables;
     }
 
-    // A hidden element paint (null color) is enough to stand in wherever a StyledCell or
-    // FactionTerritory only needs to exist, not draw.
-    private static UiElementPaint hiddenPaint() {
-        return new UiElementPaint(null, 0f);
-    }
-
     private static StyledCell anyStyledCell() {
-        return new StyledCell(new float[0], new float[0], new float[0],
-                hiddenPaint(), hiddenPaint(), hiddenPaint(), 0f, 0f);
+        return PoliticalMapTestTerritories.createPlaceholderStyledCell();
     }
 
     private static FactionTerritory anyFactionTerritory() {
-        return new FactionTerritory(new float[0], new float[0], hiddenPaint(),
-                List.of(), hiddenPaint(), 0f);
+        return PoliticalMapTestTerritories.createTerritoryWithLoops(List.of());
     }
 
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise

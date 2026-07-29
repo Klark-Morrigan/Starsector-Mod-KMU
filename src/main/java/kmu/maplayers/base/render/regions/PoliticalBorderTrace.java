@@ -1,9 +1,9 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.base.render.regions;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
-import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.Collection;
@@ -12,11 +12,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The parameters of one cluster-border ring trace, and the trace itself - the single path the
- * territory build and the anchor fit both go through, so "the anchor clips against the rings
- * the player sees" holds by construction: a new trace parameter lands here once and both
- * consumers pick it up together. Agnostic to what a cluster is grouped by; the caller supplies
- * the grouping keys.
+ * The parameters of one cluster-border ring trace, and the trace itself - the single path every
+ * ring a map layer draws, or fits a name inside, comes from. That is what makes "a name is
+ * clipped against the rings the player sees" hold by construction: a new trace parameter lands
+ * here once and every consumer picks it up together. Agnostic to what a cluster is grouped by;
+ * the caller supplies the grouping keys.
  *
  * @param weldTolerance   largest gap between two reports of a shared corner still
  *                        welded into one when chaining the boundary
@@ -58,7 +58,7 @@ public record PoliticalBorderTrace(
                 edgesByCellId,
                 grouping,
                 coincidentNeighbourSystemIds,
-                PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                CellShaper.BORDER_INSET_DISTANCE,
                 weldTolerance,
                 miterSpikeLimit);
     }

@@ -1,10 +1,10 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.base.render.regions;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
-import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.within;
  * members and adjacency. Also pins that the record forwards its parameters faithfully to
  * the cluster trace, the wiring a unit test on either class alone cannot see. Cells are
  * hand-built squares scaled clear of the fixed 150-unit border channel
- * ({@link PoliticalMapStyle#BORDER_INSET_DISTANCE}), since the trace only reads the
+ * ({@link CellShaper#BORDER_INSET_DISTANCE}), since the trace only reads the
  * adjacency graph and the keys.
  */
 class PoliticalBorderTraceIntegrationTest {
@@ -88,7 +88,7 @@ class PoliticalBorderTraceIntegrationTest {
             var throughRecord = trace.traceRings(List.of("A"), EDGES, GROUPING);
             var directTrace = SystemClusterBorders.traceBorderRings(List.of("A"), EDGES, GROUPING,
                     Set.of(),
-                    PoliticalMapStyle.BORDER_INSET_DISTANCE, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
+                    CellShaper.BORDER_INSET_DISTANCE, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertRingsEqual(throughRecord, directTrace);
         }

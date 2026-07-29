@@ -1,9 +1,9 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.base.render.regions;
 
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 /**
- * A cell ready to draw: its fill as a pre-tessellated triangle soup and its national-border
+ * A cell ready to draw: its fill as a pre-tessellated triangle soup and its cluster-border
  * and interior-seam edge runs (GL_LINES segments), plus the fill/outer/inner
  * {@link UiElementPaint}s (each a resolved color and opacity that reports whether it is
  * hidden) and the two border widths. All per cell, since colors resolve against each

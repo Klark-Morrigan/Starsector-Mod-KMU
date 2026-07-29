@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.base.render.regions;
 
 import kmlib.math.geometry.PolygonSmoothing;
 
@@ -8,14 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The two national-border smoothing passes, shared by the production
- * {@link FactionTerritoryBuilder} and the debug border-tracing builder (in the parent
- * {@code render} package) so both smooth identical geometry from one source.
+ * The two cluster-border smoothing passes, held apart from any one build so every pass over
+ * the same loops sands and rounds them identically.
  *
  * <p>Each pass is honest mechanism - it always does what its name says. The on/off
  * decision is the two Dev-tab gates, and it lives at each caller's call site, not here, so
- * the same loops smooth the same way whether the caller keeps only the final result (the
- * production build) or captures every stage (the debug overlay).
+ * the same loops smooth the same way whether the caller keeps only the final result or
+ * captures every stage.
  */
 public final class BorderSmoothing {
     private BorderSmoothing() {

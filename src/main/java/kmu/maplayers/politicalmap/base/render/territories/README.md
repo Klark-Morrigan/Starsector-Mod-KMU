@@ -31,13 +31,15 @@ identical to a full rebuild.
   resolves both palette slots to the shared neutral colour. Of the two, only decivilised ground
   takes the pass's recede - see [what recedes](#what-recedes) below.
 - `FactionTerritoryBuilder` bakes one bloc: its national border, traced across every system it
-  holds, and its fill - which it hands to `SplitFillBuilder`, see
+  holds, and its fill - which it hands to the framework's `SplitFillBuilder`, see
   [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and border come from the
   same loops, so they cannot drift apart.
 
-`BorderSmoothing` sands spikes and rounds corners of the traced borders; `VertexRuns` flattens
-shaped cells into GL vertex runs. Element colours, opacities, and widths come from cascading the
-`base.style` records with each bloc's recede adjustment, asked for through
+The shaping the two builders drive is the framework's, in
+[`base.render.regions`](../../../../base/render/regions/README.md): `BorderSmoothing` sands spikes
+and rounds corners of the traced borders, `VertexRuns` flattens shaped cells into GL vertex runs,
+and `StyledCell` is the flat per-cell packet they bake into. Element colours, opacities, and widths
+come from cascading the `base.style` records with each bloc's recede adjustment, asked for through
 `PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc resolves from one read.
 
 ## What recedes
@@ -86,9 +88,10 @@ changing them does not move a border.
 
 `PoliticalMapTerritories` is the built state a rebuild produces and an incremental refresh edits in
 place: the two draw lists (`FactionTerritory` per owned faction, `StyledCell` per cell) plus the
-retained ownership, theme, and filter inputs a re-shape needs. `FactionTerritory` carries one
-faction's fill triangles, contested-hatch segments, and border loops; `StyledCell` carries one
-cell's fill, outline, and interior seams.
+retained ownership, theme, and filter inputs a re-shape needs. `FactionTerritory` is this package's
+own - one faction's fill triangles, contested-hatch segments, and border loops; the per-cell
+`StyledCell` beside it is the framework's packet, described in
+[`base.render.regions`](../../../../base/render/regions/README.md).
 
 ## The split fill: solid, hatched, unfilled
 
@@ -98,27 +101,16 @@ its whole region from that one border and pays nothing for the split, the common
 exceptions each carve a sub-region out of the solid, hatched and unfilled, and both are decided
 upstream in `politics.ownership`; this section is how the draw honours them.
 
-Two classes own it, split along the line between deciding and drawing. `FillSplit` is the pure
-partition - which state each member system draws in, decidable from plain id sets, plus the
-coincident-neighbour rule below. `SplitFillBuilder` turns that partition into triangles and hatch
-lines; it is built per territory around the trace context the whole fill shares (the cells, their
-grouping, the border trace, the smoothed border loops), and it also owns the choice of whether a
-territory splits at all or fills solid as one region.
+The machinery is the framework's - `FillSplit` partitions the members and `SplitFillBuilder`
+tessellates each state as its own region inside the one border; see
+[`base.render.regions`](../../../../base/render/regions/README.md) for how, and why a state fills
+from its own traced rings rather than from its members' cells. What is political is which systems
+land in the two non-solid sets, and what that reads as on the map.
 
 **Hatched.** When the filter spotlights one bloc, its whole footprint - the systems it dominates
 plus the ones it merely contests - clusters into a single `FactionTerritory` under one national
 frontier, and the fill splits: solid where the bloc dominates, a pre-clipped diagonal hatch where it
 is only present ("mine, but contested").
-
-Each of those two states fills from its own traced rings, not from its members' individual cells.
-The footprint's one grouping key is suffixed per state, so the border tracer - which fuses same-key
-cells - traces the dominant members as one region and the contested members as another, while every
-system outside the footprint keeps its real key and the two regions' outer edge therefore lands
-exactly where the national border draws it. Each state names the other's members as *coincident*
-neighbours, so the boundary they share insets by nothing and the solid and hatched fills abut on the
-raw cell edge. Filling per cell instead would truncate each member's kept edges against its own
-inset boundary edges, and two members meeting at a corner against a rival would pull their shared
-edge back by different amounts - opening an unfilled wedge on the more-receded side.
 
 The footprint's interior divisions carry no geometry of their own: the whole footprint shares one
 grouping key, so a solid/hatch transition is an interior seam like any other and its two cells
@@ -148,9 +140,11 @@ The *styling resolvers* (what colour/width each category and bloc draws in) live
 [`base.style`](../../../../base/style/README.md) records they read the player's choices
 out of; this package consumes both, it does not decide either. The *name overlay*
 that sits on top is the framework's [`base.labels`](../../../../base/labels/README.md), fed the
-names and shades this layer resolves in `render.labels.anchor`. The border-ring trace shared with the label anchor search
-(`render.PoliticalBorderTrace`) stays at the `render` root because more than one concern uses it;
-the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
+names and shades this layer resolves in `render.labels.anchor`. The *shape work* the two builders
+drive - the border-ring trace, the smoothing passes, the vertex packing, the `StyledCell` packet,
+and the split-fill machinery - is the framework's
+[`base.render.regions`](../../../../base/render/regions/README.md), which knows nothing of who
+holds what; the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
 *incremental refresh* that folds per-system ownership changes into the packets is
 `render.IncrementalPoliticsRefresh`, at the render root alongside the plugin and the per-frame
 cache that drives it - the composition root that wires these feature packages together. *Which*

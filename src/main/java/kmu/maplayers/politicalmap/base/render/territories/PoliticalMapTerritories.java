@@ -5,6 +5,7 @@ import kmlib.starsector.factions.FactionPalette;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.SystemClusterIndex;
 import kmu.maplayers.base.geometry.SystemClusters;
+import kmu.maplayers.base.render.regions.StyledCell;
 import kmu.maplayers.base.style.CategoryStyle;
 import kmu.maplayers.base.style.GlobalStyle;
 import kmu.maplayers.base.style.MapCategory;

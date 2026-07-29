@@ -6,10 +6,13 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.render.regions.BorderSmoothing;
+import kmu.maplayers.base.render.regions.FillSplit;
+import kmu.maplayers.base.render.regions.PoliticalBorderTrace;
+import kmu.maplayers.base.render.regions.SplitFillBuilder;
 import kmu.maplayers.base.style.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
-import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 
 import java.awt.Color;
@@ -99,11 +102,11 @@ public final class FactionTerritoryBuilder {
         // one key, so it clusters into this single territory outlined by one frontier and then
         // splits its fill inside it. Whether that split happens is the fill builder's own call.
         var fill = new SplitFillBuilder(
-                territories,
-                geometryCache,
+                geometryCache.getCellEdgesByCellId(),
                 cellGrouping,
                 borderTrace,
-                borderLoops)
+                borderLoops,
+                territories.getGlobalStyle().hatch())
                 .buildFill(
                         FilteredPolitics.isSpotlitBloc(blocId),
                         FillSplit.splitMembersByFillState(

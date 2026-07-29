@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  * <p>The style cascade these read through is pinned by
  * {@link kmu.maplayers.politicalmap.base.render.style.BlocStylingTest}, the palette rules by
  * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes}'s own suite, and the footprint
- * fill's partition by {@link FillSplitTest}.
+ * fill's partition by {@link kmu.maplayers.base.render.regions.FillSplitTest}.
  */
 final class StyledCellBuilderTest {
     // An inert hover highlight: the builder bakes draw lists, and nothing it produces is

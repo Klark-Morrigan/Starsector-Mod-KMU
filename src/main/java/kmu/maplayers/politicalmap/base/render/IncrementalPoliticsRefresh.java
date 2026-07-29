@@ -16,7 +16,6 @@ import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
-import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
@@ -248,7 +247,7 @@ final class IncrementalPoliticsRefresh {
                 edges,
                 ownerFactionId,
                 DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()),
-                PoliticalMapStyle.BORDER_INSET_DISTANCE);
+                CellShaper.BORDER_INSET_DISTANCE);
                 
         var styled = StyledCellBuilder.buildStyledCellForSystem(territories, drawnSystemId, shaped);
         if (styled == null) {

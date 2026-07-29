@@ -17,7 +17,6 @@ import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
-import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
 import org.apache.log4j.Logger;
@@ -128,7 +127,7 @@ public final class TerritoryBuilder {
             var cellGrouping = resolveCellGrouping(territories, geometryCache);
             var shapedCells = profiler.measure("politicalMap.shapeCells",
                     () -> CellShaper.shapeCells(geometryCache.getCellEdgesByCellId(),
-                            cellGrouping, PoliticalMapStyle.BORDER_INSET_DISTANCE));
+                            cellGrouping, CellShaper.BORDER_INSET_DISTANCE));
             for (var entry : shapedCells.entrySet()) {
                 var styled = StyledCellBuilder.buildStyledCellForSystem(
                         territories,

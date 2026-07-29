@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
+import kmu.maplayers.base.render.regions.StyledCell;
+
 import java.util.List;
 
 /**

@@ -23,9 +23,11 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
   (`RenderStyle` and its tiers), in the framework rather than here, since a theme's shape is not
   political. This package reads them and never writes back.
 - this package - the behaviour, all of it political. One reader that populates the theme, and the
-  resolvers that turn a choice plus a bloc's recede into concrete shades. Plus `PoliticalMapStyle`,
-  the fixed border-channel geometry that is deliberately *not* player-tunable, since it decides
-  where fills meet rather than how they look.
+  resolvers that turn a choice plus a bloc's recede into concrete shades.
+
+The fixed border channel is deliberately *not* here and not tunable at all: it decides where fills
+meet rather than how they look, so it lives on the shaping that applies it, as
+`base.geometry.CellShaper.BORDER_INSET_DISTANCE`.
 
 ## The reader: the one seam
 

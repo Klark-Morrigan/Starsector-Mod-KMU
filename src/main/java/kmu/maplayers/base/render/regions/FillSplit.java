@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.base.render.regions;
 
 import kmu.maplayers.base.geometry.CellGrouping;
 
@@ -19,23 +19,10 @@ import java.util.Set;
  * <p>Pure partition, free of geometry: which state a system draws in is decided from plain id
  * sets here, and turning that partition into triangles is {@link SplitFillBuilder}'s job.
  */
-record FillSplit(
+public record FillSplit(
         FillMembers solid,
         FillMembers hatched,
         FillMembers unfilled) {
-
-    /**
-     * A split holding no members yet - the accumulator the walk over a footprint's cells
-     * fills, and the shape a footprint with nothing in it comes back as.
-     *
-     * @return three empty states
-     */
-    static FillSplit createEmpty() {
-        return new FillSplit(
-                FillMembers.createEmpty(),
-                FillMembers.createEmpty(),
-                FillMembers.createEmpty());
-    }
 
     /**
      * Splits a footprint's member cells into the three states, resolving each cell to the
@@ -47,7 +34,7 @@ record FillSplit(
      * @param unfilledSystemIds   systems the bloc holds but paints no fill for
      * @return the three states, each holding its own cells and systems
      */
-    static FillSplit splitMembersByFillState(
+    public static FillSplit splitMembersByFillState(
             CellGrouping cellGrouping,
             List<String> memberCellIds,
             Set<String> contestedSystemIds,
@@ -75,7 +62,7 @@ record FillSplit(
      * dominance falls. A cell with no star of its own has no per-system fill state, so it
      * fills solid with the bloc's held ground rather than probing either set with a null key.
      */
-    static FillState classifyFillState(
+    public static FillState classifyFillState(
             String systemId,
             Set<String> contestedSystemIds,
             Set<String> unfilledSystemIds) {
@@ -97,7 +84,7 @@ record FillSplit(
      *         not spotlit still takes the per-state split when it holds hatched or unfilled
      *         ground
      */
-    boolean hasNonSolidMembers() {
+    public boolean hasNonSolidMembers() {
         return !hatched.systemIds().isEmpty()
                 || !unfilled.systemIds().isEmpty();
     }
@@ -106,7 +93,7 @@ record FillSplit(
      * @param state the state to read
      * @return that state's members
      */
-    FillMembers resolveMembersOf(FillState state) {
+    public FillMembers resolveMembersOf(FillState state) {
         return switch (state) {
             case SOLID -> solid;
             case HATCHED -> hatched;
@@ -125,7 +112,7 @@ record FillSplit(
      * @param state the state whose neighbours are wanted
      * @return the systems the other two states hold, as a membership test
      */
-    Set<String> resolveCoincidentSystemIdsOf(FillState state) {
+    public Set<String> resolveCoincidentSystemIdsOf(FillState state) {
         var coincident = new LinkedHashSet<String>();
         for (var other : FillState.values()) {
             if (other != state) {
@@ -135,11 +122,20 @@ record FillSplit(
         return coincident;
     }
 
+    // A split holding no members yet - the accumulator the walk over a footprint's cells fills,
+    // and the shape a footprint with nothing in it comes back as.
+    private static FillSplit createEmpty() {
+        return new FillSplit(
+                FillMembers.createEmpty(),
+                FillMembers.createEmpty(),
+                FillMembers.createEmpty());
+    }
+
     /**
      * The three states a bloc's system can draw its fill in: solid where the bloc holds,
      * hatched where it is present but dominated, unfilled where it is held but painted empty.
      */
-    enum FillState {
+    public enum FillState {
         SOLID,
         HATCHED,
         UNFILLED
@@ -152,9 +148,9 @@ record FillSplit(
      * <p>Both sets are insertion-ordered and mutable: the split fills them cell by cell as it
      * walks the footprint, and insertion order keeps a rebuild's traced rings reproducible.
      */
-    record FillMembers(Set<String> cellIds, Set<String> systemIds) {
+    public record FillMembers(Set<String> cellIds, Set<String> systemIds) {
 
-        static FillMembers createEmpty() {
+        private static FillMembers createEmpty() {
             return new FillMembers(
                     new LinkedHashSet<>(),
                     new LinkedHashSet<>());

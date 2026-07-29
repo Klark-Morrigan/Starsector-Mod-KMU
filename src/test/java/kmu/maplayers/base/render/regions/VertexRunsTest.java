@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.base.render.regions;
 
 import kmlib.opengl.GlVertexRuns;
 

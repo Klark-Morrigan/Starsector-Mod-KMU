@@ -2,15 +2,14 @@ package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
 
-import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
-
 /**
  * The knobs a sector's geometry is built under, gathered so a caller can vary them.
  *
- * <p>In the mod these arrive from Luna settings and from {@link PoliticalMapStyle}; here they
- * are a plain value so the same pipeline can be run at a default for a test's assertions and
- * swept live by {@link SectorGeometryViewer}'s sliders. The defaults mirror the shipped ones,
- * so a run that passes none describes the map as a player sees it.
+ * <p>In the mod these arrive from Luna settings and from
+ * {@link CellShaper#BORDER_INSET_DISTANCE}; here they are a plain value so the same pipeline
+ * can be run at a default for a test's assertions and swept live by
+ * {@link SectorGeometryViewer}'s sliders. The defaults mirror the shipped ones, so a run that
+ * passes none describes the map as a player sees it.
  *
  * @param cellRadius      how far a cell may reach from its site
  * @param boundSegments   sides of the polygon approximating that radius bound
@@ -45,7 +44,7 @@ record SectorGeometryParameters(
         return new SectorGeometryParameters(
                 DEFAULT_CELL_RADIUS,
                 VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
-                PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                CellShaper.BORDER_INSET_DISTANCE,
                 DEFAULT_WELD_TOLERANCE,
                 DEFAULT_MITER_SPIKE_LIMIT);
     }

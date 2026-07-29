@@ -46,7 +46,7 @@ import javax.swing.SwingUtilities;
  *       per-edge inset</li>
  *   <li>{@link SystemClusterBorders#traceBorderRings} - and through it the kmlib chainer and
  *       per-edge miter. This is what {@code PoliticalBorderTrace.traceRings} forwards to, at
- *       the same {@code PoliticalMapStyle.BORDER_INSET_DISTANCE}; only the weld tolerance and
+ *       the same {@code CellShaper.BORDER_INSET_DISTANCE}; only the weld tolerance and
  *       miter limit arrive from {@link SectorGeometryParameters} instead of
  *       {@code KmuLunaSettings}.</li>
  * </ul>

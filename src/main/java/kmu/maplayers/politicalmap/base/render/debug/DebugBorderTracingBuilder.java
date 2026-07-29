@@ -10,12 +10,11 @@ import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
+import kmu.maplayers.base.render.regions.BorderSmoothing;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
-import kmu.maplayers.politicalmap.base.render.style.PoliticalMapStyle;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.maplayers.politicalmap.base.render.territories.BorderSmoothing;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
@@ -85,7 +84,7 @@ public final class DebugBorderTracingBuilder {
                     geometryCache.getCellEdgesByCellId(),
                     cellGrouping,
                     Set.of(),
-                    PoliticalMapStyle.BORDER_INSET_DISTANCE,
+                    CellShaper.BORDER_INSET_DISTANCE,
                     weldTolerance,
                     miterLimit);
             if (insetRings.isEmpty()) {
@@ -155,7 +154,7 @@ public final class DebugBorderTracingBuilder {
                     entry.getValue(),
                     null,
                     cellGrouping.groupKeyBySystemId(),
-                    PoliticalMapStyle.BORDER_INSET_DISTANCE);
+                    CellShaper.BORDER_INSET_DISTANCE);
             if (shaped.fillPolygon().isEmpty()) {
                 continue;
             }

@@ -11,7 +11,7 @@ import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.labels.anchor.specifications.LeanScoring;
-import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
+import kmu.maplayers.base.render.regions.PoliticalBorderTrace;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

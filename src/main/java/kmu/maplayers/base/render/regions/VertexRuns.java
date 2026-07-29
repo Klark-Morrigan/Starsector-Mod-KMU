@@ -1,17 +1,17 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.base.render.regions;
 
 import kmlib.opengl.GlVertexRuns;
 
 import kmu.maplayers.base.geometry.ShapedCell;
 
 /**
- * Packs a shaped cell's classified edges into the flat GL_LINES runs the renderer
- * strokes - the political map's cell-specific complement to the generic
- * {@link GlVertexRuns} flatten conversions.
+ * Packs a shaped cell's classified edges into the flat GL_LINES runs a renderer
+ * strokes - the cell-specific complement to the generic {@link GlVertexRuns} flatten
+ * conversions.
  *
  * <p>The generic {@code {x, y}} to {@code [x, y, x, y, ...]} packing lives in
  * {@link GlVertexRuns}; what stays here is the one conversion that needs to know a
- * {@link ShapedCell} - selecting the edges of one class (national border or
+ * {@link ShapedCell} - selecting the edges of one class (cluster border or
  * interior seam) before packing them.
  */
 public final class VertexRuns {
@@ -20,7 +20,7 @@ public final class VertexRuns {
     }
 
     // Flattens the edges of a shaped cell of one class into a GL_LINES vertex run
-    // ([x1, y1, x2, y2, ...]): national borders when wantBoundary is true, interior
+    // ([x1, y1, x2, y2, ...]): cluster borders when wantBoundary is true, interior
     // seams when false. Sized in a first pass so the run is a single exact array
     // rather than a growing list boxed per coordinate.
     public static float[] flattenEdgesOfClass(ShapedCell shaped, boolean wantBoundary) {

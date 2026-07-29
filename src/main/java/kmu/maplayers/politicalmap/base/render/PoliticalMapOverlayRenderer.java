@@ -2,11 +2,12 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapStaticDebugRenderer;
-import kmu.maplayers.politicalmap.base.render.hover.HoverHighlightRenderer;
+import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer;
 import kmu.settings.KmuLunaSettings;
 
@@ -57,9 +58,12 @@ final class PoliticalMapOverlayRenderer {
             // Over the territories it lights up, so the halo reads off the frontier it traces
             // and the wash brightens the fill beneath it rather than being painted over. Only
             // under the production view: the debug overlay replaced the draw lists the highlight
-            // would trace, and the hover has nothing to resolve against.
+            // would trace, and the hover has nothing to resolve against. The frame's draw lists
+            // are wrapped as the highlight's source, so the framework's pass asks this layer what
+            // the cursor is on rather than reading the political model itself.
             hoverHighlightRenderer.renderOnMap(
-                    cache.getTerritories(),
+                    new PoliticalMapHoverHighlightSource(cache.getTerritories()),
+                    cache.getTerritories().getGlobalStyle().hoverHighlight(),
                     PoliticalMapHoverState.getInstance().getHover(),
                     factor,
                     alphaMult);

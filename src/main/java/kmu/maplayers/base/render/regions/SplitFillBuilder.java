@@ -1,14 +1,13 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.base.render.regions;
 
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.Hatching;
 import kmlib.opengl.PolygonTessellator;
 
+import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
-import kmu.maplayers.politicalmap.base.render.PoliticalBorderTrace;
-import kmu.maplayers.politicalmap.base.render.territories.FillSplit.FillState;
+import kmu.maplayers.base.render.regions.FillSplit.FillState;
+import kmu.maplayers.base.style.HatchStyle;
 
 import java.awt.Color;
 import java.util.HashMap;
@@ -17,19 +16,20 @@ import java.util.Map;
 
 /**
  * Turns one bloc footprint's {@link FillSplit} into the triangles and hatch lines its fill
- * paints, inside the single national border the footprint already traced.
+ * paints, inside the single frontier the footprint already traced.
  *
  * <p>Built per territory around the trace context that whole fill shares - the cells, their
- * grouping, the border trace, and the smoothed border loops - so the several tessellation
- * steps read one consistent snapshot instead of threading five arguments through each hop.
+ * grouping, the border trace, the smoothed border loops, and the hatch geometry - so the
+ * several tessellation steps read one consistent snapshot instead of threading the lot
+ * through each hop.
  *
  * <p>Each drawn state fills from its own traced rings rather than from its members'
  * individual cells, so no per-cell inset truncation can leave an unfilled wedge where two
  * members meet at a corner against a rival. Both drawn fills are then clipped to the smoothed
- * national border loops, so neither keeps the mitered corner the border's rounding cut and
- * pokes out past the frontier the border strokes.
+ * frontier loops, so neither keeps the mitered corner the border's rounding cut and
+ * pokes out past the line the border strokes.
  */
-final class SplitFillBuilder {
+public final class SplitFillBuilder {
     // The suffixes that split a bloc's one grouping key into a key per fill state, so the border
     // tracer traces the solid, hatched, and unfilled members as separate regions rather than the
     // one body their shared key makes them. Appended to the bloc's own key, which already carries a
@@ -38,24 +38,34 @@ final class SplitFillBuilder {
     private static final String HATCHED_SUB_REGION_SUFFIX = "#hatched";
     private static final String UNFILLED_SUB_REGION_SUFFIX = "#unfilled";
 
-    private final PoliticalMapTerritories territories;
-    private final PoliticalMapGeometryCache geometryCache;
+    private final Map<String, List<CellEdge>> cellEdgesByCellId;
     private final CellGrouping cellGrouping;
     private final PoliticalBorderTrace borderTrace;
     private final List<List<double[]>> borderLoops;
+    private final HatchStyle hatch;
 
-    SplitFillBuilder(
-            PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache,
+    /**
+     * @param cellEdgesByCellId the raw cell adjacency the sub-region rings are traced from -
+     *                          the same map the trace itself takes, rather than whatever cache
+     *                          the caller happens to hold it in
+     * @param cellGrouping      which system each cell draws as, paired with each system's
+     *                          grouping key - the keys the sub-regions are derived from
+     * @param borderTrace       the trace parameters the whole fill shares with its border
+     * @param borderLoops       the smoothed frontier every drawn state is clipped to
+     * @param hatch             the sector-wide hatch geometry the contested region is cut with
+     */
+    public SplitFillBuilder(
+            Map<String, List<CellEdge>> cellEdgesByCellId,
             CellGrouping cellGrouping,
             PoliticalBorderTrace borderTrace,
-            List<List<double[]>> borderLoops) {
+            List<List<double[]>> borderLoops,
+            HatchStyle hatch) {
 
-        this.territories = territories;
-        this.geometryCache = geometryCache;
+        this.cellEdgesByCellId = cellEdgesByCellId;
         this.cellGrouping = cellGrouping;
         this.borderTrace = borderTrace;
         this.borderLoops = borderLoops;
+        this.hatch = hatch;
     }
 
     /**
@@ -76,7 +86,7 @@ final class SplitFillBuilder {
      *                   no region at all
      * @return the fill's solid triangles and hatch segments
      */
-    TerritoryFill buildFill(
+    public TerritoryFill buildFill(
             boolean isSpotlit,
             FillSplit split,
             String blocId,
@@ -103,7 +113,6 @@ final class SplitFillBuilder {
         var subRegionKeys = mapSubRegionKeyBySystemId(split, blocId);
         var solidTriangles = tessellateSubRegion(FillState.SOLID, split, subRegionKeys);
         var hatchedTriangles = tessellateSubRegion(FillState.HATCHED, split, subRegionKeys);
-        var hatch = territories.getGlobalStyle().hatch();
         return new TerritoryFill(
                 solidTriangles,
                 Hatching.computeHatchSegments(
@@ -117,11 +126,10 @@ final class SplitFillBuilder {
     // one body their shared footprint key makes them. Every system outside the footprint keeps its
     // real key, so an edge from a member to a rival or to empty space classifies exactly as it does
     // when the whole footprint is traced, and the sub-regions' outer edge therefore lands where the
-    // national border draws it. Suffixing the footprint's own key leaves the derived keys as
+    // frontier draws it. Suffixing the footprint's own key leaves the derived keys as
     // collision-free as it already is.
     private Map<String, String> mapSubRegionKeyBySystemId(FillSplit split, String blocId) {
-        var keys = new HashMap<>(
-                DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()));
+        var keys = new HashMap<>(cellGrouping.groupKeyBySystemId());
         putSubRegionKeys(keys, split, FillState.SOLID, blocId + SOLID_SUB_REGION_SUFFIX);
         putSubRegionKeys(keys, split, FillState.HATCHED, blocId + HATCHED_SUB_REGION_SUFFIX);
         putSubRegionKeys(keys, split, FillState.UNFILLED, blocId + UNFILLED_SUB_REGION_SUFFIX);
@@ -143,10 +151,10 @@ final class SplitFillBuilder {
     // its cells as a single region, so a state fills as one continuous area with no per-cell
     // seam or truncation inside it. The other states' systems are the coincident neighbours, whose
     // shared edge insets by nothing so the states abut with no channel between them. The traced
-    // rings are clipped to the smoothed national border loops rather than tessellated as traced:
+    // rings are clipped to the smoothed frontier loops rather than tessellated as traced:
     // their shared inter-state seam is interior to both operands and survives the clip untouched, so
     // the states still meet exactly along it, while their outer edge is clamped onto the exact
-    // line the national border strokes. Empty when the state holds no members or the trace yields
+    // line the frontier strokes. Empty when the state holds no members or the trace yields
     // no drawable ring.
     private float[] tessellateSubRegion(
             FillState state,
@@ -159,7 +167,7 @@ final class SplitFillBuilder {
         }
         var rings = borderTrace.traceRings(
                 members.cellIds(),
-                geometryCache.getCellEdgesByCellId(),
+                cellEdgesByCellId,
                 new CellGrouping(cellGrouping.systemIdByCellId(), subRegionKeyBySystemId),
                 split.resolveCoincidentSystemIdsOf(state));
         if (rings.isEmpty()) {
@@ -176,6 +184,6 @@ final class SplitFillBuilder {
      * hatched members leaves the hatch empty and one that fills solid throughout carries only
      * its solid region.
      */
-    record TerritoryFill(float[] solidTriangles, float[] hatchSegments) {
+    public record TerritoryFill(float[] solidTriangles, float[] hatchSegments) {
     }
 }

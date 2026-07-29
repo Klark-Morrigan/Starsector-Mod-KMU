@@ -69,11 +69,14 @@ about what the overlay means.
 
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`.
-- **`base/render`** - `MapLayerRenderer`, the seam a layer draws through, and the terrain surface
-  that owns the map's render pass (`SectorMapLayerTerrainPlugin`, with the starscape pair that
-  reaches the same draw while the Starscape filter is on). The surface asks the active layer for a
-  renderer and hands it the frame, so it names no layer; a layer that only switches (No Layer)
-  supplies none, which is read as nothing to draw.
+- **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
+  through, and the terrain that owns the map's render pass. It asks the active layer for a renderer
+  and hands it the frame, so it names no layer; a layer that only switches (No Layer) supplies
+  none, which is read as nothing to draw.
+- **[Regions](base/render/regions/README.md)** - the shape work under that surface: turning shaped
+  cells and opaque grouping keys into borders, fills, and GL-ready runs. The cluster-border trace,
+  the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
+  border - none of which interprets a key.
 - **`base/visibility`** - which star systems a layer draws at all: `PoliticalMapVisibility` admits a
   system on either of two paths (reachable and drawn by the vanilla map, or inhabited) and hashes the
   admitted set into the fingerprint that says it moved; `DrawnSystemPositions` exposes that rule as
@@ -85,11 +88,14 @@ about what the overlay means.
   of a grouping key, so the overlay names nothing itself.
 - **[The theme records](base/style/README.md)** - the player's appearance choices as inert value
   types, read once per rebuild. A layer brings its own reader to populate them.
-- **`base/hover`** - what the cursor is over, as values: `PoliticalMapHover` (the hovered cell and
-  the cluster around it), `PoliticalMapHoverState` (the shared holder the map render pass publishes
-  to and the later UI passes read, since only that pass can invert a cursor pixel to a world point),
-  and `HoverHighlight` (the loops and triangles one hover lights up). Resolving a hover into that
-  geometry, and what colour it burns in, stay with the layer that owns the regions.
+- **`base/hover`** - what the cursor is over, and what the map says back. The values are
+  `PoliticalMapHover` (the hovered cell and the cluster around it), `PoliticalMapHoverState` (the
+  shared holder the map render pass publishes to and the later UI passes read, since only that pass
+  can invert a cursor pixel to a world point), and `HoverHighlight` (the loops and triangles one
+  hover lights up). `HoverHighlightGeometry` resolves that geometry and `HoverHighlightRenderer`
+  burns the halo and the wash, both over a `HoverHighlightSource` - the three questions only the
+  layer that owns the regions can answer: the extent it painted under the cursor, the loops the
+  cell might sit inside, and the shade its ground draws in.
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the

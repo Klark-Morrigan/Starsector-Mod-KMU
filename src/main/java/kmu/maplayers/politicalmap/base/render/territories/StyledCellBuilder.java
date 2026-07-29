@@ -7,6 +7,8 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.ShapedCell;
+import kmu.maplayers.base.render.regions.StyledCell;
+import kmu.maplayers.base.render.regions.VertexRuns;
 import kmu.maplayers.base.style.BorderSmoothingStyle;
 import kmu.maplayers.base.style.ElementStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
