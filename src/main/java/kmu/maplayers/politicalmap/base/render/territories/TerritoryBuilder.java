@@ -8,9 +8,9 @@ import kmlib.starsector.factions.StarsectorFactionColors;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
@@ -47,7 +47,7 @@ public final class TerritoryBuilder {
     // and the style classifier each cell reads; both are retained on the territories so an
     // incremental re-shape classifies against the same view and grouping snapshot.
     public static PoliticalMapTerritories buildTerritories(
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             SectorAPI sector,
             PoliticalMapView view) {
 
@@ -170,7 +170,7 @@ public final class TerritoryBuilder {
     // pass so every stage groups the cells identically.
     private static CellGrouping resolveCellGrouping(
             PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache) {
+            CellGeometryCache geometryCache) {
         return DominantOwner.mapCellGrouping(
                 geometryCache.getSystemIdByCellId(),
                 territories.getOwnerBySystemId());

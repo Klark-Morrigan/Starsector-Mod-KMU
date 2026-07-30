@@ -135,7 +135,7 @@ final class HoverHighlightGeometryTest {
             var sourceFake = sourceOf(square(10, 10, 80), List.of(squareRun(0, 0, 100)));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, PoliticalMapHover.NONE);
+                    .resolveHighlightFor(sourceFake, MapHover.NONE);
 
             assertThat(highlight.isEmpty()).isTrue();
         }
@@ -199,8 +199,8 @@ final class HoverHighlightGeometryTest {
         }
     }
 
-    private static PoliticalMapHover hoverOf(String cellId) {
-        return new PoliticalMapHover(cellId, List.of(cellId));
+    private static MapHover hoverOf(String cellId) {
+        return new MapHover(cellId, List.of(cellId));
     }
 
     // A source answering for the one hovered cell every case here uses.

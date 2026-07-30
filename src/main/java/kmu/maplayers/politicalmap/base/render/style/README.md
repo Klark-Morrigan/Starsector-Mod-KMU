@@ -19,7 +19,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 
 *What the player chose* and *what that means in paint* are split across two packages:
 
-- [`base.style`](../../../../base/style/README.md) - the choices as inert value types
+- [`base.theme`](../../../../base/theme/README.md) - the choices as inert value types
   (`RenderStyle` and its tiers), in the framework rather than here, since a theme's shape is not
   political. This package reads them and never writes back.
 - this package - the behaviour, all of it political. One reader that populates the theme, and the

@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
@@ -83,7 +83,7 @@ final class ClaimsViewTest {
             // the shared economy revision, not here - so an alliance forming or dissolving (which the
             // alliances view renders) must leave its contribution fixed and never churn this view.
             var before = ClaimsView.INSTANCE.getContentRevision();
-            PoliticalMapRefresh.requestAllianceRefresh();
+            MapLayerRefresh.requestAllianceRefresh();
 
             assertThat(ClaimsView.INSTANCE.getContentRevision()).isEqualTo(before);
         }

@@ -23,7 +23,7 @@ import java.util.List;
  * order Nexerelin reports the alliances in (its list order is not guaranteed stable
  * between polls, and a bare positional hash would false-bump on a pure reorder). Sorting
  * a handful of alliances is trivial, so a plain sorted hash is preferred here over the
- * avalanche-then-sum fingerprint {@code PoliticalMapVisibility} needs for its hundreds of
+ * avalanche-then-sum fingerprint {@code MapVisibility} needs for its hundreds of
  * systems. Pure over plain {@link AllianceRecord}s - no Nexerelin or Starsector type - so
  * it is exercised directly on hand-built records.
  */

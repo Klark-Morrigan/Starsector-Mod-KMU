@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -128,14 +128,14 @@ final class RecedePreferencesTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                var revisionBefore = PoliticalMapRefresh.getRecedeStyleRevision();
+                var revisionBefore = MapLayerRefresh.getRecedeStyleRevision();
 
                 TEST_SET.setMuted(true);
 
                 verify(memoryMock).set(TEST_MUTE_KEY, true);
                 // The flip must bump the recede-style revision, since these sidebar-only toggles
                 // never move settingsRevision - that bump is what repaints the overlay live.
-                assertThat(PoliticalMapRefresh.getRecedeStyleRevision())
+                assertThat(MapLayerRefresh.getRecedeStyleRevision())
                         .isNotEqualTo(revisionBefore);
             }
         }
@@ -161,11 +161,11 @@ final class RecedePreferencesTest {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
-                var revisionBefore = PoliticalMapRefresh.getRecedeStyleRevision();
+                var revisionBefore = MapLayerRefresh.getRecedeStyleRevision();
 
                 TEST_SET.setMuted(true);
 
-                assertThat(PoliticalMapRefresh.getRecedeStyleRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRecedeStyleRevision()).isEqualTo(revisionBefore);
             }
         }
 
@@ -209,12 +209,12 @@ final class RecedePreferencesTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                var revisionBefore = PoliticalMapRefresh.getRecedeStyleRevision();
+                var revisionBefore = MapLayerRefresh.getRecedeStyleRevision();
 
                 TEST_SET.setDesaturated(true);
 
                 verify(memoryMock).set(TEST_DESATURATE_KEY, true);
-                assertThat(PoliticalMapRefresh.getRecedeStyleRevision())
+                assertThat(MapLayerRefresh.getRecedeStyleRevision())
                         .isNotEqualTo(revisionBefore);
             }
         }
@@ -224,11 +224,11 @@ final class RecedePreferencesTest {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
-                var revisionBefore = PoliticalMapRefresh.getRecedeStyleRevision();
+                var revisionBefore = MapLayerRefresh.getRecedeStyleRevision();
 
                 TEST_SET.setDesaturated(true);
 
-                assertThat(PoliticalMapRefresh.getRecedeStyleRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRecedeStyleRevision()).isEqualTo(revisionBefore);
             }
         }
 

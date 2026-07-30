@@ -1,15 +1,15 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.base.style.BorderSmoothingStyle;
-import kmu.maplayers.base.style.CategoryStyle;
-import kmu.maplayers.base.style.ElementStyle;
-import kmu.maplayers.base.style.GlobalStyle;
-import kmu.maplayers.base.style.HatchStyle;
-import kmu.maplayers.base.style.HoverGlowStyle;
-import kmu.maplayers.base.style.HoverHighlightStyle;
-import kmu.maplayers.base.style.HoverWashStyle;
-import kmu.maplayers.base.style.MapCategory;
-import kmu.maplayers.base.style.RenderStyle;
+import kmu.maplayers.base.theme.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.GlobalStyle;
+import kmu.maplayers.base.theme.HatchStyle;
+import kmu.maplayers.base.theme.HoverGlowStyle;
+import kmu.maplayers.base.theme.HoverHighlightStyle;
+import kmu.maplayers.base.theme.HoverWashStyle;
+import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.settings.FactionPaletteChoice;
 
@@ -130,7 +130,7 @@ final class BlocStylingTest {
     private static GlobalStyle inertGlobalStyle() {
         return new GlobalStyle(
                 new HatchStyle(0, 0, 0),
-                new BorderSmoothingStyle(false, false, 0, 0, 0),
+                new BorderSmoothingStyle(false, false, 0, 0, 0, 0, 0),
                 new HoverHighlightStyle(
                         FactionPaletteChoice.NONE,
                         new HoverGlowStyle(0, 0, 0, 0, 0),

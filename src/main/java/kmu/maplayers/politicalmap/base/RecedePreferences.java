@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.memory.SectorMemoryFlag;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.settings.KmuLunaSettings;
 
 /**
@@ -102,7 +102,7 @@ public final class RecedePreferences {
         // fields. The revision is one coarse signal every set shares, so a consumer only draws the
         // ground it owns even though any set's flip advances it.
         if (muteFlag.set(isMuted)) {
-            PoliticalMapRefresh.requestRecedeStyleRefresh();
+            MapLayerRefresh.requestRecedeStyleRefresh();
         }
     }
 
@@ -114,7 +114,7 @@ public final class RecedePreferences {
      */
     public void setDesaturated(boolean shouldDesaturate) {
         if (desaturateFlag.set(shouldDesaturate)) {
-            PoliticalMapRefresh.requestRecedeStyleRefresh();
+            MapLayerRefresh.requestRecedeStyleRefresh();
         }
     }
 

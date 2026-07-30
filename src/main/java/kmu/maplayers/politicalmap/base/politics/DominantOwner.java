@@ -29,7 +29,7 @@ public record DominantOwner(String factionId, Color primaryColor, Color secondar
      * Maps each owned system to its dominant-faction id - the per-system grouping key the
      * political-map geometry clusters by. Adapts the faction ownership map to the opaque
      * {@code Map<String, String>} the agnostic geometry ({@code CellShaper},
-     * {@code SystemClusters}, {@code SystemClusterBorders}, {@code PoliticalBorderTrace}) fuses on, so
+     * {@code SystemClusters}, {@code SystemClusterBorders}, {@code ClusterBorderTrace}) fuses on, so
      * the faction layer supplies "who owns this" while the geometry stays ignorant of factions.
      *
      * @param ownerBySystemId the dominant owner per owned system

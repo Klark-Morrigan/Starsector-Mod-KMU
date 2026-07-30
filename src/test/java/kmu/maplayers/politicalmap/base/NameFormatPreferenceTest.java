@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -70,8 +70,8 @@ final class NameFormatPreferenceTest {
         void selectNameFormatPersistsTheChoiceKeyAndRequestsAStyleRefresh() {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<PoliticalMapRefresh> refreshMock =
-                            mockStatic(PoliticalMapRefresh.class)) {
+                    MockedStatic<MapLayerRefresh> refreshMock =
+                            mockStatic(MapLayerRefresh.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
 
@@ -79,7 +79,7 @@ final class NameFormatPreferenceTest {
 
                 verify(memoryMock).set(NAME_FORMAT_KEY,
                         FactionNameFormatChoice.SHORT.persistenceKey());
-                refreshMock.verify(PoliticalMapRefresh::requestMapStyleRefresh);
+                refreshMock.verify(MapLayerRefresh::requestMapStyleRefresh);
             }
         }
 
@@ -89,15 +89,15 @@ final class NameFormatPreferenceTest {
             // bumping a revision no overlay would read.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<PoliticalMapRefresh> refreshMock =
-                            mockStatic(PoliticalMapRefresh.class)) {
+                    MockedStatic<MapLayerRefresh> refreshMock =
+                            mockStatic(MapLayerRefresh.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
 
                 NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT);
 
                 verify(memoryMock, never()).set(eq(NAME_FORMAT_KEY), anyString());
-                refreshMock.verify(PoliticalMapRefresh::requestMapStyleRefresh, never());
+                refreshMock.verify(MapLayerRefresh::requestMapStyleRefresh, never());
             }
         }
     }

@@ -5,13 +5,13 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeTarget;
-import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -58,9 +58,9 @@ final class IncrementalPoliticsRefresh {
             PoliticalMapTerritories territories,
             List<ClusterAnchor> clusterAnchors,
             List<Label> factionLabels,
-            PoliticalMapGeometryCache geometryCache) {
+            CellGeometryCache geometryCache) {
 
-        var staleSystemIds = PoliticalMapRefresh.drainStalePoliticsSystemIds();
+        var staleSystemIds = MapLayerRefresh.drainStalePoliticsSystemIds();
         if (staleSystemIds.isEmpty()) {
             return;
         }
@@ -154,7 +154,7 @@ final class IncrementalPoliticsRefresh {
     // skipped: a resize changes ownership over existing cells, never map membership.
     private static void rederiveSystemOwner(
             PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             SectorAPI sector,
             Map<String, StarSystemAPI> systemById,
             String systemId,
@@ -209,7 +209,7 @@ final class IncrementalPoliticsRefresh {
     // system's owner flips, each neighbour's shared edge flips between a same-faction
     // seam and a national border, so every neighbour re-shapes too.
     private static Set<String> neighbourSystemIdsOf(
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             String systemId) {
 
         var neighbours = new LinkedHashSet<String>();
@@ -229,7 +229,7 @@ final class IncrementalPoliticsRefresh {
     // neither its fill nor its outline drawn).
     private static void reshapeCellInPlace(
             PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             String cellId) {
 
         var edges = geometryCache.getCellEdgesByCellId().get(cellId);
@@ -262,7 +262,7 @@ final class IncrementalPoliticsRefresh {
     // geometry, is removed so its fill and border stop drawing.
     private static void rebuildFactionTerritoryInPlace(
             PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             String factionId,
             List<String> memberCellIds) {
                 

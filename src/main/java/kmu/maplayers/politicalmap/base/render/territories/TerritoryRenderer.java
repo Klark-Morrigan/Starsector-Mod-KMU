@@ -5,8 +5,14 @@ import kmlib.opengl.GlRuns;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
+import kmu.maplayers.base.render.regions.StyledCell;
+import kmu.maplayers.base.render.regions.StyledCell.FusedCell;
+import kmu.maplayers.base.render.regions.StyledCell.LoneCell;
 
 import org.lwjgl.opengl.GL11;
+
+import java.util.Collection;
+import java.util.function.Consumer;
 
 /**
  * Paints the political map's pre-built draw lists on the sector (M) map: every fill first -
@@ -89,18 +95,50 @@ public final class TerritoryRenderer {
         // non-empty hatch run.
         GL11.glLineWidth((float) territories.getGlobalStyle().hatch().width());
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
-            emitIfVisible(territory.fill(), alphaMult, () -> {
-                GlRuns.drawScaled(GL11.GL_TRIANGLES, territory.fillTriangles(), factor);
-                GlRuns.drawScaled(GL11.GL_LINES, territory.hatchSegments(), factor);
+            emitIfVisible(
+                    territory.fill(),
+                    alphaMult,
+                    () -> {
+                            GlRuns.drawScaled(
+                                    GL11.GL_TRIANGLES,
+                                    territory.fillTriangles(),
+                                    factor);
+                            GlRuns.drawScaled(
+                                    GL11.GL_LINES,
+                                    territory.hatchSegments(),
+                                    factor);
             });
         }
-        // Then the factionless cells' own fills - dead colonies washed in the neutral colour.
-        // They fill per cell rather than per cluster because factionless ground never fuses
-        // into one, and they cover no faction's region, so drawing them after the cluster
-        // fills is a matter of grouping the fill pass rather than of layering.
-        for (var cell : territories.getStyledCellByCellId().values()) {
-            emitIfVisible(cell.fillPaint(), alphaMult,
-                    () -> GlRuns.drawScaled(GL11.GL_TRIANGLES, cell.fillTriangles(), factor));
+        // Then the lone cells' own fills - dead colonies washed in the neutral colour. They fill
+        // per cell rather than per cluster because factionless ground never fuses into one, and
+        // they cover no faction's region, so drawing them after the cluster fills is a matter of
+        // grouping the fill pass rather than of layering. A fused cell is not reached at all: its
+        // fill is its cluster's, drawn above, so this pass sees only the cells that have one.
+        drawEachCellOfForm(
+                territories.getStyledCellByCellId().values(),
+                LoneCell.class,
+                lone -> emitIfVisible(
+                        lone.fillPaint(),
+                        alphaMult,
+                        () -> GlRuns.drawScaled(
+                                GL11.GL_TRIANGLES,
+                                lone.fillTriangles(),
+                                factor)));
+    }
+
+    // Draws one element of every cell of one form, skipping the cells of the other. Each pass over
+    // the cells names the form it draws and what it draws for it, rather than restating the walk and
+    // the narrowing - which is what keeps a later pass from being written over every cell and
+    // reaching for a part the form it meant does not have.
+    private static <T extends StyledCell> void drawEachCellOfForm(
+            Collection<StyledCell> cells,
+            Class<T> form,
+            Consumer<T> drawCell) {
+
+        for (var cell : cells) {
+            if (form.isInstance(cell)) {
+                drawCell.accept(form.cast(cell));
+            }
         }
     }
 
@@ -117,14 +155,13 @@ public final class TerritoryRenderer {
         emitRuns.run();
     }
 
-    // Strokes the interior province seams first, then the factionless outlines, then the
-    // smoothed national borders over them, so a cluster's frontier dominates its
-    // internal province lines where they meet. Color, opacity, and line width are all
-    // per element, and a hidden element (UiElementPaint.isHidden) is skipped - its geometry
-    // stays baked to shape its neighbours, but nothing invisible is emitted. An owned
-    // cluster's national border is its border ring (in factionTerritories), so the
-    // per-cell outline only carries factionless cells; of the runs this pass strokes an
-    // owned cell contributes only its seams and a factionless cell only its outline.
+    // Strokes the interior province seams first, then the lone cells' outlines, then the
+    // smoothed national borders over them, so a cluster's frontier dominates its internal
+    // province lines where they meet. Color, opacity, and line width are all per element, and a
+    // hidden element (UiElementPaint.isHidden) is skipped - its geometry stays baked to shape its
+    // neighbours, but nothing invisible is emitted. Which cells each stroke reaches is the cell's
+    // own form rather than a test here: a fused cell carries only seams and a lone cell only an
+    // outline, and a cluster's national border is its border ring in factionTerritories.
     private static void drawBorders(
             PoliticalMapTerritories territories,
             float factor,
@@ -133,27 +170,39 @@ public final class TerritoryRenderer {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        for (var cell : territories.getStyledCellByCellId().values()) {
-            emitIfVisible(cell.inner(), alphaMult, () -> {
-                GL11.glLineWidth(cell.innerWidth());
-                GlRuns.drawScaled(GL11.GL_LINES, cell.interiorEdges(), factor);
-            });
-        }
-        for (var cell : territories.getStyledCellByCellId().values()) {
-            emitIfVisible(cell.outer(), alphaMult, () -> {
-                GL11.glLineWidth(cell.outerWidth());
-                GlRuns.drawScaled(GL11.GL_LINES, cell.boundaryEdges(), factor);
-            });
-        }
+        drawEachCellOfForm(
+                territories.getStyledCellByCellId().values(),
+                FusedCell.class,
+                fused -> emitIfVisible(
+                        fused.seamPaint(),
+                        alphaMult,
+                        () -> {
+                                GL11.glLineWidth(fused.seamWidth());
+                                GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), factor);
+                        }));
+        drawEachCellOfForm(
+                territories.getStyledCellByCellId().values(),
+                LoneCell.class,
+                lone -> emitIfVisible(
+                        lone.outlinePaint(),
+                        alphaMult,
+                        () -> {
+                                GL11.glLineWidth(lone.outlineWidth());
+                                GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), factor);
+                        }));
+
         // The national border in its own style, over the interior seams so the frontier dominates
         // where they meet. Each border ring is a closed rounded loop, so it strokes as one
         // continuous GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
-            emitIfVisible(territory.border(), alphaMult, () -> {
-                GL11.glLineWidth(territory.borderWidth());
-                for (var loop : territory.borderLoops()) {
-                    GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
-                }
+            emitIfVisible(
+                    territory.border(),
+                    alphaMult,
+                    () -> {
+                            GL11.glLineWidth(territory.borderWidth());
+                            for (var loop : territory.borderLoops()) {
+                                GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
+                            }
             });
         }
     }

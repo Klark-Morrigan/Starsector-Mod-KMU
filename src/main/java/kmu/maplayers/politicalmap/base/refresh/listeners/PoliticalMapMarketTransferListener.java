@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.Nex_MarketCMD;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
@@ -27,7 +27,7 @@ import exerelin.utilities.InvasionListener;
  * decivilises it, and reveals nothing. Nexerelin is the only source of such
  * transfers and it does report them through {@link InvasionListener}, so this
  * translates that single Nex event into the same targeted refresh
- * ({@link PoliticalMapRefresh#markSystemPoliticsStale}) the ownership-axis siblings
+ * ({@link MapLayerRefresh#markSystemPoliticsStale}) the ownership-axis siblings
  * use: only the transferred colony's system and its neighbours are re-derived,
  * reading the post-transfer owner.
  *

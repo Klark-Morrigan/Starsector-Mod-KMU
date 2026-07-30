@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.base.style.MapCategory;
+import kmu.maplayers.base.theme.MapCategory;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 
 import java.util.Set;

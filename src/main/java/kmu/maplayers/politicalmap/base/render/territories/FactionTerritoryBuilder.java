@@ -4,13 +4,13 @@ import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
+import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
 import kmu.maplayers.base.render.regions.BorderSmoothing;
+import kmu.maplayers.base.render.regions.ClusterBorderTrace;
 import kmu.maplayers.base.render.regions.FillSplit;
-import kmu.maplayers.base.render.regions.PoliticalBorderTrace;
 import kmu.maplayers.base.render.regions.SplitFillBuilder;
-import kmu.maplayers.base.style.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
@@ -52,7 +52,7 @@ public final class FactionTerritoryBuilder {
      */
     public static FactionTerritory buildFactionTerritory(
             PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             String blocId,
             List<String> memberCellIds) {
 
@@ -86,7 +86,7 @@ public final class FactionTerritoryBuilder {
         // One trace for the whole territory: the national border's rings, and - for a spotlit
         // footprint - the per-state sub-region rings its fill splits into, so border and fill
         // offset under identical parameters and cannot drift apart.
-        var borderTrace = PoliticalBorderTrace.readFromLunaSettings();
+        var borderTrace = ClusterBorderTrace.readFromLunaSettings();
         var insetRings = borderTrace.traceRings(
                 memberCellIds,
                 geometryCache.getCellEdgesByCellId(),
@@ -94,10 +94,10 @@ public final class FactionTerritoryBuilder {
         if (insetRings.isEmpty()) {
             return null;
         }
-        var borderLoops = smoothBorderLoops(
+        var borderLoops = resolveSmoothedBorderLoops(
                 insetRings,
                 territories.getGlobalStyle().borderSmoothing());
-                
+
         // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
         // one key, so it clusters into this single territory outlined by one frontier and then
         // splits its fill inside it. Whether that split happens is the fill builder's own call.
@@ -139,7 +139,7 @@ public final class FactionTerritoryBuilder {
      */
     public static void buildAllFactionTerritories(
             PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache) {
+            CellGeometryCache geometryCache) {
 
         var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByKey();
         for (var bloc : grouped.entrySet()) {
@@ -155,22 +155,16 @@ public final class FactionTerritoryBuilder {
     }
 
     // Resolves the traced rings to their clean outer envelope first (positive winding drops any
-    // neck self-crossing), then runs each smoothing pass only when its Dev-tab gate is on: sand
-    // the spikes, then round the corners. Smoothing before the resolve would have any arc clipped
-    // off at the crossing and left a sharp corner, and sanding must precede rounding so the arc
-    // meets clean geometry.
-    private static List<List<double[]>> smoothBorderLoops(
+    // neck self-crossing), then hands them to the shared smoothing passes. Smoothing before the
+    // resolve would have any arc clipped off at the crossing and left a sharp corner; which
+    // passes run, and in which order, is the profile's own answer rather than restated here.
+    private static List<List<double[]>> resolveSmoothedBorderLoops(
             List<List<double[]>> insetRings,
             BorderSmoothingStyle borderSmoothing) {
 
-        var borderLoops = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
-        if (borderSmoothing.shouldSandSpikes()) {
-            borderLoops = BorderSmoothing.sandBorderSpikes(borderLoops);
-        }
-        if (borderSmoothing.shouldRoundCorners()) {
-            borderLoops = BorderSmoothing.roundBorderCorners(borderLoops);
-        }
-        return borderLoops;
+        return BorderSmoothing.smoothBorderLoops(
+                PolygonTessellator.tessellateToBoundaryLoops(insetRings),
+                borderSmoothing);
     }
 
     // The border's stroked runs, one per closed loop. A "No color" border bakes none at all
@@ -193,7 +187,7 @@ public final class FactionTerritoryBuilder {
     // off the geometry cache, paired with each owned system's bloc key.
     private static CellGrouping resolveCellGroupingOf(
             PoliticalMapTerritories territories,
-            PoliticalMapGeometryCache geometryCache) {
+            CellGeometryCache geometryCache) {
 
         return DominantOwner.mapCellGrouping(
                 geometryCache.getSystemIdByCellId(),

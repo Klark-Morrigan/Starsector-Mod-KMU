@@ -87,7 +87,7 @@ public final class LabelsBuilder {
             }
         });
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Political map labels built; lines=" + labels.size()
+            LOG.debug("Map layer labels built; lines=" + labels.size()
                     + " ofClusters=" + anchors.size()
                     + " took=" + Timings.formatMillis(System.nanoTime() - buildStart));
         }

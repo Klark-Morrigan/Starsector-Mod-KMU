@@ -145,7 +145,7 @@ final class SectorFixture {
      * Builds the cell-adjacency graph for the whole sector, the input every shaping and
      * tracing consumer reads.
      *
-     * <p>This repeats the translation {@link PoliticalMapGeometryCache} performs from a
+     * <p>This repeats the translation {@link CellGeometryCache} performs from a
      * labelled cell to tagged {@link CellEdge}s, because that translation is private to the
      * cache and the cache itself needs a live sector. So the graph here is equivalent to
      * the cache's, not produced by it: this exercises the geometry below the cache, and

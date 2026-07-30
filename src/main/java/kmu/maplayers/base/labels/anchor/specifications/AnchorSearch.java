@@ -1,6 +1,6 @@
 package kmu.maplayers.base.labels.anchor.specifications;
 
-import kmu.maplayers.base.render.regions.PoliticalBorderTrace;
+import kmu.maplayers.base.render.regions.ClusterBorderTrace;
 
 /**
  * Where the cluster-anchor search generates and clips its candidate lines: the border
@@ -18,7 +18,7 @@ import kmu.maplayers.base.render.regions.PoliticalBorderTrace;
  * @param offsetCount      the number of parallel lines swept per direction
  */
 public record AnchorSearch(
-        PoliticalBorderTrace borderTrace,
+        ClusterBorderTrace borderTrace,
         double endInsetDistance,
         double iconClearance,
         int directionCount,

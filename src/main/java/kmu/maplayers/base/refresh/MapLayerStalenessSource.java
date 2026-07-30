@@ -8,7 +8,7 @@ package kmu.maplayers.base.refresh;
  * activating, a system cut off, an AI faction founding a colony in a system already drawn -
  * so the only way to find them is to re-read the sector and diff it against the last read.
  * What to re-read, what counts as a change, and which refresh a change earns are all
- * answers only the layer's own model holds, so {@link PoliticalMapSectorWatcher} supplies
+ * answers only the layer's own model holds, so {@link MapLayerSectorWatcher} supplies
  * the cadence and asks for the rest through here.
  *
  * <p>Each call is diffed against the one before it, so an implementation carries its own

@@ -1,9 +1,9 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.base.style.CategoryStyle;
-import kmu.maplayers.base.style.ElementStyle;
-import kmu.maplayers.base.style.GlobalStyle;
-import kmu.maplayers.base.style.MapCategory;
+import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.GlobalStyle;
+import kmu.maplayers.base.theme.MapCategory;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
@@ -250,6 +250,46 @@ final class RenderStyleReaderTest {
                 assertThat(global.borderSmoothing().chamferAngleRadians()).isEqualTo(CHAMFER_ANGLE);
                 assertThat(global.desaturationDarkening()).isEqualTo(DESATURATION_DARKENING);
                 assertThat(global.hoverHighlight().glow().opacity()).isEqualTo(HOVER_GLOW_OPACITY);
+            }
+        }
+    }
+
+    @Nested
+    class ReadBorderSmoothingStyle {
+
+        private static final double SPIKE_HEIGHT = 12.0;
+        private static final double SPIKE_ANGLE = 1.1;
+        private static final double CORNER_RADIUS = 250.0;
+        private static final int CORNER_SEGMENTS = 6;
+        private static final double CHAMFER_ANGLE = 0.4;
+
+        @Test
+        void readBorderSmoothingStyleCarriesBothPassesShapeAndNotOnlyTheGates() {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                settingsMock.when(KmuLunaSettings::shouldSandBorderSpikes).thenReturn(true);
+                settingsMock.when(KmuLunaSettings::shouldRoundBorderCorners).thenReturn(true);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapBorderSpikeHeight)
+                        .thenReturn(SPIKE_HEIGHT);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapBorderSpikeAngleRadians)
+                        .thenReturn(SPIKE_ANGLE);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapBorderCornerRadius)
+                        .thenReturn(CORNER_RADIUS);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapBorderCornerSegments)
+                        .thenReturn(CORNER_SEGMENTS);
+                settingsMock.when(KmuLunaSettings::getPoliticalMapBorderChamferAngleRadians)
+                        .thenReturn(CHAMFER_ANGLE);
+
+                var smoothing = RenderStyleReader.readBorderSmoothingStyle();
+
+                // The sanding shape belongs on the profile alongside the rounding shape: it is
+                // what lets the passes work from one value rather than each reading its own half.
+                assertThat(smoothing.shouldSandSpikes()).isTrue();
+                assertThat(smoothing.shouldRoundCorners()).isTrue();
+                assertThat(smoothing.spikeHeight()).isEqualTo(SPIKE_HEIGHT);
+                assertThat(smoothing.spikeAngleRadians()).isEqualTo(SPIKE_ANGLE);
+                assertThat(smoothing.cornerRadius()).isEqualTo(CORNER_RADIUS);
+                assertThat(smoothing.cornerSegments()).isEqualTo(CORNER_SEGMENTS);
+                assertThat(smoothing.chamferAngleRadians()).isEqualTo(CHAMFER_ANGLE);
             }
         }
     }

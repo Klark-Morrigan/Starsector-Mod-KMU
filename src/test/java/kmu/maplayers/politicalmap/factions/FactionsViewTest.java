@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -77,7 +77,7 @@ final class FactionsViewTest {
             // view's contribution fixed - that is what keeps an alliance change from churning
             // the faction view.
             var before = FactionsView.INSTANCE.getContentRevision();
-            PoliticalMapRefresh.requestAllianceRefresh();
+            MapLayerRefresh.requestAllianceRefresh();
 
             assertThat(FactionsView.INSTANCE.getContentRevision()).isEqualTo(before);
         }

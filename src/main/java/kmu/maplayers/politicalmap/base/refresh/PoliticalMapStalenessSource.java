@@ -2,9 +2,9 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import com.fs.starfarer.api.Global;
 
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
@@ -114,7 +114,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         if (!hasVisibilityChanged) {
             LOG.debug("Political map moving set changed");
         }
-        PoliticalMapRefresh.requestGeometryRefresh();
+        MapLayerRefresh.requestGeometryRefresh();
     }
 
     // Marks politics-stale every system whose owner differs from the last poll: a system
@@ -128,12 +128,12 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         if (!isFirstPoll) {
             for (var entry : currentOwnerBySystemId.entrySet()) {
                 if (!entry.getValue().equals(lastOwnerBySystemId.get(entry.getKey()))) {
-                    PoliticalMapRefresh.markSystemPoliticsStale(entry.getKey());
+                    MapLayerRefresh.markSystemPoliticsStale(entry.getKey());
                 }
             }
             for (var systemId : lastOwnerBySystemId.keySet()) {
                 if (!currentOwnerBySystemId.containsKey(systemId)) {
-                    PoliticalMapRefresh.markSystemPoliticsStale(systemId);
+                    MapLayerRefresh.markSystemPoliticsStale(systemId);
                 }
             }
         }
@@ -150,7 +150,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         if (!isFirstPoll && allianceFingerprint != lastAllianceFingerprint) {
             LOG.debug("Political map alliance fingerprint changed; old="
                     + lastAllianceFingerprint + " new=" + allianceFingerprint);
-            PoliticalMapRefresh.requestAllianceRefresh();
+            MapLayerRefresh.requestAllianceRefresh();
         }
         lastAllianceFingerprint = allianceFingerprint;
     }

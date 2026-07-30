@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render.hover;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritory;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTestTerritories;
+import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -110,7 +110,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                     null));
 
             assertThat(source.resolveHighlightColourOf("A", FactionPaletteChoice.PRIMARY))
-                    .isEqualTo(PoliticalMapTestTerritories.NEUTRAL_COLOUR);
+                    .isEqualTo(PoliticalMapTerritoryFixtures.NEUTRAL_COLOUR);
         }
 
         @Test
@@ -165,12 +165,12 @@ final class PoliticalMapHoverHighlightSourceTest {
             Map<String, DominantOwner> ownerBySystemId,
             Map<String, List<double[]>> fillPolygonBySystemId,
             FactionTerritory territory) {
-        var territories = PoliticalMapTestTerritories
+        var territories = PoliticalMapTerritoryFixtures
                 .createTerritoriesOwnedBy(ownerBySystemId);
         for (var cell : fillPolygonBySystemId.entrySet()) {
             territories.putStyledCell(
                     cell.getKey(),
-                    PoliticalMapTestTerritories.createPlaceholderStyledCell(),
+                    PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                     cell.getValue());
         }
         if (territory != null) {
@@ -181,7 +181,7 @@ final class PoliticalMapHoverHighlightSourceTest {
 
     // A territory whose loops are all the source reads; its fills and paints never come up here.
     private static FactionTerritory territoryWithLoops(List<float[]> borderLoops) {
-        return PoliticalMapTestTerritories.createTerritoryWithLoops(borderLoops);
+        return PoliticalMapTerritoryFixtures.createTerritoryWithLoops(borderLoops);
     }
 
     // An axis-aligned square, counter-clockwise, standing in for a cell's painted extent; the

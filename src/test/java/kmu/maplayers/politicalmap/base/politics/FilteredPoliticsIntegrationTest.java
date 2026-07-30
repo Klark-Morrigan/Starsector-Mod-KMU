@@ -12,16 +12,16 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.PERSEAN_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.TRITACHYON_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.dark;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.faction;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWith;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWithSystems;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.stabilityWeightedRules;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.systemMarkets;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.visibleMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.PERSEAN_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.dark;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.faction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.sectorWith;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.sectorWithSystems;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.stabilityWeightedRules;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.systemMarkets;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.visibleMarket;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * cannot - that a dominated system carries the selected bloc's palette under the spotlit key, a
  * present-but-dominated system carries that same key yet is reported contested, an absent system
  * keeps its real (receding) owner, and the whole spotlit footprint keys alike so it fuses into one
- * territory. The stubbed economy is wired through the shared {@link PoliticsTestSectors} fixture.
+ * territory. The stubbed economy is wired through the shared {@link SectorPoliticsFixtures} fixture.
  */
 class FilteredPoliticsIntegrationTest {
     private static final DominanceRules STABILITY_WEIGHTED = stabilityWeightedRules();

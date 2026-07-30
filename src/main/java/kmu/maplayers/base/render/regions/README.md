@@ -17,7 +17,7 @@ Part of [the render surface](../README.md), in Klark Morrigan's Utilities; see t
 
 ## The trace: one path to a cluster's rings
 
-`PoliticalBorderTrace` is the parameters of one border-ring trace plus the trace itself. Every ring
+`ClusterBorderTrace` is the parameters of one border-ring trace plus the trace itself. Every ring
 a layer draws, or fits a name inside, comes from here, which is what makes "a name is clipped
 against the rings the player sees" true by construction rather than by two call sites agreeing. It
 is agnostic to what a cluster is grouped by: the caller supplies the keys, and same-key cells fuse.
@@ -36,14 +36,21 @@ without a gap opening between them.
 ## Smoothing and packing
 
 - `BorderSmoothing` - the two passes over traced loops: sanding the needle spikes and inward cusps
-  too thin for rounding to fix, then rounding the corners into arcs. Each always does what its name
-  says; the on/off decision is the caller's, so a pass that keeps only the final result and one
-  that captures every stage smooth identically.
+  too thin for rounding to fix, then rounding the corners into arcs. Each takes the
+  [`BorderSmoothingStyle`](../../theme/README.md) as data rather than reading the live settings
+  where it runs, so a lone cell's outline and the cluster border beside it round to one profile and
+  cannot drift apart. Each pass also always does what its name says: `smoothBorderLoops` applies
+  the profile's own gates in the order the passes must run, while a caller capturing every stage
+  gates them itself, and both smooth identically.
 - `VertexRuns` - flattens one shaped cell's edges of a single class (cluster border, or interior
   seam) into a GL_LINES run. The generic packing is `kmlib.opengl.GlVertexRuns`; what lives here is
   the one conversion that has to know a `ShapedCell`.
-- `StyledCell` - the flat per-cell draw packet: fill triangles, boundary and interior edge runs,
-  three paints, two widths. A layer's own builder decides what goes in it.
+- `StyledCell` - the per-cell draw packet, sealed over the two forms a cell takes. A
+  `FusedCell` fused into a region and so draws only the seam where it meets a sibling; a
+  `LoneCell` fused with nothing, is its own region, and so carries its own fill and outline.
+  Each form holds what that cell has and nothing else, so a pass that fills never reaches a
+  fused cell and one that strokes seams never reaches a lone one. A layer's own builder decides
+  which form a cell takes.
 
 ## The split fill: one border, several fills
 
@@ -80,7 +87,7 @@ any of it takes - belongs to whichever layer owns the regions; for the one layer
 that is [`politicalmap`](../../../politicalmap/README.md). *Who gets the frame at all* is the
 [render surface](../README.md) one level up. The *cells and clusters* the shaping runs over, and
 the channel it insets by, are [`base.geometry`](../../geometry/README.md); the *theme records* the
-widths and opacities cascade from are [`base.style`](../../style/README.md); the *cursor's* half of
+widths and opacities cascade from are [`base.theme`](../../theme/README.md); the *cursor's* half of
 the render pass - the halo and the wash, and the seam a layer answers them through - is
 `base.hover`. The low-level GL run emission is a generic helper in KMLib
 (`kmlib.opengl.GlRuns`).

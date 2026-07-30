@@ -12,12 +12,12 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 /**
- * The rule that decides which systems the political map draws, and their live
+ * The rule that decides which systems a map layer draws, and their live
  * positions, in one place.
  *
  * <p>Several passes need the same drawn set: the geometry cache builds a cell per
  * drawn system, and the motion tracker follows a drawn system that moves. Owning the
- * membership rule here - {@link PoliticalMapVisibility} applied over one hyperspace
+ * membership rule here - {@link MapVisibility} applied over one hyperspace
  * scan - keeps those passes from drifting apart on what "drawn" means, and lets each
  * walk it independently through the same predicate rather than re-deriving it.
  */
@@ -38,13 +38,18 @@ public final class DrawnSystemPositions {
      * @return a predicate accepting exactly the systems the map draws under these
      *         overrides
      */
-    public static Predicate<StarSystemAPI> buildDrawnSystemPredicate(SectorAPI sector,
+    public static Predicate<StarSystemAPI> buildDrawnSystemPredicate(
+            SectorAPI sector,
             PoliticalMapDevOverrides overrides) {
+
         // Scanned once here so the predicate's per-system check is an O(1) lookup
         // rather than a per-system hyperspace rescan.
         var visibleStars = VisibleStars.scan(sector);
-        return system -> PoliticalMapVisibility.shouldAppearOnMap(
-                sector, system, visibleStars, overrides);
+        return system -> MapVisibility.shouldAppearOnMap(
+                sector,
+                system,
+                visibleStars,
+                overrides);
     }
 
     /**
@@ -56,9 +61,12 @@ public final class DrawnSystemPositions {
      * @return each drawn system's live hyperspace position keyed by id; a system with
      *         no location is skipped, since it has no site to place a cell at
      */
-    public static Map<String, double[]> collectLivePositions(SectorAPI sector,
+    public static Map<String, double[]> collectLivePositions(
+            SectorAPI sector,
             PoliticalMapDevOverrides overrides) {
-        return StarSystems.collectPositionsById(sector,
+
+        return StarSystems.collectPositionsById(
+                sector,
                 buildDrawnSystemPredicate(sector, overrides));
     }
 }

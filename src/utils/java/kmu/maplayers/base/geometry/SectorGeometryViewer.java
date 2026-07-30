@@ -45,7 +45,7 @@ import javax.swing.SwingUtilities;
  *   <li>{@link CellShaper#shapeCells} - and through it {@link EdgeClassifier} and the kmlib
  *       per-edge inset</li>
  *   <li>{@link SystemClusterBorders#traceBorderRings} - and through it the kmlib chainer and
- *       per-edge miter. This is what {@code PoliticalBorderTrace.traceRings} forwards to, at
+ *       per-edge miter. This is what {@code ClusterBorderTrace.traceRings} forwards to, at
  *       the same {@code CellShaper.BORDER_INSET_DISTANCE}; only the weld tolerance and
  *       miter limit arrive from {@link SectorGeometryParameters} instead of
  *       {@code KmuLunaSettings}.</li>
@@ -55,8 +55,8 @@ import javax.swing.SwingUtilities;
  * does not call at all:
  *
  * <ul>
- *   <li><i>Deciding what exists</i> - {@code PoliticalMapVisibility.shouldAppearOnMap},
- *       {@code PoliticalMapGeometryCache.updateFromSector} and
+ *   <li><i>Deciding what exists</i> - {@code MapVisibility.shouldAppearOnMap},
+ *       {@code CellGeometryCache.updateFromSector} and
  *       {@code getCellEdgesByCellId}. {@link SectorFixture} rebuilds the cache's private
  *       cell-to-edge translation, so every fixture row is drawn and nothing exercises the
  *       cache, its diffing, or the incremental refresh.</li>

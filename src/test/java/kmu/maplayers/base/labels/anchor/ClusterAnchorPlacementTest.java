@@ -11,7 +11,7 @@ import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.labels.anchor.specifications.LeanScoring;
-import kmu.maplayers.base.render.regions.PoliticalBorderTrace;
+import kmu.maplayers.base.render.regions.ClusterBorderTrace;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -667,7 +667,7 @@ final class ClusterAnchorPlacementTest {
                 boolean showRejectedAxis, boolean showUnbiasedAxis, double nameMinFontSize,
                 double nameMaxFontSize, int nameMaxLines, double nameLineSpacing) {
             return new LabelAnchorSpecification(
-                    new AnchorSearch(new PoliticalBorderTrace(WELD_TOLERANCE, MITER_LIMIT),
+                    new AnchorSearch(new ClusterBorderTrace(WELD_TOLERANCE, MITER_LIMIT),
                             endInsetDistance, iconClearance, directionCount, offsetCount),
                     new LeanScoring(verticalPenaltyStrength, verticalPenaltyExponent, 0.0),
                     new AnchorDiagnostics(showRejectedAxis, showUnbiasedAxis),

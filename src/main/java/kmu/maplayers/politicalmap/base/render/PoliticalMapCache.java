@@ -5,12 +5,12 @@ import com.fs.starfarer.api.Global;
 import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -56,7 +56,7 @@ final class PoliticalMapCache {
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or lose
     // access. Final because this whole cache is recreated per session, so it is never null once
     // the cache exists - no lazy re-init as the old save-restored plugin needed.
-    private final PoliticalMapGeometryCache geometryCache = new PoliticalMapGeometryCache();
+    private final CellGeometryCache geometryCache = new CellGeometryCache();
 
     // The built draw lists plus the ownership and style inputs an incremental re-shape needs.
     // Null until the first build this session; exactly one of this and debugTerritories is
@@ -145,7 +145,7 @@ final class PoliticalMapCache {
         lastForcesAllSystemsOnMap = false;
         // Per-system staleness names systems of the sector being left, so it is dropped rather than
         // replayed against the next one - the rebuild this discard forces re-derives every system.
-        PoliticalMapRefresh.drainStalePoliticsSystemIds();
+        MapLayerRefresh.drainStalePoliticsSystemIds();
     }
 
     /**
@@ -175,7 +175,7 @@ final class PoliticalMapCache {
     private void rebuildStaleHalves(PoliticalMapView view) {
 
         var rebuiltCells = false;
-        var geometryRevision = PoliticalMapRefresh.getGeometryRevision();
+        var geometryRevision = MapLayerRefresh.getGeometryRevision();
 
         // The frontier resolution is a geometry input, not just a style: a change reseeds every
         // cell, so it makes the geometry stale the same way an access change does. Read once here
@@ -219,7 +219,7 @@ final class PoliticalMapCache {
         }
 
         // TODO: when only geometry changed (rebuiltCells), reshape just the cells
-        // PoliticalMapGeometryCache rebuilt - the system that gained or lost access and every cell
+        // CellGeometryCache rebuilt - the system that gained or lost access and every cell
         // it touches - rather than the full territories rebuild below. Have updateFromSector report
         // its affected-cell set and drive a targeted reshape from it, the geometry-side analogue of
         // applyStalePoliticsUpdates.
@@ -282,7 +282,7 @@ final class PoliticalMapCache {
             // A full rebuild re-derives every system, so any pending per-system staleness is
             // already reflected - drain and discard it rather than re-processing the same systems
             // immediately after.
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
             logContentRebuild(rebuiltCells, contentRevision, drawablesStart);
             return;
         }
@@ -302,7 +302,7 @@ final class PoliticalMapCache {
                     factionLabels,
                     geometryCache);
         } else {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
         }
     }
 
@@ -358,9 +358,9 @@ final class PoliticalMapCache {
                 KmuLunaSettings.getSettingsRevision(),
                 view.getId(),
                 view.getContentRevision(),
-                PoliticalMapRefresh.getFilterRevision(),
-                PoliticalMapRefresh.getRecedeStyleRevision(),
-                PoliticalMapRefresh.getMapStyleRevision());
+                MapLayerRefresh.getFilterRevision(),
+                MapLayerRefresh.getRecedeStyleRevision(),
+                MapLayerRefresh.getMapStyleRevision());
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells

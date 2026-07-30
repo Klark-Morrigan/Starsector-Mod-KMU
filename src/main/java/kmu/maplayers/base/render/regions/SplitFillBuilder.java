@@ -7,7 +7,7 @@ import kmlib.opengl.PolygonTessellator;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.render.regions.FillSplit.FillState;
-import kmu.maplayers.base.style.HatchStyle;
+import kmu.maplayers.base.theme.HatchStyle;
 
 import java.awt.Color;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ public final class SplitFillBuilder {
 
     private final Map<String, List<CellEdge>> cellEdgesByCellId;
     private final CellGrouping cellGrouping;
-    private final PoliticalBorderTrace borderTrace;
+    private final ClusterBorderTrace borderTrace;
     private final List<List<double[]>> borderLoops;
     private final HatchStyle hatch;
 
@@ -57,7 +57,7 @@ public final class SplitFillBuilder {
     public SplitFillBuilder(
             Map<String, List<CellEdge>> cellEdgesByCellId,
             CellGrouping cellGrouping,
-            PoliticalBorderTrace borderTrace,
+            ClusterBorderTrace borderTrace,
             List<List<double[]>> borderLoops,
             HatchStyle hatch) {
 
@@ -86,19 +86,19 @@ public final class SplitFillBuilder {
      *                   no region at all
      * @return the fill's solid triangles and hatch segments
      */
-    public TerritoryFill buildFill(
+    public RegionFill buildFill(
             boolean isSpotlit,
             FillSplit split,
             String blocId,
             Color fillColor) {
 
         if (fillColor == null) {
-            return new TerritoryFill(
+            return new RegionFill(
                     GlVertexRuns.NO_VERTICES,
                     GlVertexRuns.NO_VERTICES);
         }
         if (!isSpotlit && !split.hasNonSolidMembers()) {
-            return new TerritoryFill(
+            return new RegionFill(
                     PolygonTessellator.tessellateToTriangles(borderLoops),
                     GlVertexRuns.NO_VERTICES);
         }
@@ -109,11 +109,11 @@ public final class SplitFillBuilder {
     // the contested members into their own soup the hatch generator then clips diagonal lines to.
     // The unfilled state is deliberately never tessellated - it holds ground for the bloc's border
     // and label but paints no fill of its own.
-    private TerritoryFill buildPerStateFill(FillSplit split, String blocId) {
+    private RegionFill buildPerStateFill(FillSplit split, String blocId) {
         var subRegionKeys = mapSubRegionKeyBySystemId(split, blocId);
         var solidTriangles = tessellateSubRegion(FillState.SOLID, split, subRegionKeys);
         var hatchedTriangles = tessellateSubRegion(FillState.HATCHED, split, subRegionKeys);
-        return new TerritoryFill(
+        return new RegionFill(
                 solidTriangles,
                 Hatching.computeHatchSegments(
                         hatchedTriangles,
@@ -177,13 +177,14 @@ public final class SplitFillBuilder {
     }
 
     /**
-     * A bloc footprint's fill as the two runs it paints: the solid triangle soup for the held
-     * cells and the hatch GL_LINES for the contested ones.
+     * One region's fill as the two runs it paints: the solid triangle soup for the held cells
+     * and the hatch GL_LINES for the contested ones. Named for the region rather than for what
+     * holds it, since the pair is the same two runs whatever a layer groups its cells by.
      *
-     * <p>The unfilled state carries no geometry - it paints nothing - so a territory with no
+     * <p>The unfilled state carries no geometry - it paints nothing - so a region with no
      * hatched members leaves the hatch empty and one that fills solid throughout carries only
-     * its solid region.
+     * its solid triangles.
      */
-    public record TerritoryFill(float[] solidTriangles, float[] hatchSegments) {
+    public record RegionFill(float[] solidTriangles, float[] hatchSegments) {
     }
 }

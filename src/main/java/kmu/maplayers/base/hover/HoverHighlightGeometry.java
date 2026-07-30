@@ -52,7 +52,7 @@ public final class HoverHighlightGeometry {
      */
     public HoverHighlight resolveHighlightFor(
             HoverHighlightSource source,
-            PoliticalMapHover hover) {
+            MapHover hover) {
 
         if (!hover.isHovering()) {
             return HoverHighlight.NONE;

@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -89,14 +89,14 @@ final class FilterSelectionTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                var revisionBefore = PoliticalMapRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getFilterRevision();
 
                 FilterSelection.selectBloc(VIEW_ID, BLOC_ID);
 
                 verify(memoryMock).set(SELECTED_BLOC_KEY, BLOC_ID);
                 // The pick must bump the filter revision, since this sidebar-only choice never moves
                 // settingsRevision - that bump is what repaints the overlay live.
-                assertThat(PoliticalMapRefresh.getFilterRevision()).isNotEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getFilterRevision()).isNotEqualTo(revisionBefore);
             }
         }
 
@@ -107,11 +107,11 @@ final class FilterSelectionTest {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
-                var revisionBefore = PoliticalMapRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getFilterRevision();
 
                 FilterSelection.selectBloc(VIEW_ID, BLOC_ID);
 
-                assertThat(PoliticalMapRefresh.getFilterRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getFilterRevision()).isEqualTo(revisionBefore);
             }
         }
     }
@@ -126,12 +126,12 @@ final class FilterSelectionTest {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(SELECTED_BLOC_KEY)).thenReturn(true);
-                var revisionBefore = PoliticalMapRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getFilterRevision();
 
                 FilterSelection.clearSelection(VIEW_ID);
 
                 verify(memoryMock).unset(SELECTED_BLOC_KEY);
-                assertThat(PoliticalMapRefresh.getFilterRevision()).isNotEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getFilterRevision()).isNotEqualTo(revisionBefore);
             }
         }
 
@@ -143,12 +143,12 @@ final class FilterSelectionTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                var revisionBefore = PoliticalMapRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getFilterRevision();
 
                 FilterSelection.clearSelection(VIEW_ID);
 
                 verify(memoryMock, never()).unset(anyString());
-                assertThat(PoliticalMapRefresh.getFilterRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getFilterRevision()).isEqualTo(revisionBefore);
             }
         }
 
@@ -157,11 +157,11 @@ final class FilterSelectionTest {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
-                var revisionBefore = PoliticalMapRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getFilterRevision();
 
                 FilterSelection.clearSelection(VIEW_ID);
 
-                assertThat(PoliticalMapRefresh.getFilterRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getFilterRevision()).isEqualTo(revisionBefore);
             }
         }
     }

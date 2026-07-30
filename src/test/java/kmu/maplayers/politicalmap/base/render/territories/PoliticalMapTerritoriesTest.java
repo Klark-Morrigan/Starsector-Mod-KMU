@@ -5,16 +5,16 @@ import kmlib.starsector.factions.FactionPalette;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.render.regions.StyledCell;
-import kmu.maplayers.base.style.BorderSmoothingStyle;
-import kmu.maplayers.base.style.CategoryStyle;
-import kmu.maplayers.base.style.ElementStyle;
-import kmu.maplayers.base.style.GlobalStyle;
-import kmu.maplayers.base.style.HatchStyle;
-import kmu.maplayers.base.style.HoverGlowStyle;
-import kmu.maplayers.base.style.HoverHighlightStyle;
-import kmu.maplayers.base.style.HoverWashStyle;
-import kmu.maplayers.base.style.MapCategory;
-import kmu.maplayers.base.style.RenderStyle;
+import kmu.maplayers.base.theme.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.GlobalStyle;
+import kmu.maplayers.base.theme.HatchStyle;
+import kmu.maplayers.base.theme.HoverGlowStyle;
+import kmu.maplayers.base.theme.HoverHighlightStyle;
+import kmu.maplayers.base.theme.HoverWashStyle;
+import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
@@ -137,7 +137,7 @@ final class PoliticalMapTerritoriesTest {
             categories.put(MapCategory.DECIVILISED, decivilisedStyle);
             categories.put(MapCategory.UNINHABITED, uninhabitedStyle);
             var globalStyle = new GlobalStyle(new HatchStyle(5, 5, 5),
-                    new BorderSmoothingStyle(true, true, 5, 5, 5), NO_HOVER_HIGHLIGHT, 0.3);
+                    new BorderSmoothingStyle(true, true, 5, 5, 5, 5, 5), NO_HOVER_HIGHLIGHT, 0.3);
             var renderStyle = new RenderStyle(globalStyle, categories);
             PoliticalMapView viewMock = mock(PoliticalMapView.class);
             var grouping = OwnershipGrouping.identity();
@@ -330,7 +330,7 @@ final class PoliticalMapTerritoriesTest {
         for (var entry : factionIdBySystemId.entrySet()) {
             ownerBySystemId.put(entry.getKey(), ownerOf(entry.getValue()));
         }
-        return PoliticalMapTestTerritories.createTerritoriesOwnedBy(ownerBySystemId);
+        return PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(ownerBySystemId);
     }
 
     // Clustering keys off the faction id alone, so the palette shades are inert here.
@@ -370,7 +370,7 @@ final class PoliticalMapTerritoriesTest {
     // shared fixture's inert placeholders, since isEmpty reads only the draw lists.
     private static PoliticalMapTerritories drawablesWith(Map<String, StyledCell> styledCells,
             Map<String, FactionTerritory> territories) {
-        var drawables = PoliticalMapTestTerritories.createTerritoriesOwnedBy(Map.of());
+        var drawables = PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(Map.of());
         // The draw lists are not constructor inputs; fill the internally-created maps so
         // this fixture's only varying state is what isEmpty reads.
         drawables.getStyledCellByCellId().putAll(styledCells);
@@ -379,11 +379,11 @@ final class PoliticalMapTerritoriesTest {
     }
 
     private static StyledCell anyStyledCell() {
-        return PoliticalMapTestTerritories.createPlaceholderStyledCell();
+        return PoliticalMapTerritoryFixtures.createPlaceholderStyledCell();
     }
 
     private static FactionTerritory anyFactionTerritory() {
-        return PoliticalMapTestTerritories.createTerritoryWithLoops(List.of());
+        return PoliticalMapTerritoryFixtures.createTerritoryWithLoops(List.of());
     }
 
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise

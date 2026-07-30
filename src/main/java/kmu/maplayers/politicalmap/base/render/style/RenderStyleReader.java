@@ -1,15 +1,15 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.base.style.BorderSmoothingStyle;
-import kmu.maplayers.base.style.CategoryStyle;
-import kmu.maplayers.base.style.ElementStyle;
-import kmu.maplayers.base.style.GlobalStyle;
-import kmu.maplayers.base.style.HatchStyle;
-import kmu.maplayers.base.style.HoverGlowStyle;
-import kmu.maplayers.base.style.HoverHighlightStyle;
-import kmu.maplayers.base.style.HoverWashStyle;
-import kmu.maplayers.base.style.MapCategory;
-import kmu.maplayers.base.style.RenderStyle;
+import kmu.maplayers.base.theme.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.GlobalStyle;
+import kmu.maplayers.base.theme.HatchStyle;
+import kmu.maplayers.base.theme.HoverGlowStyle;
+import kmu.maplayers.base.theme.HoverHighlightStyle;
+import kmu.maplayers.base.theme.HoverWashStyle;
+import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
@@ -61,14 +61,27 @@ public final class RenderStyleReader {
                         KmuLunaSettings.getPoliticalMapHatchSpacing(),
                         KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
                         KmuLunaSettings.getPoliticalMapHatchWidth()),
-                new BorderSmoothingStyle(
-                        KmuLunaSettings.shouldSandBorderSpikes(),
-                        KmuLunaSettings.shouldRoundBorderCorners(),
-                        KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
-                        KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
-                        KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians()),
+                readBorderSmoothingStyle(),
                 readHoverHighlightStyle(),
                 KmuLunaSettings.getPoliticalMapDesaturationDarkening());
+    }
+
+    /**
+     * Reads the border smoothing profile: the two Dev-tab gates plus the shape each pass works
+     * to. Read as one value so every pass over any loops - a cluster border, a lone cell's
+     * outline, the debug capture of each stage - works to the same numbers.
+     *
+     * @return the sector-wide smoothing profile as the player has it set
+     */
+    public static BorderSmoothingStyle readBorderSmoothingStyle() {
+        return new BorderSmoothingStyle(
+                KmuLunaSettings.shouldSandBorderSpikes(),
+                KmuLunaSettings.shouldRoundBorderCorners(),
+                KmuLunaSettings.getPoliticalMapBorderSpikeHeight(),
+                KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians(),
+                KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
+                KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
+                KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians());
     }
 
     // Reads the cursor's feedback into one style: the shared palette choice both its elements

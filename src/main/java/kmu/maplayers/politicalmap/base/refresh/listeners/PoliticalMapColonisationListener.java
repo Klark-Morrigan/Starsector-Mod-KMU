@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.PlayerColonizationListener;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
@@ -20,7 +20,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * (the colony is created at its starting size, not grown into it) and abandoning
  * is not a decivilisation (the market is pulled from the economy without turning
  * neutral first). So this routes both through the same targeted refresh
- * ({@link PoliticalMapRefresh#markSystemPoliticsStale}), re-deriving only the
+ * ({@link MapLayerRefresh#markSystemPoliticsStale}), re-deriving only the
  * affected system and its neighbours; whether the change flips the dominant owner
  * is decided later, when the plugin re-derives that one system.
  *

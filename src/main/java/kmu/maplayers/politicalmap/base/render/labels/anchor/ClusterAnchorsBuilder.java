@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.FactionPalette;
 
-import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
+import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
@@ -66,7 +66,7 @@ public final class ClusterAnchorsBuilder {
     // to the selected bloc's name, since the view cannot name a synthetic id.
     public static void rebuildClusterAnchors(
             List<ClusterAnchor> anchors,
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             Map<String, DominantOwner> ownerBySystemId,
             SectorAPI sector,
             FactionPalette desaturationPalette,
@@ -133,7 +133,7 @@ public final class ClusterAnchorsBuilder {
     // someone is actually looking at the anchors.
     public static void rebuildClusterAnchorsFromSector(
             List<ClusterAnchor> anchors,
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             SectorAPI sector,
             PoliticalMapView view) {
 

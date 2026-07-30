@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import kmlib.starsector.memory.SectorMemoryString;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import java.util.function.Predicate;
 
@@ -28,7 +28,7 @@ import java.util.function.Predicate;
  * the default a fresh save holds, so no off sentinel is needed: a stored id means "filtering that
  * bloc", no key means "not filtering".
  *
- * <p>A pick or a clear bumps {@link PoliticalMapRefresh#requestFilterRefresh()} so the overlay
+ * <p>A pick or a clear bumps {@link MapLayerRefresh#requestFilterRefresh()} so the overlay
  * repaints live, standing in for the {@code settingsRevision} bump these sidebar-only changes never
  * make. The bump is gated on the store actually landing, so a call before the sector exists (or a
  * clear with nothing selected) neither writes nor repaints.
@@ -67,7 +67,7 @@ public final class FilterSelection {
      */
     public static void selectBloc(String viewId, String blocId) {
         if (resolveSlot(viewId).set(blocId)) {
-            PoliticalMapRefresh.requestFilterRefresh();
+            MapLayerRefresh.requestFilterRefresh();
         }
     }
 
@@ -80,7 +80,7 @@ public final class FilterSelection {
      */
     public static void clearSelection(String viewId) {
         if (resolveSlot(viewId).clear()) {
-            PoliticalMapRefresh.requestFilterRefresh();
+            MapLayerRefresh.requestFilterRefresh();
         }
     }
 

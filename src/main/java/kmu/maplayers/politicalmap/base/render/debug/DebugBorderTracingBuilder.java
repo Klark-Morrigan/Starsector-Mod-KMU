@@ -6,16 +6,16 @@ import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
+import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.geometry.PoliticalMapGeometryCache;
-import kmu.maplayers.base.geometry.SystemClusterBorders;
 import kmu.maplayers.base.render.regions.BorderSmoothing;
+import kmu.maplayers.base.render.regions.ClusterBorderTrace;
+import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.settings.KmuLunaSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +56,7 @@ public final class DebugBorderTracingBuilder {
     // factionless cells) into the three stage lists. Independent of the production
     // drawables, so the plugin builds this instead of them in debug mode, not alongside.
     public static PoliticalMapDebugTerritories buildDebugDrawables(
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             SectorAPI sector) {
 
         var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
@@ -68,10 +68,11 @@ public final class DebugBorderTracingBuilder {
                 ownerBySystemId);
 
         var decivilisedSystemIds = DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector);
-        var weldTolerance = KmuLunaSettings.getPoliticalMapBorderWeldTolerance();
-        var miterLimit = KmuLunaSettings.getPoliticalMapBorderMiterLimit();
-        var isSandingOn = KmuLunaSettings.shouldSandBorderSpikes();
-        var isRoundingOn = KmuLunaSettings.shouldRoundBorderCorners();
+        // The same trace and the same smoothing profile the production build reads, so a stage
+        // captured here is the geometry the normal render would have drawn rather than one this
+        // builder assembled from its own reads of the same knobs.
+        var borderTrace = ClusterBorderTrace.readFromLunaSettings();
+        var borderSmoothing = RenderStyleReader.readBorderSmoothingStyle();
         var baseLoops = new ArrayList<float[]>();
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
@@ -79,14 +80,10 @@ public final class DebugBorderTracingBuilder {
         for (var memberCellIds : cellGrouping.groupCellIdsByKey().values()) {
             // Whole clusters, so no neighbour is coincident: every boundary edge takes the
             // uniform channel, exactly as the drawn national border does.
-            var insetRings = SystemClusterBorders.traceBorderRings(
+            var insetRings = borderTrace.traceRings(
                     memberCellIds,
                     geometryCache.getCellEdgesByCellId(),
-                    cellGrouping,
-                    Set.of(),
-                    CellShaper.BORDER_INSET_DISTANCE,
-                    weldTolerance,
-                    miterLimit);
+                    cellGrouping);
             if (insetRings.isEmpty()) {
                 continue;
             }
@@ -97,12 +94,12 @@ public final class DebugBorderTracingBuilder {
             var base = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
             addFlattenedLoops(baseLoops, base);
             var smoothed = base;
-            if (isSandingOn) {
-                smoothed = BorderSmoothing.sandBorderSpikes(smoothed);
+            if (borderSmoothing.shouldSandSpikes()) {
+                smoothed = BorderSmoothing.sandBorderSpikes(smoothed, borderSmoothing);
                 addFlattenedLoops(despikedLoops, smoothed);
             }
-            if (isRoundingOn) {
-                smoothed = BorderSmoothing.roundBorderCorners(smoothed);
+            if (borderSmoothing.shouldRoundCorners()) {
+                smoothed = BorderSmoothing.roundBorderCorners(smoothed, borderSmoothing);
                 addFlattenedLoops(roundedLoops, smoothed);
             }
         }
@@ -110,7 +107,7 @@ public final class DebugBorderTracingBuilder {
                 geometryCache,
                 cellGrouping,
                 decivilisedSystemIds,
-                isRoundingOn,
+                borderSmoothing,
                 baseLoops,
                 roundedLoops);
 
@@ -127,13 +124,13 @@ public final class DebugBorderTracingBuilder {
     // owned cells (traced as clusters above) and any category whose outline is "No color",
     // matching the normal render's visibility so the overlay stays legible.
     private static void addFactionlessOutlines(
-            PoliticalMapGeometryCache geometryCache,
+            CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
             Set<String> decivilisedSystemIds,
-            boolean isRoundingOn,
+            BorderSmoothingStyle borderSmoothing,
             List<float[]> baseLoops,
             List<float[]> roundedLoops) {
-                
+
         // The whole theme rather than the two factionless bundles separately, so a category
         // resolved by the shared rule indexes straight into it - the same lookup the production
         // draw makes, which is what keeps the overlay showing the cells the map would show.
@@ -160,8 +157,10 @@ public final class DebugBorderTracingBuilder {
             }
             var base = List.of(shaped.fillPolygon());
             addFlattenedLoops(baseLoops, base);
-            if (isRoundingOn) {
-                addFlattenedLoops(roundedLoops, BorderSmoothing.roundBorderCorners(base));
+            if (borderSmoothing.shouldRoundCorners()) {
+                addFlattenedLoops(
+                        roundedLoops,
+                        BorderSmoothing.roundBorderCorners(base, borderSmoothing));
             }
         }
     }

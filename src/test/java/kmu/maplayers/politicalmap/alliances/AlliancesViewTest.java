@@ -10,7 +10,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -82,7 +82,7 @@ final class AlliancesViewTest {
             // the revision - that is what folds it into the content token and repaints the view
             // without a reload.
             var before = AlliancesView.INSTANCE.getContentRevision();
-            PoliticalMapRefresh.requestAllianceRefresh();
+            MapLayerRefresh.requestAllianceRefresh();
 
             assertThat(AlliancesView.INSTANCE.getContentRevision()).isNotEqualTo(before);
         }
@@ -93,7 +93,7 @@ final class AlliancesViewTest {
             // never move settingsRevision, so the recede-style revision must fold in here for a flip
             // to repaint the overlay live.
             var before = AlliancesView.INSTANCE.getContentRevision();
-            PoliticalMapRefresh.requestRecedeStyleRefresh();
+            MapLayerRefresh.requestRecedeStyleRefresh();
 
             assertThat(AlliancesView.INSTANCE.getContentRevision()).isNotEqualTo(before);
         }

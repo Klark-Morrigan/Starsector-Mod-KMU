@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.refresh.listeners;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,41 +27,41 @@ final class PoliticalMapDecivListenerTest {
 
         @Test
         void marksTheDecivilisedColonysSystemStale() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             listener.reportColonyDecivilized(marketInSystem("mkt", "sys"), false);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksTheSystemStaleEvenWhenFullyDestroyed() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             listener.reportColonyDecivilized(marketInSystem("mkt", "sys"), true);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
             var marketMock = mock(MarketAPI.class);
             when(marketMock.getId()).thenReturn("mkt");
             when(marketMock.getStarSystem()).thenReturn(null);
 
             listener.reportColonyDecivilized(marketMock, false);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             listener.reportColonyDecivilized(null, false);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
     }
 
@@ -70,11 +70,11 @@ final class PoliticalMapDecivListenerTest {
 
         @Test
         void marksNothingSinceTheColonyIsStillFactionOwned() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             listener.reportColonyAboutToBeDecivilized(marketInSystem("mkt", "sys"), false);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
     }
 

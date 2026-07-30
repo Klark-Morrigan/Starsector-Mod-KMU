@@ -378,7 +378,7 @@ axes: a dead colony is presence, not territory.
   dominance rule and takes no owner color, so it reads as a known-but-unowned
   region rather than territory.
 - **Admission regardless of access.** Inhabitation alone puts a system on the
-  map: `PoliticalMapVisibility.shouldAppearOnMap` is `StarSystems.isReachable`
+  map: `MapVisibility.shouldAppearOnMap` is `StarSystems.isReachable`
   OR inhabited (a discovered colony or a revealed decivilised planet), so a
   transverse-only or abyssal world - hidden from the map by its own
   `star_hidden_on_map` / abyssal tags - still appears once it holds a revealed

@@ -77,7 +77,7 @@ about what the overlay means.
   cells and opaque grouping keys into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
   border - none of which interprets a key.
-- **`base/visibility`** - which star systems a layer draws at all: `PoliticalMapVisibility` admits a
+- **`base/visibility`** - which star systems a layer draws at all: `MapVisibility` admits a
   system on either of two paths (reachable and drawn by the vanilla map, or inhabited) and hashes the
   admitted set into the fingerprint that says it moved; `DrawnSystemPositions` exposes that rule as
   one predicate every walk shares, and each drawn system's live hyperspace position.
@@ -86,10 +86,10 @@ about what the overlay means.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
   how it is drawn. What the name reads and what shade it takes arrive from the layer as functions
   of a grouping key, so the overlay names nothing itself.
-- **[The theme records](base/style/README.md)** - the player's appearance choices as inert value
+- **[The theme records](base/theme/README.md)** - the player's appearance choices as inert value
   types, read once per rebuild. A layer brings its own reader to populate them.
 - **`base/hover`** - what the cursor is over, and what the map says back. The values are
-  `PoliticalMapHover` (the hovered cell and the cluster around it), `PoliticalMapHoverState` (the
+  `MapHover` (the hovered cell and the cluster around it), `MapHoverState` (the
   shared holder the map render pass publishes to and the later UI passes read, since only that pass
   can invert a cursor pixel to a world point), and `HoverHighlight` (the loops and triangles one
   hover lights up). `HoverHighlightGeometry` resolves that geometry and `HoverHighlightRenderer`
@@ -105,7 +105,7 @@ about what the overlay means.
   one draw for both - and `CellTooltipRows` the four lines a body may be written in, so two layers'
   boxes differ only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
-  finds the changes the engine announces to nobody. `PoliticalMapSectorWatcher` owns the loop
+  finds the changes the engine announces to nobody. `MapLayerSectorWatcher` owns the loop
   alone and asks a `MapLayerStalenessSource` what moved since it last asked, so which changes
   count, and which signal each one raises, stay the layer's answer. The signals themselves and
   the four rebuild paths they drive are

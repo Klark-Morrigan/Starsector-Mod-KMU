@@ -68,7 +68,7 @@ emits the same log line.
 **The sector watcher** catches everything the engine fires no event for - a gate
 activating, a system being cut off, a dead colony surveyed, an AI faction quietly
 capturing a colony. It is split across the framework/layer line:
-[`PoliticalMapSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/PoliticalMapSectorWatcher.java)
+[`MapLayerSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerSectorWatcher.java)
 owns only the throttled campaign-thread loop, and asks a
 [`MapLayerStalenessSource`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerStalenessSource.java)
 what has changed since it last asked, so what counts as a change never has to be
@@ -98,12 +98,12 @@ second reader.
 
 | Signal | Home | Bumped by | Read by |
 | --- | --- | --- | --- |
-| `geometryRevision` | [`PoliticalMapRefresh`](../../src/main/java/kmu/maplayers/base/refresh/PoliticalMapRefresh.java) | the drawn-system set or moving-system set changing | the geometry cache |
-| stale-system id set | `PoliticalMapRefresh` | colony events + the watcher's owner diff | the incremental politics refresh |
-| `allianceRevision` | `PoliticalMapRefresh` | the alliance-set fingerprint moving | the alliances view only |
-| `recedeStyleRevision` | `PoliticalMapRefresh` | the Mute / Desaturate sidebar toggles | the pipeline, under any view (the receded blocs and decivilised ground), plus the alliances view for its own non-allied recede |
-| `filterRevision` | `PoliticalMapRefresh` | picking or clearing the spotlight bloc | the pipeline, under any view |
-| `mapStyleRevision` | `PoliticalMapRefresh` | the uninhabited-outline and name-format toggles | the pipeline, under any view |
+| `geometryRevision` | [`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java) | the drawn-system set or moving-system set changing | the geometry cache |
+| stale-system id set | `MapLayerRefresh` | colony events + the watcher's owner diff | the incremental politics refresh |
+| `allianceRevision` | `MapLayerRefresh` | the alliance-set fingerprint moving | the alliances view only |
+| `recedeStyleRevision` | `MapLayerRefresh` | the Mute / Desaturate sidebar toggles | the pipeline, under any view (the receded blocs and decivilised ground), plus the alliances view for its own non-allied recede |
+| `filterRevision` | `MapLayerRefresh` | picking or clearing the spotlight bloc | the pipeline, under any view |
+| `mapStyleRevision` | `MapLayerRefresh` | the uninhabited-outline and name-format toggles | the pipeline, under any view |
 | `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the territories rebuild |
 | content revision | each `PoliticalMapView` | the view's own live inputs, folded via `Fingerprints` | the territories rebuild |
 
@@ -135,7 +135,7 @@ null draw list. The last good draw lists stay on screen in the meantime.
 
 ### Cell geometry
 
-[`PoliticalMapGeometryCache`](../../src/main/java/kmu/maplayers/base/geometry/PoliticalMapGeometryCache.java)
+[`CellGeometryCache`](../../src/main/java/kmu/maplayers/base/geometry/CellGeometryCache.java)
 holds the raw Voronoi cells keyed by system id. It is updated by *diffing* the
 reachable set against what it holds and rebuilding only the affected cells: adding
 or removing one site changes that site's cell and the cells within twice the cell

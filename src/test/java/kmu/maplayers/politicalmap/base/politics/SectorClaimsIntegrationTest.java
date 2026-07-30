@@ -10,11 +10,11 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.dark;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.faction;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWithSystems;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.systemMarkets;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.dark;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.faction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.sectorWithSystems;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.systemMarkets;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

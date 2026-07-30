@@ -108,7 +108,7 @@ fill states are [ownership resolution](base/politics/ownership/README.md).
 
 Everything above is drawn over the systems the framework's `base/visibility` admits, shaped out of
 [cell geometry](../base/geometry/README.md), styled against the
-[theme records](../base/style/README.md), named by the
+[theme records](../base/theme/README.md), named by the
 [cluster-name overlay](../base/labels/README.md), and hovered through `base/hover` - all of which
 belong to the framework rather than to this layer: they work on an opaque grouping key, and the views
 decide that the key names a bloc.

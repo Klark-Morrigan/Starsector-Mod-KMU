@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,43 +26,43 @@ final class MarketPoliticsRefreshTest {
 
         @Test
         void marksTheMarketsSystemStale() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             MarketPoliticsRefresh.markSystemStaleForMarket(marketInSystem("mkt", "sys"),
                     "colony resize", "prevSize=3");
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksTheMarketsSystemStaleWithEmptyContext() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             MarketPoliticsRefresh.markSystemStaleForMarket(marketInSystem("mkt", "sys"),
                     "colony resize", "");
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
             var marketMock = mock(MarketAPI.class);
             when(marketMock.getStarSystem()).thenReturn(null);
 
             MarketPoliticsRefresh.markSystemStaleForMarket(marketMock, "colony resize",
                     "prevSize=3");
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             MarketPoliticsRefresh.markSystemStaleForMarket(null, "colony resize", "prevSize=3");
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
     }
 

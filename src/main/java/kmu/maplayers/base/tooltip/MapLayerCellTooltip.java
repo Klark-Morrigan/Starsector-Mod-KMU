@@ -8,8 +8,8 @@ import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.map.VanillaMapTooltip;
 
-import kmu.maplayers.base.hover.PoliticalMapHover;
-import kmu.maplayers.base.hover.PoliticalMapHoverState;
+import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuLunaSettings;
 
@@ -57,7 +57,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (!CampaignMapView.isSectorMapWithStarscapeOff()) {
             return;
         }
-        var hover = PoliticalMapHoverState.getInstance().getHover();
+        var hover = MapHoverState.getInstance().getHover();
         if (!shouldDrawTooltipFor(hover)) {
             return;
         }
@@ -101,7 +101,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     // Whether a tooltip should draw for this hover - the pure part of the gate: a cell must be
     // hovered. Stepping aside for the vanilla star tooltip is the separate, live VanillaMapTooltip
     // check in the render pass, since it reads the map's UI tree rather than the hover value.
-    static boolean shouldDrawTooltipFor(PoliticalMapHover hover) {
+    static boolean shouldDrawTooltipFor(MapHover hover) {
         return hover.isHovering();
     }
 }

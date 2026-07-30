@@ -29,7 +29,7 @@ import java.util.Set;
  * the systems the geometry draws - including any a dev reveal override put on the map. What
  * stays here is the coupling the map needs: a single shared instance joins the
  * campaign-thread writer (the poll) to the render-thread reader (the geometry cache, which
- * skips the movers) with no owner between them, the same seam {@link PoliticalMapRefresh}
+ * skips the movers) with no owner between them, the same seam {@link MapLayerRefresh}
  * provides for its counters.
  */
 public final class MovingSystems {
@@ -86,7 +86,8 @@ public final class MovingSystems {
         if (sector == null) {
             return false;
         }
-        return systemMotionTracker.updateMovingSystems(sector,
+        return systemMotionTracker.updateMovingSystems(
+                sector,
                 DrawnSystemPositions.buildDrawnSystemPredicate(sector, overrides));
     }
 }

@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ final class PoliticalMapDiscoveryListenerTest {
 
         @Test
         void marksSystemStaleWhenDiscoveredEntityHasAMarket() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
             // Build the market fully before the entity stub: marketInSystem stubs
             // internally, so nesting it inside when(...).thenReturn(...) would trip
             // Mockito's unfinished-stubbing guard.
@@ -39,25 +39,25 @@ final class PoliticalMapDiscoveryListenerTest {
 
             listener.reportEntityDiscovered(entityMock);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketlessEntity() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
-            var beforeGeometry = PoliticalMapRefresh.getGeometryRevision();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
+            var beforeGeometry = MapLayerRefresh.getGeometryRevision();
 
             // A jump point has no market; accessibility is judged elsewhere, so the
             // listener marks no system and requests no geometry rebuild.
             listener.reportEntityDiscovered(mock(JumpPointAPI.class));
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
-            assertThat(PoliticalMapRefresh.getGeometryRevision()).isEqualTo(beforeGeometry);
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.getGeometryRevision()).isEqualTo(beforeGeometry);
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
             var marketMock = mock(MarketAPI.class);
             when(marketMock.getStarSystem()).thenReturn(null);
             var entityMock = mock(SectorEntityToken.class);
@@ -65,7 +65,7 @@ final class PoliticalMapDiscoveryListenerTest {
 
             listener.reportEntityDiscovered(entityMock);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
     }
 

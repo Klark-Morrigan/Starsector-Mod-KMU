@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.memory.SectorMemoryFlag;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 /**
  * Whether uninhabited systems draw their outline, persisted per save. Off by default, so only
@@ -50,7 +50,7 @@ public final class UninhabitedOutlinePreference {
         // settingsRevision, which this sidebar-only toggle never moves since it is not a LunaLib
         // field.
         if (isOutlineDrawn.set(shouldDrawOutline)) {
-            PoliticalMapRefresh.requestMapStyleRefresh();
+            MapLayerRefresh.requestMapStyleRefresh();
         }
     }
 }

@@ -25,11 +25,12 @@ sample every input exactly once so the whole pass keys off one snapshot - which 
 incremental re-shape reuse those same builders on a handful of cells and land on a result
 identical to a full rebuild.
 
-- `StyledCellBuilder` bakes one cell. An **owned** cell contributes only its interior seams,
-  because its fill and national border belong to the cluster it fuses into. A **factionless**
-  cell (decivilised, or uninhabited) does not fuse, so it keeps its own fill and outline and
-  resolves both palette slots to the shared neutral colour. Of the two, only decivilised ground
-  takes the pass's recede - see [what recedes](#what-recedes) below.
+- `StyledCellBuilder` bakes one cell, choosing which form of `StyledCell` it takes. An **owned**
+  cell becomes a `FusedCell` and contributes only its interior seams, because its fill and national
+  border belong to the cluster it fuses into - the form has no slot for either. A **factionless**
+  cell (decivilised, or uninhabited) does not fuse, so it becomes a `LoneCell` carrying its own fill
+  and outline, and resolves both palette slots to the shared neutral colour. Of the two, only
+  decivilised ground takes the pass's recede - see [what recedes](#what-recedes) below.
 - `FactionTerritoryBuilder` bakes one bloc: its national border, traced across every system it
   holds, and its fill - which it hands to the framework's `SplitFillBuilder`, see
   [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and border come from the
@@ -38,8 +39,9 @@ identical to a full rebuild.
 The shaping the two builders drive is the framework's, in
 [`base.render.regions`](../../../../base/render/regions/README.md): `BorderSmoothing` sands spikes
 and rounds corners of the traced borders, `VertexRuns` flattens shaped cells into GL vertex runs,
-and `StyledCell` is the flat per-cell packet they bake into. Element colours, opacities, and widths
-come from cascading the `base.style` records with each bloc's recede adjustment, asked for through
+and `StyledCell` is the per-cell packet they bake into, in whichever of its two forms. Element
+colours, opacities, and widths
+come from cascading the `base.theme` records with each bloc's recede adjustment, asked for through
 `PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc resolves from one read.
 
 ## What recedes
@@ -76,8 +78,8 @@ in the neutral style on the far side of that channel.
 
 Those factionless fills are per cell rather than per cluster: factionless ground never fuses into
 a cluster, so it has no traced region to fill from and each cell tessellates its own outline
-instead. Which is why `StyledCell` carries fill triangles at all, where an owned cell leaves them
-empty and takes its fill from its `FactionTerritory`.
+instead. Which is why a `LoneCell` carries fill triangles at all, where an owned cell has no fill of
+its own to carry and takes it from its `FactionTerritory`.
 
 The two player settings under Territory reach on the **Political map - visuals**
 tab - *Uncontrolled systems give way to faction territory* and *Frontier keep-out* -
@@ -137,7 +139,7 @@ settings or how the runs were shaped.
 
 The *styling resolvers* (what colour/width each category and bloc draws in) live in
 [`render.style`](../style/README.md), over the framework's
-[`base.style`](../../../../base/style/README.md) records they read the player's choices
+[`base.theme`](../../../../base/theme/README.md) records they read the player's choices
 out of; this package consumes both, it does not decide either. The *name overlay*
 that sits on top is the framework's [`base.labels`](../../../../base/labels/README.md), fed the
 names and shades this layer resolves in `render.labels.anchor`. The *shape work* the two builders

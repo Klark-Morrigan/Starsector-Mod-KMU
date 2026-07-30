@@ -15,22 +15,22 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.FULL_STABILITY;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.NEUTRAL_BASE;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.TRITACHYON_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.centreSystemOn;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.dark;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.faction;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.hiddenMarket;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.marketAtStability;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.onlySystem;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.placeMarketOnOrbit;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWith;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.stabilityWeightedRules;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.starAt;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.undiscoveredHiddenMarket;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.visibleMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.centreSystemOn;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.dark;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.faction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.hiddenMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.marketAtStability;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.onlySystem;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketOnOrbit;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.sectorWith;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.stabilityWeightedRules;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.starAt;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.undiscoveredHiddenMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.visibleMarket;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -376,7 +376,7 @@ class SectorPoliticsIntegrationTest {
     // Delegates to the shared builder, which takes stability as its sixth argument.
     private static MarketAPI market(FactionAPI faction, int size, boolean isConditionOnly,
             boolean isHidden, boolean isUndiscovered) {
-        return PoliticsTestSectors.market(faction, size, isConditionOnly, isHidden,
+        return SectorPoliticsFixtures.market(faction, size, isConditionOnly, isHidden,
                 isUndiscovered, FULL_STABILITY);
     }
 }

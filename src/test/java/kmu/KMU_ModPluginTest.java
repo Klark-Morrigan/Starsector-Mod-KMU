@@ -7,8 +7,8 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.refresh.PoliticalMapSectorWatcher;
 import kmu.maplayers.base.render.SectorMapLayerStarscapeTerrainPlugin;
 import kmu.maplayers.base.render.SectorMapLayerTerrainPlugin;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
@@ -199,7 +199,7 @@ class KMU_ModPluginTest {
     }
 
     @Nested
-    class InstallPoliticalMapSectorWatcher {
+    class InstallMapLayerSectorWatcher {
 
         @Test
         void installsTheWatcherAsATransientScript() {
@@ -208,9 +208,9 @@ class KMU_ModPluginTest {
             // another poller - and would bake this class's name into the file.
             var sectorMock = mock(SectorAPI.class);
 
-            KMU_ModPlugin.installPoliticalMapSectorWatcher(sectorMock);
+            KMU_ModPlugin.installMapLayerSectorWatcher(sectorMock);
 
-            verify(sectorMock).addTransientScript(any(PoliticalMapSectorWatcher.class));
+            verify(sectorMock).addTransientScript(any(MapLayerSectorWatcher.class));
             verify(sectorMock, never()).addScript(any());
         }
 
@@ -222,11 +222,11 @@ class KMU_ModPluginTest {
             var firstLoadSectorMock = mock(SectorAPI.class);
             var secondLoadSectorMock = mock(SectorAPI.class);
 
-            KMU_ModPlugin.installPoliticalMapSectorWatcher(firstLoadSectorMock);
-            KMU_ModPlugin.installPoliticalMapSectorWatcher(secondLoadSectorMock);
+            KMU_ModPlugin.installMapLayerSectorWatcher(firstLoadSectorMock);
+            KMU_ModPlugin.installMapLayerSectorWatcher(secondLoadSectorMock);
 
-            var firstWatcher = ArgumentCaptor.forClass(PoliticalMapSectorWatcher.class);
-            var secondWatcher = ArgumentCaptor.forClass(PoliticalMapSectorWatcher.class);
+            var firstWatcher = ArgumentCaptor.forClass(MapLayerSectorWatcher.class);
+            var secondWatcher = ArgumentCaptor.forClass(MapLayerSectorWatcher.class);
             verify(firstLoadSectorMock).addTransientScript(firstWatcher.capture());
             verify(secondLoadSectorMock).addTransientScript(secondWatcher.capture());
             assertThat(secondWatcher.getValue()).isNotSameAs(firstWatcher.getValue());
@@ -241,7 +241,7 @@ class KMU_ModPluginTest {
                 var movingSystemsMock = mock(MovingSystems.class);
                 movingStaticMock.when(MovingSystems::getInstance).thenReturn(movingSystemsMock);
 
-                KMU_ModPlugin.installPoliticalMapSectorWatcher(mock(SectorAPI.class));
+                KMU_ModPlugin.installMapLayerSectorWatcher(mock(SectorAPI.class));
 
                 verify(movingSystemsMock).reset();
             }
@@ -250,7 +250,7 @@ class KMU_ModPluginTest {
         @Test
         void toleratesANullSector() {
             var watcherInstallOnNullSector = (Runnable) () ->
-                    KMU_ModPlugin.installPoliticalMapSectorWatcher(null);
+                    KMU_ModPlugin.installMapLayerSectorWatcher(null);
 
             assertThatCode(watcherInstallOnNullSector::run).doesNotThrowAnyException();
         }

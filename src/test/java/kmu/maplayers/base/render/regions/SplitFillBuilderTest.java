@@ -3,7 +3,7 @@ package kmu.maplayers.base.render.regions;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.EdgeTarget;
-import kmu.maplayers.base.style.HatchStyle;
+import kmu.maplayers.base.theme.HatchStyle;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -111,7 +111,7 @@ final class SplitFillBuilderTest {
         return new SplitFillBuilder(
                 EDGES,
                 GROUPING,
-                new PoliticalBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT),
+                new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT),
                 BORDER_LOOPS,
                 HATCH);
     }

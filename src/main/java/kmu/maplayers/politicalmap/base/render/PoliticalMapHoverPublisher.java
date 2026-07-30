@@ -6,8 +6,8 @@ import kmlib.starsector.ui.map.CampaignMapTransform;
 import kmlib.starsector.ui.map.ModelviewMatrixReader;
 
 import kmu.maplayers.base.geometry.CellHitTest;
-import kmu.maplayers.base.hover.PoliticalMapHover;
-import kmu.maplayers.base.hover.PoliticalMapHoverState;
+import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverState;
 
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Mouse;
@@ -80,7 +80,7 @@ final class PoliticalMapHoverPublisher {
             parkHover();
             return;
         }
-        PoliticalMapHoverState.getInstance().publishHover(new PoliticalMapHover(
+        MapHoverState.getInstance().publishHover(new MapHover(
                 hoveredSystemId,
                 territories.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
         logHoverChange(hoveredSystemId);
@@ -89,7 +89,7 @@ final class PoliticalMapHoverPublisher {
     // Parks the hover and resets the log guard, so stepping off a cell and back onto it reports
     // again rather than being swallowed as unchanged.
     private void parkHover() {
-        PoliticalMapHoverState.getInstance().clearHover();
+        MapHoverState.getInstance().clearHover();
         lastLoggedSystemId = null;
     }
 
@@ -102,6 +102,6 @@ final class PoliticalMapHoverPublisher {
         }
         lastLoggedSystemId = hoveredSystemId;
         LOG.debug("Political map hover resolved; system=" + hoveredSystemId + " clusterMembers="
-                + PoliticalMapHoverState.getInstance().getHover().clusterMemberSystemIds());
+                + MapHoverState.getInstance().getHover().clusterMemberSystemIds());
     }
 }

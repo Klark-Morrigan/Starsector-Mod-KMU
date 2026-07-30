@@ -3,7 +3,7 @@ package kmu.maplayers.base.labels.anchor.specifications;
 import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.render.regions.PoliticalBorderTrace;
+import kmu.maplayers.base.render.regions.ClusterBorderTrace;
 import kmu.settings.KmuLunaSettings;
 
 /**
@@ -40,7 +40,7 @@ public record LabelAnchorSpecification(
     public static LabelAnchorSpecification readFromLunaSettings() {
         return new LabelAnchorSpecification(
                 new AnchorSearch(
-                        PoliticalBorderTrace.readFromLunaSettings(),
+                        ClusterBorderTrace.readFromLunaSettings(),
                         KmuLunaSettings.getPoliticalMapAnchorEndInsetMultiple()
                                 * CellShaper.BORDER_INSET_DISTANCE,
                         KmuLunaSettings.getPoliticalMapAnchorIconClearance(),

@@ -4,9 +4,9 @@ import kmlib.opengl.GlColor;
 import kmlib.opengl.GlRuns;
 import kmlib.profiling.Timings;
 
-import kmu.maplayers.base.style.HoverGlowStyle;
-import kmu.maplayers.base.style.HoverHighlightStyle;
-import kmu.maplayers.base.style.HoverWashStyle;
+import kmu.maplayers.base.theme.HoverGlowStyle;
+import kmu.maplayers.base.theme.HoverHighlightStyle;
+import kmu.maplayers.base.theme.HoverWashStyle;
 
 import org.lwjgl.opengl.GL11;
 
@@ -43,7 +43,7 @@ public final class HoverHighlightRenderer {
     public void renderOnMap(
             HoverHighlightSource source,
             HoverHighlightStyle style,
-            PoliticalMapHover hover,
+            MapHover hover,
             float factor,
             float alphaMult) {
 
@@ -85,7 +85,7 @@ public final class HoverHighlightRenderer {
     // the caller skips the pass.
     private static Color resolveHighlightColour(
             HoverHighlightSource source,
-            PoliticalMapHover hover,
+            MapHover hover,
             HoverHighlightStyle style) {
 
         if (!hover.isHovering()) {

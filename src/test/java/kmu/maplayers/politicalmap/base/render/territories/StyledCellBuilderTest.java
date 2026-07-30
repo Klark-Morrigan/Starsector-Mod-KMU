@@ -3,16 +3,17 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.geometry.ShapedCell;
-import kmu.maplayers.base.style.BorderSmoothingStyle;
-import kmu.maplayers.base.style.CategoryStyle;
-import kmu.maplayers.base.style.ElementStyle;
-import kmu.maplayers.base.style.GlobalStyle;
-import kmu.maplayers.base.style.HatchStyle;
-import kmu.maplayers.base.style.HoverGlowStyle;
-import kmu.maplayers.base.style.HoverHighlightStyle;
-import kmu.maplayers.base.style.HoverWashStyle;
-import kmu.maplayers.base.style.MapCategory;
-import kmu.maplayers.base.style.RenderStyle;
+import kmu.maplayers.base.render.regions.StyledCell;
+import kmu.maplayers.base.theme.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.GlobalStyle;
+import kmu.maplayers.base.theme.HatchStyle;
+import kmu.maplayers.base.theme.HoverGlowStyle;
+import kmu.maplayers.base.theme.HoverHighlightStyle;
+import kmu.maplayers.base.theme.HoverWashStyle;
+import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
@@ -93,8 +94,8 @@ final class StyledCellBuilderTest {
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, false))),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(styled.inner().color()).isEqualTo(OWNER_SECONDARY);
-            assertThat(styled.inner().alpha()).isEqualTo(0.5f);
+            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(OWNER_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(0.5f);
         }
 
         @Test
@@ -103,8 +104,8 @@ final class StyledCellBuilderTest {
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(1.0, true))),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(styled.inner().color()).isEqualTo(DESATURATED_SECONDARY);
-            assertThat(styled.inner().alpha()).isEqualTo(1.0f);
+            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(DESATURATED_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(1.0f);
         }
 
         @Test
@@ -113,8 +114,8 @@ final class StyledCellBuilderTest {
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, true))),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(styled.inner().color()).isEqualTo(DESATURATED_SECONDARY);
-            assertThat(styled.inner().alpha()).isEqualTo(0.5f);
+            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(DESATURATED_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(0.5f);
         }
 
         @Test
@@ -123,22 +124,22 @@ final class StyledCellBuilderTest {
                     drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(styled.inner().color()).isEqualTo(OWNER_SECONDARY);
-            assertThat(styled.inner().alpha()).isEqualTo(1.0f);
+            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(OWNER_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(1.0f);
         }
 
         @Test
-        void buildStyledCellForSystemDefersAnOwnedCellsFillAndOutlineToItsCluster() {
-            // An owned cell's fill and national border are the cluster's, so the cell bakes no
-            // geometry for them and resolves no colour - nothing of them is emitted per cell.
+        void buildStyledCellForSystemBuildsAnOwnedCellInTheFusedFormWithItsSeamsAlone() {
+            // An owned cell's fill and national border are the cluster's, drawn from the cluster's
+            // own shape. It comes back in the fused form, which has no slot for either, so what it
+            // does not draw is a fact about its type rather than a hidden paint a reader has to
+            // spot - and the seams it does draw are all it carries.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(styled.fillTriangles()).isEmpty();
-            assertThat(styled.boundaryEdges()).isEmpty();
-            assertThat(styled.fillPaint().isHidden()).isTrue();
-            assertThat(styled.outer().isHidden()).isTrue();
+            assertThat(styled).isInstanceOf(StyledCell.FusedCell.class);
+            assertThat(requireFusedCell(styled).seamEdges()).isNotNull();
         }
 
         @Test
@@ -151,8 +152,8 @@ final class StyledCellBuilderTest {
                     filteringDrawablesWith(new BlocStyleAdjustment(0.5, true)),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(styled.inner().color()).isEqualTo(DESATURATED_SECONDARY);
-            assertThat(styled.inner().alpha()).isEqualTo(0.5f);
+            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(DESATURATED_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(0.5f);
         }
 
         @Test
@@ -167,7 +168,7 @@ final class StyledCellBuilderTest {
                     null, ownedCell());
 
             assertThat(styled).isNotNull();
-            assertThat(styled.outer().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).outlinePaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
         }
 
         @Test
@@ -179,8 +180,8 @@ final class StyledCellBuilderTest {
                     factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
-            assertThat(styled.fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
-            assertThat(styled.fillTriangles()).isNotEmpty();
+            assertThat(requireLoneCell(styled).fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).fillTriangles()).isNotEmpty();
         }
 
         @Test
@@ -195,10 +196,10 @@ final class StyledCellBuilderTest {
                             filledOutlineStyle(), new BlocStyleAdjustment(0.5, true)),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
-            assertThat(styled.fillPaint().color()).isEqualTo(DESATURATED_PRIMARY);
-            assertThat(styled.fillPaint().alpha()).isEqualTo(0.5f);
-            assertThat(styled.outer().color()).isEqualTo(DESATURATED_PRIMARY);
-            assertThat(styled.outer().alpha()).isEqualTo(0.5f);
+            assertThat(requireLoneCell(styled).fillPaint().color()).isEqualTo(DESATURATED_PRIMARY);
+            assertThat(requireLoneCell(styled).fillPaint().alpha()).isEqualTo(0.5f);
+            assertThat(requireLoneCell(styled).outlinePaint().color()).isEqualTo(DESATURATED_PRIMARY);
+            assertThat(requireLoneCell(styled).outlinePaint().alpha()).isEqualTo(0.5f);
         }
 
         @Test
@@ -211,8 +212,8 @@ final class StyledCellBuilderTest {
                             filledOutlineStyle(), new BlocStyleAdjustment(0.5, false)),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
-            assertThat(styled.fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
-            assertThat(styled.fillPaint().alpha()).isEqualTo(0.5f);
+            assertThat(requireLoneCell(styled).fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).fillPaint().alpha()).isEqualTo(0.5f);
         }
 
         @Test
@@ -225,8 +226,8 @@ final class StyledCellBuilderTest {
                             filledOutlineStyle(), new BlocStyleAdjustment(0.5, true)),
                     "never-settled-system", ownedCell());
 
-            assertThat(styled.outer().color()).isEqualTo(FACTIONLESS_NEUTRAL);
-            assertThat(styled.outer().alpha()).isEqualTo(1.0f);
+            assertThat(requireLoneCell(styled).outlinePaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).outlinePaint().alpha()).isEqualTo(1.0f);
         }
 
         @Test
@@ -237,8 +238,8 @@ final class StyledCellBuilderTest {
                     factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
-            assertThat(styled.fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
-            assertThat(styled.fillPaint().alpha()).isEqualTo(1.0f);
+            assertThat(requireLoneCell(styled).fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).fillPaint().alpha()).isEqualTo(1.0f);
         }
 
         @Test
@@ -250,8 +251,8 @@ final class StyledCellBuilderTest {
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
             assertThat(styled).isNotNull();
-            assertThat(styled.fillTriangles()).isNotEmpty();
-            assertThat(styled.outer().isHidden()).isTrue();
+            assertThat(requireLoneCell(styled).fillTriangles()).isNotEmpty();
+            assertThat(requireLoneCell(styled).outlinePaint().isHidden()).isTrue();
         }
 
         @Test
@@ -263,7 +264,7 @@ final class StyledCellBuilderTest {
                     "never-settled-system", ownedCell());
 
             assertThat(styled).isNotNull();
-            assertThat(styled.fillTriangles()).isEmpty();
+            assertThat(requireLoneCell(styled).fillTriangles()).isEmpty();
         }
 
         @Test
@@ -318,7 +319,7 @@ final class StyledCellBuilderTest {
                     Map.of(), Set.of(DECIVILISED_SYSTEM_ID), Set.of(),
                     new MapStyling(
                             new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
-                                    new BorderSmoothingStyle(false, false, 0, 0, 0),
+                                    new BorderSmoothingStyle(false, false, 0, 0, 0, 0, 0),
                                     NO_HOVER_HIGHLIGHT, 0.3), categories),
                             FACTIONLESS_NEUTRAL,
                             new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
@@ -400,7 +401,7 @@ final class StyledCellBuilderTest {
                 categories.put(category, style);
             }
             return new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
-                    new BorderSmoothingStyle(false, false, 0, 0, 0), NO_HOVER_HIGHLIGHT, 0.3), categories);
+                    new BorderSmoothingStyle(false, false, 0, 0, 0, 0, 0), NO_HOVER_HIGHLIGHT, 0.3), categories);
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never
@@ -411,5 +412,21 @@ final class StyledCellBuilderTest {
                             new double[] {10, 10}, new double[] {0, 10}),
                     new boolean[] {false, false, false, false});
         }
+    }
+
+    // Narrows a built cell to the fused form - a cell inside a region, carrying only its seams.
+    // Failing here is itself the assertion for a case about an owned cell: the builder choosing the
+    // other form would mean the cell claimed a fill and an outline of its own.
+    private static StyledCell.FusedCell requireFusedCell(StyledCell styled) {
+        assertThat(styled).isInstanceOf(StyledCell.FusedCell.class);
+        return (StyledCell.FusedCell) styled;
+    }
+
+    // Narrows a built cell to the lone form - a cell that is its own region, carrying its fill and
+    // outline. As above, the narrowing doubles as the assertion that the builder read the cell as
+    // factionless ground rather than as part of a cluster.
+    private static StyledCell.LoneCell requireLoneCell(StyledCell styled) {
+        assertThat(styled).isInstanceOf(StyledCell.LoneCell.class);
+        return (StyledCell.LoneCell) styled;
     }
 }

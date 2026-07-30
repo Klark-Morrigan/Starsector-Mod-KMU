@@ -17,8 +17,8 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.orbitingEntity;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.starAt;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.orbitingEntity;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.starAt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;

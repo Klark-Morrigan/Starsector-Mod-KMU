@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.memory.SectorMemoryString;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 /**
  * How cluster labels spell their owners' names - full, short, or not at all - persisted per save.
@@ -53,7 +53,7 @@ public final class NameFormatPreference {
         // settingsRevision, which this sidebar-only choice never moves since it is not a LunaLib
         // field.
         if (selectedNameFormat.set(choice.persistenceKey())) {
-            PoliticalMapRefresh.requestMapStyleRefresh();
+            MapLayerRefresh.requestMapStyleRefresh();
         }
     }
 }

@@ -7,8 +7,8 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
+import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.refresh.PoliticalMapSectorWatcher;
 import kmu.maplayers.base.render.SectorMapLayerTerrainPlugin;
 import kmu.maplayers.base.sidebar.runtime.IntelSidebarHost;
 import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
@@ -160,7 +160,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         try {
-            installPoliticalMapSectorWatcher(Global.getSector());
+            installMapLayerSectorWatcher(Global.getSector());
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU political map sector watcher", exception);
         }
@@ -285,7 +285,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // cadence, so which of those count as a change is handed in as the political
     // map's own staleness source. Transient: not saved, so it is re-added fresh
     // each load and never duplicates across reloads.
-    static void installPoliticalMapSectorWatcher(SectorAPI sector) {
+    static void installMapLayerSectorWatcher(SectorAPI sector) {
         if (sector == null) {
             return;
         }
@@ -298,7 +298,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // A fresh source per load, so the baselines it diffs against start empty rather
         // than carrying the previous save's last read into this one.
         sector.addTransientScript(
-                new PoliticalMapSectorWatcher(new PoliticalMapStalenessSource()));
+                new MapLayerSectorWatcher(new PoliticalMapStalenessSource()));
     }
 
     // Registers the sidebar's render and input listeners for both screens it draws on: the sector

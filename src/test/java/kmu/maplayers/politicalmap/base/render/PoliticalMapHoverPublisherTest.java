@@ -6,8 +6,8 @@ import com.fs.starfarer.api.SettingsAPI;
 import kmlib.testfixtures.starsector.ui.map.ModelviewMatrixReaderFake;
 
 import kmu.maplayers.base.geometry.SystemClusterIndex;
-import kmu.maplayers.base.hover.PoliticalMapHover;
-import kmu.maplayers.base.hover.PoliticalMapHoverState;
+import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 
 import org.junit.jupiter.api.AfterEach;
@@ -124,7 +124,7 @@ final class PoliticalMapHoverPublisherTest {
 
         private MockedStatic<GL11> glMock;
         private MockedStatic<Mouse> mouseMock;
-        private PoliticalMapHoverState hoverState;
+        private MapHoverState hoverState;
 
         @BeforeEach
         void setUp() {
@@ -151,8 +151,8 @@ final class PoliticalMapHoverPublisherTest {
             mouseMock.when(Mouse::getY).thenReturn(CURSOR_Y_ON_CELL);
             // A standing hover from an earlier frame, so a parking assertion distinguishes "parked"
             // from "left alone": both publish nothing new, only the first clears.
-            hoverState = PoliticalMapHoverState.getInstance();
-            hoverState.publishHover(new PoliticalMapHover("stale", List.of("stale")));
+            hoverState = MapHoverState.getInstance();
+            hoverState.publishHover(new MapHover("stale", List.of("stale")));
         }
 
         @AfterEach
@@ -184,7 +184,7 @@ final class PoliticalMapHoverPublisherTest {
 
             buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
 
-            assertThat(hoverState.getHover()).isSameAs(PoliticalMapHover.NONE);
+            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
         }
 
         @Test
@@ -196,7 +196,7 @@ final class PoliticalMapHoverPublisherTest {
 
             buildPublisherOnALiveMap().publishHoverFrom(cacheMock, MAP_ZOOM);
 
-            assertThat(hoverState.getHover()).isSameAs(PoliticalMapHover.NONE);
+            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
         }
 
         @Test
@@ -207,7 +207,7 @@ final class PoliticalMapHoverPublisherTest {
 
             buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
 
-            assertThat(hoverState.getHover()).isSameAs(PoliticalMapHover.NONE);
+            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
         }
 
         @Test
@@ -216,7 +216,7 @@ final class PoliticalMapHoverPublisherTest {
             // is unusable and no cell may be resolved from it.
             buildPublisherReading(null).publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
 
-            assertThat(hoverState.getHover()).isSameAs(PoliticalMapHover.NONE);
+            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
         }
 
         @Test
@@ -225,7 +225,7 @@ final class PoliticalMapHoverPublisherTest {
             // cursor sits over must not be published on the strength of a point that never came.
             buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), UNUSABLE_ZOOM);
 
-            assertThat(hoverState.getHover()).isSameAs(PoliticalMapHover.NONE);
+            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
         }
     }
 }

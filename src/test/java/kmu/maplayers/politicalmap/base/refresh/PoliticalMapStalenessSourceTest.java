@@ -3,8 +3,8 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
  * owner-map diff marks exactly the changed systems politics-stale (the same set the event
  * listeners feed), and an alliance-fingerprint move bumps the alliance revision - while the
  * first poll only establishes the baselines. Asserts on the real geometry and alliance
- * counters' deltas and the real stale set rather than mocking {@link PoliticalMapRefresh}
+ * counters' deltas and the real stale set rather than mocking {@link MapLayerRefresh}
  * (whose logger a static mock would null during class init), stubbing the snapshot scan and
  * the alliance fingerprint across polls.
  */
@@ -169,7 +169,7 @@ final class PoliticalMapStalenessSourceTest {
     // Polls the source pollCount times against the run's stubbed reads and reports how far
     // each counter moved and which systems were marked politics-stale. Global is stubbed so
     // the scan's sector read is inert and the source's logger is a no-op mock;
-    // PoliticalMapRefresh is left real so its counters and stale set record the requests. The
+    // MapLayerRefresh is left real so its counters and stale set record the requests. The
     // stale set is drained first to isolate this run from earlier tests' marks.
     //
     // The shared moving tracker is always stubbed to a mock instance rather than driven with
@@ -218,17 +218,17 @@ final class PoliticalMapStalenessSourceTest {
     // reads as configuration alone; the counters are read as deltas so a run is isolated from
     // earlier tests' bumps.
     private static RefreshOutcome runPollsAndReadOutcome(int pollCount) {
-        PoliticalMapRefresh.drainStalePoliticsSystemIds();
-        var geometryBefore = PoliticalMapRefresh.getGeometryRevision();
-        var allianceBefore = PoliticalMapRefresh.getAllianceRevision();
+        MapLayerRefresh.drainStalePoliticsSystemIds();
+        var geometryBefore = MapLayerRefresh.getGeometryRevision();
+        var allianceBefore = MapLayerRefresh.getAllianceRevision();
         var stalenessSource = new PoliticalMapStalenessSource();
         for (var poll = 0; poll < pollCount; poll++) {
             stalenessSource.markChangesSinceLastPoll();
         }
         return new RefreshOutcome(
-                PoliticalMapRefresh.getGeometryRevision() - geometryBefore,
-                PoliticalMapRefresh.getAllianceRevision() - allianceBefore,
-                PoliticalMapRefresh.drainStalePoliticsSystemIds());
+                MapLayerRefresh.getGeometryRevision() - geometryBefore,
+                MapLayerRefresh.getAllianceRevision() - allianceBefore,
+                MapLayerRefresh.drainStalePoliticsSystemIds());
     }
 
     // One run's stubbed reads: what the two snapshot scans return, what the two alliance

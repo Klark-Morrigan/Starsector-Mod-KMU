@@ -26,7 +26,7 @@ Part of [the map-layer framework](../../README.md); see the
 
 The cells are a Voronoi partition of the drawn systems: each system holds the
 space closer to it than to any other.
-[`PoliticalMapGeometryCache`](PoliticalMapGeometryCache.java) builds and holds
+[`CellGeometryCache`](CellGeometryCache.java) builds and holds
 them, keyed by system id.
 
 A cell is kept as a list of [`CellEdge`](CellEdge.java) rather than a bare polygon,

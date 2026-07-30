@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ final class PoliticalMapColonisationListenerTest {
 
         @Test
         void marksTheColonisedPlanetsSystemStale() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
             // Build the market fully before the planet stub: marketInSystem stubs
             // internally, so nesting it inside when(...).thenReturn(...) would trip
             // Mockito's unfinished-stubbing guard.
@@ -39,28 +39,28 @@ final class PoliticalMapColonisationListenerTest {
 
             listener.reportPlayerColonizedPlanet(planetMock);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForPlanetWithoutMarket() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
             var planetMock = mock(PlanetAPI.class);
             when(planetMock.getId()).thenReturn("planet");
             when(planetMock.getMarket()).thenReturn(null);
 
             listener.reportPlayerColonizedPlanet(planetMock);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
 
         @Test
         void marksNothingForNullPlanet() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             listener.reportPlayerColonizedPlanet(null);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
     }
 
@@ -69,31 +69,31 @@ final class PoliticalMapColonisationListenerTest {
 
         @Test
         void marksTheAbandonedColonysSystemStale() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             listener.reportPlayerAbandonedColony(marketInSystem("sys"));
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
             var marketMock = mock(MarketAPI.class);
             when(marketMock.getStarSystem()).thenReturn(null);
 
             listener.reportPlayerAbandonedColony(marketMock);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
-            PoliticalMapRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStalePoliticsSystemIds();
 
             listener.reportPlayerAbandonedColony(null);
 
-            assertThat(PoliticalMapRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
         }
     }
 

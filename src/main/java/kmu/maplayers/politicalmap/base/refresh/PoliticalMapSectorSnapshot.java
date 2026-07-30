@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
-import kmu.maplayers.base.visibility.PoliticalMapVisibility;
+import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
@@ -36,7 +36,7 @@ import java.util.Map;
  * <p>Both come from a single walk. Each system is read from the economy once - the
  * same footprint read sizes its dominance and tells whether it is inhabited - and
  * that one read feeds both outputs. The concerns stay separated: the visibility
- * contribution is {@link PoliticalMapVisibility}'s and the dominant owner is
+ * contribution is {@link MapVisibility}'s and the dominant owner is
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
  */
 public record PoliticalMapSectorSnapshot(
@@ -134,7 +134,7 @@ public record PoliticalMapSectorSnapshot(
             var hasRevealedDecivilised = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
             var isInhabited = !footprintByFactionId.isEmpty() || hasRevealedDecivilised;
 
-            if (!PoliticalMapVisibility.shouldAppearOnMap(
+            if (!MapVisibility.shouldAppearOnMap(
                     system,
                     visibleStars,
                     isInhabited,
@@ -142,7 +142,7 @@ public record PoliticalMapSectorSnapshot(
                 continue;
             }
             var systemId = system.getId();
-            visibility += PoliticalMapVisibility.computeVisibilityContribution(
+            visibility += MapVisibility.computeVisibilityContribution(
                     systemId,
                     hasRevealedDecivilised);
                     

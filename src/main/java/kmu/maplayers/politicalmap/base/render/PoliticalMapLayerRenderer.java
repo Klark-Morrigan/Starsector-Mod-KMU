@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
-import kmu.maplayers.base.hover.PoliticalMapHoverState;
+import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -69,7 +69,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         cache.discardCachedState();
         // The hover names a system id from the sector being left, so it is parked rather than left
         // to light a cell - or float a tooltip - that the new sector may not even contain.
-        PoliticalMapHoverState.getInstance().clearHover();
+        MapHoverState.getInstance().clearHover();
     }
 
     @Override
@@ -108,14 +108,14 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // and the publisher (and the renderer binding it holds) is never created.
     private void publishHoverIfEnabled(float factor) {
         if (!KmuLunaSettings.getPoliticalMapHoverEnabled()) {
-            PoliticalMapHoverState.getInstance().clearHover();
+            MapHoverState.getInstance().clearHover();
             return;
         }
         // The sidebar is drawn over the map, so a cursor on it is not hovering the territory
         // beneath. Park the hover so the panel neither lights a cell under it nor floats a tooltip
         // over it.
         if (isCursorOverSidebar()) {
-            PoliticalMapHoverState.getInstance().clearHover();
+            MapHoverState.getInstance().clearHover();
             return;
         }
         if (hoverPublisher == null) {

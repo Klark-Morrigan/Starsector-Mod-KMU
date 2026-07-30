@@ -13,15 +13,15 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.FULL_STABILITY;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.TRITACHYON_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.faction;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWith;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.sectorWithSystems;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.stabilityWeightedRules;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.systemMarkets;
-import static kmu.maplayers.politicalmap.base.politics.PoliticsTestSectors.visibleMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.faction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.sectorWith;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.sectorWithSystems;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.stabilityWeightedRules;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.systemMarkets;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.visibleMarket;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
@@ -130,6 +130,6 @@ class BlocStatsAggregatorIntegrationTest {
     // A bare rock's condition-only market (the placeholder every uninhabited planet carries): no
     // colony, so it confers no ownership and marks no bloc presence. Local to this suite.
     private static MarketAPI conditionOnlyMarket(FactionAPI faction, int size) {
-        return PoliticsTestSectors.market(faction, size, true, false, false, FULL_STABILITY);
+        return SectorPoliticsFixtures.market(faction, size, true, false, false, FULL_STABILITY);
     }
 }

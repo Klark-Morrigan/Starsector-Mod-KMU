@@ -4,7 +4,7 @@ import com.fs.starfarer.api.Global;
 
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.hover.PoliticalMapHover;
+import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
@@ -59,14 +59,14 @@ final class MapLayerCellTooltipTest {
 
         @Test
         void shouldDrawTooltipForIsTrueForAHoveredCell() {
-            var hover = new PoliticalMapHover("system", List.of("system"));
+            var hover = new MapHover("system", List.of("system"));
 
             assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(hover)).isTrue();
         }
 
         @Test
         void shouldDrawTooltipForIsFalseWhenNothingIsHovered() {
-            assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(PoliticalMapHover.NONE)).isFalse();
+            assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(MapHover.NONE)).isFalse();
         }
     }
 
