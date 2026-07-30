@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -28,6 +29,37 @@ final class PoliticalMapSectorWatcherTest {
     private static final float ADVANCE_PAST_POLL_INTERVAL = 10f;
     // Short of the interval's lower bound, so no advance of this size can elapse it.
     private static final float ADVANCE_WITHIN_POLL_INTERVAL = 1f;
+
+    @Nested
+    class IsDone {
+
+        @Test
+        void neverFinishesSoTheEngineKeepsPollingForTheLifeOfTheSave() {
+            // The engine drops a script that reports done, and nothing reinstalls one before
+            // the next load - so this answering true would silently stop live refresh for the
+            // rest of the save, with no crash to point at it.
+            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+                var watcher = new PoliticalMapSectorWatcher(mock(MapLayerStalenessSource.class));
+
+                assertThat(watcher.isDone()).isFalse();
+            }
+        }
+    }
+
+    @Nested
+    class RunWhilePaused {
+
+        @Test
+        void doesNotPollWhileTheGameIsPaused() {
+            // Nothing the poll watches for can happen while the game is paused, so polling
+            // then would only spend a sector walk on the campaign thread to find no change.
+            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+                var watcher = new PoliticalMapSectorWatcher(mock(MapLayerStalenessSource.class));
+
+                assertThat(watcher.runWhilePaused()).isFalse();
+            }
+        }
+    }
 
     @Nested
     class Advance {
