@@ -13,6 +13,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
 
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
@@ -37,20 +39,30 @@ final class CellGeometryCacheTest {
     // not reach the other.
     private static final float FAR = 20_000f;
 
-    // The frontier resolution cells are seeded at unless the tuning knob changes it;
-    // the access-diff tests all run at this one count so a rebuild is driven only by
-    // the reachable set, never by a resolution change.
-    private static final int DEFAULT_BOUND_SEGMENTS = VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS;
-
-    // The cell reach cells are seeded at unless a test changes it - the production
-    // default. The access-diff tests all run at this one radius so a rebuild is driven
-    // only by the reachable set, never by a reach change; FAR is set well past twice it.
+    // The cell reach cells are seeded at unless a test changes it - the production default.
+    // FAR is set well past twice it, so a change near one cell cannot reach the other.
     private static final double DEFAULT_CELL_RADIUS = 4000.0;
+
+    // What cells are seeded with unless a test changes it: the production frontier resolution
+    // and reach. The access-diff tests all run at this one pair, so a rebuild there is driven
+    // only by the reachable set and never by a reseed.
+    private static final CellSeedInputs DEFAULT_SEED_INPUTS = new CellSeedInputs(
+            VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
+            DEFAULT_CELL_RADIUS);
 
     // No movers in the access-diff tests: an empty moving set makes every drawn system
     // participate in the partition. The exclusion tests pass an explicit set to drop
     // one system.
     private static final Set<String> NO_MOVING_SYSTEMS = Set.of();
+
+    // No reveal widening in the diff tests: each fixture decides admission through the normal
+    // gates, so a cell appearing or vanishing is the access diff and never an override flip.
+    private static final MapVisibilityOverrides NO_REVEAL = MapVisibilityOverrides.NONE;
+
+    // The force override on, which admits every system whatever the normal gates say - the one
+    // widening that needs no economy staged behind it to change the participating set.
+    private static final MapVisibilityOverrides FORCED_ONTO_MAP =
+            new MapVisibilityOverrides(false, true);
 
     @Nested
     class UpdateFromSector {
@@ -59,7 +71,8 @@ final class CellGeometryCacheTest {
         void updateBuildsCellsForReachableSystemsAndSkipsInaccessibleOnes() {
             var cache = new CellGeometryCache();
 
-            updateAtDefaultResolution(cache,
+            updateAtDefaultResolution(
+                    cache,
                     accessibleSystem("a", 0, 0),
                     accessibleSystem("b", 4000, 0),
                     inaccessibleSystem("hidden", 8000, 0));
@@ -69,14 +82,39 @@ final class CellGeometryCacheTest {
         }
 
         @Test
+        void updateSeedsACellForAnInaccessibleSystemWhenTheOverridesForceItOntoTheMap() {
+            // The overrides reach the partition through the drawn-set walk, so the system the
+            // test above proves is skipped has to participate here - and its neighbour has to
+            // be clipped by it, since a site that seeds a cell also takes area from the cells
+            // around it. Nothing else in this class passes a widening, so without this the
+            // parameter could be dropped on the floor and every test would still pass.
+            var cache = new CellGeometryCache();
+
+            cache.updateFromSector(
+                    sectorOf(
+                            accessibleSystem("a", 0, 0),
+                            inaccessibleSystem("hidden", 4000, 0)),
+                    NO_MOVING_SYSTEMS,
+                    DEFAULT_SEED_INPUTS,
+                    FORCED_ONTO_MAP);
+
+            assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a", "hidden");
+            assertThat(neighboursOf(cache, "a")).containsExactly("hidden");
+        }
+
+        @Test
         void updateLeavesDistantCellsUntouchedWhenASystemIsAdded() {
             var cache = new CellGeometryCache();
-            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0));
+            updateAtDefaultResolution(
+                    cache,
+                    accessibleSystem("a", 0, 0),
+                    accessibleSystem("b", FAR, 0));
             var distantBefore = cache.getCellEdgesByCellId().get("b");
 
             // Add a system next to "a"; "b" is far away, so its cell must be the
             // very same object - proof it was not recomputed.
-            updateAtDefaultResolution(cache,
+            updateAtDefaultResolution(
+                    cache,
                     accessibleSystem("a", 0, 0),
                     accessibleSystem("b", FAR, 0),
                     accessibleSystem("c", 100, 0));
@@ -89,8 +127,12 @@ final class CellGeometryCacheTest {
         void updateReseedsEveryCellWhenTheFrontierResolutionChanges() {
             var cache = new CellGeometryCache();
             cache.updateFromSector(
-                    sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
-                    NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS);
+                    sectorOf(
+                            accessibleSystem("a", 0, 0),
+                            accessibleSystem("b", FAR, 0)),
+                    NO_MOVING_SYSTEMS,
+                    DEFAULT_SEED_INPUTS,
+                    NO_REVEAL);
             var distantBefore = cache.getCellEdgesByCellId().get("b");
 
             // The segment count seeds every cell's frontier polygon, so lowering it
@@ -99,8 +141,12 @@ final class CellGeometryCacheTest {
             // diff would leave. A lone bounded cell keeps one edge per seed segment,
             // so its edge count drops to the new count.
             cache.updateFromSector(
-                    sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
-                    NO_MOVING_SYSTEMS, 24, DEFAULT_CELL_RADIUS);
+                    sectorOf(
+                            accessibleSystem("a", 0, 0),
+                            accessibleSystem("b", FAR, 0)),
+                    NO_MOVING_SYSTEMS,
+                    new CellSeedInputs(24, DEFAULT_CELL_RADIUS),
+                    NO_REVEAL);
 
             assertThat(cache.getCellEdgesByCellId().get("b")).isNotSameAs(distantBefore);
             assertThat(cache.getCellEdgesByCellId().get("b")).hasSize(24);
@@ -110,8 +156,12 @@ final class CellGeometryCacheTest {
         void updateReseedsEveryCellWhenTheCellRadiusChanges() {
             var cache = new CellGeometryCache();
             cache.updateFromSector(
-                    sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
-                    NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS);
+                    sectorOf(
+                            accessibleSystem("a", 0, 0),
+                            accessibleSystem("b", FAR, 0)),
+                    NO_MOVING_SYSTEMS,
+                    DEFAULT_SEED_INPUTS,
+                    NO_REVEAL);
             var distantBefore = cache.getCellEdgesByCellId().get("b");
 
             // The cell radius seeds each cell's reach into empty space, so changing it
@@ -119,8 +169,14 @@ final class CellGeometryCacheTest {
             // isolated cell must be a fresh object, not the untouched one an access diff
             // would leave in place, exactly as a frontier-resolution change reseeds it.
             cache.updateFromSector(
-                    sectorOf(accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0)),
-                    NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS, DEFAULT_CELL_RADIUS / 2.0);
+                    sectorOf(
+                            accessibleSystem("a", 0, 0),
+                            accessibleSystem("b", FAR, 0)),
+                    NO_MOVING_SYSTEMS,
+                    new CellSeedInputs(
+                            VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
+                            DEFAULT_CELL_RADIUS / 2.0),
+                    NO_REVEAL);
 
             assertThat(cache.getCellEdgesByCellId().get("b")).isNotSameAs(distantBefore);
         }
@@ -180,7 +236,10 @@ final class CellGeometryCacheTest {
         @Test
         void updateDropsTheAdjacencyOfASystemThatLosesAccess() {
             var cache = new CellGeometryCache();
-            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0));
+            updateAtDefaultResolution(
+                    cache,
+                    accessibleSystem("a", 0, 0),
+                    accessibleSystem("b", FAR, 0));
 
             updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
 
@@ -193,7 +252,8 @@ final class CellGeometryCacheTest {
             // makes it inhabited - it must still seed a cell.
             var cache = new CellGeometryCache();
 
-            updateAtDefaultResolution(cache,
+            updateAtDefaultResolution(
+                    cache,
                     accessibleSystem("a", 0, 0),
                     decivilisedUnreachableSystem("ruin", 4000, 0));
 
@@ -203,7 +263,8 @@ final class CellGeometryCacheTest {
         @Test
         void updateExcludesAMovingSystemAndReshapesItsNeighbourButNotDistantCells() {
             var cache = new CellGeometryCache();
-            updateAtDefaultResolution(cache,
+            updateAtDefaultResolution(
+                    cache,
                     accessibleSystem("m", 0, 0),
                     accessibleSystem("n", 2000, 0),
                     accessibleSystem("f", FAR, 0));
@@ -213,7 +274,9 @@ final class CellGeometryCacheTest {
             // "m" starts moving, so it drops out of the partition: it seeds no cell, and
             // "n" (within a neighbourhood radius) reshapes to reclaim its space, while
             // "f" is beyond reach and keeps the very same cell object.
-            updateExcluding(cache, Set.of("m"),
+            updateExcluding(
+                    cache,
+                    Set.of("m"),
                     accessibleSystem("m", 0, 0),
                     accessibleSystem("n", 2000, 0),
                     accessibleSystem("f", FAR, 0));
@@ -226,13 +289,22 @@ final class CellGeometryCacheTest {
         @Test
         void updateReturnsAStoppedSystemToThePartition() {
             var cache = new CellGeometryCache();
-            updateAtDefaultResolution(cache, accessibleSystem("m", 0, 0), accessibleSystem("n", 2000, 0));
-            updateExcluding(cache, Set.of("m"),
-                    accessibleSystem("m", 0, 0), accessibleSystem("n", 2000, 0));
+            updateAtDefaultResolution(
+                    cache,
+                    accessibleSystem("m", 0, 0),
+                    accessibleSystem("n", 2000, 0));
+            updateExcluding(
+                    cache,
+                    Set.of("m"),
+                    accessibleSystem("m", 0, 0),
+                    accessibleSystem("n", 2000, 0));
 
             // "m" comes to rest, so it is no longer a mover and rejoins the partition
             // with a fresh cell.
-            updateAtDefaultResolution(cache, accessibleSystem("m", 0, 0), accessibleSystem("n", 2000, 0));
+            updateAtDefaultResolution(
+                    cache,
+                    accessibleSystem("m", 0, 0),
+                    accessibleSystem("n", 2000, 0));
 
             assertThat(cache.getCellEdgesByCellId()).containsKey("m");
             assertThat(cache.getCellEdgesByCellId().get("m")).isNotEmpty();
@@ -241,13 +313,19 @@ final class CellGeometryCacheTest {
         @Test
         void updateExcludingAnIsolatedSystemLeavesDistantCellsUntouched() {
             var cache = new CellGeometryCache();
-            updateAtDefaultResolution(cache, accessibleSystem("m", 0, 0), accessibleSystem("f", FAR, 0));
+            updateAtDefaultResolution(
+                    cache,
+                    accessibleSystem("m", 0, 0),
+                    accessibleSystem("f", FAR, 0));
             var distantBefore = cache.getCellEdgesByCellId().get("f");
 
             // "m" starts moving but has no neighbour within a neighbourhood radius, so
             // its removal touches only itself; "f" keeps the same cell object.
-            updateExcluding(cache, Set.of("m"),
-                    accessibleSystem("m", 0, 0), accessibleSystem("f", FAR, 0));
+            updateExcluding(
+                    cache,
+                    Set.of("m"),
+                    accessibleSystem("m", 0, 0),
+                    accessibleSystem("f", FAR, 0));
 
             assertThat(cache.getCellEdgesByCellId()).doesNotContainKey("m");
             assertThat(cache.getCellEdgesByCellId().get("f")).isSameAs(distantBefore);
@@ -269,19 +347,30 @@ final class CellGeometryCacheTest {
     // Runs an update at the default frontier resolution with no movers, the count
     // cells stay at unless the tuning knob changes it. The access-diff tests use this
     // so the only thing that drives a rebuild is the reachable set.
-    private static void updateAtDefaultResolution(CellGeometryCache cache,
+    private static void updateAtDefaultResolution(
+            CellGeometryCache cache,
             StarSystemAPI... systems) {
-        cache.updateFromSector(sectorOf(systems), NO_MOVING_SYSTEMS, DEFAULT_BOUND_SEGMENTS,
-                DEFAULT_CELL_RADIUS);
+
+        cache.updateFromSector(
+                sectorOf(systems),
+                NO_MOVING_SYSTEMS,
+                DEFAULT_SEED_INPUTS,
+                NO_REVEAL);
     }
 
     // Runs an update at the default frontier resolution with the named systems
     // excluded from the partition as movers. The exclusion tests use this to drop a
     // system: it seeds no cell and clips no neighbour.
-    private static void updateExcluding(CellGeometryCache cache,
-            Set<String> movingSystemIds, StarSystemAPI... systems) {
-        cache.updateFromSector(sectorOf(systems), movingSystemIds, DEFAULT_BOUND_SEGMENTS,
-                DEFAULT_CELL_RADIUS);
+    private static void updateExcluding(
+            CellGeometryCache cache,
+            Set<String> movingSystemIds,
+            StarSystemAPI... systems) {
+                
+        cache.updateFromSector(
+                sectorOf(systems),
+                movingSystemIds,
+                DEFAULT_SEED_INPUTS,
+                NO_REVEAL);
     }
 
     private static SectorAPI sectorOf(StarSystemAPI... systems) {

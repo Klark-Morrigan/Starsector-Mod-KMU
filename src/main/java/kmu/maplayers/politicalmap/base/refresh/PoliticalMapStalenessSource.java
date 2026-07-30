@@ -5,7 +5,7 @@ import com.fs.starfarer.api.Global;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
@@ -70,8 +70,8 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         // player flips a toggle between the two - and, crucially, so the motion walk
         // observes the same revealed systems the geometry draws, not just the normally
         // visible ones.
-        var overrides = PoliticalMapDevOverrides.readFromLunaSettings();
-        var snapshot = PoliticalMapSectorSnapshot.scan(sector, overrides);
+        var devToggles = PoliticalMapDevToggles.readFromLunaSettings();
+        var snapshot = PoliticalMapSectorSnapshot.scan(sector, devToggles);
 
         // Observe positions every poll so a system that starts or stops moving is
         // taken out of, or returned to, the partition. Only a change to the moving set
@@ -79,7 +79,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         // reports no change and never churns the map.
         var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(
                 sector,
-                overrides);
+                devToggles.convertToVisibilityOverrides());
 
         // One call per axis, each handed the same first-poll flag and each owning its own
         // baseline, so no axis can be read without seeing how it treats a baseline poll.

@@ -6,13 +6,14 @@ import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
 import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapDebugTerritories;
@@ -79,18 +80,21 @@ final class PoliticalMapCache {
     private final List<Label> factionLabels = new ArrayList<>();
 
     // The revisions each half of the cache was built against. Geometry rebuilds when the
-    // reachable-system set changes or the frontier resolution/cell reach changes (either reseeds
-    // every cell); the territories rebuild on a content change (settings) or whenever the geometry
-    // itself was rebuilt. Start at -1 (NaN for the radius) so the first refresh builds both.
+    // reachable-system set changes or the seed inputs change (either reseeds every cell); the
+    // territories rebuild on a content change (settings) or whenever the geometry itself was
+    // rebuilt. The revisions start at -1 and the value fields at null, so the first refresh
+    // builds both halves.
     private int lastGeometryRevision = -1;
     private int lastContentRevision = -1;
-    private int lastBoundSegments = -1;
-    private double lastCellRadius = Double.NaN;
-    // The dev reveal overrides the cached geometry was last seeded under. Like the frontier
+    // The seed inputs the cached cells were cut at, held as the pair for the same reason as the
+    // toggles below: one value compare, and neither half can be advanced without the other.
+    private CellSeedInputs lastSeedInputs;
+    // The dev reveal toggles the cached geometry was last seeded under. Like the frontier
     // resolution they change which systems seed a cell, so a flip reseeds the partition - the
-    // settings-revision bump alone only restyles fixed geometry.
-    private boolean lastShowsAllFactions;
-    private boolean lastForcesAllSystemsOnMap;
+    // settings-revision bump alone only restyles fixed geometry. Held as the record rather than
+    // as its two booleans so the staleness check is one value compare, and null (not NONE) is
+    // the never-seeded seed, since NONE is a reading the player can actually be under.
+    private PoliticalMapDevToggles lastDevToggles;
 
     // One-shot guard for rebuild faults: refresh runs every frame the map is open, so a recurring
     // rebuild failure would flood the log. The first is recorded at ERROR, the rest silenced.
@@ -139,10 +143,8 @@ final class PoliticalMapCache {
         geometryCache.clearCachedCells();
         lastGeometryRevision = -1;
         lastContentRevision = -1;
-        lastBoundSegments = -1;
-        lastCellRadius = Double.NaN;
-        lastShowsAllFactions = false;
-        lastForcesAllSystemsOnMap = false;
+        lastSeedInputs = null;
+        lastDevToggles = null;
         // Per-system staleness names systems of the sector being left, so it is dropped rather than
         // replayed against the next one - the rebuild this discard forces re-derives every system.
         MapLayerRefresh.drainStalePoliticsSystemIds();
@@ -177,44 +179,32 @@ final class PoliticalMapCache {
         var rebuiltCells = false;
         var geometryRevision = MapLayerRefresh.getGeometryRevision();
 
-        // The frontier resolution is a geometry input, not just a style: a change reseeds every
-        // cell, so it makes the geometry stale the same way an access change does. Read once here
-        // and let updateFromSector do the reseed.
+        // The frontier resolution and the cell reach are geometry inputs, not just styles: each
+        // reseeds every cell, so a change makes the geometry stale the same way an access change
+        // does. Read once here and let updateFromSector do the reseed.
+        var seedInputs = new CellSeedInputs(
+                KmuLunaSettings.getPoliticalMapCellBoundSegments(),
+                KmuLunaSettings.getPoliticalMapCellRadius());
 
-        var boundSegments = KmuLunaSettings.getPoliticalMapCellBoundSegments();
-        // The cell reach is a geometry input for the same reason as the resolution: it sets how
-        // far each cell extends into empty space, so a change reseeds every cell and must rebuild
-        // the partition here rather than only restyle it below.
-        
-        var cellRadius = KmuLunaSettings.getPoliticalMapCellRadius();
-
-        // The two dev reveal overrides are geometry inputs for the same reason: each changes which
+        // The two dev reveal toggles are geometry inputs for the same reason: each changes which
         // systems seed a cell, so a flip must reseed the partition here rather than only restyle it
         // through the content revision below.
-        var devOverrides = PoliticalMapDevOverrides.readFromLunaSettings();
+        var devToggles = PoliticalMapDevToggles.readFromLunaSettings();
         if (geometryRevision != lastGeometryRevision
-                || boundSegments != lastBoundSegments
-                || cellRadius != lastCellRadius
-                || devOverrides.isShowingAllFactions() != lastShowsAllFactions
-                || devOverrides.isForcingAllSystemsOnMap() != lastForcesAllSystemsOnMap) {
+                || !seedInputs.equals(lastSeedInputs)
+                || !devToggles.equals(lastDevToggles)) {
 
             // Transition trace: a stale cell or one left behind after an access change can be tied
-            // to the revision step - or segment count or cell reach - that drove it.
+            // to the revision step - or the seed inputs or toggle flip - that drove it.
             LOG.debug("Political map geometry stale; rebuilding from revision "
                     + lastGeometryRevision + " to " + geometryRevision
-                    + ", boundSegments " + lastBoundSegments + " to " + boundSegments
-                    + ", cellRadius " + lastCellRadius + " to " + cellRadius
-                    + ", showAllFactions " + lastShowsAllFactions + " to "
-                    + devOverrides.isShowingAllFactions()
-                    + ", forceAllSystems " + lastForcesAllSystemsOnMap + " to "
-                    + devOverrides.isForcingAllSystemsOnMap());
+                    + ", seedInputs " + lastSeedInputs + " to " + seedInputs
+                    + ", devToggles " + lastDevToggles + " to " + devToggles);
 
-            rebuildGeometry(boundSegments, cellRadius, devOverrides);
+            rebuildGeometry(seedInputs, devToggles);
             lastGeometryRevision = geometryRevision;
-            lastBoundSegments = boundSegments;
-            lastCellRadius = cellRadius;
-            lastShowsAllFactions = devOverrides.isShowingAllFactions();
-            lastForcesAllSystemsOnMap = devOverrides.isForcingAllSystemsOnMap();
+            lastSeedInputs = seedInputs;
+            lastDevToggles = devToggles;
             rebuiltCells = true;
         }
 
@@ -367,12 +357,12 @@ final class PoliticalMapCache {
     // affected by an access change or a system starting or stopping moving - or every cell, when
     // the frontier resolution or the cell radius changed, since either reseeds them all. Feeds the
     // cache the currently-moving systems so they are left out of the partition (they seed no cell
-    // and clip no neighbour), and the dev reveal overrides so a forced or undiscovered-colony
-    // system joins the drawn set.
+    // and clip no neighbour), and the dev reveal toggles so a forced or undiscovered-colony
+    // system joins the drawn set. The toggles cross into the framework as the visibility overrides
+    // they amount to, so the geometry cache never learns which dev toggle wanted them.
     private void rebuildGeometry(
-            int boundSegments,
-            double cellRadius,
-            PoliticalMapDevOverrides overrides) {
+            CellSeedInputs seedInputs,
+            PoliticalMapDevToggles devToggles) {
 
         var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
         KmuProfiling
@@ -382,8 +372,7 @@ final class PoliticalMapCache {
                         () -> geometryCache.updateFromSector(
                                 Global.getSector(),
                                 movingSystemIds,
-                                boundSegments,
-                                cellRadius,
-                                overrides));
+                                seedInputs,
+                                devToggles.convertToVisibilityOverrides()));
     }
 }

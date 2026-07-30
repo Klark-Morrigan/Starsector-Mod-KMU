@@ -5,7 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
@@ -177,8 +178,8 @@ final class PoliticalMapStalenessSourceTest {
     // on the motion-detection math.
     private static RefreshOutcome pollThenReadRefreshOutcome(PollInputs inputs, int pollCount) {
         try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                MockedStatic<PoliticalMapDevOverrides> overridesMock =
-                        mockStatic(PoliticalMapDevOverrides.class);
+                MockedStatic<PoliticalMapDevToggles> overridesMock =
+                        mockStatic(PoliticalMapDevToggles.class);
                 MockedStatic<PoliticalMapSectorSnapshot> snapshotMock =
                         mockStatic(PoliticalMapSectorSnapshot.class);
                 MockedStatic<NexerelinAlliances> alliancesMock =
@@ -190,10 +191,10 @@ final class PoliticalMapStalenessSourceTest {
                     .thenReturn(mock(Logger.class));
             // The source reads the reveal toggles itself; stub them to the no-reveal view
             // so the scan and motion walks resolve the normal drawn set.
-            overridesMock.when(PoliticalMapDevOverrides::readFromLunaSettings)
-                    .thenReturn(PoliticalMapDevOverrides.NONE);
+            overridesMock.when(PoliticalMapDevToggles::readFromLunaSettings)
+                    .thenReturn(PoliticalMapDevToggles.NONE);
             snapshotMock.when(() -> PoliticalMapSectorSnapshot.scan(
-                            nullable(SectorAPI.class), any(PoliticalMapDevOverrides.class)))
+                            nullable(SectorAPI.class), any(PoliticalMapDevToggles.class)))
                     .thenReturn(inputs.firstSnapshot(), inputs.secondSnapshot());
             alliancesMock.when(NexerelinAlliances::computeAllianceFingerprint)
                     .thenReturn(inputs.firstAllianceFingerprint(),
@@ -204,7 +205,7 @@ final class PoliticalMapStalenessSourceTest {
             // (the tracker also has a Map-typed updateMovingSystems, so a bare any() is
             // ambiguous).
             when(movingSystemsMock.updateMovingSystems(nullable(SectorAPI.class),
-                            any(PoliticalMapDevOverrides.class)))
+                            any(MapVisibilityOverrides.class)))
                     .thenReturn(false, inputs.hasMovingSetChangedOnSecondPoll());
             movingStaticMock.when(MovingSystems::getInstance).thenReturn(movingSystemsMock);
 

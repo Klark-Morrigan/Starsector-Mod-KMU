@@ -89,6 +89,13 @@ every frame. Since hyperspace positions are fixed for the life of a save, the ce
 are built once and reconciled by diffing the drawn set - adding or removing a site
 provably only disturbs cells within twice the cell radius of it.
 
+[`CellSeedInputs`](CellSeedInputs.java) is what the diff cannot absorb: the frontier
+resolution each cell is cut with and how far it reaches into empty space. Both are
+per-cell, so a change to either invalidates every built cell rather than the ones a
+drawn-set change touched, and the cache discards what it holds instead of diffing.
+They travel as one value because that consequence is shared, and because the reach
+doubles as the distance the diff above scans.
+
 Systems that move are the exception: a system that rewrites its own position has no
 stable cell, and letting it clip its neighbours would drag their borders with it,
 so it is dropped from the site set rather than chased.

@@ -4,9 +4,13 @@ import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.settings.KmuLunaSettings;
 
 /**
- * The dev reveal overrides in force for one political-map resolution pass: the two
- * "Dev" toggles that widen what the map draws, read once from settings and threaded
- * down beside the {@link DominanceRules} rules.
+ * The two "Dev" reveal toggles in force for one political-map resolution pass, read once
+ * from settings and threaded down beside the {@link DominanceRules} rules.
+ *
+ * <p>Named for what it holds - the player's checkboxes - rather than for the effect they
+ * have downstream, which is what {@link MapVisibilityOverrides} is named for. Only one of
+ * these two toggles is purely an admission override anyway: show-all-factions is also a
+ * dominance-weighting input, so calling the pair "overrides" would describe half of it.
  *
  * <p>Both bypass a normal gate for inspection. {@code isShowingAllFactions} drops the
  * known-to-player filter in {@link KnownMarketFootprints}, so an undiscovered colony
@@ -32,37 +36,38 @@ import kmu.settings.KmuLunaSettings;
  *                                  reachable, visible, or inhabited ones - the map
  *                                  visibility rule is bypassed
  */
-public record PoliticalMapDevOverrides(
+public record PoliticalMapDevToggles(
         boolean isShowingAllFactions,
         boolean isForcingAllSystemsOnMap) {
 
     /**
-     * The no-override view: both reveals off, so the map draws exactly what the
+     * The no-reveal view: both toggles off, so the map draws exactly what the
      * normal gates admit. The default a caller with no dev toggle to apply passes.
      */
-    public static final PoliticalMapDevOverrides NONE =
-            new PoliticalMapDevOverrides(false, false);
+    public static final PoliticalMapDevToggles NONE =
+            new PoliticalMapDevToggles(false, false);
 
     /**
      * Reads the player's current dev reveal toggles from LunaLib into one pass-wide
-     * override.
+     * value.
      *
      * <p>Called once per resolution pass at the entry points, so every system in the
-     * pass resolves under the same overrides even if the player flips a toggle
-     * mid-walk. Isolating the settings read here keeps the domain classes that
-     * consume the result free of LunaLib access.
+     * pass resolves under the same toggles even if the player flips one mid-walk.
+     * Isolating the settings read here keeps the domain classes that consume the
+     * result free of LunaLib access.
      *
-     * @return the overrides the player's live settings describe
+     * @return the toggles the player's live settings describe
      */
-    public static PoliticalMapDevOverrides readFromLunaSettings() {
-        return new PoliticalMapDevOverrides(
+    public static PoliticalMapDevToggles readFromLunaSettings() {
+        return new PoliticalMapDevToggles(
                 KmuLunaSettings.getPoliticalMapShowAllFactions(),
                 KmuLunaSettings.shouldForceAllSystemsOnMap());
     }
 
     /**
-     * Answers what these toggles mean to the visibility rule, dropping the political
-     * reason and keeping the two widenings themselves.
+     * Restates these toggles as what they mean to the visibility rule, dropping the
+     * political reason and keeping the two widenings themselves. A relabelling of the same
+     * two bits, not a computation - the settings read that decided them already happened.
      *
      * <p>{@code isShowingAllFactions} is political only in why it widens - undiscovered
      * faction colonies - while what it widens is the generic inhabitation read, so it
@@ -71,7 +76,7 @@ public record PoliticalMapDevOverrides(
      *
      * @return the visibility overrides these toggles describe
      */
-    public MapVisibilityOverrides resolveVisibilityOverrides() {
+    public MapVisibilityOverrides convertToVisibilityOverrides() {
         return new MapVisibilityOverrides(
                 isShowingAllFactions,
                 isForcingAllSystemsOnMap);

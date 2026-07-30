@@ -6,7 +6,7 @@ import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.maplayers.base.visibility.MapVisibility;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
@@ -44,29 +44,29 @@ public record PoliticalMapSectorSnapshot(
         Map<String, String> ownerBySystemId) {
 
     /**
-     * Walks the sector once under dev reveal overrides the caller has already read,
+     * Walks the sector once under dev reveal toggles the caller has already read,
      * reading the dominance-weighting rules itself so the whole walk resolves every
      * system under one rule even if the player applies a settings change mid-scan. Lets
-     * a caller that shares one override read across several walks (the staleness poll,
-     * which drives both this scan and the motion walk from a single toggle read) pass
-     * the overrides in while leaving weighting - which only this scan needs -
-     * encapsulated here.
+     * a caller that shares one toggle read across several walks (the staleness poll,
+     * which drives both this scan and the motion walk from a single read) pass the
+     * toggles in while leaving weighting - which only this scan needs - encapsulated
+     * here.
      *
-     * @param sector    the sector to scan; null yields an empty snapshot
-     * @param overrides the dev reveal overrides for this pass - show-all-factions folds
-     *                  undiscovered colonies into dominance and inhabitation,
-     *                  force-all-systems admits every system to the drawn set
+     * @param sector     the sector to scan; null yields an empty snapshot
+     * @param devToggles the dev reveal toggles for this pass - show-all-factions folds
+     *                   undiscovered colonies into dominance and inhabitation,
+     *                   force-all-systems admits every system to the drawn set
      * @return the visibility fingerprint and the dominant owner (by faction id) of each
      *         owned on-map system; a drawn-but-unowned system (a decivilised shell) is
      *         absent from the owner map
      */
     public static PoliticalMapSectorSnapshot scan(
             SectorAPI sector,
-            PoliticalMapDevOverrides overrides) {
+            PoliticalMapDevToggles devToggles) {
         return scan(
                 sector,
                 DominanceRules.readFromLunaSettings(),
-                overrides);
+                devToggles);
     }
 
     /**
@@ -84,20 +84,20 @@ public record PoliticalMapSectorSnapshot(
         return scan(
                 sector,
                 rules,
-                PoliticalMapDevOverrides.NONE);
+                PoliticalMapDevToggles.NONE);
     }
 
     /**
-     * Walks the sector once under an explicit weighting rule and dev reveal overrides,
+     * Walks the sector once under an explicit weighting rule and dev reveal toggles,
      * for a caller that has already read the player's toggles for the surrounding pass.
      *
-     * @param sector    the sector to scan; null yields an empty snapshot
-     * @param rules     the dominance-weighting rules for this pass - whether
-     *                  stability scales each rating and whether an attached station
-     *                  lifts it - before dominance is compared
-     * @param overrides the dev reveal overrides for this pass - show-all-factions folds
-     *                  undiscovered colonies into dominance and inhabitation,
-     *                  force-all-systems admits every system to the drawn set
+     * @param sector     the sector to scan; null yields an empty snapshot
+     * @param rules      the dominance-weighting rules for this pass - whether
+     *                   stability scales each rating and whether an attached station
+     *                   lifts it - before dominance is compared
+     * @param devToggles the dev reveal toggles for this pass - show-all-factions folds
+     *                   undiscovered colonies into dominance and inhabitation,
+     *                   force-all-systems admits every system to the drawn set
      * @return the visibility fingerprint and the dominant owner (by faction id) of
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
      *         shell) is absent from the owner map
@@ -105,7 +105,7 @@ public record PoliticalMapSectorSnapshot(
     public static PoliticalMapSectorSnapshot scan(
             SectorAPI sector,
             DominanceRules rules,
-            PoliticalMapDevOverrides overrides) {
+            PoliticalMapDevToggles devToggles) {
 
         if (sector == null) {
             return new PoliticalMapSectorSnapshot(0, Map.of());
@@ -114,6 +114,9 @@ public record PoliticalMapSectorSnapshot(
         // Scanned once for the whole walk so the per-system access check stays an
         // O(1) lookup rather than rescanning hyperspace each time.
         var visibleStars = VisibleStars.scan(sector);
+        // The reveals as the membership rule sees them, resolved once for the whole walk:
+        // the rule takes visibility overrides, not this layer's dev toggles.
+        var visibilityOverrides = devToggles.convertToVisibilityOverrides();
         var hasEconomy = sector.getEconomy() != null;
         var visibility = 0;
         var ownerBySystemId = new LinkedHashMap<String, String>();
@@ -128,7 +131,7 @@ public record PoliticalMapSectorSnapshot(
                             sector,
                             system,
                             rules,
-                            overrides.isShowingAllFactions())
+                            devToggles.isShowingAllFactions())
                     : Map.of();
 
             var hasRevealedDecivilised = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
@@ -138,7 +141,7 @@ public record PoliticalMapSectorSnapshot(
                     system,
                     visibleStars,
                     isInhabited,
-                    overrides.isForcingAllSystemsOnMap())) {
+                    visibilityOverrides)) {
                 continue;
             }
             var systemId = system.getId();

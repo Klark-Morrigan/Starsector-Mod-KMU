@@ -195,7 +195,7 @@ public interface PoliticalMapView {
         return resolveSelectableBlocs(
                 sector,
                 DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions());
+                PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions());
     }
 
     /**

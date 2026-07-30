@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import java.util.Comparator;
@@ -56,7 +56,7 @@ public record DominancePass(
     public static DominancePass readFromLunaSettings(OwnershipGrouping grouping) {
         return new DominancePass(
                 DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevOverrides.readFromLunaSettings().isShowingAllFactions(),
+                PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions(),
                 grouping);
     }
 

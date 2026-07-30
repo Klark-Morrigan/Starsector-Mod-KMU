@@ -8,8 +8,6 @@ import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
-
 /**
  * Decides which star systems appear on a map layer, and fingerprints that
  * set so the overlay knows when to rebuild.
@@ -45,144 +43,82 @@ public final class MapVisibility {
     }
 
     /**
-     * Convenience for single-system callers: scans hyperspace for visible stars,
-     * then defers to {@link #shouldAppearOnMap(SectorAPI, StarSystemAPI,
-     * VisibleStars)}. Callers that walk every system should scan once and pass
-     * the index instead, to avoid rescanning hyperspace per system.
-     *
-     * @param sector the sector the system belongs to; supplies the economy read
-     * @param system the system to test
-     * @return true when the system should seed a map cell
-     */
-    public static boolean shouldAppearOnMap(
-            SectorAPI sector,
-            StarSystemAPI system) {
-
-        return shouldAppearOnMap(
-                sector,
-                system,
-                VisibleStars.scan(sector));
-    }
-
-    /**
-     * @param sector       the sector the system belongs to; supplies the economy
-     *                     read
-     * @param system       the system to test
-     * @param visibleStars the index of systems whose star the map draws, scanned
-     *                     once by the caller
-     * @return true when the system should seed a map cell
-     */
-    public static boolean shouldAppearOnMap(
-            SectorAPI sector,
-            StarSystemAPI system,
-            VisibleStars visibleStars) {
-                
-        return shouldAppearOnMap(
-                sector,
-                system,
-                visibleStars,
-                PoliticalMapDevOverrides.NONE);
-    }
-
-    /**
-     * Convenience for single-system callers under the dev reveal overrides: reads the
-     * system's inhabitation with undiscovered colonies folded in when show-all-factions
-     * is on, then applies the force override so a system the normal rule would omit
-     * still appears.
+     * Decides map membership by reading the system's inhabitation itself, under the
+     * pass's reveal overrides: the inhabitation read widens to undiscovered colonies
+     * when the overrides ask for it, and the force override then admits a system the
+     * normal rule would omit.
      *
      * @param sector       the sector the system belongs to; supplies the economy read
      * @param system       the system to test
      * @param visibleStars the index of systems whose star the map draws, scanned once
      *                     by the caller
-     * @param overrides    the pass's dev reveal overrides - show-all-factions widens the
-     *                     inhabitation read, force-all-systems admits the system outright
+     * @param overrides    the pass's reveal overrides, resolved once by the caller
      * @return true when the system should seed a map cell
      */
     public static boolean shouldAppearOnMap(
             SectorAPI sector,
             StarSystemAPI system,
             VisibleStars visibleStars,
-            PoliticalMapDevOverrides overrides) {
+            MapVisibilityOverrides overrides) {
 
         return shouldAppearOnMap(
                 system,
                 visibleStars,
-                isInhabited(
-                        sector,
-                        system,
-                        overrides.isShowingAllFactions()),
-                overrides.isForcingAllSystemsOnMap());
+                isInhabited(sector, system, overrides),
+                overrides);
     }
 
     /**
      * Decides map membership from an inhabitation flag the caller already has,
-     * rather than re-reading the economy to recompute it, with a dev force override
-     * that admits the system outright.
+     * rather than re-reading the economy to recompute it.
      *
      * <p>The single-walk fingerprint scan reads each system's markets once - to size
      * dominance and to know if it is inhabited - so it passes that flag straight in
      * here instead of paying for a second economy read through {@link #isInhabited}.
+     * Only the force override is read off the overrides here: the widening half is
+     * already folded into the flag by whoever computed it.
      *
-     * @param system          the system to test
-     * @param visibleStars    the index of systems whose star the map draws
-     * @param isInhabited     whether the system holds a folded colony or a revealed
-     *                        dead colony, decided by the caller
-     * @param isForcedOntoMap whether the "force all systems" dev reveal admits the
-     *                        system regardless of access or inhabitation
+     * @param system       the system to test
+     * @param visibleStars the index of systems whose star the map draws
+     * @param isInhabited  whether the system holds a folded colony or a revealed
+     *                     dead colony, decided by the caller
+     * @param overrides    the pass's reveal overrides, resolved once by the caller
      * @return true when the system should seed a map cell
      */
     public static boolean shouldAppearOnMap(
             StarSystemAPI system,
             VisibleStars visibleStars,
             boolean isInhabited,
-            boolean isForcedOntoMap) {
+            MapVisibilityOverrides overrides) {
 
-        return isForcedOntoMap
+        return overrides.isForcedOntoMap()
                 || hasVisibleMapAccess(system, visibleStars)
                 || isInhabited;
     }
 
     /**
      * Whether the system counts as inhabited - a discovered faction colony or a
-     * revealed decivilised planet. Drives admission to the map independently of
-     * how (or whether) the system can be reached.
+     * revealed decivilised planet, plus an undiscovered colony when the overrides widen
+     * the read. Drives admission to the map independently of how (or whether) the
+     * system can be reached. A revealed decivilised planet counts under any overrides -
+     * it is always known once revealed.
      *
-     * @param sector the sector the system belongs to; null yields false
-     * @param system the system to test; null yields false
-     * @return true when the system holds a colony or a known dead colony
-     */
-    public static boolean isInhabited(
-            SectorAPI sector,
-            StarSystemAPI system) {
-
-        return isInhabited(
-                sector,
-                system,
-                false); // Should not include undiscovered colonies by default.
-    }
-
-    /**
-     * Whether the system counts as inhabited under the dev reveal, folding in
-     * undiscovered colonies when show-all-factions is on. A revealed decivilised
-     * planet still counts regardless of the flag - it is always known once revealed.
-     *
-     * @param sector                       the sector the system belongs to; null yields
-     *                                     false
-     * @param system                       the system to test; null yields false
-     * @param shouldIncludeUndiscoveredMarkets whether an undiscovered colony counts as
-     *                                     inhabitation (the "show all factions" dev
-     *                                     reveal); false applies the normal filter
+     * @param sector    the sector the system belongs to; null yields false
+     * @param system    the system to test; null yields false
+     * @param overrides the pass's reveal overrides; only the undiscovered-colony
+     *                  widening is read here, since forcing a system onto the map does
+     *                  not make it inhabited
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(
             SectorAPI sector,
             StarSystemAPI system,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            MapVisibilityOverrides overrides) {
 
         return StarSystems.hasKnownOwnedMarket(
                     sector,
                     system,
-                    shouldIncludeUndiscoveredMarkets)
+                    overrides.shouldIncludeUndiscoveredMarkets())
                 || DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
     }
 

@@ -142,7 +142,7 @@ or removing one site changes that site's cell and the cells within twice the cel
 radius, and every farther cell is provably untouched.
 
 Two seed inputs bypass the diff and force a full reseed, because each changes every
-cell: the frontier resolution and the cell reach. So do the dev reveal overrides,
+cell: the frontier resolution and the cell reach. So do the dev reveal toggles,
 which change *which* systems seed a cell at all.
 
 The cache holds raw cells, not shaped outlines. The inset that gives a cluster its

@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.SystemMotionTracker;
 
 import kmu.maplayers.base.visibility.DrawnSystemPositions;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import java.util.Set;
 
@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * <p>Detection is delegated to {@link SystemMotionTracker}, fed the shared drawn-set rule
  * ({@link DrawnSystemPositions#buildDrawnSystemPredicate}) so the motion walk sees exactly
- * the systems the geometry draws - including any a dev reveal override put on the map. What
+ * the systems the geometry draws - including any a reveal override put on the map. What
  * stays here is the coupling the map needs: a single shared instance joins the
  * campaign-thread writer (the poll) to the render-thread reader (the geometry cache, which
  * skips the movers) with no owner between them, the same seam {@link MapLayerRefresh}
@@ -73,16 +73,16 @@ public final class MovingSystems {
     }
 
     /**
-     * Observes every drawn system's live position under the pass's dev reveal
-     * overrides, republishes the moving set, and reports whether that set changed.
+     * Observes every drawn system's live position under the pass's reveal overrides,
+     * republishes the moving set, and reports whether that set changed.
      *
      * @param sector    the sector to walk; null observes nothing and reports no change
-     * @param overrides the pass's dev reveal overrides, matching the set the geometry
-     *                  cache draws, so both agree on which systems are on the map
+     * @param overrides the pass's reveal overrides, matching the set the geometry cache
+     *                  draws, so both agree on which systems are on the map
      * @return true when the moving set gained or lost a member this poll, so the caller
      *         requests a geometry refresh; false while it is steady
      */
-    public boolean updateMovingSystems(SectorAPI sector, PoliticalMapDevOverrides overrides) {
+    public boolean updateMovingSystems(SectorAPI sector, MapVisibilityOverrides overrides) {
         if (sector == null) {
             return false;
         }

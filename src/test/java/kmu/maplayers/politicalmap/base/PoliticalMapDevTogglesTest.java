@@ -13,26 +13,26 @@ import static org.assertj.core.api.Assertions.assertThat;
  * while silently trading one reveal for the other - each case here raises exactly one
  * toggle, which is what makes that swap fail.
  *
- * <p>{@link PoliticalMapDevOverrides#readFromLunaSettings()} is not exercised: it is the
+ * <p>{@link PoliticalMapDevToggles#readFromLunaSettings()} is not exercised: it is the
  * settings read itself, and its whole purpose is to be the only thing here that touches
  * LunaLib.
  */
-class PoliticalMapDevOverridesTest {
+class PoliticalMapDevTogglesTest {
 
     @Nested
-    class ResolveVisibilityOverrides {
+    class ConvertToVisibilityOverrides {
 
         @Test
         void answersTheFrameworkNoOverrideValueWhenNoRevealIsOn() {
-            assertThat(PoliticalMapDevOverrides.NONE.resolveVisibilityOverrides())
+            assertThat(PoliticalMapDevToggles.NONE.convertToVisibilityOverrides())
                     .isEqualTo(MapVisibilityOverrides.NONE);
         }
 
         @Test
         void mapsForcingAllSystemsOntoTheForcedOntoMapWidening() {
-            var overrides = new PoliticalMapDevOverrides(false, true);
+            var devToggles = new PoliticalMapDevToggles(false, true);
 
-            var converted = overrides.resolveVisibilityOverrides();
+            var converted = devToggles.convertToVisibilityOverrides();
 
             assertThat(converted.isForcedOntoMap()).isTrue();
             assertThat(converted.shouldIncludeUndiscoveredMarkets()).isFalse();
@@ -40,9 +40,9 @@ class PoliticalMapDevOverridesTest {
 
         @Test
         void mapsShowingAllFactionsOntoTheUndiscoveredMarketWidening() {
-            var overrides = new PoliticalMapDevOverrides(true, false);
+            var devToggles = new PoliticalMapDevToggles(true, false);
 
-            var converted = overrides.resolveVisibilityOverrides();
+            var converted = devToggles.convertToVisibilityOverrides();
 
             assertThat(converted.shouldIncludeUndiscoveredMarkets()).isTrue();
             assertThat(converted.isForcedOntoMap()).isFalse();

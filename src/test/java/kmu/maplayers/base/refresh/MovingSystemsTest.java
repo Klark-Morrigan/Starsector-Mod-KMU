@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,11 +32,11 @@ import static org.mockito.Mockito.when;
  */
 class MovingSystemsTest {
 
-    // Force-all-systems on, so the drawn-set rule admits a system nothing else would put on
-    // the map - the reveal a dev toggle applies, and the shortest route to a tracked system
-    // without also staging an economy that owns it.
-    private static final PoliticalMapDevOverrides FORCED_ONTO_MAP =
-            new PoliticalMapDevOverrides(false, true);
+    // The force override on, so the drawn-set rule admits a system nothing else would put on
+    // the map - the shortest route to a tracked system without also staging an economy that
+    // owns it.
+    private static final MapVisibilityOverrides FORCED_ONTO_MAP =
+            new MapVisibilityOverrides(false, true);
 
     @Nested
     class GetInstance {
@@ -124,12 +124,12 @@ class MovingSystemsTest {
             var sectorFake = new MovableSystemSectorFake();
             var movingSystems = new MovingSystems();
             movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), PoliticalMapDevOverrides.NONE);
+                    sectorFake.getSector(), MapVisibilityOverrides.NONE);
 
             sectorFake.moveSystemClearOfItsLastPosition();
 
             assertThat(movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), PoliticalMapDevOverrides.NONE)).isFalse();
+                    sectorFake.getSector(), MapVisibilityOverrides.NONE)).isFalse();
             assertThat(movingSystems.getMovingSystemIds()).isEmpty();
         }
     }

@@ -6,8 +6,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.StarSystems;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
-
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -33,14 +31,14 @@ public final class DrawnSystemPositions {
      * drifting.
      *
      * @param sector    the sector whose hyperspace is scanned for visible stars
-     * @param overrides the pass's dev reveal overrides - force-all-systems admits
-     *                  every system, show-all-factions widens the inhabitation read
+     * @param overrides the pass's reveal overrides - each widens what the rule admits,
+     *                  resolved once by the caller
      * @return a predicate accepting exactly the systems the map draws under these
      *         overrides
      */
     public static Predicate<StarSystemAPI> buildDrawnSystemPredicate(
             SectorAPI sector,
-            PoliticalMapDevOverrides overrides) {
+            MapVisibilityOverrides overrides) {
 
         // Scanned once here so the predicate's per-system check is an O(1) lookup
         // rather than a per-system hyperspace rescan.
@@ -57,13 +55,13 @@ public final class DrawnSystemPositions {
      * {@code {x, y}} position of every on-map system, keyed by system id.
      *
      * @param sector    the sector to read; null yields an empty map
-     * @param overrides the pass's dev reveal overrides applied by the drawn-set rule
+     * @param overrides the pass's reveal overrides applied by the drawn-set rule
      * @return each drawn system's live hyperspace position keyed by id; a system with
      *         no location is skipped, since it has no site to place a cell at
      */
     public static Map<String, double[]> collectLivePositions(
             SectorAPI sector,
-            PoliticalMapDevOverrides overrides) {
+            MapVisibilityOverrides overrides) {
 
         return StarSystems.collectPositionsById(
                 sector,

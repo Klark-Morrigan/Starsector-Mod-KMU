@@ -37,6 +37,19 @@ import static org.mockito.Mockito.when;
  * each rule would hide whether they are wired in the right order.
  */
 class MapVisibilityIntegrationTest {
+    // The force override on, so the rule admits a system regardless of access or
+    // inhabitation - the widening the pre-computed entry point reads off the value.
+    private static final MapVisibilityOverrides FORCED_ONTO_MAP =
+            new MapVisibilityOverrides(false, true);
+
+    // The undiscovered-colony widening on, the other component of the same value: an
+    // undiscovered colony counts as inhabitation.
+    private static final MapVisibilityOverrides INCLUDING_UNDISCOVERED_MARKETS =
+            new MapVisibilityOverrides(true, false);
+
+    // The inhabitation the pre-computed entry point is handed when the caller has already
+    // decided the system holds nothing, so admission rests on access or the force override.
+    private static final boolean UNINHABITED = false;
 
     @Nested
     class ShouldAppearOnMap {
@@ -45,7 +58,7 @@ class MapVisibilityIntegrationTest {
         void shouldAppearOnMapIsTrueForReachableSystem() {
             var system = reachableSystem("a");
 
-            assertThat(MapVisibility.shouldAppearOnMap(sectorWith(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(sectorWith(system), system))
                     .isTrue();
         }
 
@@ -55,7 +68,7 @@ class MapVisibilityIntegrationTest {
             // colony makes it inhabited and admits it to the map.
             var system = unreachableSystem("a");
 
-            assertThat(MapVisibility.shouldAppearOnMap(
+            assertThat(shouldAppearOnMapUnderNoReveal(
                     sectorWith(system, ownedMarket()), system)).isTrue();
         }
 
@@ -63,7 +76,7 @@ class MapVisibilityIntegrationTest {
         void shouldAppearOnMapIsTrueForUnreachableSystemWithARevealedDecivilisedPlanet() {
             var system = unreachableSystemWithDecivilisedPlanet("a");
 
-            assertThat(MapVisibility.shouldAppearOnMap(sectorWith(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(sectorWith(system), system))
                     .isTrue();
         }
 
@@ -71,7 +84,7 @@ class MapVisibilityIntegrationTest {
         void shouldAppearOnMapIsFalseForUnreachableUninhabitedSystem() {
             var system = unreachableSystem("a");
 
-            assertThat(MapVisibility.shouldAppearOnMap(sectorWith(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(sectorWith(system), system))
                     .isFalse();
         }
 
@@ -81,30 +94,30 @@ class MapVisibilityIntegrationTest {
             // abyssal rogue object), so reachability alone does not admit it.
             var system = reachableSystem("a");
 
-            assertThat(MapVisibility.shouldAppearOnMap(sectorWithHiddenStar(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(sectorWithHiddenStar(system), system))
                     .isFalse();
         }
 
         @Test
         void shouldAppearOnMapIsTrueForReachableNebulaWithNoVisibleStar() {
             // A nebula has no star anchor, so it is never in the visible-star
-            // index; the vanilla map draws it as a cloud, so the political map
-            // must admit it on the access path without an inhabitation.
+            // index; the vanilla map draws it as a cloud, so the rule must admit it
+            // on the access path without an inhabitation.
             var system = reachableNebula("a");
 
-            assertThat(MapVisibility.shouldAppearOnMap(sectorWithoutStarAnchors(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(sectorWithoutStarAnchors(system), system))
                     .isTrue();
         }
 
         @Test
         void shouldAppearOnMapIsTrueForUninhabitedSystemWhenForcedOntoMap() {
-            // The force-all-systems dev reveal admits a system the normal rule omits -
-            // unreachable and uninhabited - so the full partition can be inspected.
+            // The force override admits a system the normal rule omits - unreachable and
+            // uninhabited - so the full partition can be inspected.
             var system = unreachableSystem("a");
             var visibleStars = VisibleStars.scan(sectorWithoutStarAnchors(system));
 
-            assertThat(MapVisibility.shouldAppearOnMap(system, visibleStars, false, true))
-                    .isTrue();
+            assertThat(MapVisibility.shouldAppearOnMap(
+                    system, visibleStars, UNINHABITED, FORCED_ONTO_MAP)).isTrue();
         }
 
         @Test
@@ -114,8 +127,8 @@ class MapVisibilityIntegrationTest {
             var system = unreachableSystem("a");
             var visibleStars = VisibleStars.scan(sectorWithoutStarAnchors(system));
 
-            assertThat(MapVisibility.shouldAppearOnMap(system, visibleStars, false, false))
-                    .isFalse();
+            assertThat(MapVisibility.shouldAppearOnMap(
+                    system, visibleStars, UNINHABITED, MapVisibilityOverrides.NONE)).isFalse();
         }
     }
 
@@ -126,7 +139,7 @@ class MapVisibilityIntegrationTest {
         void isInhabitedIsTrueWhenADiscoveredColonyExists() {
             var system = unreachableSystem("a");
 
-            assertThat(MapVisibility.isInhabited(sectorWith(system, ownedMarket()), system))
+            assertThat(isInhabitedUnderNoReveal(sectorWith(system, ownedMarket()), system))
                     .isTrue();
         }
 
@@ -134,14 +147,14 @@ class MapVisibilityIntegrationTest {
         void isInhabitedIsTrueWhenARevealedDecivilisedPlanetExists() {
             var system = unreachableSystemWithDecivilisedPlanet("a");
 
-            assertThat(MapVisibility.isInhabited(sectorWith(system), system)).isTrue();
+            assertThat(isInhabitedUnderNoReveal(sectorWith(system), system)).isTrue();
         }
 
         @Test
         void isInhabitedIsFalseWhenNeitherColonyNorRuinExists() {
             var system = unreachableSystem("a");
 
-            assertThat(MapVisibility.isInhabited(sectorWith(system), system)).isFalse();
+            assertThat(isInhabitedUnderNoReveal(sectorWith(system), system)).isFalse();
         }
 
         @Test
@@ -150,18 +163,20 @@ class MapVisibilityIntegrationTest {
             // reads as uninhabited until the reveal is on.
             var system = unreachableSystem("a");
 
-            assertThat(MapVisibility.isInhabited(
+            assertThat(isInhabitedUnderNoReveal(
                     sectorWith(system, undiscoveredColony()), system)).isFalse();
         }
 
         @Test
-        void isInhabitedIsTrueForAnUndiscoveredColonyWhenShowingAllFactions() {
-            // The show-all-factions dev reveal folds the undiscovered colony in, so the
-            // system counts as inhabited and earns a cell.
+        void isInhabitedIsTrueForAnUndiscoveredColonyWhenTheyAreIncluded() {
+            // The widening folds the undiscovered colony in, so the system counts as
+            // inhabited and earns a cell.
             var system = unreachableSystem("a");
 
             assertThat(MapVisibility.isInhabited(
-                    sectorWith(system, undiscoveredColony()), system, true)).isTrue();
+                    sectorWith(system, undiscoveredColony()),
+                    system,
+                    INCLUDING_UNDISCOVERED_MARKETS)).isTrue();
         }
     }
 
@@ -216,6 +231,31 @@ class MapVisibilityIntegrationTest {
             assertThat(MapVisibility.computeVisibilityContribution("", true))
                     .isNotEqualTo(MapVisibility.computeVisibilityContribution("", false));
         }
+    }
+
+    // The whole rule over one system with no reveal applied: scans the sector's visible
+    // stars, then asks the entry point that reads inhabitation itself. Bound here once so
+    // the scenarios below differ only in the fixture they stage, not in the scan and the
+    // no-reveal value each would otherwise repeat.
+    private static boolean shouldAppearOnMapUnderNoReveal(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
+        return MapVisibility.shouldAppearOnMap(
+                sector,
+                system,
+                VisibleStars.scan(sector),
+                MapVisibilityOverrides.NONE);
+    }
+
+    // The inhabitation read with no reveal applied, so the normal known-to-player gate
+    // stands. Bound here for the same reason as the rule helper above: the no-reveal value is
+    // the constant across these scenarios, and only the fixture varies.
+    private static boolean isInhabitedUnderNoReveal(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
+        return MapVisibility.isInhabited(sector, system, MapVisibilityOverrides.NONE);
     }
 
     // Wires a single-system sector whose economy returns the given markets for

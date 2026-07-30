@@ -8,7 +8,7 @@ import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
 
 import kmu.maplayers.base.visibility.DrawnSystemPositions;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import org.apache.log4j.Logger;
 
@@ -32,10 +32,9 @@ import java.util.Set;
  * the cell's bounding radius). So
  * {@link #updateFromSector} diffs the reachable set against the cache and rebuilds
  * only the affected cells, leaving distant ones in place. The first update (empty
- * cache) rebuilds everything, since every system is "added". Two per-cell seed
- * inputs passed in also force a full rebuild when they change - the frontier
- * resolution and the cell radius - since each reseeds every cell, invalidating them
- * all regardless of the access diff.
+ * cache) rebuilds everything, since every system is "added". The
+ * {@link CellSeedInputs} passed in also force a full rebuild when they change, since
+ * each reseeds every cell, invalidating them all regardless of the access diff.
  *
  * <p>Moving systems are excluded from the partition. A system that rewrites its own
  * hyperspace position (a mobile colony) has no stable cell to draw, and letting it
@@ -74,23 +73,15 @@ public final class CellGeometryCache {
     // and what it draws as are produced together and a reader of one always needs the other.
     private final Map<String, String> systemIdByCellId = new LinkedHashMap<>();
 
-    // The frontier resolution the cached cells were seeded at. The bound-segment
-    // count is a per-cell seed input, so a change invalidates every built cell, not
-    // just the ones an access change touched. Held here so updateFromSector can spot
-    // the change and force a full rebuild. Starts at a value no real count takes, so
-    // the first update always rebuilds from scratch.
-    private int lastBoundSegments = -1;
-
-    // The cell radius the cached cells were seeded at - how far a cell reaches into empty
-    // space. Like the bound-segment count it is a per-cell seed input, so a change
-    // invalidates every built cell; it also sets the neighbourhood radius the incremental
-    // diff scans (twice the reach), so it is held for both. Starts NaN so the first update
-    // always rebuilds from scratch.
-    private double lastCellRadius = Double.NaN;
+    // The seed inputs the cached cells were built at. Both invalidate every built cell when
+    // they move, not just the ones an access change touched, so updateFromSector compares
+    // this to spot the change and force a full rebuild. Null until the first update, which
+    // is what makes that update rebuild from scratch rather than diff against nothing.
+    private CellSeedInputs lastSeedInputs;
 
     /**
-     * Empties the cached partition and returns the seed inputs to their rebuild-forcing values, so
-     * the next update builds every cell from scratch instead of diffing against what is held.
+     * Empties the cached partition and forgets the seed inputs it was built at, so the next update
+     * builds every cell from scratch instead of diffing against what is held.
      *
      * <p>Wanted when the cells belong to a sector that is no longer the live one. The incremental
      * path cannot get there on its own: it reconciles by comparing system <em>ids</em>, so a system
@@ -101,8 +92,7 @@ public final class CellGeometryCache {
         siteBySystemId.clear();
         cellEdgesByCellId.clear();
         systemIdByCellId.clear();
-        lastBoundSegments = -1;
-        lastCellRadius = Double.NaN;
+        lastSeedInputs = null;
     }
 
     /**
@@ -111,68 +101,40 @@ public final class CellGeometryCache {
      * partition - including a system that entered or left it by starting or stopping
      * moving. A no-op when the participating set is unchanged.
      *
+     * <p>The reveal overrides widen the participating set: a forced system seeds a cell
+     * whatever the normal gates say, and a system inhabited only by an undiscovered
+     * colony is admitted. A change to either shifts the participating set, so it reads
+     * through the same add/remove diff as an access change - the caller forces this
+     * update when one moves.
+     *
      * @param sector          the sector to read; null clears nothing and does nothing
      * @param movingSystemIds the systems currently moving, left out of the partition -
      *                        each seeds no cell and clips no neighbour, so the cells
      *                        around it fill the space as if it were absent
-     * @param boundSegments   the frontier resolution to seed each cell at (sides of
-     *                        the bound polygon); a change from the last update reseeds
-     *                        every cell, since it is a per-cell input
-     * @param cellRadius      how far each cell may reach into empty space, world units;
-     *                        a change from the last update reseeds every cell, since it
-     *                        is a per-cell input, and it sets the diff's reach
+     * @param seedInputs      what to seed each cell with - its frontier resolution and its
+     *                        reach; a change from the last update reseeds every cell, and
+     *                        the reach also sets how far the diff scans
+     * @param overrides       the pass's reveal overrides, applied to the drawn set
      */
     public void updateFromSector(
             SectorAPI sector,
             Set<String> movingSystemIds,
-            int boundSegments,
-            double cellRadius) {
-        updateFromSector(
-                sector,
-                movingSystemIds,
-                boundSegments,
-                cellRadius,
-                PoliticalMapDevOverrides.NONE);
-    }
-
-    /**
-     * Brings the cache in line with the sector's current on-map systems under the dev
-     * reveal overrides, which widen the participating set: force-all-systems seeds a
-     * cell for every star system, and show-all-factions admits systems inhabited only
-     * by an undiscovered colony. A change to either override shifts the participating
-     * set, so it reads through the same add/remove diff as an access change - the
-     * plugin forces this update when a toggle flips.
-     *
-     * @param sector          the sector to read; null clears nothing and does nothing
-     * @param movingSystemIds the systems currently moving, left out of the partition
-     * @param boundSegments   the frontier resolution to seed each cell at; a change
-     *                        reseeds every cell
-     * @param cellRadius      how far each cell may reach into empty space, world units;
-     *                        a change reseeds every cell and sets the diff's reach
-     * @param overrides       the pass's dev reveal overrides, applied to the drawn set
-     */
-    public void updateFromSector(
-            SectorAPI sector,
-            Set<String> movingSystemIds,
-            int boundSegments,
-            double cellRadius,
-            PoliticalMapDevOverrides overrides) {
+            CellSeedInputs seedInputs,
+            MapVisibilityOverrides overrides) {
 
         // Timed independently of the profiler so the per-update cost (the whole
         // diff, or a full rebuild) reads straight from the log.
         var start = System.nanoTime();
         var newSites = collectAccessibleSites(sector, movingSystemIds, overrides);
 
-        // The bound-segment count and the cell radius are both per-cell seed inputs -
-        // one sets each frontier polygon's resolution, the other its reach - so a change
-        // to either invalidates all cached cells regardless of the access diff. Drop them
-        // so the diff below reads every current system as "added" and reseeds it.
-        if (boundSegments != lastBoundSegments || cellRadius != lastCellRadius) {
+        // The seed inputs are what every cell is cut from, so a change to either of them
+        // invalidates all cached cells regardless of the access diff. Drop them so the diff
+        // below reads every current system as "added" and reseeds it.
+        if (!seedInputs.equals(lastSeedInputs)) {
             siteBySystemId.clear();
             cellEdgesByCellId.clear();
             systemIdByCellId.clear();
-            lastBoundSegments = boundSegments;
-            lastCellRadius = cellRadius;
+            lastSeedInputs = seedInputs;
         }
 
         var added = new LinkedHashSet<String>(newSites.keySet());
@@ -197,7 +159,7 @@ public final class CellGeometryCache {
         // removed sites' positions from the old map before it is replaced. A change at
         // one site can only alter cells whose site is within twice the cell radius (the
         // bisector with the changed site reaches no farther), so that is the diff's reach.
-        var neighbourhoodRadius = 2.0 * cellRadius;
+        var neighbourhoodRadius = 2.0 * seedInputs.cellRadius();
         var affected = new LinkedHashSet<String>(added);
         for (var id : added) {
             affected.addAll(findSystemsNear(newSites, newSites.get(id), neighbourhoodRadius));
@@ -229,8 +191,8 @@ public final class CellGeometryCache {
             var cell = VoronoiCellBuilder.buildLabelledCell(
                     indexBySystemId.get(id),
                     allSites,
-                    cellRadius,
-                    boundSegments);
+                    seedInputs.cellRadius(),
+                    seedInputs.boundSegments());
             var edges = buildCellEdges(cell, allSiteIds);
             cellEdgesByCellId.put(id, edges);
 
@@ -282,12 +244,12 @@ public final class CellGeometryCache {
     // The live sites the partition is built from: every drawn system's position,
     // minus the ones currently moving. A mover is left out so it seeds no cell and
     // clips no neighbour; the cells around it fill the space as if it were absent.
-    // The dev reveal overrides pass through to the drawn-set walk, so a forced or
+    // The reveal overrides pass through to the drawn-set walk, so a forced or
     // undiscovered-colony system enters the partition like any other site.
     private static Map<String, double[]> collectAccessibleSites(
             SectorAPI sector,
             Set<String> movingSystemIds,
-            PoliticalMapDevOverrides overrides) {
+            MapVisibilityOverrides overrides) {
 
         var sites = DrawnSystemPositions.collectLivePositions(sector, overrides);
         sites.keySet().removeAll(movingSystemIds);
