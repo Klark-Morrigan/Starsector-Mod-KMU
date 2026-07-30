@@ -9,6 +9,7 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimsOwnershipProvider;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.Nested;
@@ -83,7 +84,7 @@ final class ClaimsViewTest {
             // the shared economy revision, not here - so an alliance forming or dissolving (which the
             // alliances view renders) must leave its contribution fixed and never churn this view.
             var before = ClaimsView.INSTANCE.getContentRevision();
-            MapLayerRefresh.requestAllianceRefresh();
+            MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
             assertThat(ClaimsView.INSTANCE.getContentRevision()).isEqualTo(before);
         }

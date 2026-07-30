@@ -17,6 +17,7 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -77,7 +78,7 @@ final class FactionsViewTest {
             // view's contribution fixed - that is what keeps an alliance change from churning
             // the faction view.
             var before = FactionsView.INSTANCE.getContentRevision();
-            MapLayerRefresh.requestAllianceRefresh();
+            MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
             assertThat(FactionsView.INSTANCE.getContentRevision()).isEqualTo(before);
         }

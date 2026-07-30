@@ -111,8 +111,9 @@ about what the overlay means.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
   finds the changes the engine announces to nobody. `MapLayerSectorWatcher` owns the loop
   alone and asks a `MapLayerStalenessSource` what moved since it last asked, so which changes
-  count, and which signal each one raises, stay the layer's answer. The signals themselves and
-  the four rebuild paths they drive are
+  count, and which signal each one raises, stay the layer's answer - a signal being a
+  `MapLayerRefreshSignal`, declared by the framework or by the layer that alone means anything by
+  it. The signals themselves, who declares which, and the four rebuild paths they drive are
   [the caching notes](../../../../../docs/dev/caching.md).
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.

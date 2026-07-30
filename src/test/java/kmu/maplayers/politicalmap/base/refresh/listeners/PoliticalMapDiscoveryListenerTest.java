@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.refresh.listeners;
 import com.fs.starfarer.api.campaign.JumpPointAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -50,14 +51,15 @@ final class PoliticalMapDiscoveryListenerTest {
 
         @Test
         void marksNothingForMarketlessEntity() {
-            var beforeGeometry = MapLayerRefresh.getGeometryRevision();
+            var beforeGeometry = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
 
             // A jump point has no market; accessibility is judged elsewhere, so the
             // listener marks no system and requests no geometry rebuild.
             listener.reportEntityDiscovered(mock(JumpPointAPI.class));
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
-            assertThat(MapLayerRefresh.getGeometryRevision()).isEqualTo(beforeGeometry);
+            assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY))
+                    .isEqualTo(beforeGeometry);
         }
 
         @Test

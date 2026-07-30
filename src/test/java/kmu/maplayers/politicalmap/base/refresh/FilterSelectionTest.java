@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
@@ -89,14 +90,15 @@ final class FilterSelectionTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                var revisionBefore = MapLayerRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
 
                 FilterSelection.selectBloc(VIEW_ID, BLOC_ID);
 
                 verify(memoryMock).set(SELECTED_BLOC_KEY, BLOC_ID);
                 // The pick must bump the filter revision, since this sidebar-only choice never moves
                 // settingsRevision - that bump is what repaints the overlay live.
-                assertThat(MapLayerRefresh.getFilterRevision()).isNotEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                        .isNotEqualTo(revisionBefore);
             }
         }
 
@@ -107,11 +109,12 @@ final class FilterSelectionTest {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
-                var revisionBefore = MapLayerRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
 
                 FilterSelection.selectBloc(VIEW_ID, BLOC_ID);
 
-                assertThat(MapLayerRefresh.getFilterRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                        .isEqualTo(revisionBefore);
             }
         }
     }
@@ -126,12 +129,13 @@ final class FilterSelectionTest {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(SELECTED_BLOC_KEY)).thenReturn(true);
-                var revisionBefore = MapLayerRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
 
                 FilterSelection.clearSelection(VIEW_ID);
 
                 verify(memoryMock).unset(SELECTED_BLOC_KEY);
-                assertThat(MapLayerRefresh.getFilterRevision()).isNotEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                        .isNotEqualTo(revisionBefore);
             }
         }
 
@@ -143,12 +147,13 @@ final class FilterSelectionTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                var revisionBefore = MapLayerRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
 
                 FilterSelection.clearSelection(VIEW_ID);
 
                 verify(memoryMock, never()).unset(anyString());
-                assertThat(MapLayerRefresh.getFilterRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                        .isEqualTo(revisionBefore);
             }
         }
 
@@ -157,11 +162,12 @@ final class FilterSelectionTest {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
-                var revisionBefore = MapLayerRefresh.getFilterRevision();
+                var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
 
                 FilterSelection.clearSelection(VIEW_ID);
 
-                assertThat(MapLayerRefresh.getFilterRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                        .isEqualTo(revisionBefore);
             }
         }
     }

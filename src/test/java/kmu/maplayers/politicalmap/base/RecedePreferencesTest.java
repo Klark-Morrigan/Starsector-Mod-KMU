@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.settings.KmuLunaSettings;
 
@@ -128,14 +129,15 @@ final class RecedePreferencesTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                var revisionBefore = MapLayerRefresh.getRecedeStyleRevision();
+                var revisionBefore =
+                        MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
                 TEST_SET.setMuted(true);
 
                 verify(memoryMock).set(TEST_MUTE_KEY, true);
                 // The flip must bump the recede-style revision, since these sidebar-only toggles
                 // never move settingsRevision - that bump is what repaints the overlay live.
-                assertThat(MapLayerRefresh.getRecedeStyleRevision())
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
                         .isNotEqualTo(revisionBefore);
             }
         }
@@ -161,11 +163,13 @@ final class RecedePreferencesTest {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
-                var revisionBefore = MapLayerRefresh.getRecedeStyleRevision();
+                var revisionBefore =
+                        MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
                 TEST_SET.setMuted(true);
 
-                assertThat(MapLayerRefresh.getRecedeStyleRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                        .isEqualTo(revisionBefore);
             }
         }
 
@@ -209,12 +213,13 @@ final class RecedePreferencesTest {
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                var revisionBefore = MapLayerRefresh.getRecedeStyleRevision();
+                var revisionBefore =
+                        MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
                 TEST_SET.setDesaturated(true);
 
                 verify(memoryMock).set(TEST_DESATURATE_KEY, true);
-                assertThat(MapLayerRefresh.getRecedeStyleRevision())
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
                         .isNotEqualTo(revisionBefore);
             }
         }
@@ -224,11 +229,13 @@ final class RecedePreferencesTest {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
-                var revisionBefore = MapLayerRefresh.getRecedeStyleRevision();
+                var revisionBefore =
+                        MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
                 TEST_SET.setDesaturated(true);
 
-                assertThat(MapLayerRefresh.getRecedeStyleRevision()).isEqualTo(revisionBefore);
+                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                        .isEqualTo(revisionBefore);
             }
         }
 

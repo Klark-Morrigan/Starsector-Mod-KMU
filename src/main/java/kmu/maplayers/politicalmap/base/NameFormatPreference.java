@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.memory.SectorMemoryString;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 /**
@@ -53,7 +54,7 @@ public final class NameFormatPreference {
         // settingsRevision, which this sidebar-only choice never moves since it is not a LunaLib
         // field.
         if (selectedNameFormat.set(choice.persistenceKey())) {
-            MapLayerRefresh.requestMapStyleRefresh();
+            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
         }
     }
 }

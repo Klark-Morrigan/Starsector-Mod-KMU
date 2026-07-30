@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import org.apache.log4j.Logger;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,182 +14,66 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The refresh signals a map layer's overlay watches to know what part of its
  * cache has gone stale, so it rebuilds only what actually changed.
  *
- * <p>The cell geometry (the Voronoi partition) is expensive but changes rarely -
- * only when the set of reachable systems does (a gate activating, a jump point
- * established). A single {@code geometryRevision} counter flags that: a bump tells
- * the plugin to reconcile the geometry cache.
+ * <p>A coarse change is one counter, held under the {@link MapLayerRefreshSignal} its producer and its
+ * consumer both name: the producer raises the signal, and the consumer folds the current count
+ * into the token it compares each frame, so the per-frame path stays an int compare. Keyed on the
+ * open signal type rather than on a fixed set of accessors, so a layer watching something only it
+ * can raise declares that signal beside itself and still reaches this one board for it - which is
+ * what keeps a second layer's arrival from splitting the mechanism in two. The counters
+ * materialise on first use, since a board that cannot enumerate the layers cannot pre-seed their
+ * signals; an unraised signal reads zero, so a consumer folding one no producer ever bumps folds
+ * a constant. A counter is never cleared, so composing several cannot clear one out from under a
+ * second reader.
  *
  * <p>A change to what a system groups by - the opaque key {@code CellGrouping} resolves a
- * cell's cluster from, whose meaning belongs to the layer and not to this board - is
- * finer-grained: rather than rescanning every system, the producers name exactly which ones
- * went stale, so the plugin re-derives and re-shapes only those and their neighbours. A set
- * because several systems can go stale in one tick, and identity is all that matters (a
- * system is stale or not, once per refresh). Several producers can feed the same set - a
- * per-event signal and a periodic diff, say - so a system one already marked and another
- * re-discovers collapses to a single reshape. The whole-map restyle a settings change needs
- * is a separate signal the plugin reads straight from {@code KmuLunaSettings}, not this
- * class.
+ * cell's cluster from, whose meaning belongs to the layer and not to this board - is finer than
+ * any counter can express: rather than rescanning every system, the producers name exactly which
+ * ones went stale, so the plugin re-derives and re-shapes only those and their neighbours. A set
+ * because several systems can go stale in one tick, and identity is all that matters (a system is
+ * stale or not, once per refresh). Several producers can feed the same set - a per-event signal
+ * and a periodic diff, say - so a system one already marked and another re-discovers collapses to
+ * a single reshape. The whole-map restyle a settings change needs is a separate signal the plugin
+ * reads straight from {@code KmuLunaSettings}, not this class.
  *
- * <p>Alliance membership is a third coarse signal, tracked like the geometry with a
- * single {@code allianceRevision} counter. Which factions are allied changes only the
- * alliances view (it fuses allied factions into one bloc), so a bump here is folded into
- * the drawables' content token by that view alone; the faction view ignores it. The
- * sector watcher fingerprints the live alliance set each poll and bumps this counter when
- * that fingerprint moves, so the per-frame path stays an int compare.
- *
- * <p>How a view recedes its background ground - the shared per-save Mute/Desaturate toggles -
- * is a fourth coarse signal, tracked with a single {@code recedeStyleRevision} counter. Those
- * toggles are sidebar-only sector-memory state, not LunaLib fields, so a flip does not bump
- * {@code settingsRevision}; instead the toggle's setter bumps this counter and every view that
- * recedes ground folds it into its content token, so a flip repaints the overlay live. A view
- * that draws no receded ground ignores it, exactly as it ignores a change it does not render.
- *
- * <p>Which bloc the filter spotlights is a fifth coarse signal, tracked with a single
- * {@code filterRevision} counter. The selected bloc is sidebar-only sector-memory state like the
- * recede toggles, so picking or clearing it never bumps {@code settingsRevision}; instead the
- * selection's setter bumps this counter. Unlike the alliance and recede signals this one is folded
- * into the content token at the pipeline level rather than by any single view, since the filter is a
- * mode orthogonal to the active view (either view can be filtered), so a bump repaints the overlay
- * under whichever view is up without each view naming the filter.
- *
- * <p>How the map draws the sidebar's two shared appearance toggles - whether uninhabited
- * systems draw their outline, and whether a cluster label spells its owner's full or short
- * name - is a sixth coarse signal, tracked with a single {@code mapStyleRevision} counter.
- * Both toggles are sidebar-only sector-memory state rather than LunaLib fields, so flipping
- * one never bumps {@code settingsRevision}; each setter bumps this counter instead. Folded in
- * at the pipeline level like the filter revision, since both toggles restyle the whole map
- * under whichever view is up rather than belonging to any single view.
- *
- * <p>A counter and a set rather than direct calls because the producers (a
+ * <p>Counters and a set rather than direct calls because the producers (a
  * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)
- * are created independently, with no shared owner to wire together. The set is
+ * are created independently, with no shared owner to wire together. Both are
  * concurrent because a producer's event fires on the campaign thread while the
- * plugin drains it on the render thread.
+ * plugin reads or drains on the render thread.
  */
 public final class MapLayerRefresh {
     private static final Logger LOG = Global.getLogger(MapLayerRefresh.class);
 
-    private static final AtomicInteger geometryRevision = new AtomicInteger();
-    private static final AtomicInteger allianceRevision = new AtomicInteger();
-    private static final AtomicInteger recedeStyleRevision = new AtomicInteger();
-    private static final AtomicInteger filterRevision = new AtomicInteger();
-    private static final AtomicInteger mapStyleRevision = new AtomicInteger();
+    private static final Map<MapLayerRefreshSignal, AtomicInteger> revisionsBySignal =
+            new ConcurrentHashMap<>();
     private static final Set<String> groupingStaleSystemIds = ConcurrentHashMap.newKeySet();
 
     private MapLayerRefresh() {
     }
 
     /**
-     * @return a counter that advances when the reachable-system set changes, so
-     *         the cell geometry must be rebuilt
+     * @param signal the coarse change to read
+     * @return how many times {@code signal} has been raised, which advances only when it is
+     *         raised and never when another signal is
      */
-    public static int getGeometryRevision() {
-        return geometryRevision.get();
+    public static int getRevision(MapLayerRefreshSignal signal) {
+        return resolveCounter(signal).get();
     }
 
     /**
-     * Marks the cell geometry stale: the set of reachable systems changed.
+     * Raises {@code signal}: whatever it names went stale, so every consumer folding it in
+     * rebuilds. A consumer that does not fold this signal in is left alone, which is what lets a
+     * layer ignore a change it does not render.
+     *
+     * @param signal the coarse change that occurred
      */
-    public static void requestGeometryRefresh() {
-        // The central seam every reachable-set change funnels through. Logged
-        // with the resulting counter so a stale or missing province can be
-        // traced to whether the request was even issued.
-        var revision = geometryRevision.incrementAndGet();
-        LOG.debug("Map layer geometry refresh requested; geometryRevision=" + revision);
-    }
-
-    /**
-     * @return a counter that advances when the live alliance set changes, so the
-     *         alliances view rebuilds its drawables; the faction view does not read it
-     */
-    public static int getAllianceRevision() {
-        return allianceRevision.get();
-    }
-
-    /**
-     * Marks the alliance grouping stale: an alliance formed, dissolved, or gained or
-     * lost a member. Only the alliances view folds this into its content token, so the
-     * faction view is never rebuilt for a change it does not render.
-     */
-    public static void requestAllianceRefresh() {
-        // The seam the sector watcher's alliance-fingerprint diff funnels through, mirroring
-        // requestGeometryRefresh. Logged with the resulting counter so a stale or missing
-        // alliance region can be traced to whether the fingerprint diff even fired.
-        var revision = allianceRevision.incrementAndGet();
-        LOG.debug("Map layer alliance refresh requested; allianceRevision=" + revision);
-    }
-
-    /**
-     * @return a counter that advances when a recede toggle (Mute or Desaturate) flips, so every
-     *         view that recedes ground rebuilds its drawables; a view drawing no receded ground
-     *         does not read it
-     */
-    public static int getRecedeStyleRevision() {
-        return recedeStyleRevision.get();
-    }
-
-    /**
-     * Marks the recede styling stale: the player flipped a view's Mute or Desaturate toggle. Only a
-     * view that recedes ground folds this into its content token, so a view drawing no receded
-     * ground is never rebuilt for a toggle it does not honour. This is the live-invalidation seam
-     * the toggles use in place of {@code settingsRevision}, since they are sidebar-only
-     * sector-memory state rather than LunaLib fields.
-     */
-    public static void requestRecedeStyleRefresh() {
-        // The seam the Mute/Desaturate setters funnel through, mirroring requestAllianceRefresh.
-        // Logged with the resulting counter so a toggle that failed to repaint can be traced to
-        // whether the request was even issued.
-        var revision = recedeStyleRevision.incrementAndGet();
-        LOG.debug("Map layer recede style refresh requested; recedeStyleRevision="
-                + revision);
-    }
-
-    /**
-     * @return a counter that advances when the filter's selected bloc changes or is cleared, so the
-     *         overlay rebuilds its drawables; folded into the content token at the pipeline level,
-     *         since the filter is a mode either view can be under rather than a single view's concern
-     */
-    public static int getFilterRevision() {
-        return filterRevision.get();
-    }
-
-    /**
-     * Marks the filter selection stale: the player picked a different bloc to spotlight or cleared
-     * the filter. Folded into the content token at the pipeline level - the filter is orthogonal to
-     * the active view, so the bump repaints under whichever view is up without any view naming it.
-     * This is the live-invalidation seam the selection uses in place of {@code settingsRevision},
-     * since the selected bloc is sidebar-only sector-memory state rather than a LunaLib field.
-     */
-    public static void requestFilterRefresh() {
-        // The seam the filter selection's setter funnels through, mirroring requestRecedeStyleRefresh.
-        // Logged with the resulting counter so a selection that failed to repaint can be traced to
-        // whether the request was even issued.
-        var revision = filterRevision.incrementAndGet();
-        LOG.debug("Map layer filter refresh requested; filterRevision=" + revision);
-    }
-
-    /**
-     * @return a counter that advances when a shared appearance toggle (the uninhabited-systems
-     *         outline, the full/short name format) flips, so the overlay restyles; folded into the
-     *         content token at the pipeline level, since either toggle changes how the map draws
-     *         under whichever view is up
-     */
-    public static int getMapStyleRevision() {
-        return mapStyleRevision.get();
-    }
-
-    /**
-     * Marks the map's shared styling stale: the player flipped the uninhabited-systems outline or the
-     * full/short name format on the sidebar. This is the live-invalidation seam both toggles use in
-     * place of {@code settingsRevision}, since each is sidebar-only sector-memory state rather than a
-     * LunaLib field.
-     */
-    public static void requestMapStyleRefresh() {
-        // The seam the two shared appearance toggles' setters funnel through, mirroring
-        // requestRecedeStyleRefresh. Logged with the resulting counter so a toggle that failed to
-        // repaint can be traced to whether the request was even issued.
-        var revision = mapStyleRevision.incrementAndGet();
-        LOG.debug("Map layer style refresh requested; mapStyleRevision=" + revision);
+    public static void requestRefresh(MapLayerRefreshSignal signal) {
+        // The one seam every coarse change funnels through. Logged with the signal and the
+        // resulting counter so an overlay that failed to repaint - a stale region, a toggle that
+        // did nothing - can be traced to whether the request was even issued.
+        var revision = resolveCounter(signal).incrementAndGet();
+        LOG.debug("Map layer refresh requested; signal=" + signal.getId()
+                + " revision=" + revision);
     }
 
     /**
@@ -225,5 +110,11 @@ public final class MapLayerRefresh {
         var drained = new LinkedHashSet<>(groupingStaleSystemIds);
         groupingStaleSystemIds.removeAll(drained);
         return drained;
+    }
+
+    // The single point a signal's counter is reached through, so a read of a never-raised signal
+    // answers zero by the same path a raise starts from rather than by a null check of its own.
+    private static AtomicInteger resolveCounter(MapLayerRefreshSignal signal) {
+        return revisionsBySignal.computeIfAbsent(signal, key -> new AtomicInteger());
     }
 }

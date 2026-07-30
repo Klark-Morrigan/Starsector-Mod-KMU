@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
@@ -220,15 +221,15 @@ final class PoliticalMapStalenessSourceTest {
     // earlier tests' bumps.
     private static RefreshOutcome runPollsAndReadOutcome(int pollCount) {
         MapLayerRefresh.drainStaleGroupingSystemIds();
-        var geometryBefore = MapLayerRefresh.getGeometryRevision();
-        var allianceBefore = MapLayerRefresh.getAllianceRevision();
+        var geometryBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
+        var allianceBefore = MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES);
         var stalenessSource = new PoliticalMapStalenessSource();
         for (var poll = 0; poll < pollCount; poll++) {
             stalenessSource.markChangesSinceLastPoll();
         }
         return new RefreshOutcome(
-                MapLayerRefresh.getGeometryRevision() - geometryBefore,
-                MapLayerRefresh.getAllianceRevision() - allianceBefore,
+                MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY) - geometryBefore,
+                MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES) - allianceBefore,
                 MapLayerRefresh.drainStaleGroupingSystemIds());
     }
 

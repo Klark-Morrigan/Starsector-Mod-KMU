@@ -10,6 +10,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -22,6 +23,7 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -82,7 +84,7 @@ final class AlliancesViewTest {
             // the revision - that is what folds it into the content token and repaints the view
             // without a reload.
             var before = AlliancesView.INSTANCE.getContentRevision();
-            MapLayerRefresh.requestAllianceRefresh();
+            MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
             assertThat(AlliancesView.INSTANCE.getContentRevision()).isNotEqualTo(before);
         }
@@ -93,7 +95,7 @@ final class AlliancesViewTest {
             // never move settingsRevision, so the recede-style revision must fold in here for a flip
             // to repaint the overlay live.
             var before = AlliancesView.INSTANCE.getContentRevision();
-            MapLayerRefresh.requestRecedeStyleRefresh();
+            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
             assertThat(AlliancesView.INSTANCE.getContentRevision()).isNotEqualTo(before);
         }

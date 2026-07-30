@@ -7,6 +7,7 @@ import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
@@ -18,6 +19,7 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.starsector.nexerelin.NexerelinAlliances;
@@ -78,8 +80,8 @@ public final class AlliancesView implements PoliticalMapView {
         // input later is one more source here, not a wider contract; a change to either forces a
         // rebuild.
         return Fingerprints.compute(
-                MapLayerRefresh::getAllianceRevision,
-                MapLayerRefresh::getRecedeStyleRevision);
+                () -> MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES),
+                () -> MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE));
     }
 
     @Override

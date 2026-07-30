@@ -114,8 +114,10 @@ belong to the framework rather than to this layer: they work on an opaque groupi
 decide that the key names a bloc.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
-`refresh` (the economy-event listeners, and `PoliticalMapStalenessSource` - what this layer counts
-as a change the engine fired no event for, answered into the framework's poll),
+`refresh` (the economy-event listeners, `PoliticalMapStalenessSource` - what this layer counts
+as a change the engine fired no event for, answered into the framework's poll - and
+`PoliticalMapRefreshSignal`, the coarse changes only this layer can raise on the shared board,
+alliance membership being the one),
 `render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers to the three
 questions the framework's highlight asks about the cell under the cursor: the extent this frame
 painted there, the owner's border loops it might sit inside, and the shade its ground draws in),

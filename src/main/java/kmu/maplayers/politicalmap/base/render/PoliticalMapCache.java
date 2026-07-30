@@ -10,6 +10,7 @@ import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -177,7 +178,7 @@ final class PoliticalMapCache {
     private void rebuildStaleHalves(PoliticalMapView view) {
 
         var rebuiltCells = false;
-        var geometryRevision = MapLayerRefresh.getGeometryRevision();
+        var geometryRevision = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
 
         // The frontier resolution and the cell reach are geometry inputs, not just styles: each
         // reseeds every cell, so a change makes the geometry stale the same way an access change
@@ -334,7 +335,7 @@ final class PoliticalMapCache {
     // a change to any live input the active view samples - the alliances view's alliance set -
     // rebuilds the territories even though no setting moved. The faction view samples nothing live
     // and contributes a constant, so an alliance change never churns it; the pipeline stays
-    // view-neutral by reading this off the view rather than naming the alliance revision itself. The
+    // view-neutral by reading this off the view rather than naming the alliance signal itself. The
     // filter, recede-style, and map-style revisions are folded in at this pipeline level rather than
     // through any view, since each is a mode or an appearance toggle either view can be under: a
     // filter pick or clear, a recede Mute/Desaturate flip, or a flip of the sidebar's shared
@@ -348,9 +349,9 @@ final class PoliticalMapCache {
                 KmuLunaSettings.getSettingsRevision(),
                 view.getId(),
                 view.getContentRevision(),
-                MapLayerRefresh.getFilterRevision(),
-                MapLayerRefresh.getRecedeStyleRevision(),
-                MapLayerRefresh.getMapStyleRevision());
+                MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER),
+                MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE),
+                MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells

@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
@@ -79,7 +80,8 @@ final class NameFormatPreferenceTest {
 
                 verify(memoryMock).set(NAME_FORMAT_KEY,
                         FactionNameFormatChoice.SHORT.persistenceKey());
-                refreshMock.verify(MapLayerRefresh::requestMapStyleRefresh);
+                refreshMock.verify(
+                        () -> MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE));
             }
         }
 
@@ -97,7 +99,9 @@ final class NameFormatPreferenceTest {
                 NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT);
 
                 verify(memoryMock, never()).set(eq(NAME_FORMAT_KEY), anyString());
-                refreshMock.verify(MapLayerRefresh::requestMapStyleRefresh, never());
+                refreshMock.verify(
+                        () -> MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE),
+                        never());
             }
         }
     }

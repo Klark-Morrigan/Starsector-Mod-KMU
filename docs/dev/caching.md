@@ -96,22 +96,38 @@ Every producer above writes into one of these; every cache below reads them. Non
 of them is a boolean - a counter composes and cannot be cleared out from under a
 second reader.
 
-| Signal | Home | Bumped by | Read by |
+[`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java)
+holds one counter per
+[`MapLayerRefreshSignal`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefreshSignal.java)
+raised on it, keyed on the open signal type rather than on a fixed set of accessors.
+The framework declares the signals any painting layer could raise
+([`MapLayerCommonRefreshSignal`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerCommonRefreshSignal.java));
+a layer declares its own beside itself
+([`PoliticalMapRefreshSignal`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapRefreshSignal.java))
+and reaches the same board for them.
+
+| Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |
-| `geometryRevision` | [`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java) | the drawn-system set or moving-system set changing | the geometry cache |
+| `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
 | `groupingStaleSystemIds` | `MapLayerRefresh` | colony events + the watcher's owner diff | the incremental politics refresh |
-| `allianceRevision` | `MapLayerRefresh` | the alliance-set fingerprint moving | the alliances view only |
-| `recedeStyleRevision` | `MapLayerRefresh` | the Mute / Desaturate sidebar toggles | the pipeline, under any view (the receded blocs and decivilised ground), plus the alliances view for its own non-allied recede |
-| `filterRevision` | `MapLayerRefresh` | picking or clearing the spotlight bloc | the pipeline, under any view |
-| `mapStyleRevision` | `MapLayerRefresh` | the uninhabited-outline and name-format toggles | the pipeline, under any view |
+| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance-set fingerprint moving | the alliances view only |
+| `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | the pipeline, under any view (the receded blocs and decivilised ground), plus the alliances view for its own non-allied recede |
+| `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | the pipeline, under any view |
+| `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | the pipeline, under any view |
 | `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the territories rebuild |
 | content revision | each `PoliticalMapView` | the view's own live inputs, folded via `Fingerprints` | the territories rebuild |
 
-Two of those deserve their reason stated.
+Three of those deserve their reason stated.
+
+The **alliance signal** is the political map's own rather than the framework's,
+because who is allied with whom is this layer's vocabulary and no other layer would
+mean anything by it. The board stays one board all the same: a layer declares its
+signals and raises them on the shared counters, so a second layer's arrival does not
+split the mechanism in two.
 
 The **sidebar toggles** (recede, filter, spotlight, outline, name format) live in
 sector memory rather than as LunaLib fields, so flipping one does *not* bump
-`settingsRevision`. Each setter bumps its own counter instead, which is what makes
+`settingsRevision`. Each setter raises its own signal instead, which is what makes
 those toggles repaint the overlay live despite never touching the settings screen.
 
 The **content revision** is the seam that keeps the shared pipeline from naming any

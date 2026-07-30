@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
@@ -74,7 +75,8 @@ final class UninhabitedOutlinePreferenceTest {
                 UninhabitedOutlinePreference.setOutlineDrawn(true);
 
                 verify(memoryMock).set(OUTLINE_KEY, true);
-                refreshMock.verify(MapLayerRefresh::requestMapStyleRefresh);
+                refreshMock.verify(
+                        () -> MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE));
             }
         }
 
@@ -92,7 +94,9 @@ final class UninhabitedOutlinePreferenceTest {
                 UninhabitedOutlinePreference.setOutlineDrawn(true);
 
                 verify(memoryMock, never()).set(eq(OUTLINE_KEY), anyBoolean());
-                refreshMock.verify(MapLayerRefresh::requestMapStyleRefresh, never());
+                refreshMock.verify(
+                        () -> MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE),
+                        never());
             }
         }
     }
