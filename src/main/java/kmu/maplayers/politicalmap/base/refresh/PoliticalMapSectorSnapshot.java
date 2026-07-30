@@ -70,26 +70,9 @@ public record PoliticalMapSectorSnapshot(
     }
 
     /**
-     * Walks the sector once under an explicit weighting rule and the normal reveal
-     * gates.
-     *
-     * @param sector the sector to scan; null yields an empty snapshot
-     * @param rules  the dominance-weighting rules for this pass
-     * @return the visibility fingerprint and the dominant owner (by faction id) of
-     *         each owned on-map system
-     */
-    public static PoliticalMapSectorSnapshot scan(
-            SectorAPI sector,
-            DominanceRules rules) {
-        return scan(
-                sector,
-                rules,
-                PoliticalMapDevToggles.NONE);
-    }
-
-    /**
      * Walks the sector once under an explicit weighting rule and dev reveal toggles,
-     * for a caller that has already read the player's toggles for the surrounding pass.
+     * for a caller that resolves both itself rather than letting this class read the
+     * live settings.
      *
      * @param sector     the sector to scan; null yields an empty snapshot
      * @param rules      the dominance-weighting rules for this pass - whether

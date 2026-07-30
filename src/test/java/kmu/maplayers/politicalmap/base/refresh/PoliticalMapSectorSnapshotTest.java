@@ -12,6 +12,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -41,11 +42,11 @@ import static org.mockito.Mockito.when;
 class PoliticalMapSectorSnapshotTest {
 
     private static final float FULL_STABILITY = 10.0f;
-    // The scan is exercised through the explicit-rule overload: the one-argument
-    // entry point reads the live LunaLib settings, which only the running game
-    // provides. Station and patrol weighting are off so the snapshot tests turn on the
+    // The scan is exercised through the explicit-rule signature: the shorter entry
+    // point reads the live LunaLib settings, which only the running game provides.
+    // Station and patrol weighting are off so the snapshot tests turn on the
     // stability rule alone, with the colony-size weight at its identity and the colony
-    // penalty at a full collapse (the old whole-rating stability behaviour).
+    // penalty at a full collapse (the whole-rating stability behaviour).
     private static final DominanceRules STABILITY_WEIGHTED =
             new DominanceRules(true,
                     new BaseSizeWeighting(1.0, HiddenMarketScalingChoice.FIXED, 1.0, 1.0),
@@ -57,7 +58,7 @@ class PoliticalMapSectorSnapshotTest {
 
         @Test
         void scanReturnsEmptySnapshotForNullSector() {
-            var snapshot = PoliticalMapSectorSnapshot.scan(null, STABILITY_WEIGHTED);
+            var snapshot = scanUnderStabilityWeighting(null);
 
             assertThat(snapshot.visibilityFingerprint()).isZero();
             assertThat(snapshot.ownerBySystemId()).isEmpty();
@@ -65,8 +66,8 @@ class PoliticalMapSectorSnapshotTest {
 
         @Test
         void ownerMapNamesTheDominantFactionOfAnOwnedSystem() {
-            var snapshot = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)), STABILITY_WEIGHTED);
+            var snapshot = scanUnderStabilityWeighting(
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)));
 
             assertThat(snapshot.ownerBySystemId()).containsExactly(entry("a", "hegemony"));
         }
@@ -75,11 +76,11 @@ class PoliticalMapSectorSnapshotTest {
         void visibilityFingerprintShiftsWhenASystemBecomesInhabited() {
             // An empty system is off the map; a colony admits it, so the on-map set
             // - and the visibility fingerprint - changes.
-            var before = PoliticalMapSectorSnapshot.scan(sectorWith(system("a")),
-                    STABILITY_WEIGHTED).visibilityFingerprint();
+            var before = scanUnderStabilityWeighting(sectorWith(system("a")))
+                    .visibilityFingerprint();
 
-            var after = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)), STABILITY_WEIGHTED)
+            var after = scanUnderStabilityWeighting(
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)))
                     .visibilityFingerprint();
 
             assertThat(after).isNotEqualTo(before);
@@ -90,11 +91,11 @@ class PoliticalMapSectorSnapshotTest {
             // The AI-captures-or-founds case: the same system stays on the map, but
             // its owner flips. The owner map must move while the visibility hash
             // stays put, so only that system reshapes and no geometry rebuilds.
-            var before = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)), STABILITY_WEIGHTED);
+            var before = scanUnderStabilityWeighting(
+                    sectorWith(system("a"), ownedMarket("hegemony", 5)));
 
-            var after = PoliticalMapSectorSnapshot.scan(
-                    sectorWith(system("a"), ownedMarket("tritachyon", 5)), STABILITY_WEIGHTED);
+            var after = scanUnderStabilityWeighting(
+                    sectorWith(system("a"), ownedMarket("tritachyon", 5)));
 
             assertThat(after.ownerBySystemId()).containsExactly(entry("a", "tritachyon"));
             assertThat(after.visibilityFingerprint()).isEqualTo(before.visibilityFingerprint());
@@ -104,12 +105,20 @@ class PoliticalMapSectorSnapshotTest {
         void ownerMapOmitsADecivilisedShellThatStillCountsForVisibility() {
             // A revealed dead colony is drawn (visibility) but confers no owner, so
             // it is absent from the owner map - the mirror image of an owned system.
-            var snapshot = PoliticalMapSectorSnapshot.scan(sectorWith(decivilisedSystem("a")),
-                    STABILITY_WEIGHTED);
+            var snapshot = scanUnderStabilityWeighting(sectorWith(decivilisedSystem("a")));
 
             assertThat(snapshot.visibilityFingerprint()).isNotZero();
             assertThat(snapshot.ownerBySystemId()).isEmpty();
         }
+    }
+
+    // Binds the two arguments every case here shares - the stability-only rule and no
+    // dev reveals - so each test reads as the sector it scans and nothing else.
+    private static PoliticalMapSectorSnapshot scanUnderStabilityWeighting(SectorAPI sector) {
+        return PoliticalMapSectorSnapshot.scan(
+                sector,
+                STABILITY_WEIGHTED,
+                PoliticalMapDevToggles.NONE);
     }
 
     // A single-system sector whose economy returns the given markets for that
