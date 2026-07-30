@@ -65,17 +65,25 @@ seated system and marks exactly that system stale, through the one shared
 translation in `MarketPoliticsRefresh` so every listener applies the same guard and
 emits the same log line.
 
-**The sector watcher**
-([`PoliticalMapSectorWatcher`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapSectorWatcher.java))
-catches everything the engine fires no event for - a gate activating, a system
-being cut off, a dead colony surveyed, an AI faction quietly capturing a colony.
-It takes one cheap snapshot per poll
+**The sector watcher** catches everything the engine fires no event for - a gate
+activating, a system being cut off, a dead colony surveyed, an AI faction quietly
+capturing a colony. It is split across the framework/layer line:
+[`PoliticalMapSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/PoliticalMapSectorWatcher.java)
+owns only the throttled campaign-thread loop, and asks a
+[`MapLayerStalenessSource`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerStalenessSource.java)
+what has changed since it last asked, so what counts as a change never has to be
+named by the framework.
+
+The political map answers through
+[`PoliticalMapStalenessSource`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapStalenessSource.java),
+which takes one cheap snapshot per poll
 ([`PoliticalMapSectorSnapshot`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapSectorSnapshot.java))
 holding a scalar fingerprint of *which* systems are drawn and a map of *who* holds
 each, then reacts to each half on its own axis: the fingerprint moving means the
 geometry is stale (whole-map, since the partition depends on every site), while the
 owner map is diffed to mark exactly the systems whose owner changed. It also tracks
-the moving-system set and fingerprints the live alliance set.
+the moving-system set and fingerprints the live alliance set. All four baselines are
+its own, so nothing about the diff lives in the loop.
 
 The overlap is intentional. Both feed the same stale-system set, so a change a
 listener already marked and one the watcher's diff re-discovers collapse into a
@@ -90,7 +98,7 @@ second reader.
 
 | Signal | Home | Bumped by | Read by |
 | --- | --- | --- | --- |
-| `geometryRevision` | [`PoliticalMapRefresh`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapRefresh.java) | the drawn-system set or moving-system set changing | the geometry cache |
+| `geometryRevision` | [`PoliticalMapRefresh`](../../src/main/java/kmu/maplayers/base/refresh/PoliticalMapRefresh.java) | the drawn-system set or moving-system set changing | the geometry cache |
 | stale-system id set | `PoliticalMapRefresh` | colony events + the watcher's owner diff | the incremental politics refresh |
 | `allianceRevision` | `PoliticalMapRefresh` | the alliance-set fingerprint moving | the alliances view only |
 | `recedeStyleRevision` | `PoliticalMapRefresh` | the Mute / Desaturate sidebar toggles | the pipeline, under any view (the receded blocs and decivilised ground), plus the alliances view for its own non-allied recede |

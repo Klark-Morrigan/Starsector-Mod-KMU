@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.memory.SectorMemoryString;
 
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 
 /**
  * How cluster labels spell their owners' names - full, short, or not at all - persisted per save.

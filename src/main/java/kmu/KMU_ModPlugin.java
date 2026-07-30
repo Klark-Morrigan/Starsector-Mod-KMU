@@ -7,15 +7,16 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
+import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.refresh.PoliticalMapSectorWatcher;
 import kmu.maplayers.base.render.SectorMapLayerTerrainPlugin;
 import kmu.maplayers.base.sidebar.runtime.IntelSidebarHost;
 import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
 import kmu.maplayers.politicalmap.base.PoliticalMapSaveMigrations;
-import kmu.maplayers.politicalmap.base.refresh.MovingSystems;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapSectorWatcher;
-import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonizationListener;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisationListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
@@ -177,9 +178,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         try {
-            installPoliticalMapColonizationListener(Global.getSector());
+            installPoliticalMapColonisationListener(Global.getSector());
         } catch (RuntimeException exception) {
-            LOG.error("Failed to install KMU political map colonization listener", exception);
+            LOG.error("Failed to install KMU political map colonisation listener", exception);
         }
 
         try {
@@ -262,26 +263,28 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // when the player founds or abandons a colony in it, so planting or dropping
     // a colony repaints its system live rather than only on reload. Idempotent: a
     // reloaded save already carries it.
-    static void installPoliticalMapColonizationListener(SectorAPI sector) {
+    static void installPoliticalMapColonisationListener(SectorAPI sector) {
         if (sector == null) {
             return;
         }
 
         var listenerManager = sector.getListenerManager();
         if (listenerManager == null
-                || listenerManager.hasListenerOfClass(PoliticalMapColonizationListener.class)) {
+                || listenerManager.hasListenerOfClass(PoliticalMapColonisationListener.class)) {
             return;
         }
 
-        listenerManager.addListener(new PoliticalMapColonizationListener(), true);
+        listenerManager.addListener(new PoliticalMapColonisationListener(), true);
     }
 
     // Registers the per-frame watcher that refreshes the political map when a
     // change the engine fires no event for slips past the listeners - the set of
     // drawn systems shifting (a gate activating, a jump point established), a drawn
     // system changing hands (an AI colony founded in a system already on the map),
-    // or a mobile system drifting to a new position. Transient: not saved, so it is
-    // re-added fresh each load and never duplicates across reloads.
+    // or a mobile system drifting to a new position. The watcher owns only the
+    // cadence, so which of those count as a change is handed in as the political
+    // map's own staleness source. Transient: not saved, so it is re-added fresh
+    // each load and never duplicates across reloads.
     static void installPoliticalMapSectorWatcher(SectorAPI sector) {
         if (sector == null) {
             return;
@@ -292,7 +295,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // otherwise be compared against the previous save's last-seen position until
         // the first poll re-seeds it.
         MovingSystems.getInstance().reset();
-        sector.addTransientScript(new PoliticalMapSectorWatcher());
+        // A fresh source per load, so the baselines it diffs against start empty rather
+        // than carrying the previous save's last read into this one.
+        sector.addTransientScript(
+                new PoliticalMapSectorWatcher(new PoliticalMapStalenessSource()));
     }
 
     // Registers the sidebar's render and input listeners for both screens it draws on: the sector

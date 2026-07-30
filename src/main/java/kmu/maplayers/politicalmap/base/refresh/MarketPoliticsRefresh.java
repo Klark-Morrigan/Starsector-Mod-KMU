@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -20,7 +22,7 @@ import org.apache.log4j.Logger;
  * {@link PoliticalMapRefresh#markSystemPoliticsStale} - the fine-grained refresh
  * that re-derives only the named system and its neighbours rather than rescanning
  * the whole economy. Reachability changes (a system joining or leaving the map)
- * are a separate axis owned by {@link PoliticalMapSectorWatcher}.
+ * are a separate axis owned by {@link PoliticalMapStalenessSource}.
  */
 public final class MarketPoliticsRefresh {
     private static final Logger LOG = Global.getLogger(MarketPoliticsRefresh.class);

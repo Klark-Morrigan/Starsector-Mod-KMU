@@ -1,0 +1,157 @@
+package kmu.maplayers.politicalmap.base.refresh;
+
+import com.fs.starfarer.api.Global;
+
+import kmu.maplayers.base.refresh.MapLayerStalenessSource;
+import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
+import kmu.starsector.nexerelin.NexerelinAlliances;
+
+import org.apache.log4j.Logger;
+
+import java.util.Map;
+
+/**
+ * What the political map counts as a change the engine never announced - a gate activating,
+ * a system being cut off, a dead colony surveyed, or an AI faction founding or capturing a
+ * colony in a system already on the map - and which refresh each one earns.
+ *
+ * <p>Takes a cheap snapshot of the on-map systems ({@link PoliticalMapSectorSnapshot}) and
+ * reacts to each half on its own axis. The visibility fingerprint tracks which systems are
+ * drawn; when its scalar hash moves the geometry is stale, so this requests a whole-map
+ * geometry rebuild - the Voronoi partition depends on the full set of sites, so there is
+ * nothing finer to act on. The owner map tracks who holds each system; this diffs it against
+ * the last poll and marks exactly the systems whose owner changed politics-stale, the same
+ * targeted signal the event listeners raise. Feeding that shared set is what keeps this from
+ * doubling a listener's work: a colony a listener already marked and one this diff
+ * re-discovers collapse to a single reshape, and a change no listener saw is caught here and
+ * reshaped just as narrowly.
+ *
+ * <p>A third axis handles systems that move. Each poll also observes on-map positions through
+ * {@link MovingSystems}, which flags a system that rewrites its own hyperspace position so the
+ * geometry can leave it out of the partition rather than chase it. When that moving set
+ * changes - a system starts or stops moving - the geometry is stale through the same refresh a
+ * visibility change uses, since the mover joins or leaves the cell layout. A system that merely
+ * keeps moving changes nothing, since it is already excluded, so a steady drifter never churns
+ * the map.
+ *
+ * <p>A fourth axis fingerprints the live alliance set (Nex-gated: on a Nex-free install the
+ * fingerprint is a fixed value, so it never fires and no {@code exerelin} class loads). When
+ * alliances form, dissolve, or change members the fingerprint moves, so this bumps the shared
+ * alliance revision - which only the alliances view folds into its content token, so the
+ * faction view never rebuilds for an alliance change. The fingerprint keys on who is allied and
+ * which member leads (the bloc's colour), so a market-size reshuffle below the lead never churns
+ * the map while a colour lead swap does.
+ *
+ * <p>All four baselines live here rather than in the framework's poll, so the whole of "what
+ * changed" is decided against this layer's own last read. The first poll only establishes them.
+ */
+public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
+    private static final Logger LOG = Global.getLogger(PoliticalMapStalenessSource.class);
+
+    // Last poll's state; 0 and an empty map are also the empty-sector values, so a
+    // boolean guards the very first poll establishing every baseline.
+    private boolean hasPolled;
+    private int lastVisibilityFingerprint;
+    private int lastAllianceFingerprint;
+    private Map<String, String> lastOwnerBySystemId = Map.of();
+
+    // Re-reads the snapshot and stages on-map positions, then hands each axis its own
+    // routing: a visibility move or an accepted system move rebuilds geometry, an owner-map
+    // diff marks just the changed systems stale, an alliance-fingerprint move bumps the
+    // alliance revision. The first poll only establishes the baselines.
+    @Override
+    public void markChangesSinceLastPoll() {
+        var sector = Global.getSector();
+
+        // Read the dev reveal toggles once and share them across both walks, so the
+        // snapshot's drawn set and the motion tracker's drawn set agree even if the
+        // player flips a toggle between the two - and, crucially, so the motion walk
+        // observes the same revealed systems the geometry draws, not just the normally
+        // visible ones.
+        var overrides = PoliticalMapDevOverrides.readFromLunaSettings();
+        var snapshot = PoliticalMapSectorSnapshot.scan(sector, overrides);
+
+        // Observe positions every poll so a system that starts or stops moving is
+        // taken out of, or returned to, the partition. Only a change to the moving set
+        // stales the geometry; a system that keeps moving is already excluded, so it
+        // reports no change and never churns the map.
+        var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(
+                sector,
+                overrides);
+
+        // One call per axis, each handed the same first-poll flag and each owning its own
+        // baseline, so no axis can be read without seeing how it treats a baseline poll.
+        var isFirstPoll = !hasPolled;
+        markGeometryChange(snapshot, hasMovingSetChanged, isFirstPoll);
+        markOwnerChanges(snapshot.ownerBySystemId(), isFirstPoll);
+        markAllianceSetChange(isFirstPoll);
+        hasPolled = true;
+    }
+
+    // Requests a whole-map geometry rebuild when either trigger fired: the drawn set moved
+    // (the visibility fingerprint differs) or a system started or stopped moving. One
+    // request covers both, since the rebuild reads the fresh moving set and reachable set
+    // whole. The fingerprint baseline advances even on the first poll, where there is
+    // nothing to compare against and so nothing to request.
+    private void markGeometryChange(
+            PoliticalMapSectorSnapshot snapshot,
+            boolean hasMovingSetChanged,
+            boolean isFirstPoll) {
+
+        var hasVisibilityChanged = isFirstPoll
+                || snapshot.visibilityFingerprint() != lastVisibilityFingerprint;
+        if (hasVisibilityChanged) {
+            LOG.debug("Political map visibility fingerprint changed; old="
+                    + (isFirstPoll ? 0 : lastVisibilityFingerprint) + " new="
+                    + snapshot.visibilityFingerprint() + " firstPoll=" + isFirstPoll);
+            lastVisibilityFingerprint = snapshot.visibilityFingerprint();
+        }
+        if (isFirstPoll || !(hasVisibilityChanged || hasMovingSetChanged)) {
+            return;
+        }
+        if (!hasVisibilityChanged) {
+            LOG.debug("Political map moving set changed");
+        }
+        PoliticalMapRefresh.requestGeometryRefresh();
+    }
+
+    // Marks politics-stale every system whose owner differs from the last poll: a system
+    // that gained an owner or changed hands (present now with a new id), and one that lost
+    // its owner (dropped since). Each mark funnels into the same set the listeners raise,
+    // so an overlapping change reshapes once and is traced by markSystemPoliticsStale's own
+    // log line. The baseline advances even on the first poll, which has no prior to diff.
+    private void markOwnerChanges(Map<String, String> currentOwnerBySystemId,
+            boolean isFirstPoll) {
+
+        if (!isFirstPoll) {
+            for (var entry : currentOwnerBySystemId.entrySet()) {
+                if (!entry.getValue().equals(lastOwnerBySystemId.get(entry.getKey()))) {
+                    PoliticalMapRefresh.markSystemPoliticsStale(entry.getKey());
+                }
+            }
+            for (var systemId : lastOwnerBySystemId.keySet()) {
+                if (!currentOwnerBySystemId.containsKey(systemId)) {
+                    PoliticalMapRefresh.markSystemPoliticsStale(systemId);
+                }
+            }
+        }
+        lastOwnerBySystemId = currentOwnerBySystemId;
+    }
+
+    // Fingerprints the live alliance set and bumps the shared alliance revision when it
+    // moves against the last poll, so the alliances view repaints on a form/dissolve/
+    // transfer. Nex-gated inside computeAllianceFingerprint (a fixed value without Nex), so
+    // a Nex-free install polls a steady token and never bumps. The first poll only seeds the
+    // baseline, matching the other axes.
+    private void markAllianceSetChange(boolean isFirstPoll) {
+        var allianceFingerprint = NexerelinAlliances.computeAllianceFingerprint();
+        if (!isFirstPoll && allianceFingerprint != lastAllianceFingerprint) {
+            LOG.debug("Political map alliance fingerprint changed; old="
+                    + lastAllianceFingerprint + " new=" + allianceFingerprint);
+            PoliticalMapRefresh.requestAllianceRefresh();
+        }
+        lastAllianceFingerprint = allianceFingerprint;
+    }
+}

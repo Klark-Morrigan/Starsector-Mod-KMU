@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.refresh;
+package kmu.maplayers.base.refresh;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -10,10 +10,10 @@ import kmu.maplayers.politicalmap.base.PoliticalMapDevOverrides;
 import java.util.Set;
 
 /**
- * The shared seam that couples the political map's motion tracking to its two
- * threads, and the reason a moving system is left out of the overlay.
+ * The shared seam that couples the map's motion tracking to its two threads, and the
+ * reason a moving system is left out of an overlay.
  *
- * <p>The overlay's Voronoi partition assumes a system's hyperspace position is fixed.
+ * <p>The cell partition assumes a system's hyperspace position is fixed.
  * Some mods break that: a system can be a mobile entity that rewrites its own
  * {@code getLocation()} every frame and drifts across hyperspace (the motivating case
  * is Legacy of Arkgneisis' Anarakis Reparations Society, whose capital patrols a
@@ -24,13 +24,13 @@ import java.util.Set;
  * wherever it stopped. A one-time relocation (a rehomed colony) falls out for free: it
  * reads as moving on the poll it jumps, then rejoins once it holds still.
  *
- * <p>Detection is delegated to {@link SystemMotionTracker}, fed the political map's own
- * drawn-set rule ({@link DrawnSystemPositions#buildDrawnSystemPredicate}) so the motion
- * walk sees exactly the systems the geometry draws - including any a dev reveal override
- * put on the map. What stays here is the coupling this feature needs: a single shared
- * instance joins the campaign-thread writer (the sector watcher, which polls) to the
- * render-thread reader (the geometry cache, which skips the movers) with no owner
- * between them, the same seam {@link PoliticalMapRefresh} provides for its counters.
+ * <p>Detection is delegated to {@link SystemMotionTracker}, fed the shared drawn-set rule
+ * ({@link DrawnSystemPositions#buildDrawnSystemPredicate}) so the motion walk sees exactly
+ * the systems the geometry draws - including any a dev reveal override put on the map. What
+ * stays here is the coupling the map needs: a single shared instance joins the
+ * campaign-thread writer (the poll) to the render-thread reader (the geometry cache, which
+ * skips the movers) with no owner between them, the same seam {@link PoliticalMapRefresh}
+ * provides for its counters.
  */
 public final class MovingSystems {
     // The one shared tracker the watcher writes and the geometry cache reads.
@@ -47,8 +47,8 @@ public final class MovingSystems {
     }
 
     /**
-     * @return the one shared tracker both the sector watcher and the geometry cache
-     *         reach, since neither owns the other
+     * @return the one shared tracker both the poll and the geometry cache reach, since
+     *         neither owns the other
      */
     public static MovingSystems getInstance() {
         return INSTANCE;

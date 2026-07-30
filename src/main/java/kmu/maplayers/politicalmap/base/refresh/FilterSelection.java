@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import kmlib.starsector.memory.SectorMemoryString;
 
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+
 import java.util.function.Predicate;
 
 /**

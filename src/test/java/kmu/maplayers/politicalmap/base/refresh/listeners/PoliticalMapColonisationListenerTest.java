@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,20 +14,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link PoliticalMapColonizationListener}: founding a colony marks the new
+ * Pins {@link PoliticalMapColonisationListener}: founding a colony marks the new
  * colony's star system politics-stale and abandoning one marks the dropped
  * colony's system, while a planet or market with no star system (a deep-hyperspace
  * station) marks nothing. The stale set is drained to read it, so each case clears
  * it first.
  */
-final class PoliticalMapColonizationListenerTest {
-    private final PoliticalMapColonizationListener listener = new PoliticalMapColonizationListener();
+final class PoliticalMapColonisationListenerTest {
+    private final PoliticalMapColonisationListener listener = new PoliticalMapColonisationListener();
 
     @Nested
     class ReportPlayerColonizedPlanet {
 
         @Test
-        void marksTheColonizedPlanetsSystemStale() {
+        void marksTheColonisedPlanetsSystemStale() {
             PoliticalMapRefresh.drainStalePoliticsSystemIds();
             // Build the market fully before the planet stub: marketInSystem stubs
             // internally, so nesting it inside when(...).thenReturn(...) would trip

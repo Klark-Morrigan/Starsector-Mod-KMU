@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.refresh;
+package kmu.maplayers.base.refresh;
 
 import com.fs.starfarer.api.Global;
 
@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * The refresh signals the political-map overlay watches to know what part of its
+ * The refresh signals a map layer's overlay watches to know what part of its
  * cache has gone stale, so it rebuilds only what actually changed.
  *
  * <p>The cell geometry (the Voronoi partition) is expensive but changes rarely -

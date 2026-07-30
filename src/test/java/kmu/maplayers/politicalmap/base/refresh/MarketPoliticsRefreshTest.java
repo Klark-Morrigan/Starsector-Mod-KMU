@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

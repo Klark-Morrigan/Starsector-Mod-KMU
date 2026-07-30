@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.memory.SectorMemoryFlag;
 
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 import kmu.settings.KmuLunaSettings;
 
 /**

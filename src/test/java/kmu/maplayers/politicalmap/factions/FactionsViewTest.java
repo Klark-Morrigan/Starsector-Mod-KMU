@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -16,7 +17,6 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -18,9 +18,9 @@ import java.util.Map;
 /**
  * A snapshot of the political map's two refresh inputs, taken in one sector walk:
  * a scalar fingerprint of which systems are drawn, and a per-system map of who
- * holds each of them. The sector watcher scans and diffs it; it lives beside the
- * watcher rather than in the domain layer because it is a refresh input, not a
- * rule of the map's model.
+ * holds each of them. {@link PoliticalMapStalenessSource} scans and diffs it; it
+ * lives beside that source rather than in the domain layer because it is a refresh
+ * input, not a rule of the map's model.
  *
  * <p>The two are shaped to match how their refreshes work, not for symmetry.
  * Visibility drives a geometry rebuild, which is inherently whole-map - the
@@ -39,39 +39,34 @@ import java.util.Map;
  * contribution is {@link PoliticalMapVisibility}'s and the dominant owner is
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
  */
-public record PoliticalMapSectorSnapshot(int visibilityFingerprint,
+public record PoliticalMapSectorSnapshot(
+        int visibilityFingerprint,
         Map<String, String> ownerBySystemId) {
 
     /**
-     * Walks the sector once and records both refresh inputs for every on-map
-     * system.
-     *
-     * <p>Reads the player's dominance-weighting rules once up front, so the whole
-     * walk resolves every system under the same rule even if the player applies a
-     * settings change mid-scan.
-     *
-     * @param sector the sector to scan; null yields an empty snapshot
-     * @return the visibility fingerprint and the dominant owner (by faction id) of
-     *         each owned on-map system; a drawn-but-unowned system (a decivilised
-     *         shell) is absent from the owner map
-     */
-    /**
      * Walks the sector once under dev reveal overrides the caller has already read,
-     * reading the dominance-weighting rules itself. Lets a caller that shares one
-     * override read across several walks (the sector watcher's poll, which drives both
-     * this scan and the motion walk from a single toggle read) pass the overrides in
-     * while leaving weighting - which only this scan needs - encapsulated here.
+     * reading the dominance-weighting rules itself so the whole walk resolves every
+     * system under one rule even if the player applies a settings change mid-scan. Lets
+     * a caller that shares one override read across several walks (the staleness poll,
+     * which drives both this scan and the motion walk from a single toggle read) pass
+     * the overrides in while leaving weighting - which only this scan needs -
+     * encapsulated here.
      *
      * @param sector    the sector to scan; null yields an empty snapshot
      * @param overrides the dev reveal overrides for this pass - show-all-factions folds
      *                  undiscovered colonies into dominance and inhabitation,
      *                  force-all-systems admits every system to the drawn set
      * @return the visibility fingerprint and the dominant owner (by faction id) of each
-     *         owned on-map system
+     *         owned on-map system; a drawn-but-unowned system (a decivilised shell) is
+     *         absent from the owner map
      */
-    public static PoliticalMapSectorSnapshot scan(SectorAPI sector,
+    public static PoliticalMapSectorSnapshot scan(
+            SectorAPI sector,
             PoliticalMapDevOverrides overrides) {
-        return scan(sector, DominanceRules.readFromLunaSettings(), overrides);
+        return scan(
+                sector,
+                DominanceRules.readFromLunaSettings(),
+                overrides);
     }
 
     /**
@@ -83,9 +78,13 @@ public record PoliticalMapSectorSnapshot(int visibilityFingerprint,
      * @return the visibility fingerprint and the dominant owner (by faction id) of
      *         each owned on-map system
      */
-    public static PoliticalMapSectorSnapshot scan(SectorAPI sector,
+    public static PoliticalMapSectorSnapshot scan(
+            SectorAPI sector,
             DominanceRules rules) {
-        return scan(sector, rules, PoliticalMapDevOverrides.NONE);
+        return scan(
+                sector,
+                rules,
+                PoliticalMapDevOverrides.NONE);
     }
 
     /**
@@ -103,35 +102,50 @@ public record PoliticalMapSectorSnapshot(int visibilityFingerprint,
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
      *         shell) is absent from the owner map
      */
-    public static PoliticalMapSectorSnapshot scan(SectorAPI sector,
-            DominanceRules rules, PoliticalMapDevOverrides overrides) {
+    public static PoliticalMapSectorSnapshot scan(
+            SectorAPI sector,
+            DominanceRules rules,
+            PoliticalMapDevOverrides overrides) {
+
         if (sector == null) {
             return new PoliticalMapSectorSnapshot(0, Map.of());
         }
+
         // Scanned once for the whole walk so the per-system access check stays an
         // O(1) lookup rather than rescanning hyperspace each time.
         var visibleStars = VisibleStars.scan(sector);
         var hasEconomy = sector.getEconomy() != null;
         var visibility = 0;
         var ownerBySystemId = new LinkedHashMap<String, String>();
+
         for (var system : sector.getStarSystems()) {
             // One economy read per system, shared by both concerns: its emptiness
             // is the inhabitation flag membership needs, and its footprints are
             // what the dominance rule ranks. A null economy (early load) reads as
             // no markets rather than faulting.
             Map<String, MarketFootprint> footprintByFactionId = hasEconomy
-                    ? KnownMarketFootprints.readByFaction(sector, system, rules,
+                    ? KnownMarketFootprints.readByFaction(
+                            sector,
+                            system,
+                            rules,
                             overrides.isShowingAllFactions())
                     : Map.of();
+
             var hasRevealedDecivilised = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
             var isInhabited = !footprintByFactionId.isEmpty() || hasRevealedDecivilised;
-            if (!PoliticalMapVisibility.shouldAppearOnMap(system, visibleStars, isInhabited,
+
+            if (!PoliticalMapVisibility.shouldAppearOnMap(
+                    system,
+                    visibleStars,
+                    isInhabited,
                     overrides.isForcingAllSystemsOnMap())) {
                 continue;
             }
             var systemId = system.getId();
-            visibility += PoliticalMapVisibility.computeVisibilityContribution(systemId,
+            visibility += PoliticalMapVisibility.computeVisibilityContribution(
+                    systemId,
                     hasRevealedDecivilised);
+                    
             // A decivilised-only system is drawn yet unowned, so it counts toward
             // visibility but is left out of the owner map - a system gaining or
             // losing an owner then reads as a diff against that absence.

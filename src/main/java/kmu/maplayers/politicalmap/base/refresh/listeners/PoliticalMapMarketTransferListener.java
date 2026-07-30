@@ -7,9 +7,9 @@ import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.Nex_MarketCMD;
 
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.refresh.MarketPoliticsRefresh;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapSectorWatcher;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
 import java.util.List;
 
@@ -38,7 +38,7 @@ import exerelin.utilities.InvasionListener;
  * {@link InvasionListener}. Only {@code reportMarketTransferred} touches the map;
  * the other invasion callbacks (loot, per-round strength, invasion finished) do
  * not change owner and are left as no-ops. Reachability changes remain
- * {@link PoliticalMapSectorWatcher}'s axis.
+ * {@link PoliticalMapStalenessSource}'s axis.
  */
 public class PoliticalMapMarketTransferListener implements InvasionListener {
 

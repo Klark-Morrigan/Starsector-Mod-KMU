@@ -114,7 +114,9 @@ belong to the framework rather than to this layer: they work on an opaque groupi
 decide that the key names a bloc.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
-`refresh`, `render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers to the three
+`refresh` (the economy-event listeners, and `PoliticalMapStalenessSource` - what this layer counts
+as a change the engine fired no event for, answered into the framework's poll),
+`render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers to the three
 questions the framework's highlight asks about the cell under the cursor: the extent this frame
 painted there, the owner's border loops it might sit inside, and the shade its ground draws in),
 `tooltip`, and `sidebar` - the last being this layer's own body

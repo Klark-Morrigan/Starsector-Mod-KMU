@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.memory.SectorMemoryFlag;
 
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 
 /**
  * Whether uninhabited systems draw their outline, persisted per save. Off by default, so only

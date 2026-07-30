@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;

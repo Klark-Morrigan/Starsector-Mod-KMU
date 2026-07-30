@@ -10,6 +10,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.refresh.PoliticalMapRefresh;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -21,7 +22,6 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefresh;
 import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.Nested;
