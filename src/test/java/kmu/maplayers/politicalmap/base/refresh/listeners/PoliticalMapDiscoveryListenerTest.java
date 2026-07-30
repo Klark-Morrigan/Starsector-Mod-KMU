@@ -2,14 +2,15 @@ package kmu.maplayers.politicalmap.base.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.JumpPointAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -19,21 +20,26 @@ import static org.mockito.Mockito.when;
  * system politics-stale (the same targeted refresh a colony resize uses), while
  * discovering something with no market (a jump point, inert salvage) marks
  * nothing - accessibility is the sector watcher's job, not the listener's. The
- * stale set is drained to read it, so each case clears it first.
+ * stale set is drained to read it, and drained before each case, since the board
+ * it lives on is process-wide.
  */
 final class PoliticalMapDiscoveryListenerTest {
     private final PoliticalMapDiscoveryListener listener = new PoliticalMapDiscoveryListener();
+
+    @BeforeEach
+    void drainAnyPendingStaleSystems() {
+        MapLayerRefresh.drainStaleGroupingSystemIds();
+    }
 
     @Nested
     class ReportEntityDiscovered {
 
         @Test
         void marksSystemStaleWhenDiscoveredEntityHasAMarket() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-            // Build the market fully before the entity stub: marketInSystem stubs
+            // Build the market fully before the entity stub: mockMarketInSystem stubs
             // internally, so nesting it inside when(...).thenReturn(...) would trip
             // Mockito's unfinished-stubbing guard.
-            var marketMock = marketInSystem("sys");
+            var marketMock = mockMarketInSystem("sys");
             var entityMock = mock(SectorEntityToken.class);
             when(entityMock.getMarket()).thenReturn(marketMock);
 
@@ -44,7 +50,6 @@ final class PoliticalMapDiscoveryListenerTest {
 
         @Test
         void marksNothingForMarketlessEntity() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
             var beforeGeometry = MapLayerRefresh.getGeometryRevision();
 
             // A jump point has no market; accessibility is judged elsewhere, so the
@@ -57,9 +62,7 @@ final class PoliticalMapDiscoveryListenerTest {
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-            var marketMock = mock(MarketAPI.class);
-            when(marketMock.getStarSystem()).thenReturn(null);
+            var marketMock = mockUnseatedMarket();
             var entityMock = mock(SectorEntityToken.class);
             when(entityMock.getMarket()).thenReturn(marketMock);
 
@@ -67,14 +70,5 @@ final class PoliticalMapDiscoveryListenerTest {
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
-    }
-
-    private static MarketAPI marketInSystem(String systemId) {
-        var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getId()).thenReturn(systemId);
-        var marketMock = mock(MarketAPI.class);
-        when(marketMock.getId()).thenReturn("mkt");
-        when(marketMock.getStarSystem()).thenReturn(systemMock);
-        return marketMock;
     }
 }

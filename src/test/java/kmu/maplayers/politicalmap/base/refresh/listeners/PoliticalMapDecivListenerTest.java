@@ -1,64 +1,56 @@
 package kmu.maplayers.politicalmap.base.refresh.listeners;
 
-import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
-
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link PoliticalMapDecivListener}: a completed decivilisation marks its
  * own star system politics-stale (whether or not the colony was fully
  * destroyed), while the pre-deciv phase and a market with no star system (a
- * deep-hyperspace station) mark nothing. The stale set is drained to read it, so
- * each case clears it first.
+ * deep-hyperspace station) mark nothing. The stale set is drained to read it, and
+ * drained before each case, since the board it lives on is process-wide.
  */
 final class PoliticalMapDecivListenerTest {
     private final PoliticalMapDecivListener listener = new PoliticalMapDecivListener();
+
+    @BeforeEach
+    void drainAnyPendingStaleSystems() {
+        MapLayerRefresh.drainStaleGroupingSystemIds();
+    }
 
     @Nested
     class ReportColonyDecivilized {
 
         @Test
         void marksTheDecivilisedColonysSystemStale() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
-            listener.reportColonyDecivilized(marketInSystem("mkt", "sys"), false);
+            listener.reportColonyDecivilized(mockMarketInSystem("sys"), false);
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksTheSystemStaleEvenWhenFullyDestroyed() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
-            listener.reportColonyDecivilized(marketInSystem("mkt", "sys"), true);
+            listener.reportColonyDecivilized(mockMarketInSystem("sys"), true);
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-            var marketMock = mock(MarketAPI.class);
-            when(marketMock.getId()).thenReturn("mkt");
-            when(marketMock.getStarSystem()).thenReturn(null);
-
-            listener.reportColonyDecivilized(marketMock, false);
+            listener.reportColonyDecivilized(mockUnseatedMarket(), false);
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
             listener.reportColonyDecivilized(null, false);
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
@@ -70,20 +62,9 @@ final class PoliticalMapDecivListenerTest {
 
         @Test
         void marksNothingSinceTheColonyIsStillFactionOwned() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
-            listener.reportColonyAboutToBeDecivilized(marketInSystem("mkt", "sys"), false);
+            listener.reportColonyAboutToBeDecivilized(mockMarketInSystem("sys"), false);
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
-    }
-
-    private static MarketAPI marketInSystem(String marketId, String systemId) {
-        var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getId()).thenReturn(systemId);
-        var marketMock = mock(MarketAPI.class);
-        when(marketMock.getId()).thenReturn(marketId);
-        when(marketMock.getStarSystem()).thenReturn(systemMock);
-        return marketMock;
     }
 }

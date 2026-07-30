@@ -1,34 +1,35 @@
 package kmu.maplayers.politicalmap.base.refresh;
 
-import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
-
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link MarketPoliticsRefresh}, the shared seat guard the politics
  * listeners funnel through: a market seated in a star system marks that system
  * stale, while a null market or one with no star system (a deep-hyperspace
- * station) marks nothing. The stale set is drained to read it, so each case
- * clears it first.
+ * station) marks nothing. The stale set is drained to read it, and drained before
+ * each case, since the board it lives on is process-wide.
  */
 final class MarketPoliticsRefreshTest {
+
+    @BeforeEach
+    void drainAnyPendingStaleSystems() {
+        MapLayerRefresh.drainStaleGroupingSystemIds();
+    }
 
     @Nested
     class MarkSystemStaleForMarket {
 
         @Test
         void marksTheMarketsSystemStale() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
-            MarketPoliticsRefresh.markSystemStaleForMarket(marketInSystem("mkt", "sys"),
+            MarketPoliticsRefresh.markSystemStaleForMarket(mockMarketInSystem("sys"),
                     "colony resize", "prevSize=3");
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
@@ -36,9 +37,7 @@ final class MarketPoliticsRefreshTest {
 
         @Test
         void marksTheMarketsSystemStaleWithEmptyContext() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
-            MarketPoliticsRefresh.markSystemStaleForMarket(marketInSystem("mkt", "sys"),
+            MarketPoliticsRefresh.markSystemStaleForMarket(mockMarketInSystem("sys"),
                     "colony resize", "");
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
@@ -46,11 +45,7 @@ final class MarketPoliticsRefreshTest {
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-            var marketMock = mock(MarketAPI.class);
-            when(marketMock.getStarSystem()).thenReturn(null);
-
-            MarketPoliticsRefresh.markSystemStaleForMarket(marketMock, "colony resize",
+            MarketPoliticsRefresh.markSystemStaleForMarket(mockUnseatedMarket(), "colony resize",
                     "prevSize=3");
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
@@ -58,20 +53,9 @@ final class MarketPoliticsRefreshTest {
 
         @Test
         void marksNothingForNullMarket() {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
             MarketPoliticsRefresh.markSystemStaleForMarket(null, "colony resize", "prevSize=3");
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
-    }
-
-    private static MarketAPI marketInSystem(String marketId, String systemId) {
-        var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getId()).thenReturn(systemId);
-        var marketMock = mock(MarketAPI.class);
-        when(marketMock.getId()).thenReturn(marketId);
-        when(marketMock.getStarSystem()).thenReturn(systemMock);
-        return marketMock;
     }
 }
