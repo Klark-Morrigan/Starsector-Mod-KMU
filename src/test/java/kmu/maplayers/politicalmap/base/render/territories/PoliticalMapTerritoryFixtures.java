@@ -4,10 +4,15 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.render.regions.StyledCell;
+import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.MapStyleCategory;
+import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
@@ -18,9 +23,10 @@ import java.util.Map;
 import static org.mockito.Mockito.mock;
 
 /**
- * Shared fixtures for the tests that read a built {@link PoliticalMapTerritories}: an inert
- * one to hang a test's own state on, and the two placeholder draw records that stand in
- * wherever a cell or a territory only has to exist rather than draw.
+ * Shared fixtures for the tests that build or read a {@link PoliticalMapTerritories}: an inert
+ * one to hang a test's own state on, the uniform theme a build runs against when the styling is
+ * not what is under test, and the two placeholder draw records that stand in wherever a cell or
+ * a territory only has to exist rather than draw.
  *
  * <p>One home for these because a built territories takes six constructor arguments of which
  * most tests vary one, so each suite that hand-rolled its own was repeating the same five
@@ -63,6 +69,26 @@ public final class PoliticalMapTerritoryFixtures {
                     mock(PoliticalMapView.class),
                     OwnershipGrouping.identity()),
                 new FilterSnapshot(null, BlocStyleAdjustment.NONE, new LinkedHashSet<>()));
+    }
+
+    /**
+     * A theme painting every one of this map's categories in the same bundle, over the shared
+     * inert global tier.
+     *
+     * <p>For the suites whose subject is which ground a builder draws rather than what it draws
+     * it in: with all four categories identical, a difference in the output can only have come
+     * from the geometry or the ownership, never from a category the fixture happened to style
+     * differently.
+     *
+     * @param style the bundle every category paints from
+     * @return a live theme, keyed by the four political categories
+     */
+    public static RenderStyle createRenderStyleForEveryCategory(CategoryStyle style) {
+        Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+        for (var category : PoliticalMapCategory.values()) {
+            categories.put(category, style);
+        }
+        return new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
     }
 
     /**

@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render.style;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.MapCategory;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
@@ -360,8 +359,9 @@ final class RenderStyleReaderTest {
                 var renderStyle = RenderStyleReader.readRenderStyle();
 
                 assertThat(renderStyle.global()).isNotNull();
-                assertThat(renderStyle.categories()).containsOnlyKeys(MapCategory.values());
-                for (var category : MapCategory.values()) {
+                assertThat(renderStyle.categories())
+                        .containsOnlyKeys(PoliticalMapCategory.values());
+                for (var category : PoliticalMapCategory.values()) {
                     assertThat(renderStyle.categoryStyle(category)).isNotNull();
                 }
             }

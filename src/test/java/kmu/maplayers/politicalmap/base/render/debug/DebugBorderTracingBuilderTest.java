@@ -12,13 +12,12 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HatchStyle;
-import kmu.maplayers.base.theme.HoverGlowStyle;
-import kmu.maplayers.base.theme.HoverHighlightStyle;
-import kmu.maplayers.base.theme.HoverWashStyle;
-import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
@@ -30,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,10 +83,6 @@ final class DebugBorderTracingBuilderTest {
     private static final double CORNER_RADIUS = 100.0;
     private static final int CORNER_SEGMENTS = 4;
     private static final double CHAMFER_ANGLE_RADIANS = 0.5;
-    // An inert hover highlight: nothing built here is hovered, so it is carried and never read.
-    private static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
-            FactionPaletteChoice.NONE, new HoverGlowStyle(0, 0, 0, 0, 0),
-            new HoverWashStyle(0, 0, 0));
     private static final ElementStyle DRAWN_OUTLINE =
             new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0);
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
@@ -338,14 +332,19 @@ final class DebugBorderTracingBuilderTest {
             ElementStyle decivilisedOutline,
             ElementStyle uninhabitedOutline) {
 
-        Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
-        categories.put(MapCategory.FACTION, outlinedBy(DRAWN_OUTLINE));
-        categories.put(MapCategory.INDEPENDENT, outlinedBy(DRAWN_OUTLINE));
-        categories.put(MapCategory.DECIVILISED, outlinedBy(decivilisedOutline));
-        categories.put(MapCategory.UNINHABITED, outlinedBy(uninhabitedOutline));
+        Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+        categories.put(PoliticalMapCategory.FACTION, outlinedBy(DRAWN_OUTLINE));
+        categories.put(PoliticalMapCategory.INDEPENDENT, outlinedBy(DRAWN_OUTLINE));
+        categories.put(PoliticalMapCategory.DECIVILISED, outlinedBy(decivilisedOutline));
+        categories.put(PoliticalMapCategory.UNINHABITED, outlinedBy(uninhabitedOutline));
+        // The smoothing profile is the one sector-wide value these cases vary, so the rest of the
+        // tier is the shared inert one.
         var renderStyle = new RenderStyle(
                 new GlobalStyle(
-                        new HatchStyle(0, 0, 0), smoothing, NO_HOVER_HIGHLIGHT, 0.3),
+                        new HatchStyle(0, 0, 0),
+                        smoothing,
+                        ThemeFixtures.NO_HOVER_HIGHLIGHT,
+                        0.3),
                 categories);
         styleReaderMock.when(RenderStyleReader::readBorderSmoothingStyle).thenReturn(smoothing);
         styleReaderMock.when(RenderStyleReader::readRenderStyle).thenReturn(renderStyle);

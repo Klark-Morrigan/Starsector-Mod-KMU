@@ -4,27 +4,23 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.render.regions.StyledCell;
-import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.HatchStyle;
-import kmu.maplayers.base.theme.HoverGlowStyle;
-import kmu.maplayers.base.theme.HoverHighlightStyle;
-import kmu.maplayers.base.theme.HoverWashStyle;
-import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,12 +43,6 @@ import static org.mockito.Mockito.when;
  * fill's partition by {@link kmu.maplayers.base.render.regions.FillSplitTest}.
  */
 final class StyledCellBuilderTest {
-    // An inert hover highlight: the builder bakes draw lists, and nothing it produces is
-    // hovered here, so the style is carried untouched and its values never read.
-    private static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
-            FactionPaletteChoice.NONE, new HoverGlowStyle(0, 0, 0, 0, 0),
-            new HoverWashStyle(0, 0, 0));
-
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
     // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
     private static PoliticalMapView viewMockDeciding(boolean usesIndependentStyle,
@@ -310,17 +300,15 @@ final class StyledCellBuilderTest {
                 CategoryStyle uninhabitedStyle,
                 String selectedBlocId,
                 BlocStyleAdjustment recede) {
-            Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
-            categories.put(MapCategory.FACTION, STYLE);
-            categories.put(MapCategory.INDEPENDENT, STYLE);
-            categories.put(MapCategory.DECIVILISED, decivilisedStyle);
-            categories.put(MapCategory.UNINHABITED, uninhabitedStyle);
+            Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+            categories.put(PoliticalMapCategory.FACTION, STYLE);
+            categories.put(PoliticalMapCategory.INDEPENDENT, STYLE);
+            categories.put(PoliticalMapCategory.DECIVILISED, decivilisedStyle);
+            categories.put(PoliticalMapCategory.UNINHABITED, uninhabitedStyle);
             return new PoliticalMapTerritories(
                     Map.of(), Set.of(DECIVILISED_SYSTEM_ID), Set.of(),
                     new MapStyling(
-                            new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
-                                    new BorderSmoothingStyle(false, false, 0, 0, 0, 0, 0),
-                                    NO_HOVER_HIGHLIGHT, 0.3), categories),
+                            new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories),
                             FACTIONLESS_NEUTRAL,
                             new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
                     new ViewGrouping(viewMockAdjusting(BlocStyleAdjustment.NONE),
@@ -385,23 +373,10 @@ final class StyledCellBuilderTest {
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
             return new PoliticalMapTerritories(
                     Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of(),
-                    new MapStyling(renderStyleWithEveryCategory(STYLE), Color.GRAY,
+                    new MapStyling(PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE), Color.GRAY,
                             new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
                     new ViewGrouping(viewMock, OwnershipGrouping.identity()),
                     new FilterSnapshot(isFiltering ? "selected-bloc" : null, recede, Set.of()));
-        }
-
-        // Wraps one category style into a full theme with all four categories set to it and an
-        // inert global tier, so this owned-cell fixture reads its style off the territories the way
-        // production does. The owned-cell path never rounds a per-cell outline or hatches, so the
-        // global tier's smoothing and hatch values are never read here.
-        private static RenderStyle renderStyleWithEveryCategory(CategoryStyle style) {
-            Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
-            for (var category : MapCategory.values()) {
-                categories.put(category, style);
-            }
-            return new RenderStyle(new GlobalStyle(new HatchStyle(0, 0, 0),
-                    new BorderSmoothingStyle(false, false, 0, 0, 0, 0, 0), NO_HOVER_HIGHLIGHT, 0.3), categories);
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

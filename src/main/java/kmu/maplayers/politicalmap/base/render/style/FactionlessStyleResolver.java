@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.base.theme.MapCategory;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 
 import java.util.Set;
@@ -22,8 +21,9 @@ public final class FactionlessStyleResolver {
     }
 
     /**
-     * Which factionless category a piece of ground falls under: {@link MapCategory#DECIVILISED}
-     * where a revealed dead colony sits, {@link MapCategory#UNINHABITED} everywhere else.
+     * Which factionless category a piece of ground falls under:
+     * {@link PoliticalMapCategory#DECIVILISED} where a revealed dead colony sits,
+     * {@link PoliticalMapCategory#UNINHABITED} everywhere else.
      *
      * @param decivilisedSystemIds the systems holding a revealed dead colony this pass
      * @param systemId             the system the ground draws as, or null for ground with no star
@@ -32,13 +32,13 @@ public final class FactionlessStyleResolver {
      *                             the set, which may be immutable and null-hostile.
      * @return the category the ground draws in
      */
-    public static MapCategory resolveCategoryOf(
+    public static PoliticalMapCategory resolveCategoryOf(
             Set<String> decivilisedSystemIds,
             String systemId) {
 
         return systemId != null && decivilisedSystemIds.contains(systemId)
-                ? MapCategory.DECIVILISED
-                : MapCategory.UNINHABITED;
+                ? PoliticalMapCategory.DECIVILISED
+                : PoliticalMapCategory.UNINHABITED;
     }
 
     /**
@@ -57,10 +57,10 @@ public final class FactionlessStyleResolver {
      * @return the adjustment this ground draws under
      */
     public static BlocStyleAdjustment resolveRecedeOf(
-            MapCategory category,
+            PoliticalMapCategory category,
             BlocStyleAdjustment passRecede) {
 
-        return category == MapCategory.DECIVILISED
+        return category == PoliticalMapCategory.DECIVILISED
                 ? passRecede
                 : BlocStyleAdjustment.NONE;
     }

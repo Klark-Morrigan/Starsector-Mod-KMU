@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.base.theme.MapCategory;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 
 import org.junit.jupiter.api.Nested;
@@ -28,14 +27,14 @@ final class FactionlessStyleResolverTest {
         void resolveCategoryOfReturnsDecivilisedForASystemHoldingARevealedDeadColony() {
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
                     DECIVILISED_SYSTEM_IDS, "some-decivilised-system"))
-                    .isEqualTo(MapCategory.DECIVILISED);
+                    .isEqualTo(PoliticalMapCategory.DECIVILISED);
         }
 
         @Test
         void resolveCategoryOfReturnsUninhabitedForASystemOutsideTheDecivilisedSet() {
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
                     DECIVILISED_SYSTEM_IDS, "never-settled-system"))
-                    .isEqualTo(MapCategory.UNINHABITED);
+                    .isEqualTo(PoliticalMapCategory.UNINHABITED);
         }
 
         @Test
@@ -43,7 +42,7 @@ final class FactionlessStyleResolverTest {
             // Ground drawn as no system names nothing to look up, so it is uninhabited without the
             // null id ever probing the set.
             assertThat(FactionlessStyleResolver.resolveCategoryOf(DECIVILISED_SYSTEM_IDS, null))
-                    .isEqualTo(MapCategory.UNINHABITED);
+                    .isEqualTo(PoliticalMapCategory.UNINHABITED);
         }
     }
 
@@ -55,7 +54,7 @@ final class FactionlessStyleResolverTest {
         @Test
         void resolveRecedeOfGivesDecivilisedGroundThePassRecede() {
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
-                    MapCategory.DECIVILISED, PASS_RECEDE)).isEqualTo(PASS_RECEDE);
+                    PoliticalMapCategory.DECIVILISED, PASS_RECEDE)).isEqualTo(PASS_RECEDE);
         }
 
         @Test
@@ -63,7 +62,8 @@ final class FactionlessStyleResolverTest {
             // The empty backdrop keeps the sector's shape whatever the spotlight does to the blocs
             // drawn over it.
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
-                    MapCategory.UNINHABITED, PASS_RECEDE)).isEqualTo(BlocStyleAdjustment.NONE);
+                    PoliticalMapCategory.UNINHABITED, PASS_RECEDE))
+                    .isEqualTo(BlocStyleAdjustment.NONE);
         }
 
         @Test
@@ -71,7 +71,7 @@ final class FactionlessStyleResolverTest {
             // Off filter the pass's recede is the identity, so the rule is a no-op rather than a
             // path that has to be gated on whether a filter is active.
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
-                    MapCategory.DECIVILISED, BlocStyleAdjustment.NONE))
+                    PoliticalMapCategory.DECIVILISED, BlocStyleAdjustment.NONE))
                     .isEqualTo(BlocStyleAdjustment.NONE);
         }
     }

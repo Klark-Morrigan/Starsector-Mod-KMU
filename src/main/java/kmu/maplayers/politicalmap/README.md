@@ -100,8 +100,8 @@ fill states are [ownership resolution](base/politics/ownership/README.md).
   three sources, the three fill states, and the claim mechanic.
 - **[Territory fills and borders](base/render/territories/README.md)** - how cells become each
   bloc's coloured region, border, seams, and split fill.
-- **[Render style layer](base/render/style/README.md)** - how player settings become each
-  territory's colours, widths, and opacities.
+- **[Render style layer](base/render/style/README.md)** - the four categories this map divides the
+  ground into, and how player settings become each territory's colours, widths, and opacities.
 - **`base/render/labels/anchor`** - what a cluster's name reads and what shade it draws in: the
   active view's name for the bloc, and the outer border its group inherits. Both are resolved here
   and handed to the framework's overlay, which places and draws them.

@@ -10,22 +10,20 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HatchStyle;
-import kmu.maplayers.base.theme.HoverGlowStyle;
-import kmu.maplayers.base.theme.HoverHighlightStyle;
-import kmu.maplayers.base.theme.HoverWashStyle;
-import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -50,11 +48,6 @@ import static org.mockito.Mockito.mock;
  * the splits and merges a single flip can cause.
  */
 final class PoliticalMapTerritoriesTest {
-    // An inert hover highlight: this model carries the style through untouched, and no case here
-    // hovers anything, so its values are never read.
-    private static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
-            FactionPaletteChoice.NONE, new HoverGlowStyle(0, 0, 0, 0, 0),
-            new HoverWashStyle(0, 0, 0));
 
     @Nested
     class CreateEmpty {
@@ -131,13 +124,16 @@ final class PoliticalMapTerritoriesTest {
             var independentStyle = styleMarked(2);
             var decivilisedStyle = styleMarked(3);
             var uninhabitedStyle = styleMarked(4);
-            Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
-            categories.put(MapCategory.FACTION, factionStyle);
-            categories.put(MapCategory.INDEPENDENT, independentStyle);
-            categories.put(MapCategory.DECIVILISED, decivilisedStyle);
-            categories.put(MapCategory.UNINHABITED, uninhabitedStyle);
+            Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+            categories.put(PoliticalMapCategory.FACTION, factionStyle);
+            categories.put(PoliticalMapCategory.INDEPENDENT, independentStyle);
+            categories.put(PoliticalMapCategory.DECIVILISED, decivilisedStyle);
+            categories.put(PoliticalMapCategory.UNINHABITED, uninhabitedStyle);
+            // Every sector-wide value non-zero, so a getter reading the wrong tier is caught by
+            // value rather than by both tiers happening to hold the same inert numbers.
             var globalStyle = new GlobalStyle(new HatchStyle(5, 5, 5),
-                    new BorderSmoothingStyle(true, true, 5, 5, 5, 5, 5), NO_HOVER_HIGHLIGHT, 0.3);
+                    new BorderSmoothingStyle(true, true, 5, 5, 5, 5, 5),
+                    ThemeFixtures.NO_HOVER_HIGHLIGHT, 0.3);
             var renderStyle = new RenderStyle(globalStyle, categories);
             PoliticalMapView viewMock = mock(PoliticalMapView.class);
             var grouping = OwnershipGrouping.identity();
@@ -165,12 +161,13 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getDesaturationPalette()).isSameAs(desaturationPalette);
             assertThat(territories.getRenderStyle()).isSameAs(renderStyle);
             assertThat(territories.getGlobalStyle()).isSameAs(globalStyle);
-            assertThat(territories.getCategoryStyle(MapCategory.FACTION)).isSameAs(factionStyle);
-            assertThat(territories.getCategoryStyle(MapCategory.INDEPENDENT))
+            assertThat(territories.getCategoryStyle(PoliticalMapCategory.FACTION))
+                    .isSameAs(factionStyle);
+            assertThat(territories.getCategoryStyle(PoliticalMapCategory.INDEPENDENT))
                     .isSameAs(independentStyle);
-            assertThat(territories.getCategoryStyle(MapCategory.DECIVILISED))
+            assertThat(territories.getCategoryStyle(PoliticalMapCategory.DECIVILISED))
                     .isSameAs(decivilisedStyle);
-            assertThat(territories.getCategoryStyle(MapCategory.UNINHABITED))
+            assertThat(territories.getCategoryStyle(PoliticalMapCategory.UNINHABITED))
                     .isSameAs(uninhabitedStyle);
             assertThat(territories.getView()).isSameAs(viewMock);
             assertThat(territories.getGrouping()).isSameAs(grouping);

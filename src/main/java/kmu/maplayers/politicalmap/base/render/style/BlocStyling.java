@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.MapCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 
@@ -29,13 +28,13 @@ public record BlocStyling(CategoryStyle style, BlocStyleAdjustment adjustment) {
      * @return the bundle and adjustment this bloc draws under
      */
     public static BlocStyling resolveFrom(RenderStyle renderStyle, BlocStyleDecision decision) {
-        var factionStyle = renderStyle.categoryStyle(MapCategory.FACTION);
+        var factionStyle = renderStyle.categoryStyle(PoliticalMapCategory.FACTION);
         if (!decision.usesIndependentStyle()) {
             return new BlocStyling(factionStyle, decision.adjustment());
         }
         return new BlocStyling(
                 applyDesaturatedFillOpacity(
-                        renderStyle.categoryStyle(MapCategory.INDEPENDENT),
+                        renderStyle.categoryStyle(PoliticalMapCategory.INDEPENDENT),
                         factionStyle,
                         decision.adjustment()),
                 decision.adjustment());

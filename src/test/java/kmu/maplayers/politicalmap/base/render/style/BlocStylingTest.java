@@ -1,22 +1,17 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.HatchStyle;
-import kmu.maplayers.base.theme.HoverGlowStyle;
-import kmu.maplayers.base.theme.HoverHighlightStyle;
-import kmu.maplayers.base.theme.HoverWashStyle;
-import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -117,24 +112,13 @@ final class BlocStylingTest {
                 new ElementStyle(FactionPaletteChoice.SECONDARY, INDEPENDENT_FILL_OPACITY),
                 new ElementStyle(FactionPaletteChoice.SECONDARY, INDEPENDENT_OUTER_OPACITY), 3.0,
                 new ElementStyle(FactionPaletteChoice.SECONDARY, 1.0), INDEPENDENT_INNER_WIDTH);
-        Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
-        categories.put(MapCategory.FACTION, factionStyle);
-        categories.put(MapCategory.INDEPENDENT, independentStyle);
-        categories.put(MapCategory.DECIVILISED, factionStyle);
-        categories.put(MapCategory.UNINHABITED, factionStyle);
-        return new RenderStyle(inertGlobalStyle(), categories);
-    }
-
-    // The global tier is carried untouched by this cascade - it maps categories, not sector-wide
-    // knobs - so every value here is inert.
-    private static GlobalStyle inertGlobalStyle() {
-        return new GlobalStyle(
-                new HatchStyle(0, 0, 0),
-                new BorderSmoothingStyle(false, false, 0, 0, 0, 0, 0),
-                new HoverHighlightStyle(
-                        FactionPaletteChoice.NONE,
-                        new HoverGlowStyle(0, 0, 0, 0, 0),
-                        new HoverWashStyle(0, 0, 0)),
-                0.3);
+        Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+        categories.put(PoliticalMapCategory.FACTION, factionStyle);
+        categories.put(PoliticalMapCategory.INDEPENDENT, independentStyle);
+        categories.put(PoliticalMapCategory.DECIVILISED, factionStyle);
+        categories.put(PoliticalMapCategory.UNINHABITED, factionStyle);
+        // The global tier is carried untouched by this cascade - it maps categories, not
+        // sector-wide knobs - so the shared inert tier serves.
+        return new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
     }
 }

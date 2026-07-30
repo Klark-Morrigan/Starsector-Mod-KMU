@@ -11,6 +11,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 ## Index
 
 - [Layout](#layout)
+- [The categories: how this map divides the ground](#the-categories-how-this-map-divides-the-ground)
 - [The reader: the one seam](#the-reader-the-one-seam)
 - [The resolvers: choices into colours](#the-resolvers-choices-into-colours)
 - [What is not here](#what-is-not-here)
@@ -22,8 +23,26 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 - [`base.theme`](../../../../base/theme/README.md) - the choices as inert value types
   (`RenderStyle` and its tiers), in the framework rather than here, since a theme's shape is not
   political. This package reads them and never writes back.
-- this package - the behaviour, all of it political. One reader that populates the theme, and the
-  resolvers that turn a choice plus a bloc's recede into concrete shades.
+- this package - the behaviour, all of it political, plus the one piece of political *vocabulary*
+  the theme is keyed by. One category set, one reader that populates the theme, and the resolvers
+  that turn a choice plus a bloc's recede into concrete shades.
+
+## The categories: how this map divides the ground
+
+`PoliticalMapCategory` is the four ways this map divides the sector - `FACTION`, `INDEPENDENT`,
+`DECIVILISED`, `UNINHABITED` - and the keys the theme's per-category bundles are held under. It
+lives here rather than in `base.theme` because dividing ground by *who holds it* is this layer's
+reading of the sector: the theme keys on the open `MapStyleCategory`, so a hazard or trade layer
+would declare its own set alongside its own painting code. An enum, so this side's own lookups
+stay a closed set the compiler checks.
+
+Two of the four are owned and carry a full fill/border/seam style. The other two have no owner and
+so no faction palette to choose a shade from: both paint in the shared neutral colour and expose no
+colour field at all, leaving each element's opacity as its only on/off. Decivilised ground draws a
+fill and an outline (a dead colony is settled ground, so it reads as occupied rather than as a bare
+ring); uninhabited ground draws an outline alone, since filling it would wash every corner of the
+sector nothing else holds. Neither has an inner seam: factionless cells never fuse into clusters,
+so there are no province divisions to stroke.
 
 The fixed border channel is deliberately *not* here and not tunable at all: it decides where fills
 meet rather than how they look, so it lives on the shaping that applies it, as

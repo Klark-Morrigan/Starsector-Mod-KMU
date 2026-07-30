@@ -5,16 +5,8 @@ import kmlib.starsector.factions.FactionPalette;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
-import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.HatchStyle;
-import kmu.maplayers.base.theme.HoverGlowStyle;
-import kmu.maplayers.base.theme.HoverHighlightStyle;
-import kmu.maplayers.base.theme.HoverWashStyle;
-import kmu.maplayers.base.theme.MapCategory;
-import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
@@ -29,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,10 +74,6 @@ final class FactionTerritoryBuilderTest {
     // chain the hand-built corners, and the miter limit the shipped border uses.
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
-    // An inert hover highlight: nothing built here is hovered, so it is carried and never read.
-    private static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
-            FactionPaletteChoice.NONE, new HoverGlowStyle(0, 0, 0, 0, 0),
-            new HoverWashStyle(0, 0, 0));
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
             HELD_SYSTEM, List.of(
                     edgeFacing(0, 0, 2000, 0, null),
@@ -305,7 +292,7 @@ final class FactionTerritoryBuilderTest {
         return new PoliticalMapTerritories(
                 ownerBySystemId, Set.of(), Set.of(),
                 new MapStyling(
-                        renderStyleWithEveryCategory(style),
+                        PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(style),
                         Color.GRAY,
                         new FactionPalette(Color.GREEN, Color.YELLOW)),
                 new ViewGrouping(viewMockAdjustingNothing(), OwnershipGrouping.identity()),
@@ -320,22 +307,6 @@ final class FactionTerritoryBuilderTest {
         when(viewMock.resolveBlocStyleAdjustment(any(), any()))
                 .thenReturn(BlocStyleAdjustment.NONE);
         return viewMock;
-    }
-
-    // The theme wrapper: one style for all four categories over an inert global tier. Smoothing
-    // is off and the hatch is zeroed, so the rings a test counts are the raw traced ones.
-    private static RenderStyle renderStyleWithEveryCategory(CategoryStyle style) {
-        Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
-        for (var category : MapCategory.values()) {
-            categories.put(category, style);
-        }
-        return new RenderStyle(
-                new GlobalStyle(
-                        new HatchStyle(0, 0, 0),
-                        new BorderSmoothingStyle(false, false, 0, 0, 0, 0, 0),
-                        NO_HOVER_HIGHLIGHT,
-                        0.3),
-                categories);
     }
 
     // Fill and national border both drawn, each from a different palette slot so the two paints

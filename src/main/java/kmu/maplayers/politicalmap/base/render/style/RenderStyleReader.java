@@ -8,22 +8,22 @@ import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.HoverGlowStyle;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.base.theme.HoverWashStyle;
-import kmu.maplayers.base.theme.MapCategory;
+import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
-import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Reads the whole political-map theme out of the player's LunaLib settings into one
  * {@link RenderStyle}: the global tier (hatch, border smoothing, hover highlight, desaturation
- * profile) and
- * one {@link CategoryStyle} per {@link MapCategory}. This is the single seam a rebuild reads
- * the render settings through, so every knob resolves in one place rather than being fetched
- * ad hoc across the builders, and an incremental re-shape restyles against the same snapshot.
+ * profile) and one {@link CategoryStyle} per {@link PoliticalMapCategory}. This is the single
+ * seam a rebuild reads the render settings through, so every knob resolves in one place rather
+ * than being fetched ad hoc across the builders, and an incremental re-shape restyles against
+ * the same snapshot.
  *
  * <p>The two owned categories - core factions and independent space - carry a full
  * fill/outer/inner style. The two factionless categories - decivilised and uninhabited -
@@ -41,13 +41,16 @@ public final class RenderStyleReader {
     }
 
     // Reads the global tier and all four category styles into one theme, so the build loop
-    // and every incremental re-shape draw from a single already-read snapshot.
+    // and every incremental re-shape draw from a single already-read snapshot. The theme keys
+    // on the open MapStyleCategory rather than on this layer's enum, so the map is a plain
+    // hash map rather than an EnumMap - four inserts once per rebuild, against a lookup the
+    // framework can serve for any layer's categories.
     public static RenderStyle readRenderStyle() {
-        Map<MapCategory, CategoryStyle> categories = new EnumMap<>(MapCategory.class);
-        categories.put(MapCategory.FACTION, readFactionStyle());
-        categories.put(MapCategory.INDEPENDENT, readIndependentStyle());
-        categories.put(MapCategory.DECIVILISED, readDecivilisedStyle());
-        categories.put(MapCategory.UNINHABITED, readUninhabitedStyle());
+        Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+        categories.put(PoliticalMapCategory.FACTION, readFactionStyle());
+        categories.put(PoliticalMapCategory.INDEPENDENT, readIndependentStyle());
+        categories.put(PoliticalMapCategory.DECIVILISED, readDecivilisedStyle());
+        categories.put(PoliticalMapCategory.UNINHABITED, readUninhabitedStyle());
         return new RenderStyle(readGlobalStyle(), categories);
     }
 

@@ -8,7 +8,6 @@ import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.render.regions.StyledCell;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.MapCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -16,6 +15,7 @@ import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
+import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
@@ -225,7 +225,7 @@ public final class PoliticalMapTerritories {
 
     // The style for one category, the per-category tier the cascade folds over the global
     // tier when a cell or territory of that category is built.
-    public CategoryStyle getCategoryStyle(MapCategory category) {
+    public CategoryStyle getCategoryStyle(PoliticalMapCategory category) {
         return styling.renderStyle().categoryStyle(category);
     }
 
