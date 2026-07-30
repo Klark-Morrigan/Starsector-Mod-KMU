@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.settings.KmuLunaSettings;
 
 /**
@@ -11,13 +12,18 @@ import kmu.settings.KmuLunaSettings;
  * known-to-player filter in {@link KnownMarketFootprints}, so an undiscovered colony
  * still folds into its system's dominance and inhabitation - and, through inhabitation,
  * its cell geometry. {@code isForcingAllSystemsOnMap} bypasses the visibility rule, so
- * every star system seeds a cell regardless of reachability or inhabitation. Bundling
- * the two into one value lets a pass read the player's toggles once up front and thread
- * a single argument through the coordinators that need both (the sector snapshot, the
- * drawn-position walk, the geometry cache), while a leaf that needs only one reads the
- * matching component. The LunaLib read is confined to {@link #readFromLunaSettings()} - the
- * one seam that touches settings - so the domain classes that consume the result stay
- * free of settings access.
+ * every star system seeds a cell regardless of reachability or inhabitation.
+ *
+ * <p>What survives here is the political framing of the two reveals: which faction
+ * colonies count as discovered, and what a "show everything" toggle means for a map of
+ * blocs. Dominance reads {@code isShowingAllFactions} straight off this record, because
+ * folding an undiscovered colony into a faction's weight is political in a way that
+ * admitting its system to the map is not. The admission half, stripped of that framing,
+ * is {@link MapVisibilityOverrides}.
+ *
+ * <p>The LunaLib read is confined to {@link #readFromLunaSettings()} - the one seam that
+ * touches settings - so the domain classes that consume the result stay free of settings
+ * access.
  *
  * @param isShowingAllFactions      whether every faction's colonies are drawn, including
  *                                  ones the player has not discovered - the known-to-player
@@ -26,7 +32,8 @@ import kmu.settings.KmuLunaSettings;
  *                                  reachable, visible, or inhabited ones - the map
  *                                  visibility rule is bypassed
  */
-public record PoliticalMapDevOverrides(boolean isShowingAllFactions,
+public record PoliticalMapDevOverrides(
+        boolean isShowingAllFactions,
         boolean isForcingAllSystemsOnMap) {
 
     /**
@@ -51,5 +58,22 @@ public record PoliticalMapDevOverrides(boolean isShowingAllFactions,
         return new PoliticalMapDevOverrides(
                 KmuLunaSettings.getPoliticalMapShowAllFactions(),
                 KmuLunaSettings.shouldForceAllSystemsOnMap());
+    }
+
+    /**
+     * Answers what these toggles mean to the visibility rule, dropping the political
+     * reason and keeping the two widenings themselves.
+     *
+     * <p>{@code isShowingAllFactions} is political only in why it widens - undiscovered
+     * faction colonies - while what it widens is the generic inhabitation read, so it
+     * lands on {@code shouldIncludeUndiscoveredMarkets}. {@code isForcingAllSystemsOnMap}
+     * carries no political meaning at all and maps straight across.
+     *
+     * @return the visibility overrides these toggles describe
+     */
+    public MapVisibilityOverrides resolveVisibilityOverrides() {
+        return new MapVisibilityOverrides(
+                isShowingAllFactions,
+                isForcingAllSystemsOnMap);
     }
 }

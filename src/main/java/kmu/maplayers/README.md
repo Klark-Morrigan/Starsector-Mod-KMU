@@ -81,6 +81,9 @@ about what the overlay means.
   system on either of two paths (reachable and drawn by the vanilla map, or inhabited) and hashes the
   admitted set into the fingerprint that says it moved; `DrawnSystemPositions` exposes that rule as
   one predicate every walk shares, and each drawn system's live hyperspace position.
+  `MapVisibilityOverrides` is the pair of widenings a caller may apply to that rule - count
+  undiscovered colonies as inhabitation, or admit a system outright - so a layer can widen what is
+  drawn without the rule knowing why it wanted to.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
