@@ -125,7 +125,7 @@ final class IncrementalPoliticsRefreshTest {
 
             // The stale set is static and shared, so a residue from another suite would
             // read here as a system this one never marked.
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
         }
 
         @AfterEach
@@ -154,7 +154,7 @@ final class IncrementalPoliticsRefreshTest {
             // system to the map, so one with no cell has nothing to re-shape and must not
             // reach the re-derive at all.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
-            MapLayerRefresh.markSystemPoliticsStale(CELL_LESS_SYSTEM);
+            MapLayerRefresh.markSystemGroupingStale(CELL_LESS_SYSTEM);
 
             applyTo(territories);
 
@@ -168,7 +168,7 @@ final class IncrementalPoliticsRefreshTest {
             // identical - so the whole redraw below the re-derive must be skipped.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
             resolvesTo(FLIPPED_SYSTEM, ownerOf(HEGEMONY));
-            MapLayerRefresh.markSystemPoliticsStale(FLIPPED_SYSTEM);
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
 
             applyTo(territories);
 
@@ -182,7 +182,7 @@ final class IncrementalPoliticsRefreshTest {
         void applyStalePoliticsUpdatesRecordsTheNewOwnerWhenASystemChangesHands() {
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
             resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
-            MapLayerRefresh.markSystemPoliticsStale(FLIPPED_SYSTEM);
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
 
             applyTo(territories);
 
@@ -196,7 +196,7 @@ final class IncrementalPoliticsRefreshTest {
             // entry goes rather than being left pointing at the faction that lost it.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
             resolvesTo(FLIPPED_SYSTEM, null);
-            MapLayerRefresh.markSystemPoliticsStale(FLIPPED_SYSTEM);
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
 
             applyTo(territories);
 
@@ -211,7 +211,7 @@ final class IncrementalPoliticsRefreshTest {
             var territories = ownedBy(Map.of(
                     FLIPPED_SYSTEM, HEGEMONY, NEIGHBOUR_SYSTEM, HEGEMONY));
             resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
-            MapLayerRefresh.markSystemPoliticsStale(FLIPPED_SYSTEM);
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
 
             applyTo(territories);
 
@@ -229,7 +229,7 @@ final class IncrementalPoliticsRefreshTest {
             var territories = ownedBy(Map.of(
                     FLIPPED_SYSTEM, HEGEMONY, NEIGHBOUR_SYSTEM, HEGEMONY));
             resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
-            MapLayerRefresh.markSystemPoliticsStale(FLIPPED_SYSTEM);
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
 
             applyTo(territories);
 

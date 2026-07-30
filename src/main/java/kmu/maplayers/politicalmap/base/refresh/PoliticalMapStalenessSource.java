@@ -120,7 +120,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     // Marks politics-stale every system whose owner differs from the last poll: a system
     // that gained an owner or changed hands (present now with a new id), and one that lost
     // its owner (dropped since). Each mark funnels into the same set the listeners raise,
-    // so an overlapping change reshapes once and is traced by markSystemPoliticsStale's own
+    // so an overlapping change reshapes once and is traced by markSystemGroupingStale's own
     // log line. The baseline advances even on the first poll, which has no prior to diff.
     private void markOwnerChanges(Map<String, String> currentOwnerBySystemId,
             boolean isFirstPoll) {
@@ -128,12 +128,12 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         if (!isFirstPoll) {
             for (var entry : currentOwnerBySystemId.entrySet()) {
                 if (!entry.getValue().equals(lastOwnerBySystemId.get(entry.getKey()))) {
-                    MapLayerRefresh.markSystemPoliticsStale(entry.getKey());
+                    MapLayerRefresh.markSystemGroupingStale(entry.getKey());
                 }
             }
             for (var systemId : lastOwnerBySystemId.keySet()) {
                 if (!currentOwnerBySystemId.containsKey(systemId)) {
-                    MapLayerRefresh.markSystemPoliticsStale(systemId);
+                    MapLayerRefresh.markSystemGroupingStale(systemId);
                 }
             }
         }

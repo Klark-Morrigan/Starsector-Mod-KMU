@@ -15,7 +15,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * <p>Discovering a market reveals a new dominant owner over a cell that already
  * exists - the same per-system ownership change a colony resize makes - so it
  * routes through the same targeted refresh
- * ({@link MapLayerRefresh#markSystemPoliticsStale}): only that system and its
+ * ({@link MapLayerRefresh#markSystemGroupingStale}): only that system and its
  * neighbours are re-derived and re-shaped, not the whole economy. Discoveries
  * that could change which systems are reachable (a jump point, a gate) are not
  * handled here - gate activation in particular is a separate, later step from

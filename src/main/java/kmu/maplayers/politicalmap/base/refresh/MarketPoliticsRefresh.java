@@ -19,7 +19,7 @@ import org.apache.log4j.Logger;
  * colony's own system. This resolves the market's seated system, ignores a
  * market not seated in one (a deep-hyperspace station seeds no cell, so its
  * change can repaint nothing), and marks just that system stale via
- * {@link MapLayerRefresh#markSystemPoliticsStale} - the fine-grained refresh
+ * {@link MapLayerRefresh#markSystemGroupingStale} - the fine-grained refresh
  * that re-derives only the named system and its neighbours rather than rescanning
  * the whole economy. Reachability changes (a system joining or leaving the map)
  * are a separate axis owned by {@link PoliticalMapStalenessSource}.
@@ -53,6 +53,6 @@ public final class MarketPoliticsRefresh {
         }
         LOG.debug("Political map politics stale on " + event + "; market=" + market.getId()
                 + " system=" + system.getId() + (context.isEmpty() ? "" : " " + context));
-        MapLayerRefresh.markSystemPoliticsStale(system.getId());
+        MapLayerRefresh.markSystemGroupingStale(system.getId());
     }
 }

@@ -27,7 +27,7 @@ import exerelin.utilities.InvasionListener;
  * decivilises it, and reveals nothing. Nexerelin is the only source of such
  * transfers and it does report them through {@link InvasionListener}, so this
  * translates that single Nex event into the same targeted refresh
- * ({@link MapLayerRefresh#markSystemPoliticsStale}) the ownership-axis siblings
+ * ({@link MapLayerRefresh#markSystemGroupingStale}) the ownership-axis siblings
  * use: only the transferred colony's system and its neighbours are re-derived,
  * reading the post-transfer owner.
  *

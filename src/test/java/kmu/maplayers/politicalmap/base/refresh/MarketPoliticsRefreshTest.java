@@ -26,43 +26,43 @@ final class MarketPoliticsRefreshTest {
 
         @Test
         void marksTheMarketsSystemStale() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
             MarketPoliticsRefresh.markSystemStaleForMarket(marketInSystem("mkt", "sys"),
                     "colony resize", "prevSize=3");
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksTheMarketsSystemStaleWithEmptyContext() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
             MarketPoliticsRefresh.markSystemStaleForMarket(marketInSystem("mkt", "sys"),
                     "colony resize", "");
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
             var marketMock = mock(MarketAPI.class);
             when(marketMock.getStarSystem()).thenReturn(null);
 
             MarketPoliticsRefresh.markSystemStaleForMarket(marketMock, "colony resize",
                     "prevSize=3");
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
             MarketPoliticsRefresh.markSystemStaleForMarket(null, "colony resize", "prevSize=3");
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
     }
 

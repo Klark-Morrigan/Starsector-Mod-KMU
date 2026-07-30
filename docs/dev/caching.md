@@ -99,7 +99,7 @@ second reader.
 | Signal | Home | Bumped by | Read by |
 | --- | --- | --- | --- |
 | `geometryRevision` | [`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java) | the drawn-system set or moving-system set changing | the geometry cache |
-| stale-system id set | `MapLayerRefresh` | colony events + the watcher's owner diff | the incremental politics refresh |
+| `groupingStaleSystemIds` | `MapLayerRefresh` | colony events + the watcher's owner diff | the incremental politics refresh |
 | `allianceRevision` | `MapLayerRefresh` | the alliance-set fingerprint moving | the alliances view only |
 | `recedeStyleRevision` | `MapLayerRefresh` | the Mute / Desaturate sidebar toggles | the pipeline, under any view (the receded blocs and decivilised ground), plus the alliances view for its own non-allied recede |
 | `filterRevision` | `MapLayerRefresh` | picking or clearing the spotlight bloc | the pipeline, under any view |

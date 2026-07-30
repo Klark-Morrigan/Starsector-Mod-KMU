@@ -19,7 +19,7 @@ class MapLayerRefreshTest {
 
     @BeforeEach
     void drainAnyPendingStaleSystems() {
-        MapLayerRefresh.drainStalePoliticsSystemIds();
+        MapLayerRefresh.drainStaleGroupingSystemIds();
     }
 
     @Nested
@@ -98,58 +98,58 @@ class MapLayerRefreshTest {
     }
 
     @Nested
-    class MarkSystemPoliticsStale {
+    class markSystemGroupingStale {
 
         @Test
-        void markSystemPoliticsStaleQueuesTheSystemForTheNextDrain() {
-            MapLayerRefresh.markSystemPoliticsStale("sys");
+        void markSystemGroupingStaleQueuesTheSystemForTheNextDrain() {
+            MapLayerRefresh.markSystemGroupingStale("sys");
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
-        void markSystemPoliticsStaleQueuesOneSystemOnceHoweverOftenItIsMarked() {
-            MapLayerRefresh.markSystemPoliticsStale("sys");
-            MapLayerRefresh.markSystemPoliticsStale("sys");
+        void markSystemGroupingStaleQueuesOneSystemOnceHoweverOftenItIsMarked() {
+            MapLayerRefresh.markSystemGroupingStale("sys");
+            MapLayerRefresh.markSystemGroupingStale("sys");
 
             // A system is stale or it is not, so a colony resized twice in one tick costs one
             // reshape rather than two.
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
-        void markSystemPoliticsStaleIgnoresANullSystemId() {
-            MapLayerRefresh.markSystemPoliticsStale(null);
+        void markSystemGroupingStaleIgnoresANullSystemId() {
+            MapLayerRefresh.markSystemGroupingStale(null);
 
             // A producer with nothing to name must not put a null in the set for the drain to
             // hand a consumer that would then look it up.
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
     }
 
     @Nested
-    class DrainStalePoliticsSystemIds {
+    class drainStaleGroupingSystemIds {
 
         @Test
-        void drainStalePoliticsSystemIdsReturnsEveryQueuedSystem() {
-            MapLayerRefresh.markSystemPoliticsStale("first");
-            MapLayerRefresh.markSystemPoliticsStale("second");
+        void drainStaleGroupingSystemIdsReturnsEveryQueuedSystem() {
+            MapLayerRefresh.markSystemGroupingStale("first");
+            MapLayerRefresh.markSystemGroupingStale("second");
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds())
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds())
                     .containsExactlyInAnyOrder("first", "second");
         }
 
         @Test
-        void drainStalePoliticsSystemIdsEmptiesTheSetSoOneStalenessIsProcessedOnce() {
-            MapLayerRefresh.markSystemPoliticsStale("sys");
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+        void drainStaleGroupingSystemIdsEmptiesTheSetSoOneStalenessIsProcessedOnce() {
+            MapLayerRefresh.markSystemGroupingStale("sys");
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
 
         @Test
-        void drainStalePoliticsSystemIdsReturnsEmptyWhenNothingIsQueued() {
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+        void drainStaleGroupingSystemIdsReturnsEmptyWhenNothingIsQueued() {
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
     }
 }

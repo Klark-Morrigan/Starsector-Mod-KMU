@@ -29,7 +29,7 @@ final class PoliticalMapDiscoveryListenerTest {
 
         @Test
         void marksSystemStaleWhenDiscoveredEntityHasAMarket() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
             // Build the market fully before the entity stub: marketInSystem stubs
             // internally, so nesting it inside when(...).thenReturn(...) would trip
             // Mockito's unfinished-stubbing guard.
@@ -39,25 +39,25 @@ final class PoliticalMapDiscoveryListenerTest {
 
             listener.reportEntityDiscovered(entityMock);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketlessEntity() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
             var beforeGeometry = MapLayerRefresh.getGeometryRevision();
 
             // A jump point has no market; accessibility is judged elsewhere, so the
             // listener marks no system and requests no geometry rebuild.
             listener.reportEntityDiscovered(mock(JumpPointAPI.class));
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
             assertThat(MapLayerRefresh.getGeometryRevision()).isEqualTo(beforeGeometry);
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
             var marketMock = mock(MarketAPI.class);
             when(marketMock.getStarSystem()).thenReturn(null);
             var entityMock = mock(SectorEntityToken.class);
@@ -65,7 +65,7 @@ final class PoliticalMapDiscoveryListenerTest {
 
             listener.reportEntityDiscovered(entityMock);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
     }
 

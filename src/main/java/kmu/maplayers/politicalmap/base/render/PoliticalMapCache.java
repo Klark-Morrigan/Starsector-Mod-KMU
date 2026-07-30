@@ -147,7 +147,7 @@ final class PoliticalMapCache {
         lastDevToggles = null;
         // Per-system staleness names systems of the sector being left, so it is dropped rather than
         // replayed against the next one - the rebuild this discard forces re-derives every system.
-        MapLayerRefresh.drainStalePoliticsSystemIds();
+        MapLayerRefresh.drainStaleGroupingSystemIds();
     }
 
     /**
@@ -272,7 +272,7 @@ final class PoliticalMapCache {
             // A full rebuild re-derives every system, so any pending per-system staleness is
             // already reflected - drain and discard it rather than re-processing the same systems
             // immediately after.
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
             logContentRebuild(rebuiltCells, contentRevision, drawablesStart);
             return;
         }
@@ -292,7 +292,7 @@ final class PoliticalMapCache {
                     factionLabels,
                     geometryCache);
         } else {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
         }
     }
 

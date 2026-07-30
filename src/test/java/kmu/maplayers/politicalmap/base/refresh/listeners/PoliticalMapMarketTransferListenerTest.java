@@ -34,34 +34,34 @@ final class PoliticalMapMarketTransferListenerTest {
 
         @Test
         void marksTheTransferredColonysSystemStale() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
             listener.reportMarketTransfered(marketInSystem("sys"), faction("attacker"),
                     faction("defender"), true, true, List.of(), 1.0f);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
             var marketMock = mock(MarketAPI.class);
             when(marketMock.getStarSystem()).thenReturn(null);
 
             listener.reportMarketTransfered(marketMock, faction("attacker"), faction("defender"),
                     true, true, List.of(), 1.0f);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
             listener.reportMarketTransfered(null, faction("attacker"), faction("defender"),
                     true, true, List.of(), 1.0f);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
     }
 
@@ -70,14 +70,14 @@ final class PoliticalMapMarketTransferListenerTest {
 
         @Test
         void marksNothingSinceTransferReportsTheOwnerChange() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
             // An invasion finishing does not itself transfer ownership; the refresh
             // keys off reportMarketTransferred, so this callback marks nothing.
             listener.reportInvasionFinished(mock(CampaignFleetAPI.class), faction("attacker"),
                     marketInSystem("sys"), 3.0f, true);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
     }
 

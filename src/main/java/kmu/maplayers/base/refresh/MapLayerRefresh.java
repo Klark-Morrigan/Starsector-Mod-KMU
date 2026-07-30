@@ -18,16 +18,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * established). A single {@code geometryRevision} counter flags that: a bump tells
  * the plugin to reconcile the geometry cache.
  *
- * <p>Ownership changes are finer-grained: rather than a whole-economy rescan, the
- * producers name exactly which systems went stale (a colony resized past its
- * neighbour, a market discovered, a colony a silent AI change handed to another
- * faction), so the plugin re-derives and re-shapes only those and their
- * neighbours. A set because several colonies can resize in one economy tick, and
- * identity is all that matters (a system is stale or not, once per refresh). Both
- * the event listeners and the sector watcher feed this same set, so a change a
- * listener already marked and one the watcher's owner diff re-discovers collapse
- * to a single reshape. The whole-map restyle a settings change needs is a separate
- * signal the plugin reads straight from {@code KmuLunaSettings}, not this class.
+ * <p>A change to what a system groups by - the opaque key {@code CellGrouping} resolves a
+ * cell's cluster from, whose meaning belongs to the layer and not to this board - is
+ * finer-grained: rather than rescanning every system, the producers name exactly which ones
+ * went stale, so the plugin re-derives and re-shapes only those and their neighbours. A set
+ * because several systems can go stale in one tick, and identity is all that matters (a
+ * system is stale or not, once per refresh). Several producers can feed the same set - a
+ * per-event signal and a periodic diff, say - so a system one already marked and another
+ * re-discovers collapses to a single reshape. The whole-map restyle a settings change needs
+ * is a separate signal the plugin reads straight from {@code KmuLunaSettings}, not this
+ * class.
  *
  * <p>Alliance membership is a third coarse signal, tracked like the geometry with a
  * single {@code allianceRevision} counter. Which factions are allied changes only the
@@ -62,8 +62,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>A counter and a set rather than direct calls because the producers (a
  * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)
  * are created independently, with no shared owner to wire together. The set is
- * concurrent because a colony-size or discovery event fires on the campaign thread
- * while the plugin drains it on the render thread.
+ * concurrent because a producer's event fires on the campaign thread while the
+ * plugin drains it on the render thread.
  */
 public final class MapLayerRefresh {
     private static final Logger LOG = Global.getLogger(MapLayerRefresh.class);
@@ -73,7 +73,7 @@ public final class MapLayerRefresh {
     private static final AtomicInteger recedeStyleRevision = new AtomicInteger();
     private static final AtomicInteger filterRevision = new AtomicInteger();
     private static final AtomicInteger mapStyleRevision = new AtomicInteger();
-    private static final Set<String> politicsStaleSystemIds = ConcurrentHashMap.newKeySet();
+    private static final Set<String> groupingStaleSystemIds = ConcurrentHashMap.newKeySet();
 
     private MapLayerRefresh() {
     }
@@ -192,38 +192,38 @@ public final class MapLayerRefresh {
     }
 
     /**
-     * Marks one system's ownership stale so the overlay re-derives just it (and
-     * its neighbours) rather than rescanning the whole economy - used when a single
-     * colony resized or a market was discovered.
+     * Marks one system's grouping key stale so the overlay re-derives just it (and
+     * its neighbours) rather than rescanning every system - used when a producer can
+     * name the one system whose key may have moved.
      *
-     * @param systemId the system whose dominant owner may have changed; null is
+     * @param systemId the system whose grouping key may have changed; null is
      *                 ignored
      */
-    public static void markSystemPoliticsStale(String systemId) {
+    public static void markSystemGroupingStale(String systemId) {
         if (systemId == null) {
             return;
         }
-        politicsStaleSystemIds.add(systemId);
-        LOG.debug("Map layer system politics marked stale; systemId=" + systemId);
+        groupingStaleSystemIds.add(systemId);
+        LOG.debug("Map layer system grouping marked stale; systemId=" + systemId);
     }
 
     /**
-     * Removes and returns the systems marked politics-stale since the last drain,
+     * Removes and returns the systems marked grouping-stale since the last drain,
      * so the plugin processes each staleness once. A full rebuild (a settings
      * change or a geometry change) drains and discards them, since it already
      * re-derives every system.
      *
      * @return the drained stale system ids; empty when none are pending
      */
-    public static Set<String> drainStalePoliticsSystemIds() {
-        if (politicsStaleSystemIds.isEmpty()) {
+    public static Set<String> drainStaleGroupingSystemIds() {
+        if (groupingStaleSystemIds.isEmpty()) {
             return Set.of();
         }
         // Snapshot then remove exactly what was snapshotted, so an id added by the
         // campaign thread between the copy and the removal survives to the next
         // drain rather than being silently dropped.
-        var drained = new LinkedHashSet<>(politicsStaleSystemIds);
-        politicsStaleSystemIds.removeAll(drained);
+        var drained = new LinkedHashSet<>(groupingStaleSystemIds);
+        groupingStaleSystemIds.removeAll(drained);
         return drained;
     }
 }

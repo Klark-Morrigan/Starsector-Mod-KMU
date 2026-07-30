@@ -26,32 +26,32 @@ final class PoliticalMapColonySizeListenerTest {
 
         @Test
         void marksTheResizedColonysSystemStale() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
             listener.reportColonySizeChanged(marketInSystem("mkt", "sys"), 3);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).containsExactly("sys");
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
             var marketMock = mock(MarketAPI.class);
             when(marketMock.getId()).thenReturn("mkt");
             when(marketMock.getStarSystem()).thenReturn(null);
 
             listener.reportColonySizeChanged(marketMock, 3);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
-            MapLayerRefresh.drainStalePoliticsSystemIds();
+            MapLayerRefresh.drainStaleGroupingSystemIds();
 
             listener.reportColonySizeChanged(null, 3);
 
-            assertThat(MapLayerRefresh.drainStalePoliticsSystemIds()).isEmpty();
+            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
     }
 

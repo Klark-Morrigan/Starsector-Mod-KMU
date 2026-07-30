@@ -16,7 +16,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * neutral and removes it from the economy - so the system's dominant owner
  * vanishes, the same per-system ownership change a colony resize or a discovery
  * makes. It therefore routes through the same targeted refresh
- * ({@link MapLayerRefresh#markSystemPoliticsStale}): only that system and its
+ * ({@link MapLayerRefresh#markSystemGroupingStale}): only that system and its
  * neighbours are re-derived and re-shaped, the re-derivation reading the now
  * ownerless economy and dropping the faction fill.
  *

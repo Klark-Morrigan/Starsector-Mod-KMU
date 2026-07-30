@@ -219,7 +219,7 @@ final class PoliticalMapStalenessSourceTest {
     // reads as configuration alone; the counters are read as deltas so a run is isolated from
     // earlier tests' bumps.
     private static RefreshOutcome runPollsAndReadOutcome(int pollCount) {
-        MapLayerRefresh.drainStalePoliticsSystemIds();
+        MapLayerRefresh.drainStaleGroupingSystemIds();
         var geometryBefore = MapLayerRefresh.getGeometryRevision();
         var allianceBefore = MapLayerRefresh.getAllianceRevision();
         var stalenessSource = new PoliticalMapStalenessSource();
@@ -229,7 +229,7 @@ final class PoliticalMapStalenessSourceTest {
         return new RefreshOutcome(
                 MapLayerRefresh.getGeometryRevision() - geometryBefore,
                 MapLayerRefresh.getAllianceRevision() - allianceBefore,
-                MapLayerRefresh.drainStalePoliticsSystemIds());
+                MapLayerRefresh.drainStaleGroupingSystemIds());
     }
 
     // One run's stubbed reads: what the two snapshot scans return, what the two alliance

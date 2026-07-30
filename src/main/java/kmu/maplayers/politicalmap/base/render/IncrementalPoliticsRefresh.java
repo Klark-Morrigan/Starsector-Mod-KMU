@@ -60,7 +60,7 @@ final class IncrementalPoliticsRefresh {
             List<Label> factionLabels,
             CellGeometryCache geometryCache) {
 
-        var staleSystemIds = MapLayerRefresh.drainStalePoliticsSystemIds();
+        var staleSystemIds = MapLayerRefresh.drainStaleGroupingSystemIds();
         if (staleSystemIds.isEmpty()) {
             return;
         }
