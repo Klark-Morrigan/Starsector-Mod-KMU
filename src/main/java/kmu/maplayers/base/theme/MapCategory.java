@@ -9,8 +9,11 @@ package kmu.maplayers.base.theme;
  * {@link #DECIVILISED} when a revealed dead world sits there and {@link #UNINHABITED}
  * otherwise. Making the category a type (rather than four hardcoded reader methods and
  * four fields) lets the theme carry the four styles as one keyed map the builders index.
+ *
+ * <p>These four are the political map's own division of the ground, filling the theme's open
+ * {@link MapStyleCategory} key.
  */
-public enum MapCategory {
+public enum MapCategory implements MapStyleCategory {
     FACTION,
     INDEPENDENT,
     DECIVILISED,

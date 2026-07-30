@@ -1,19 +1,20 @@
 # The theme records (`base.theme`)
 
 The player's authored choices, as value types: what the player picked, held in the shape the rest
-of the map reads it in. Everything here is a record (plus one enum), and what little behaviour they
-carry answers only from their own components - `ElementStyle.isDrawn`, `RenderStyle.categoryStyle`,
-and the per-layer width and alpha `HoverGlowStyle` derives from its stack and pulse. None of it
-reads a setting, resolves a colour, or touches geometry.
+of the map reads it in. Everything here is a record (plus one enum and the key interface it
+implements), and what little behaviour they carry answers only from their own components -
+`ElementStyle.isDrawn`, `RenderStyle.categoryStyle`, and the per-layer width and alpha
+`HoverGlowStyle` derives from its stack and pulse. None of it reads a setting, resolves a colour,
+or touches geometry.
 
 A leaf of the framework rather than of any one layer: the *tiers* describe how a map is styled -
 sector-wide knobs plus one bundle per category - and say nothing about what a bundle is painting.
 
-The *categories* are the exception, and the one place this package is not yet general.
-`MapCategory` enumerates the political map's four, so a layer whose ground divides some other way
-has no key to hang its own bundles off. Making the key an interface the layer supplies constants
-for is what would finish the job; until then a second layer reuses the tiers and inherits these
-four names.
+The *categories* are where a layer's own vocabulary meets those tiers. `MapStyleCategory` is the
+open key - memberless, since a category is only ever looked up, and declared beside the layer that
+paints it - and `MapCategory` enumerates the political map's four as constants of it. The tiers themselves are still typed on
+that enum, so a layer whose ground divides some other way inherits these four names until
+`RenderStyle` keys on the interface.
 
 Part of [the map-layer framework](../../README.md); see the
 [mod README](../../../../../../../README.md) for project context.
@@ -33,9 +34,9 @@ A `RenderStyle` is the whole theme, in two tiers:
   national-border `BorderSmoothingStyle` (both smoothing gates and the shape each pass works to),
   the `HoverHighlightStyle` (itself a `HoverGlowStyle` for the frontier halo and a `HoverWashStyle`
   for the hovered cell), and the desaturation profile.
-- `Map<MapCategory, CategoryStyle>` - one bundle per category. `MapCategory` is a type rather than
-  four hardcoded fields, which is what lets the theme carry the four bundles as one keyed map the
-  builders index.
+- `Map<MapCategory, CategoryStyle>` - one bundle per category. `MapCategory` is a type (a
+  `MapStyleCategory` enum) rather than four hardcoded fields, which is what lets the theme carry
+  the four bundles as one keyed map the builders index.
 
 A new sector-wide knob belongs on the matching `GlobalStyle` sub-record, never fetched ad hoc at a
 call site.
