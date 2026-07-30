@@ -6,7 +6,6 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
-import kmlib.starsector.ui.widgets.TooltipRow;
 
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -19,6 +18,9 @@ import org.mockito.Mockito;
 
 import java.awt.Color;
 
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
@@ -32,8 +34,6 @@ import static org.mockito.Mockito.when;
 final class CoreTerritoryRowTest {
     private static final Color HIGHLIGHT = new Color(255, 200, 100);
     private static final String CREST = "graphics/hegemony_crest.png";
-    private static final float MEMBER_INDENT = 14f;
-    private static final float TOLERANCE = 0.001f;
 
     // The two runs the line reads as: the faction named plainly, then the status it holds the system
     // under, picked out beside it.
@@ -41,12 +41,6 @@ final class CoreTerritoryRowTest {
     private static final int CORE_STATUS_RUN = 1;
 
     private MockedStatic<Misc> miscMock;
-
-    // One of the line's label runs, by position. The runs are a sequence read as one sentence, so a
-    // test names which stretch of the line it is about rather than reaching through the row's content.
-    private static TextSpan readLabelRun(TooltipRow row, int runIndex) {
-        return row.labelTextSpans().get(runIndex);
-    }
 
     @BeforeEach
     void installStringsAndColours() {

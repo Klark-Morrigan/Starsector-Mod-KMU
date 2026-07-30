@@ -7,6 +7,7 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.widgets.TooltipRow;
 
+import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.util.KmuStrings;
 
 import java.util.Optional;
@@ -53,6 +54,6 @@ public final class SystemStatusRow {
         // Flush under the system name the box is headed with, crestless and scoreless: the status
         // qualifies the whole system rather than being one entry of a list, so it reads as a standalone
         // line rather than as the first - indented - row of a breakdown that has none.
-        return Optional.of(SystemCellTooltip.buildStandaloneRow(KmuStrings.get(statusKey)));
+        return Optional.of(CellTooltipRows.buildStandaloneRow(KmuStrings.get(statusKey)));
     }
 }

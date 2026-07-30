@@ -14,6 +14,7 @@ import kmu.maplayers.base.sidebar.runtime.IntelSidebarHost;
 import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
+import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapSaveMigrations;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisationListener;
@@ -21,7 +22,6 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeL
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
-import kmu.maplayers.politicalmap.base.tooltip.MapLayerCellTooltip;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -154,9 +154,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         try {
-            installPoliticalMapHoverTooltip(Global.getSector());
+            installMapLayerHoverTooltip(Global.getSector());
         } catch (RuntimeException exception) {
-            LOG.error("Failed to install KMU political map hover tooltip", exception);
+            LOG.error("Failed to install KMU map layer hover tooltip", exception);
         }
 
         try {
@@ -329,11 +329,11 @@ public class KMU_ModPlugin extends BaseModPlugin {
     }
 
     // Registers the hover-tooltip dispatcher - the render listener that draws whichever tooltip the
-    // active political-map view injects for the star system under the cursor. Transient,
-    // remove-then-add: it draws only, holds no save-relevant state, and its cached GL text must never
-    // enter a save, so it is re-added fresh each load and never duplicates. Mirrors the sidebar's
-    // contract so exactly one renders.
-    static void installPoliticalMapHoverTooltip(SectorAPI sector) {
+    // active map layer injects for the star system under the cursor. Transient, remove-then-add: it
+    // draws only, holds no save-relevant state, and its cached GL text must never enter a save, so it
+    // is re-added fresh each load and never duplicates. Mirrors the sidebar's contract so exactly one
+    // renders.
+    static void installMapLayerHoverTooltip(SectorAPI sector) {
         if (sector == null) {
             return;
         }

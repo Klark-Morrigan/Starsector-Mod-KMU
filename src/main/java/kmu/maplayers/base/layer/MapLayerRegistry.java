@@ -2,6 +2,8 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.intel.IntelScreenView;
 
+import kmu.maplayers.base.render.MapLayerRenderer;
+
 import java.util.List;
 
 /**
@@ -118,6 +120,21 @@ public final class MapLayerRegistry {
      */
     public static MapLayer getActiveLayer() {
         return resolveLiveSelection().getActiveLayer();
+    }
+
+    /**
+     * @return what draws for the screen showing this frame, or null when nothing does - either because
+     *         no layer is picked yet (before a composition root has registered any) or because the
+     *         active one draws nothing. The two are one answer on purpose: every pass driven by the
+     *         active pick treats them alike, so a switch-only tab needs no case of its own in any of
+     *         them
+     */
+    public static MapLayerRenderer resolveActiveMapRenderer() {
+        var activeLayer = getActiveLayer();
+        if (activeLayer == null) {
+            return null;
+        }
+        return activeLayer.getMapRenderer();
     }
 
     /**

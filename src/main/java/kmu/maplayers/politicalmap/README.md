@@ -119,7 +119,10 @@ as a change the engine fired no event for, answered into the framework's poll),
 `render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers to the three
 questions the framework's highlight asks about the cell under the cursor: the extent this frame
 painted there, the owner's border loops it might sit inside, and the shade its ground draws in),
-`tooltip`, and `sidebar` - the last being this layer's own body
+`tooltip` (`SystemDominationTooltip` - what this layer says about the hovered system, the ranked
+standings behind the fills, which the faction and alliance views inject into the framework's hover
+box and the claims view does not, plus the standing, territory, and status lines it is written from),
+and `sidebar` - the last being this layer's own body
 controls, not the box they sit in, which is [the sidebar](../base/sidebar/README.md) one level up. The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
 up; how a layer is picked and what each screen remembers is [map layers](../README.md).
 

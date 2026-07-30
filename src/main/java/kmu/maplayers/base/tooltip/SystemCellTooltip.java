@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.tooltip;
+package kmu.maplayers.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -16,11 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The shared shape of a political-map cell tooltip: the hovered system's name on top, the layer's own
+ * The shared shape of a map-layer cell tooltip: the hovered system's name on top, the layer's own
  * content below it, one look and one render call for both. A layer tooltip extends this and supplies
  * only its body, so the header, the box style, and the economy precondition are settled in one place
  * and no two layers can drift on them - the difference between two layers' hovers is what they say
- * about the system, never how the box is framed or named.
+ * about the system, never how the box is framed or named. Which lines a body may be written in is
+ * {@link CellTooltipRows}.
  *
  * <p>Naming the system in the header is what makes the hover read as landing on a real system: a body
  * that resolves to nothing at all draws no box, since a lone name repeats what the cursor already sits
@@ -30,17 +31,6 @@ import java.util.List;
  * so one shared instance per layer serves every view that injects it.
  */
 public abstract class SystemCellTooltip implements MapHoverTooltip {
-
-    /**
-     * The value of a row that carries no number, such as a status or section line. Rendered as-is it
-     * draws nothing and measures zero width, so the value column collapses for that row.
-     */
-    protected static final String NO_SCORE = "";
-
-    // The inset a nested row draws at, so it reads as belonging to the line above it; a top-tier row
-    // sits flush at zero. Only the two row builders apply it, which is what keeps the two tiers a
-    // choice of builder at the call site rather than an indent every caller has to remember.
-    private static final float MEMBER_INDENT = 14f;
 
     // The insignia body face every row's text renders at its own native size - which is also each row's
     // line height for the box fit.
@@ -53,7 +43,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
 
     @Override
     public final void renderFor(SectorAPI sector, StarSystemAPI system) {
-        // Bodies read the live economy for what a faction holds in the system, so a sector without one
+        // Bodies read the live economy for what a layer holds in the system, so a sector without one
         // (never on the open campaign map, but guarded since the reads assume it) has nothing to show.
         if (sector.getEconomy() == null) {
             return;
@@ -79,95 +69,15 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
 
     /**
      * Builds this layer's content rows, drawn top to bottom under the system-name header. Called once
-     * per paint with the live sector, after the economy precondition holds.
+     * per paint with the live sector, after the economy precondition holds. The seam the whole class
+     * exists around: the box is framed here and its content is the layer's, so this shape can be shared
+     * by layers it names none of.
      *
      * @param sector the live sector, whose economy the content may read
      * @param system the star system under the cursor
      * @return the body rows, or an empty list when the layer has nothing to show for this system
      */
     protected abstract List<TooltipRow> buildBodyRows(SectorAPI sector, StarSystemAPI system);
-
-    /**
-     * Builds a top-tier row: flush left, its label bright and its value in the highlight colour, so a
-     * section heading, a bloc header, or the system name reads as opening a block rather than sitting
-     * inside one.
-     *
-     * @param crestSpritePath the leading crest's texture path, or null for a crestless row
-     * @param text            the row's label
-     * @param value           the right-aligned value, or {@link #NO_SCORE} for a row carrying none
-     * @return the row, ready to add to a body
-     */
-    protected static TooltipRow.TableRow buildTopTierRow(
-            String crestSpritePath,
-            String text,
-            String value) {
-
-        return TooltipRow
-                .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve()))
-                .carriesCrest(crestSpritePath)
-                .carriesValue(new TextSpan(value, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
-    }
-
-    /**
-     * Builds a nested row: indented under the top-tier row above it and drawn in the plain text
-     * colour, so a section's entry or a bloc's member faction reads as belonging to that block.
-     *
-     * @param crestSpritePath the leading crest's texture path, or null for a crestless row
-     * @param text            the row's label
-     * @param value           the right-aligned value, or {@link #NO_SCORE} for a row carrying none
-     * @return the row, ready to add to a body
-     */
-    protected static TooltipRow.TableRow buildNestedRow(
-            String crestSpritePath,
-            String text,
-            String value) {
-
-        var textColour = StarsectorUiColor.VANILLA_TEXT.resolve();
-        return TooltipRow
-                .createRow(new TextSpan(text, textColour))
-                .carriesCrest(crestSpritePath)
-                .carriesValue(new TextSpan(value, textColour))
-                .indentsBy(MEMBER_INDENT);
-    }
-
-    /**
-     * Builds a nested row whose label runs on into a second run in the highlight colour - a status or
-     * flag called out on the line it qualifies, rather than stated on a line of its own. One place
-     * decides that such a qualifier reads gold, so two layers calling out different facts still call
-     * them out alike.
-     *
-     * @param crestSpritePath    the leading crest's texture path, or null for a crestless row
-     * @param text               the row's label
-     * @param highlightedRunText the qualifier continuing the label, in the highlight colour
-     * @param value              the right-aligned value, or {@link #NO_SCORE} for a row carrying none
-     * @return the row, ready to add to a body
-     */
-    protected static TooltipRow.TableRow buildNestedRowWithHighlightedRun(
-            String crestSpritePath,
-            String text,
-            String highlightedRunText,
-            String value) {
-
-        return buildNestedRow(crestSpritePath, text, value)
-                .continuesWith(new TextSpan(
-                        highlightedRunText,
-                        StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
-    }
-
-    /**
-     * Builds a standalone row: flush at the box's left content edge, outside the crest column, in the
-     * plain text colour and carrying neither crest nor value - for a line stating something about the
-     * hovered system as a whole. Flush rather than inset, since an indent would read as the line
-     * belonging to an entry above it, and there is no entry for it to belong to.
-     *
-     * @param text the row's label
-     * @return the row, ready to add to a body
-     */
-    protected static TooltipRow.TableRow buildStandaloneRow(String text) {
-        return TooltipRow
-                .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_TEXT.resolve()))
-                .clearsCrestColumn();
-    }
 
     // The header every cell tooltip opens with: the hovered system's own name, crestless and drawn in
     // the highlight colour, so the body below it never has to repeat which system it describes and the

@@ -70,9 +70,9 @@ about what the overlay means.
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
-  through, and the terrain that owns the map's render pass. It asks the active layer for a renderer
-  and hands it the frame, so it names no layer; a layer that only switches (No Layer) supplies
-  none, which is read as nothing to draw.
+  through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
+  render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;
+  a layer that only switches (No Layer) supplies none, which is read as nothing to draw.
 - **[Regions](base/render/regions/README.md)** - the shape work under that surface: turning shaped
   cells and opaque grouping keys into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
@@ -96,6 +96,14 @@ about what the overlay means.
   burns the halo and the wash, both over a `HoverHighlightSource` - the three questions only the
   layer that owns the regions can answer: the extent it painted under the cursor, the loops the
   cell might sit inside, and the shade its ground draws in.
+- **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
+  `MapLayerCellTooltip` owns the gates every hover box shares (the settings toggle, the sector map
+  with the starscape filter off, a hovered cell, stepping aside for the vanilla star tooltip) and
+  draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer with none, and a
+  switch-only tab with no renderer at all, show nothing for the same reason. `SystemCellTooltip` is
+  the shape a layer's box takes - the hovered system's name over the layer's own body, one look and
+  one draw for both - and `CellTooltipRows` the four lines a body may be written in, so two layers'
+  boxes differ only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
   finds the changes the engine announces to nobody. `PoliticalMapSectorWatcher` owns the loop
   alone and asks a `MapLayerStalenessSource` what moved since it last asked, so which changes

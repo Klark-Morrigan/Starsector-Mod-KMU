@@ -8,6 +8,7 @@ import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.refresh.PoliticalMapRefresh;
+import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -17,7 +18,6 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
-import kmu.maplayers.politicalmap.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.starsector.nexerelin.NexerelinAlliances;

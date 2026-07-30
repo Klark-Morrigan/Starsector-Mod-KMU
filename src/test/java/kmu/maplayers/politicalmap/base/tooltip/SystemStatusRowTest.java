@@ -11,10 +11,8 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.util.Misc;
 
-import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.TooltipLabelPlacement;
-import kmlib.starsector.ui.widgets.TooltipRow;
 
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -28,6 +26,9 @@ import org.mockito.Mockito;
 import java.awt.Color;
 import java.util.List;
 
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
@@ -41,19 +42,10 @@ import static org.mockito.Mockito.when;
  * read as a standalone line under the system-name header rather than as an entry of a list.
  */
 final class SystemStatusRowTest {
-    private static final float NO_INDENT = 0f;
-    private static final float TOLERANCE = 0.001f;
-
     // The status line is one plain run, so its label is read at the first of them.
     private static final int STATUS_RUN = 0;
 
     private MockedStatic<Misc> miscMock;
-
-    // One of the line's label runs, by position. The runs are a sequence read as one sentence, so a
-    // test names which stretch of the line it is about rather than reaching through the row's content.
-    private static TextSpan readLabelRun(TooltipRow row, int runIndex) {
-        return row.labelTextSpans().get(runIndex);
-    }
 
     @BeforeEach
     void installStringsAndColours() {

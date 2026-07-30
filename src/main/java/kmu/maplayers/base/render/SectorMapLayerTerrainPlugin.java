@@ -11,12 +11,12 @@ import java.util.EnumSet;
 /**
  * The map's render surface: the terrain plugin that owns the sector (M) map's overlay render pass
  * and hands each frame to whichever map layer the player has selected. It names no layer of its own -
- * it reads the active pick from {@link MapLayerRegistry}, asks it for a renderer, and draws through
- * that - so a new layer draws here by registering rather than by being named here.
+ * it asks {@link MapLayerRegistry} what draws for the showing screen and draws through that - so a new
+ * layer draws here by registering rather than by being named here.
  *
- * <p>A layer that supplies no renderer, and a frame with no active pick at all, are the same answer:
- * nothing to draw. That is what makes the "show nothing" tab an ordinary layer rather than a special
- * case in this class.
+ * <p>A layer that supplies no renderer, and a frame with no active pick at all, arrive as the same
+ * answer: nothing to draw. That is what makes the "show nothing" tab an ordinary layer rather than a
+ * special case in this class.
  *
  * <p>Terrain is the surface because the sector map renders terrain through {@code renderOnMap} -
  * the same hook the vanilla nebulae draw with. A custom campaign entity has no map-render hook, so
@@ -65,13 +65,9 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     @Override
     public void renderOnMap(float factor, float alphaMult) {
         // Draws through the pick of whichever screen is showing this frame, so switching a tab
-        // switches what paints with no per-layer branch here. Null before a composition root has
-        // registered any layers - the same nothing-to-draw answer as a layer with no painter.
-        var activeLayer = MapLayerRegistry.getActiveLayer();
-        if (activeLayer == null) {
-            return;
-        }
-        var layerRenderer = activeLayer.getMapRenderer();
+        // switches what paints with no per-layer branch here. Null when nothing draws at all - no
+        // registered pick yet, or a pick that paints nothing.
+        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer();
         if (layerRenderer == null) {
             return;
         }

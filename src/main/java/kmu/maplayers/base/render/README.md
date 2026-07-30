@@ -15,15 +15,17 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 
 ## Who gets the frame
 
-`MapLayerRenderer` is the seam a layer draws through - one `renderOnMap(factor, alphaMult)` and
-nothing else. It is kept apart from `MapLayer` itself, which is a descriptor (id, tab label, body
-controls, hotkey): folding a render method into the descriptor would merge two roles in one type,
-and a tab that only switches would be left with a method it has no answer for.
+`MapLayerRenderer` is the seam a layer draws through: `renderOnMap(factor, alphaMult)` for the
+overlay, and `resolveHoverTooltip()` for the box shown over one cell of it, which defaults to none.
+It is kept apart from `MapLayer` itself, which is a descriptor (id, tab label, body controls,
+hotkey): folding drawing into the descriptor would merge two roles in one type, and a tab that only
+switches would be left with methods it has no answer for.
 
 `SectorMapLayerTerrainPlugin` is the terrain the engine actually calls. It reads the active layer,
 asks it for a renderer, and draws through it. A layer that supplies none - No Layer, or any future
 switch-only tab - reads as nothing to draw, which is the same answer the surface gives when no
-layer is active at all.
+layer is active at all. `base.tooltip`'s dispatcher resolves its box the same way, off the same two
+reads, so neither pass names a layer.
 
 Because a renderer is reached through a registered layer, it is a session-scoped singleton created
 at load: nothing it holds enters a save, so it needs no `transient` marking, no lazy re-creation,
@@ -50,5 +52,7 @@ alias or an existing save fails to load.
   persisted. The surface only asks the registry for the active one.
 - **`base.hover`** - the cursor's half of the render pass: the halo and the wash, and the seam a
   layer answers them through.
+- **`base.tooltip`** - what the box floating beside that cursor says, drawn in a later UI pass than
+  this one and dispatched through the same active-layer read.
 - What any layer actually paints, and what its grouping keys mean, belongs to that layer; for the
   one layer that paints today that is [`politicalmap`](../../politicalmap/README.md).

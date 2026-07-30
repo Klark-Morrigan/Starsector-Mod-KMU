@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.tooltip;
+package kmu.maplayers.base.tooltip;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
@@ -10,20 +10,22 @@ import kmlib.starsector.ui.map.VanillaMapTooltip;
 
 import kmu.maplayers.base.hover.PoliticalMapHover;
 import kmu.maplayers.base.hover.PoliticalMapHoverState;
-import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuLunaSettings;
 
+import java.util.Optional;
+
 /**
- * The political-map hover-tooltip dispatcher: a render listener that draws whichever {@link
- * MapHoverTooltip} the active view has injected for the star system under the cursor, and nothing when
- * the active view injects none. Paints in the UI-coords above-tooltips layer - the same layer the map
- * sidebar draws in, the only one composited after the opaque core-UI map and its tooltips.
+ * The map's hover-tooltip dispatcher: a render listener that draws whichever {@link MapHoverTooltip}
+ * the active map layer has injected for the star system under the cursor, and nothing when the active
+ * layer injects none. Paints in the UI-coords above-tooltips layer - the same layer the map sidebar
+ * draws in, the only one composited after the opaque core-UI map and its tooltips.
  *
- * <p>Whether a layer shows a tooltip is decided by composition, not a flag: a view returns a tooltip
- * from {@code resolveHoverTooltip} or it does not, and this dispatcher draws whatever the active view
- * supplies. So the faction and alliance views show the domination breakdown they inject, the claims
- * view shows nothing, and a later layer adds or replaces its tooltip by what it injects rather than by
- * a branch here.
+ * <p>Whether a layer shows a tooltip is decided by composition, not a flag: a layer's renderer returns
+ * a tooltip from {@code resolveHoverTooltip} or it does not, and this dispatcher draws whatever the
+ * active layer supplies. So a layer adds or replaces its tooltip by what it injects rather than by a
+ * branch here, and a switch-only tab - which supplies no renderer at all - shows nothing for the same
+ * reason it paints nothing.
  *
  * <p>The dispatcher owns only the gates every hover tooltip shares - the master settings toggle, the
  * sector-map-with-starscape-off gate, a hovered cell, stepping aside while the vanilla map draws its
@@ -65,13 +67,9 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (VanillaMapTooltip.isShowing()) {
             return;
         }
-        // The active view decides which tooltip to draw by injecting one; a view with none (the claims
-        // view) leaves this empty, and nothing draws.
-        var activeView = PoliticalMapViewRegistry.getActiveView();
-        if (activeView == null) {
-            return;
-        }
-        var tooltip = activeView.resolveHoverTooltip();
+        // The active layer decides which tooltip to draw by injecting one; a layer with none leaves
+        // this empty, and nothing draws.
+        var tooltip = resolveActiveTooltip();
         if (tooltip.isEmpty()) {
             return;
         }
@@ -87,6 +85,17 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
             return;
         }
         tooltip.get().renderFor(sector, system);
+    }
+
+    // The tooltip the frame draws, asked of whatever draws for the showing screen - the same read the
+    // map surface paints through. Nothing drawing at all resolves the same as an injected empty:
+    // nothing to show, so a switch-only tab and a pre-registration frame need no case of their own.
+    static Optional<MapHoverTooltip> resolveActiveTooltip() {
+        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer();
+        if (layerRenderer == null) {
+            return Optional.empty();
+        }
+        return layerRenderer.resolveHoverTooltip();
     }
 
     // Whether a tooltip should draw for this hover - the pure part of the gate: a cell must be

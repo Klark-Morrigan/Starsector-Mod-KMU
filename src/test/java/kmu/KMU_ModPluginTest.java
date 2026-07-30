@@ -13,6 +13,7 @@ import kmu.maplayers.base.render.SectorMapLayerStarscapeTerrainPlugin;
 import kmu.maplayers.base.render.SectorMapLayerTerrainPlugin;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
+import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.junit.jupiter.api.Nested;
@@ -166,6 +167,34 @@ class KMU_ModPluginTest {
                     KMU_ModPlugin.installPoliticalMapSidebar(sector(null));
 
             assertThatCode(sidebarInstallOnNullManager::run).doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class InstallMapLayerHoverTooltip {
+
+        @Test
+        void reinstallsTheHoverTooltipDispatcherFreshAsTransient() {
+            // Remove-then-add, transient: the dispatcher caches GL text, which must never enter a save,
+            // and a registration an older save carried has to be cleared or two would draw the same box.
+            var listenerManager = new RecordingListenerManager(false);
+
+            KMU_ModPlugin.installMapLayerHoverTooltip(sector(listenerManager));
+
+            assertThat(listenerManager.removedListenerClasses)
+                    .containsExactly(MapLayerCellTooltip.class);
+            assertThat(listenerManager.addedListeners)
+                    .singleElement()
+                    .isInstanceOf(MapLayerCellTooltip.class);
+            assertThat(listenerManager.addedTransientFlags).containsExactly(true);
+        }
+
+        @Test
+        void toleratesAMissingListenerManager() {
+            var tooltipInstallOnNullManager = (Runnable) () ->
+                    KMU_ModPlugin.installMapLayerHoverTooltip(sector(null));
+
+            assertThatCode(tooltipInstallOnNullManager::run).doesNotThrowAnyException();
         }
     }
 

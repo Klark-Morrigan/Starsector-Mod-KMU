@@ -6,6 +6,7 @@ import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.widgets.TooltipRow;
 import kmlib.text.KmlibStrings;
 
+import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.util.KmuStrings;
 
 import java.util.Optional;
@@ -41,10 +42,15 @@ public final class CoreTerritoryRow {
         }
         var faction = sector.getFaction(coreFactionId);
 
-        return Optional.of(SystemCellTooltip.buildNestedRowWithHighlightedRun(
-                FactionCrests.resolveCrestPath(faction),
-                TooltipFactionNames.resolveLongName(faction, coreFactionId),
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY),
-                SystemCellTooltip.NO_SCORE));
+        // The faction named plainly, then the decree called out beside it as the point of the line -
+        // the qualifier run, so the shade it reads in stays the vocabulary's decision rather than this
+        // row's.
+        return Optional.of(CellTooltipRows
+                .buildNestedRow(
+                        FactionCrests.resolveCrestPath(faction),
+                        TooltipFactionNames.resolveLongName(faction, coreFactionId),
+                        CellTooltipRows.NO_SCORE)
+                .continuesWith(CellTooltipRows.buildQualifierSpan(
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY))));
     }
 }

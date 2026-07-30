@@ -4,11 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
 import kmu.maplayers.politicalmap.base.politics.ownership.OwnershipProvider;
-import kmu.maplayers.politicalmap.base.tooltip.MapHoverTooltip;
 
 import java.util.List;
 import java.util.Optional;
@@ -214,8 +214,9 @@ public interface PoliticalMapView {
 
     /**
      * The hover tooltip this view shows for the star system under the cursor, or empty when it shows
-     * none. The shared hover dispatcher draws whatever a view supplies here and nothing when it
-     * supplies nothing, so a layer opts into a tooltip by injecting one rather than flipping a flag:
+     * none. The layer renderer answers the framework's tooltip seam with whatever the active view
+     * supplies here, and the shared dispatcher draws it - nothing when it supplies nothing - so a view
+     * opts into a tooltip by injecting one rather than flipping a flag:
      * the faction and alliance views inject the domination breakdown, and the claims view - whose
      * ownership that breakdown does not describe - injects none and gets its own surface later.
      * Defaulting to empty makes "no tooltip" the base case, the same shape as

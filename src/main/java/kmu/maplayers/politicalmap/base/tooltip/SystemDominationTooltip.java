@@ -5,6 +5,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.ui.widgets.TooltipRow;
 
+import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.base.tooltip.SystemCellTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
@@ -80,13 +83,13 @@ public final class SystemDominationTooltip extends SystemCellTooltip {
     private static List<TooltipRow> buildRows(List<StandingGroupRow> groupRows) {
         var rows = new ArrayList<TooltipRow>();
         for (var group : groupRows) {
-            rows.add(buildTopTierRow(
+            rows.add(CellTooltipRows.buildTopTierRow(
                     group.crestSpritePath(),
                     group.displayName(),
                     DominationScoreFormat.formatScore(group.aggregateScore())));
             if (group.nestsMembers()) {
                 for (var member : group.members()) {
-                    rows.add(buildNestedRow(
+                    rows.add(CellTooltipRows.buildNestedRow(
                             member.crestSpritePath(),
                             member.fullName(),
                             DominationScoreFormat.formatScore(member.score())));

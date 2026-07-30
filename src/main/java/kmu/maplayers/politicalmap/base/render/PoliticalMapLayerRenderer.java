@@ -6,8 +6,11 @@ import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 import kmu.maplayers.base.hover.PoliticalMapHoverState;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
+import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.settings.KmuLunaSettings;
+
+import java.util.Optional;
 
 /**
  * Draws the political map on the sector map as merged HOI4-style clusters, where adjacent
@@ -18,7 +21,9 @@ import kmu.settings.KmuLunaSettings;
  *
  * <p>Resolving the view here rather than at the surface is what keeps the framework out of the
  * feature's business: which of the political views draws is the political map's own question, and
- * the surface learns only that some layer wants the frame.
+ * the surface learns only that some layer wants the frame. The hover box the layer shows for one
+ * system is resolved the same way, off the same view read, so the framework's tooltip dispatcher names
+ * no view either.
  *
  * <p>Named for the layer, not for the overlay: this sequences a frame, while
  * {@link PoliticalMapOverlayRenderer} one level down composes the overlay's own sub-layers. It
@@ -80,6 +85,19 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         cache.refresh(view);
         publishHoverIfEnabled(factor);
         overlayRenderer.renderOnMap(cache, factor, alphaMult);
+    }
+
+    @Override
+    public Optional<MapHoverTooltip> resolveHoverTooltip() {
+        // The hover box is resolved through the active view for the same reason the paint is: which
+        // view is up decides what there is to say about a system - the faction and alliance views show
+        // the domination breakdown, the claims view none - and the dispatcher above learns only that
+        // this layer has a box, or has not.
+        var view = PoliticalMapViewRegistry.getActiveView();
+        if (view == null) {
+            return Optional.empty();
+        }
+        return view.resolveHoverTooltip();
     }
 
     // Runs the cursor read only while the hover highlight is switched on. The whole feature - the
