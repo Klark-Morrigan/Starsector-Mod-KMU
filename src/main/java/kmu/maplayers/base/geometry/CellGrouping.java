@@ -29,8 +29,8 @@ import java.util.Map;
  * @param ownerBySystemId the owner per system; a system absent here is unowned
  */
 public record CellGrouping(
-        Map<String, String> systemIdByCellId,
-        Map<String, String> ownerBySystemId) {
+    Map<String, String> systemIdByCellId,
+    Map<String, String> ownerBySystemId) {
 
     /**
      * The system one cell draws as - whose owner, palette, and name it takes.
@@ -51,7 +51,9 @@ public record CellGrouping(
      */
     public String resolveOwnerOf(String cellId) {
         var systemId = resolveDrawnSystemIdOf(cellId);
-        return systemId == null ? null : ownerBySystemId.get(systemId);
+        return systemId == null
+            ? null
+            : ownerBySystemId.get(systemId);
     }
 
     /**

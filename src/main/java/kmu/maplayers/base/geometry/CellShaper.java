@@ -58,15 +58,16 @@ public final class CellShaper {
             Map<String, List<CellEdge>> edgesByCellId,
             CellGrouping grouping,
             double borderInset) {
+
         var shaped = new LinkedHashMap<String, ShapedCell>();
         for (var entry : edgesByCellId.entrySet()) {
             shaped.put(
-                    entry.getKey(),
-                    shapeCell(
-                        entry.getValue(),
-                        grouping.resolveOwnerOf(entry.getKey()),
-                        grouping.ownerBySystemId(),
-                        borderInset));
+                entry.getKey(),
+                shapeCell(
+                    entry.getValue(),
+                    grouping.resolveOwnerOf(entry.getKey()),
+                    grouping.ownerBySystemId(),
+                    borderInset));
         }
         return shaped;
     }
@@ -89,6 +90,7 @@ public final class CellShaper {
             String cellOwner,
             Map<String, String> ownerBySystemId,
             double borderInset) {
+
         var vertices = new ArrayList<double[]>(edges.size());
         var edgeInsets = new double[edges.size()];
         for (var i = 0; i < edges.size(); i++) {
@@ -109,6 +111,7 @@ public final class CellShaper {
             String cellOwner,
             Map<String, String> ownerBySystemId,
             double borderInset) {
+                
         var edgeClass = EdgeClassifier.classifyAcross(edge, cellOwner, ownerBySystemId);
         return edgeClass == EdgeClass.INTERIOR_SEAM ? 0.0 : borderInset;
     }

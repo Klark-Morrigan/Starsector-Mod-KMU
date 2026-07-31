@@ -76,6 +76,7 @@ public final class EdgeClassifier {
             CellEdge edge,
             String cellOwner,
             Map<String, String> ownerBySystemId) {
+
         var target = edge.target();
         if (target instanceof EdgeTarget.AcrossSystem acrossSystem) {
             return classify(cellOwner, ownerBySystemId.get(acrossSystem.systemId()));

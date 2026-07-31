@@ -11,5 +11,10 @@ package kmu.maplayers.base.geometry;
  * is an interior seam (the same owner both sides, or no far side to differ from) or a
  * cluster boundary.
  */
-public record CellEdge(double x1, double y1, double x2, double y2, EdgeTarget target) {
+public record CellEdge(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    EdgeTarget target) {
 }

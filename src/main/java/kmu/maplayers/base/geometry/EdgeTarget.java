@@ -33,7 +33,8 @@ public sealed interface EdgeTarget {
      *
      * @param systemId the system whose cell meets this one along the edge
      */
-    record AcrossSystem(String systemId) implements EdgeTarget {
+    record AcrossSystem(
+        String systemId) implements EdgeTarget {
     }
 
     /**
@@ -43,6 +44,7 @@ public sealed interface EdgeTarget {
      *
      * @param name which of the two systemless targets this is
      */
-    record NoSystem(String name) implements EdgeTarget {
+    record NoSystem(
+        String name) implements EdgeTarget {
     }
 }

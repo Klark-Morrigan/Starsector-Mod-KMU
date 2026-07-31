@@ -45,8 +45,10 @@ public final class SystemClusters {
      * @return one member list per contiguous cluster, in first-seen order (members
      *         likewise); empty when nothing is grouped
      */
-    public static List<List<String>> findClusters(Map<String, List<CellEdge>> edgesByCellId,
+    public static List<List<String>> findClusters(
+            Map<String, List<CellEdge>> edgesByCellId,
             CellGrouping grouping) {
+
         // Union-find keyed by cell id: seed every owned cell as its own singleton, then
         // fuse across each interior seam. An unowned cell seeds nothing, so an edge into
         // it never fuses.
@@ -72,8 +74,13 @@ public final class SystemClusters {
     // Fuses this cell with the one across an edge when that edge is an interior seam -
     // both cells present and sharing an owner. An edge with no cell across it, or
     // one into an unowned or differently-owned cell, leaves them apart.
-    private static void fuseAcrossSeam(Map<String, String> parentByCellId,
-            CellGrouping grouping, String cellId, String cellOwner, CellEdge edge) {
+    private static void fuseAcrossSeam(
+            Map<String, String> parentByCellId,
+            CellGrouping grouping,
+            String cellId,
+            String cellOwner,
+            CellEdge edge) {
+
         // A system's own cell is keyed by that system's id, so the system an edge names
         // across it is also the cell across it. Same-ground needs no fusing - it is one
         // the cell's own ground either side, already the same component.
@@ -94,14 +101,16 @@ public final class SystemClusters {
     private static List<List<String>> collectComponentsInFirstSeenOrder(
             Map<String, String> parentByCellId,
             CellGrouping grouping) {
+
         var membersByRoot = new LinkedHashMap<String, Set<String>>();
         for (var cellId : parentByCellId.keySet()) {
             var systemId = grouping.resolveDrawnSystemIdOf(cellId);
             if (systemId == null) {
                 continue;
             }
-            membersByRoot.computeIfAbsent(find(parentByCellId, cellId), root -> new LinkedHashSet<>())
-                    .add(systemId);
+            membersByRoot
+                .computeIfAbsent(find(parentByCellId, cellId), root -> new LinkedHashSet<>())
+                .add(systemId);
         }
         var clusters = new ArrayList<List<String>>(membersByRoot.size());
         for (var members : membersByRoot.values()) {

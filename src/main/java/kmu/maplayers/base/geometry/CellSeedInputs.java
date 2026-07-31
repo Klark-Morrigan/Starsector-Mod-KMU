@@ -21,6 +21,6 @@ package kmu.maplayers.base.geometry;
  * @param cellRadius    how far a cell may reach into empty space, in world units
  */
 public record CellSeedInputs(
-        int boundSegments,
-        double cellRadius) {
+    int boundSegments,
+    double cellRadius) {
 }

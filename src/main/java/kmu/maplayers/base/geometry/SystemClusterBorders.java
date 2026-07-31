@@ -90,22 +90,28 @@ public final class SystemClusterBorders {
             double borderInset,
             double vertexWeldTolerance,
             double miterSpikeLimit) {
+
         var boundary = collectBoundarySegments(
-                groupCellIds, edgesByCellId,
-                grouping,
-                coincidentNeighbourSystemIds,
-                borderInset);
+            groupCellIds, edgesByCellId,
+            grouping,
+            coincidentNeighbourSystemIds,
+            borderInset);
+
         var rings = new ArrayList<List<double[]>>();
         for (var ring : EdgeRings.chainIntoRingsWithEdgeValues(
                 boundary.segments(),
                 boundary.edgeDistances(),
                 vertexWeldTolerance)) {
+
             // Offset each ring edge by its own distance: the channel for an ordinary
             // boundary, nothing across a coincident neighbour. The per-edge miter path is
             // used rather than a uniform inset because those two distances differ along one
             // ring, and the miter is what carries the difference through each corner.
             var inset = PolygonOffsets.insetPolygonByMiter(
-                    ring.corners(), ring.edgeValues(), miterSpikeLimit);
+                ring.corners(),
+                ring.edgeValues(),
+                miterSpikeLimit);
+
             if (!isCollapsed(ring.corners(), inset)) {
                 rings.add(inset);
             }
@@ -124,8 +130,10 @@ public final class SystemClusterBorders {
             CellGrouping grouping,
             Set<String> coincidentNeighbourSystemIds,
             double borderInset) {
+
         var segments = new ArrayList<Segment>();
         var distances = new ArrayList<Double>();
+
         for (var cellId : groupCellIds) {
             var edges = edgesByCellId.get(cellId);
             if (edges == null) {
@@ -133,13 +141,16 @@ public final class SystemClusterBorders {
             }
             var cellOwner = grouping.resolveOwnerOf(cellId);
             for (var edge : edges) {
+
                 var edgeClass = EdgeClassifier.classifyAcross(
-                        edge,
-                        cellOwner,
-                        grouping.ownerBySystemId());
+                    edge,
+                    cellOwner,
+                    grouping.ownerBySystemId());
+
                 if (!edgeClass.isBoundary()) {
                     continue;
                 }
+
                 segments.add(new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
                 distances.add(computeEdgeInset(edge, coincidentNeighbourSystemIds, borderInset));
             }
@@ -154,6 +165,7 @@ public final class SystemClusterBorders {
             CellEdge edge,
             Set<String> coincidentNeighbourSystemIds,
             double borderInset) {
+
         // A coincident neighbour's edge stays on the raw cell border, so the cluster traced
         // from the other side lands on the same line and the two abut with no channel
         // between them. Only an edge naming a system can be coincident: a reach bound has
@@ -187,6 +199,7 @@ public final class SystemClusterBorders {
     private static boolean isCollapsed(
             List<double[]> rawRing,
             List<double[]> insetRing) {
+
         if (insetRing.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
             return true;
         }
@@ -202,6 +215,8 @@ public final class SystemClusterBorders {
     // One owner's boundary segments paired with the miter inset each receives,
     // kept parallel so the distance survives chaining onto the ring edge it forms (the
     // channel for an ordinary boundary, nothing across a coincident neighbour).
-    private record BoundarySegments(List<Segment> segments, double[] edgeDistances) {
+    private record BoundarySegments(
+        List<Segment> segments,
+        double[] edgeDistances) {
     }
 }

@@ -43,8 +43,11 @@ public final class CellHitTest {
      *                             is absent or empty and can never be hit
      * @return the containing system's id, or null when no cell contains the point
      */
-    public static String resolveSystemIdAt(double worldX, double worldY,
+    public static String resolveSystemIdAt(
+            double worldX,
+            double worldY,
             Map<String, List<double[]>> fillPolygonBySystemId) {
+
         for (var entry : fillPolygonBySystemId.entrySet()) {
             if (PolygonRegions.isPointInsideRing(entry.getValue(), worldX, worldY)) {
                 return entry.getKey();

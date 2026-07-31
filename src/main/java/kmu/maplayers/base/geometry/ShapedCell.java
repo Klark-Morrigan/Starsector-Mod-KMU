@@ -17,5 +17,7 @@ import java.util.List;
  * strokes its boundary edges as the bold cluster border and its remaining edges as
  * the faint interior seam lines.
  */
-public record ShapedCell(List<double[]> fillPolygon, boolean[] edgeIsBoundary) {
+public record ShapedCell(
+    List<double[]> fillPolygon,
+    boolean[] edgeIsBoundary) {
 }
