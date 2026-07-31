@@ -7,6 +7,7 @@ import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapStaticDebugRenderer;
+import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer;
 import kmu.settings.KmuLunaSettings;
@@ -42,31 +43,40 @@ final class PoliticalMapOverlayRenderer {
             PoliticalMapCache cache,
             float factor,
             float alphaMult) {
+
         logFirstRenderOnce(cache, factor, alphaMult);
+
         // Swap production and debug base render on which view the cache built: the debug overlay
         // replaces the normal render, and the cache built exactly one of the two.
         if (cache.isDebug()) {
             PoliticalMapStaticDebugRenderer.renderOnMap(
-                    cache.getDebugTerritories(),
-                    factor,
-                    alphaMult);
+                cache.getDebugTerritories(),
+                factor,
+                alphaMult);
         } else {
             TerritoryRenderer.renderOnMap(
-                    cache.getTerritories(),
-                    factor,
-                    alphaMult);
+                cache.getTerritories(),
+                factor,
+                alphaMult);
+
             // Over the territories it lights up, so the halo reads off the frontier it traces
             // and the wash brightens the fill beneath it rather than being painted over. Only
             // under the production view: the debug overlay replaced the draw lists the highlight
             // would trace, and the hover has nothing to resolve against. The frame's draw lists
             // are wrapped as the highlight's source, so the framework's pass asks this layer what
             // the cursor is on rather than reading the political model itself.
-            hoverHighlightRenderer.renderOnMap(
+            //
+            // Gated on the effects switches alone, though the hover it reads may have been
+            // published for the box's sake: with only the tooltip on, the cursor is still resolved
+            // every frame and nothing may be painted over the map for it.
+            if (PoliticalMapHoverGates.isHoverEffectsEnabled()) {
+                hoverHighlightRenderer.renderOnMap(
                     new PoliticalMapHoverHighlightSource(cache.getTerritories()),
                     cache.getTerritories().getGlobalStyle().hoverHighlight(),
                     MapHoverState.getInstance().getHover(),
                     factor,
                     alphaMult);
+            }
         }
         // The anchor overlay layers over whichever base view just drew - independent of the swap
         // above, so the two debug toggles compose. Gated on its own toggle here (not by the list
@@ -89,12 +99,16 @@ final class PoliticalMapOverlayRenderer {
             return;
         }
         hasLoggedFirstRender = true;
+        
         // Report whichever view is live: the normal draw lists, or the debug overlay when it has
         // replaced them (territories is null in debug mode).
         var builtCounts = cache.isDebug()
-                ? "debugBaseLoops=" + cache.getDebugTerritories().baseLoops().size()
-                : "styledCells=" + cache.getTerritories().getStyledCellByCellId().size();
-        LOG.debug("Political map render renderOnMap fired: " + builtCounts
-                + " factor=" + factor + " alphaMult=" + alphaMult);
+            ? "debugBaseLoops=" + cache.getDebugTerritories().baseLoops().size()
+            : "styledCells=" + cache.getTerritories().getStyledCellByCellId().size();
+
+        LOG.debug("Political map render renderOnMap fired: "
+            + builtCounts
+            + " factor=" + factor
+            + " alphaMult=" + alphaMult);
     }
 }

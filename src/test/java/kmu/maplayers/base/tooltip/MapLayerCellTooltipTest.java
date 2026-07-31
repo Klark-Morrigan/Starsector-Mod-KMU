@@ -95,6 +95,29 @@ final class MapLayerCellTooltipTest {
         }
 
         @Test
+        void resolveActiveTooltipAnswersTheActivePicksBoxWhileAnotherLayerWithholdsIts() {
+            // The per-layer half of the hover switching: a layer whose own tooltip switch is off
+            // offers no box, and that says nothing about the layer beside it - which is the case a
+            // single shared switch could not express. The dispatcher does not know the difference
+            // between a withheld box and a layer that has nothing to say, and must not.
+            var silencedLayerMock = mock(MapLayer.class);
+            var silencedRendererMock = mock(MapLayerRenderer.class);
+            when(silencedLayerMock.getId()).thenReturn("silenced_layer");
+            when(silencedLayerMock.getMapRenderer()).thenReturn(silencedRendererMock);
+            when(silencedRendererMock.resolveHoverTooltip()).thenReturn(Optional.empty());
+
+            MapLayerRegistry.registerLayers(
+                List.of(silencedLayerMock, tooltipLayerMock),
+                tooltipLayerMock);
+
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                globalMock.when(Global::getSector).thenReturn(null);
+
+                assertThat(MapLayerCellTooltip.resolveActiveTooltip()).contains(tooltipMock);
+            }
+        }
+
+        @Test
         void resolveActiveTooltipIsEmptyWhenTheActiveLayerHasNoRenderer() {
             // The "show nothing" tab's shape: a registered layer that supplies no renderer, which must
             // stay an ordinary layer here rather than a named special case.

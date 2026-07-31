@@ -9,9 +9,9 @@ import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.map.VanillaMapTooltip;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverGates;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.settings.KmuLunaSettings;
 
 import java.util.Optional;
 
@@ -27,9 +27,11 @@ import java.util.Optional;
  * branch here, and a switch-only tab - which supplies no renderer at all - shows nothing for the same
  * reason it paints nothing.
  *
- * <p>The dispatcher owns only the gates every hover tooltip shares - the master settings toggle, the
- * sector-map-with-starscape-off gate, a hovered cell, stepping aside while the vanilla map draws its
- * own tooltip - and resolves the hovered system, then hands it to the injected tooltip. The pass is
+ * <p>The dispatcher owns only the gates every hover tooltip shares - the settings switches that
+ * answer for every layer ({@link MapHoverGates}), the sector-map-with-starscape-off gate, a hovered
+ * cell, stepping aside while the vanilla map draws its own tooltip - and resolves the hovered system,
+ * then hands it to the injected tooltip. A layer's own tooltip switch stays with the layer, which
+ * withholds its box by injecting none. The pass is
  * read-only over the hover state and consumes no input, so the vanilla star-system tooltip keeps
  * drawing; the tooltip a layer injects owns its own content, look, and any further precondition.
  */
@@ -47,9 +49,11 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
-        // Root master switch: with the tooltip turned off in settings the box never draws, whatever
-        // the map state or hover. Read live each frame so toggling it takes effect without a rebuild.
-        if (!KmuLunaSettings.getMapHoverTooltipEnabled()) {
+        // The two hover switches that answer for every layer - the hovering master and the global
+        // tooltip switch. With either off no layer's box draws, whatever the map state or hover.
+        // The layer's own tooltip switch is the layer's to read: it withholds the box by injecting
+        // none, the same way a layer with nothing to say about a cell does.
+        if (!MapHoverGates.isHoverTooltipEnabled()) {
             return;
         }
         // Only the sector map with the starscape filter off shows the overlay, so only then is a hover

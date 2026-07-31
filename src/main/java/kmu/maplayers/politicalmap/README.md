@@ -120,7 +120,9 @@ as a change the engine fired no event for, answered into the framework's poll - 
 alliance membership being the one),
 `render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers to the three
 questions the framework's highlight asks about the cell under the cursor: the extent this frame
-painted there, the owner's border loops it might sit inside, and the shade its ground draws in),
+painted there, the owner's border loops it might sit inside, and the shade its ground draws in;
+and `PoliticalMapHoverGates` - whether this layer answers the cursor at all, its own two switches
+ANDed with the framework's, plus whether either kind of feedback still needs the cursor read),
 `tooltip` (`SystemDominationTooltip` - what this layer says about the hovered system, the ranked
 standings behind the fills, which the faction and alliance views inject into the framework's hover
 box and the claims view does not, plus the standing, territory, and status lines it is written from),

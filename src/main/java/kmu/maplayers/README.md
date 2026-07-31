@@ -128,12 +128,17 @@ about what the overlay means.
   hover lights up). `HoverHighlightGeometry` resolves that geometry and `HoverHighlightRenderer`
   burns the halo and the wash, both over a `HoverHighlightSource` - the three questions only the
   layer that owns the clusters can answer: the extent it painted under the cursor, the loops the
-  cell might sit inside, and the shade its ground draws in.
+  cell might sit inside, and the shade its ground draws in. `MapHoverGates` is the settings side:
+  hovering is switched at three tiers - a master over the whole map, a pair under it for the
+  effects and the box separately, and a pair of the layer's own - and this answers for the two that
+  reach every layer, which a layer ANDs its own into. So one layer's box can go dark while another's
+  stays up, and one row still silences them all.
 - **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
-  `MapLayerCellTooltip` owns the gates every hover box shares (the settings toggle, the sector map
-  with the starscape filter off, a hovered cell, stepping aside for the vanilla star tooltip) and
-  draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer with none, and a
-  switch-only tab with no renderer at all, show nothing for the same reason. `SystemCellTooltip` is
+  `MapLayerCellTooltip` owns the gates every hover box shares (the settings tiers above any layer,
+  the sector map with the starscape filter off, a hovered cell, stepping aside for the vanilla star
+  tooltip) and draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer
+  with none, a layer whose own tooltip switch is off, and a switch-only tab with no renderer at all
+  show nothing for the same reason. `SystemCellTooltip` is
   the shape a layer's box takes - the hovered system's name over the layer's own body, one look and
   one draw for both - and `CellTooltipRows` the four lines a body may be written in, so two layers'
   boxes differ only in what they say.

@@ -8,7 +8,7 @@ import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.settings.KmuLunaSettings;
+import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 
 import java.util.Optional;
 
@@ -34,6 +34,7 @@ import java.util.Optional;
  * lives in those three.
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
+
     /** The one shared instance; the political-map layer hands it to the map surface as its renderer. */
     public static final PoliticalMapLayerRenderer INSTANCE = new PoliticalMapLayerRenderer();
 
@@ -83,12 +84,18 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             return;
         }
         cache.refresh(view);
-        publishHoverIfEnabled(factor);
+        publishHoverIfAnyFeedbackNeedsIt(factor);
         overlayRenderer.renderOnMap(cache, factor, alphaMult);
     }
 
     @Override
     public Optional<MapHoverTooltip> resolveHoverTooltip() {
+        // This layer's own tooltip switch, off means no box from it - and the framework draws
+        // whatever the other layers offer regardless, which is the point of scoping it here rather
+        // than at the dispatcher.
+        if (!PoliticalMapHoverGates.isHoverTooltipEnabled()) {
+            return Optional.empty();
+        }
         // The hover box is resolved through the active view for the same reason the paint is: which
         // view is up decides what there is to say about a system - the faction and alliance views show
         // the domination breakdown, the claims view none - and the dispatcher above learns only that
@@ -100,14 +107,16 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         return view.resolveHoverTooltip();
     }
 
-    // Runs the cursor read only while the hover highlight is switched on. The whole feature - the
-    // map-matrix read (bridged, and a per-frame render-thread hop under Fast Rendering), the
-    // unproject, and the cell hit test - hangs off this call, so gating it here is what makes the
-    // toggle a real off switch rather than one that draws nothing while still paying to resolve the
-    // hover every frame. When off, the hover is parked so nothing downstream keeps a stale cell lit,
-    // and the publisher (and the renderer binding it holds) is never created.
-    private void publishHoverIfEnabled(float factor) {
-        if (!KmuLunaSettings.getPoliticalMapHoverEnabled()) {
+    // Runs the cursor read only while some hover feedback still wants the answer - either the halo
+    // and wash or the hover box. The whole read - the map-matrix read (bridged, and a per-frame
+    // render-thread hop under Fast Rendering), the unproject, and the cell hit test - hangs off this
+    // call, so gating it here is what makes the switches real off switches rather than ones that
+    // draw nothing while still paying to resolve the hover every frame. It is the union of the two
+    // kinds rather than the effects alone because the box needs the same hovered cell the halo does.
+    // With both off the hover is parked so nothing downstream keeps a stale cell lit, and the
+    // publisher (and the renderer binding it holds) is never created.
+    private void publishHoverIfAnyFeedbackNeedsIt(float factor) {
+        if (!PoliticalMapHoverGates.isCursorReadNeeded()) {
             MapHoverState.getInstance().clearHover();
             return;
         }
@@ -133,17 +142,20 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // hit-tests, so the hover parks over exactly the box the panel occupies; a null placement (the
     // bar is not on screen) is nothing to be over.
     private static boolean isCursorOverSidebar() {
+
         // The on-map sidebar is the one drawn on this screen, so the cursor test reads the on-map host's
         // own placement - the same host, controller, layer selection, and layout the render pass draws.
         var placement = MapSidebarHost.INSTANCE.resolvePlacement();
         if (placement == null) {
             return false;
         }
+        
         var uiX = UiCursor.getUiX();
         var uiY = UiCursor.getUiY();
+
         // The collapse notch protrudes past the body's edge - when the panel is docked it is the
         // only part still on screen - so a cursor over it is still over the sidebar.
         return placement.body().box().containsPoint(uiX, uiY)
-                || (placement.notch() != null && placement.notch().containsPoint(uiX, uiY));
+            || (placement.notch() != null && placement.notch().containsPoint(uiX, uiY));
     }
 }

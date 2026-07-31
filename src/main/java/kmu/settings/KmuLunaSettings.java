@@ -31,7 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * read them, so a player hunting a knob is asked the one question the code already
  * answers: is this the map framework's chrome or one layer's paint? {@code Map - Visuals}
  * carries what every map layer shares - the overlay sidebar, the map labels, the hover
- * tooltip - and {@code Map - Politics - Visuals} carries the political map's own palette.
+ * switches every layer answers to - and {@code Map - Politics - Visuals} carries the
+ * political map's own palette, its own hover switches included.
  * {@code Map - Politics - Domination} and {@code Map - Keybinds} follow the same reading.
  * The prefix is what makes the grouping legible, so a tab that is not a map feature (the
  * condition picker's) deliberately does not take it.
@@ -210,18 +211,39 @@ public final class KmuLunaSettings {
     private static final String DESATURATION_DARKENING_FIELD =
         "kmu_politicalMapDesaturationDarkening";
 
-    // Hover highlight settings (Map - Politics - Visuals tab): how the map answers the cursor -
-    // a halo around the hovered territory's frontier and a wash over the one hovered cell,
-    // both in the hovered ground's own palette colour. The enable toggle is the master switch:
-    // it gates the whole feature, so with it off the cursor read never runs and nothing is
-    // drawn. The halo is a stack of strokes, so it takes a widest-layer width, an
+    // Hover tiers, the top two (Map - Visuals tab): whether the map answers the cursor at all,
+    // and then whether each kind of answer does - both across every map layer. The master gates
+    // both kinds, so with it off no layer reads the cursor and nothing hover-driven is drawn or
+    // paid for. Under it sits one switch per kind of feedback: effects covers the halo and cell
+    // wash a layer paints, the tooltip covers the info box naming what is under the cursor. Every
+    // layer carries its own pair below these, so switching one layer's feedback off does not take
+    // the other layers' with it. The lower two ids read as the political map's because they
+    // predate the framework - the mismatch this class's note above explains.
+    private static final String HOVERING_ENABLED_FIELD =
+        "kmu_mapVisualsHoveringEnabled";
+    private static final String HOVER_EFFECTS_ENABLED_FIELD =
+        "kmu_politicalMapHoverEnabled";
+    private static final String HOVER_TOOLTIP_ENABLED_FIELD =
+        "kmu_politicalMapHoverTooltipEnabled";
+
+    // Hover tiers, the political map's own pair (Map - Politics - Visuals tab): the same two kinds
+    // of feedback scoped to this one layer's paint. Each ANDs with the global switch of its kind,
+    // so a layer switch only takes away feedback the tiers above already allow - which is what
+    // lets one layer keep its box while another's is off.
+    private static final String POLITICAL_HOVER_EFFECTS_ENABLED_FIELD =
+        "kmu_mapPoliticsVisualsHoverEffectsEnabled";
+    private static final String POLITICAL_HOVER_TOOLTIP_ENABLED_FIELD =
+        "kmu_mapPoliticsVisualsHoverTooltipEnabled";
+
+    // Hover highlight styling (Map - Politics - Visuals tab): what the halo around the hovered
+    // territory's frontier and the wash over the one hovered cell look like, both drawn in the
+    // hovered ground's own palette colour. Whether they draw at all is the hover tiers above; these
+    // shape them. The halo is a stack of strokes, so it takes a widest-layer width, an
     // innermost-layer opacity, a layer count, and a pulse (strength plus period); the wash
     // takes a fill opacity and its own outline opacity and width, since an interior cell reads
     // only by its trace. All feed the drawables rebuild, so a change repaints the highlight
     // live on the open map - which is the point of exposing them: the look is dialed in-engine
     // against real territory rather than guessed at build time.
-    private static final String HOVER_ENABLED_FIELD =
-        "kmu_politicalMapHoverEnabled";
     private static final String HOVER_HIGHLIGHT_COLOR_FIELD =
         "kmu_politicalMapHoverHighlightColor";
     private static final String HOVER_GLOW_OPACITY_FIELD =
@@ -240,15 +262,6 @@ public final class KmuLunaSettings {
         "kmu_politicalMapHoverWashOutlineOpacity";
     private static final String HOVER_WASH_OUTLINE_WIDTH_FIELD =
         "kmu_politicalMapHoverWashOutlineWidth";
-
-    // Hover tooltip master switch (Map - Visuals tab): whether the cursor tooltip - the box
-    // naming the hovered system and its owner - draws at all. Distinct from the
-    // hover-highlight switch above (the halo and cell wash): the tooltip is the info box,
-    // each gated on its own. It sits on the shared tab rather than beside the highlight
-    // because the tooltip host is the map-layer framework's, so the switch covers every
-    // layer's box, while the highlight above is the political map's own paint.
-    private static final String HOVER_TOOLTIP_ENABLED_FIELD =
-        "kmu_politicalMapHoverTooltipEnabled";
 
     // Dominance rules (Map - Politics - Domination tab): how the map decides a system's
     // dominant faction. Not styling fields - they change the political verdicts
@@ -623,7 +636,6 @@ public final class KmuLunaSettings {
     // quarter-depth breath, and a cell wash of a little over a third alpha under a crisp
     // near-opaque trace. Tuned to sit over the fills without swamping them - the fills
     // themselves paint at 0.4 - and expected to move once playtested.
-    private static final boolean DEFAULT_HOVER_ENABLED = true;
     private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
@@ -635,8 +647,15 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
 
-    // The hover tooltip draws by default while the map is up; its switch turns it off.
+    // Every hover tier is on by default, at all three levels. A tiered gate that shipped with any
+    // level off would read to a player as a feature that is broken rather than switched off, and
+    // defaulting the new levels on is also what keeps the tiering invisible to an existing player:
+    // the two levels they may already have switched off still switch the same feedback off.
+    private static final boolean DEFAULT_HOVERING_ENABLED = true;
+    private static final boolean DEFAULT_HOVER_EFFECTS_ENABLED = true;
     private static final boolean DEFAULT_HOVER_TOOLTIP_ENABLED = true;
+    private static final boolean DEFAULT_POLITICAL_HOVER_EFFECTS_ENABLED = true;
+    private static final boolean DEFAULT_POLITICAL_HOVER_TOOLTIP_ENABLED = true;
 
     // Label-anchor search knobs.
     private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
@@ -1123,20 +1142,51 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return whether the hover highlight is on at all - the master switch gating the per-frame
-     *         cursor read and every highlight pass; on by default
+     * @return whether the map answers the cursor at all - the master over both kinds of hover
+     *         feedback on every layer, so with it off no cursor read runs and nothing hover-driven
+     *         is drawn; on by default
      */
-    public static boolean getPoliticalMapHoverEnabled() {
-        return readBoolean(HOVER_ENABLED_FIELD, DEFAULT_HOVER_ENABLED);
+    public static boolean getMapHoveringEnabled() {
+        return readBoolean(HOVERING_ENABLED_FIELD, DEFAULT_HOVERING_ENABLED);
     }
 
     /**
-     * @return whether the hover tooltip - the box naming the system under the cursor -
-     *         draws at all; on by default, gated separately from the hover highlight. A
-     *         master switch read live each frame so toggling it needs no rebuild
+     * @return whether hover effects - the halo over the hovered ground and the wash on its cell -
+     *         are on across every map layer; on by default. Under the hovering master, and over
+     *         each layer's own effects switch
+     */
+    public static boolean getMapHoverEffectsEnabled() {
+        return readBoolean(HOVER_EFFECTS_ENABLED_FIELD, DEFAULT_HOVER_EFFECTS_ENABLED);
+    }
+
+    /**
+     * @return whether the hover tooltip - the box naming what the cursor is over - is on across
+     *         every map layer; on by default. Under the hovering master, and over each layer's own
+     *         tooltip switch. Read live each frame, so toggling it needs no rebuild
      */
     public static boolean getMapHoverTooltipEnabled() {
         return readBoolean(HOVER_TOOLTIP_ENABLED_FIELD, DEFAULT_HOVER_TOOLTIP_ENABLED);
+    }
+
+    /**
+     * @return whether the political map paints its own hover halo and cell wash; on by default.
+     *         The bottom tier, so it can only withhold effects the two global tiers already allow
+     */
+    public static boolean getPoliticalMapHoverEffectsEnabled() {
+        return readBoolean(
+            POLITICAL_HOVER_EFFECTS_ENABLED_FIELD,
+            DEFAULT_POLITICAL_HOVER_EFFECTS_ENABLED);
+    }
+
+    /**
+     * @return whether the political map shows its own hover box - the hovered system's standings;
+     *         on by default. The bottom tier, so it can only withhold the box the two global tiers
+     *         already allow, and it leaves another layer's box alone
+     */
+    public static boolean getPoliticalMapHoverTooltipEnabled() {
+        return readBoolean(
+            POLITICAL_HOVER_TOOLTIP_ENABLED_FIELD,
+            DEFAULT_POLITICAL_HOVER_TOOLTIP_ENABLED);
     }
 
     /**

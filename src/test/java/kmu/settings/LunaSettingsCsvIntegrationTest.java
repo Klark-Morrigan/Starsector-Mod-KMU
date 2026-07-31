@@ -48,6 +48,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * not mark a string as a setting - unrelated ids such as the terrain plugin's share it - so that second
  * walk names its exceptions rather than assuming there are none.
  *
+ * <p>A Boolean row's default column is held the same way where the value is a decision rather than a
+ * taste: the hover tiers ship on so that switching them is the player's move and not the file's, and
+ * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
+ * no stored value, so it is this column a fresh player is actually given.
+ *
  * <p>The last column fails the same way one column at a time: LunaLib creates a tab by being named, so a
  * mistyped tab name opens a new tab holding that row alone rather than raising anything. The tab walk
  * holds every row's placement against the set the screen is laid out into, which is why the layout is
@@ -63,6 +68,21 @@ final class LunaSettingsCsvIntegrationTest {
     private static final int OPTIONS_COLUMN = 8;
     private static final int TAB_COLUMN = 16;
     private static final String RADIO_FIELD_TYPE = "Radio";
+    private static final String BOOLEAN_FIELD_TYPE = "Boolean";
+    private static final String BOOLEAN_ON_VALUE = "TRUE";
+
+    // The five rows hovering is switched at - the master, the pair that answers for every map layer,
+    // and the political map's own pair - which are held to shipping on. The Java fallback beside each
+    // getter only answers while LunaLib has no stored value, so it is this column a fresh player
+    // actually gets; a row shipped off would read as a feature that is broken rather than one that is
+    // switched off, and the two ids a player may already have turned off are meant to keep switching
+    // the same feedback off after being lifted a tier.
+    private static final List<String> HOVER_TIER_FIELD_IDS = List.of(
+        "kmu_mapVisualsHoveringEnabled",
+        "kmu_politicalMapHoverEnabled",
+        "kmu_politicalMapHoverTooltipEnabled",
+        "kmu_mapPoliticsVisualsHoverEffectsEnabled",
+        "kmu_mapPoliticsVisualsHoverTooltipEnabled");
 
     // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
     // so a mistyped tab name is not an error there - it silently opens a tab of its own holding
@@ -122,7 +142,8 @@ final class LunaSettingsCsvIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioFieldIds")
         void radioOptionLabelsIncludeTheRowsOwnDefault(String fieldId) {
-            assertThat(readOptions(fieldId)).contains(readColumn(fieldId, DEFAULT_VALUE_COLUMN));
+            assertThat(readOptions(fieldId))
+                .contains(readColumn(fieldId, DEFAULT_VALUE_COLUMN, RADIO_FIELD_TYPE));
         }
     }
 
@@ -137,6 +158,22 @@ final class LunaSettingsCsvIntegrationTest {
                         + " so nothing holds their option labels frozen",
                     SETTINGS_CSV)
                 .isSubsetOf(listClassifiedRadioFieldIds());
+        }
+    }
+
+    @Nested
+    class HoverTierDefaults {
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideHoverTierFieldIds")
+        void hoverTierRowsAllShipSwitchedOn(String fieldId) {
+            assertThat(readColumn(fieldId, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: every hover tier ships on, so the tiering is invisible"
+                        + " to a player who has switched none of them",
+                    fieldId,
+                    SETTINGS_CSV)
+                .isEqualTo(BOOLEAN_ON_VALUE);
         }
     }
 
@@ -220,6 +257,12 @@ final class LunaSettingsCsvIntegrationTest {
             Arguments.of("kmu_politicalMapIndependentInnerBorderColor", FactionPaletteChoice.values()),
             Arguments.of("kmu_politicalMapIndependentFillColor", FactionPaletteChoice.values()),
             Arguments.of("kmu_politicalMapHoverHighlightColor", FactionPaletteChoice.values()));
+    }
+
+    // The rows hovering is switched at, one case each, so a row shipped off is named by the failure
+    // rather than hidden inside one assertion over five ids.
+    private static Stream<String> provideHoverTierFieldIds() {
+        return HOVER_TIER_FIELD_IDS.stream();
     }
 
     // The same table's field ids alone, for the checks that hold a row against itself.
@@ -337,19 +380,22 @@ final class LunaSettingsCsvIntegrationTest {
 
     // The row's offered option labels, trimmed of the spacing the authored rows use.
     private static List<String> readOptions(String fieldId) {
-        return Arrays.stream(readColumn(fieldId, OPTIONS_COLUMN).split(OPTION_SEPARATOR))
+        return Arrays
+            .stream(readColumn(fieldId, OPTIONS_COLUMN, RADIO_FIELD_TYPE).split(OPTION_SEPARATOR))
             .map(String::trim)
             .filter(option -> !option.isEmpty())
             .toList();
     }
 
-    // One cell of the named field's row. Fails the test outright when the row is missing or is not a
-    // Radio, since either means the table below no longer describes the shipped file.
-    private static String readColumn(String fieldId, int column) {
+    // One cell of the named field's row. Fails the test outright when the row is missing or is not of
+    // the type the caller reads it as, since either means the tables below no longer describe the
+    // shipped file - and a cell read off a row of the wrong type would otherwise be held against a
+    // column that means something else there.
+    private static String readColumn(String fieldId, int column, String expectedFieldType) {
         var row = findRow(fieldId);
         assertThat(row.get(FIELD_TYPE_COLUMN))
             .as("field type of %s", fieldId)
-            .isEqualTo(RADIO_FIELD_TYPE);
+            .isEqualTo(expectedFieldType);
         return row.get(column);
     }
 
