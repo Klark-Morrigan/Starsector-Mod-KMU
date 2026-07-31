@@ -27,6 +27,7 @@ import kmlib.starsector.systems.StarSystems;
  * seeding and the refresh fingerprint share one rule.
  */
 public final class MapVisibility {
+
     // Salt XORed into a decivilised system's id hash before the avalanche, so a
     // revealed ruin - a draw-class change on a system already on the map - lands a
     // different contribution from that same system drawn live, and the fingerprint
@@ -62,10 +63,10 @@ public final class MapVisibility {
             MapVisibilityOverrides overrides) {
 
         return shouldAppearOnMap(
-                system,
-                visibleStars,
-                isInhabited(sector, system, overrides),
-                overrides);
+            system,
+            visibleStars,
+            isInhabited(sector, system, overrides),
+            overrides);
     }
 
     /**
@@ -92,8 +93,8 @@ public final class MapVisibility {
             MapVisibilityOverrides overrides) {
 
         return overrides.isForcedOntoMap()
-                || hasVisibleMapAccess(system, visibleStars)
-                || isInhabited;
+            || hasVisibleMapAccess(system, visibleStars)
+            || isInhabited;
     }
 
     /**
@@ -116,10 +117,10 @@ public final class MapVisibility {
             MapVisibilityOverrides overrides) {
 
         return StarSystems.hasKnownOwnedMarket(
-                    sector,
-                    system,
-                    overrides.shouldIncludeUndiscoveredMarkets())
-                || DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
+                sector,
+                system,
+                overrides.shouldIncludeUndiscoveredMarkets())
+            || DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
     }
 
     /**
@@ -167,7 +168,7 @@ public final class MapVisibility {
             VisibleStars visibleStars) {
 
         return StarSystems.isReachable(system)
-                && isDrawnOnMap(system, visibleStars);
+            && isDrawnOnMap(system, visibleStars);
     }
 
     // Whether the vanilla map draws the system at all: as its star (a visible
@@ -180,6 +181,6 @@ public final class MapVisibility {
             StarSystemAPI system,
             VisibleStars visibleStars) {
         return visibleStars.isStarVisibleForSystem(system)
-                || system.isNebula();
+            || system.isNebula();
     }
 }

@@ -47,9 +47,9 @@ public final class CellTooltipRows {
             String value) {
 
         return TooltipRow
-                .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve()))
-                .carriesCrest(crestSpritePath)
-                .carriesValue(new TextSpan(value, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
+            .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve()))
+            .carriesCrest(crestSpritePath)
+            .carriesValue(new TextSpan(value, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
     }
 
     /**
@@ -68,10 +68,10 @@ public final class CellTooltipRows {
 
         var textColour = StarsectorUiColor.VANILLA_TEXT.resolve();
         return TooltipRow
-                .createRow(new TextSpan(text, textColour))
-                .carriesCrest(crestSpritePath)
-                .carriesValue(new TextSpan(value, textColour))
-                .indentsBy(MEMBER_INDENT);
+            .createRow(new TextSpan(text, textColour))
+            .carriesCrest(crestSpritePath)
+            .carriesValue(new TextSpan(value, textColour))
+            .indentsBy(MEMBER_INDENT);
     }
 
     /**
@@ -98,7 +98,7 @@ public final class CellTooltipRows {
      */
     public static TooltipRow.TableRow buildStandaloneRow(String text) {
         return TooltipRow
-                .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_TEXT.resolve()))
-                .clearsCrestColumn();
+            .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_TEXT.resolve()))
+            .clearsCrestColumn();
     }
 }

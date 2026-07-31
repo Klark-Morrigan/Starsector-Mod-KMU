@@ -86,8 +86,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // also frees it of the crest gutter and the value column those rows align to.
     private static TooltipRow.CentredRow buildHeaderRow(StarSystemAPI system) {
         return TooltipRow.createCentredRow(new TextSpan(
-                system.getName(),
-                StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
+            system.getName(),
+            StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
     }
 
     // The tooltip's fixed look: the typography every row draws in, the shared opacity, and the frame
@@ -100,10 +100,10 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static CursorTooltipStyle buildStyle() {
         var bodyStyle = TextStyle.createStyle(BODY_FONT);
         return new CursorTooltipStyle(
-                new TooltipStyle(bodyStyle, bodyStyle),
-                OPACITY,
-                BORDER_WIDTH,
-                StarsectorUiColor.BLACK.resolve(),
-                StarsectorUiColor.VANILLA_PLAYER_BASE.resolve());
+            new TooltipStyle(bodyStyle, bodyStyle),
+            OPACITY,
+            BORDER_WIDTH,
+            StarsectorUiColor.BLACK.resolve(),
+            StarsectorUiColor.VANILLA_PLAYER_BASE.resolve());
     }
 }

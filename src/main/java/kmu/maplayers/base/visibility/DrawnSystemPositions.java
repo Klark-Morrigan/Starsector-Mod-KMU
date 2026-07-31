@@ -44,10 +44,10 @@ public final class DrawnSystemPositions {
         // rather than a per-system hyperspace rescan.
         var visibleStars = VisibleStars.scan(sector);
         return system -> MapVisibility.shouldAppearOnMap(
-                sector,
-                system,
-                visibleStars,
-                overrides);
+            sector,
+            system,
+            visibleStars,
+            overrides);
     }
 
     /**
@@ -64,7 +64,7 @@ public final class DrawnSystemPositions {
             MapVisibilityOverrides overrides) {
 
         return StarSystems.collectPositionsById(
-                sector,
-                buildDrawnSystemPredicate(sector, overrides));
+            sector,
+            buildDrawnSystemPredicate(sector, overrides));
     }
 }

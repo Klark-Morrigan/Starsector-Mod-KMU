@@ -28,13 +28,13 @@ package kmu.maplayers.base.visibility;
  *                                         regardless of access or inhabitation
  */
 public record MapVisibilityOverrides(
-        boolean shouldIncludeUndiscoveredMarkets,
-        boolean isForcedOntoMap) {
+    boolean shouldIncludeUndiscoveredMarkets,
+    boolean isForcedOntoMap) {
 
     /**
      * The no-override view: both widenings off, so the map admits exactly what the normal
      * gates admit. The default a caller with no reveal to apply passes.
      */
     public static final MapVisibilityOverrides NONE =
-            new MapVisibilityOverrides(false, false);
+        new MapVisibilityOverrides(false, false);
 }
