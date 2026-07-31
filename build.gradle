@@ -41,6 +41,12 @@ sourceSets {
     }
 }
 
+// On-demand Java formatting (`gradlew spotlessApply`). Applied after the source
+// sets above because the shared script formats
+// whichever ones exist when it runs; utils is KMU's own code, so it is styled
+// like main and test rather than exempted.
+apply from: "${rootDir}/../Common-Java/gradle/spotless-java.gradle"
+
 // The shared conventions expose the resolved install root so KMU can locate
 // its own extra dependencies without re-deriving the path.
 def starsectorRoot = project.ext.starsectorRoot
