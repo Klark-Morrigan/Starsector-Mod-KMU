@@ -51,7 +51,7 @@ final class SectorFixture {
 
     private final List<String> systemIds = new ArrayList<>();
     private final List<double[]> sites = new ArrayList<>();
-    private final Map<String, String> groupKeyBySystemId = new LinkedHashMap<>();
+    private final Map<String, String> ownerBySystemId = new LinkedHashMap<>();
     private final Map<String, Integer> scoreBySystemId = new LinkedHashMap<>();
 
     private SectorFixture() {
@@ -133,8 +133,8 @@ final class SectorFixture {
      *
      * @return the key map, keyed by system id
      */
-    Map<String, String> getGroupKeyBySystemId() {
-        return groupKeyBySystemId;
+    Map<String, String> getOwnerBySystemId() {
+        return ownerBySystemId;
     }
 
     Map<String, Integer> getScoreBySystemId() {
@@ -194,7 +194,7 @@ final class SectorFixture {
         // An unowned system carries no key at all rather than an empty one, so it reads as
         // ungrouped to every consumer exactly as a real uninhabited system does.
         if (!columns[COLUMN_GROUP_KEY].isEmpty()) {
-            groupKeyBySystemId.put(systemId, columns[COLUMN_GROUP_KEY]);
+            ownerBySystemId.put(systemId, columns[COLUMN_GROUP_KEY]);
         }
         scoreBySystemId.put(systemId, Integer.parseInt(columns[COLUMN_SCORE]));
     }

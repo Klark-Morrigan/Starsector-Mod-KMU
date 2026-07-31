@@ -110,7 +110,7 @@ final class EdgeClassifierTest {
 
         @Test
         void classifyAcrossReturnsOpenFrontierFromAnUngroupedCellFacingAGroupedOne() {
-            // The empty/deciv cell's own side: an ungrouped cell (ownGroupKey null) facing
+            // The empty/deciv cell's own side: an ungrouped cell (cellOwner null) facing
             // a grouped neighbour sees the same frontier, so the shaper can pull its edge in
             // toward the star. Pins the null-own direction through classifyAcross itself.
             var edge = edgeAcrossSystem("B");
@@ -136,7 +136,7 @@ final class EdgeClassifierTest {
         void classifyAcrossReturnsInteriorSeamForSameGroundUnderAKey() {
             // A cut interior to one key's absorbed region: the far side is that key's own
             // ground, so it fuses whatever key sits either side, with no system to look up.
-            var edge = edgeFacing(EdgeTarget.SAME_TERRITORY);
+            var edge = edgeFacing(EdgeTarget.SAME_OWNER);
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
                     .isEqualTo(EdgeClass.INTERIOR_SEAM);
@@ -147,7 +147,7 @@ final class EdgeClassifierTest {
             // Same-territory fuses even an ungrouped cell's own cut - a null-keyed shard of one
             // dead star's leftover space - which "same key both sides" could not express for a
             // null key, and which must not read a null system out of the map.
-            var edge = edgeFacing(EdgeTarget.SAME_TERRITORY);
+            var edge = edgeFacing(EdgeTarget.SAME_OWNER);
 
             assertThatCode(() -> assertThat(
                     EdgeClassifier.classifyAcross(edge, null, Map.of("B", "F")))

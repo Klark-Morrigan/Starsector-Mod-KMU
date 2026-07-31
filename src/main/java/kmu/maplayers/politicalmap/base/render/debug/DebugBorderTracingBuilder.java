@@ -77,7 +77,7 @@ public final class DebugBorderTracingBuilder {
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
 
-        for (var memberCellIds : cellGrouping.groupCellIdsByKey().values()) {
+        for (var memberCellIds : cellGrouping.groupCellIdsByOwner().values()) {
             // Whole clusters, so no neighbour is coincident: every boundary edge takes the
             // uniform channel, exactly as the drawn national border does.
             var insetRings = borderTrace.traceRings(
@@ -136,7 +136,7 @@ public final class DebugBorderTracingBuilder {
         // draw makes, which is what keeps the overlay showing the cells the map would show.
         var renderStyle = RenderStyleReader.readRenderStyle();
         for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
-            if (cellGrouping.resolveGroupKeyOf(entry.getKey()) != null) {
+            if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
                 continue;
             }
             // A factionless cell resolves its decivilised/uninhabited style through the system
@@ -150,7 +150,7 @@ public final class DebugBorderTracingBuilder {
             var shaped = CellShaper.shapeCell(
                     entry.getValue(),
                     null,
-                    cellGrouping.groupKeyBySystemId(),
+                    cellGrouping.ownerBySystemId(),
                     CellShaper.BORDER_INSET_DISTANCE);
             if (shaped.fillPolygon().isEmpty()) {
                 continue;

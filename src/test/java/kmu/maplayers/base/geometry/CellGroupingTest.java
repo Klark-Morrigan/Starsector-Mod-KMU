@@ -48,7 +48,7 @@ final class CellGroupingTest {
             // rather than as neutral ground.
             var grouping = new CellGrouping(Map.of("wedge", "A"), Map.of("A", "F"));
 
-            assertThat(grouping.resolveGroupKeyOf("wedge")).isEqualTo("F");
+            assertThat(grouping.resolveOwnerOf("wedge")).isEqualTo("F");
         }
 
         @Test
@@ -56,7 +56,7 @@ final class CellGroupingTest {
             // No star to look a key up through, so a shard is ungrouped whatever the key map says.
             var grouping = new CellGrouping(Map.of("A", "A"), Map.of("A", "F"));
 
-            assertThat(grouping.resolveGroupKeyOf("shard")).isNull();
+            assertThat(grouping.resolveOwnerOf("shard")).isNull();
         }
 
         @Test
@@ -64,7 +64,7 @@ final class CellGroupingTest {
             // The cell draws as a real star, but that star holds no market, so it is ungrouped.
             var grouping = new CellGrouping(Map.of("A", "A"), Map.of());
 
-            assertThat(grouping.resolveGroupKeyOf("A")).isNull();
+            assertThat(grouping.resolveOwnerOf("A")).isNull();
         }
     }
 
@@ -79,7 +79,7 @@ final class CellGroupingTest {
                     Map.of("A", "A", "wedge", "A", "B", "B"),
                     Map.of("A", "F", "B", "G"));
 
-            var cellsByKey = grouping.groupCellIdsByKey();
+            var cellsByKey = grouping.groupCellIdsByOwner();
 
             assertThat(cellsByKey.get("F")).containsExactlyInAnyOrder("A", "wedge");
             assertThat(cellsByKey.get("G")).containsExactly("B");
@@ -93,7 +93,7 @@ final class CellGroupingTest {
                     Map.of("A", "A", "ungrouped", "U"),
                     Map.of("A", "F"));
 
-            var cellsByKey = grouping.groupCellIdsByKey();
+            var cellsByKey = grouping.groupCellIdsByOwner();
 
             assertThat(cellsByKey).containsOnlyKeys("F");
             assertThat(cellsByKey.get("F")).containsExactly("A");
@@ -103,7 +103,7 @@ final class CellGroupingTest {
         void groupCellIdsByKeyIsEmptyWhenNothingIsGrouped() {
             var grouping = new CellGrouping(Map.of("A", "A"), Map.of());
 
-            assertThat(grouping.groupCellIdsByKey()).isEmpty();
+            assertThat(grouping.groupCellIdsByOwner()).isEmpty();
         }
     }
 }

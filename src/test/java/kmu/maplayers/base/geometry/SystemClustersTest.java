@@ -37,12 +37,12 @@ final class SystemClustersTest {
     // The grouping the clustering runs over: each cell drawing as its own star (identity
     // draws-as over the cell set), keyed by the given grouping keys.
     private static CellGrouping grouping(
-            Map<String, List<CellEdge>> edges, Map<String, String> groupKeys) {
+            Map<String, List<CellEdge>> edges, Map<String, String> owners) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
         for (var cellId : edges.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        return new CellGrouping(systemIdByCellId, groupKeys);
+        return new CellGrouping(systemIdByCellId, owners);
     }
 
     @Nested
@@ -54,9 +54,9 @@ final class SystemClustersTest {
             var edges = Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A")));
-            var groupKeys = Map.of("A", "F", "B", "F");
+            var owners = Map.of("A", "F", "B", "F");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactlyInAnyOrder("A", "B");
@@ -70,9 +70,9 @@ final class SystemClustersTest {
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A"), edgeTo("C")),
                     "C", List.of(edgeTo("B")));
-            var groupKeys = Map.of("A", "F", "B", "F", "C", "F");
+            var owners = Map.of("A", "F", "B", "F", "C", "F");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactlyInAnyOrder("A", "B", "C");
@@ -85,9 +85,9 @@ final class SystemClustersTest {
             var edges = Map.of(
                     "A", List.of(boundEdge()),
                     "B", List.of(boundEdge()));
-            var groupKeys = Map.of("A", "F", "B", "F");
+            var owners = Map.of("A", "F", "B", "F");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(2);
         }
@@ -99,9 +99,9 @@ final class SystemClustersTest {
             var edges = Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A")));
-            var groupKeys = Map.of("A", "F", "B", "G");
+            var owners = Map.of("A", "F", "B", "G");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(2);
             assertThat(clusters).allSatisfy(cluster -> assertThat(cluster).hasSize(1));
@@ -114,9 +114,9 @@ final class SystemClustersTest {
             var edges = Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A")));
-            var groupKeys = Map.of("A", "F");
+            var owners = Map.of("A", "F");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactly("A");

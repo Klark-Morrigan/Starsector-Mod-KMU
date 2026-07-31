@@ -44,12 +44,12 @@ final class SystemClusterBordersTest {
     // The grouping to trace under: each cell drawing as its own star (identity draws-as over
     // the cell set), keyed by the given grouping keys.
     private static CellGrouping grouping(
-            Map<String, List<CellEdge>> edges, Map<String, String> groupKeys) {
+            Map<String, List<CellEdge>> edges, Map<String, String> owners) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
         for (var cellId : edges.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        return new CellGrouping(systemIdByCellId, groupKeys);
+        return new CellGrouping(systemIdByCellId, owners);
     }
 
     @Nested
@@ -66,10 +66,10 @@ final class SystemClusterBordersTest {
                     "B", List.of(
                             edge(10, 0, 20, 0, null), edge(20, 0, 20, 10, null),
                             edge(20, 10, 10, 10, null), edge(10, 10, 10, 0, "A")));
-            var groupKeys = Map.of("A", "F", "B", "F");
+            var owners = Map.of("A", "F", "B", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A", "B"), edges, grouping(edges, groupKeys), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A", "B"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
@@ -85,10 +85,10 @@ final class SystemClusterBordersTest {
                     "A", List.of(
                             edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
                             edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)));
-            var groupKeys = Map.of("A", "F", "B", "G");
+            var owners = Map.of("A", "F", "B", "G");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A"), edges, grouping(edges, groupKeys), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
@@ -105,10 +105,10 @@ final class SystemClusterBordersTest {
                     "A", List.of(
                             edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
                             edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)));
-            var groupKeys = Map.of("A", "F");
+            var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A"), edges, grouping(edges, groupKeys), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
@@ -132,10 +132,10 @@ final class SystemClusterBordersTest {
                     "A", List.of(
                             edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, null),
                             edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)));
-            var groupKeys = Map.of("A", "F");
+            var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A"), edges, grouping(edges, groupKeys), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     20.0, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).isEmpty();
@@ -176,12 +176,12 @@ final class SystemClusterBordersTest {
                     "B", List.of(
                             edge(10, 0, 20, 0, null), edge(20, 0, 20, 10, null),
                             edge(20, 10, 10, 10, null), edge(10, 10, 10, 0, "A")));
-            var groupKeys = Map.of("A", "F#solid", "B", "F#hatched");
+            var owners = Map.of("A", "F#solid", "B", "F#hatched");
             return new TracedPair(
-                    SystemClusterBorders.traceBorderRings(List.of("A"), edges, grouping(edges, groupKeys),
+                    SystemClusterBorders.traceBorderRings(List.of("A"), edges, grouping(edges, owners),
                             aCoincidentNeighbours,
                             BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT).get(0),
-                    SystemClusterBorders.traceBorderRings(List.of("B"), edges, grouping(edges, groupKeys),
+                    SystemClusterBorders.traceBorderRings(List.of("B"), edges, grouping(edges, owners),
                             bCoincidentNeighbours,
                             BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT).get(0));
         }
@@ -196,10 +196,10 @@ final class SystemClusterBordersTest {
                     "A", List.of(
                             edge(0, 0, 100, 0, null), edge(100, 0, 100, 100, "B"),
                             edge(100, 100, 0, 100, null), edge(0, 100, 0, 0, null)));
-            var groupKeys = Map.of("A", "F");
+            var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A"), edges, grouping(edges, groupKeys), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);

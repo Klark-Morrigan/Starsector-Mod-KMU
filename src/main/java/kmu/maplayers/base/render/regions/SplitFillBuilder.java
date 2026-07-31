@@ -129,7 +129,7 @@ public final class SplitFillBuilder {
     // frontier draws it. Suffixing the footprint's own key leaves the derived keys as
     // collision-free as it already is.
     private Map<String, String> mapSubRegionKeyBySystemId(FillSplit split, String regionKey) {
-        var keys = new HashMap<>(cellGrouping.groupKeyBySystemId());
+        var keys = new HashMap<>(cellGrouping.ownerBySystemId());
         putSubRegionKeys(keys, split, FillState.SOLID, regionKey + SOLID_SUB_REGION_SUFFIX);
         putSubRegionKeys(keys, split, FillState.HATCHED, regionKey + HATCHED_SUB_REGION_SUFFIX);
         putSubRegionKeys(keys, split, FillState.UNFILLED, regionKey + UNFILLED_SUB_REGION_SUFFIX);

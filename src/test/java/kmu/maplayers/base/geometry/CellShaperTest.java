@@ -128,8 +128,8 @@ final class CellShaperTest {
     // Shapes the cells under the identity draws-as grouping, so a test names its edges and
     // keys exactly as before while the shaper reads a cell's key through its own star.
     private static Map<String, ShapedCell> shape(
-            Map<String, List<CellEdge>> edges, Map<String, String> groupKeys, double inset) {
-        return CellShaper.shapeCells(edges, grouping(edges, groupKeys), inset);
+            Map<String, List<CellEdge>> edges, Map<String, String> owners, double inset) {
+        return CellShaper.shapeCells(edges, grouping(edges, owners), inset);
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
@@ -143,12 +143,12 @@ final class CellShaperTest {
     // The grouping to shape under: each cell drawing as its own star (identity draws-as over
     // the cell set), keyed by the given grouping keys.
     private static CellGrouping grouping(
-            Map<String, List<CellEdge>> edges, Map<String, String> groupKeys) {
+            Map<String, List<CellEdge>> edges, Map<String, String> owners) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
         for (var cellId : edges.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        return new CellGrouping(systemIdByCellId, groupKeys);
+        return new CellGrouping(systemIdByCellId, owners);
     }
 
     // The unit square (0,0)..(10,10) CCW, its right edge (x = 10) tagged with the

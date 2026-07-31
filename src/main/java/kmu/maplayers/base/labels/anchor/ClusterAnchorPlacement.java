@@ -84,7 +84,7 @@ public final class ClusterAnchorPlacement {
             if (sites.isEmpty()) {
                 continue;
             }
-            var groupKey = grouping.groupKeyBySystemId().get(memberSystemIds.get(0));
+            var owner = grouping.ownerBySystemId().get(memberSystemIds.get(0));
             var axis = resolveClusterAxis(memberSystemIds, edgesByCellId, sites);
             var rings = spec.search().borderTrace().traceRings(
                     memberSystemIds,
@@ -95,9 +95,9 @@ public final class ClusterAnchorPlacement {
                         rings,
                         siteBySystemId,
                         axis,
-                        labelColorByGroupKey.apply(groupKey),
+                        labelColorByGroupKey.apply(owner),
                         spec,
-                        nameEstimatorByGroupKey.apply(groupKey)));
+                        nameEstimatorByGroupKey.apply(owner)));
         }
         return anchors;
     }

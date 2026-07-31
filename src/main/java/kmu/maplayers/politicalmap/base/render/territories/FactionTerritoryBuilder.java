@@ -141,7 +141,7 @@ public final class FactionTerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
 
-        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByKey();
+        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByOwner();
         for (var bloc : grouped.entrySet()) {
             var territory = buildFactionTerritory(
                     territories,

@@ -32,16 +32,16 @@ import java.util.TreeMap;
  * LOOKS - only what shape it is.
  *
  * @param cellEdgesByCellId  each cell, as its adjacency-tagged edges
- * @param groupKeyByCellId   the grouping key per cell; a cell absent from the map is
+ * @param ownerByCellId   the grouping key per cell; a cell absent from the map is
  *                           ungrouped, which is what makes it neutral ground
  * @param shapedCellByCellId each cell after the border channel is cut inward
- * @param ringsByGroupKey     each grouping key's traced cluster rings
+ * @param ringsByOwner     each grouping key's traced cluster rings
  */
 record SectorGeometry(
         Map<String, List<CellEdge>> cellEdgesByCellId,
-        Map<String, String> groupKeyByCellId,
+        Map<String, String> ownerByCellId,
         Map<String, ShapedCell> shapedCellByCellId,
-        Map<String, List<List<double[]>>> ringsByGroupKey) {
+        Map<String, List<List<double[]>>> ringsByOwner) {
 
     /**
      * Runs the full pipeline: partition the sites, shape each cell, trace each grouping key.
@@ -61,11 +61,11 @@ record SectorGeometry(
         // draws-as map is identity over the cell ids.
         var grouping = new CellGrouping(
                 identityOver(cellEdges.keySet()),
-                fixture.getGroupKeyBySystemId());
-        var groupKeys = fixture.getGroupKeyBySystemId();
+                fixture.getOwnerBySystemId());
+        var owners = fixture.getOwnerBySystemId();
         var shaped = CellShaper.shapeCells(cellEdges, grouping, parameters.borderInset());
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
-        for (var group : groupCellIdsByGroupKey(groupKeys).entrySet()) {
+        for (var group : groupCellIdsByOwner(owners).entrySet()) {
             rings.put(group.getKey(), SystemClusterBorders.traceBorderRings(
                     group.getValue(),
                     cellEdges,
@@ -75,19 +75,19 @@ record SectorGeometry(
                     parameters.weldTolerance(),
                     parameters.miterSpikeLimit()));
         }
-        return new SectorGeometry(cellEdges, groupKeys, shaped, rings);
+        return new SectorGeometry(cellEdges, owners, shaped, rings);
     }
 
     /**
      * The cells each grouping key holds, sorted so a failure names the same key run to run and a
      * drawing's layer order does not shift under a map iteration change.
      *
-     * @param groupKeyByCellId the grouping key per cell
+     * @param ownerByCellId the grouping key per cell
      * @return member cell ids per grouping key
      */
-    static Map<String, List<String>> groupCellIdsByGroupKey(Map<String, String> groupKeyByCellId) {
+    static Map<String, List<String>> groupCellIdsByOwner(Map<String, String> ownerByCellId) {
         var members = new TreeMap<String, List<String>>();
-        for (var entry : groupKeyByCellId.entrySet()) {
+        for (var entry : ownerByCellId.entrySet()) {
             members.computeIfAbsent(entry.getValue(), key -> new ArrayList<>()).add(entry.getKey());
         }
         return members;

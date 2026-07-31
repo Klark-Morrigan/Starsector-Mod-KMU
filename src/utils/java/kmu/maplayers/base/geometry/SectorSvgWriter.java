@@ -63,7 +63,7 @@ final class SectorSvgWriter {
         // the cell edge it came from.
         appendRawCells(svg, geometry.cellEdgesByCellId());
         appendNeutralCells(svg, geometry);
-        appendBlocRings(svg, geometry.ringsByGroupKey());
+        appendBlocRings(svg, geometry.ringsByOwner());
         appendSites(svg, fixture.getSites());
         svg.append("</g>\n</svg>\n");
         try {
@@ -112,7 +112,7 @@ final class SectorSvgWriter {
     // build left it, not as the sector was handed in.
     private static void appendNeutralCells(StringBuilder svg, SectorGeometry geometry) {
         for (var entry : geometry.shapedCellByCellId().entrySet()) {
-            if (geometry.groupKeyByCellId().containsKey(entry.getKey())) {
+            if (geometry.ownerByCellId().containsKey(entry.getKey())) {
                 continue;
             }
             appendPolygon(svg, entry.getValue().fillPolygon(), "none", NEUTRAL_COLOUR, RING_STROKE);

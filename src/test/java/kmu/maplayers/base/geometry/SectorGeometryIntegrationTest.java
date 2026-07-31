@@ -148,7 +148,7 @@ class SectorGeometryIntegrationTest {
             var geometry = geometryOf(sector);
             var pinned = 0;
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
-                if (geometry.groupKeyByCellId().containsKey(entry.getKey())
+                if (geometry.ownerByCellId().containsKey(entry.getKey())
                         || entry.getValue().fillPolygon().isEmpty()) {
                     continue;
                 }
@@ -169,9 +169,9 @@ class SectorGeometryIntegrationTest {
         void every_bloc_holding_a_cell_traces_at_least_one_ring(String sector) {
             var geometry = geometryOf(sector);
             var blocsWithoutRings = new ArrayList<String>();
-            for (var bloc : SectorGeometry.groupCellIdsByGroupKey(geometry.groupKeyByCellId())
+            for (var bloc : SectorGeometry.groupCellIdsByOwner(geometry.ownerByCellId())
                     .entrySet()) {
-                if (geometry.ringsByGroupKey().get(bloc.getKey()).isEmpty()) {
+                if (geometry.ringsByOwner().get(bloc.getKey()).isEmpty()) {
                     blocsWithoutRings.add(bloc.getKey());
                 }
             }
@@ -184,7 +184,7 @@ class SectorGeometryIntegrationTest {
             // A ring the inset folded over is dropped by the trace's own collapse guard, so
             // anything handed back must be drawable; a degenerate survivor is the shape an
             // orphaned loop takes.
-            for (var rings : geometryOf(sector).ringsByGroupKey().values()) {
+            for (var rings : geometryOf(sector).ringsByOwner().values()) {
                 for (var ring : rings) {
                     assertThat(ring.size()).isGreaterThanOrEqualTo(3);
                     assertThat(Math.abs(PolygonRegions.computeSignedArea(ring))).isGreaterThan(0.0);

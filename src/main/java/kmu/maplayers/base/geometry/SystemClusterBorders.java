@@ -131,12 +131,12 @@ public final class SystemClusterBorders {
             if (edges == null) {
                 continue;
             }
-            var ownGroupKey = grouping.resolveGroupKeyOf(cellId);
+            var cellOwner = grouping.resolveOwnerOf(cellId);
             for (var edge : edges) {
                 var edgeClass = EdgeClassifier.classifyAcross(
                         edge,
-                        ownGroupKey,
-                        grouping.groupKeyBySystemId());
+                        cellOwner,
+                        grouping.ownerBySystemId());
                 if (!edgeClass.isBoundary()) {
                     continue;
                 }

@@ -52,17 +52,17 @@ final class ClusterAnchorPlacementTest {
 
     // The colour seam the geometry tests run under: one shade for every grouping key, since
     // none of them assert on colour.
-    private static final Function<String, Color> FIXED_LABEL_COLORS = groupKey -> LABEL_COLOR;
+    private static final Function<String, Color> FIXED_LABEL_COLORS = owner -> LABEL_COLOR;
 
     // The grouping the anchor search traces under: each cell drawing as its own star (identity
     // draws-as over the group-key map's cells, all grouped cluster members here), keyed by the
     // given grouping keys.
-    private static CellGrouping grouping(Map<String, String> groupKeyBySystemId) {
+    private static CellGrouping grouping(Map<String, String> ownerBySystemId) {
         var systemIdByCellId = new LinkedHashMap<String, String>();
-        for (var cellId : groupKeyBySystemId.keySet()) {
+        for (var cellId : ownerBySystemId.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        return new CellGrouping(systemIdByCellId, groupKeyBySystemId);
+        return new CellGrouping(systemIdByCellId, ownerBySystemId);
     }
 
     @Nested
@@ -457,8 +457,8 @@ final class ClusterAnchorPlacementTest {
             // label's lines, so the resolver must be asked with the key the cluster's
             // members carry - the search's only handle on which name this box is for.
             var askedGroupKeys = new ArrayList<String>();
-            Function<String, LabelLengthEstimator> recordingResolver = groupKey -> {
-                askedGroupKeys.add(groupKey);
+            Function<String, LabelLengthEstimator> recordingResolver = owner -> {
+                askedGroupKeys.add(owner);
                 return new AspectLabelLengthEstimator(SLENDER_ASPECT);
             };
             ClusterAnchorPlacement.computeClusterAnchors(
@@ -475,8 +475,8 @@ final class ClusterAnchorPlacementTest {
             // up by the same key the name is: the search only carries it onto the anchor, so
             // it never has to know what makes one cluster's colour differ from another's.
             var askedGroupKeys = new ArrayList<String>();
-            Function<String, Color> recordingColors = groupKey -> {
-                askedGroupKeys.add(groupKey);
+            Function<String, Color> recordingColors = owner -> {
+                askedGroupKeys.add(owner);
                 return Color.MAGENTA;
             };
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
@@ -626,7 +626,7 @@ final class ClusterAnchorPlacementTest {
         // A per-key estimator resolver that hands every cluster the same aspect stand-in -
         // the name-estimator seam the line- and band-fit tests size against.
         private static Function<String, LabelLengthEstimator> aspectNameEstimators(double aspect) {
-            return groupKey -> new AspectLabelLengthEstimator(aspect);
+            return owner -> new AspectLabelLengthEstimator(aspect);
         }
 
         // The slender stand-in resolver behind the line-fit tests.

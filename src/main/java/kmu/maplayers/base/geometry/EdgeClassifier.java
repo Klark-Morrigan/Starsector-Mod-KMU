@@ -34,20 +34,20 @@ public final class EdgeClassifier {
      *       BOUNDARY.</li>
      * </ul>
      *
-     * @param ownGroupKey       the grouping key of this side, or null if ungrouped
-     * @param neighbourGroupKey the grouping key across the edge, or null if ungrouped or
+     * @param cellOwner       the grouping key of this side, or null if ungrouped
+     * @param neighbourOwner the grouping key across the edge, or null if ungrouped or
      *                          a frontier into empty space
      * @return INTERIOR_SEAM for a shared non-null key, OPEN_FRONTIER for a key on exactly
      *         one side, else BOUNDARY
      */
-    public static EdgeClass classify(String ownGroupKey, String neighbourGroupKey) {
-        if (ownGroupKey != null && ownGroupKey.equals(neighbourGroupKey)) {
+    public static EdgeClass classify(String cellOwner, String neighbourOwner) {
+        if (cellOwner != null && cellOwner.equals(neighbourOwner)) {
             return EdgeClass.INTERIOR_SEAM;
         }
         // Exactly one side grouped: a keyed cell facing an unkeyed neighbour (or the
         // reverse). This is the frontier a consumer can push outward, kept distinct from a
         // boundary between two differing keys or between two ungrouped cells.
-        if ((ownGroupKey == null) != (neighbourGroupKey == null)) {
+        if ((cellOwner == null) != (neighbourOwner == null)) {
             return EdgeClass.OPEN_FRONTIER;
         }
         return EdgeClass.BOUNDARY;
@@ -64,9 +64,9 @@ public final class EdgeClassifier {
      * interior seam outright - the far side is this cell's own ground, so no key can differ.
      *
      * @param edge             the cell edge, tagged with what lies across it
-     * @param ownGroupKey      the grouping key of the cell this edge belongs to, or null if
+     * @param cellOwner      the grouping key of the cell this edge belongs to, or null if
      *                         that cell is ungrouped
-     * @param groupKeyBySystemId the grouping key per system, to look up the key of a system
+     * @param ownerBySystemId the grouping key per system, to look up the key of a system
      *                         across the edge
      * @return INTERIOR_SEAM for a shared non-null key or for same-ground, OPEN_FRONTIER for
      *         a grouped cell facing an ungrouped star, else BOUNDARY; the reach bound is always
@@ -74,16 +74,16 @@ public final class EdgeClassifier {
      */
     public static EdgeClass classifyAcross(
             CellEdge edge,
-            String ownGroupKey,
-            Map<String, String> groupKeyBySystemId) {
+            String cellOwner,
+            Map<String, String> ownerBySystemId) {
         var target = edge.target();
         if (target instanceof EdgeTarget.AcrossSystem acrossSystem) {
-            return classify(ownGroupKey, groupKeyBySystemId.get(acrossSystem.systemId()));
+            return classify(cellOwner, ownerBySystemId.get(acrossSystem.systemId()));
         }
         // Same ground on both sides, so the edge fuses whatever this cell's key is - an
         // ungrouped cell's own cut included, which "same key both sides" could not express
         // for a null key.
-        if (EdgeTarget.SAME_TERRITORY.equals(target)) {
+        if (EdgeTarget.SAME_OWNER.equals(target)) {
             return EdgeClass.INTERIOR_SEAM;
         }
         return EdgeClass.BOUNDARY;

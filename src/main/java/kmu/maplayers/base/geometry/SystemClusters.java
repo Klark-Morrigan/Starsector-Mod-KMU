@@ -52,7 +52,7 @@ public final class SystemClusters {
         // it never fuses.
         var parentByCellId = new LinkedHashMap<String, String>();
         for (var cellId : edgesByCellId.keySet()) {
-            if (grouping.resolveGroupKeyOf(cellId) != null) {
+            if (grouping.resolveOwnerOf(cellId) != null) {
                 parentByCellId.put(cellId, cellId);
             }
         }
@@ -61,9 +61,9 @@ public final class SystemClusters {
             if (!parentByCellId.containsKey(cellId)) {
                 continue;
             }
-            var ownGroupKey = grouping.resolveGroupKeyOf(cellId);
+            var cellOwner = grouping.resolveOwnerOf(cellId);
             for (var edge : entry.getValue()) {
-                fuseAcrossSeam(parentByCellId, grouping, cellId, ownGroupKey, edge);
+                fuseAcrossSeam(parentByCellId, grouping, cellId, cellOwner, edge);
             }
         }
         return collectComponentsInFirstSeenOrder(parentByCellId, grouping);
@@ -73,7 +73,7 @@ public final class SystemClusters {
     // both cells present and sharing a grouping key. An edge with no cell across it, or
     // one into an ungrouped or differently-keyed cell, leaves them apart.
     private static void fuseAcrossSeam(Map<String, String> parentByCellId,
-            CellGrouping grouping, String cellId, String ownGroupKey, CellEdge edge) {
+            CellGrouping grouping, String cellId, String cellOwner, CellEdge edge) {
         // A system's own cell is keyed by that system's id, so the system an edge names
         // across it is also the cell across it. Same-ground needs no fusing - it is one
         // the cell's own ground either side, already the same component.
@@ -81,7 +81,7 @@ public final class SystemClusters {
                 || !parentByCellId.containsKey(acrossSystem.systemId())) {
             return;
         }
-        if (EdgeClassifier.classifyAcross(edge, ownGroupKey, grouping.groupKeyBySystemId())
+        if (EdgeClassifier.classifyAcross(edge, cellOwner, grouping.ownerBySystemId())
                 == EdgeClass.INTERIOR_SEAM) {
             union(parentByCellId, cellId, acrossSystem.systemId());
         }

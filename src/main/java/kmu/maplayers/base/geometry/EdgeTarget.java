@@ -5,7 +5,7 @@ package kmu.maplayers.base.geometry;
  *
  * <p>A cell edge faces one of exactly three things: another system's cell
  * ({@link AcrossSystem}), open space at the cell's own outer reach ({@link #REACH_BOUND}),
- * or more of the same territory ({@link #SAME_TERRITORY}), which is a cut interior to one
+ * or more of the same territory ({@link #SAME_OWNER}), which is a cut interior to one
  * owner's ground with no star on the far side at all. Naming the three keeps the far side
  * a stated fact rather than something inferred from a null or from a system tagged against
  * itself: a consumer that reads the far side's owner - to fuse the edge away, or to weigh
@@ -25,7 +25,7 @@ public sealed interface EdgeTarget {
      * ground was assembled from more than one piece. The two sides are the same owner,
      * so the edge fuses away.
      */
-    EdgeTarget SAME_TERRITORY = new NoSystem("SAME_TERRITORY");
+    EdgeTarget SAME_OWNER = new NoSystem("SAME_OWNER");
 
     /**
      * Another system's cell across the edge - the ordinary adjacency, and the only
@@ -38,7 +38,7 @@ public sealed interface EdgeTarget {
 
     /**
      * A target with no system on the far side, standing behind {@link #REACH_BOUND} and
-     * {@link #SAME_TERRITORY}. The name carries no meaning of its own beyond telling the
+     * {@link #SAME_OWNER}. The name carries no meaning of its own beyond telling the
      * two apart - in a log line, and in the equality that distinguishes them.
      *
      * @param name which of the two systemless targets this is

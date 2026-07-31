@@ -108,7 +108,7 @@ final class IncrementalPoliticsRefresh {
             var cellsByFaction = DominantOwner.mapCellGrouping(
                     geometryCache.getSystemIdByCellId(),
                     territories.getOwnerBySystemId())
-                    .groupCellIdsByKey();
+                    .groupCellIdsByOwner();
 
             for (var factionId : affectedFactionIds) {
                 rebuildFactionTerritoryInPlace(

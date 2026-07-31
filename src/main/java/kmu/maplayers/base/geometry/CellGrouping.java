@@ -26,11 +26,11 @@ import java.util.Map;
  *
  * @param systemIdByCellId   the system each cell draws as; a cell absent here has no system
  *                           of its own and so no key, whatever ground it sits on
- * @param groupKeyBySystemId the grouping key per system; a system absent here is ungrouped
+ * @param ownerBySystemId the grouping key per system; a system absent here is ungrouped
  */
 public record CellGrouping(
         Map<String, String> systemIdByCellId,
-        Map<String, String> groupKeyBySystemId) {
+        Map<String, String> ownerBySystemId) {
 
     /**
      * The system one cell draws as - whose key, palette, and name it takes.
@@ -49,9 +49,9 @@ public record CellGrouping(
      * @return that cell's grouping key, or null when the cell has no system or its system
      *         is ungrouped
      */
-    public String resolveGroupKeyOf(String cellId) {
+    public String resolveOwnerOf(String cellId) {
         var systemId = resolveDrawnSystemIdOf(cellId);
-        return systemId == null ? null : groupKeyBySystemId.get(systemId);
+        return systemId == null ? null : ownerBySystemId.get(systemId);
     }
 
     /**
@@ -62,12 +62,12 @@ public record CellGrouping(
      * @return each grouping key mapped to its member cell ids, in cell iteration order;
      *         ungrouped cells appear under no key
      */
-    public Map<String, List<String>> groupCellIdsByKey() {
+    public Map<String, List<String>> groupCellIdsByOwner() {
         var cellIdsByKey = new LinkedHashMap<String, List<String>>();
         for (var cellId : systemIdByCellId.keySet()) {
-            var groupKey = resolveGroupKeyOf(cellId);
-            if (groupKey != null) {
-                cellIdsByKey.computeIfAbsent(groupKey, key -> new ArrayList<>()).add(cellId);
+            var owner = resolveOwnerOf(cellId);
+            if (owner != null) {
+                cellIdsByKey.computeIfAbsent(owner, key -> new ArrayList<>()).add(cellId);
             }
         }
         return cellIdsByKey;
