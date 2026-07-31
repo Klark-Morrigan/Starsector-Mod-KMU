@@ -12,10 +12,8 @@ import kmlib.settings.LabeledChoice;
  * under the pointer, so the handle reads as part of the chrome. This names the two options, and the
  * settings reader maps LunaLib's stored Radio label back to one, so the render layer resolves shades
  * without matching raw strings. The labels here must match the {@code secondaryValue} options in
- * data/config/LunaSettings.csv exactly, and neither side may be reworded once shipped: a Radio
- * stores the label itself, so a tidied caption is a key that no longer resolves, and every save
- * holding the old string quietly falls back to the default. They are frozen for the reason the
- * field ids are.
+ * data/config/LunaSettings.csv exactly, and both are frozen once shipped - see
+ * {@link LabeledChoice} for what a reworded label costs.
  */
 public enum NotchChevronColorChoice implements LabeledChoice {
     GOLD("Gold"),

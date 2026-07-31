@@ -16,6 +16,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +35,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * picked it. The label check is only as wide as the table below, so the coverage walk holds every Radio
  * row in the file against that table - a row added or reworded by a pass over the settings screen has to
  * be classified here before the suite goes green, rather than slipping past the guard unnoticed.
+ *
+ * <p>The field id one column left is stored the same way and drifts the same way, so the last walk holds
+ * every value-bearing row against the sources that name it. It reads the ids out of the source text
+ * because they are private constants of whichever class reads the field, and they are not all in one
+ * class: the two keybind ids sit with the tabs they bind. It runs one way only - a row no source names
+ * catches both a renamed row and a renamed constant, since either leaves the id unread - because the
+ * prefix alone does not mark a string as a setting, and unrelated ids such as the terrain plugin's share
+ * it.
  */
 final class LunaSettingsCsvIntegrationTest {
     private static final Path SETTINGS_CSV = Path.of("data", "config", "LunaSettings.csv");
@@ -52,6 +63,20 @@ final class LunaSettingsCsvIntegrationTest {
     // pretending the row is choice-backed.
     private static final List<String> NON_CHOICE_BACKED_RADIO_FIELDS = List.of("kmu_logLevel");
 
+    // Section captions carry an id so LunaLib can place them, but store nothing, so no source reads
+    // one. Every other row holds a value.
+    private static final String HEADER_FIELD_TYPE = "Header";
+    
+    // KMU's field ids all carry the mod's prefix, which is also what tells a field row from the
+    // file's own column-header line.
+    private static final String FIELD_ID_PREFIX = "kmu_";
+
+    // A field id as the sources spell it: quoted, so a mention in prose or a comment does not count
+    // as reading the field.
+    private static final Pattern FIELD_ID_LITERAL = Pattern.compile("\"(kmu_[A-Za-z0-9_]+)\"");
+    private static final Path MAIN_SOURCE_ROOT = Path.of("src", "main", "java");
+    private static final String JAVA_SOURCE_SUFFIX = ".java";
+
     @Nested
     class RadioOptionLabels {
 
@@ -64,9 +89,11 @@ final class LunaSettingsCsvIntegrationTest {
             assertThat(readOptions(fieldId)).isSubsetOf(expectedLabels);
         }
 
+        // Takes the id alone: the row's default is held against the row's own options, so the enum
+        // the other check needs would only be an argument nothing reads.
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioFields")
-        void radioOptionLabelsIncludeTheRowsOwnDefault(String fieldId, LabeledChoice[] choices) {
+        @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioFieldIds")
+        void radioOptionLabelsIncludeTheRowsOwnDefault(String fieldId) {
             assertThat(readOptions(fieldId)).contains(readColumn(fieldId, DEFAULT_VALUE_COLUMN));
         }
     }
@@ -82,6 +109,23 @@ final class LunaSettingsCsvIntegrationTest {
                         + " so nothing holds their option labels frozen",
                     SETTINGS_CSV)
                 .isSubsetOf(listClassifiedRadioFieldIds());
+        }
+    }
+
+    @Nested
+    class ValueFieldIds {
+
+        @Test
+        void everyValueFieldIdIsNamedBySomeSource() {
+            var namedFieldIds = readFieldIdLiteralsInMainSources();
+            assertThat(readValueFieldIds())
+                .as(
+                    "field ids declared in %s that no source under %s names, so either the row or"
+                        + " the constant behind it was renamed and the player's stored value is"
+                        + " now unreachable",
+                    SETTINGS_CSV,
+                    MAIN_SOURCE_ROOT)
+                .isSubsetOf(namedFieldIds);
         }
     }
 
@@ -101,6 +145,11 @@ final class LunaSettingsCsvIntegrationTest {
             Arguments.of("kmu_politicalMapHoverHighlightColor", FactionPaletteChoice.values()));
     }
 
+    // The same table's field ids alone, for the checks that hold a row against itself.
+    private static Stream<String> provideChoiceBackedRadioFieldIds() {
+        return provideChoiceBackedRadioFields().map(field -> (String) field.get()[0]);
+    }
+
     // Every Radio field the shipped file declares, in file order.
     private static List<String> readRadioFieldIds() {
         return readSettingsRows().stream()
@@ -113,10 +162,51 @@ final class LunaSettingsCsvIntegrationTest {
     // The Radio fields this suite has an answer for: those held against a choice enum above, plus
     // those declared to have no enum behind them.
     private static List<String> listClassifiedRadioFieldIds() {
-        return Stream.concat(
-                provideChoiceBackedRadioFields().map(field -> (String) field.get()[0]),
-                NON_CHOICE_BACKED_RADIO_FIELDS.stream())
+        return Stream
+            .concat(provideChoiceBackedRadioFieldIds(), NON_CHOICE_BACKED_RADIO_FIELDS.stream())
             .toList();
+    }
+
+    // Every field the screen stores a value for, in file order.
+    private static List<String> readValueFieldIds() {
+        return readSettingsRows()
+            .stream()
+            .filter(row -> row.size() > FIELD_TYPE_COLUMN)
+            .filter(row -> row.get(FIELD_ID_COLUMN).startsWith(FIELD_ID_PREFIX))
+            .filter(row -> !HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
+            .map(row -> row.get(FIELD_ID_COLUMN))
+            .toList();
+    }
+
+    // Every field id the shipped sources name, wherever they hold it.
+    private static Set<String> readFieldIdLiteralsInMainSources() {
+        try (var sources = Files.walk(MAIN_SOURCE_ROOT)) {
+            return sources
+                .filter(source -> source.toString().endsWith(JAVA_SOURCE_SUFFIX))
+                .flatMap(LunaSettingsCsvIntegrationTest::findFieldIdLiterals)
+                .collect(Collectors.toSet());
+        } catch (IOException failure) {
+            // Surfaced for the reason the CSV read is: an unreadable source tree means the walk is
+            // looking in the wrong place, not that every field is read.
+            throw new UncheckedIOException(
+                "Could not walk " + MAIN_SOURCE_ROOT.toAbsolutePath(),
+                failure);
+        }
+    }
+
+    private static Stream<String> findFieldIdLiterals(Path source) {
+        return FIELD_ID_LITERAL
+            .matcher(readSource(source))
+            .results()
+            .map(match -> match.group(1));
+    }
+
+    private static String readSource(Path source) {
+        try {
+            return Files.readString(source, StandardCharsets.UTF_8);
+        } catch (IOException failure) {
+            throw new UncheckedIOException("Could not read " + source.toAbsolutePath(), failure);
+        }
     }
 
     // The row's offered option labels, trimmed of the spacing the authored rows use.
@@ -138,11 +228,16 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     private static List<String> findRow(String fieldId) {
+        
         var rows = readSettingsRows().stream()
             .filter(row -> row.size() > OPTIONS_COLUMN)
             .filter(row -> fieldId.equals(row.get(FIELD_ID_COLUMN)))
             .toList();
-        assertThat(rows).as("rows for field %s in %s", fieldId, SETTINGS_CSV).hasSize(1);
+
+        assertThat(rows)
+            .as("rows for field %s in %s", fieldId, SETTINGS_CSV)
+            .hasSize(1);
+
         return rows.get(0);
     }
 
