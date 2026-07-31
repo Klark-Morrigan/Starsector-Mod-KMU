@@ -7,7 +7,7 @@ import kmu.maplayers.politicalmap.base.politics.BlocStats;
  * picker row needs to draw, what the filter needs to store, and the numbers the picker sorts and
  * ranks it by. A bloc is a faction under the factions view and an alliance under the alliances view,
  * so this carries the stable id the selection serialises ({@link
- * kmu.maplayers.politicalmap.base.refresh.FilterSelection}), the label and crest the row renders, and
+ * kmu.maplayers.base.sidebar.FilterSelection}), the label and crest the row renders, and
  * the {@link BlocStats} its whole-sector standing is scored from - nothing about how the id resolves
  * into presence-aware territory, which is the resolver's concern.
  *

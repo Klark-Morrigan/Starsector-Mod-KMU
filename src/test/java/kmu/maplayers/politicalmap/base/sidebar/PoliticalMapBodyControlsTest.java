@@ -3,13 +3,13 @@ package kmu.maplayers.politicalmap.base.sidebar;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
+import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
-import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.Nested;

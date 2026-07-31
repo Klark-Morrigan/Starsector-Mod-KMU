@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -46,15 +47,17 @@ public final class SystemDominationTooltip extends SystemCellTooltip {
         if (activeView == null) {
             return List.of();
         }
+
         // Ranks the hovered system under the active view's grouping and dominance rule - the same the
         // map paints under - so the tooltip's numbers and its bloc grouping match the fills exactly.
         var grouping = activeView.resolveGrouping();
         var pass = DominancePass.readFromLunaSettings(grouping);
         var standings = SystemStandings.rankByDominationScore(sector, system, pass);
         var groupRows = StandingRowResolver.resolveRows(sector, standings, grouping);
+
         return groupRows.isEmpty()
-                ? buildEmptyStateRows(sector, system, pass)
-                : buildRows(groupRows);
+            ? buildEmptyStateRows(sector, system, pass)
+            : buildRows(groupRows);
     }
 
     // The one line shown under the system name for a system with no ranked presence: the shared status
@@ -70,8 +73,8 @@ public final class SystemDominationTooltip extends SystemCellTooltip {
                 sector,
                 system,
                 pass.shouldIncludeUndiscoveredMarkets())
-                .map(List::<TooltipRow>of)
-                .orElseGet(List::of);
+            .map(List::<TooltipRow>of)
+            .orElseGet(List::of);
     }
 
     // Flattens the two-tier group rows into the flat draw rows the box paints top to bottom: a bloc
@@ -82,17 +85,21 @@ public final class SystemDominationTooltip extends SystemCellTooltip {
     // keeps a one-member alliance a tree while the faction view stays flat.
     private static List<TooltipRow> buildRows(List<StandingGroupRow> groupRows) {
         var rows = new ArrayList<TooltipRow>();
+        
         for (var group : groupRows) {
+
             rows.add(CellTooltipRows.buildTopTierRow(
-                    group.crestSpritePath(),
-                    group.displayName(),
-                    DominationScoreFormat.formatScore(group.aggregateScore())));
+                group.crestSpritePath(),
+                group.displayName(),
+                KmlibNumbers.formatGroupedInteger(group.aggregateScore())));
+
             if (group.nestsMembers()) {
+
                 for (var member : group.members()) {
                     rows.add(CellTooltipRows.buildNestedRow(
-                            member.crestSpritePath(),
-                            member.fullName(),
-                            DominationScoreFormat.formatScore(member.score())));
+                        member.crestSpritePath(),
+                        member.fullName(),
+                        KmlibNumbers.formatGroupedInteger(member.score())));
                 }
             }
         }

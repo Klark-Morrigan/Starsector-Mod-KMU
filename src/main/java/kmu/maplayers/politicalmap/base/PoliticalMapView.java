@@ -148,7 +148,7 @@ public interface PoliticalMapView {
      * The blocs the filter picker offers under this view: factions with a visible weighted market
      * under the factions view, current alliances under the alliances view. Each carries the id the
      * filter stores, its picker label, and (for a faction) its crest. The list is what the picker
-     * draws and what {@link kmu.maplayers.politicalmap.base.refresh.FilterSelection} heals a stale
+     * draws and what {@link kmu.maplayers.base.sidebar.FilterSelection} heals a stale
      * saved selection against, so a bloc that is no longer here is no longer spotlightable.
      *
      * <p>Only blocs present somewhere qualify - a bloc holding a visible market in at least one system

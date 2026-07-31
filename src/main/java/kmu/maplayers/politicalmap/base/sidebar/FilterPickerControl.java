@@ -2,12 +2,12 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.BlocListColumns;
 import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
-import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -118,7 +118,7 @@ public final class FilterPickerControl {
         if (cellIndex == selectedIndex) {
             FilterSelection.clearSelection(viewId);
         } else {
-            FilterSelection.selectBloc(viewId, blocs.get(cellIndex).blocId());
+            FilterSelection.selectId(viewId, blocs.get(cellIndex).blocId());
         }
     }
 

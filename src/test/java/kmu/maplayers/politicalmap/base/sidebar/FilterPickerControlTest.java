@@ -4,13 +4,13 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
+import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.sidebar.SortDirection;
 import kmu.maplayers.politicalmap.base.BlocListColumns;
 import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
-import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -334,7 +334,7 @@ final class FilterPickerControlTest {
 
                 picker.action().activateCell(0);
 
-                selectionMock.verify(() -> FilterSelection.selectBloc(VIEW_ID, "hegemony"));
+                selectionMock.verify(() -> FilterSelection.selectId(VIEW_ID, "hegemony"));
             }
         }
 
@@ -366,7 +366,7 @@ final class FilterPickerControlTest {
 
                 picker.action().activateCell(1);
 
-                selectionMock.verify(() -> FilterSelection.selectBloc(VIEW_ID, "free_traders"));
+                selectionMock.verify(() -> FilterSelection.selectId(VIEW_ID, "free_traders"));
             }
         }
     }

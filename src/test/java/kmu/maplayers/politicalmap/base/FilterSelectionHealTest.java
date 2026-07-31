@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
+import kmu.maplayers.base.sidebar.FilterSelection;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

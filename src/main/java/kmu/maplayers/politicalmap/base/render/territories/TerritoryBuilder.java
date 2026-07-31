@@ -11,11 +11,11 @@ import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
@@ -63,7 +63,7 @@ public final class TerritoryBuilder {
             // holding provider (which keeps a spotlit bloc drawn wherever it is present), the
             // recede the rest of the sector takes, and the retained filter snapshot all resolve
             // from this one read, exactly like the grouping.
-            var selectedBlocId = FilterSelection.getSelectedBlocId(view.getId());
+            var selectedBlocId = FilterSelection.getSelectedIdOf(view.getId());
             var isFiltering = selectedBlocId != null;
 
             // The politics scan walks the whole economy - the priciest content step -

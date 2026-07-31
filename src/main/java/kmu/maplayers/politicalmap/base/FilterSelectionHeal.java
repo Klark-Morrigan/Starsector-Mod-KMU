@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.Global;
 
-import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
+import kmu.maplayers.base.sidebar.FilterSelection;
 
 import java.util.HashSet;
 
@@ -18,7 +18,7 @@ import java.util.HashSet;
  * and with no active view there is no grouping to judge which blocs are selectable - a faction id
  * would be meaningless under an alliance read and vice versa - so a persisted filter is left intact
  * until a view is up to validate it. It lives in {@code base} beside the view registry it reads,
- * since resolving "the active view and its selectable blocs" is a view concern the refresh-package
+ * since resolving "the active view and its selectable blocs" is a view concern the framework's
  * {@link FilterSelection} deliberately does not carry.
  */
 public final class FilterSelectionHeal {

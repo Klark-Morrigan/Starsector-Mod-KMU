@@ -127,26 +127,37 @@ the previous save's scroll offset in the same move.
 ## Picker state
 
 A layer whose body carries a sortable, column-laid list needs somewhere to keep how that list is
-ranked and wrapped. `SortSelection` and `ColumnSelection` are those stores, and `SortDirection` is
-the ascending/descending value the first of them round-trips.
+ranked, wrapped, and filtered. `SortSelection`, `ColumnSelection`, and `FilterSelection` are those
+stores, and `SortDirection` is the ascending/descending value the first of them round-trips.
 
-All three are leaves: they hold the raw stored keys and nothing that resolves one. Which comparator
-a mode key names, which count a column key means, and what either falls back to when unset stay with
-the layer that offers the choices, so the framework carries the storage without learning what is
-being sorted.
+All of them are leaves: they hold the raw stored keys and nothing that resolves one. Which
+comparator a mode key names, which count a column key means, what a filtered-to id points at, and
+what any of them falls back to when unset stay with the layer that offers the choices, so the
+framework carries the storage without learning what is being sorted or filtered.
+
+`FilterSelection` holds one selected id per opaque scope, so each scope keeps its own choice and
+switching scopes neither clears nor cross-reads another's. Beyond the read, pick, and clear it
+heals a stored id a caller-supplied predicate no longer accepts (for a save whose selection stopped
+being on offer between sessions) and carries a pre-per-scope save's single shared slot into a scope
+slot on load.
 
 | Key | Holds |
 | --- | --- |
 | `$kmu_political_sort_mode` | the picked sort mode's key, absent until first picked |
 | `$kmu_political_sort_direction` | the picked direction (`asc` / `desc`), absent until first flipped |
 | `$kmu_political_list_columns` | the picked column count's key, absent until first picked |
+| `$kmu_political_filter_bloc_<scope>` | one scope's filtered-to id, absent while un-filtered |
+| `$kmu_political_filter_bloc` | the pre-per-scope shared slot, read once by the load migration and retired |
 
 The keys read as the political map's because this state shipped alongside it, before the framework
 was carved out; like the fold keys they are save-serialised identities and frozen, so renaming one
 would reset every existing save to the default.
 
-Neither store raises a refresh. Both values are read on the per-frame body build, so the next frame
-re-sorts or re-wraps on its own, and nothing on the map depends on either.
+The sort and column stores raise no refresh: both values are read on the per-frame body build, so
+the next frame re-sorts or re-wraps on its own, and nothing on the map depends on either.
+`FilterSelection` is the exception - its value changes what a layer paints, so a landed pick or
+clear raises `MapLayerCommonRefreshSignal.FILTER`; the heal and the migration run on load before
+anything paints, so they move values without raising it.
 
 ## Styling
 

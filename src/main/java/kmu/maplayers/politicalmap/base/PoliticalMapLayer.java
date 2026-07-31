@@ -8,7 +8,7 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelection;
-import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
+import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
@@ -29,6 +29,7 @@ import java.util.List;
  * with the view seam and registry it composes, since the tab itself names no concrete view.
  */
 public final class PoliticalMapLayer implements MapLayer {
+
     /** The one shared instance; the tab registration and the view registry's host tab reference it. */
     public static final PoliticalMapLayer INSTANCE = new PoliticalMapLayer();
 
@@ -72,11 +73,13 @@ public final class PoliticalMapLayer implements MapLayer {
 
     @Override
     public List<ControlSpec> getBodyControls() {
+
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
         // view-selector radio that picks which view paints - one segment per registered view. The
         // radio only switches between views; turning the map off is the tab bar's No Layer pick.
         var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls());
         controls.add(PoliticalMapBodyControls.buildViewSelector());
+
         // Then the spotlight picker and the selected view's own controls, so the body shows the
         // filter list plus any widgets specific to the active view (the alliances view's
         // Mute/Desaturate checkboxes) and the layout grows downward to fit them. Use the selected
@@ -84,7 +87,9 @@ public final class PoliticalMapLayer implements MapLayer {
         // getBodyControls is only reached for the active tab. No view selected means the map is off,
         // so there is nothing to append.
         var selectedView = PoliticalMapViewRegistry.getSelectedView();
+
         if (selectedView != null) {
+
             // The picker lists the selected view's own selectable blocs under the player's live
             // dominance and dev-reveal settings; empty (no present bloc) contributes no picker. Read
             // through the memo so this per-frame body build reads a cached list rather than re-walking
@@ -92,16 +97,19 @@ public final class PoliticalMapLayer implements MapLayer {
             // The stored sort (mode and direction), resolved live so a save with no stored direction
             // reads the mode's natural order.
             var sort = BlocSort.resolveStored();
+
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
             var columns = BlocListColumns.fromKeyOrDefault(ColumnSelection.getColumnCountKey());
             var viewId = selectedView.getId();
+
             controls.addAll(FilterPickerControl.buildControls(
-                    viewId,
-                    SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
-                    FilterSelection.getSelectedBlocId(viewId),
-                    sort,
-                    columns));
+                viewId,
+                SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
+                FilterSelection.getSelectedIdOf(viewId),
+                sort,
+                columns));
+                
             controls.addAll(selectedView.getViewBodyControls());
         }
         return List.copyOf(controls);
