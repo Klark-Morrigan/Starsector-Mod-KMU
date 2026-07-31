@@ -26,13 +26,15 @@ import java.util.List;
  * would paint straight across it, washing ground the cell does not cover.
  */
 public record HoverHighlight(
-        List<float[]> glowLoops,
-        float[] washTriangles,
-        List<float[]> washOutline) {
+    List<float[]> glowLoops,
+    float[] washTriangles,
+    List<float[]> washOutline) {
 
     /** Nothing is hovered, or the hovered cell has no drawable shape, so nothing lights up. */
     public static final HoverHighlight NONE = new HoverHighlight(
-            List.of(), GlVertexRuns.NO_VERTICES, List.of());
+        List.of(),
+        GlVertexRuns.NO_VERTICES,
+        List.of());
 
     public HoverHighlight {
         glowLoops = List.copyOf(glowLoops);

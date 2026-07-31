@@ -60,10 +60,10 @@ public final class HoverHighlightRenderer {
             return;
         }
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT
-                | GL11.GL_CURRENT_BIT
-                | GL11.GL_COLOR_BUFFER_BIT
-                | GL11.GL_LINE_BIT
-                | GL11.GL_HINT_BIT);
+            | GL11.GL_CURRENT_BIT
+            | GL11.GL_COLOR_BUFFER_BIT
+            | GL11.GL_LINE_BIT
+            | GL11.GL_HINT_BIT);
 
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
@@ -92,8 +92,8 @@ public final class HoverHighlightRenderer {
             return null;
         }
         return source.resolveHighlightColourOf(
-                hover.hoveredSystemId(),
-                style.color());
+            hover.hoveredSystemId(),
+            style.color());
     }
 
     // Strokes the hovered frontier once per layer, so the additive layers pile into a halo;
@@ -117,14 +117,14 @@ public final class HoverHighlightRenderer {
         for (var layer = 0; layer < style.layers(); layer++) {
             GL11.glLineWidth((float) style.computeLayerWidth(layer));
             GlColor.set(
-                    color,
-                    (float) (alphaMult * style.computeLayerAlpha(layer, timeSeconds)));
+                color,
+                (float) (alphaMult * style.computeLayerAlpha(layer, timeSeconds)));
 
             for (var loop : highlight.glowLoops()) {
                 GlRuns.drawScaled(
-                        GL11.GL_LINE_LOOP,
-                        loop,
-                        factor);
+                    GL11.GL_LINE_LOOP,
+                    loop,
+                    factor);
             }
         }
     }
@@ -143,21 +143,21 @@ public final class HoverHighlightRenderer {
         if (style.fillOpacity() > 0) {
             GlColor.set(color, (float) (alphaMult * style.fillOpacity()));
             GlRuns.drawScaled(
-                    GL11.GL_TRIANGLES,
-                    highlight.washTriangles(),
-                    factor);
+                GL11.GL_TRIANGLES,
+                highlight.washTriangles(),
+                factor);
         }
         if (style.outlineOpacity() > 0) {
             GL11.glLineWidth((float) style.outlineWidth());
             GlColor.set(
-                    color,
-                    (float) (alphaMult * style.outlineOpacity()));
+                color,
+                (float) (alphaMult * style.outlineOpacity()));
 
             for (var loop : highlight.washOutline()) {
                 GlRuns.drawScaled(
-                        GL11.GL_LINE_LOOP,
-                        loop,
-                        factor);
+                    GL11.GL_LINE_LOOP,
+                    loop,
+                    factor);
             }
         }
     }

@@ -19,7 +19,9 @@ import java.util.List;
  * @param clusterMemberSystemIds every system in that cell's contiguous cluster, the hovered
  *                               cell included; empty when nothing is hovered
  */
-public record MapHover(String hoveredSystemId, List<String> clusterMemberSystemIds) {
+public record MapHover(
+    String hoveredSystemId,
+    List<String> clusterMemberSystemIds) {
 
     /** The cursor is over no cell, so nothing highlights and nothing is broken down. */
     public static final MapHover NONE = new MapHover(null, List.of());
