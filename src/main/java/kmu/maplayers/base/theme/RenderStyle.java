@@ -15,7 +15,9 @@ import java.util.Map;
  * built once per rebuild and read per element, so a plain hash map costs nothing worth the
  * theme knowing which layer's categories are in it.
  */
-public record RenderStyle(GlobalStyle global, Map<MapStyleCategory, CategoryStyle> categories) {
+public record RenderStyle(
+    GlobalStyle global,
+    Map<MapStyleCategory, CategoryStyle> categories) {
 
     /**
      * @return the style for {@code category}, the per-category tier the cascade folds over

@@ -17,11 +17,11 @@ package kmu.maplayers.base.theme;
  * (0 leaves the halo steady) and {@code pulsePeriodSeconds} how long one breath takes.
  */
 public record HoverGlowStyle(
-        double opacity,
-        double width,
-        int layers,
-        double pulseStrength,
-        double pulsePeriodSeconds) {
+    double opacity,
+    double width,
+    int layers,
+    double pulseStrength,
+    double pulsePeriodSeconds) {
 
     // A full breath is one cosine cycle, so the phase advances by this much per period.
     private static final double FULL_CYCLE_RADIANS = 2 * Math.PI;
@@ -52,7 +52,9 @@ public record HoverGlowStyle(
      * @return the layer's alpha
      */
     public double computeLayerAlpha(int layer, double timeSeconds) {
-        return opacity * (1.0 - (double) layer / layers) * computePulseScale(timeSeconds);
+        return opacity
+            * (1.0 - (double) layer / layers)
+            * computePulseScale(timeSeconds);
     }
 
     // How much of the halo's alpha survives at timeSeconds - 1 at the crest, down to

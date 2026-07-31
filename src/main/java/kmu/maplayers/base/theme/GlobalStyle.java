@@ -15,8 +15,8 @@ package kmu.maplayers.base.theme;
  *                              untouched, 1 goes to black
  */
 public record GlobalStyle(
-        HatchStyle hatch,
-        BorderSmoothingStyle borderSmoothing,
-        HoverHighlightStyle hoverHighlight,
-        double desaturationDarkening) {
+    HatchStyle hatch,
+    BorderSmoothingStyle borderSmoothing,
+    HoverHighlightStyle hoverHighlight,
+    double desaturationDarkening) {
 }

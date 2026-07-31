@@ -11,9 +11,9 @@ package kmu.maplayers.base.theme;
  * {@link MapStyleCategory}.
  */
 public record CategoryStyle(
-        ElementStyle fill,
-        ElementStyle outer,
-        double outerWidth,
-        ElementStyle inner,
-        double innerWidth) {
+    ElementStyle fill,
+    ElementStyle outer,
+    double outerWidth,
+    ElementStyle inner,
+    double innerWidth) {
 }

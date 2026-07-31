@@ -9,7 +9,9 @@ package kmu.maplayers.base.theme;
  * pair travels as one value rather than as two parallel components each style has to spell out
  * and each reader has to keep in step. Widths stay outside it: only the two borders have one.
  */
-public record ElementStyle(ElementPaint color, double opacity) {
+public record ElementStyle(
+    ElementPaint color,
+    double opacity) {
 
     /** An element the player turned off, so no draw pass paints it. */
     public static final ElementStyle NOT_DRAWN = new ElementStyle(null, 0);

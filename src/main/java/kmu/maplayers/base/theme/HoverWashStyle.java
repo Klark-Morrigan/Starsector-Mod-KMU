@@ -12,7 +12,7 @@ package kmu.maplayers.base.theme;
  * wash. Either element can be dialed to nothing on its own.
  */
 public record HoverWashStyle(
-        double fillOpacity,
-        double outlineOpacity,
-        double outlineWidth) {
+    double fillOpacity,
+    double outlineOpacity,
+    double outlineWidth) {
 }

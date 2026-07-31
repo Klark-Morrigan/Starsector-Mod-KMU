@@ -17,7 +17,7 @@ package kmu.maplayers.base.theme;
  * kind of ground was under the pointer would read as the map responding unevenly.
  */
 public record HoverHighlightStyle(
-        ElementPaint color,
-        HoverGlowStyle glow,
-        HoverWashStyle wash) {
+    ElementPaint color,
+    HoverGlowStyle glow,
+    HoverWashStyle wash) {
 }

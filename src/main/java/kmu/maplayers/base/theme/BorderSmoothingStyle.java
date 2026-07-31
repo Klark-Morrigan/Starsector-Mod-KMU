@@ -13,11 +13,11 @@ package kmu.maplayers.base.theme;
  * border and the cell outline beside it can never smooth to different numbers.
  */
 public record BorderSmoothingStyle(
-        boolean shouldSandSpikes,
-        boolean shouldRoundCorners,
-        double spikeHeight,
-        double spikeAngleRadians,
-        double cornerRadius,
-        int cornerSegments,
-        double chamferAngleRadians) {
+    boolean shouldSandSpikes,
+    boolean shouldRoundCorners,
+    double spikeHeight,
+    double spikeAngleRadians,
+    double cornerRadius,
+    int cornerSegments,
+    double chamferAngleRadians) {
 }

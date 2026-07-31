@@ -9,5 +9,8 @@ package kmu.maplayers.base.theme;
  * in world units, {@code angleRadians} their direction, and {@code width} the pixel stroke of
  * each line.
  */
-public record HatchStyle(double spacing, double angleRadians, double width) {
+public record HatchStyle(
+    double spacing,
+    double angleRadians,
+    double width) {
 }
