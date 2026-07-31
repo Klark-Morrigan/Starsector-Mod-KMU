@@ -15,7 +15,8 @@ public final class StarsectorConditionOfferPolicy implements KmuConditionOfferPo
 
     public StarsectorConditionOfferPolicy(BooleanSupplier shouldOfferAllConditions) {
         this.shouldOfferAllConditions = Objects.requireNonNull(
-                shouldOfferAllConditions, "shouldOfferAllConditions");
+            shouldOfferAllConditions,
+            "shouldOfferAllConditions");
     }
 
     @Override
@@ -25,6 +26,7 @@ public final class StarsectorConditionOfferPolicy implements KmuConditionOfferPo
         }
         // Planetary conditions are always offerable, so short-circuit before the
         // live settings read; the toggle only decides the non-planetary ones.
-        return spec.isPlanetary() || shouldOfferAllConditions.getAsBoolean();
+        return spec.isPlanetary()
+            || shouldOfferAllConditions.getAsBoolean();
     }
 }

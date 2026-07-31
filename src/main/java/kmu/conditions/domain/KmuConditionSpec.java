@@ -67,11 +67,11 @@ public final class KmuConditionSpec {
         }
         var that = (KmuConditionSpec) other;
         return planetary == that.planetary
-                && id.equals(that.id)
-                && name.equals(that.name)
-                && Objects.equals(icon, that.icon)
-                && Objects.equals(description, that.description)
-                && Objects.equals(sourceModName, that.sourceModName);
+            && id.equals(that.id)
+            && name.equals(that.name)
+            && Objects.equals(icon, that.icon)
+            && Objects.equals(description, that.description)
+            && Objects.equals(sourceModName, that.sourceModName);
     }
 
     @Override
@@ -82,12 +82,12 @@ public final class KmuConditionSpec {
     @Override
     public String toString() {
         return "KmuConditionSpec{"
-                + "id='" + id + '\''
-                + ", name='" + name + '\''
-                + ", icon='" + icon + '\''
-                + ", description='" + description + '\''
-                + ", sourceModName='" + sourceModName + '\''
-                + ", planetary=" + planetary
-                + '}';
+            + "id='" + id + '\''
+            + ", name='" + name + '\''
+            + ", icon='" + icon + '\''
+            + ", description='" + description + '\''
+            + ", sourceModName='" + sourceModName + '\''
+            + ", planetary=" + planetary
+            + '}';
     }
 }

@@ -32,10 +32,10 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
             return Collections.emptyList();
         }
         return specs.stream()
-                .filter(Objects::nonNull)
-                .map(this::toKmuSpecOrNull)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableList());
+            .filter(Objects::nonNull)
+            .map(this::toKmuSpecOrNull)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
@@ -55,12 +55,12 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
     private KmuConditionSpec toKmuSpecOrNull(MarketConditionSpecAPI spec) {
         try {
             return new KmuConditionSpec(
-                    spec.getId(),
-                    spec.getName(),
-                    spec.getIcon(),
-                    spec.getDesc(),
-                    sourceModName(spec),
-                    spec.isPlanetary());
+                spec.getId(),
+                spec.getName(),
+                spec.getIcon(),
+                spec.getDesc(),
+                sourceModName(spec),
+                spec.isPlanetary());
         } catch (RuntimeException exception) {
             return null;
         }

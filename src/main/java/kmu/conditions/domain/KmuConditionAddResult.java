@@ -38,10 +38,10 @@ public final class KmuConditionAddResult {
 
     public static KmuConditionAddResult failed(String conditionId, String message, RuntimeException cause) {
         return new KmuConditionAddResult(
-                KmuConditionAddStatus.FAILED,
-                conditionId,
-                Objects.requireNonNull(message, "message"),
-                Objects.requireNonNull(cause, "cause"));
+            KmuConditionAddStatus.FAILED,
+            conditionId,
+            Objects.requireNonNull(message, "message"),
+            Objects.requireNonNull(cause, "cause"));
     }
 
     public KmuConditionAddStatus getStatus() {

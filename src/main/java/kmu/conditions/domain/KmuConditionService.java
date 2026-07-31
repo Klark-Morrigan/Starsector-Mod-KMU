@@ -36,9 +36,9 @@ public final class KmuConditionService {
     public List<KmuConditionSpec> listPlanetaryConditionSpecs() {
         try {
             return repository.getAllConditionSpecs().stream()
-                    .filter(Objects::nonNull)
-                    .filter(KmuConditionSpec::isPlanetary)
-                    .collect(Collectors.toUnmodifiableList());
+                .filter(Objects::nonNull)
+                .filter(KmuConditionSpec::isPlanetary)
+                .collect(Collectors.toUnmodifiableList());
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to list market condition specs.", exception);
             return Collections.emptyList();
@@ -50,10 +50,10 @@ public final class KmuConditionService {
         var currentConditionIds = getCurrentConditionIds(market);
         try {
             return repository.getAllConditionSpecs().stream()
-                    .filter(Objects::nonNull)
-                    .filter(spec -> offerPolicy.isConditionOfferable(spec)
-                            || currentConditionIds.contains(spec.getId()))
-                    .collect(Collectors.toUnmodifiableList());
+                .filter(Objects::nonNull)
+                .filter(spec -> offerPolicy.isConditionOfferable(spec)
+                    || currentConditionIds.contains(spec.getId()))
+                .collect(Collectors.toUnmodifiableList());
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to list visible market condition specs.", exception);
             return Collections.emptyList();

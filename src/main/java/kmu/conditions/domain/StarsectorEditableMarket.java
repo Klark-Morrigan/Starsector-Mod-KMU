@@ -29,10 +29,10 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
             return new LinkedHashSet<>();
         }
         return conditions.stream()
-                .filter(Objects::nonNull)
-                .map(MarketConditionAPI::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+            .filter(Objects::nonNull)
+            .map(MarketConditionAPI::getId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override
