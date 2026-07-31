@@ -14,6 +14,7 @@ Part of Klark Morrigan's Utilities; see the
 ## Index
 
 - [The layers](#the-layers)
+- [The vocabulary](#the-vocabulary)
 - [Two screens, two picks](#two-screens-two-picks)
 - [What is per screen](#what-is-per-screen)
 - [Where each part lives](#where-each-part-lives)
@@ -30,6 +31,34 @@ what is and is not drawn and an empty map reads as a choice. The political map i
 untouched save resolves to, so the overlay is up the first time the sector map opens. Each tab also
 answers a LunaLib-rebindable shortcut, printed on the tab, on both screens the box draws; since the
 picks are per-screen, a shortcut moves only the tab of the screen it was pressed on.
+
+## The vocabulary
+
+`base` and a layer deliberately use different words for the same thing, and the translation
+happens at the boundary between them. That is what keeps the framework honest: if `base` said
+"faction", a second layer could not use it without lying about what it paints.
+
+Read this table left to right as "what the framework calls it" -> "what the political map calls
+the thing it hands over".
+
+| `base` says | political map says | Means |
+| --- | --- | --- |
+| **owner** | **holder** (`DominantHolder`, `HolderProvider`) | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` - a faction id under the factions view, an alliance id under alliances, a claimant under claims |
+| **unowned** | factionless, uninhabited, decivilised | a cell no owner is attributed to. It never fuses, and draws its own lone outline |
+| **cluster** | **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters |
+| **cluster border** | national border, frontier | the inset ring around a cluster. `base` never calls it national - nothing about a border is political |
+| **interior seam** | province line | the fused edge between two same-owner cells, drawn faint or not at all |
+| **fill state** | held / contested / drawn-empty | how ground inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
+| **`ElementPaint`** | `FactionPaletteShade` | the player's colour pick, held opaquely by the theme. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaint` - its "No color" would otherwise read as drawable |
+
+Two words that are **not** synonyms, despite looking alike:
+
+- A **cluster** is one connected component. A political **territory** may be several - a faction's
+  homeland and its far-flung colony are two clusters under one territory, which is why each gets
+  its own label rather than one name stranded between them.
+- An **owner** is a render input; a **holder** is a computed political fact (dominant faction by
+  market weight, or claimant, or alliance). They coincide only because the political map feeds one
+  into the other.
 
 ## Two screens, two picks
 
