@@ -27,6 +27,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * and costs nothing to change, so the mismatch is parked where it does no harm - the
  * Java side says which half of the map code owns a knob, the stored key stays put.
  *
+ * <p>The tabs the fields are laid out into follow the same split as the packages that
+ * read them, so a player hunting a knob is asked the one question the code already
+ * answers: is this the map framework's chrome or one layer's paint? {@code Map - Visuals}
+ * carries what every map layer shares - the overlay sidebar, the map labels, the hover
+ * tooltip - and {@code Map - Politics - Visuals} carries the political map's own palette.
+ * {@code Map - Politics - Domination} and {@code Map - Keybinds} follow the same reading.
+ * The prefix is what makes the grouping legible, so a tab that is not a map feature (the
+ * condition picker's) deliberately does not take it.
+ *
  * <p>The political-map fields, matching data/config/LunaSettings.csv, style each
  * category of system on the sector map. Owned categories - core factions and
  * independent space - each get a fill, an outer (national) border, and an inner
@@ -39,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * since zero opacity is the only way to hide a shade with no alternative.
  * Whether the uninhabited outline draws at all is the on-map sidebar's checkbox
  * rather than a field here, so the setting screen never duplicates that control.
- * All are tuned under the LunaLib "Visuals customisation" tab.
+ * All are tuned under the LunaLib "Map - Politics - Visuals" tab.
  *
  * <p>The national-border geometry is exposed separately under the "Dev" tab: it
  * shapes the frontier rather than recoloring it, so it is a tuning surface for
@@ -65,9 +74,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * map framerate against frontier smoothness, and the two overrides open up the whole
  * sector's politics or the full cell partition.
  *
- * <p>The "Political map - domination" tab holds the dominance rules - fields that change the
+ * <p>The "Map - Politics - Domination" tab holds the dominance rules - fields that change the
  * map's political verdicts rather than its styling, which is why they do not sit
- * under "Visuals customisation". They set how heavily a colony's raw size weighs on
+ * under "Map - Politics - Visuals". They set how heavily a colony's raw size weighs on
  * its system's dominant faction, how a hidden market's size is counted (its real
  * size or a fixed weight), whether (and by how many size points) an attached
  * defensive station lifts a colony (paired with the fraction a hidden market earns),
@@ -77,12 +86,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * zero stability. The tab groups the fields under Colony size, Hidden markets,
  * Stability, Orbital stations, and Garrison patrols headers.
  *
- * <p>The "Market conditions" tab holds the condition-picker toggles. Its one field
+ * <p>The "Market Condition Manager (MCM)" tab holds the condition-picker toggles. Its one field
  * chooses whether the picker offers every market condition or only the planetary
  * ones vanilla treats as hand-placeable; it is on by default, so non-planetary
  * conditions (such as decivilisation) are offered too.
  *
- * <p>The "Keybinds" tab holds the overlay's shortcut keys, grouped under a "Map Sidebar"
+ * <p>The "Map - Keybinds" tab holds the overlay's shortcut keys, grouped under a "Map Sidebar"
  * header: the keycodes that jump the layer bar straight to the No Layer and Factions
  * views. Each is a LunaLib Keycode control, so the player rebinds it in place or clears
  * it with Escape (stored as keycode 0, which the input handler and tab caption read as
@@ -99,7 +108,7 @@ public final class KmuLunaSettings {
     private static final String LOGGER_ROOT = "kmu";
     private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
 
-    // Overlay sidebar fields (Political map - visuals tab): the small on-map box carrying
+    // Overlay sidebar fields (Map - Visuals tab): the small on-map box carrying
     // the overlay's tabs and controls. Padding places the box from the screen's top-left
     // corner; border width frames it (0 = no border); opacity is its background
     // translucency.
@@ -116,7 +125,7 @@ public final class KmuLunaSettings {
 
     // How long the sidebar's collapse handle takes to fold the body to its docked rail (and
     // unfold it), in seconds; 0 snaps it instantly. Player-facing animation pace, so it sits
-    // in the Overlay sidebar section of the visuals tab beside the box's other appearance knobs.
+    // in the Overlay sidebar section of the Map - Visuals tab beside the box's other appearance knobs.
     private static final String SIDEBAR_COLLAPSE_SECONDS_FIELD =
         "kmu_politicalMapSidebarCollapseSeconds";
 
@@ -126,7 +135,7 @@ public final class KmuLunaSettings {
     private static final String SIDEBAR_CHEVRON_COLOR_FIELD =
         "kmu_politicalMapSidebarChevronColor";
 
-    // Intel-screen overlay field (Political map - visuals tab): the same sidebar box drawn on the intel
+    // Intel-screen overlay field (Map - Visuals tab): the same sidebar box drawn on the intel
     // screen sits flush against the left edge of that screen's map preview (the "visor") and hangs from
     // the visor top; this top padding pushes it down to clear the vanilla starscape / fuel-range toggles
     // at the top of the intel map. The visor's height caps the box, so no left or bottom knob is needed.
@@ -188,7 +197,7 @@ public final class KmuLunaSettings {
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
         "kmu_politicalMapUninhabitedBorderWidth";
 
-    // Recede styling settings (Political map - visuals tab): the two settings-screen knobs
+    // Recede styling settings (Map - Politics - Visuals tab): the two settings-screen knobs
     // supplementary to the sidebar recede toggles, shared across both recede sets (the spotlight
     // filter's faded background and the alliances view's non-allied ground). The muted-opacity
     // modifier is how far Mute dims a receded bloc's borders, fills, and name as a fraction of
@@ -201,7 +210,7 @@ public final class KmuLunaSettings {
     private static final String DESATURATION_DARKENING_FIELD =
         "kmu_politicalMapDesaturationDarkening";
 
-    // Hover highlight settings (Political map - visuals tab): how the map answers the cursor -
+    // Hover highlight settings (Map - Politics - Visuals tab): how the map answers the cursor -
     // a halo around the hovered territory's frontier and a wash over the one hovered cell,
     // both in the hovered ground's own palette colour. The enable toggle is the master switch:
     // it gates the whole feature, so with it off the cursor read never runs and nothing is
@@ -232,14 +241,16 @@ public final class KmuLunaSettings {
     private static final String HOVER_WASH_OUTLINE_WIDTH_FIELD =
         "kmu_politicalMapHoverWashOutlineWidth";
 
-    // Hover tooltip master switch (visuals tab): whether the cursor tooltip - the box
+    // Hover tooltip master switch (Map - Visuals tab): whether the cursor tooltip - the box
     // naming the hovered system and its owner - draws at all. Distinct from the
     // hover-highlight switch above (the halo and cell wash): the tooltip is the info box,
-    // each gated on its own, in its own section beside the highlight controls.
+    // each gated on its own. It sits on the shared tab rather than beside the highlight
+    // because the tooltip host is the map-layer framework's, so the switch covers every
+    // layer's box, while the highlight above is the political map's own paint.
     private static final String HOVER_TOOLTIP_ENABLED_FIELD =
         "kmu_politicalMapHoverTooltipEnabled";
 
-    // Dominance rules (Political map - domination tab): how the map decides a system's
+    // Dominance rules (Map - Politics - Domination tab): how the map decides a system's
     // dominant faction. Not styling fields - they change the political verdicts
     // themselves. The colony-size weight multiplies each market's base size rating; a
     // hidden market takes its base rating from the hidden-market scaling choice
@@ -288,11 +299,11 @@ public final class KmuLunaSettings {
     private static final String CELL_BOUND_SEGMENTS_FIELD =
         "kmu_politicalMapCellBoundSegments";
 
-    // Cell reach (visuals tab): how far each system's territory extends into empty space
-    // before the frontier bound closes it off. A player-facing appearance knob - it sets
-    // how much open space each system colours in - so it sits on the visuals tab, not the
-    // Dev resolution knob above. Like the resolution it reseeds the cells, so it feeds the
-    // geometry rebuild rather than the drawables restyle.
+    // Cell reach (Dev tab, Cell geometry): how far each system's territory extends into empty
+    // space before the frontier bound closes it off. Sits beside the resolution knob above
+    // rather than with the palette because the two answer the same question - the shape of the
+    // cells the map is partitioned into - and both reseed the cells, so it feeds the geometry
+    // rebuild rather than the drawables restyle.
     private static final String CELL_RADIUS_FIELD =
         "kmu_politicalMapCellRadius";
 
@@ -380,7 +391,7 @@ public final class KmuLunaSettings {
     private static final String ANCHOR_BAND_LINE_OPACITY_FIELD =
         "kmu_politicalMapAnchorBandLineOpacity";
 
-    // Name-fit knobs (Political map - visuals tab, Faction names): a label is a box with
+    // Name-fit knobs (Map - Visuals tab, Map labels): a label is a box with
     // girth, sized to the space it sits in and to the owner's actual name - player-facing
     // appearance, so they live beside the name toggle and format, not among the Dev
     // diagnostics. Min/max font size clamp the per-line height the fit searches (the

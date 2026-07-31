@@ -81,7 +81,7 @@ a cluster, so it has no traced cluster to fill from and each cell tessellates it
 instead. Which is why a `LoneCell` carries fill triangles at all, where an owned cell has no fill of
 its own to carry and takes it from its `FactionTerritory`.
 
-The two player settings under Territory reach on the **Political map - visuals**
+The two player settings under Territory reach on the **Dev**
 tab - *Uncontrolled systems give way to faction territory* and *Frontier keep-out* -
 describe an asymmetric treatment of empty space that the draw does not yet apply, so
 changing them does not move a border.

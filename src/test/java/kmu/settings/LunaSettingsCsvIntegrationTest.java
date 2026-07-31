@@ -47,6 +47,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * fallback forever and so looks exactly like a setting the player has not touched. The prefix alone does
  * not mark a string as a setting - unrelated ids such as the terrain plugin's share it - so that second
  * walk names its exceptions rather than assuming there are none.
+ *
+ * <p>The last column fails the same way one column at a time: LunaLib creates a tab by being named, so a
+ * mistyped tab name opens a new tab holding that row alone rather than raising anything. The tab walk
+ * holds every row's placement against the set the screen is laid out into, which is why the layout is
+ * spelled out here rather than left implicit in the file.
  */
 final class LunaSettingsCsvIntegrationTest {
     private static final Path SETTINGS_CSV = Path.of("data", "config", "LunaSettings.csv");
@@ -56,7 +61,20 @@ final class LunaSettingsCsvIntegrationTest {
     private static final int FIELD_TYPE_COLUMN = 6;
     private static final int DEFAULT_VALUE_COLUMN = 7;
     private static final int OPTIONS_COLUMN = 8;
+    private static final int TAB_COLUMN = 16;
     private static final String RADIO_FIELD_TYPE = "Radio";
+
+    // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
+    // so a mistyped tab name is not an error there - it silently opens a tab of its own holding
+    // that one row, which reads to a player as a knob that has gone missing from where it lived.
+    // Held here so the layout is a decision the file cannot drift away from by typo.
+    private static final Set<String> KNOWN_TABS = Set.of(
+        "Map - Visuals",
+        "Map - Politics - Visuals",
+        "Map - Politics - Domination",
+        "Map - Keybinds",
+        "Dev",
+        "Market Condition Manager (MCM)");
     
     // LunaLib splits a Radio's options on commas; the authored rows space them out for readability.
     private static final String OPTION_SEPARATOR = ",";
@@ -154,6 +172,20 @@ final class LunaSettingsCsvIntegrationTest {
         }
     }
 
+    @Nested
+    class TabPlacement {
+
+        @Test
+        void everyRowIsPlacedOnAKnownTab() {
+            assertThat(readDeclaredTabs())
+                .as(
+                    "tab names declared in %s that the settings screen's layout does not know,"
+                        + " so a mistyped one strands its field on a tab of its own",
+                    SETTINGS_CSV)
+                .isSubsetOf(KNOWN_TABS);
+        }
+    }
+
     // The Radio fields whose stored label a LabeledChoice enum maps back to a choice. Listed here
     // rather than read from KmuLunaSettings because the field ids are private there - a typo in this
     // table fails loudly (no such row) rather than quietly skipping a field.
@@ -211,6 +243,17 @@ final class LunaSettingsCsvIntegrationTest {
             .stream()
             .map(row -> row.get(FIELD_ID_COLUMN))
             .filter(fieldId -> fieldId.startsWith(FIELD_ID_PREFIX))
+            .toList();
+    }
+
+    // The tab every prefixed row asks to be placed on, section captions included: a caption is what
+    // carries a section onto a tab, so it is placed the same way a value row is.
+    private static List<String> readDeclaredTabs() {
+        return readSettingsRows()
+            .stream()
+            .filter(row -> row.size() > TAB_COLUMN)
+            .filter(row -> row.get(FIELD_ID_COLUMN).startsWith(FIELD_ID_PREFIX))
+            .map(row -> row.get(TAB_COLUMN))
             .toList();
     }
 
