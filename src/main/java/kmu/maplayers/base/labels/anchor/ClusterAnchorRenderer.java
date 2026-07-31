@@ -69,7 +69,7 @@ public final class ClusterAnchorRenderer {
 
         // Profiled (not logged) like the base passes: this runs every frame the map is
         // open, so only the profiler's accumulated view is affordable here.
-        KmuProfiling.getProfiler().measure("politicalMap.render.anchors",
+        KmuProfiling.getProfiler().measure("mapLayer.render.anchors",
                 () -> drawClusterAnchors(anchors, factor, alphaMult));
 
         GL11.glPopAttrib();

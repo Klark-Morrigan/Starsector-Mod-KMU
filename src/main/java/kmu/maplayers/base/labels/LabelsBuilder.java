@@ -64,7 +64,7 @@ public final class LabelsBuilder {
             return;
         }
         var buildStart = System.nanoTime();
-        KmuProfiling.getProfiler().measure("politicalMap.buildLabels", () -> {
+        KmuProfiling.getProfiler().measure("mapLayer.buildLabels", () -> {
             // The plan step (each line's text, colour, hang point, slant, and font size)
             // is pure computation; only the mint below touches GL, so the stacking
             // geometry stays a self-contained calculation apart from GL resource creation.

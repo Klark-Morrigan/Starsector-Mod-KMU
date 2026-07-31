@@ -42,7 +42,7 @@ public final class LabelRenderer {
         if (labels.isEmpty() || alphaMult <= 0f) {
             return;
         }
-        KmuProfiling.getProfiler().measure("politicalMap.render.labels",
+        KmuProfiling.getProfiler().measure("mapLayer.render.labels",
                 () -> drawLabels(labels, factor, alphaMult));
     }
 
