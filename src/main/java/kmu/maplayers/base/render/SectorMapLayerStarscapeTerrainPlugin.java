@@ -29,6 +29,7 @@ import java.util.function.BooleanSupplier;
  * drive one layer renderer, over one set of draw lists.
  */
 public class SectorMapLayerStarscapeTerrainPlugin extends SectorMapLayerTerrainPlugin {
+
     // Whether a starscape map is on screen, held rather than re-resolved per frame. Transient and
     // non-final because this plugin is serialised into the save with the terrain entity holding it,
     // and the binding behind this field is not something XStream can carry. A save-restored plugin

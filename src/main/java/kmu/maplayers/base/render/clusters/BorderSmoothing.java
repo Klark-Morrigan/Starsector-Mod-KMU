@@ -65,11 +65,11 @@ public final class BorderSmoothing {
             BorderSmoothingStyle style) {
 
         return mapEachLoop(
-                loops,
-                loop -> PolygonSmoothing.removeSpikes(
-                        loop,
-                        style.spikeHeight(),
-                        style.spikeAngleRadians()));
+            loops,
+            loop -> PolygonSmoothing.removeSpikes(
+                loop,
+                style.spikeHeight(),
+                style.spikeAngleRadians()));
     }
 
     /**
@@ -104,10 +104,10 @@ public final class BorderSmoothing {
             BorderSmoothingStyle style) {
 
         return PolygonSmoothing.roundCorners(
-                loop,
-                style.cornerRadius(),
-                style.cornerSegments(),
-                style.chamferAngleRadians());
+            loop,
+            style.cornerRadius(),
+            style.cornerSegments(),
+            style.chamferAngleRadians());
     }
 
     // Applies one pass to every loop, collecting the results. Both passes are per-loop and

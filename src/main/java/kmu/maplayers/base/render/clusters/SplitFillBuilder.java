@@ -30,6 +30,7 @@ import java.util.Map;
  * pokes out past the line the border strokes.
  */
 public final class SplitFillBuilder {
+
     // The suffixes that split a cluster's one owner into a key per fill state, so the border
     // tracer traces the solid, hatched, and unfilled members as separate clusters rather than the
     // one body their shared key makes them. Appended to the cluster's own key, which already carries
@@ -94,13 +95,13 @@ public final class SplitFillBuilder {
 
         if (fillColor == null) {
             return new ClusterFill(
-                    GlVertexRuns.NO_VERTICES,
-                    GlVertexRuns.NO_VERTICES);
+                GlVertexRuns.NO_VERTICES,
+                GlVertexRuns.NO_VERTICES);
         }
         if (!isSpotlit && !split.hasNonSolidMembers()) {
             return new ClusterFill(
-                    PolygonTessellator.tessellateToTriangles(borderLoops),
-                    GlVertexRuns.NO_VERTICES);
+                PolygonTessellator.tessellateToTriangles(borderLoops),
+                GlVertexRuns.NO_VERTICES);
         }
         return buildPerStateFill(split, owner);
     }
@@ -110,15 +111,17 @@ public final class SplitFillBuilder {
     // The unfilled state is deliberately never tessellated - it holds ground for the cluster's
     // border and label but paints no fill of its own.
     private ClusterFill buildPerStateFill(FillSplit split, String owner) {
+
         var subClusterOwners = mapSubClusterOwnerBySystemId(split, owner);
         var solidTriangles = tessellateSubCluster(FillState.SOLID, split, subClusterOwners);
         var hatchedTriangles = tessellateSubCluster(FillState.HATCHED, split, subClusterOwners);
+
         return new ClusterFill(
-                solidTriangles,
-                Hatching.computeHatchSegments(
-                        hatchedTriangles,
-                        hatch.angleRadians(),
-                        hatch.spacing()));
+            solidTriangles,
+            Hatching.computeHatchSegments(
+                hatchedTriangles,
+                hatch.angleRadians(),
+                hatch.spacing()));
     }
 
     // Keys the footprint's three fill states apart, so the border tracer - which fuses cells sharing
@@ -129,10 +132,13 @@ public final class SplitFillBuilder {
     // frontier draws it. Suffixing the footprint's own key leaves the derived keys as
     // collision-free as it already is.
     private Map<String, String> mapSubClusterOwnerBySystemId(FillSplit split, String owner) {
+
         var keys = new HashMap<>(cellGrouping.ownerBySystemId());
+
         putSubClusterOwners(keys, split, FillState.SOLID, owner + SOLID_SUB_CLUSTER_SUFFIX);
         putSubClusterOwners(keys, split, FillState.HATCHED, owner + HATCHED_SUB_CLUSTER_SUFFIX);
         putSubClusterOwners(keys, split, FillState.UNFILLED, owner + UNFILLED_SUB_CLUSTER_SUFFIX);
+
         return keys;
     }
 
@@ -166,10 +172,11 @@ public final class SplitFillBuilder {
             return GlVertexRuns.NO_VERTICES;
         }
         var rings = borderTrace.traceRings(
-                members.cellIds(),
-                cellEdgesByCellId,
-                new CellGrouping(cellGrouping.systemIdByCellId(), subClusterOwnerBySystemId),
-                split.resolveCoincidentSystemIdsOf(state));
+            members.cellIds(),
+            cellEdgesByCellId,
+            new CellGrouping(cellGrouping.systemIdByCellId(), subClusterOwnerBySystemId),
+            split.resolveCoincidentSystemIdsOf(state));
+
         if (rings.isEmpty()) {
             return GlVertexRuns.NO_VERTICES;
         }
@@ -185,6 +192,8 @@ public final class SplitFillBuilder {
      * hatched members leaves the hatch empty and one that fills solid throughout carries only
      * its solid triangles.
      */
-    public record ClusterFill(float[] solidTriangles, float[] hatchSegments) {
+    public record ClusterFill(
+        float[] solidTriangles,
+        float[] hatchSegments) {
     }
 }

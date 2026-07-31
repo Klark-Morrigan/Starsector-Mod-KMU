@@ -29,6 +29,7 @@ import java.util.EnumSet;
  * registered layer and never enters a save.
  */
 public class SectorMapLayerTerrainPlugin extends BaseTerrain {
+
     // Map rendering ignores this (the map calls the map hooks regardless), but BaseTerrain
     // requires the override; large so the terrain is never treated as a tiny point elsewhere.
     private static final float RENDER_RANGE = 1_000_000f;
@@ -39,7 +40,7 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     // RadioChatterTerrainPlugin does the same. Returning it (rather than leaving the default) is
     // what lets addTerrain succeed on a fresh game; omitting it crashes onGameLoad.
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
-            EnumSet.noneOf(CampaignEngineLayers.class);
+        EnumSet.noneOf(CampaignEngineLayers.class);
 
     @Override
     public EnumSet<CampaignEngineLayers> getActiveLayers() {

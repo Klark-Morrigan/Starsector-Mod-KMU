@@ -36,10 +36,10 @@ public sealed interface StyledCell {
      * @param seamWidth the seam line width in pixels
      */
     record FusedCell(
-            float[] seamEdges,
-            UiElementPaint seamPaint,
-            float seamWidth)
-            implements StyledCell {
+        float[] seamEdges,
+        UiElementPaint seamPaint,
+        float seamWidth)
+        implements StyledCell {
     }
 
     /**
@@ -58,10 +58,10 @@ public sealed interface StyledCell {
      * @param outlineWidth  the outline line width in pixels
      */
     record LoneCell(
-            float[] fillTriangles,
-            float[] outlineEdges,
-            UiElementPaint fillPaint,
-            UiElementPaint outlinePaint,
-            float outlineWidth) implements StyledCell {
+        float[] fillTriangles,
+        float[] outlineEdges,
+        UiElementPaint fillPaint,
+        UiElementPaint outlinePaint,
+        float outlineWidth) implements StyledCell {
     }
 }

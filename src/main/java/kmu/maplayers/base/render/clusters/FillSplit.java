@@ -43,9 +43,10 @@ public record FillSplit(
         for (var cellId : memberCellIds) {
             var systemId = cellGrouping.resolveDrawnSystemIdOf(cellId);
             var members = split.resolveMembersOf(classifyFillState(
-                    systemId,
-                    hatchedSystemIds,
-                    unfilledSystemIds));
+                systemId,
+                hatchedSystemIds,
+                unfilledSystemIds));
+
             members.cellIds().add(cellId);
             if (systemId != null) {
                 members.systemIds().add(systemId);
@@ -86,7 +87,7 @@ public record FillSplit(
      */
     public boolean hasNonSolidMembers() {
         return !hatched.systemIds().isEmpty()
-                || !unfilled.systemIds().isEmpty();
+            || !unfilled.systemIds().isEmpty();
     }
 
     /**
@@ -126,9 +127,9 @@ public record FillSplit(
     // and the shape a footprint with nothing in it comes back as.
     private static FillSplit createEmpty() {
         return new FillSplit(
-                FillMembers.createEmpty(),
-                FillMembers.createEmpty(),
-                FillMembers.createEmpty());
+            FillMembers.createEmpty(),
+            FillMembers.createEmpty(),
+            FillMembers.createEmpty());
     }
 
     /**
@@ -157,8 +158,8 @@ public record FillSplit(
 
         private static FillMembers createEmpty() {
             return new FillMembers(
-                    new LinkedHashSet<>(),
-                    new LinkedHashSet<>());
+                new LinkedHashSet<>(),
+                new LinkedHashSet<>());
         }
     }
 }

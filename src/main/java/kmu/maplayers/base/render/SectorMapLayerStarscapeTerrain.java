@@ -27,6 +27,7 @@ import com.fs.starfarer.campaign.CampaignTerrain;
  * {@link SectorMapLayerStarscapeTerrainPlugin} instead, where it can be reached.
  */
 public class SectorMapLayerStarscapeTerrain extends CampaignTerrain {
+
     // The one terrain type the map widget draws while the starscape filter is on.
     private static final String WHITELISTED_MAP_TYPE = "slipstream";
 

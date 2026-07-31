@@ -15,6 +15,7 @@ import kmu.maplayers.base.geometry.ShapedCell;
  * interior seam) before packing them.
  */
 public final class VertexRuns {
+
     // Conversions only; never instantiated.
     private VertexRuns() {
     }
@@ -24,23 +25,29 @@ public final class VertexRuns {
     // seams when false. Sized in a first pass so the run is a single exact array
     // rather than a growing list boxed per coordinate.
     public static float[] flattenEdgesOfClass(ShapedCell shaped, boolean wantBoundary) {
+
         var polygon = shaped.fillPolygon();
         var edgeIsBoundary = shaped.edgeIsBoundary();
         var count = polygon.size();
         var matching = 0;
+
         for (var i = 0; i < count; i++) {
             if (edgeIsBoundary[i] == wantBoundary) {
                 matching++;
             }
         }
+
         var flat = new float[matching * GlVertexRuns.FLOATS_PER_SEGMENT];
         var index = 0;
+
         for (var i = 0; i < count; i++) {
             if (edgeIsBoundary[i] != wantBoundary) {
                 continue;
             }
+            
             var start = polygon.get(i);
             var end = polygon.get((i + 1) % count);
+
             flat[index++] = (float) start[0];
             flat[index++] = (float) start[1];
             flat[index++] = (float) end[0];
