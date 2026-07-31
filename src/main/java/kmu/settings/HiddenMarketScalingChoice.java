@@ -13,7 +13,10 @@ import kmlib.settings.LabeledChoice;
  * {@link #FIXED} counts it at the player-set fixed weight regardless of size. This
  * names the options, and the settings reader maps LunaLib's stored Radio label back to
  * one, so the weighting reads the mode without matching raw strings. The labels here must match
- * the {@code secondaryValue} options in data/config/LunaSettings.csv exactly.
+ * the {@code secondaryValue} options in data/config/LunaSettings.csv exactly, and neither side may
+ * be reworded once shipped: a Radio stores the label itself, so a tidied caption is a key that no
+ * longer resolves, and every save holding the old string quietly falls back to the default. They
+ * are frozen for the reason the field ids are.
  */
 public enum HiddenMarketScalingChoice implements LabeledChoice {
     NORMAL("Normal"),

@@ -13,7 +13,10 @@ import kmlib.settings.LabeledChoice;
  * stored Radio label back to one, so the render layer picks {@code owner.primaryColor()},
  * {@code owner.secondaryColor()}, or no draw without matching raw strings. The
  * labels here must match the {@code secondaryValue} options in
- * data/config/LunaSettings.csv exactly.
+ * data/config/LunaSettings.csv exactly, and neither side may be reworded once
+ * shipped: a Radio stores the label itself, so a tidied caption is a key that no
+ * longer resolves, and every save holding the old string quietly falls back to the
+ * default. They are frozen for the reason the field ids are.
  */
 public enum FactionPaletteChoice implements LabeledChoice {
     PRIMARY("Primary faction color"),
