@@ -15,9 +15,16 @@ import java.util.Set;
  * paints every bloc untouched.
  */
 public record FilterSnapshot(
-        String selectedBlocId,
-        BlocStyleAdjustment recedeAdjustment,
-        Set<String> contestedSystemIds) {
+    String selectedBlocId,
+    BlocStyleAdjustment recedeAdjustment,
+    Set<String> contestedSystemIds) {
+
+    // The inert default: nothing spotlighted, so nothing recedes and no system is contested.
+    // Named here rather than spelt out at each pass that has no filter, so "off filter" is one
+    // value every such pass shares and cannot get subtly wrong.
+    public static FilterSnapshot unfiltered() {
+        return new FilterSnapshot(null, BlocStyleAdjustment.NONE, Set.of());
+    }
 
     // A build spotlights a bloc exactly when one was selected, so the shared cell and faction
     // builders bypass the view's per-bloc styling for the filter's presence-aware rules.

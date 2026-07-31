@@ -11,7 +11,7 @@ import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import java.util.Set;
 
 /**
- * One screen's binding for the shared political-map sidebar: it answers when the sidebar is live on that
+ * One screen's binding for the shared map-layer sidebar: it answers when the sidebar is live on that
  * screen, resolves the placement to draw there, owns the panel's transient scroll and collapse state, and
  * routes a key press. The generic {@link SidebarRenderer} and {@link SidebarInput} run against this role,
  * so the same panel draws and routes on the sector map and on the intel screen with only the host differing
@@ -19,7 +19,7 @@ import java.util.Set;
  *
  * <p>Each host owns its own {@link TabPanelController} and its own {@link SidebarFoldSelection}, so the two
  * screens' panels keep separate scroll and collapse state - and reopen at their own folds - even though
- * they share one layout and one set of political-map controls. {@link BaseSidebarHost} carries the plumbing
+ * they share one layout and one set of layer controls. {@link BaseSidebarHost} carries the plumbing
  * common to every host - including the shortcut key that jumps to a layer, since the panel offers the same
  * tabs wherever it draws - leaving a concrete host only the questions that genuinely differ between
  * screens.

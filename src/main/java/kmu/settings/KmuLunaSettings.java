@@ -17,6 +17,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * to what", and lets the mod plugin stay a thin entry point. New settings
  * bindings are added here as the mod grows.
  *
+ * <p>Many field ids read as the political map's - {@code kmu_politicalMapSidebar*},
+ * {@code kmu_politicalMapAnchor*}, {@code kmu_politicalMapBorderWeldTolerance} - while
+ * the getters over them are named for the map-layer framework that reads them
+ * ({@code getMapSidebar*}, {@code getMapAnchor*}, {@code getMapBorderWeldTolerance}).
+ * The ids predate the framework and cannot follow it: a LunaLib field id is the key its
+ * value is stored under, so renaming one resets that setting for every existing player,
+ * exactly as a persisted class or memory key cannot be renamed. A getter is a Java name
+ * and costs nothing to change, so the mismatch is parked where it does no harm - the
+ * Java side says which half of the map code owns a knob, the stored key stays put.
+ *
  * <p>The political-map fields, matching data/config/LunaSettings.csv, style each
  * category of system on the sector map. Owned categories - core factions and
  * independent space - each get a fill, an outer (national) border, and an inner
@@ -79,6 +89,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * unbound). They sit apart from the visuals because they are controls, not appearance.
  */
 public final class KmuLunaSettings {
+
     // KMU's LunaLib settings id (matches data/config/LunaSettings.csv) and the
     // logger subtree the log-level field tunes. Every KMU class lives under
     // the "kmu" package, so that one logger name is the lever for the whole
@@ -93,48 +104,51 @@ public final class KmuLunaSettings {
     // corner; border width frames it (0 = no border); opacity is its background
     // translucency.
     private static final String SIDEBAR_PADDING_TOP_FIELD =
-            "kmu_politicalMapSidebarPaddingTop";
+        "kmu_politicalMapSidebarPaddingTop";
     private static final String SIDEBAR_PADDING_LEFT_FIELD =
-            "kmu_politicalMapSidebarPaddingLeft";
+        "kmu_politicalMapSidebarPaddingLeft";
     private static final String SIDEBAR_PADDING_BOTTOM_FIELD =
-            "kmu_politicalMapSidebarPaddingBottom";
+        "kmu_politicalMapSidebarPaddingBottom";
     private static final String SIDEBAR_BORDER_WIDTH_FIELD =
-            "kmu_politicalMapSidebarBorderWidth";
+        "kmu_politicalMapSidebarBorderWidth";
     private static final String SIDEBAR_OPACITY_FIELD =
-            "kmu_politicalMapSidebarOpacity";
+        "kmu_politicalMapSidebarOpacity";
+
     // How long the sidebar's collapse handle takes to fold the body to its docked rail (and
     // unfold it), in seconds; 0 snaps it instantly. Player-facing animation pace, so it sits
     // in the Overlay sidebar section of the visuals tab beside the box's other appearance knobs.
     private static final String SIDEBAR_COLLAPSE_SECONDS_FIELD =
-            "kmu_politicalMapSidebarCollapseSeconds";
+        "kmu_politicalMapSidebarCollapseSeconds";
+
     // Which colour the collapse handle's chevron draws in: the vanilla highlight gold, so the cue
     // stands off the frame it sits on, or the panel's own accents so the handle reads as chrome.
     // Appearance only, so it sits with the box's other looks in the Overlay sidebar section.
     private static final String SIDEBAR_CHEVRON_COLOR_FIELD =
-            "kmu_politicalMapSidebarChevronColor";
+        "kmu_politicalMapSidebarChevronColor";
+
     // Intel-screen overlay field (Political map - visuals tab): the same sidebar box drawn on the intel
     // screen sits flush against the left edge of that screen's map preview (the "visor") and hangs from
     // the visor top; this top padding pushes it down to clear the vanilla starscape / fuel-range toggles
     // at the top of the intel map. The visor's height caps the box, so no left or bottom knob is needed.
     private static final String INTEL_SIDEBAR_PADDING_TOP_FIELD =
-            "kmu_politicalMapIntelSidebarPaddingTop";
+        "kmu_politicalMapIntelSidebarPaddingTop";
 
     // Faction (core-faction cluster) style fields. Name opacity fades this group's cluster
     // names, applied where the name colour is resolved so the faction group can recede its
     // own names without touching independent space's. A fade, not a fit knob - it dims the
     // name colour without touching the box the fit sized.
     private static final String FACTION_OUTER_BORDER_COLOR_FIELD =
-            "kmu_politicalMapFactionOuterBorderColor";
+        "kmu_politicalMapFactionOuterBorderColor";
     private static final String FACTION_OUTER_BORDER_OPACITY_FIELD =
-            "kmu_politicalMapFactionOuterBorderOpacity";
+        "kmu_politicalMapFactionOuterBorderOpacity";
     private static final String FACTION_OUTER_BORDER_WIDTH_FIELD =
-            "kmu_politicalMapFactionOuterBorderWidth";
+        "kmu_politicalMapFactionOuterBorderWidth";
     private static final String FACTION_INNER_BORDER_COLOR_FIELD =
-            "kmu_politicalMapFactionInnerBorderColor";
+        "kmu_politicalMapFactionInnerBorderColor";
     private static final String FACTION_INNER_BORDER_OPACITY_FIELD =
-            "kmu_politicalMapFactionInnerBorderOpacity";
+        "kmu_politicalMapFactionInnerBorderOpacity";
     private static final String FACTION_INNER_BORDER_WIDTH_FIELD =
-            "kmu_politicalMapFactionInnerBorderWidth";
+        "kmu_politicalMapFactionInnerBorderWidth";
     private static final String FACTION_FILL_COLOR_FIELD = "kmu_politicalMapFactionFillColor";
     private static final String FACTION_FILL_OPACITY_FIELD = "kmu_politicalMapFactionFillOpacity";
     private static final String FACTION_NAME_OPACITY_FIELD = "kmu_politicalMapFactionNameOpacity";
@@ -142,37 +156,37 @@ public final class KmuLunaSettings {
     // Independent (independent-held cluster) style fields, the same shape as faction (its
     // name opacity fades only the independent group's names).
     private static final String INDEPENDENT_OUTER_BORDER_COLOR_FIELD =
-            "kmu_politicalMapIndependentOuterBorderColor";
+        "kmu_politicalMapIndependentOuterBorderColor";
     private static final String INDEPENDENT_OUTER_BORDER_OPACITY_FIELD =
-            "kmu_politicalMapIndependentOuterBorderOpacity";
+        "kmu_politicalMapIndependentOuterBorderOpacity";
     private static final String INDEPENDENT_OUTER_BORDER_WIDTH_FIELD =
-            "kmu_politicalMapIndependentOuterBorderWidth";
+        "kmu_politicalMapIndependentOuterBorderWidth";
     private static final String INDEPENDENT_INNER_BORDER_COLOR_FIELD =
-            "kmu_politicalMapIndependentInnerBorderColor";
+        "kmu_politicalMapIndependentInnerBorderColor";
     private static final String INDEPENDENT_INNER_BORDER_OPACITY_FIELD =
-            "kmu_politicalMapIndependentInnerBorderOpacity";
+        "kmu_politicalMapIndependentInnerBorderOpacity";
     private static final String INDEPENDENT_INNER_BORDER_WIDTH_FIELD =
-            "kmu_politicalMapIndependentInnerBorderWidth";
+        "kmu_politicalMapIndependentInnerBorderWidth";
     private static final String INDEPENDENT_FILL_COLOR_FIELD =
-            "kmu_politicalMapIndependentFillColor";
+        "kmu_politicalMapIndependentFillColor";
     private static final String INDEPENDENT_FILL_OPACITY_FIELD =
-            "kmu_politicalMapIndependentFillOpacity";
+        "kmu_politicalMapIndependentFillOpacity";
     private static final String INDEPENDENT_NAME_OPACITY_FIELD =
-            "kmu_politicalMapIndependentNameOpacity";
+        "kmu_politicalMapIndependentNameOpacity";
 
     // Decivilised and uninhabited (factionless) style fields. Neither has a colour choice:
     // factionless ground has no faction palette to pick from, so it always paints in the
     // shared neutral colour and the opacity knobs alone decide what shows.
     private static final String DECIVILISED_BORDER_OPACITY_FIELD =
-            "kmu_politicalMapDecivilisedBorderOpacity";
+        "kmu_politicalMapDecivilisedBorderOpacity";
     private static final String DECIVILISED_BORDER_WIDTH_FIELD =
-            "kmu_politicalMapDecivilisedBorderWidth";
+        "kmu_politicalMapDecivilisedBorderWidth";
     private static final String DECIVILISED_FILL_OPACITY_FIELD =
-            "kmu_politicalMapDecivilisedFillOpacity";
+        "kmu_politicalMapDecivilisedFillOpacity";
     private static final String UNINHABITED_BORDER_OPACITY_FIELD =
-            "kmu_politicalMapUninhabitedBorderOpacity";
+        "kmu_politicalMapUninhabitedBorderOpacity";
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
-            "kmu_politicalMapUninhabitedBorderWidth";
+        "kmu_politicalMapUninhabitedBorderWidth";
 
     // Recede styling settings (Political map - visuals tab): the two settings-screen knobs
     // supplementary to the sidebar recede toggles, shared across both recede sets (the spotlight
@@ -183,9 +197,9 @@ public final class KmuLunaSettings {
     // independent-held space. The toggles themselves are sidebar-only per-save choices (sector
     // memory), not LunaLib fields, since every LunaLib field would render on a settings tab.
     private static final String ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD =
-            "kmu_politicalMapAllianceMutedOpacityModifier";
+        "kmu_politicalMapAllianceMutedOpacityModifier";
     private static final String DESATURATION_DARKENING_FIELD =
-            "kmu_politicalMapDesaturationDarkening";
+        "kmu_politicalMapDesaturationDarkening";
 
     // Hover highlight settings (Political map - visuals tab): how the map answers the cursor -
     // a halo around the hovered territory's frontier and a wash over the one hovered cell,
@@ -198,31 +212,32 @@ public final class KmuLunaSettings {
     // live on the open map - which is the point of exposing them: the look is dialed in-engine
     // against real territory rather than guessed at build time.
     private static final String HOVER_ENABLED_FIELD =
-            "kmu_politicalMapHoverEnabled";
+        "kmu_politicalMapHoverEnabled";
     private static final String HOVER_HIGHLIGHT_COLOR_FIELD =
-            "kmu_politicalMapHoverHighlightColor";
+        "kmu_politicalMapHoverHighlightColor";
     private static final String HOVER_GLOW_OPACITY_FIELD =
-            "kmu_politicalMapHoverGlowOpacity";
+        "kmu_politicalMapHoverGlowOpacity";
     private static final String HOVER_GLOW_WIDTH_FIELD =
-            "kmu_politicalMapHoverGlowWidth";
+        "kmu_politicalMapHoverGlowWidth";
     private static final String HOVER_GLOW_LAYERS_FIELD =
-            "kmu_politicalMapHoverGlowLayers";
+        "kmu_politicalMapHoverGlowLayers";
     private static final String HOVER_GLOW_PULSE_STRENGTH_FIELD =
-            "kmu_politicalMapHoverGlowPulseStrength";
+        "kmu_politicalMapHoverGlowPulseStrength";
     private static final String HOVER_GLOW_PULSE_PERIOD_FIELD =
-            "kmu_politicalMapHoverGlowPulsePeriod";
+        "kmu_politicalMapHoverGlowPulsePeriod";
     private static final String HOVER_WASH_OPACITY_FIELD =
-            "kmu_politicalMapHoverWashOpacity";
+        "kmu_politicalMapHoverWashOpacity";
     private static final String HOVER_WASH_OUTLINE_OPACITY_FIELD =
-            "kmu_politicalMapHoverWashOutlineOpacity";
+        "kmu_politicalMapHoverWashOutlineOpacity";
     private static final String HOVER_WASH_OUTLINE_WIDTH_FIELD =
-            "kmu_politicalMapHoverWashOutlineWidth";
+        "kmu_politicalMapHoverWashOutlineWidth";
+
     // Hover tooltip master switch (visuals tab): whether the cursor tooltip - the box
     // naming the hovered system and its owner - draws at all. Distinct from the
     // hover-highlight switch above (the halo and cell wash): the tooltip is the info box,
     // each gated on its own, in its own section beside the highlight controls.
     private static final String HOVER_TOOLTIP_ENABLED_FIELD =
-            "kmu_politicalMapHoverTooltipEnabled";
+        "kmu_politicalMapHoverTooltipEnabled";
 
     // Dominance rules (Political map - domination tab): how the map decides a system's
     // dominant faction. Not styling fields - they change the political verdicts
@@ -237,33 +252,33 @@ public final class KmuLunaSettings {
     // collapses at zero stability. All fold into one DominanceRules read once per
     // resolution pass.
     private static final String COLONY_SIZE_WEIGHT_FIELD =
-            "kmu_politicalMapColonySizeWeight";
+        "kmu_politicalMapColonySizeWeight";
     private static final String HIDDEN_MARKET_SCALING_FIELD =
-            "kmu_politicalMapHiddenMarketScaling";
+        "kmu_politicalMapHiddenMarketScaling";
     private static final String HIDDEN_MARKET_FIXED_WEIGHT_FIELD =
-            "kmu_politicalMapHiddenMarketFixedWeight";
+        "kmu_politicalMapHiddenMarketFixedWeight";
     private static final String STABILITY_WEIGHS_DOMINANCE_FIELD =
-            "kmu_politicalMapStabilityWeighsDominance";
+        "kmu_politicalMapStabilityWeighsDominance";
     private static final String NORMAL_LOW_STABILITY_PENALTY_FIELD =
-            "kmu_politicalMapNormalLowStabilityPenalty";
+        "kmu_politicalMapNormalLowStabilityPenalty";
     private static final String STATION_WEIGHS_DOMINANCE_FIELD =
-            "kmu_politicalMapStationWeighsDominance";
+        "kmu_politicalMapStationWeighsDominance";
     private static final String STATION_WEIGHT_FIELD =
-            "kmu_politicalMapStationWeight";
+        "kmu_politicalMapStationWeight";
     private static final String STATION_HIDDEN_MARKET_RATE_FIELD =
-            "kmu_politicalMapStationHiddenMarketRate";
+        "kmu_politicalMapStationHiddenMarketRate";
     private static final String STATION_LOW_STABILITY_PENALTY_FIELD =
-            "kmu_politicalMapStationLowStabilityPenalty";
+        "kmu_politicalMapStationLowStabilityPenalty";
     private static final String PATROL_WEIGHS_DOMINANCE_FIELD =
-            "kmu_politicalMapPatrolWeighsDominance";
+        "kmu_politicalMapPatrolWeighsDominance";
     private static final String PATROL_SMALL_WEIGHT_FIELD =
-            "kmu_politicalMapPatrolSmallWeight";
+        "kmu_politicalMapPatrolSmallWeight";
     private static final String PATROL_MEDIUM_WEIGHT_FIELD =
-            "kmu_politicalMapPatrolMediumWeight";
+        "kmu_politicalMapPatrolMediumWeight";
     private static final String PATROL_LARGE_WEIGHT_FIELD =
-            "kmu_politicalMapPatrolLargeWeight";
+        "kmu_politicalMapPatrolLargeWeight";
     private static final String PATROL_LOW_STABILITY_PENALTY_FIELD =
-            "kmu_politicalMapPatrolLowStabilityPenalty";
+        "kmu_politicalMapPatrolLowStabilityPenalty";
 
     // Cell geometry (Dev tab): the resolution of the raw Voronoi cells, upstream of
     // any border shaping. Unlike the border fields below - which restyle fixed
@@ -271,7 +286,7 @@ public final class KmuLunaSettings {
     // it feeds the geometry rebuild. Every segment is a vertex on each frontier cell,
     // so it is the lever for trading map FPS against frontier smoothness.
     private static final String CELL_BOUND_SEGMENTS_FIELD =
-            "kmu_politicalMapCellBoundSegments";
+        "kmu_politicalMapCellBoundSegments";
 
     // Cell reach (visuals tab): how far each system's territory extends into empty space
     // before the frontier bound closes it off. A player-facing appearance knob - it sets
@@ -279,7 +294,7 @@ public final class KmuLunaSettings {
     // Dev resolution knob above. Like the resolution it reseeds the cells, so it feeds the
     // geometry rebuild rather than the drawables restyle.
     private static final String CELL_RADIUS_FIELD =
-            "kmu_politicalMapCellRadius";
+        "kmu_politicalMapCellRadius";
 
     // National-border geometry (Dev tab): the shape of the frontier stroked and filled
     // per cluster, exposed for live tuning rather than baked as constants. All feed the
@@ -291,32 +306,33 @@ public final class KmuLunaSettings {
     // Border tracing: the raw ring chaining and miter inset. Always applied - it is
     // upstream of the two gated smoothing passes, so it has no switch of its own.
     private static final String BORDER_WELD_TOLERANCE_FIELD =
-            "kmu_politicalMapBorderWeldTolerance";
+        "kmu_politicalMapBorderWeldTolerance";
     private static final String BORDER_MITER_LIMIT_FIELD =
-            "kmu_politicalMapBorderMiterLimit";
+        "kmu_politicalMapBorderMiterLimit";
 
     // Spike sanding: gate then its knobs. Splices out needle/cusp protrusions the
     // rounding cannot fix (a corner both sharper than the angle and shallower than the
     // height) from the resolved border before rounding. The gate leaves both knobs
     // unread when off, so their values survive for when it is switched back on.
     private static final String SAND_SPIKES_FIELD =
-            "kmu_politicalMapSandSpikes";
+        "kmu_politicalMapSandSpikes";
     private static final String BORDER_SPIKE_HEIGHT_FIELD =
-            "kmu_politicalMapBorderSpikeHeight";
+        "kmu_politicalMapBorderSpikeHeight";
     private static final String BORDER_SPIKE_ANGLE_FIELD =
-            "kmu_politicalMapBorderSpikeAngle";
+        "kmu_politicalMapBorderSpikeAngle";
 
     // Corner rounding: gate then its knobs. Replaces each sharp corner with an arc. The
     // gate leaves the radius, segments, and chamfer unread when off, and also covers the
     // factionless cell outlines, which reuse this same corner-rounding pass.
     private static final String ROUND_CORNERS_FIELD =
-            "kmu_politicalMapRoundCorners";
+        "kmu_politicalMapRoundCorners";
     private static final String BORDER_CORNER_RADIUS_FIELD =
-            "kmu_politicalMapBorderCornerRadius";
+        "kmu_politicalMapBorderCornerRadius";
     private static final String BORDER_CORNER_SEGMENTS_FIELD =
-            "kmu_politicalMapBorderCornerSegments";
+        "kmu_politicalMapBorderCornerSegments";
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
-            "kmu_politicalMapBorderChamferAngle";
+        "kmu_politicalMapBorderChamferAngle";
+
     // Hatch fill (Dev tab): the diagonal line pattern that fills the filter's contested
     // cluster - the spotlighted bloc's present-but-dominated systems - so it reads as
     // "mine, but contested" against the solid cluster it holds outright. Only that one
@@ -324,11 +340,12 @@ public final class KmuLunaSettings {
     // angle their direction in degrees off horizontal, and width the pixel stroke of each
     // line. All three feed the drawables rebuild, so a change repaints the hatch live.
     private static final String HATCH_SPACING_FIELD =
-            "kmu_politicalMapHatchSpacing";
+        "kmu_politicalMapHatchSpacing";
     private static final String HATCH_ANGLE_FIELD =
-            "kmu_politicalMapHatchAngle";
+        "kmu_politicalMapHatchAngle";
     private static final String HATCH_WIDTH_FIELD =
-            "kmu_politicalMapHatchWidth";
+        "kmu_politicalMapHatchWidth";
+
     // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor search -
     // the straight line a faction name will sit on, chosen by scoring many candidate
     // lines swept across the cluster (a fan of directions times a family of parallel
@@ -341,26 +358,28 @@ public final class KmuLunaSettings {
     // bending any direction before the fit; the max-slant degrees cap that lean short of
     // vertical (and it fades to level for round clusters whose axis is meaningless).
     private static final String ANCHOR_DIRECTION_COUNT_FIELD =
-            "kmu_politicalMapAnchorDirectionCount";
+        "kmu_politicalMapAnchorDirectionCount";
     private static final String ANCHOR_OFFSET_COUNT_FIELD =
-            "kmu_politicalMapAnchorOffsetCount";
+        "kmu_politicalMapAnchorOffsetCount";
     private static final String ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD =
-            "kmu_politicalMapAnchorVerticalPenaltyStrength";
+        "kmu_politicalMapAnchorVerticalPenaltyStrength";
     private static final String ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD =
-            "kmu_politicalMapAnchorVerticalPenaltyExponent";
+        "kmu_politicalMapAnchorVerticalPenaltyExponent";
     private static final String ANCHOR_MAX_SLANT_DEGREES_FIELD =
-            "kmu_politicalMapAnchorMaxSlantDegrees";
+        "kmu_politicalMapAnchorMaxSlantDegrees";
     private static final String ANCHOR_END_INSET_MULTIPLE_FIELD =
-            "kmu_politicalMapAnchorEndInsetMultiple";
+        "kmu_politicalMapAnchorEndInsetMultiple";
     private static final String ANCHOR_ICON_CLEARANCE_FIELD =
-            "kmu_politicalMapAnchorIconClearance";
+        "kmu_politicalMapAnchorIconClearance";
+
     // Debug band-quad knobs (Dev tab, Label anchors): the opacity is the band quad's
     // fill alpha, and the line opacity the separate alpha of that box's strokes so the
     // outline can read stronger than the fill it sits on.
     private static final String ANCHOR_BAND_OPACITY_FIELD =
-            "kmu_politicalMapAnchorBandOpacity";
+        "kmu_politicalMapAnchorBandOpacity";
     private static final String ANCHOR_BAND_LINE_OPACITY_FIELD =
-            "kmu_politicalMapAnchorBandLineOpacity";
+        "kmu_politicalMapAnchorBandLineOpacity";
+
     // Name-fit knobs (Political map - visuals tab, Faction names): a label is a box with
     // girth, sized to the space it sits in and to the owner's actual name - player-facing
     // appearance, so they live beside the name toggle and format, not among the Dev
@@ -368,13 +387,14 @@ public final class KmuLunaSettings {
     // readability floor and the oversize ceiling); max lines and line spacing let a
     // length-poor cluster wrap the name into a taller-font block instead of shrinking it.
     private static final String NAME_MIN_FONT_SIZE_FIELD =
-            "kmu_politicalMapNameMinFontSize";
+        "kmu_politicalMapNameMinFontSize";
     private static final String NAME_MAX_FONT_SIZE_FIELD =
-            "kmu_politicalMapNameMaxFontSize";
+        "kmu_politicalMapNameMaxFontSize";
     private static final String NAME_MAX_LINES_FIELD =
-            "kmu_politicalMapNameMaxLines";
+        "kmu_politicalMapNameMaxLines";
     private static final String NAME_LINE_SPACING_FIELD =
-            "kmu_politicalMapNameLineSpacing";
+        "kmu_politicalMapNameLineSpacing";
+
     // Reveal overrides (Dev tab): two toggles that widen what the map draws for
     // inspection, each bypassing a normal gate. Show-all-factions drops the
     // known-to-player footprint filter so undiscovered colonies count toward
@@ -384,14 +404,16 @@ public final class KmuLunaSettings {
     // treats them like the frontier resolution - a change forces a geometry rebuild,
     // not just the drawables restyle a styling setting triggers.
     private static final String SHOW_ALL_FACTIONS_FIELD =
-            "kmu_politicalMapShowAllFactions";
+        "kmu_politicalMapShowAllFactions";
     private static final String FORCE_ALL_SYSTEMS_ON_MAP_FIELD =
-            "kmu_politicalMapForceAllSystemsOnMap";
+        "kmu_politicalMapForceAllSystemsOnMap";
+
     // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and the
     // accepted label line in green) so the clustering and axis fit behind the faction
     // labels can be eyeballed on the map. Off by default.
     private static final String SHOW_CLUSTER_ANCHORS_FIELD =
-            "kmu_politicalMapShowClusterAnchors";
+        "kmu_politicalMapShowClusterAnchors";
+
     // Diagnostics (Dev tab): the two extra anchor lines layered under the accepted one,
     // each behind its own toggle so the anchor overlay stays readable by default. The
     // rejected line (red) shows the best candidate a collapsed fit had before the
@@ -399,18 +421,20 @@ public final class KmuLunaSettings {
     // what the fit would accept with no horizontal bias, so the bias knob's effect is
     // visible directly. Both meaningful only while the anchors themselves draw.
     private static final String SHOW_REJECTED_AXES_FIELD =
-            "kmu_politicalMapShowRejectedAxes";
+        "kmu_politicalMapShowRejectedAxes";
     private static final String SHOW_UNBIASED_AXES_FIELD =
-            "kmu_politicalMapShowUnbiasedAxes";
+        "kmu_politicalMapShowUnbiasedAxes";
+
     // Diagnostics (Dev tab): replaces the normal render with a border-tracing overlay that
     // layers the smoothing pipeline's stages (base, despiked, rounded) in distinct colors,
     // honouring the two smoothing gates. Off by default.
     private static final String DEBUG_BORDER_TRACING_FIELD =
-            "kmu_politicalMapDebugBorderTracing";
+        "kmu_politicalMapDebugBorderTracing";
+
     // Market-conditions tab: whether the condition picker offers every market
     // condition, or only the planetary ones vanilla treats as hand-placeable.
     private static final String OFFER_ALL_CONDITIONS_FIELD =
-            "kmu_conditionsShowAll";
+        "kmu_conditionsShowAll";
 
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
@@ -420,139 +444,169 @@ public final class KmuLunaSettings {
     // rows' defaultValues.
     private static final int DEFAULT_SIDEBAR_PADDING_TOP = 46;
     private static final int DEFAULT_SIDEBAR_PADDING_LEFT = 12;
+
     // Kept clear at the screen bottom, pixels: the panel body caps its height so the box
     // never runs past this margin, and the bloc list scrolls within what is left. A small
     // margin like the left padding. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_PADDING_BOTTOM = 12;
+
     // Intel overlay top padding from the visor's top edge, pixels: clears the vanilla starscape /
     // fuel-range toggles at the top of the intel map by default. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_INTEL_SIDEBAR_PADDING_TOP = 40;
+
     // A one-pixel outer border by default; 0 hides it. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;
+
     // 80% opaque by default: readable over the map without fully masking what is behind it.
     // Stored 0..100 in the CSV, exposed 0..1. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
     private static final int MIN_SIDEBAR_OPACITY_PERCENT = 0;
     private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
+
     // A quarter-second collapse by default. Kept a literal mirroring the CSV defaultValue and
     // TabPanelCollapse.DEFAULT_DURATION_SECONDS - the KMLib holder's own default pace - like the
     // other fallbacks, so this class stays decoupled from the widget library.
     private static final float DEFAULT_SIDEBAR_COLLAPSE_SECONDS = 0.25f;
+
     // The highlight gold by default: the collapse handle hangs off the frame over the map, so its
     // chevron reads clearest pitched against the panel's accents rather than painted in them.
     // Mirrors the CSV row's defaultValue.
     private static final NotchChevronColorChoice DEFAULT_SIDEBAR_CHEVRON_COLOR =
-            NotchChevronColorChoice.GOLD;
+        NotchChevronColorChoice.GOLD;
     private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOR =
-            FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_OUTER_BORDER_OPACITY = 1.0;
     private static final double DEFAULT_FACTION_OUTER_BORDER_WIDTH = 3.0;
     private static final FactionPaletteChoice DEFAULT_FACTION_INNER_BORDER_COLOR =
-            FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_INNER_BORDER_OPACITY = 0.1;
     private static final double DEFAULT_FACTION_INNER_BORDER_WIDTH = 5.0;
     private static final FactionPaletteChoice DEFAULT_FACTION_FILL_COLOR =
-            FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_FILL_OPACITY = 0.4;
+    
     // Fully opaque by default: faction names draw at full colour strength unless faded.
     private static final double DEFAULT_FACTION_NAME_OPACITY = 1.0;
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_OUTER_BORDER_COLOR =
-            FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_OUTER_BORDER_OPACITY = 0.5;
     private static final double DEFAULT_INDEPENDENT_OUTER_BORDER_WIDTH = 3.0;
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_INNER_BORDER_COLOR =
-            FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY = 0.1;
     private static final double DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH = 5.0;
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_FILL_COLOR =
-            FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.2;
+
     // Fully opaque by default: independent names draw at full colour strength unless faded.
     private static final double DEFAULT_INDEPENDENT_NAME_OPACITY = 1.0;
     private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.35;
     private static final double DEFAULT_DECIVILISED_BORDER_WIDTH = 3.0;
+
     // A faint wash by default: a dead colony is real ground, so it fills rather than reading
     // as a bare ring, but stays well behind a living faction's fill (0.4) and independent
     // space's (0.2 at full colour) since nothing holds it. Mirrors the CSV row's defaultValue.
     private static final double DEFAULT_DECIVILISED_FILL_OPACITY = 0.2;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
+
     // Half strength by default: Mute dims a non-allied bloc to half its normal opacity.
     private static final double DEFAULT_ALLIANCE_MUTED_OPACITY_MODIFIER = 0.5;
+
     // 30% darker by default: a desaturated bloc paints the Independent grey sunk to 70% brightness,
     // a clear step behind genuine independent-held space without going so dark it reads as unowned.
     // Mirrors the CSV row's defaultValue.
     private static final double DEFAULT_DESATURATION_DARKENING = 0.3;
+
     // The identity weight by default: raw colony size counts toward dominance as it
     // does without the rule. Below 1 flattens the gap between large and small
     // colonies, above 1 sharpens it; it scales a hidden market's chosen base size too.
     private static final double DEFAULT_COLONY_SIZE_WEIGHT = 1.0;
+
     // Fixed by default: a hidden market folds in at its fixed weight (below) rather
     // than its real size, so a large secret base does not outweigh the open colonies
     // around it. Mirrors the CSV row's defaultValue and the labels the radio offers.
     private static final HiddenMarketScalingChoice DEFAULT_HIDDEN_MARKET_SCALING =
-            HiddenMarketScalingChoice.FIXED;
+        HiddenMarketScalingChoice.FIXED;
+
     // One size point by default: a hidden market marks presence as a single size
     // point while its scaling is Fixed, matching the token the rule used before this
     // became a knob.
     private static final double DEFAULT_HIDDEN_MARKET_FIXED_WEIGHT = 1.0;
+
     // On by default: a destabilised colony should hold less of its system than a
     // functioning one; the master toggle exists to opt back into raw-size dominance.
     private static final boolean DEFAULT_STABILITY_WEIGHS_DOMINANCE = true;
+
     // Full collapse by default: a colony's own size weight falls to nothing at zero
     // stability (half at 5, full at 10), the whole-size stability scaling the rule
     // applied before the penalty was per-factor.
     private static final double DEFAULT_NORMAL_LOW_STABILITY_PENALTY = 1.0;
+
     // On by default: an attached defensive station is real military presence, so it
     // lifts a stationed colony's hold on its system by the station weight in size
     // points; off ranks markets without any station bonus.
     private static final boolean DEFAULT_STATION_WEIGHS_DOMINANCE = true;
+
     // One size point by default: an attached station is worth a single colony size
     // point toward its system's dominance. Below 1 softens the bonus, above 1
     // sharpens it.
     private static final double DEFAULT_STATION_WEIGHT = 1.0;
+
     // A hidden market earns half the station weight, so a fortified secret base reads
     // as more than a bare unstationed hidden market without matching an open stationed
     // colony.
     private static final double DEFAULT_STATION_HIDDEN_MARKET_RATE = 0.5;
+
     // Half collapse by default: the station bonus falls to half its worth at zero
     // stability, so a destabilised fortress keeps some military weight rather than
     // losing it entirely with the colony's economy.
     private static final double DEFAULT_STATION_LOW_STABILITY_PENALTY = 0.5;
+
     // Off by default: patrol strength does not sway dominance until the player opts in.
     private static final boolean DEFAULT_PATROL_WEIGHS_DOMINANCE = false;
+
     // Modest per-tier defaults, tuned so a mid-size military colony adds roughly a
     // colony size point of patrol weight when the factor is enabled; freely tunable.
     private static final double DEFAULT_PATROL_SMALL_WEIGHT = 0.25;
     private static final double DEFAULT_PATROL_MEDIUM_WEIGHT = 0.5;
     private static final double DEFAULT_PATROL_LARGE_WEIGHT = 1.0;
+
     // Half collapse by default, like the station bonus: a garrison keeps half its
     // weight at zero stability rather than vanishing with the colony's economy.
     private static final double DEFAULT_PATROL_LOW_STABILITY_PENALTY = 0.5;
+
     // Mirrors both the CSV defaultValue and VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
     // the geometric default this setting overrides; kept a literal like the other
     // fallbacks so this class stays decoupled from the geometry library.
     private static final int DEFAULT_CELL_BOUND_SEGMENTS = 48;
+
     // The default cell reach into empty space, world units - the constant the geometry
     // used before this became a knob. Mirrors the CSV defaultValue.
     private static final double DEFAULT_CELL_RADIUS = 4000.0;
+
     // Border-tracing knobs (ungated).
     private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
+
     // Spike-sanding gate then its knobs; the gate leaves the pass off by default.
     private static final boolean DEFAULT_SAND_SPIKES = false;
     private static final double DEFAULT_BORDER_SPIKE_HEIGHT = 150.0;
     private static final double DEFAULT_BORDER_SPIKE_ANGLE_DEGREES = 60.0;
+
     // Corner-rounding gate then its knobs; likewise on by default.
     private static final boolean DEFAULT_ROUND_CORNERS = true;
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
+
     // Hatch-fill knobs, mirroring the CSV defaults: ~10 lines across a default-reach cell,
     // laid on a 45-degree diagonal at a hairline stroke.
     private static final double DEFAULT_HATCH_SPACING = 400.0;
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
     private static final double DEFAULT_HATCH_WIDTH = 1.0;
+
     // Hover-highlight knobs, mirroring the CSV defaults: the hovered ground's own bright
     // shade, a four-layer halo peaking at half alpha and fading out by 14 pixels with a slow
     // quarter-depth breath, and a cell wash of a little over a third alpha under a crisp
@@ -560,7 +614,7 @@ public final class KmuLunaSettings {
     // themselves paint at 0.4 - and expected to move once playtested.
     private static final boolean DEFAULT_HOVER_ENABLED = true;
     private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOR =
-            FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
     private static final double DEFAULT_HOVER_GLOW_WIDTH = 14.0;
     private static final int DEFAULT_HOVER_GLOW_LAYERS = 4;
@@ -569,8 +623,10 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_HOVER_WASH_OPACITY = 0.35;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
+
     // The hover tooltip draws by default while the map is up; its switch turns it off.
     private static final boolean DEFAULT_HOVER_TOOLTIP_ENABLED = true;
+
     // Label-anchor search knobs.
     private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
     private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
@@ -579,6 +635,7 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_ANCHOR_MAX_SLANT_DEGREES = 22.0;
     private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 4.0;
     private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 750.0;
+
     // Name-fit defaults, in world units where a distance. The font-size clamp brackets
     // a readable line against the map's scale (the border inset channel is 150); three
     // lines is the HOI4-style ceiling; 1.15 leads the lines with a little air.
@@ -588,6 +645,7 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_NAME_LINE_SPACING = 1.15;
     private static final double DEFAULT_ANCHOR_BAND_OPACITY = 0.35;
     private static final double DEFAULT_ANCHOR_BAND_LINE_OPACITY = 0.9;
+
     // Both reveal overrides off by default: the map draws exactly what the normal
     // gates admit until the player opts into a wider view.
     private static final boolean DEFAULT_SHOW_ALL_FACTIONS = false;
@@ -596,6 +654,7 @@ public final class KmuLunaSettings {
     private static final boolean DEFAULT_SHOW_REJECTED_AXES = false;
     private static final boolean DEFAULT_SHOW_UNBIASED_AXES = false;
     private static final boolean DEFAULT_DEBUG_BORDER_TRACING = false;
+
     // On by default: the picker is a hands-on condition manager, so it lists every
     // condition unless the player narrows it to vanilla's planetary set.
     private static final boolean DEFAULT_OFFER_ALL_CONDITIONS = true;
@@ -706,8 +765,8 @@ public final class KmuLunaSettings {
      */
     public static FactionPaletteChoice getIndependentOuterBorderColor() {
         return readChoice(
-                INDEPENDENT_OUTER_BORDER_COLOR_FIELD,
-                DEFAULT_INDEPENDENT_OUTER_BORDER_COLOR);
+            INDEPENDENT_OUTER_BORDER_COLOR_FIELD,
+            DEFAULT_INDEPENDENT_OUTER_BORDER_COLOR);
     }
 
     /**
@@ -716,8 +775,8 @@ public final class KmuLunaSettings {
      */
     public static double getIndependentOuterBorderOpacity() {
         return readDouble(
-                INDEPENDENT_OUTER_BORDER_OPACITY_FIELD,
-                DEFAULT_INDEPENDENT_OUTER_BORDER_OPACITY);
+            INDEPENDENT_OUTER_BORDER_OPACITY_FIELD,
+            DEFAULT_INDEPENDENT_OUTER_BORDER_OPACITY);
     }
 
     /**
@@ -726,8 +785,8 @@ public final class KmuLunaSettings {
      */
     public static double getIndependentOuterBorderWidth() {
         return readDouble(
-                INDEPENDENT_OUTER_BORDER_WIDTH_FIELD,
-                DEFAULT_INDEPENDENT_OUTER_BORDER_WIDTH);
+            INDEPENDENT_OUTER_BORDER_WIDTH_FIELD,
+            DEFAULT_INDEPENDENT_OUTER_BORDER_WIDTH);
     }
 
     /**
@@ -736,8 +795,8 @@ public final class KmuLunaSettings {
      */
     public static FactionPaletteChoice getIndependentInnerBorderColor() {
         return readChoice(
-                INDEPENDENT_INNER_BORDER_COLOR_FIELD,
-                DEFAULT_INDEPENDENT_INNER_BORDER_COLOR);
+            INDEPENDENT_INNER_BORDER_COLOR_FIELD,
+            DEFAULT_INDEPENDENT_INNER_BORDER_COLOR);
     }
 
     /**
@@ -746,8 +805,8 @@ public final class KmuLunaSettings {
      */
     public static double getIndependentInnerBorderOpacity() {
         return readDouble(
-                INDEPENDENT_INNER_BORDER_OPACITY_FIELD,
-                DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY);
+            INDEPENDENT_INNER_BORDER_OPACITY_FIELD,
+            DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY);
     }
 
     /**
@@ -756,8 +815,8 @@ public final class KmuLunaSettings {
      */
     public static double getIndependentInnerBorderWidth() {
         return readDouble(
-                INDEPENDENT_INNER_BORDER_WIDTH_FIELD,
-                DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH);
+            INDEPENDENT_INNER_BORDER_WIDTH_FIELD,
+            DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH);
     }
 
     /**
@@ -830,8 +889,8 @@ public final class KmuLunaSettings {
      */
     public static double getPoliticalMapAllianceMutedOpacityModifier() {
         return readDouble(
-                ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD,
-                DEFAULT_ALLIANCE_MUTED_OPACITY_MODIFIER);
+            ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD,
+            DEFAULT_ALLIANCE_MUTED_OPACITY_MODIFIER);
     }
 
     /**
@@ -929,8 +988,8 @@ public final class KmuLunaSettings {
      */
     public static double getStationLowStabilityPenalty() {
         return readDouble(
-                STATION_LOW_STABILITY_PENALTY_FIELD,
-                DEFAULT_STATION_LOW_STABILITY_PENALTY);
+            STATION_LOW_STABILITY_PENALTY_FIELD,
+            DEFAULT_STATION_LOW_STABILITY_PENALTY);
     }
 
     /**
@@ -976,8 +1035,8 @@ public final class KmuLunaSettings {
      */
     public static double getPatrolLowStabilityPenalty() {
         return readDouble(
-                PATROL_LOW_STABILITY_PENALTY_FIELD,
-                DEFAULT_PATROL_LOW_STABILITY_PENALTY);
+            PATROL_LOW_STABILITY_PENALTY_FIELD,
+            DEFAULT_PATROL_LOW_STABILITY_PENALTY);
     }
 
     /**
@@ -1023,7 +1082,7 @@ public final class KmuLunaSettings {
      */
     public static double getPoliticalMapBorderChamferAngleRadians() {
         return Math.toRadians(readDouble(BORDER_CHAMFER_ANGLE_FIELD,
-                DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES));
+            DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES));
     }
 
     /**
@@ -1065,7 +1124,7 @@ public final class KmuLunaSettings {
      *         draws at all; on by default, gated separately from the hover highlight. A
      *         master switch read live each frame so toggling it needs no rebuild
      */
-    public static boolean getPoliticalMapHoverTooltipEnabled() {
+    public static boolean getMapHoverTooltipEnabled() {
         return readBoolean(HOVER_TOOLTIP_ENABLED_FIELD, DEFAULT_HOVER_TOOLTIP_ENABLED);
     }
 
@@ -1145,7 +1204,7 @@ public final class KmuLunaSettings {
      *         when chaining the national border, in world units; raised if borders
      *         go missing, lowered if distinct corners merge
      */
-    public static double getPoliticalMapBorderWeldTolerance() {
+    public static double getMapBorderWeldTolerance() {
         return readDouble(BORDER_WELD_TOLERANCE_FIELD, DEFAULT_BORDER_WELD_TOLERANCE);
     }
 
@@ -1154,7 +1213,7 @@ public final class KmuLunaSettings {
      *         bevelled instead of pointed; lower bevels sooner (rounder corners,
      *         no inward spikes), higher keeps crisper points
      */
-    public static double getPoliticalMapBorderMiterLimit() {
+    public static double getMapBorderMiterLimit() {
         return readDouble(BORDER_MITER_LIMIT_FIELD, DEFAULT_BORDER_MITER_LIMIT);
     }
 
@@ -1174,8 +1233,8 @@ public final class KmuLunaSettings {
      */
     public static double getPoliticalMapBorderSpikeAngleRadians() {
         return Math.toRadians(readDouble(
-                BORDER_SPIKE_ANGLE_FIELD,
-                DEFAULT_BORDER_SPIKE_ANGLE_DEGREES));
+            BORDER_SPIKE_ANGLE_FIELD,
+            DEFAULT_BORDER_SPIKE_ANGLE_DEGREES));
     }
 
     /**
@@ -1205,7 +1264,7 @@ public final class KmuLunaSettings {
      *         at a higher search cost. Pure horizontal, the cluster's own principal
      *         axis, and the preferred slant are always searched on top of the fan
      */
-    public static int getPoliticalMapAnchorDirectionCount() {
+    public static int getMapAnchorDirectionCount() {
         return readInt(ANCHOR_DIRECTION_COUNT_FIELD, DEFAULT_ANCHOR_DIRECTION_COUNT);
     }
 
@@ -1216,10 +1275,10 @@ public final class KmuLunaSettings {
      *         centroid into a roomier part of the cluster. 1 degenerates to a single
      *         centred line per direction
      */
-    public static int getPoliticalMapAnchorOffsetCount() {
+    public static int getMapAnchorOffsetCount() {
         return readInt(
-                ANCHOR_OFFSET_COUNT_FIELD,
-                DEFAULT_ANCHOR_OFFSET_COUNT);
+            ANCHOR_OFFSET_COUNT_FIELD,
+            DEFAULT_ANCHOR_OFFSET_COUNT);
     }
 
     /**
@@ -1228,10 +1287,10 @@ public final class KmuLunaSettings {
      *         by {@code 1 - strength * sin(angle)^exponent}, so 0 picks the pure
      *         longest line regardless of slope and 1 scores a vertical line zero
      */
-    public static double getPoliticalMapAnchorVerticalPenaltyStrength() {
+    public static double getMapAnchorVerticalPenaltyStrength() {
         return readDouble(
-                ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD,
-                DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH);
+            ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD,
+            DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH);
     }
 
     /**
@@ -1241,10 +1300,10 @@ public final class KmuLunaSettings {
      *         as a line approaches vertical, the falloff a flat vertical-component
      *         scale got backwards
      */
-    public static double getPoliticalMapAnchorVerticalPenaltyExponent() {
+    public static double getMapAnchorVerticalPenaltyExponent() {
         return readDouble(
-                ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD,
-                DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT);
+            ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD,
+            DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT);
     }
 
     /**
@@ -1254,7 +1313,7 @@ public final class KmuLunaSettings {
      *         vertical and faded toward level as a cluster gets rounder; 0 forces
      *         dead-horizontal labels, 90 lets a label follow its axis to vertical
      */
-    public static double getPoliticalMapAnchorMaxSlantDegrees() {
+    public static double getMapAnchorMaxSlantDegrees() {
         return readDouble(ANCHOR_MAX_SLANT_DEGREES_FIELD, DEFAULT_ANCHOR_MAX_SLANT_DEGREES);
     }
 
@@ -1264,7 +1323,7 @@ public final class KmuLunaSettings {
      *         needs so it does not touch the border; a clear line shorter than twice
      *         this collapses to the dot
      */
-    public static double getPoliticalMapAnchorEndInsetMultiple() {
+    public static double getMapAnchorEndInsetMultiple() {
         return readDouble(ANCHOR_END_INSET_MULTIPLE_FIELD, DEFAULT_ANCHOR_END_INSET_MULTIPLE);
     }
 
@@ -1274,7 +1333,7 @@ public final class KmuLunaSettings {
      *         footprint, since icons draw at a fixed pixel size while the anchor is
      *         fitted once in world space
      */
-    public static double getPoliticalMapAnchorIconClearance() {
+    public static double getMapAnchorIconClearance() {
         return readDouble(ANCHOR_ICON_CLEARANCE_FIELD, DEFAULT_ANCHOR_ICON_CLEARANCE);
     }
 
@@ -1283,7 +1342,7 @@ public final class KmuLunaSettings {
      *         at - the readability floor. A placement that cannot hold even one line
      *         this tall anywhere collapses to the dot and shows no name
      */
-    public static double getPoliticalMapNameMinFontSize() {
+    public static double getMapNameMinFontSize() {
         return readDouble(NAME_MIN_FONT_SIZE_FIELD, DEFAULT_NAME_MIN_FONT_SIZE);
     }
 
@@ -1292,7 +1351,7 @@ public final class KmuLunaSettings {
      *         so a roomy cluster does not mint an oversized label; the upper bound of
      *         the font-height search
      */
-    public static double getPoliticalMapNameMaxFontSize() {
+    public static double getMapNameMaxFontSize() {
         return readDouble(NAME_MAX_FONT_SIZE_FIELD, DEFAULT_NAME_MAX_FONT_SIZE);
     }
 
@@ -1302,7 +1361,7 @@ public final class KmuLunaSettings {
      *         girth, chosen only when that renders a strictly larger font than fewer
      *         lines would. 1 forces single-line names
      */
-    public static int getPoliticalMapNameMaxLines() {
+    public static int getMapNameMaxLines() {
         return readInt(NAME_MAX_LINES_FIELD, DEFAULT_NAME_MAX_LINES);
     }
 
@@ -1311,7 +1370,7 @@ public final class KmuLunaSettings {
      *         two- or three-line block is that much taller than the raw line heights;
      *         at least 1 (lines flush)
      */
-    public static double getPoliticalMapNameLineSpacing() {
+    public static double getMapNameLineSpacing() {
         return readDouble(NAME_LINE_SPACING_FIELD, DEFAULT_NAME_LINE_SPACING);
     }
 
@@ -1320,7 +1379,7 @@ public final class KmuLunaSettings {
      *         national border reads through the band so an overflow is visible, since
      *         the whole point of drawing the band is to see it kiss or clear the border
      */
-    public static double getPoliticalMapAnchorBandOpacity() {
+    public static double getMapAnchorBandOpacity() {
         return readDouble(ANCHOR_BAND_OPACITY_FIELD, DEFAULT_ANCHOR_BAND_OPACITY);
     }
 
@@ -1329,7 +1388,7 @@ public final class KmuLunaSettings {
      *         divider rules, the centreline, and the anchor dot - 0..1, kept separate
      *         from the fill alpha so the outline stays legible over a faint band wash
      */
-    public static double getPoliticalMapAnchorBandLineOpacity() {
+    public static double getMapAnchorBandLineOpacity() {
         return readDouble(ANCHOR_BAND_LINE_OPACITY_FIELD, DEFAULT_ANCHOR_BAND_LINE_OPACITY);
     }
 
@@ -1337,7 +1396,7 @@ public final class KmuLunaSettings {
      * @return how far down from the top edge of the screen the overlay sidebar box sits,
      *         in pixels; 46 by default (clearing the sector map's own tab strip)
      */
-    public static int getPoliticalMapSidebarPaddingTop() {
+    public static int getMapSidebarPaddingTop() {
         return readInt(SIDEBAR_PADDING_TOP_FIELD, DEFAULT_SIDEBAR_PADDING_TOP);
     }
 
@@ -1345,7 +1404,7 @@ public final class KmuLunaSettings {
      * @return how far in from the left edge of the screen the overlay sidebar box sits,
      *         in pixels; 12 by default
      */
-    public static int getPoliticalMapSidebarPaddingLeft() {
+    public static int getMapSidebarPaddingLeft() {
         return readInt(SIDEBAR_PADDING_LEFT_FIELD, DEFAULT_SIDEBAR_PADDING_LEFT);
     }
 
@@ -1354,7 +1413,7 @@ public final class KmuLunaSettings {
      *         in pixels; the panel body caps its height to this margin and the bloc list
      *         scrolls within the room left; 12 by default
      */
-    public static int getPoliticalMapSidebarPaddingBottom() {
+    public static int getMapSidebarPaddingBottom() {
         return readInt(SIDEBAR_PADDING_BOTTOM_FIELD, DEFAULT_SIDEBAR_PADDING_BOTTOM);
     }
 
@@ -1364,7 +1423,7 @@ public final class KmuLunaSettings {
      *         toggles at the top of that map; 40 by default. The box sits flush against the visor's
      *         left edge and its height caps to the visor's bottom, so only this top offset is exposed
      */
-    public static int getPoliticalMapIntelSidebarPaddingTop() {
+    public static int getMapIntelSidebarPaddingTop() {
         return readInt(INTEL_SIDEBAR_PADDING_TOP_FIELD, DEFAULT_INTEL_SIDEBAR_PADDING_TOP);
     }
 
@@ -1372,7 +1431,7 @@ public final class KmuLunaSettings {
      * @return the line width of the outer border framing the overlay sidebar box, in
      *         pixels; 1 by default, 0 draws no border
      */
-    public static int getPoliticalMapSidebarBorderWidth() {
+    public static int getMapSidebarBorderWidth() {
         return readInt(SIDEBAR_BORDER_WIDTH_FIELD, DEFAULT_SIDEBAR_BORDER_WIDTH);
     }
 
@@ -1380,13 +1439,16 @@ public final class KmuLunaSettings {
      * @return the overlay sidebar box's background opacity as a 0..1 fraction (the CSV
      *         stores it as a 0..100 percentage); 0.8 by default
      */
-    public static float getPoliticalMapSidebarBackgroundOpacity() {
+    public static float getMapSidebarBackgroundOpacity() {
+
         var percent = readInt(
-                SIDEBAR_OPACITY_FIELD,
-                DEFAULT_SIDEBAR_OPACITY_PERCENT);
+            SIDEBAR_OPACITY_FIELD,
+            DEFAULT_SIDEBAR_OPACITY_PERCENT);
+
         var clamped = Math.max(
-                MIN_SIDEBAR_OPACITY_PERCENT,
-                Math.min(MAX_SIDEBAR_OPACITY_PERCENT, percent));
+            MIN_SIDEBAR_OPACITY_PERCENT,
+            Math.min(MAX_SIDEBAR_OPACITY_PERCENT, percent));
+
         return clamped / (float) MAX_SIDEBAR_OPACITY_PERCENT;
     }
 
@@ -1396,10 +1458,10 @@ public final class KmuLunaSettings {
      *         animation, up to 2 seconds; 0.25 by default. Fed to the collapse holder's
      *         per-frame advance so the player sets the animation pace
      */
-    public static float getPoliticalMapSidebarCollapseSeconds() {
+    public static float getMapSidebarCollapseSeconds() {
         return (float) readDouble(
-                SIDEBAR_COLLAPSE_SECONDS_FIELD,
-                DEFAULT_SIDEBAR_COLLAPSE_SECONDS);
+            SIDEBAR_COLLAPSE_SECONDS_FIELD,
+            DEFAULT_SIDEBAR_COLLAPSE_SECONDS);
     }
 
     /**
@@ -1407,10 +1469,10 @@ public final class KmuLunaSettings {
      *         highlight gold, or the panel's own player-faction accents (brightening under the
      *         pointer); the gold by default
      */
-    public static NotchChevronColorChoice getPoliticalMapSidebarChevronColor() {
+    public static NotchChevronColorChoice getMapSidebarChevronColor() {
         return readChoice(
-                SIDEBAR_CHEVRON_COLOR_FIELD,
-                DEFAULT_SIDEBAR_CHEVRON_COLOR);
+            SIDEBAR_CHEVRON_COLOR_FIELD,
+            DEFAULT_SIDEBAR_CHEVRON_COLOR);
     }
 
     /**
@@ -1425,7 +1487,7 @@ public final class KmuLunaSettings {
      * @param defaultKeycode the LWJGL keycode used when the field is unset or unreadable
      * @return the LWJGL keycode the layer's tab jumps to, or 0 when the shortcut is unbound
      */
-    public static int getPoliticalMapLayerShortcut(String settingKey, int defaultKeycode) {
+    public static int getMapLayerShortcut(String settingKey, int defaultKeycode) {
         return readInt(settingKey, defaultKeycode);
     }
 
@@ -1468,7 +1530,7 @@ public final class KmuLunaSettings {
      *         carrying a line; off by default, meaningful only while the cluster
      *         anchors themselves draw
      */
-    public static boolean getPoliticalMapShowRejectedAxes() {
+    public static boolean getMapShowRejectedAxes() {
         return readBoolean(SHOW_REJECTED_AXES_FIELD, DEFAULT_SHOW_REJECTED_AXES);
     }
 
@@ -1480,7 +1542,7 @@ public final class KmuLunaSettings {
      *         horizontal, the accepted line is the unbiased line); off by default,
      *         meaningful only while the cluster anchors themselves draw
      */
-    public static boolean getPoliticalMapShowUnbiasedAxes() {
+    public static boolean getMapShowUnbiasedAxes() {
         return readBoolean(SHOW_UNBIASED_AXES_FIELD, DEFAULT_SHOW_UNBIASED_AXES);
     }
 
@@ -1510,9 +1572,9 @@ public final class KmuLunaSettings {
     // a caller names the field and its default and nothing else.
     private static <T extends Enum<T> & LabeledChoice> T readChoice(String fieldId, T fallback) {
         return LabeledChoices.fromLabel(
-                fallback.getDeclaringClass().getEnumConstants(),
-                readString(fieldId, fallback.getLabel()),
-                fallback);
+            fallback.getDeclaringClass().getEnumConstants(),
+            readString(fieldId, fallback.getLabel()),
+            fallback);
     }
 
     // The typed reads, each binding this mod's LunaLib settings id once. Every getter above names

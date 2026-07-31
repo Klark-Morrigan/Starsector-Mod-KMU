@@ -49,7 +49,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
         // Root master switch: with the tooltip turned off in settings the box never draws, whatever
         // the map state or hover. Read live each frame so toggling it takes effect without a rebuild.
-        if (!KmuLunaSettings.getPoliticalMapHoverTooltipEnabled()) {
+        if (!KmuLunaSettings.getMapHoverTooltipEnabled()) {
             return;
         }
         // Only the sector map with the starscape filter off shows the overlay, so only then is a hover

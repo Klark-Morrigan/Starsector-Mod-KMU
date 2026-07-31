@@ -38,33 +38,33 @@ class LabelAnchorSpecificationTest {
     // Every knob the read touches, given a distinct value so a component wired to the wrong
     // getter shows up as the wrong number rather than as a coincidence.
     private static void stubEveryAnchorSetting(MockedStatic<KmuLunaSettings> settingsMock) {
-        settingsMock.when(KmuLunaSettings::getPoliticalMapAnchorEndInsetMultiple)
-                .thenReturn(END_INSET_MULTIPLE);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapAnchorIconClearance)
-                .thenReturn(ICON_CLEARANCE);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapAnchorDirectionCount)
-                .thenReturn(DIRECTION_COUNT);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapAnchorOffsetCount)
-                .thenReturn(OFFSET_COUNT);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapAnchorVerticalPenaltyStrength)
-                .thenReturn(VERTICAL_PENALTY_STRENGTH);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapAnchorVerticalPenaltyExponent)
-                .thenReturn(VERTICAL_PENALTY_EXPONENT);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapAnchorMaxSlantDegrees)
-                .thenReturn(MAX_SLANT_DEGREES);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapShowRejectedAxes).thenReturn(true);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapShowUnbiasedAxes).thenReturn(false);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapNameMinFontSize)
-                .thenReturn(MIN_FONT_SIZE);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapNameMaxFontSize)
-                .thenReturn(MAX_FONT_SIZE);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapNameMaxLines).thenReturn(MAX_LINES);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapNameLineSpacing)
-                .thenReturn(LINE_SPACING);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapBorderWeldTolerance)
-                .thenReturn(WELD_TOLERANCE);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapBorderMiterLimit)
-                .thenReturn(MITER_LIMIT);
+        settingsMock.when(KmuLunaSettings::getMapAnchorEndInsetMultiple)
+            .thenReturn(END_INSET_MULTIPLE);
+        settingsMock.when(KmuLunaSettings::getMapAnchorIconClearance)
+            .thenReturn(ICON_CLEARANCE);
+        settingsMock.when(KmuLunaSettings::getMapAnchorDirectionCount)
+            .thenReturn(DIRECTION_COUNT);
+        settingsMock.when(KmuLunaSettings::getMapAnchorOffsetCount)
+            .thenReturn(OFFSET_COUNT);
+        settingsMock.when(KmuLunaSettings::getMapAnchorVerticalPenaltyStrength)
+            .thenReturn(VERTICAL_PENALTY_STRENGTH);
+        settingsMock.when(KmuLunaSettings::getMapAnchorVerticalPenaltyExponent)
+            .thenReturn(VERTICAL_PENALTY_EXPONENT);
+        settingsMock.when(KmuLunaSettings::getMapAnchorMaxSlantDegrees)
+            .thenReturn(MAX_SLANT_DEGREES);
+        settingsMock.when(KmuLunaSettings::getMapShowRejectedAxes).thenReturn(true);
+        settingsMock.when(KmuLunaSettings::getMapShowUnbiasedAxes).thenReturn(false);
+        settingsMock.when(KmuLunaSettings::getMapNameMinFontSize)
+            .thenReturn(MIN_FONT_SIZE);
+        settingsMock.when(KmuLunaSettings::getMapNameMaxFontSize)
+            .thenReturn(MAX_FONT_SIZE);
+        settingsMock.when(KmuLunaSettings::getMapNameMaxLines).thenReturn(MAX_LINES);
+        settingsMock.when(KmuLunaSettings::getMapNameLineSpacing)
+            .thenReturn(LINE_SPACING);
+        settingsMock.when(KmuLunaSettings::getMapBorderWeldTolerance)
+            .thenReturn(WELD_TOLERANCE);
+        settingsMock.when(KmuLunaSettings::getMapBorderMiterLimit)
+            .thenReturn(MITER_LIMIT);
     }
 
     @Nested
@@ -80,7 +80,7 @@ class LabelAnchorSpecificationTest {
                 // Authored as a multiple of the channel and resolved here, so the search itself
                 // works in plain distances and never has to know what it was a multiple of.
                 assertThat(spec.search().endInsetDistance())
-                        .isEqualTo(END_INSET_MULTIPLE * CellShaper.BORDER_INSET_DISTANCE);
+                    .isEqualTo(END_INSET_MULTIPLE * CellShaper.BORDER_INSET_DISTANCE);
             }
         }
 
@@ -103,8 +103,8 @@ class LabelAnchorSpecificationTest {
                 stubEveryAnchorSetting(settingsMock);
 
                 var borderTrace = LabelAnchorSpecification.readFromLunaSettings()
-                        .search()
-                        .borderTrace();
+                    .search()
+                    .borderTrace();
 
                 // The same two trace parameters the border renders with, so a name is clipped
                 // against the rings the player actually sees.
@@ -121,10 +121,11 @@ class LabelAnchorSpecificationTest {
                 var scoring = LabelAnchorSpecification.readFromLunaSettings().scoring();
 
                 assertThat(scoring.verticalPenaltyStrength())
-                        .isEqualTo(VERTICAL_PENALTY_STRENGTH);
+                    .isEqualTo(VERTICAL_PENALTY_STRENGTH);
                 assertThat(scoring.verticalPenaltyExponent())
-                        .isEqualTo(VERTICAL_PENALTY_EXPONENT);
-                assertThat(scoring.maxSlantDegrees()).isEqualTo(MAX_SLANT_DEGREES);
+                    .isEqualTo(VERTICAL_PENALTY_EXPONENT);
+                assertThat(scoring.maxSlantDegrees())
+                    .isEqualTo(MAX_SLANT_DEGREES);
             }
         }
 

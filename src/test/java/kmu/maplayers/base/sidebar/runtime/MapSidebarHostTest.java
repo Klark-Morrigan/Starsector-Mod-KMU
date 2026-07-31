@@ -77,12 +77,19 @@ final class MapSidebarHostTest {
 
             try (MockedStatic<Global> globalMock = mockStatic(Global.class);
                     MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
                 when(sectorMock.getMemoryWithoutUpdate()).thenReturn(memoryMock);
-                globalMock.when(Global::getSector).thenReturn(sectorMock);
-                settingsMock.when(() -> KmuLunaSettings.getPoliticalMapLayerShortcut(
-                        SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE)).thenReturn(SHORTCUT_KEYCODE);
+
+                globalMock.
+                    when(Global::getSector)
+                    .thenReturn(sectorMock);
+                settingsMock
+                    .when(() -> KmuLunaSettings.getMapLayerShortcut(
+                        SHORTCUT_SETTING_KEY,
+                        SHORTCUT_KEYCODE))
+                    .thenReturn(SHORTCUT_KEYCODE);
 
                 MapSidebarHost.INSTANCE.handleKeyPress(eventMock);
 
@@ -100,6 +107,7 @@ final class MapSidebarHostTest {
             // the political map and has the screen width to sit open.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(DOCKED_KEY)).thenReturn(false);
@@ -107,8 +115,9 @@ final class MapSidebarHostTest {
                 MapSidebarHost.INSTANCE.restoreFoldFromSave();
 
                 assertThat(MapSidebarHost.INSTANCE.getController().getCollapseFraction())
-                        .isCloseTo(FULLY_EXPANDED, within(TOLERANCE));
-                assertThat(MapSidebarHost.INSTANCE.getController().isFullyExpanded()).isTrue();
+                    .isCloseTo(FULLY_EXPANDED, within(TOLERANCE));
+                assertThat(MapSidebarHost.INSTANCE.getController().isFullyExpanded())
+                    .isTrue();
             }
         }
 
@@ -116,6 +125,7 @@ final class MapSidebarHostTest {
         void restoreFoldFromSaveOpensDockedWhenTheSaveWasLeftDocked() {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
@@ -124,7 +134,7 @@ final class MapSidebarHostTest {
                 MapSidebarHost.INSTANCE.restoreFoldFromSave();
 
                 assertThat(MapSidebarHost.INSTANCE.getController().getCollapseFraction())
-                        .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
+                    .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
             }
         }
 
@@ -134,6 +144,7 @@ final class MapSidebarHostTest {
             // intel panel stores under.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains("$kmu_political_intel_sidebar_docked")).thenReturn(true);

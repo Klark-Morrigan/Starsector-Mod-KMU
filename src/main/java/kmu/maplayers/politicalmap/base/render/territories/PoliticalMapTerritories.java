@@ -50,28 +50,34 @@ import java.util.Set;
  * against the exact inputs the full build baked in.
  */
 public final class PoliticalMapTerritories {
+
     // Render output, mutated in place by the incremental refresh. Created empty here since a
     // fresh build fills them and no caller ever supplies them pre-populated.
     private final Map<String, StyledCell> styledCellByCellId = new LinkedHashMap<>();
     private final Map<String, FactionTerritory> factionTerritoryByFactionId = new LinkedHashMap<>();
+
     // Each drawn cell's shaped fill polygon, the shape the cursor is tested against. Written only
     // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
     // hover is exactly what the frame painted.
     private final Map<String, List<double[]>> fillPolygonByCellId = new LinkedHashMap<>();
+
     // Retained derivation inputs. The holder map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
     private final Map<String, DominantHolder> ownerBySystemId;
     private final Set<String> decivilisedSystemIds;
+
     // The owned systems drawn with no fill: held by their bloc for border and label but painting
     // nothing inside its one frontier, so a held/claimed boundary reads as a seam where the fill
     // stops. Set once at build alongside the holder map, read by the per-faction fill split.
     private final Set<String> unfilledSystemIds;
+
     // The three cohesive input snapshots: the resolved paint scheme, the view and its once-sampled
     // grouping, and the spotlight state. The flat getters below unwrap them so every reader keeps
     // its original accessor.
     private final MapStyling styling;
     private final ViewGrouping viewGrouping;
     private final FilterSnapshot filter;
+
     // Which contiguous territory each system sits in, re-derived by reindexClusters whenever the
     // holder map changes. Seeded empty so a build that never indexes (and the empty placeholder)
     // still answers a lookup rather than tripping over a null.
@@ -102,20 +108,17 @@ public final class PoliticalMapTerritories {
     // gray-paired desaturation palette are inert defaults, never read for the same reason.
     public static PoliticalMapTerritories createEmpty(PoliticalMapView view) {
         return new PoliticalMapTerritories(
-                new LinkedHashMap<>(),
-                new LinkedHashSet<>(),
-                new LinkedHashSet<>(),
-                new MapStyling(
-                    null,
-                    Color.GRAY,
-                    new FactionPalette(Color.GRAY, Color.GRAY)),
-                new ViewGrouping(
-                    view,
-                    HolderGrouping.identity()),
-                new FilterSnapshot(
-                    null,
-                    BlocStyleAdjustment.NONE,
-                    new LinkedHashSet<>()));
+            new LinkedHashMap<>(),
+            new LinkedHashSet<>(),
+            new LinkedHashSet<>(),
+            new MapStyling(
+                null,
+                Color.GRAY,
+                new FactionPalette(Color.GRAY, Color.GRAY)),
+            new ViewGrouping(
+                view,
+                HolderGrouping.identity()),
+            FilterSnapshot.unfiltered());
     }
 
     public Map<String, StyledCell> getStyledCellByCellId() {
@@ -183,8 +186,8 @@ public final class PoliticalMapTerritories {
             Map<String, List<CellEdge>> cellEdgesByCellId,
             Map<String, String> systemIdByCellId) {
         clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
-                cellEdgesByCellId,
-                DominantHolder.mapCellGrouping(systemIdByCellId, ownerBySystemId)));
+            cellEdgesByCellId,
+            DominantHolder.mapCellGrouping(systemIdByCellId, ownerBySystemId)));
     }
 
     public Map<String, FactionTerritory> getFactionTerritoryByFactionId() {
@@ -242,13 +245,27 @@ public final class PoliticalMapTerritories {
      */
     public BlocStyling resolveBlocStyling(String blocId) {
         return BlocStyling.resolveFrom(
-                getRenderStyle(),
-                BlocStyleResolver.resolveBlocStyleDecision(
-                        isFiltering(),
-                        blocId,
-                        getView(),
-                        getGrouping(),
-                        getRecedeAdjustment()));
+            getRenderStyle(),
+            BlocStyleResolver.resolveBlocStyleDecision(
+                isFiltering(),
+                blocId,
+                getView(),
+                getGrouping(),
+                getRecedeAdjustment()));
+    }
+
+    // The view and grouping as the one retained pair, for a consumer that carries both onward
+    // rather than reading one of them; the two single getters below unpack it for the many
+    // consumers that want only one.
+    public ViewGrouping getViewGrouping() {
+        return viewGrouping;
+    }
+
+    // The spotlight state as the one retained record, for the same reason: a consumer passing the
+    // filter along keeps it whole rather than splitting it into three values that could be
+    // recombined from different passes.
+    public FilterSnapshot getFilterSnapshot() {
+        return filter;
     }
 
     public PoliticalMapView getView() {

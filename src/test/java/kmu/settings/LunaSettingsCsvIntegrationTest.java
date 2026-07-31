@@ -36,13 +36,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * row in the file against that table - a row added or reworded by a pass over the settings screen has to
  * be classified here before the suite goes green, rather than slipping past the guard unnoticed.
  *
- * <p>The field id one column left is stored the same way and drifts the same way, so the last walk holds
- * every value-bearing row against the sources that name it. It reads the ids out of the source text
- * because they are private constants of whichever class reads the field, and they are not all in one
- * class: the two keybind ids sit with the tabs they bind. It runs one way only - a row no source names
- * catches both a renamed row and a renamed constant, since either leaves the id unread - because the
- * prefix alone does not mark a string as a setting, and unrelated ids such as the terrain plugin's share
- * it.
+ * <p>The field id one column left is stored the same way and drifts the same way, so the last two walks
+ * hold the rows and the sources that name them against each other. They read the ids out of the source
+ * text because they are private constants of whichever class reads the field, and they are not all in one
+ * class: the two keybind ids sit with the tabs they bind.
+ *
+ * <p>Both directions are walked because they fail differently. A row no source names is a row whose value
+ * nothing can reach - a renamed row or a renamed constant, since either leaves the id unread. An id no row
+ * declares is the opposite: a getter reading a key the shipped file never writes, which returns its
+ * fallback forever and so looks exactly like a setting the player has not touched. The prefix alone does
+ * not mark a string as a setting - unrelated ids such as the terrain plugin's share it - so that second
+ * walk names its exceptions rather than assuming there are none.
  */
 final class LunaSettingsCsvIntegrationTest {
     private static final Path SETTINGS_CSV = Path.of("data", "config", "LunaSettings.csv");
@@ -70,6 +74,12 @@ final class LunaSettingsCsvIntegrationTest {
     // KMU's field ids all carry the mod's prefix, which is also what tells a field row from the
     // file's own column-header line.
     private static final String FIELD_ID_PREFIX = "kmu_";
+
+    // Strings that carry the mod prefix without being settings fields, and so are held against no row.
+    // The sector-map terrain plugin registers its id with the game rather than with LunaLib; it shares
+    // the prefix because it is KMU's, not because it is a setting. Listed one by one so a genuine field
+    // id cannot join them by accident.
+    private static final Set<String> NON_SETTINGS_PREFIXED_IDS = Set.of("kmu_sector_map_layer_terrain");
 
     // A field id as the sources spell it: quoted, so a mention in prose or a comment does not count
     // as reading the field.
@@ -127,6 +137,21 @@ final class LunaSettingsCsvIntegrationTest {
                     MAIN_SOURCE_ROOT)
                 .isSubsetOf(namedFieldIds);
         }
+
+        @Test
+        void everyFieldIdNamedBySourceIsDeclaredInTheFile() {
+            var declaredFieldIds = Stream
+                .concat(readDeclaredFieldIds().stream(), NON_SETTINGS_PREFIXED_IDS.stream())
+                .toList();
+            assertThat(readFieldIdLiteralsInMainSources())
+                .as(
+                    "prefixed ids named under %s that %s declares no row for, so a getter reads a"
+                        + " key the shipped file never writes and silently answers its fallback"
+                        + " forever",
+                    MAIN_SOURCE_ROOT,
+                    SETTINGS_CSV)
+                .isSubsetOf(declaredFieldIds);
+        }
     }
 
     // The Radio fields whose stored label a LabeledChoice enum maps back to a choice. Listed here
@@ -175,6 +200,17 @@ final class LunaSettingsCsvIntegrationTest {
             .filter(row -> row.get(FIELD_ID_COLUMN).startsWith(FIELD_ID_PREFIX))
             .filter(row -> !HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
             .map(row -> row.get(FIELD_ID_COLUMN))
+            .toList();
+    }
+
+    // Every prefixed id the file declares a row for, section captions included: a caption stores nothing,
+    // but it is still a row the file declares, so a source naming one is not naming a key that does not
+    // exist.
+    private static List<String> readDeclaredFieldIds() {
+        return readSettingsRows()
+            .stream()
+            .map(row -> row.get(FIELD_ID_COLUMN))
+            .filter(fieldId -> fieldId.startsWith(FIELD_ID_PREFIX))
             .toList();
     }
 

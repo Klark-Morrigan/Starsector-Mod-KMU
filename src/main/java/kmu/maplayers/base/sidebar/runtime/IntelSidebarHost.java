@@ -14,7 +14,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 /**
- * The intel screen's binding for the political-map sidebar: it shows while the intel screen's embedded map
+ * The intel screen's binding for the map-layer sidebar: it shows while the intel screen's embedded map
  * preview (the "visor") is lit and drawing the ordinary map, and overlays the panel on that visor anchored
  * to its top-left. This is the intel-screen sibling of {@link MapSidebarHost}; the two feed the shared
  * {@link SidebarRenderer} / {@link SidebarInput} and differ only in gate, anchor, controller, and which
@@ -34,7 +34,7 @@ import java.util.Set;
  * the anchor. Gating on the rectangle rather than on {@link IntelScreenView#isIntelTabOpen()} is what keeps
  * the sidebar off those sibling sub-tabs, which are the same core tab but carry no visor. Starscape mode on
  * that visor ({@link IntelScreenView#isMapStarscapeModeOn()}) hides the sidebar too: the game paints the
- * starfield in place of the map and suppresses the terrain layers the political overlay rides, leaving the
+ * starfield in place of the map and suppresses the terrain layers a layer's overlay rides, leaving the
  * controls nothing visible to drive. The intel screen carries its own starscape filter, so this follows the
  * visor's own setting and not the full campaign map's. Both reads reach the game's concrete intel panel
  * through the KMLib seam, which fails closed, so a missing link simply hides the sidebar.
@@ -54,7 +54,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // Save-serialised key of this panel's resting fold; frozen once shipped, since renaming it silently
     // re-docks every existing save. Its own key rather than a widening of the active-layer pick: the pick
     // stores which tab is lit and the fold stores whether the body is folded away, and the two move
-    // independently - the rail can be docked with the political map still the lit tab.
+    // independently - the rail can be docked with a layer still the lit tab.
     private static final String INTEL_SIDEBAR_DOCKED_KEY = "$kmu_political_intel_sidebar_docked";
 
     // Reads whether the intel tab is up and the lit visor's screen rectangle - the seam into the game's
@@ -69,8 +69,8 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         // screen's own pick goes with it: a switch on the map screen leaves it where it was, and reopening
         // the intel screen returns to this pick rather than inheriting the map's.
         super(
-                new PersistedSidebarFold(INTEL_SIDEBAR_DOCKED_KEY, true),
-                MapLayerRegistry.getIntelSelection());
+            new PersistedSidebarFold(INTEL_SIDEBAR_DOCKED_KEY, true),
+            MapLayerRegistry.getIntelSelection());
         this.intelScreen = intelScreen;
     }
 
@@ -79,7 +79,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         // Two readings, both asking whether there is a live canvas under the panel. The rectangle covers
         // the intel tab not showing and a blanked preview alike, and starscape mode covers the visor being
         // lit but drawing the starfield: the game paints that in place of the ordinary map and suppresses
-        // the terrain layers above it, so the political overlay these controls drive is not on screen and
+        // the terrain layers above it, so the layer overlay these controls drive is not on screen and
         // the sidebar steps aside until the filter goes off again.
         return intelScreen.getMapVisorRect() != null && !intelScreen.isMapStarscapeModeOn();
     }
@@ -91,17 +91,17 @@ public final class IntelSidebarHost extends BaseSidebarHost {
             return null;
         }
         return LiveSidebarPlacement.resolveIntelPlacement(
-                mapVisorRect,
-                getController(),
-                getLayerSelection(),
-                layoutBorderEdges());
+            mapVisorRect,
+            getController(),
+            getLayerSelection(),
+            layoutBorderEdges());
     }
 
     @Override
     public Set<BoxEdge> resolveBorderEdges(TabPanelPlacement placement) {
         return decideBorderEdges(
-                placement.body().box().y(),
-                intelScreen.getMapVisorRect());
+            placement.body().box().y(),
+            intelScreen.getMapVisorRect());
     }
 
     @Override
@@ -118,8 +118,8 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         // A lit visor still gates on the starscape filter, so the log says which of the two hid a sidebar
         // that is missing from a screen plainly showing the map.
         return intelScreen.isMapStarscapeModeOn()
-                ? "intel tab; visor lit; starscape on"
-                : "intel tab; visor lit; starscape off";
+            ? "intel tab; visor lit; starscape on"
+            : "intel tab; visor lit; starscape off";
     }
 
     // Which frame edges the box reserves inset space for, decided before layout so a dropped edge collapses
@@ -141,7 +141,8 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     static Set<BoxEdge> decideBorderEdges(float boxBottomY, Rectangle mapVisorRect) {
         var edges = EnumSet.copyOf(layoutBorderEdges());
         var isBottomFlush = mapVisorRect != null
-                && boxBottomY <= mapVisorRect.y() + BOTTOM_FLUSH_TOLERANCE;
+            && boxBottomY <= mapVisorRect.y() + BOTTOM_FLUSH_TOLERANCE;
+            
         if (isBottomFlush) {
             edges.remove(BoxEdge.BOTTOM);
         }

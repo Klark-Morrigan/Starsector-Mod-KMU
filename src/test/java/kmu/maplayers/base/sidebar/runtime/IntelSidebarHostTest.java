@@ -168,7 +168,7 @@ final class IntelSidebarHostTest {
             // The top and right frame the sidebar inside the visor; the bottom keeps its reserved inset for
             // now (its stroke drops separately on flush, but collapsing the bottom strip is deferred).
             assertThat(IntelSidebarHost.layoutBorderEdges())
-                    .contains(BoxEdge.TOP, BoxEdge.RIGHT, BoxEdge.BOTTOM);
+                .contains(BoxEdge.TOP, BoxEdge.RIGHT, BoxEdge.BOTTOM);
         }
 
         @Test
@@ -176,8 +176,9 @@ final class IntelSidebarHostTest {
             // The reserved edges and the stroked edges must agree on the left, or the box would collapse the
             // left strip while still stroking the border there (or the reverse). Both drop it.
             assertThat(IntelSidebarHost.decideBorderEdges(400f, null))
-                    .doesNotContain(BoxEdge.LEFT);
-            assertThat(IntelSidebarHost.layoutBorderEdges()).doesNotContain(BoxEdge.LEFT);
+                .doesNotContain(BoxEdge.LEFT);
+            assertThat(IntelSidebarHost.layoutBorderEdges())
+                .doesNotContain(BoxEdge.LEFT);
         }
     }
 
@@ -199,12 +200,17 @@ final class IntelSidebarHostTest {
 
             try (MockedStatic<Global> globalMock = mockStatic(Global.class);
                     MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
                 when(sectorMock.getMemoryWithoutUpdate()).thenReturn(memoryMock);
-                globalMock.when(Global::getSector).thenReturn(sectorMock);
-                settingsMock.when(() -> KmuLunaSettings.getPoliticalMapLayerShortcut(
-                        SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE)).thenReturn(SHORTCUT_KEYCODE);
+
+                globalMock.
+                    when(Global::getSector)
+                    .thenReturn(sectorMock);
+                settingsMock
+                    .when(() -> KmuLunaSettings.getMapLayerShortcut(SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE))
+                    .thenReturn(SHORTCUT_KEYCODE);
 
                 new IntelSidebarHost(new IntelScreenViewFake()).handleKeyPress(eventMock);
 
@@ -222,6 +228,7 @@ final class IntelSidebarHostTest {
             // the visor until the player expands it.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(DOCKED_KEY)).thenReturn(false);
@@ -230,7 +237,7 @@ final class IntelSidebarHostTest {
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().getCollapseFraction())
-                        .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
+                    .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
             }
         }
 
@@ -238,6 +245,7 @@ final class IntelSidebarHostTest {
         void restoreFoldFromSaveOpensExpandedWhenTheSaveWasLeftWithTheRailOpen() {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
@@ -247,8 +255,9 @@ final class IntelSidebarHostTest {
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().getCollapseFraction())
-                        .isCloseTo(FULLY_EXPANDED, within(TOLERANCE));
-                assertThat(host.getController().isFullyExpanded()).isTrue();
+                    .isCloseTo(FULLY_EXPANDED, within(TOLERANCE));
+                assertThat(host.getController().isFullyExpanded())
+                    .isTrue();
             }
         }
 
@@ -256,6 +265,7 @@ final class IntelSidebarHostTest {
         void restoreFoldFromSaveOpensDockedWhenTheSaveWasLeftDocked() {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
@@ -265,7 +275,7 @@ final class IntelSidebarHostTest {
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().getCollapseFraction())
-                        .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
+                    .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
             }
         }
 
@@ -275,6 +285,7 @@ final class IntelSidebarHostTest {
             // process-lifetime singleton, so the reseed is the only thing that clears the old fold.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
@@ -288,7 +299,7 @@ final class IntelSidebarHostTest {
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().getCollapseFraction())
-                        .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
+                    .isCloseTo(FULLY_DOCKED, within(TOLERANCE));
             }
         }
     }

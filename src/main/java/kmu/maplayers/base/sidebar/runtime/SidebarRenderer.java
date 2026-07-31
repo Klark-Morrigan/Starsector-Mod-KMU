@@ -20,7 +20,7 @@ import kmu.settings.KmuLunaSettings;
 import org.apache.log4j.Logger;
 
 /**
- * Draws the political-map sidebar for one {@link SidebarHost} as a campaign UI listener: it gates on the
+ * Draws the map-layer sidebar for one {@link SidebarHost} as a campaign UI listener: it gates on the
  * host, advances the host's collapse handle off a wall clock, resolves the host's placement, and hands it
  * to the reusable KMLib {@link TabPanelRenderer} to paint. The panel's actual paint - the bordered frame,
  * the vanilla-styled tab header, the body controls, the scrollbar, and the collapse handle - is the
@@ -96,8 +96,8 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // so the placement resolves at the freshly-advanced fold; the pace is the player's collapse-seconds
         // setting, with zero meaning an instant snap.
         host.getController().advanceCollapse(
-                elapsedSinceLastFrame(),
-                KmuLunaSettings.getPoliticalMapSidebarCollapseSeconds());
+            elapsedSinceLastFrame(),
+            KmuLunaSettings.getMapSidebarCollapseSeconds());
 
         // Offer the freshly-advanced fold to the host's fold selection, which decides for itself whether
         // that end is worth storing. Here rather than in the input pass because a fold is only unambiguous
@@ -113,32 +113,42 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             return;
         }
         var settings = Global.getSettings();
-        var borderWidth = KmuLunaSettings.getPoliticalMapSidebarBorderWidth();
-        var opacity = KmuLunaSettings.getPoliticalMapSidebarBackgroundOpacity();
+        var opacity = KmuLunaSettings.getMapSidebarBackgroundOpacity();
 
         // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated in but
         // never seen is diagnosed from the numbers rather than another run.
-        logViewStateOnChange("showing; " + host.describeViewState() + "; screen="
-                + settings.getScreenWidth() + "x" + settings.getScreenHeight()
-                + " box=" + formatRect(placement.body().box()) + " opacity=" + opacity);
+        logViewStateOnChange("showing; "
+            + host.describeViewState()
+            + "; screen="
+            + settings.getScreenWidth()
+            + "x"
+            + settings.getScreenHeight()
+            + " box="
+            + formatRect(placement.body().box())
+            + " opacity="
+            + opacity);
 
         // The live notch state: the collapse fraction the layout above was resolved at, and whether the
         // input pass latched the pointer over the notch this frame, so the drawn fold and the lit handle
         // match what the placement was built from.
         var notchState = new NotchState(
-                host.getController().getCollapseFraction(),
-                host.getController().isNotchHovered());
-                
-        // The frame to stroke: the settings width, and the edges the host keeps - it drops any edge sitting
-        // flush against another panel (the intel overlay omits the borders it shares with the visor) so the
-        // sidebar does not draw a second frame over that panel's own.
-        var border = new BoxBorder(borderWidth, host.resolveBorderEdges(placement));
+            host.getController().getCollapseFraction(),
+            host.getController().isNotchHovered());
+
+        // The frame to stroke: the width the layout already reserved inset space for, taken off the
+        // placement so the stroke cannot outgrow its own inset, and the edges the host keeps - it drops any
+        // edge sitting flush against another panel (the intel overlay omits the borders it shares with the
+        // visor) so the sidebar does not draw a second frame over that panel's own. Only the edges are
+        // decided here, because only they need the resolved box to decide against.
+        var border = new BoxBorder(
+            placement.border().width(),
+            host.resolveBorderEdges(placement));
         TabPanelRenderer.render(
-                placement,
-                buildStyle(),
-                border,
-                notchState,
-                opacity);
+            placement,
+            buildStyle(),
+            border,
+            notchState,
+            opacity);
     }
 
     // Offers the host's fold selection the end its panel has settled at, and nothing at all while the panel
@@ -146,9 +156,11 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // fraction, which reaches its docked end exactly, and the fully-expanded flag, which already separates
     // a panel resting open from one that has just turned away from that end without moving yet.
     static void recordSettledFold(SidebarHost host) {
+
         var settledFold = resolveSettledFold(
-                host.getController().getCollapseFraction(),
-                host.getController().isFullyExpanded());
+            host.getController().getCollapseFraction(),
+            host.getController().isFullyExpanded());
+
         if (settledFold != null) {
             host.getFoldSelection().recordFold(settledFold);
         }
@@ -167,10 +179,12 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // paused screen. A zeroed frame clock - the first frame and every re-open - reports no elapsed time, so
     // a re-opened panel resumes from where it was rather than jumping by the whole time the screen was shut.
     private float elapsedSinceLastFrame() {
+
         var now = System.nanoTime();
         var elapsed = previousFrameNanos == 0L
-                ? 0f
-                : (float) Timings.convertNanosToSeconds(now - previousFrameNanos);
+            ? 0f
+            : (float) Timings.convertNanosToSeconds(now - previousFrameNanos);
+
         previousFrameNanos = now;
         return elapsed;
     }
@@ -180,25 +194,27 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // scheme and orbitron face; the paint pass reads no band height, each screen having laid its own out),
     // the insignia body face, and the collapse handle's chevron shades for the colour the player picked.
     private static WidgetStyle buildStyle() {
+
         var accent = StarsectorUiColor.VANILLA_PLAYER_BASE.resolve();
         var brightAccent = StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve();
+
         return new WidgetStyle(
-                // The body backdrop is black; the opacity setting fades it, so the body reads as a
-                // translucent-black pane the map shows through rather than a solid block. Black, not the
-                // player-dark tint, so the body stays neutral - only the tabs header, accents, and the
-                // notch carry colour. This is the body fill alone; the tabs' own fills live in the
-                // TabStyle below, a separate field, so the body's colour never couples to the header's.
-                // The header also opts out of this opacity fade and paints opaque (see
-                // TabPanelRenderer.HEADER_OPACITY), so the tabs read solid over the faded body.
-                StarsectorUiColor.BLACK.resolve(), // Panel fill.
+            // The body backdrop is black; the opacity setting fades it, so the body reads as a
+            // translucent-black pane the map shows through rather than a solid block. Black, not the
+            // player-dark tint, so the body stays neutral - only the tabs header, accents, and the
+            // notch carry colour. This is the body fill alone; the tabs' own fills live in the
+            // TabStyle below, a separate field, so the body's colour never couples to the header's.
+            // The header also opts out of this opacity fade and paints opaque (see
+            // TabPanelRenderer.HEADER_OPACITY), so the tabs read solid over the faded body.
+            StarsectorUiColor.BLACK.resolve(), // Panel fill.
+            accent,
+            brightAccent,
+            BODY_FONT,
+            LiveSidebarPlacement.buildMapTabStyle(),
+            SidebarPalettes.resolveNotchColors(
+                KmuLunaSettings.getMapSidebarChevronColor(),
                 accent,
-                brightAccent,
-                BODY_FONT,
-                LiveSidebarPlacement.buildMapTabStyle(),
-                SidebarPalettes.resolveNotchColors(
-                        KmuLunaSettings.getPoliticalMapSidebarChevronColor(),
-                        accent,
-                        brightAccent));
+                brightAccent));
     }
 
     // Logs the composed view-state line once per change; the dedupe keeps a steady state to one line while
@@ -208,7 +224,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             return;
         }
         lastLoggedLine = line;
-        LOG.debug("Political map sidebar " + line);
+        LOG.debug("Map layer sidebar " + line);
     }
 
     private static String formatRect(Rectangle rect) {

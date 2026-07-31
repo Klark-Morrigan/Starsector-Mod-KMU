@@ -90,14 +90,14 @@ public final class HoverHighlightGeometry {
         // border already are), and the clip runs a single tessellation rather than one per half.
         var washLoops = clipCellToFrontier(paintedExtent, enclosingLoop);
         return new HoverHighlight(
-                enclosingLoop == null
-                        ? List.of()
-                        : List.of(enclosingLoop),
-                PolygonTessellator.tessellateToTriangles(washLoops),
-                washLoops
-                        .stream()
-                        .map(GlVertexRuns::flattenVertices)
-                        .toList());
+            enclosingLoop == null
+                ? List.of()
+                : List.of(enclosingLoop),
+            PolygonTessellator.tessellateToTriangles(washLoops),
+            washLoops
+                .stream()
+                .map(GlVertexRuns::flattenVertices)
+                .toList());
     }
 
     // The hovered cell as the boundary loops its wash fills and traces, clamped to the frontier it
@@ -115,8 +115,8 @@ public final class HoverHighlightGeometry {
             return PolygonTessellator.tessellateToBoundaryLoops(cell);
         }
         return PolygonTessellator.tessellateIntersectionToBoundaryLoops(
-                cell,
-                List.of(GlVertexRuns.unflattenVertices(enclosingLoop)));
+            cell,
+            List.of(GlVertexRuns.unflattenVertices(enclosingLoop)));
     }
 
     // The hovered cluster's frontier: the smallest of the candidate loops that encloses the cell,
@@ -132,7 +132,7 @@ public final class HoverHighlightGeometry {
         var point = Points.computeMean(paintedExtent);
         float[] smallestLoop = null;
         var smallestArea = Double.MAX_VALUE;
-        
+
         for (var loop : frontierLoops) {
             var ring = GlVertexRuns.unflattenVertices(loop);
             if (!PolygonRegions.isPointInsideRing(ring, point[0], point[1])) {

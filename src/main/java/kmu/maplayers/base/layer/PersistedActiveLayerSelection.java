@@ -66,7 +66,7 @@ public final class PersistedActiveLayerSelection implements ActiveLayerSelection
     public static void migrateLegacyKeyInto(
             String legacyKey,
             PersistedActiveLayerSelection... targets) {
-                
+
         var memory = SectorMemoryAccess.readSectorMemory();
         if (memory == null || !memory.contains(legacyKey)) {
             return;

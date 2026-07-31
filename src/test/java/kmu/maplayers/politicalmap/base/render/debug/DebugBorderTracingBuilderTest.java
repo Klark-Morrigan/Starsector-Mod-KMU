@@ -62,21 +62,25 @@ import static org.mockito.Mockito.when;
  */
 final class DebugBorderTracingBuilderTest {
     private static final String HEGEMONY = "hegemony";
+
     // Two cells of one bloc meeting along x = 2000, so the pair proves the trace fuses them; the
     // other two share no edge with anything, each enclosed by the reach bound alone.
     private static final String HELD_SYSTEM = "held";
     private static final String NEIGHBOUR_SYSTEM = "neighbour";
     private static final String DEAD_SYSTEM = "dead";
     private static final String EMPTY_SYSTEM = "empty";
+
     // A 100-unit cell, well under twice the 150-unit border channel, so insetting it leaves
     // nothing to outline.
     private static final String TINY_SYSTEM = "tiny";
     private static final DominantHolder HEGEMONY_OWNER =
-            new DominantHolder(HEGEMONY, Color.RED, Color.BLUE);
+        new DominantHolder(HEGEMONY, Color.RED, Color.BLUE);
+
     // The live Dev-tab trace parameters, stubbed at their read: a weld tolerance loose enough to
     // chain the hand-built corners, and the miter limit the shipped border uses.
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
+
     // A smoothing profile whose shape is well inside a 2000-unit square, so whether a pass ran is
     // never confused with a pass that ran and degenerated the loop away.
     private static final double SPIKE_HEIGHT = 300.0;
@@ -84,34 +88,38 @@ final class DebugBorderTracingBuilderTest {
     private static final double CORNER_RADIUS = 100.0;
     private static final int CORNER_SEGMENTS = 4;
     private static final double CHAMFER_ANGLE_RADIANS = 0.5;
+
     private static final ElementStyle DRAWN_OUTLINE =
-            new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 1.0);
+        new ElementStyle(
+            FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
+            1.0);
+
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
-            HELD_SYSTEM, List.of(
-                    edgeFacing(0, 0, 2000, 0, null),
-                    edgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
-                    edgeFacing(2000, 2000, 0, 2000, null),
-                    edgeFacing(0, 2000, 0, 0, null)),
-            NEIGHBOUR_SYSTEM, List.of(
-                    edgeFacing(2000, 0, 4000, 0, null),
-                    edgeFacing(4000, 0, 4000, 2000, null),
-                    edgeFacing(4000, 2000, 2000, 2000, null),
-                    edgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
-            DEAD_SYSTEM, List.of(
-                    edgeFacing(10000, 0, 12000, 0, null),
-                    edgeFacing(12000, 0, 12000, 2000, null),
-                    edgeFacing(12000, 2000, 10000, 2000, null),
-                    edgeFacing(10000, 2000, 10000, 0, null)),
-            EMPTY_SYSTEM, List.of(
-                    edgeFacing(20000, 0, 22000, 0, null),
-                    edgeFacing(22000, 0, 22000, 2000, null),
-                    edgeFacing(22000, 2000, 20000, 2000, null),
-                    edgeFacing(20000, 2000, 20000, 0, null)),
-            TINY_SYSTEM, List.of(
-                    edgeFacing(30000, 0, 30100, 0, null),
-                    edgeFacing(30100, 0, 30100, 100, null),
-                    edgeFacing(30100, 100, 30000, 100, null),
-                    edgeFacing(30000, 100, 30000, 0, null)));
+        HELD_SYSTEM, List.of(
+            edgeFacing(0, 0, 2000, 0, null),
+            edgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
+            edgeFacing(2000, 2000, 0, 2000, null),
+            edgeFacing(0, 2000, 0, 0, null)),
+        NEIGHBOUR_SYSTEM, List.of(
+            edgeFacing(2000, 0, 4000, 0, null),
+            edgeFacing(4000, 0, 4000, 2000, null),
+            edgeFacing(4000, 2000, 2000, 2000, null),
+            edgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
+        DEAD_SYSTEM, List.of(
+            edgeFacing(10000, 0, 12000, 0, null),
+            edgeFacing(12000, 0, 12000, 2000, null),
+            edgeFacing(12000, 2000, 10000, 2000, null),
+            edgeFacing(10000, 2000, 10000, 0, null)),
+        EMPTY_SYSTEM, List.of(
+            edgeFacing(20000, 0, 22000, 0, null),
+            edgeFacing(22000, 0, 22000, 2000, null),
+            edgeFacing(22000, 2000, 20000, 2000, null),
+            edgeFacing(20000, 2000, 20000, 0, null)),
+        TINY_SYSTEM, List.of(
+            edgeFacing(30000, 0, 30100, 0, null),
+            edgeFacing(30100, 0, 30100, 100, null),
+            edgeFacing(30100, 100, 30000, 100, null),
+            edgeFacing(30000, 100, 30000, 0, null)));
 
     // The sector is never read: every question the builder asks of it is stubbed at the resolver
     // that would have walked it, so this stands only for the argument those stubs match on.
@@ -124,13 +132,18 @@ final class DebugBorderTracingBuilderTest {
     @BeforeEach
     void openTheSectorAndSettingsSeams() {
         settingsMock = mockStatic(KmuLunaSettings.class);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapBorderWeldTolerance)
-                .thenReturn(WELD_TOLERANCE);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapBorderMiterLimit)
-                .thenReturn(MITER_SPIKE_LIMIT);
+
+        settingsMock
+            .when(KmuLunaSettings::getMapBorderWeldTolerance)
+            .thenReturn(WELD_TOLERANCE);
+        settingsMock
+            .when(KmuLunaSettings::getMapBorderMiterLimit)
+            .thenReturn(MITER_SPIKE_LIMIT);
+
         politicsMock = mockStatic(SectorPolitics.class);
         decivilisedMarketsMock = mockStatic(DecivilisedMarkets.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
+
         // An empty sector by default, so a case names only the ground it is about.
         stubHolders(Map.of());
         stubDecivilisedSystems();
@@ -151,15 +164,19 @@ final class DebugBorderTracingBuilderTest {
         @Test
         void buildDebugDrawablesCapturesOneFusedBaseLoopWithBothSmoothingGatesOff() {
             stubHolders(Map.of(
-                    HELD_SYSTEM, HEGEMONY_OWNER,
-                    NEIGHBOUR_SYSTEM, HEGEMONY_OWNER));
+                HELD_SYSTEM,
+                HEGEMONY_OWNER,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY_OWNER));
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM), sectorMock);
+                cellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
+                sectorMock);
 
             // One loop rather than two: the shared edge is a same-bloc seam, exactly as in the
             // production trace this stage is supposed to be showing.
             assertThat(drawables.baseLoops()).hasSize(1);
+
             // Both gates off, so the two smoothed stages are empty rather than echoing the base -
             // an echo would read as "the passes ran and changed nothing".
             assertThat(drawables.despikedLoops()).isEmpty();
@@ -172,7 +189,8 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(sandingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellsFor(HELD_SYSTEM), sectorMock);
+                cellsFor(HELD_SYSTEM),
+                sectorMock);
 
             assertThat(drawables.baseLoops()).hasSize(1);
             assertThat(drawables.despikedLoops()).hasSize(1);
@@ -185,7 +203,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(roundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellsFor(HELD_SYSTEM), sectorMock);
+                cellsFor(HELD_SYSTEM), sectorMock);
 
             // Rounding feeds off whatever the previous stage left, so with sanding off it rounds
             // the base - and the skipped stage stays empty rather than standing in for it.
@@ -199,7 +217,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(noSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
+                cellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
 
             // The dead world's cell resolves to the decivilised bundle and draws; the uninhabited
             // one resolves to the bundle the player switched off and is skipped, which is what
@@ -212,7 +230,7 @@ final class DebugBorderTracingBuilderTest {
             stubDecivilisedSystems(DEAD_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
+                cellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
 
             assertThat(drawables.isEmpty()).isTrue();
         }
@@ -223,7 +241,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(noSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellsFor(HELD_SYSTEM), sectorMock);
+                cellsFor(HELD_SYSTEM), sectorMock);
 
             // One loop with both factionless outlines on: the cell is grouped, so the factionless
             // pass steps over it instead of stroking a second ring inside its cluster border.
@@ -234,10 +252,11 @@ final class DebugBorderTracingBuilderTest {
         void buildDebugDrawablesCapturesNothingForAClusterThatTracesNoRing() {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             var geometryCacheMock = mock(CellGeometryCache.class);
+
             when(geometryCacheMock.getCellEdgesByCellId())
-                    .thenReturn(Map.of(HELD_SYSTEM, List.of()));
+                .thenReturn(Map.of(HELD_SYSTEM, List.of()));
             when(geometryCacheMock.getSystemIdByCellId())
-                    .thenReturn(Map.of(HELD_SYSTEM, HELD_SYSTEM));
+                .thenReturn(Map.of(HELD_SYSTEM, HELD_SYSTEM));
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                     geometryCacheMock, sectorMock);
@@ -253,7 +272,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(noSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellsFor(TINY_SYSTEM), sectorMock);
+                cellsFor(TINY_SYSTEM), sectorMock);
 
             // The cell is narrower than twice the border inset, so insetting leaves no polygon
             // at all - dropped rather than flattened into a degenerate run.
@@ -266,7 +285,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(bothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellsFor(DEAD_SYSTEM), sectorMock);
+                cellsFor(DEAD_SYSTEM), sectorMock);
 
             // A lone convex cell has no needle protrusions to sand, so its two stages are the raw
             // inset and its rounded corners - the sanding gate being on does not invent a third.
@@ -277,12 +296,20 @@ final class DebugBorderTracingBuilderTest {
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge edgeFacing(double x1, double y1, double x2, double y2,
+    private static CellEdge edgeFacing(
+            double x1,
+            double y1,
+            double x2,
+            double y2,
             String neighbourSystemId) {
-        return new CellEdge(x1, y1, x2, y2,
-                neighbourSystemId == null
-                        ? EdgeTarget.REACH_BOUND
-                        : new EdgeTarget.AcrossSystem(neighbourSystemId));
+        return new CellEdge(
+            x1,
+            y1,
+            x2,
+            y2,
+            neighbourSystemId == null
+                ? EdgeTarget.REACH_BOUND
+                : new EdgeTarget.AcrossSystem(neighbourSystemId));
     }
 
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
@@ -321,8 +348,14 @@ final class DebugBorderTracingBuilderTest {
     private static BorderSmoothingStyle smoothing(
             boolean shouldSandSpikes,
             boolean shouldRoundCorners) {
-        return new BorderSmoothingStyle(shouldSandSpikes, shouldRoundCorners, SPIKE_HEIGHT,
-                SPIKE_ANGLE_RADIANS, CORNER_RADIUS, CORNER_SEGMENTS, CHAMFER_ANGLE_RADIANS);
+        return new BorderSmoothingStyle(
+            shouldSandSpikes,
+            shouldRoundCorners,
+            SPIKE_HEIGHT,
+            SPIKE_ANGLE_RADIANS,
+            CORNER_RADIUS,
+            CORNER_SEGMENTS,
+            CHAMFER_ANGLE_RADIANS);
     }
 
     // The theme as the builder reads it: the smoothing profile it stages the passes by, and the
@@ -338,33 +371,41 @@ final class DebugBorderTracingBuilderTest {
         categories.put(PoliticalMapCategory.INDEPENDENT, outlinedBy(DRAWN_OUTLINE));
         categories.put(PoliticalMapCategory.DECIVILISED, outlinedBy(decivilisedOutline));
         categories.put(PoliticalMapCategory.UNINHABITED, outlinedBy(uninhabitedOutline));
+
         // The smoothing profile is the one sector-wide value these cases vary, so the rest of the
         // tier is the shared inert one.
         var renderStyle = new RenderStyle(
-                new GlobalStyle(
-                        new HatchStyle(0, 0, 0),
-                        smoothing,
-                        ThemeFixtures.NO_HOVER_HIGHLIGHT,
-                        0.3),
-                categories);
+            new GlobalStyle(
+                new HatchStyle(0, 0, 0),
+                smoothing,
+                ThemeFixtures.NO_HOVER_HIGHLIGHT,
+                0.3),
+            categories);
+
         styleReaderMock.when(RenderStyleReader::readBorderSmoothingStyle).thenReturn(smoothing);
         styleReaderMock.when(RenderStyleReader::readRenderStyle).thenReturn(renderStyle);
     }
 
     private void stubHolders(Map<String, DominantHolder> ownerBySystemId) {
-        politicsMock.when(() -> SectorPolitics.resolveDominantHolderBySystemId(sectorMock))
-                .thenReturn(ownerBySystemId);
+        politicsMock
+            .when(() -> SectorPolitics.resolveDominantHolderBySystemId(sectorMock))
+            .thenReturn(ownerBySystemId);
     }
 
     private void stubDecivilisedSystems(String... systemIds) {
         decivilisedMarketsMock
-                .when(() -> DecivilisedMarkets.findRevealedDecivilisedSystemIds(sectorMock))
-                .thenReturn(Set.of(systemIds));
+            .when(() -> DecivilisedMarkets.findRevealedDecivilisedSystemIds(sectorMock))
+            .thenReturn(Set.of(systemIds));
     }
 
     // A bundle the overlay reads only for its outer element: fill and seam never reach the
     // border tracing, so they are inert.
     private static CategoryStyle outlinedBy(ElementStyle outer) {
-        return new CategoryStyle(ElementStyle.NOT_DRAWN, outer, 1.0, ElementStyle.NOT_DRAWN, 1.0);
+        return new CategoryStyle(
+            ElementStyle.NOT_DRAWN,
+            outer,
+            1.0,
+            ElementStyle.NOT_DRAWN,
+            1.0);
     }
 }

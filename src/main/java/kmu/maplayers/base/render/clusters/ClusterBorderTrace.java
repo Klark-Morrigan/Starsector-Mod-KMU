@@ -24,14 +24,14 @@ import java.util.Set;
  *                        corner's inset miter is bevelled instead of pointed
  */
 public record ClusterBorderTrace(
-        double weldTolerance,
-        double miterSpikeLimit) {
+    double weldTolerance,
+    double miterSpikeLimit) {
 
     // Reads the live trace parameters from the Dev "Border tracing" section.
     public static ClusterBorderTrace readFromLunaSettings() {
         return new ClusterBorderTrace(
-                KmuLunaSettings.getPoliticalMapBorderWeldTolerance(),
-                KmuLunaSettings.getPoliticalMapBorderMiterLimit());
+            KmuLunaSettings.getMapBorderWeldTolerance(),
+            KmuLunaSettings.getMapBorderMiterLimit());
     }
 
     // Traces one cluster's inset border rings with these parameters and the fixed
@@ -40,7 +40,7 @@ public record ClusterBorderTrace(
             Collection<String> memberCellIds,
             Map<String, List<CellEdge>> edgesByCellId,
             CellGrouping grouping) {
-                
+
         return traceRings(memberCellIds, edgesByCellId, grouping, Set.of());
     }
 
@@ -56,12 +56,12 @@ public record ClusterBorderTrace(
             Set<String> coincidentNeighbourSystemIds) {
 
         return SystemClusterBorders.traceBorderRings(
-                memberCellIds,
-                edgesByCellId,
-                grouping,
-                coincidentNeighbourSystemIds,
-                CellShaper.BORDER_INSET_DISTANCE,
-                weldTolerance,
-                miterSpikeLimit);
+            memberCellIds,
+            edgesByCellId,
+            grouping,
+            coincidentNeighbourSystemIds,
+            CellShaper.BORDER_INSET_DISTANCE,
+            weldTolerance,
+            miterSpikeLimit);
     }
 }

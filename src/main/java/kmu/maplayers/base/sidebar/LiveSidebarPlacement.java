@@ -102,11 +102,11 @@ public final class LiveSidebarPlacement {
             ActiveLayerSelection selection,
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
-                buildMapPadding(),
-                buildMapTabStyle(),
-                controller,
-                selection,
-                borderedEdges);
+            buildMapPadding(),
+            buildMapTabStyle(),
+            controller,
+            selection,
+            borderedEdges);
     }
 
     /**
@@ -130,11 +130,11 @@ public final class LiveSidebarPlacement {
             ActiveLayerSelection selection,
             Set<BoxEdge> borderedEdges) {
         return resolvePlacement(
-                buildIntelPadding(mapVisorRect),
-                buildIntelTabStyle(),
-                controller,
-                selection,
-                borderedEdges);
+            buildIntelPadding(mapVisorRect),
+            buildIntelTabStyle(),
+            controller,
+            selection,
+            borderedEdges);
     }
 
     // The intel sidebar's tab look: the tighter intel band over the same colour scheme and face the map
@@ -153,10 +153,10 @@ public final class LiveSidebarPlacement {
     // its height. The right margin is unused - the sidebar grows rightward across the visor.
     static Padding computeIntelPadding(Rectangle mapVisorRect, float screenHeight, int topPadding) {
         return new Padding(
-                Math.round(screenHeight - (mapVisorRect.y() + mapVisorRect.height())) + topPadding,
-                0,
-                Math.round(mapVisorRect.y()),
-                Math.round(mapVisorRect.x()));
+            Math.round(screenHeight - (mapVisorRect.y() + mapVisorRect.height())) + topPadding,
+            0,
+            Math.round(mapVisorRect.y()),
+            Math.round(mapVisorRect.x()));
     }
 
     // Lays the panel out for the given anchor, tab style, and controller - the one path both host entry
@@ -183,28 +183,28 @@ public final class LiveSidebarPlacement {
         var activeLayer = selection.getActiveLayer();
 
         var placement = TabPanelLayout.computePlacement(
-                settings.getScreenHeight(),
-                padding,
-                // The player's border width over the edges the host frames; a dropped edge collapses its
-                // reserved inset so the box sits flush against the neighbour the host meant to blend into.
-                new BoxBorder(KmuLunaSettings.getPoliticalMapSidebarBorderWidth(), borderedEdges),
-                tabStyle,
-                buildTabsSpec(layers, activeLayer, selection),
-                activeLayer.getBodyControls(),
-                measurer,
-                // The live scroll and fold, so the body lays out at its interpolated width and the notch
-                // rides the shrinking edge; the render pass advances the fold each frame and both passes
-                // resolve against the same value, so the drawn fold and the hit-tested notch line up.
-                new TabPanelViewState(
-                        controller.getScrollState().getOffset(),
-                        controller.getCollapseFraction()));
+            settings.getScreenHeight(),
+            padding,
+            // The player's border width over the edges the host frames; a dropped edge collapses its
+            // reserved inset so the box sits flush against the neighbour the host meant to blend into.
+            new BoxBorder(KmuLunaSettings.getMapSidebarBorderWidth(), borderedEdges),
+            tabStyle,
+            buildTabsSpec(layers, activeLayer, selection),
+            activeLayer.getBodyControls(),
+            measurer,
+            // The live scroll and fold, so the body lays out at its interpolated width and the notch
+            // rides the shrinking edge; the render pass advances the fold each frame and both passes
+            // resolve against the same value, so the drawn fold and the hit-tested notch line up.
+            new TabPanelViewState(
+                controller.getScrollState().getOffset(),
+                controller.getCollapseFraction()));
 
         // Settle the stored scroll request into the list's real range now the layout has resolved the
         // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
         // the render and input passes call this each frame, so the stored offset stays bounded.
         controller
-                .getScrollState()
-                .clampTo(placement.body().scrollOverflow());
+            .getScrollState()
+            .clampTo(placement.body().scrollOverflow());
 
         return placement;
     }
@@ -213,19 +213,19 @@ public final class LiveSidebarPlacement {
     // unused - the sidebar grows rightward to fit the widest content.
     private static Padding buildMapPadding() {
         return new Padding(
-                KmuLunaSettings.getPoliticalMapSidebarPaddingTop(),
-                0,
-                KmuLunaSettings.getPoliticalMapSidebarPaddingBottom(),
-                KmuLunaSettings.getPoliticalMapSidebarPaddingLeft());
+            KmuLunaSettings.getMapSidebarPaddingTop(),
+            0,
+            KmuLunaSettings.getMapSidebarPaddingBottom(),
+            KmuLunaSettings.getMapSidebarPaddingLeft());
     }
 
     // The intel-screen anchor from the live screen height and the player's top padding; the anchor math
     // (flush-left, hung from the visor top minus the padding, capped to the visor bottom) is computeIntelPadding's.
     private static Padding buildIntelPadding(Rectangle mapVisorRect) {
         return computeIntelPadding(
-                mapVisorRect,
-                Global.getSettings().getScreenHeight(),
-                KmuLunaSettings.getPoliticalMapIntelSidebarPaddingTop());
+            mapVisorRect,
+            Global.getSettings().getScreenHeight(),
+            KmuLunaSettings.getMapIntelSidebarPaddingTop());
     }
 
     // A tab style at the given band height, over the shared paint: the vanilla map-tab colour scheme,
@@ -239,10 +239,10 @@ public final class LiveSidebarPlacement {
     // of the measured display string - so no tab moves for it.
     private static TabStyle buildTabStyle(float headerBandHeight) {
         return new TabStyle(
-                headerBandHeight,
-                VanillaTabColors.mapTabs(),
-                HotkeyStyle.createUnderlined(),
-                new TextFace(TAB_FONT, ControlStripLayout.TAB_FONT_SIZE));
+            headerBandHeight,
+            VanillaTabColors.mapTabs(),
+            HotkeyStyle.createUnderlined(),
+            new TextFace(TAB_FONT, ControlStripLayout.TAB_FONT_SIZE));
     }
 
     // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
@@ -261,19 +261,21 @@ public final class LiveSidebarPlacement {
             shortcuts.add(resolveShortcutName(layer));
         }
         return new ControlSpec.Tabs(
-                labels,
-                shortcuts,
-                layers.indexOf(activeLayer),
-                cell -> selection.selectLayer(layers.get(cell)));
+            labels,
+            shortcuts,
+            layers.indexOf(activeLayer),
+            cell -> selection.selectLayer(layers.get(cell)));
     }
 
     // The display name of a layer's shortcut key, or null when it has none - an unbound keycode (0,
     // cleared with Escape; LWJGL still names it "NONE") or a code LWJGL cannot name. A null/blank
     // shortcut leaves the tab label alone.
     private static String resolveShortcutName(MapLayer layer) {
-        var keycode = KmuLunaSettings.getPoliticalMapLayerShortcut(
-                layer.getShortcutSettingKey(),
-                layer.getDefaultShortcutKeycode());
+
+        var keycode = KmuLunaSettings.getMapLayerShortcut(
+            layer.getShortcutSettingKey(),
+            layer.getDefaultShortcutKeycode());
+
         if (keycode <= 0) {
             return null;
         }

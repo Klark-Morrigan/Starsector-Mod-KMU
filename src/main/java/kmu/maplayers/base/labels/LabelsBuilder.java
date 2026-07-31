@@ -7,7 +7,6 @@ import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
-import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
 import org.lazywizard.lazylib.ui.LazyFont;
@@ -25,10 +24,13 @@ import java.util.List;
  * owner's bright colour.
  *
  * <p>Reuses the cluster-anchor placements rather than re-fitting: the anchor carries the
- * wrapped lines and font height its box was sized for, so the drawn block matches the
- * fitted footprint by construction and the (costly) placement search runs once. This class
- * adds only the geometry of the stack - each line's own hang point along the block's
- * perpendicular - and the GL strings; it never touches the sector. The label font is the
+ * wrapped lines, the font height, and the band thickness its box was sized for, so the drawn
+ * block matches the fitted footprint by construction and the (costly) placement search runs
+ * once. The line spacing is read back out of that band rather than off the setting a second
+ * time, which is what keeps "by construction" honest - a spacing change between the fit and
+ * the draw cannot leave the block spilling out of the box it was fitted into. This class adds
+ * only the geometry of the stack - each line's own hang point along the block's perpendicular
+ * - and the GL strings; it never touches the sector. The label font is the
  * fixed face loaded and cached by {@link LabelFonts} - the same face whose metrics
  * sized the boxes - and a face that failed to load leaves the labels empty.
  *
@@ -37,6 +39,10 @@ import java.util.List;
  */
 public final class LabelsBuilder {
     private static final Logger LOG = Global.getLogger(LabelsBuilder.class);
+
+    // Below two lines there is no gap between line centres to measure, so the band holds one
+    // line height and nothing more.
+    private static final int MIN_LINES_TO_STACK = 2;
 
     // Builds only; never instantiated.
     private LabelsBuilder() {
@@ -68,28 +74,29 @@ public final class LabelsBuilder {
             // The plan step (each line's text, colour, hang point, slant, and font size)
             // is pure computation; only the mint below touches GL, so the stacking
             // geometry stays a self-contained calculation apart from GL resource creation.
-            for (var plan : planLabels(
-                    anchors,
-                    KmuLunaSettings.getPoliticalMapNameLineSpacing())) {
+            for (var plan : planLabels(anchors)) {
 
                 var text = resolvedFont.createText(
-                        plan.text(),
-                        plan.color(),
-                        plan.fontHeight());
+                    plan.text(),
+                    plan.color(),
+                    plan.fontHeight());
 
                 text.setAnchor(LazyFont.TextAnchor.CENTER);
                 labels.add(new Label(
-                        text,
-                        plan.color(),
-                        plan.hangX(),
-                        plan.hangY(),
-                        plan.slantDegrees()));
+                    text,
+                    plan.color(),
+                    plan.hangX(),
+                    plan.hangY(),
+                    plan.slantDegrees()));
             }
         });
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Map layer labels built; lines=" + labels.size()
-                    + " ofClusters=" + anchors.size()
-                    + " took=" + Timings.formatMillis(System.nanoTime() - buildStart));
+            LOG.debug("Map layer labels built; lines="
+                + labels.size()
+                + " ofClusters="
+                + anchors.size()
+                + " took="
+                + Timings.formatMillis(System.nanoTime() - buildStart));
         }
     }
 
@@ -101,24 +108,22 @@ public final class LabelsBuilder {
      * minting that consumes it.
      */
     public record LabelPlan(
-            String text,
-            Color color,
-            float hangX,
-            float hangY,
-            float slantDegrees,
-            float fontHeight) {
+        String text,
+        Color color,
+        float hangX,
+        float hangY,
+        float slantDegrees,
+        float fontHeight) {
     }
 
     // Plans every label line: skipping a collapsed placement (dot only, no accepted
     // axis) and any cluster with no wrapped name (an owner whose font or display name
     // did not resolve at fit time), then laying the cluster's lines out as a block -
-    // stacked along the accepted line's perpendicular at the given line-spacing multiple,
-    // centred on the anchor, first line on the upper side so the block reads top-down.
-    // The slant is folded upright first, so the stacking normal is taken from the
-    // direction the text actually reads in. Pure - no GL, no font, no sector.
-    public static List<LabelPlan> planLabels(
-            List<ClusterAnchor> anchors,
-            double lineSpacing) {
+    // stacked along the accepted line's perpendicular, centred on the anchor, first line
+    // on the upper side so the block reads top-down. The slant is folded upright first,
+    // so the stacking normal is taken from the direction the text actually reads in.
+    // Pure - no GL, no font, no sector.
+    public static List<LabelPlan> planLabels(List<ClusterAnchor> anchors) {
 
         var plans = new ArrayList<LabelPlan>(anchors.size());
         for (var anchor : anchors) {
@@ -126,7 +131,7 @@ public final class LabelsBuilder {
                 continue;
             }
             var slantDegrees = computeSlantDegrees(anchor.acceptedAxis());
-            planBlockLines(plans, anchor, slantDegrees, lineSpacing);
+            planBlockLines(plans, anchor, slantDegrees);
         }
         return plans;
     }
@@ -140,16 +145,13 @@ public final class LabelsBuilder {
         }
     }
 
-    // Lays one cluster's lines out around its anchor: line centres spaced one
-    // line-height-times-spacing apart along the upright slant's "up" perpendicular,
-    // the whole stack centred on the anchor point, first line highest. The distance
-    // from first to last centre plus one line height is exactly the band thickness the
-    // fit reserved, so the block fills the fitted box.
+    // Lays one cluster's lines out around its anchor: line centres spaced one step apart
+    // along the upright slant's "up" perpendicular, the whole stack centred on the anchor
+    // point, first line highest.
     private static void planBlockLines(
             List<LabelPlan> plans,
             ClusterAnchor anchor,
-            float slantDegrees,
-            double lineSpacing) {
+            float slantDegrees) {
 
         var lines = anchor.nameLines();
         var slantRadians = Math.toRadians(slantDegrees);
@@ -158,19 +160,35 @@ public final class LabelsBuilder {
         // slant (|slant| <= 90) its y-component is non-negative, so "up" is screen-up.
         var upX = (float) -Math.sin(slantRadians);
         var upY = (float) Math.cos(slantRadians);
-        var lineStep = (float) (anchor.fontHeight() * lineSpacing);
+        var lineStep = computeLineStep(anchor);
 
         for (var lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
             // Offsets run from +((L-1)/2)*step for the first line down to its negative
             // for the last, symmetric about the anchor.
             var offset = ((lines.size() - 1) / 2f - lineIndex) * lineStep;
             plans.add(new LabelPlan(
-                    lines.get(lineIndex),
-                    anchor.color(),
-                    anchor.anchorX() + upX * offset,
-                    anchor.anchorY() + upY * offset,
-                    slantDegrees, anchor.fontHeight()));
+                lines.get(lineIndex),
+                anchor.color(),
+                anchor.anchorX() + upX * offset,
+                anchor.anchorY() + upY * offset,
+                slantDegrees,
+                anchor.fontHeight()));
         }
+    }
+
+    // The gap between two stacked line centres, read back out of the band the fit already
+    // reserved rather than off the line-spacing setting a second time. The fit sizes a band
+    // of thickness fontHeight * ((lineCount - 1) * lineSpacing + 1) - one line height plus a
+    // step per gap - so the step is what is left of the band once the last line's own height
+    // is taken off, divided between the gaps. Deriving it here is what makes "the drawn block
+    // fills the fitted box" true by construction: the block cannot be stacked at a spacing the
+    // box was not sized for, however the setting moves between the fit and the draw. A single
+    // line has no gap, and its step goes unread.
+    private static float computeLineStep(ClusterAnchor anchor) {
+        if (anchor.lineCount() < MIN_LINES_TO_STACK) {
+            return 0f;
+        }
+        return (anchor.thickness() - anchor.fontHeight()) / (anchor.lineCount() - 1);
     }
 
     // The slope of the accepted line in degrees, folded upright so the name reads

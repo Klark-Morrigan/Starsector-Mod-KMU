@@ -76,8 +76,9 @@ public abstract class BaseSidebarHost implements SidebarHost {
     public final void handleKeyPress(InputEventAPI event) {
         var layers = MapLayerRegistry.getLayers();
         var tabIndex = TabPanelHotkeys.findTabForKey(
-                event.getEventValue(),
-                layerKeycodes(layers));
+            event.getEventValue(),
+            layerKeycodes(layers));
+
         if (tabIndex == TabStrip.NO_TAB) {
             return;
         }
@@ -108,8 +109,8 @@ public abstract class BaseSidebarHost implements SidebarHost {
     // two constructors, so the fold a host opens at is chosen here rather than animated into.
     private static TabPanelController createControllerAtFold(boolean isRailDocked) {
         return isRailDocked
-                ? TabPanelController.createStartingDocked()
-                : new TabPanelController();
+            ? TabPanelController.createStartingDocked()
+            : new TabPanelController();
     }
 
     // Each layer's bound keycode in registry order, so a matched index maps back to its layer. A cleared
@@ -118,9 +119,9 @@ public abstract class BaseSidebarHost implements SidebarHost {
     private static List<Integer> layerKeycodes(List<MapLayer> layers) {
         var keycodes = new ArrayList<Integer>(layers.size());
         for (var layer : layers) {
-            keycodes.add(KmuLunaSettings.getPoliticalMapLayerShortcut(
-                    layer.getShortcutSettingKey(),
-                    layer.getDefaultShortcutKeycode()));
+            keycodes.add(KmuLunaSettings.getMapLayerShortcut(
+                layer.getShortcutSettingKey(),
+                layer.getDefaultShortcutKeycode()));
         }
         return keycodes;
     }

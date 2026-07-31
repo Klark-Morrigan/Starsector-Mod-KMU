@@ -39,24 +39,23 @@ public record LabelAnchorSpecification(
     // the player sees.
     public static LabelAnchorSpecification readFromLunaSettings() {
         return new LabelAnchorSpecification(
-                new AnchorSearch(
-                        ClusterBorderTrace.readFromLunaSettings(),
-                        KmuLunaSettings.getPoliticalMapAnchorEndInsetMultiple()
-                                * CellShaper.BORDER_INSET_DISTANCE,
-                        KmuLunaSettings.getPoliticalMapAnchorIconClearance(),
-                        KmuLunaSettings.getPoliticalMapAnchorDirectionCount(),
-                        KmuLunaSettings.getPoliticalMapAnchorOffsetCount()),
-                new LeanScoring(
-                        KmuLunaSettings.getPoliticalMapAnchorVerticalPenaltyStrength(),
-                        KmuLunaSettings.getPoliticalMapAnchorVerticalPenaltyExponent(),
-                        KmuLunaSettings.getPoliticalMapAnchorMaxSlantDegrees()),
-                new AnchorDiagnostics(
-                        KmuLunaSettings.getPoliticalMapShowRejectedAxes(),
-                        KmuLunaSettings.getPoliticalMapShowUnbiasedAxes()),
-                new NameFitSpecification(
-                        KmuLunaSettings.getPoliticalMapNameMinFontSize(),
-                        KmuLunaSettings.getPoliticalMapNameMaxFontSize(),
-                        KmuLunaSettings.getPoliticalMapNameMaxLines(),
-                        KmuLunaSettings.getPoliticalMapNameLineSpacing()));
+            new AnchorSearch(
+                ClusterBorderTrace.readFromLunaSettings(),
+                KmuLunaSettings.getMapAnchorEndInsetMultiple() * CellShaper.BORDER_INSET_DISTANCE,
+                KmuLunaSettings.getMapAnchorIconClearance(),
+                KmuLunaSettings.getMapAnchorDirectionCount(),
+                KmuLunaSettings.getMapAnchorOffsetCount()),
+            new LeanScoring(
+                KmuLunaSettings.getMapAnchorVerticalPenaltyStrength(),
+                KmuLunaSettings.getMapAnchorVerticalPenaltyExponent(),
+                KmuLunaSettings.getMapAnchorMaxSlantDegrees()),
+            new AnchorDiagnostics(
+                KmuLunaSettings.getMapShowRejectedAxes(),
+                KmuLunaSettings.getMapShowUnbiasedAxes()),
+            new NameFitSpecification(
+                KmuLunaSettings.getMapNameMinFontSize(),
+                KmuLunaSettings.getMapNameMaxFontSize(),
+                KmuLunaSettings.getMapNameMaxLines(),
+                KmuLunaSettings.getMapNameLineSpacing()));
     }
 }

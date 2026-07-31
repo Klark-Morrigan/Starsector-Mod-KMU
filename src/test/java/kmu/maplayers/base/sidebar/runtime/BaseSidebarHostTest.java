@@ -53,6 +53,7 @@ final class BaseSidebarHostTest {
         when(firstLayerMock.getDefaultShortcutKeycode()).thenReturn(FIRST_KEYCODE);
         when(secondLayerMock.getShortcutSettingKey()).thenReturn(SECOND_SETTING_KEY);
         when(secondLayerMock.getDefaultShortcutKeycode()).thenReturn(SECOND_KEYCODE);
+
         // The registry is static, so a neighbour's layers would otherwise outlive their test.
         MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), firstLayerMock);
     }
@@ -96,8 +97,9 @@ final class BaseSidebarHostTest {
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNBOUND);
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(() -> KmuLunaSettings.getPoliticalMapLayerShortcut(anyString(), anyInt()))
-                        .thenReturn(UNBOUND);
+                settingsMock
+                    .when(() -> KmuLunaSettings.getMapLayerShortcut(anyString(), anyInt()))
+                    .thenReturn(UNBOUND);
 
                 host.handleKeyPress(eventMock);
             }
@@ -114,10 +116,13 @@ final class BaseSidebarHostTest {
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(() -> KmuLunaSettings.getPoliticalMapLayerShortcut(
-                        FIRST_SETTING_KEY, FIRST_KEYCODE)).thenReturn(UNBOUND);
-                settingsMock.when(() -> KmuLunaSettings.getPoliticalMapLayerShortcut(
-                        SECOND_SETTING_KEY, SECOND_KEYCODE)).thenReturn(UNRELATED_KEYCODE);
+
+                settingsMock
+                    .when(() -> KmuLunaSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
+                    .thenReturn(UNBOUND);
+                settingsMock
+                    .when(() -> KmuLunaSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
+                    .thenReturn(UNRELATED_KEYCODE);
 
                 host.handleKeyPress(eventMock);
             }
@@ -132,7 +137,9 @@ final class BaseSidebarHostTest {
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var otherScreenSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
+            
             createHost(otherScreenSelectionMock);
+
             var eventMock = mockKeyPress(FIRST_KEYCODE);
             try (MockedStatic<KmuLunaSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
@@ -154,10 +161,14 @@ final class BaseSidebarHostTest {
     // Each layer bound to its own default, the state before the player rebinds anything.
     private static MockedStatic<KmuLunaSettings> mockDefaultBindings() {
         MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
-        settingsMock.when(() -> KmuLunaSettings.getPoliticalMapLayerShortcut(
-                FIRST_SETTING_KEY, FIRST_KEYCODE)).thenReturn(FIRST_KEYCODE);
-        settingsMock.when(() -> KmuLunaSettings.getPoliticalMapLayerShortcut(
-                SECOND_SETTING_KEY, SECOND_KEYCODE)).thenReturn(SECOND_KEYCODE);
+
+        settingsMock
+            .when(() -> KmuLunaSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
+            .thenReturn(FIRST_KEYCODE);
+        settingsMock
+            .when(() -> KmuLunaSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
+            .thenReturn(SECOND_KEYCODE);
+
         return settingsMock;
     }
 

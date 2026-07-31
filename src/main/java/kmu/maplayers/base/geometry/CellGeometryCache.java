@@ -65,10 +65,12 @@ public final class CellGeometryCache {
     private static final Logger LOG = Global.getLogger(CellGeometryCache.class);
 
     private final Map<String, double[]> siteBySystemId = new LinkedHashMap<>();
+
     // Each raw cell as adjacency edges, keyed by cell id: an affected cell's edges are
     // recomputed on an access change while distant cells keep their existing lists
     // (and their adjacency), so untouched cells stay the very same object.
     private final Map<String, List<CellEdge>> cellEdgesByCellId = new LinkedHashMap<>();
+
     // The system each cell draws as. Written in lockstep with the cells above, since a cell
     // and what it draws as are produced together and a reader of one always needs the other.
     private final Map<String, String> systemIdByCellId = new LinkedHashMap<>();
@@ -148,8 +150,10 @@ public final class CellGeometryCache {
             // fingerprint collision, or a non-access change). Logged so a "why did
             // nothing rebuild" question has an answer - and the diff cost (scanning
             // every system) shows even when nothing rebuilds.
-            LOG.debug("Map layer geometry unchanged; reachableSites=" + newSites.size()
-                    + " took=" + Timings.formatMillis(System.nanoTime() - start));
+            LOG.debug("Map layer geometry unchanged; reachableSites="
+                + newSites.size()
+                + " took="
+                + Timings.formatMillis(System.nanoTime() - start));
             return;
         }
 
@@ -189,10 +193,10 @@ public final class CellGeometryCache {
         var recomputedCellEdges = 0;
         for (var id : affected) {
             var cell = VoronoiCellBuilder.buildLabelledCell(
-                    indexBySystemId.get(id),
-                    allSites,
-                    seedInputs.cellRadius(),
-                    seedInputs.boundSegments());
+                indexBySystemId.get(id),
+                allSites,
+                seedInputs.cellRadius(),
+                seedInputs.boundSegments());
             var edges = buildCellEdges(cell, allSiteIds);
             cellEdgesByCellId.put(id, edges);
 
@@ -207,11 +211,18 @@ public final class CellGeometryCache {
         // recomputed and at what edge cost, and how long it took. The primary trace
         // for a cell that is misshapen, missing, or left behind after such a change,
         // and for how heavy a rebuild it triggered.
-        LOG.debug("Map layer geometry rebuilt; added=" + added.size()
-                + " removed=" + removed.size() + " recomputedCells=" + affected.size()
-                + " recomputedCellEdges=" + recomputedCellEdges
-                + " totalSites=" + siteBySystemId.size()
-                + " took=" + Timings.formatMillis(System.nanoTime() - start));
+        LOG.debug("Map layer geometry rebuilt; added="
+            + added.size()
+            + " removed="
+            + removed.size()
+            + " recomputedCells="
+            + affected.size()
+            + " recomputedCellEdges="
+            + recomputedCellEdges
+            + " totalSites="
+            + siteBySystemId.size()
+            + " took="
+            + Timings.formatMillis(System.nanoTime() - start));
     }
 
     /**
@@ -285,14 +296,14 @@ public final class CellGeometryCache {
         var neighbourIndices = cell.edgeNeighbourSiteIndices();
         var count = vertices.size();
         var edges = new ArrayList<CellEdge>(count);
-        
+
         for (var i = 0; i < count; i++) {
             var start = vertices.get(i);
             var end = vertices.get((i + 1) % count);
             var neighbourIndex = neighbourIndices[i];
             var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
-                    ? EdgeTarget.REACH_BOUND
-                    : new EdgeTarget.AcrossSystem(allSiteIds.get(neighbourIndex));
+                ? EdgeTarget.REACH_BOUND
+                : new EdgeTarget.AcrossSystem(allSiteIds.get(neighbourIndex));
             edges.add(new CellEdge(start[0], start[1], end[0], end[1], target));
         }
         return edges;

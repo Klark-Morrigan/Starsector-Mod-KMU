@@ -19,6 +19,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
 import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapDebugTerritories;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
+import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 import kmu.settings.KmuLunaSettings;
@@ -87,9 +88,11 @@ final class PoliticalMapCache {
     // builds both halves.
     private int lastGeometryRevision = -1;
     private int lastContentRevision = -1;
+
     // The seed inputs the cached cells were cut at, held as the pair for the same reason as the
     // toggles below: one value compare, and neither half can be advanced without the other.
     private CellSeedInputs lastSeedInputs;
+
     // The dev reveal toggles the cached geometry was last seeded under. Like the frontier
     // resolution they change which systems seed a cell, so a flip reseeds the partition - the
     // settings-revision bump alone only restyles fixed geometry. Held as the record rather than
@@ -164,8 +167,10 @@ final class PoliticalMapCache {
         } catch (RuntimeException exception) {
             if (!hasLoggedRebuildError) {
                 hasLoggedRebuildError = true;
-                LOG.error("Political map rebuild failed; retrying next frame, "
-                        + "keeping last good draw lists", exception);
+                LOG.error(
+                    "Political map rebuild failed; retrying next frame, "
+                        + "keeping last good draw lists",
+                    exception);
             }
             ensureDrawablesNonNull(view);
         }
@@ -184,8 +189,8 @@ final class PoliticalMapCache {
         // reseeds every cell, so a change makes the geometry stale the same way an access change
         // does. Read once here and let updateFromSector do the reseed.
         var seedInputs = new CellSeedInputs(
-                KmuLunaSettings.getPoliticalMapCellBoundSegments(),
-                KmuLunaSettings.getPoliticalMapCellRadius());
+            KmuLunaSettings.getPoliticalMapCellBoundSegments(),
+            KmuLunaSettings.getPoliticalMapCellRadius());
 
         // The two dev reveal toggles are geometry inputs for the same reason: each changes which
         // systems seed a cell, so a flip must reseed the partition here rather than only restyle it
@@ -198,9 +203,17 @@ final class PoliticalMapCache {
             // Transition trace: a stale cell or one left behind after an access change can be tied
             // to the revision step - or the seed inputs or toggle flip - that drove it.
             LOG.debug("Political map geometry stale; rebuilding from revision "
-                    + lastGeometryRevision + " to " + geometryRevision
-                    + ", seedInputs " + lastSeedInputs + " to " + seedInputs
-                    + ", devToggles " + lastDevToggles + " to " + devToggles);
+                + lastGeometryRevision
+                + " to "
+                + geometryRevision
+                + ", seedInputs "
+                + lastSeedInputs
+                + " to "
+                + seedInputs
+                + ", devToggles "
+                + lastDevToggles
+                + " to "
+                + devToggles);
 
             rebuildGeometry(seedInputs, devToggles);
             lastGeometryRevision = geometryRevision;
@@ -232,31 +245,25 @@ final class PoliticalMapCache {
             // none behind.
             if (KmuLunaSettings.shouldTraceBordersForDebug()) {
                 debugTerritories = DebugBorderTracingBuilder.buildDebugDrawables(
-                        geometryCache,
-                        Global.getSector());
+                    geometryCache,
+                    Global.getSector());
                 territories = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                        clusterAnchors,
-                        geometryCache,
-                        Global.getSector(),
-                        view);
+                    clusterAnchors,
+                    geometryCache,
+                    Global.getSector(),
+                    view);
             } else {
                 territories = TerritoryBuilder.buildTerritories(
-                        geometryCache,
-                        Global.getSector(),
-                        view);
+                    geometryCache,
+                    Global.getSector(),
+                    view);
                 debugTerritories = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchors(
-                        clusterAnchors,
-                        geometryCache,
-                        territories.getHolderBySystemId(),
-                        Global.getSector(),
-                        territories.getDesaturationPalette(),
-                        view,
-                        territories.getGrouping(),
-                        territories.isFiltering(),
-                        territories.getRecedeAdjustment(),
-                        territories.getSelectedBlocId());
+                    clusterAnchors,
+                    geometryCache,
+                    Global.getSector(),
+                    ClusterLabelStylingSnapshot.resolveFrom(territories));
             }
 
             // The name labels are minted from the placements just rebuilt (empty when the names
@@ -264,9 +271,9 @@ final class PoliticalMapCache {
             // placement search both consumers share. The name choice is read here rather than
             // inside the build, since whether names draw at all is this layer's own answer.
             LabelsBuilder.rebuildLabels(
-                    factionLabels,
-                    clusterAnchors,
-                    NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
+                factionLabels,
+                clusterAnchors,
+                NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
                     
             lastContentRevision = contentRevision;
 
@@ -288,10 +295,10 @@ final class PoliticalMapCache {
         // rebuild instead.
         if (territories != null && !territories.isFiltering()) {
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
-                    territories,
-                    clusterAnchors,
-                    factionLabels,
-                    geometryCache);
+                territories,
+                clusterAnchors,
+                factionLabels,
+                geometryCache);
         } else {
             MapLayerRefresh.drainStaleGroupingSystemIds();
         }
@@ -310,11 +317,17 @@ final class PoliticalMapCache {
             return;
         }
         var builtCounts = debugTerritories != null
-                ? "debugBaseLoops=" + debugTerritories.baseLoops().size()
-                : "styledCells=" + territories.getStyledCellByCellId().size();
-        LOG.debug("Political map territories rebuilt; contentRevision=" + contentRevision
-                + " " + builtCounts + " geometryRebuilt=" + rebuiltCells
-                + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
+            ? "debugBaseLoops=" + debugTerritories.baseLoops().size()
+            : "styledCells=" + territories.getStyledCellByCellId().size();
+
+        LOG.debug("Political map territories rebuilt; contentRevision="
+            + contentRevision
+            + " "
+            + builtCounts
+            + " geometryRebuilt="
+            + rebuiltCells
+            + " took="
+            + Timings.formatMillis(System.nanoTime() - drawablesStart));
     }
 
     // Guards the render path after a failed first build: a rebuild that threw before completing can
@@ -346,12 +359,12 @@ final class PoliticalMapCache {
     // combine here.
     private static int computeContentRevision(PoliticalMapView view) {
         return Objects.hash(
-                KmuLunaSettings.getSettingsRevision(),
-                view.getId(),
-                view.getContentRevision(),
-                MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER),
-                MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE),
-                MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));
+            KmuLunaSettings.getSettingsRevision(),
+            view.getId(),
+            view.getContentRevision(),
+            MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER),
+            MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE),
+            MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
@@ -367,13 +380,13 @@ final class PoliticalMapCache {
 
         var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
         KmuProfiling
-                .getProfiler()
-                .measure(
-                        "politicalMap.updateGeometry",
-                        () -> geometryCache.updateFromSector(
-                                Global.getSector(),
-                                movingSystemIds,
-                                seedInputs,
-                                devToggles.convertToVisibilityOverrides()));
+            .getProfiler()
+            .measure(
+                "politicalMap.updateGeometry",
+                () -> geometryCache.updateFromSector(
+                    Global.getSector(),
+                    movingSystemIds,
+                    seedInputs,
+                    devToggles.convertToVisibilityOverrides()));
     }
 }
