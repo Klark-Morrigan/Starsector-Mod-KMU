@@ -40,6 +40,7 @@ import java.util.Set;
  * through the KMLib seam, which fails closed, so a missing link simply hides the sidebar.
  */
 public final class IntelSidebarHost extends BaseSidebarHost {
+    
     /**
      * The one intel-screen host; the render and input listeners registered for the intel screen reference it.
      * This is where the live intel-screen binding is chosen, the host itself naming only the role.

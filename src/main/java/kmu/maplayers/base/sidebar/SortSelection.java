@@ -21,6 +21,7 @@ import kmlib.starsector.memory.SectorMemoryString;
  * Nothing on the map changes, so there is no overlay repaint to request.
  */
 public final class SortSelection {
+    
     // The two keys read as the political map's because this state shipped alongside it, before the
     // framework was carved out. A key is a save-serialised identity, not a description of where the
     // class lives: a renamed key reads as absent and silently resets every existing save's sort choice

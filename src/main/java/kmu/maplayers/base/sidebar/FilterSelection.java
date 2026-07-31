@@ -33,6 +33,7 @@ import java.util.function.Predicate;
  * before the sector exists (or a clear with nothing selected) neither writes nor repaints.
  */
 public final class FilterSelection {
+    
     // Per-scope key prefix; the scope's own id is appended to give one save-serialised slot per
     // scope. The prefix reads as the political map's because this state shipped alongside it,
     // before the framework was carved out. A key is a save-serialised identity, not a description

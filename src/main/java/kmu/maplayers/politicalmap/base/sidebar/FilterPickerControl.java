@@ -2,9 +2,12 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.sidebar.ColumnsSelectorControl;
 import kmu.maplayers.base.sidebar.FilterSelection;
-import kmu.maplayers.politicalmap.base.BlocListColumns;
-import kmu.maplayers.politicalmap.base.BlocSort;
+import kmu.maplayers.base.sidebar.ListColumns;
+import kmu.maplayers.base.sidebar.ListSort;
+import kmu.maplayers.base.sidebar.ListSortMode;
+import kmu.maplayers.base.sidebar.SortSelectorControl;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -62,47 +65,56 @@ public final class FilterPickerControl {
             String viewId,
             List<SelectableBloc> blocs,
             String selectedBlocId,
-            BlocSort sort,
-            BlocListColumns columns) {
+            ListSort<SelectableBloc> sort,
+            ListColumns columns) {
+
         if (blocs.isEmpty()) {
             return List.of();
         }
+
         // Rank a copy under the active mode and direction, leaving the caller's (cached) list
         // untouched, so the rows draw in the chosen order and the lit index below is resolved against
         // that same order.
         var rankedBlocs = new ArrayList<>(blocs);
         rankedBlocs.sort(sort.comparator());
+
         var selectedIndex = resolveSelectedIndex(rankedBlocs, selectedBlocId);
         var controls = new ArrayList<ControlSpec>();
+
         // A rule heads the block, parting the view-level controls above from the picker below - the
         // section break a caption used to mark, now carrying no text.
         controls.add(new ControlSpec.Divider());
+
         // The columns selector rides directly under the rule, so the column count is chosen for the
         // block as a whole; the list below then wraps its rows across that many columns.
         controls.add(ColumnsSelectorControl.buildSelector(columns));
+
         // The sort selector and the recede control share one row, the sort on the left picking the
         // metric the list ranks by and the recede on the right setting how the rest of the sector fades
         // behind a spotlight. Pairing them keeps the picker compact. The recede is always shown - it
         // simply has no visible effect until a bloc is spotlighted, so the knobs stay put whether or not
         // a filter is active.
         controls.add(new ControlSpec.SideBySide(
-                List.of(SortSelectorControl.buildSelector(sort)),
-                RecedeControl.buildControls(
-                        RecedePreferences.FILTER,
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))));
+            List.of(SortSelectorControl.buildSelector(sort, BlocSortMode.MODES)),
+            RecedeControl.buildControls(
+                RecedePreferences.FILTER,
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))));
+
         // The bloc list is the body's one scrolling cluster: when the picker plus the controls above and
         // below it would run the box past the bottom margin, the list gives up the difference and
         // scrolls while everything around it stays pinned. asScrolling marks the list; the capped
         // layout, renderer, and input listener all read that one flag.
         controls.add(
-                ControlSpec.VerticalTable.iconList(
-                        resolveLabels(rankedBlocs),
-                        resolveIconPaths(rankedBlocs),
-                        resolveTrailingValues(rankedBlocs, sort.mode()),
-                        selectedIndex,
-                        cellIndex -> pickBloc(viewId, rankedBlocs, selectedIndex, cellIndex),
-                        columns.columnCount())
-                        .asScrolling());
+            ControlSpec.VerticalTable
+                .iconList(
+                    resolveLabels(rankedBlocs),
+                    resolveIconPaths(rankedBlocs),
+                    resolveTrailingValues(rankedBlocs, sort.mode()),
+                    selectedIndex,
+                    cellIndex -> pickBloc(viewId, rankedBlocs, selectedIndex, cellIndex),
+                    columns.columnCount())
+                .asScrolling());
+
         return List.copyOf(controls);
     }
 
@@ -111,7 +123,11 @@ public final class FilterPickerControl {
     // picking it means "stop spotlighting". Any index outside the bloc list is ignored, so a stray
     // hit changes nothing.
     private static void pickBloc(
-            String viewId, List<SelectableBloc> blocs, int selectedIndex, int cellIndex) {
+            String viewId,
+            List<SelectableBloc> blocs,
+            int selectedIndex,
+            int cellIndex) {
+
         if (cellIndex < 0 || cellIndex >= blocs.size()) {
             return;
         }
@@ -140,14 +156,18 @@ public final class FilterPickerControl {
     // Each option's label, in list order; a bloc with no resolved name draws as an unlabelled row
     // rather than a null the width measurer would choke on, so an empty string stands in.
     private static List<String> resolveLabels(List<SelectableBloc> blocs) {
-        return mapBlocs(blocs, bloc -> bloc.displayName() == null ? "" : bloc.displayName());
+        return mapBlocs(
+            blocs,
+            bloc -> bloc.displayName() == null ? "" : bloc.displayName());
     }
 
     // Each option's crest path, in list order, keeping the nulls: a bloc with no crest (every
     // alliance, and a crestless faction) contributes a null the row draws without an icon, so the
     // list stays aligned to the labels index for index.
     private static List<String> resolveIconPaths(List<SelectableBloc> blocs) {
-        return mapBlocs(blocs, SelectableBloc::crestSpritePath);
+        return mapBlocs(
+            blocs,
+            SelectableBloc::crestSpritePath);
     }
 
     // Each option's trailing value, in list order: the active sort metric's number for the bloc, drawn
@@ -155,16 +175,22 @@ public final class FilterPickerControl {
     // labels index for index, so every row carries a value (a bloc with a zero metric shows "0" rather
     // than dropping the column). Under the name mode there is no numeric metric, so the value is blank
     // and the rows read as a plain alphabetical list.
-    private static List<String> resolveTrailingValues(List<SelectableBloc> blocs,
-            BlocSortMode sortMode) {
-        return mapBlocs(blocs, bloc -> sortMode.resolveTrailingValue(bloc.stats()));
+    private static List<String> resolveTrailingValues(
+            List<SelectableBloc> blocs,
+            ListSortMode<SelectableBloc> sortMode) {
+
+        return mapBlocs(
+            blocs,
+            sortMode::resolveTrailingValue);
     }
 
     // One column of the picker table: each bloc mapped to a cell string, in list order, so the label,
     // crest, and value columns stay aligned index for index. A null entry is kept (a crestless bloc's
     // null path is a real "no icon"), so callers that need to null-guard do it in their own mapping.
-    private static List<String> mapBlocs(List<SelectableBloc> blocs,
+    private static List<String> mapBlocs(
+            List<SelectableBloc> blocs,
             Function<SelectableBloc, String> resolveCell) {
+
         var cells = new ArrayList<String>(blocs.size());
         for (var bloc : blocs) {
             cells.add(resolveCell.apply(bloc));

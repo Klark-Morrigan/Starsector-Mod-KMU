@@ -20,6 +20,7 @@ import java.util.List;
  * else.
  */
 public final class SidebarInput implements CampaignInputListener {
+
     // Run ahead of the core screen and of other mods' listeners, so a tab click or notch press is consumed
     // before anything else claims it.
     private static final int INPUT_PRIORITY = 1000;

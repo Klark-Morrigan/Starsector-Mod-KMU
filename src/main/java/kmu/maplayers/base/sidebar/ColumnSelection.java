@@ -18,6 +18,7 @@ import kmlib.starsector.memory.SectorMemoryString;
  * re-lays the rows on its own. Nothing on the map changes, so there is no overlay repaint to request.
  */
 public final class ColumnSelection {
+    
     // The key reads as the political map's because this state shipped alongside it, before the
     // framework was carved out. A key is a save-serialised identity, not a description of where the
     // class lives: a renamed key reads as absent and silently resets every existing save's column

@@ -21,6 +21,9 @@
     "dialog_close": "Close",
 
     "map_layer_tab_no_layer": "No Layer",
+    "map_layer_ctl_columns_caption": "Columns",
+    "map_layer_ctl_columns_one": "1",
+    "map_layer_ctl_columns_two": "2",
 
     "political_map_tab_political_map": "Political Map",
 
@@ -41,9 +44,6 @@
     "political_map_ctl_sort_presence": "Presence",
     "political_map_ctl_sort_score": "Score",
     "political_map_ctl_sort_market_size": "Market size",
-    "political_map_ctl_columns_caption": "Columns",
-    "political_map_ctl_columns_one": "1",
-    "political_map_ctl_columns_two": "2",
 
     "political_map_tooltip_decivilised": "Decivilised",
     "political_map_tooltip_unpopulated": "Unpopulated",

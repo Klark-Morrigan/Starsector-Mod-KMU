@@ -17,6 +17,7 @@ import kmlib.starsector.memory.SectorMemoryFlag;
  * before the sector exists, which is dropped and simply retried on the next frame.
  */
 public final class PersistedSidebarFold implements SidebarFoldSelection {
+    
     // The stored fold and the default a save that holds no choice yet resolves to. The key is the
     // save-serialised identity, so it must stay stable once shipped - renaming it silently returns every
     // existing save to the default.

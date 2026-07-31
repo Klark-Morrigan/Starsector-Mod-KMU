@@ -127,13 +127,33 @@ the previous save's scroll offset in the same move.
 ## Picker state
 
 A layer whose body carries a sortable, column-laid list needs somewhere to keep how that list is
-ranked, wrapped, and filtered. `SortSelection`, `ColumnSelection`, and `FilterSelection` are those
-stores, and `SortDirection` is the ascending/descending value the first of them round-trips.
+ranked, wrapped, and filtered - and the widgets that change those choices. `SortSelection`,
+`ColumnSelection`, and `FilterSelection` are the stores, `SortDirection` is the
+ascending/descending value the first of them round-trips, and the sort and column models with
+their two selector controls sit beside them.
 
-All of them are leaves: they hold the raw stored keys and nothing that resolves one. Which
-comparator a mode key names, which count a column key means, what a filtered-to id points at, and
-what any of them falls back to when unset stay with the layer that offers the choices, so the
-framework carries the storage without learning what is being sorted or filtered.
+The stores are leaves: they hold the raw stored keys and nothing that resolves one. What a
+filtered-to id points at stays with the layer that offers the choices, and a stored sort or
+column key only means something to the models below, so the framework carries the storage without
+learning what any one layer's list holds.
+
+`ListSortMode` is the seam a layer's sort vocabulary implements: each mode carries the key its
+choice persists under, its selector-row label, its natural direction, the comparator that lays
+the list out under it, and the trailing value a row shows beside an item (blank by default, for a
+mode with no number to show). A layer hands its modes over as one `ListSortModes` value - the
+set in display order bundled with its fallback, so the two cannot be mixed from different
+layers. `ListSort` pairs the active mode with its direction and is the one place the stored pair
+is resolved - against the caller's vocabulary, so an unrecognised key falls back to its default
+and an unstored direction to the mode's own.
+`ListColumns` is framework outright rather than a seam: nothing in a one-or-two column choice is
+any layer's own, so the choices, their frozen keys, and the stored-count resolution all live
+here.
+
+`SortSelectorControl` and `ColumnsSelectorControl` are the selectors over those models. The sort
+selector is a re-firing radio over the caller's modes - a click on an unlit row switches to that
+mode at its default direction, a re-click of the lit row flips the direction - with each row's
+trailing triangle previewing the order picking it would give. The columns selector is an ordinary
+two-segment radio, inert on a re-pick. Both persist through the stores above.
 
 `FilterSelection` holds one selected id per opaque scope, so each scope keeps its own choice and
 switching scopes neither clears nor cross-reads another's. Beyond the read, pick, and clear it
@@ -191,6 +211,7 @@ The *panel widget itself* - frame, tab strip, scrollbar, collapse handle, contro
 (`kmlib.starsector.ui.widgets`, `.input`, `.render.gl`); this package supplies only the wiring
 KMLib cannot know. The *layer roster and each screen's active pick*, including the save migrations
 behind them, are `base/layer`'s (`MapLayerRegistry`), summarised in
-[map layers](../../README.md). The *body controls* the panel lays out belong to whichever layer is
-active - for the political map, [`politicalmap`](../../politicalmap/README.md) and its
-`base/sidebar` controls. Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.
+[map layers](../../README.md). The *body composition* the panel lays out belongs to whichever
+layer is active - for the political map, [`politicalmap`](../../politicalmap/README.md) and its
+`base/sidebar` controls - though the sort and columns selectors a body embeds are this package's
+(see [Picker state](#picker-state)). Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.

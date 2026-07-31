@@ -53,6 +53,7 @@ import java.util.Set;
  * width matches the text drawn into it.
  */
 public final class LiveSidebarPlacement {
+    
     // The tabs read in the sector map's own orbitron face - the AA orbitron atlas vanilla uses for its
     // map tabs, scaled to the tab size. The measurer loads it and both tab styles below carry it, so a
     // snapped tab width matches the text drawn into it.

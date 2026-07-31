@@ -7,8 +7,8 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.maplayers.base.sidebar.ColumnSelection;
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.sidebar.ListColumns;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
@@ -96,11 +96,11 @@ public final class PoliticalMapLayer implements MapLayer {
             // the economy every frame the map is open.
             // The stored sort (mode and direction), resolved live so a save with no stored direction
             // reads the mode's natural order.
-            var sort = BlocSort.resolveStored();
+            var sort = BlocSortMode.resolveStoredSort();
 
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
-            var columns = BlocListColumns.fromKeyOrDefault(ColumnSelection.getColumnCountKey());
+            var columns = ListColumns.resolveStored();
             var viewId = selectedView.getId();
 
             controls.addAll(FilterPickerControl.buildControls(

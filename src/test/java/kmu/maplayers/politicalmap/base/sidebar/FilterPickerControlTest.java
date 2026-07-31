@@ -5,9 +5,9 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.sidebar.ListColumns;
+import kmu.maplayers.base.sidebar.ListSort;
 import kmu.maplayers.base.sidebar.SortDirection;
-import kmu.maplayers.politicalmap.base.BlocListColumns;
-import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
@@ -33,6 +33,7 @@ import static org.mockito.Mockito.mockStatic;
  * the picker's shape and wiring alone, not how a string resolves or how the selection persists.
  */
 final class FilterPickerControlTest {
+
     // The active view whose slot a pick or clear writes into; the picker is built for this view.
     private static final String VIEW_ID = "factions";
 
@@ -40,9 +41,10 @@ final class FilterPickerControlTest {
     // crestless one (an alliance, or a faction with no authored crest) that dominates less, so the
     // null-crest path is exercised and the default domination sort keeps them in this order.
     private static final SelectableBloc HEGEMONY =
-            new SelectableBloc("hegemony", "Hegemony", "crest_heg", new BlocStats(5, 8, 40, 12));
+        new SelectableBloc("hegemony", "Hegemony", "crest_heg", new BlocStats(5, 8, 40, 12));
     private static final SelectableBloc TRADERS =
-            new SelectableBloc("free_traders", "Free Traders", null, new BlocStats(2, 3, 6, 4));
+        new SelectableBloc("free_traders", "Free Traders", null, new BlocStats(2, 3, 6, 4));
+
     private static final List<SelectableBloc> BLOCS = List.of(HEGEMONY, TRADERS);
 
     // The block is a fixed four rows: the section rule, the columns selector, the paired sort-and-recede
@@ -51,6 +53,7 @@ final class FilterPickerControlTest {
     private static final int DIVIDER = 0;
     private static final int COLUMNS_SELECTOR = 1;
     private static final int SORT_AND_RECEDE = 2;
+
     // The recede's three cells within the pair's right column: its caption then the two checkboxes.
     private static final int RECEDE_CAPTION = 0;
     private static final int RECEDE_MUTE = 1;
@@ -79,8 +82,9 @@ final class FilterPickerControlTest {
             // A view with no visible weighted bloc contributes no picker at all, so the body carries
             // no empty list widget.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+
                 assertThat(build(List.of(), null, BlocSortMode.DEFAULT))
-                        .isEmpty();
+                    .isEmpty();
             }
         }
 
@@ -93,7 +97,8 @@ final class FilterPickerControlTest {
 
                 var divider = build(BLOCS, null, BlocSortMode.DEFAULT).get(DIVIDER);
 
-                assertThat(divider).isInstanceOf(ControlSpec.Divider.class);
+                assertThat(divider)
+                    .isInstanceOf(ControlSpec.Divider.class);
             }
         }
 
@@ -106,8 +111,10 @@ final class FilterPickerControlTest {
 
                 var columnsSelector = build(BLOCS, null, BlocSortMode.DEFAULT).get(COLUMNS_SELECTOR);
 
-                assertThat(columnsSelector).isInstanceOf(ControlSpec.HorizontalRadio.class);
-                assertThat(columnsSelector.labels()).hasSize(2);
+                assertThat(columnsSelector)
+                    .isInstanceOf(ControlSpec.HorizontalRadio.class);
+                assertThat(columnsSelector.labels())
+                    .hasSize(2);
             }
         }
 
@@ -121,20 +128,26 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
 
                 var pair = sortAndRecedeOf(build(BLOCS, null, BlocSortMode.PRESENCE));
-
                 var sortSelector = (ControlSpec.VerticalTable) pair.leftColumn().get(0);
-                assertThat(pair.leftColumn()).hasSize(1);
+
+                assertThat(pair.leftColumn())
+                    .hasSize(1);
+
                 // A sort is always active, so a re-pick re-fires to flip; the lit row is the active mode.
-                assertThat(sortSelector.reselect()).isEqualTo(ReselectBehaviour.REFIRE);
+                assertThat(sortSelector.reselect())
+                    .isEqualTo(ReselectBehaviour.REFIRE);
                 assertThat(sortSelector.selectedIndex())
-                        .isEqualTo(List.of(BlocSortMode.values()).indexOf(BlocSortMode.PRESENCE));
+                    .isEqualTo(List.of(BlocSortMode.values()).indexOf(BlocSortMode.PRESENCE));
+
                 // The recede is the caller's caption then the two checkboxes, left to right.
-                assertThat(pair.rightColumn().get(RECEDE_CAPTION)).isInstanceOf(ControlSpec.Label.class);
+                assertThat(pair.rightColumn().get(RECEDE_CAPTION))
+                    .isInstanceOf(ControlSpec.Label.class);
                 assertThat(pair.rightColumn().get(RECEDE_CAPTION).labels())
-                        .containsExactly("Rest of the sector is");
-                assertThat(pair.rightColumn().get(RECEDE_MUTE)).isInstanceOf(ControlSpec.Checkbox.class);
+                    .containsExactly("Rest of the sector is");
+                assertThat(pair.rightColumn().get(RECEDE_MUTE))
+                    .isInstanceOf(ControlSpec.Checkbox.class);
                 assertThat(pair.rightColumn().get(RECEDE_DESATURATE))
-                        .isInstanceOf(ControlSpec.Checkbox.class);
+                    .isInstanceOf(ControlSpec.Checkbox.class);
             }
         }
 
@@ -148,9 +161,10 @@ final class FilterPickerControlTest {
 
                 var pair = sortAndRecedeOf(build(BLOCS, null, BlocSortMode.DEFAULT));
 
-                assertThat(pair.rightColumn()).hasSize(3);
+                assertThat(pair.rightColumn())
+                    .hasSize(3);
                 assertThat(pair.rightColumn().get(RECEDE_CAPTION).labels())
-                        .containsExactly("Rest of the sector is");
+                    .containsExactly("Rest of the sector is");
             }
         }
 
@@ -162,8 +176,10 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                assertThat(build(BLOCS, null, BlocSortMode.DEFAULT)).hasSize(4);
-                assertThat(build(BLOCS, "hegemony", BlocSortMode.DEFAULT)).hasSize(4);
+                assertThat(build(BLOCS, null, BlocSortMode.DEFAULT))
+                    .hasSize(4);
+                assertThat(build(BLOCS, "hegemony", BlocSortMode.DEFAULT))
+                    .hasSize(4);
             }
         }
 
@@ -175,15 +191,21 @@ final class FilterPickerControlTest {
                 var picker = pickerOf(build(BLOCS, null, BlocSortMode.DEFAULT));
 
                 // A vertical table by type; re-picking the lit row clears the spotlight (DESELECT).
-                assertThat(picker.reselect()).isEqualTo(ReselectBehaviour.DESELECT);
+                assertThat(picker.reselect())
+                    .isEqualTo(ReselectBehaviour.DESELECT);
+
                 // The list is the body's scrolling cluster, so a long bloc list scrolls within the
                 // capped body while the controls above and below it stay pinned.
-                assertThat(picker.scrolls()).isTrue();
+                assertThat(picker.scrolls())
+                    .isTrue();
+
                 // Labels are the bloc names, the icons the crests, aligned index for index so a
                 // crestless bloc rides as a null entry rather than dropping a row. Domination-sorted,
                 // so the higher-dominating Hegemony leads.
-                assertThat(picker.labels()).containsExactly("Hegemony", "Free Traders");
-                assertThat(picker.iconPaths()).containsExactly("crest_heg", null);
+                assertThat(picker.labels())
+                    .containsExactly("Hegemony", "Free Traders");
+                assertThat(picker.iconPaths())
+                    .containsExactly("crest_heg", null);
             }
         }
 
@@ -194,16 +216,24 @@ final class FilterPickerControlTest {
             // Hegemony keep their order (8 > 3) but the values switch to the presence counts.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
+
                 // A third bloc that trails on domination but leads on market size, so a market-size
                 // sort visibly reorders the list rather than just relabelling it.
-                var tritachyon = new SelectableBloc("tritachyon", "Tri-Tachyon", "crest_tt",
-                        new BlocStats(1, 9, 30, 99));
+                var tritachyon = new SelectableBloc(
+                    "tritachyon",
+                    "Tri-Tachyon",
+                    "crest_tt",
+                    new BlocStats(1, 9, 30, 99));
 
                 var picker = pickerOf(build(
-                        List.of(HEGEMONY, TRADERS, tritachyon), null, BlocSortMode.MARKET_SIZE));
+                    List.of(HEGEMONY, TRADERS, tritachyon),
+                    null,
+                    BlocSortMode.MARKET_SIZE));
 
-                assertThat(picker.labels()).containsExactly("Tri-Tachyon", "Hegemony", "Free Traders");
-                assertThat(picker.trailingLabels()).containsExactly("99", "12", "4");
+                assertThat(picker.labels())
+                    .containsExactly("Tri-Tachyon", "Hegemony", "Free Traders");
+                assertThat(picker.trailingLabels())
+                    .containsExactly("99", "12", "4");
             }
         }
 
@@ -216,12 +246,14 @@ final class FilterPickerControlTest {
                 stubCaptions(stringsMock);
 
                 var picker = pickerOf(FilterPickerControl.buildControls(
-                        VIEW_ID, BLOCS, null,
-                        new BlocSort(BlocSortMode.DOMINATION, SortDirection.ASCENDING),
-                        BlocListColumns.ONE));
+                    VIEW_ID, BLOCS, null,
+                    new ListSort<>(BlocSortMode.DOMINATION, SortDirection.ASCENDING),
+                    ListColumns.ONE));
 
-                assertThat(picker.labels()).containsExactly("Free Traders", "Hegemony");
-                assertThat(picker.trailingLabels()).containsExactly("2", "5");
+                assertThat(picker.labels())
+                    .containsExactly("Free Traders", "Hegemony");
+                assertThat(picker.trailingLabels())
+                    .containsExactly("2", "5");
             }
         }
 
@@ -234,8 +266,10 @@ final class FilterPickerControlTest {
 
                 var picker = pickerOf(build(BLOCS, null, BlocSortMode.NAME));
 
-                assertThat(picker.labels()).containsExactly("Free Traders", "Hegemony");
-                assertThat(picker.trailingLabels()).containsExactly("", "");
+                assertThat(picker.labels())
+                    .containsExactly("Free Traders", "Hegemony");
+                assertThat(picker.trailingLabels())
+                    .containsExactly("", "");
             }
         }
 
@@ -246,15 +280,25 @@ final class FilterPickerControlTest {
             // dropping the column.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
-                var hegemony = new SelectableBloc("hegemony", "Hegemony", "crest_heg",
-                        new BlocStats(5, 8, 40, 12));
-                var traders = new SelectableBloc("free_traders", "Free Traders", null,
-                        new BlocStats(0, 3, 6, 4));
+
+                var hegemony = new SelectableBloc(
+                    "hegemony",
+                    "Hegemony",
+                    "crest_heg",
+                    new BlocStats(5, 8, 40, 12));
+                var traders = new SelectableBloc(
+                    "free_traders",
+                    "Free Traders",
+                    null,
+                    new BlocStats(0, 3, 6, 4));
 
                 var picker = pickerOf(build(
-                        List.of(hegemony, traders), null, BlocSortMode.DOMINATION));
+                    List.of(hegemony, traders),
+                    null,
+                    BlocSortMode.DOMINATION));
 
-                assertThat(picker.trailingLabels()).containsExactly("5", "0");
+                assertThat(picker.trailingLabels())
+                    .containsExactly("5", "0");
             }
         }
 
@@ -264,12 +308,19 @@ final class FilterPickerControlTest {
             // measurer would choke on.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
-                var nameless = new SelectableBloc("ghost", null, null);
+
+                var nameless = new SelectableBloc(
+                    "ghost",
+                    null,
+                    null);
 
                 var picker = pickerOf(
-                        build(List.of(nameless), null, BlocSortMode.DEFAULT));
+                    build(List.of(nameless),
+                    null,
+                    BlocSortMode.DEFAULT));
 
-                assertThat(picker.labels()).containsExactly("");
+                assertThat(picker.labels())
+                    .containsExactly("");
             }
         }
 
@@ -278,11 +329,14 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = pickerOf(
-                        build(BLOCS, "free_traders", BlocSortMode.DEFAULT));
+                var picker = pickerOf(build(
+                    BLOCS,
+                    "free_traders",
+                    BlocSortMode.DEFAULT));
 
                 // Domination-sorted, Free Traders is the second row.
-                assertThat(picker.selectedIndex()).isEqualTo(1);
+                assertThat(picker.selectedIndex())
+                    .isEqualTo(1);
             }
         }
 
@@ -293,10 +347,13 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var picker = pickerOf(
-                        build(BLOCS, "vanished", BlocSortMode.DEFAULT));
+                var picker = pickerOf(build(
+                    BLOCS,
+                    "vanished",
+                    BlocSortMode.DEFAULT));
 
-                assertThat(picker.selectedIndex()).isEqualTo(ControlSpec.NO_SELECTION);
+                assertThat(picker.selectedIndex())
+                    .isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
 
@@ -308,15 +365,27 @@ final class FilterPickerControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCaptions(stringsMock);
 
-                var defaultSort = new BlocSort(
-                        BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection());
-                var oneColumn = pickerOf(FilterPickerControl.buildControls(
-                        VIEW_ID, BLOCS, null, defaultSort, BlocListColumns.ONE));
-                var twoColumn = pickerOf(FilterPickerControl.buildControls(
-                        VIEW_ID, BLOCS, null, defaultSort, BlocListColumns.TWO));
+                var defaultSort = new ListSort<>(
+                    BlocSortMode.DEFAULT,
+                    BlocSortMode.DEFAULT.defaultDirection());
 
-                assertThat(oneColumn.columnCount()).isEqualTo(1);
-                assertThat(twoColumn.columnCount()).isEqualTo(2);
+                var oneColumn = pickerOf(FilterPickerControl.buildControls(
+                    VIEW_ID,
+                    BLOCS,
+                    null,
+                    defaultSort,
+                    ListColumns.ONE));
+                var twoColumn = pickerOf(FilterPickerControl.buildControls(
+                    VIEW_ID,
+                    BLOCS,
+                    null,
+                    defaultSort,
+                    ListColumns.TWO));
+
+                assertThat(oneColumn.columnCount())
+                    .isEqualTo(1);
+                assertThat(twoColumn.columnCount())
+                    .isEqualTo(2);
             }
         }
     }
@@ -328,13 +397,18 @@ final class FilterPickerControlTest {
         void clickingAnUnlitOptionSpotlightsThatBloc() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<FilterSelection> selectionMock =
-                            mockStatic(FilterSelection.class)) {
+                        mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = pickerOf(build(BLOCS, null, BlocSortMode.DEFAULT));
+
+                var picker = pickerOf(build(
+                    BLOCS,
+                    null,
+                    BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(0);
 
-                selectionMock.verify(() -> FilterSelection.selectId(VIEW_ID, "hegemony"));
+                selectionMock.verify(
+                    () -> FilterSelection.selectId(VIEW_ID, "hegemony"));
             }
         }
 
@@ -344,14 +418,18 @@ final class FilterPickerControlTest {
             // own index; re-picking it stops the spotlight rather than re-selecting it.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<FilterSelection> selectionMock =
-                            mockStatic(FilterSelection.class)) {
+                        mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = pickerOf(
-                        build(BLOCS, "hegemony", BlocSortMode.DEFAULT));
+
+                var picker = pickerOf(build(
+                    BLOCS,
+                    "hegemony",
+                    BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(0);
 
-                selectionMock.verify(() -> FilterSelection.clearSelection(VIEW_ID));
+                selectionMock.verify(
+                    () -> FilterSelection.clearSelection(VIEW_ID));
             }
         }
 
@@ -359,14 +437,18 @@ final class FilterPickerControlTest {
         void clickingAnotherOptionWhileFilteringSpotlightsTheNewBloc() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<FilterSelection> selectionMock =
-                            mockStatic(FilterSelection.class)) {
+                        mockStatic(FilterSelection.class)) {
                 stubCaptions(stringsMock);
-                var picker = pickerOf(
-                        build(BLOCS, "hegemony", BlocSortMode.DEFAULT));
+
+                var picker = pickerOf(build(
+                    BLOCS,
+                    "hegemony",
+                    BlocSortMode.DEFAULT));
 
                 picker.action().activateCell(1);
 
-                selectionMock.verify(() -> FilterSelection.selectId(VIEW_ID, "free_traders"));
+                selectionMock.verify(
+                    () -> FilterSelection.selectId(VIEW_ID, "free_traders"));
             }
         }
     }
@@ -375,10 +457,17 @@ final class FilterPickerControlTest {
     // the state every test that does not exercise a flip or a column change assumes, so the call sites
     // read the mode alone without spelling out its default direction or column count. A test that flips
     // the direction calls the full builder directly.
-    private static List<ControlSpec> build(List<SelectableBloc> blocs, String selectedBlocId,
+    private static List<ControlSpec> build(
+            List<SelectableBloc> blocs,
+            String selectedBlocId,
             BlocSortMode mode) {
-        return FilterPickerControl.buildControls(VIEW_ID, blocs, selectedBlocId,
-                new BlocSort(mode, mode.defaultDirection()), BlocListColumns.ONE);
+
+        return FilterPickerControl.buildControls(
+            VIEW_ID,
+            blocs,
+            selectedBlocId,
+            new ListSort<>(mode, mode.defaultDirection()),
+            ListColumns.ONE);
     }
 
     // The picker list is always the block's last row, so a test reads it from the tail. Read as the
@@ -398,17 +487,32 @@ final class FilterPickerControlTest {
     // the wiring without the live strings table. The recede checkbox labels resolve here too, since the
     // always-shown filter recede's checkboxes read them.
     private static void stubCaptions(MockedStatic<KmuStrings> stringsMock) {
-        stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))
-                .thenReturn("Rest of the sector is");
-        stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED)).thenReturn("Muted");
-        stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED))
-                .thenReturn("Desaturated");
-        // The picker builds the sort selector, which reads every sort-mode label.
-        SortLabelStubs.stubSortLabels(stringsMock);
-        // The picker also builds the columns selector, whose segment labels must resolve to real text
-        // rather than a null, since a control's labels are copied and reject a null option name.
-        for (var columns : BlocListColumns.values()) {
-            stringsMock.when(() -> KmuStrings.get(columns.labelKey())).thenReturn(columns.name());
+
+        stringsMock
+            .when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))
+            .thenReturn("Rest of the sector is");
+
+        stringsMock
+            .when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED))
+            .thenReturn("Muted");
+
+        stringsMock
+            .when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED))
+            .thenReturn("Desaturated");
+
+        // The picker builds the sort selector, whose row labels must resolve to real text rather
+        // than a null, since a control's labels are copied and reject a null option name. The
+        // constant names stand in for the drawn labels, which no assertion here reads.
+        for (var mode : BlocSortMode.values()) {
+            stringsMock
+                .when(() -> KmuStrings.get(mode.labelKey()))
+                .thenReturn(mode.name());
+        }
+        // The picker also builds the columns selector, whose segment labels resolve the same way.
+        for (var columns : ListColumns.values()) {
+            stringsMock
+                .when(() -> KmuStrings.get(columns.labelKey()))
+                .thenReturn(columns.name());
         }
     }
 }
