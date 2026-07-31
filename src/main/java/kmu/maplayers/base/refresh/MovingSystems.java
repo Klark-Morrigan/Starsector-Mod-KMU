@@ -33,6 +33,7 @@ import java.util.Set;
  * provides for its counters.
  */
 public final class MovingSystems {
+
     // The one shared tracker the watcher writes and the geometry cache reads.
     private static final MovingSystems INSTANCE = new MovingSystems();
 
@@ -87,7 +88,7 @@ public final class MovingSystems {
             return false;
         }
         return systemMotionTracker.updateMovingSystems(
-                sector,
-                DrawnSystemPositions.buildDrawnSystemPredicate(sector, overrides));
+            sector,
+            DrawnSystemPositions.buildDrawnSystemPredicate(sector, overrides));
     }
 }

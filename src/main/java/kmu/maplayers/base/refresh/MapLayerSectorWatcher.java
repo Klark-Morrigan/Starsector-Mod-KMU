@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
  * re-added on load, never serialized.
  */
 public class MapLayerSectorWatcher implements EveryFrameScript {
+
     // Poll cadence in campaign seconds. These are rare story/exploration events, so
     // a coarse interval keeps the per-frame cost negligible while still catching
     // them within a few seconds.
@@ -30,6 +31,7 @@ public class MapLayerSectorWatcher implements EveryFrameScript {
 
     private final IntervalUtil pollInterval = new IntervalUtil(POLL_MIN_SECONDS, POLL_MAX_SECONDS);
     private final MapLayerStalenessSource stalenessSource;
+    
     // One-shot guard: this polls on the campaign thread every few seconds, so a
     // recurring fault would flood the log. The first failure is recorded, the
     // rest silenced.

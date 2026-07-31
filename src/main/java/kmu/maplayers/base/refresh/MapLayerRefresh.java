@@ -72,8 +72,9 @@ public final class MapLayerRefresh {
         // resulting counter so an overlay that failed to repaint - a stale cluster, a toggle that
         // did nothing - can be traced to whether the request was even issued.
         var revision = resolveCounter(signal).incrementAndGet();
-        LOG.debug("Map layer refresh requested; signal=" + signal.getId()
-                + " revision=" + revision);
+        LOG.debug("Map layer refresh requested; signal="
+            + signal.getId()
+            + " revision=" + revision);
     }
 
     /**
@@ -89,7 +90,8 @@ public final class MapLayerRefresh {
             return;
         }
         groupingStaleSystemIds.add(systemId);
-        LOG.debug("Map layer system grouping marked stale; systemId=" + systemId);
+        LOG.debug("Map layer system grouping marked stale; systemId="
+            + systemId);
     }
 
     /**
