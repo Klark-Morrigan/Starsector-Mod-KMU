@@ -16,8 +16,8 @@ import java.util.Map;
  * Aggregates the whole-sector {@link BlocStats} the filter picker sorts and labels its options by,
  * from one grouped per-system dominance pass.
  *
- * <p>The picker half of the ownership pipeline, kept apart from {@link SectorPolitics}'s per-system
- * owner resolution: where that produces one render owner per system, this walks the same economy to
+ * <p>The picker half of the holder pipeline, kept apart from {@link SectorPolitics}'s per-system
+ * holder resolution: where that produces one render holder per system, this walks the same economy to
  * total each bloc's four picker metrics - dominations, presences, summed dominance weight, and
  * summed raw colony size. Both read the same footprints, dominance inputs, and grouping through
  * {@link DominancePass}, so the picker's "which blocs are selectable" gate stays honest against the

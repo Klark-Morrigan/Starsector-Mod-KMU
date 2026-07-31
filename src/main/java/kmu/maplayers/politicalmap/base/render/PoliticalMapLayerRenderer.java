@@ -14,7 +14,7 @@ import java.util.Optional;
 
 /**
  * Draws the political map on the sector map as merged HOI4-style clusters, where adjacent
- * same-owner systems fuse into one solid national region. It is the political-map layer's whole
+ * same-holder systems fuse into one solid national region. It is the political-map layer's whole
  * turn at a frame: the map surface hands it one while that tab is the active pick, and it draws
  * whichever view {@link PoliticalMapViewRegistry#getActiveView()} reports, or nothing when none is
  * active - the tab is open but every view is deselected.

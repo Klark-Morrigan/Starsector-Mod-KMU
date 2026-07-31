@@ -4,7 +4,7 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.settings.KmuLunaSettings;
 
 /**
- * How a cluster name is coloured and faded, per owner group: the outer-border colour choice
+ * How a cluster name is coloured and faded, per holder group: the outer-border colour choice
  * the name inherits (the same one the national border reads, so a name never drifts from the
  * border it labels) beside that group's own name opacity.
  *

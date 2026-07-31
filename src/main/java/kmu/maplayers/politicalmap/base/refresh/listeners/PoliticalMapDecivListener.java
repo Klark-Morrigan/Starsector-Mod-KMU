@@ -13,8 +13,8 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * reload.
  *
  * <p>Decivilisation strips the owning faction - the engine turns the market
- * neutral and removes it from the economy - so the system's dominant owner
- * vanishes, the same per-system ownership change a colony resize or a discovery
+ * neutral and removes it from the economy - so the system's dominant holder
+ * vanishes, the same per-system holder change a colony resize or a discovery
  * makes. It therefore routes through the same targeted refresh
  * ({@link MapLayerRefresh#markSystemGroupingStale}): only that system and its
  * neighbours are re-derived and re-shaped, the re-derivation reading the now
@@ -29,7 +29,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * scans planets only) - so a full destroy, or any station deciv, can drop a hidden
  * single-colony system. The watcher is the single authority on map membership: its
  * fingerprint moves on both a draw-class flip and a set-membership change, so it
- * reconciles the geometry on its next poll. This listener stays on the ownership
+ * reconciles the geometry on its next poll. This listener stays on the holding
  * axis alone, mirroring {@link PoliticalMapDiscoveryListener}.
  *
  * <p>Reacts to {@code reportColonyDecivilized} (fired after the engine has turned
@@ -40,7 +40,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 public class PoliticalMapDecivListener implements ColonyDecivListener {
 
     // The colony is still faction-owned at this point, so re-deriving now would
-    // read the pre-deciv owner. The stale mark is deferred to the completed
+    // read the pre-deciv holder. The stale mark is deferred to the completed
     // event below, which sees the neutral, economy-removed market.
     @Override
     public void reportColonyAboutToBeDecivilized(MarketAPI market, boolean fullyDestroyed) {

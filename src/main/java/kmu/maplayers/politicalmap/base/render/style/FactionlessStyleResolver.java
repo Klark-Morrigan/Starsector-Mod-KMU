@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * Resolves the two style decisions a piece of ownerless ground takes - which factionless category
  * it draws in, and how far it recedes - as pure rules over plain values. The factionless
- * counterpart to {@link BlocStyleResolver}: ground with no owner has no bloc to carry a decision,
+ * counterpart to {@link BlocStyleResolver}: ground with no holder has no bloc to carry a decision,
  * so its rules are stated here rather than falling out of the per-bloc path.
  *
  * <p>Both rules are stated once because more than one pass classifies the same ground and the two

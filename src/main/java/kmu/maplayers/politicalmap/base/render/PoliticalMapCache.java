@@ -60,7 +60,7 @@ final class PoliticalMapCache {
     // the cache exists - no lazy re-init as the old save-restored plugin needed.
     private final CellGeometryCache geometryCache = new CellGeometryCache();
 
-    // The built draw lists plus the ownership and style inputs an incremental re-shape needs.
+    // The built draw lists plus the holding and style inputs an incremental re-shape needs.
     // Null until the first build this session; exactly one of this and debugTerritories is
     // non-null after a build.
     private PoliticalMapTerritories territories;
@@ -227,7 +227,7 @@ final class PoliticalMapCache {
             // render, so in debug mode the production draw lists are not built at all, and the
             // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
             // revision and forces this rebuild - which is what swaps the two. The anchor overlay
-            // rebuilds either way - it draws over both views - borrowing the normal build's owner
+            // rebuilds either way - it draws over both views - borrowing the normal build's holder
             // map when there is one, resolving its own from the sector when the debug build left
             // none behind.
             if (KmuLunaSettings.shouldTraceBordersForDebug()) {
@@ -249,7 +249,7 @@ final class PoliticalMapCache {
                 ClusterAnchorsBuilder.rebuildClusterAnchors(
                         clusterAnchors,
                         geometryCache,
-                        territories.getOwnerBySystemId(),
+                        territories.getHolderBySystemId(),
                         Global.getSector(),
                         territories.getDesaturationPalette(),
                         view,
@@ -278,13 +278,13 @@ final class PoliticalMapCache {
             return;
         }
 
-        // No full rebuild this frame. In the normal view, fold in any per-system ownership changes
+        // No full rebuild this frame. In the normal view, fold in any per-system holder changes
         // a colony resize marked, re-shaping only those systems and their neighbours over the
         // standing territories. The static debug overlay has no draw lists to patch, so its
         // staleness is drained instead - it refreshes on the next full rebuild (any settings or
         // geometry change). Under a filter the incremental re-shape is bypassed too: it re-derives
-        // owners through the normal (non-filter) politics, which would overwrite the spotlit keys
-        // and corrupt the spotlight, so a filtered map defers ownership changes to the next full
+        // holders through the normal (non-filter) politics, which would overwrite the spotlit keys
+        // and corrupt the spotlight, so a filtered map defers holder changes to the next full
         // rebuild instead.
         if (territories != null && !territories.isFiltering()) {
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
@@ -327,8 +327,8 @@ final class PoliticalMapCache {
     }
 
     // The territories-staleness token: a settings change restyles every cell over the fixed
-    // geometry, so a settings-revision bump forces a full territories rebuild. Ownership changes no
-    // longer feed this - a resized colony, or a system the sector watcher's owner diff caught,
+    // geometry, so a settings-revision bump forces a full territories rebuild. Holder changes no
+    // longer feed this - a resized colony, or a system the sector watcher's holder diff caught,
     // marks just its system stale now. The active view is folded in so switching views (their
     // grouping, styling, and labels differ) rebuilds the territories under the newly-selected view
     // rather than reusing the previous view's. The view's content fingerprint is folded in too, so

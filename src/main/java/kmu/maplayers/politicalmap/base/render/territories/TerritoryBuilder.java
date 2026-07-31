@@ -14,7 +14,7 @@ import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
@@ -43,7 +43,7 @@ public final class TerritoryBuilder {
     // cluster-filled (owned) and per-cell (decivilised/uninhabited) draw lists, baking in each
     // cell's colors, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category, not
-    // per cell. The active view supplies the ownership grouping the pass resolves under
+    // per cell. The active view supplies the holder grouping the pass resolves under
     // and the style classifier each cell reads; both are retained on the territories so an
     // incremental re-shape classifies against the same view and grouping snapshot.
     public static PoliticalMapTerritories buildTerritories(
@@ -56,25 +56,25 @@ public final class TerritoryBuilder {
 
             // Sample the view's grouping once for the whole pass (the alliances view reads
             // Nexerelin), so every stage keys off one snapshot and the retained copy the
-            // incremental re-shape reads matches the ownership this build resolved.
+            // incremental re-shape reads matches the holding this build resolved.
             var grouping = view.resolveGrouping();
 
             // The spotlighted bloc, read once so the whole pass keys off one snapshot - the
-            // ownership provider (which keeps a spotlit bloc drawn wherever it is present), the
+            // holding provider (which keeps a spotlit bloc drawn wherever it is present), the
             // recede the rest of the sector takes, and the retained filter snapshot all resolve
             // from this one read, exactly like the grouping.
             var selectedBlocId = FilterSelection.getSelectedBlocId(view.getId());
             var isFiltering = selectedBlocId != null;
 
             // The politics scan walks the whole economy - the priciest content step -
-            // so it is profiled and timed on its own, and the owner count logged
+            // so it is profiled and timed on its own, and the holder count logged
             // independent of the profiler's accumulated view. Under a filter it also reports
             // which spotlit systems are contested, since the whole spotlit footprint shares one
             // key and that set is the only record of the dominant/contested split.
             var politicsStart = System.nanoTime();
             var resolution = profiler.measure("politicalMap.resolvePolitics",
-                    () -> view.resolveOwnershipProvider()
-                            .resolveOwnership(sector, grouping, selectedBlocId));
+                    () -> view.resolveHolderProvider()
+                            .resolveHolder(sector, grouping, selectedBlocId));
             var ownerBySystemId = resolution.ownerBySystemId();
             var contestedSystemIds = resolution.contestedSystemIds();
 
@@ -120,8 +120,8 @@ public final class TerritoryBuilder {
                     new ViewGrouping(view, grouping),
                     new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
 
-            // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
-            // geometry clusters by owner, so hand it each system's faction id as the
+            // Shape the raw cells into merged clusters once, holding-aware. The agnostic
+            // geometry clusters by holder, so hand it each system's faction id as the
             // key. Cells consumed by the inset (fewer than three vertices left) drop out.
             var shapeStart = System.nanoTime();
             var cellGrouping = resolveCellGrouping(territories, geometryCache);
@@ -150,7 +150,7 @@ public final class TerritoryBuilder {
             // Each owned faction's territory: one region per cluster (traced across all
             // its cells so a multi-system cluster reads as one frontier), tessellated for
             // the fill and flattened for the border - the same shape for both. Built off
-            // the same raw cells and owners the seams used, and profiled on its own since
+            // the same raw cells and holders the seams used, and profiled on its own since
             // chaining, smoothing, and tessellating every faction's outline is comparable
             // in cost to shaping the cells.
             profiler.measure("politicalMap.buildFactionTerritories",
@@ -171,9 +171,9 @@ public final class TerritoryBuilder {
     private static CellGrouping resolveCellGrouping(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
-        return DominantOwner.mapCellGrouping(
+        return DominantHolder.mapCellGrouping(
                 geometryCache.getSystemIdByCellId(),
-                territories.getOwnerBySystemId());
+                territories.getHolderBySystemId());
     }
 
 }

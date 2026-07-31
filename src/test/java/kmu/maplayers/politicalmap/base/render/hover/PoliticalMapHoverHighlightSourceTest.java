@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritory;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
@@ -28,15 +28,15 @@ final class PoliticalMapHoverHighlightSourceTest {
     private static final String FACTION_ID = "hegemony";
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
-    private static final DominantOwner OWNER =
-            new DominantOwner(FACTION_ID, PRIMARY, SECONDARY);
+    private static final DominantHolder OWNER =
+            new DominantHolder(FACTION_ID, PRIMARY, SECONDARY);
 
     @Nested
     class ResolveCandidateFrontierLoopsOf {
 
         @Test
-        void resolveCandidateFrontierLoopsOfReturnsTheOwnersOwnBorderLoops() {
-            // Every loop the owner traced is a candidate; which of them encloses this cell is
+        void resolveCandidateFrontierLoopsOfReturnsTheHoldersOwnBorderLoops() {
+            // Every loop the holder traced is a candidate; which of them encloses this cell is
             // the highlight's own geometric question, not one answered here.
             var loops = List.of(squareRun(0, 0, 100), squareRun(500, 0, 100));
             var source = sourceOf(territoriesWith(
@@ -61,8 +61,8 @@ final class PoliticalMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveCandidateFrontierLoopsOfReturnsNothingWhenTheOwnerBakedNoBorder() {
-            // The owner's border is "No color", so its territory carries no loops - owned ground
+        void resolveCandidateFrontierLoopsOfReturnsNothingWhenTheHolderBakedNoBorder() {
+            // The holder's border is "No color", so its territory carries no loops - owned ground
             // that still has nothing to halo.
             var source = sourceOf(territoriesWith(
                     Map.of("A", OWNER),
@@ -90,7 +90,7 @@ final class PoliticalMapHoverHighlightSourceTest {
     class ResolveHighlightColourOf {
 
         @Test
-        void resolveHighlightColourOfPaintsOwnedGroundInItsOwnersShade() {
+        void resolveHighlightColourOfPaintsOwnedGroundInItsHoldersShade() {
             var source = sourceOf(territoriesWith(
                     Map.of("A", OWNER),
                     Map.of("A", square(10, 10, 80)),
@@ -159,10 +159,10 @@ final class PoliticalMapHoverHighlightSourceTest {
     }
 
     // Territories carrying just what the source reads: who owns each system, each cell's shape,
-    // and the owner's traced loops. A null territory stands for a faction with none - the state
-    // a factionless cell's owner lookup lands in.
+    // and the holder's traced loops. A null territory stands for a faction with none - the state
+    // a factionless cell's holder lookup lands in.
     private static PoliticalMapTerritories territoriesWith(
-            Map<String, DominantOwner> ownerBySystemId,
+            Map<String, DominantHolder> ownerBySystemId,
             Map<String, List<double[]>> fillPolygonBySystemId,
             FactionTerritory territory) {
         var territories = PoliticalMapTerritoryFixtures

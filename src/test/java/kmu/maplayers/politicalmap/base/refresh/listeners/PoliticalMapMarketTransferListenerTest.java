@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
  * Pins {@link PoliticalMapMarketTransferListener}: a Nexerelin market transfer
  * marks the transferred colony's star system politics-stale, while a transfer of
  * a market with no star system marks nothing. An invasion finishing is a no-op,
- * since the transfer - not the invasion outcome - is what changes the owner. The
+ * since the transfer - not the invasion outcome - is what changes the holder. The
  * stale set is drained to read it, and drained before each case, since the board
  * it lives on is process-wide.
  */
@@ -68,8 +68,8 @@ final class PoliticalMapMarketTransferListenerTest {
     class ReportInvasionFinished {
 
         @Test
-        void marksNothingSinceTransferReportsTheOwnerChange() {
-            // An invasion finishing does not itself transfer ownership; the refresh
+        void marksNothingSinceTransferReportsTheHolderChange() {
+            // An invasion finishing does not itself transfer holding; the refresh
             // keys off reportMarketTransferred, so this callback marks nothing.
             listener.reportInvasionFinished(mock(CampaignFleetAPI.class), mockFaction("attacker"),
                     mockMarketInSystem("sys"), 3.0f, true);

@@ -5,24 +5,24 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Resolves which faction owns each star system and in which colours that owner
+ * Resolves which faction owns each star system and in which colours that holder
  * paints.
  *
- * <p>The dominance-and-palette half of the ownership pipeline: it takes the known
+ * <p>The dominance-and-palette half of the holder pipeline: it takes the known
  * market footprints {@link KnownMarketFootprints} reads from the economy, asks
  * {@link SystemDominance} which faction holds the system, and resolves that
- * winner's authored UI shades into a {@link DominantOwner} the render layer draws.
- * Confining the winning owner's {@code FactionAPI} palette lookup here keeps the
+ * winner's authored UI shades into a {@link DominantHolder} the render layer draws.
+ * Confining the winning holder's {@code FactionAPI} palette lookup here keeps the
  * render layer clear of Starsector economy and faction types.
  *
- * <p>Resolves one render owner per system; the picker's whole-sector bloc totals are
+ * <p>Resolves one render holder per system; the picker's whole-sector bloc totals are
  * {@link BlocStatsAggregator}'s job, walking the same economy through the same
  * {@link DominancePass} so the two never drift on which blocs hold territory.
  *
@@ -37,26 +37,26 @@ public final class SectorPolitics {
     }
 
     /**
-     * Builds the dominant owner - faction id and draw colour - for every inhabited
+     * Builds the dominant holder - faction id and draw colour - for every inhabited
      * star system, under the player's live settings and the faction (identity) grouping.
      *
-     * <p>The render-ready output of the ownership pipeline: resolving the faction
+     * <p>The render-ready output of the holder pipeline: resolving the faction
      * and its palette here confines {@code FactionAPI} access to this adapter, so
-     * the render layer consumes a plain {@link DominantOwner} and never reaches
+     * the render layer consumes a plain {@link DominantHolder} and never reaches
      * into the economy. Both facts come from one dominance pass, and the id is
-     * kept beside the colour so per-owner styling - and later per-owner behaviour -
+     * kept beside the colour so per-holder styling - and later per-holder behaviour -
      * reads the same winner the fill was decided by.
      *
      * @param sector the sector whose economy is read; null yields an empty map
-     * @return the dominant owner keyed by system id; a system with no owned
+     * @return the dominant holder keyed by system id; a system with no owned
      *         markets is absent from the map (uninhabited)
      */
-    public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(SectorAPI sector) {
-        return resolveDominantOwnerBySystemId(sector, OwnershipGrouping.identity());
+    public static Map<String, DominantHolder> resolveDominantHolderBySystemId(SectorAPI sector) {
+        return resolveDominantHolderBySystemId(sector, HolderGrouping.identity());
     }
 
     /**
-     * Builds the dominant owner for every inhabited star system under an explicit
+     * Builds the dominant holder for every inhabited star system under an explicit
      * grouping and the player's live settings.
      *
      * <p>The view-aware live entry point: a political-map view supplies its grouping
@@ -65,65 +65,65 @@ public final class SectorPolitics {
      * the winning bloc per system reflects both the active view and the live toggles.
      *
      * @param sector   the sector whose economy is read; null yields an empty map
-     * @param grouping the ownership grouping that collapses factions into blocs for
+     * @param grouping the holder grouping that collapses factions into blocs for
      *                 this pass
-     * @return the dominant owner keyed by system id; a system with no owned
+     * @return the dominant holder keyed by system id; a system with no owned
      *         markets is absent from the map (uninhabited)
      */
-    public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
-            SectorAPI sector, OwnershipGrouping grouping) {
-        return resolveDominantOwnerBySystemId(
+    public static Map<String, DominantHolder> resolveDominantHolderBySystemId(
+            SectorAPI sector, HolderGrouping grouping) {
+        return resolveDominantHolderBySystemId(
                 sector, DominancePass.readFromLunaSettings(grouping));
     }
 
     /**
-     * Builds the dominant owner for every inhabited star system under an explicit
+     * Builds the dominant holder for every inhabited star system under an explicit
      * dominance pass, for a caller that has already sampled the player's settings.
      *
      * @param sector the sector whose economy is read; null yields an empty map
      * @param pass   the rule, dev reveal, and grouping this pass resolves under
-     * @return the dominant owner keyed by system id; a system with no folded
+     * @return the dominant holder keyed by system id; a system with no folded
      *         markets is absent from the map (uninhabited)
      */
-    public static Map<String, DominantOwner> resolveDominantOwnerBySystemId(
+    public static Map<String, DominantHolder> resolveDominantHolderBySystemId(
             SectorAPI sector, DominancePass pass) {
-        var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
+        var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         if (sector == null) {
             return ownerBySystemId;
         }
         for (var system : sector.getStarSystems()) {
-            var owner = resolveDominantOwner(sector, system, pass);
-            if (owner != null) {
-                ownerBySystemId.put(system.getId(), owner);
+            var holder = resolveDominantHolder(sector, system, pass);
+            if (holder != null) {
+                ownerBySystemId.put(system.getId(), holder);
             }
         }
         return ownerBySystemId;
     }
 
     /**
-     * Resolves the dominant owner of one star system under the player's live settings
+     * Resolves the dominant holder of one star system under the player's live settings
      * and the faction (identity) grouping - the same result the bulk pass would put
      * under this system's id, computed for it alone.
      *
      * <p>The single-system entry point the incremental refresh path leans on:
-     * when one colony's size changes, only that system's ownership can shift, so
+     * when one colony's size changes, only that system's holding can shift, so
      * only it is re-derived rather than re-walking the whole economy. Shares the
      * footprint, dominance rule, and palette lookup with
-     * {@link #resolveDominantOwnerBySystemId}, so a system resolves the same
+     * {@link #resolveDominantHolderBySystemId}, so a system resolves the same
      * winner and colours whether it is refreshed alone or in the full pass.
      *
      * @param sector the sector whose economy is read; null (or a null economy)
      *               yields null
      * @param system the system to resolve; null yields null
-     * @return the dominant owner, or null when the system holds no owned market
+     * @return the dominant holder, or null when the system holds no owned market
      *         (uninhabited)
      */
-    public static DominantOwner resolveDominantOwner(SectorAPI sector, StarSystemAPI system) {
-        return resolveDominantOwner(sector, system, OwnershipGrouping.identity());
+    public static DominantHolder resolveDominantHolder(SectorAPI sector, StarSystemAPI system) {
+        return resolveDominantHolder(sector, system, HolderGrouping.identity());
     }
 
     /**
-     * Resolves the dominant owner of one star system under an explicit grouping and
+     * Resolves the dominant holder of one star system under an explicit grouping and
      * the player's live settings.
      *
      * <p>The view-aware single-system entry point: the incremental refresh path
@@ -134,32 +134,32 @@ public final class SectorPolitics {
      * @param sector   the sector whose economy is read; null (or a null economy)
      *                 yields null
      * @param system   the system to resolve; null yields null
-     * @param grouping the ownership grouping that collapses factions into blocs for
+     * @param grouping the holder grouping that collapses factions into blocs for
      *                 this pass
-     * @return the dominant owner, or null when the system holds no owned market
+     * @return the dominant holder, or null when the system holds no owned market
      *         (uninhabited)
      */
-    public static DominantOwner resolveDominantOwner(
-            SectorAPI sector, StarSystemAPI system, OwnershipGrouping grouping) {
-        return resolveDominantOwner(sector, system, DominancePass.readFromLunaSettings(grouping));
+    public static DominantHolder resolveDominantHolder(
+            SectorAPI sector, StarSystemAPI system, HolderGrouping grouping) {
+        return resolveDominantHolder(sector, system, DominancePass.readFromLunaSettings(grouping));
     }
 
     /**
-     * Resolves the dominant owner of one star system under an explicit dominance pass.
+     * Resolves the dominant holder of one star system under an explicit dominance pass.
      *
-     * <p>The core of the ownership pipeline: it reads each bloc's footprint under the
+     * <p>The core of the holder pipeline: it reads each bloc's footprint under the
      * pass's grouping (a no-op fold under the identity grouping, a member-summing merge
      * under an alliance grouping), ranks the blocs, then colours the winning bloc through
      * the faction the grouping names for its palette. Under identity the bloc id is the
-     * faction id and its colour faction is itself, so the result is the plain faction owner.
+     * faction id and its colour faction is itself, so the result is the plain faction holder.
      *
      * @param sector the sector whose economy is read; null (or a null economy) yields null
      * @param system the system to resolve; null yields null
      * @param pass   the rule, dev reveal, and grouping this pass resolves under
-     * @return the dominant owner, or null when the system holds no folded market
+     * @return the dominant holder, or null when the system holds no folded market
      *         (uninhabited)
      */
-    public static DominantOwner resolveDominantOwner(
+    public static DominantHolder resolveDominantHolder(
             SectorAPI sector, StarSystemAPI system, DominancePass pass) {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
@@ -170,11 +170,11 @@ public final class SectorPolitics {
         if (dominantBlocId == null) {
             return null;
         }
-        return resolveBlocOwner(sector, pass.grouping(), dominantBlocId);
+        return resolveBlocHolder(sector, pass.grouping(), dominantBlocId);
     }
 
     /**
-     * Colours a bloc into a render-ready {@link DominantOwner}: the bloc's id paired with
+     * Colours a bloc into a render-ready {@link DominantHolder}: the bloc's id paired with
      * the two shades it paints in.
      *
      * <p>The bloc paints in a real faction's palette - itself for a lone faction bloc, the
@@ -192,15 +192,15 @@ public final class SectorPolitics {
      *
      * @param sector   the sector whose {@code FactionAPI} palette is read
      * @param grouping the grouping that names the bloc's colour faction
-     * @param blocId   the bloc to colour, carried on the returned owner as its id
-     * @return the render-ready owner, or null when the colour faction does not resolve
+     * @param blocId   the bloc to colour, carried on the returned holder as its id
+     * @return the render-ready holder, or null when the colour faction does not resolve
      */
-    static DominantOwner resolveBlocOwner(
-            SectorAPI sector, OwnershipGrouping grouping, String blocId) {
+    static DominantHolder resolveBlocHolder(
+            SectorAPI sector, HolderGrouping grouping, String blocId) {
         var faction = sector.getFaction(grouping.resolveColorFactionId(blocId));
         if (faction == null) {
             return null;
         }
-        return new DominantOwner(blocId, faction.getBrightUIColor(), faction.getDarkUIColor());
+        return new DominantHolder(blocId, faction.getBrightUIColor(), faction.getDarkUIColor());
     }
 }

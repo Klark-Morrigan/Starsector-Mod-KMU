@@ -15,7 +15,7 @@ import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
  * {@link kmu.maplayers.base.render.regions.ClusterBorderTraceIntegrationTest}, the smoothing
  * passes by their own suites - so it runs for real here and is only ever counted, never measured.
  * Cells are hand-built 2000-unit squares, comfortably clear of the fixed border channel, so which
- * cells touch is plain to read. The sector reads (ownership, decivilisation) and the two settings
+ * cells touch is plain to read. The sector reads (holding, decivilisation) and the two settings
  * reads are stubbed: the builder resolves them itself by design, and none of them answers outside
  * the game.
  */
@@ -70,8 +70,8 @@ final class DebugBorderTracingBuilderTest {
     // A 100-unit cell, well under twice the 150-unit border channel, so insetting it leaves
     // nothing to outline.
     private static final String TINY_SYSTEM = "tiny";
-    private static final DominantOwner HEGEMONY_OWNER =
-            new DominantOwner(HEGEMONY, Color.RED, Color.BLUE);
+    private static final DominantHolder HEGEMONY_OWNER =
+            new DominantHolder(HEGEMONY, Color.RED, Color.BLUE);
     // The live Dev-tab trace parameters, stubbed at their read: a weld tolerance loose enough to
     // chain the hand-built corners, and the miter limit the shipped border uses.
     private static final double WELD_TOLERANCE = 1e-3;
@@ -131,7 +131,7 @@ final class DebugBorderTracingBuilderTest {
         decivilisedMarketsMock = mockStatic(DecivilisedMarkets.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
         // An empty sector by default, so a case names only the ground it is about.
-        stubOwners(Map.of());
+        stubHolders(Map.of());
         stubDecivilisedSystems();
         stubTheme(noSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
     }
@@ -149,7 +149,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesCapturesOneFusedBaseLoopWithBothSmoothingGatesOff() {
-            stubOwners(Map.of(
+            stubHolders(Map.of(
                     HELD_SYSTEM, HEGEMONY_OWNER,
                     NEIGHBOUR_SYSTEM, HEGEMONY_OWNER));
 
@@ -167,7 +167,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesCapturesTheDespikedStageOnlyWhenSandingIsGatedOn() {
-            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(sandingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -180,7 +180,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesRoundsTheBaseDirectlyWhenSandingIsGatedOff() {
-            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(roundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -218,7 +218,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesLeavesAnOwnedCellToTheClusterPassRatherThanOutliningItTwice() {
-            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(noSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -231,7 +231,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesCapturesNothingForAClusterThatTracesNoRing() {
-            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             var geometryCacheMock = mock(CellGeometryCache.class);
             when(geometryCacheMock.getCellEdgesByCellId())
                     .thenReturn(Map.of(HELD_SYSTEM, List.of()));
@@ -350,8 +350,8 @@ final class DebugBorderTracingBuilderTest {
         styleReaderMock.when(RenderStyleReader::readRenderStyle).thenReturn(renderStyle);
     }
 
-    private void stubOwners(Map<String, DominantOwner> ownerBySystemId) {
-        politicsMock.when(() -> SectorPolitics.resolveDominantOwnerBySystemId(sectorMock))
+    private void stubHolders(Map<String, DominantHolder> ownerBySystemId) {
+        politicsMock.when(() -> SectorPolitics.resolveDominantHolderBySystemId(sectorMock))
                 .thenReturn(ownerBySystemId);
     }
 

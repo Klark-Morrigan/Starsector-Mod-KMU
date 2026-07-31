@@ -12,7 +12,7 @@ import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.render.regions.BorderSmoothing;
 import kmu.maplayers.base.render.regions.ClusterBorderTrace;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
@@ -26,7 +26,7 @@ import java.util.Set;
  * loops captured at every smoothing stage, so the diagnostic renderer can show what each
  * pass did to the geometry.
  *
- * <p>Self-contained: it resolves its own ownership and factionless visibility from the
+ * <p>Self-contained: it resolves its own holding and factionless visibility from the
  * sector and builds none of the production draw lists, so while the debug toggle is on it
  * fully replaces the normal build rather than deriving from it. The one politics scan it
  * runs is the same one the normal build would have - the normal build is skipped in debug
@@ -52,18 +52,18 @@ public final class DebugBorderTracingBuilder {
     private DebugBorderTracingBuilder() {
     }
 
-    // Resolves ownership from the sector and traces every owned cluster (plus the drawn
+    // Resolves holding from the sector and traces every owned cluster (plus the drawn
     // factionless cells) into the three stage lists. Independent of the production
     // drawables, so the plugin builds this instead of them in debug mode, not alongside.
     public static PoliticalMapDebugTerritories buildDebugDrawables(
             CellGeometryCache geometryCache,
             SectorAPI sector) {
 
-        var ownerBySystemId = SectorPolitics.resolveDominantOwnerBySystemId(sector);
+        var ownerBySystemId = SectorPolitics.resolveDominantHolderBySystemId(sector);
 
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its faction id.
-        var cellGrouping = DominantOwner.mapCellGrouping(
+        var cellGrouping = DominantHolder.mapCellGrouping(
                 geometryCache.getSystemIdByCellId(),
                 ownerBySystemId);
 
@@ -77,7 +77,7 @@ public final class DebugBorderTracingBuilder {
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
 
-        for (var memberCellIds : cellGrouping.groupCellIdsByOwner().values()) {
+        for (var memberCellIds : cellGrouping.groupCellIdsByHolder().values()) {
             // Whole clusters, so no neighbour is coincident: every boundary edge takes the
             // uniform channel, exactly as the drawn national border does.
             var insetRings = borderTrace.traceRings(
@@ -136,7 +136,7 @@ public final class DebugBorderTracingBuilder {
         // draw makes, which is what keeps the overlay showing the cells the map would show.
         var renderStyle = RenderStyleReader.readRenderStyle();
         for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
-            if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
+            if (cellGrouping.resolveHolderOf(entry.getKey()) != null) {
                 continue;
             }
             // A factionless cell resolves its decivilised/uninhabited style through the system

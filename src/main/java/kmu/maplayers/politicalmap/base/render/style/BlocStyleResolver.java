@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render.style;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 
 /**
@@ -43,7 +43,7 @@ public final class BlocStyleResolver {
             boolean isFiltering,
             String blocId,
             PoliticalMapView view,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             BlocStyleAdjustment recedeAdjustment) {
         if (isFiltering) {
             var isSpotlit = FilteredPolitics.isSpotlitBloc(blocId);

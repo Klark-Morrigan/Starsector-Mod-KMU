@@ -12,8 +12,8 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * station (e.g. Knights of Ludd's Battlestar Libra) paints its system the moment
  * it is found, not only on reload.
  *
- * <p>Discovering a market reveals a new dominant owner over a cell that already
- * exists - the same per-system ownership change a colony resize makes - so it
+ * <p>Discovering a market reveals a new dominant holder over a cell that already
+ * exists - the same per-system holder change a colony resize makes - so it
  * routes through the same targeted refresh
  * ({@link MapLayerRefresh#markSystemGroupingStale}): only that system and its
  * neighbours are re-derived and re-shaped, not the whole economy. Discoveries

@@ -25,17 +25,17 @@ class SystemStandingsTest {
         @Test
         void returnsNoGroupsForAnUninhabitedSystem() {
             assertThat(SystemStandings.rankByDominationScore(
-                    Map.of(), OwnershipGrouping.identity()))
+                    Map.of(), HolderGrouping.identity()))
                     .isEmpty();
         }
 
         @Test
-        void returnsOneSingletonGroupForASingleOwnerSystem() {
+        void returnsOneSingletonGroupForASingleHolderSystem() {
             var footprints = orderedFootprints(
                     "hegemony", new MarketFootprint(7, 5, 5));
 
             var standings = SystemStandings.rankByDominationScore(
-                    footprints, OwnershipGrouping.identity());
+                    footprints, HolderGrouping.identity());
 
             assertThat(standings).containsExactly(
                     new GroupStanding("hegemony", 7,
@@ -51,7 +51,7 @@ class SystemStandingsTest {
                     "hegemony", new MarketFootprint(9, 5, 5));
 
             var standings = SystemStandings.rankByDominationScore(
-                    footprints, OwnershipGrouping.identity());
+                    footprints, HolderGrouping.identity());
 
             assertThat(standings).extracting(GroupStanding::blocId)
                     .containsExactly("hegemony", "tritachyon");
@@ -68,7 +68,7 @@ class SystemStandingsTest {
                     "hegemony", new MarketFootprint(6, 6, 6));
 
             var standings = SystemStandings.rankByDominationScore(
-                    footprints, OwnershipGrouping.identity());
+                    footprints, HolderGrouping.identity());
 
             assertThat(standings).extracting(GroupStanding::blocId)
                     .containsExactly("hegemony", "tritachyon");
@@ -114,7 +114,7 @@ class SystemStandingsTest {
                     "hegemony", new MarketFootprint(0, 0, 0));
 
             var standings = SystemStandings.rankByDominationScore(
-                    footprints, OwnershipGrouping.identity());
+                    footprints, HolderGrouping.identity());
 
             assertThat(standings).containsExactly(
                     new GroupStanding("hegemony", 0, List.of(new FactionStanding("hegemony", 0))));
@@ -142,8 +142,8 @@ class SystemStandingsTest {
 
     // Two allied factions folded into one bloc, with tritachyon left an outsider mapped to itself, so
     // a test can pit the bloc's summed score against the lone faction off one grouping.
-    private static OwnershipGrouping allianceGrouping() {
-        return new OwnershipGrouping(
+    private static HolderGrouping allianceGrouping() {
+        return new HolderGrouping(
                 Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
                 Map.of("alliance-1", "hegemony"),
                 Map.of("alliance-1", "Allied Powers"));

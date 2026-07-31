@@ -7,7 +7,7 @@ import java.util.List;
  * member factions that make it up, ranked beneath it. The upper tier of the two-tier standings the
  * cell tooltip shows.
  *
- * <p>A group is whatever the active view groups ownership by - a lone faction in the faction view,
+ * <p>A group is whatever the active view groups holders by - a lone faction in the faction view,
  * an alliance in the alliances view - so the aggregate score is exactly the territory that view
  * paints as one bloc. In the faction view a group is a singleton: its one member is the group
  * itself, and the tooltip renders it flat. In the alliances view a group is a bloc whose summed

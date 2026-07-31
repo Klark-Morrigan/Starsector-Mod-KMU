@@ -12,8 +12,8 @@ import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
@@ -55,23 +55,23 @@ public final class ClusterAnchorsBuilder {
     // faction-name labels and the debug anchor overlay. Building whenever either is on
     // keeps them a single computation (an SSOT the labels and the overlay share), so the
     // search never runs twice; each consumer then draws only under its own toggle. Shared
-    // by the full rebuild and the incremental refresh so an ownership change keeps the
+    // by the full rebuild and the incremental refresh so an holder change keeps the
     // placements in step with the fills and borders. Reads the toggles here (not at the
     // call sites) so all paths gate identically; the search's tuning is read here too, so
     // a settings change re-fits on the rebuild it triggers. The active view supplies each
     // bloc's label (which the fit sizes the boxes for) and the style classifier the label
-    // colour follows, over the grouping snapshot the owner map was resolved under. Under a
+    // colour follows, over the grouping snapshot the holder map was resolved under. Under a
     // filter the label styling follows the same shared decision the fills do - receding every
     // non-spotlit bloc, leaving the spotlit one full - and the synthetic spotlight keys resolve
     // to the selected bloc's name, since the view cannot name a synthetic id.
     public static void rebuildClusterAnchors(
             List<ClusterAnchor> anchors,
             CellGeometryCache geometryCache,
-            Map<String, DominantOwner> ownerBySystemId,
+            Map<String, DominantHolder> ownerBySystemId,
             SectorAPI sector,
             FactionPalette desaturationPalette,
             PoliticalMapView view,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             boolean isFiltering,
             BlocStyleAdjustment recedeAdjustment,
             String selectedBlocId) {
@@ -83,11 +83,11 @@ public final class ClusterAnchorsBuilder {
         }
 
         // The agnostic clustering and border trace group the drawn cells, resolving each to
-        // the system it draws as and that system to its bloc id; the owner map is still
-        // carried for the per-owner colour. Under a filter that key is a synthetic spotlight
+        // the system it draws as and that system to its bloc id; the holder map is still
+        // carried for the per-holder colour. Under a filter that key is a synthetic spotlight
         // key, so the solid and contested clusters trace as their own territories exactly as
         // the fills do.
-        var cellGrouping = DominantOwner.mapCellGrouping(
+        var cellGrouping = DominantHolder.mapCellGrouping(
                 geometryCache.getSystemIdByCellId(),
                 ownerBySystemId);
         var clusters = SystemClusters.findClusters(
@@ -127,8 +127,8 @@ public final class ClusterAnchorsBuilder {
                         selectedBlocId)));
     }
 
-    // The rebuild for a path with no owner map at hand - the debug border-tracing view,
-    // which builds no production draw lists to borrow one from. Resolves ownership from
+    // The rebuild for a path with no holder map at hand - the debug border-tracing view,
+    // which builds no production draw lists to borrow one from. Resolves holding from
     // the sector itself, gated behind the toggle so the economy scan only runs while
     // someone is actually looking at the anchors.
     public static void rebuildClusterAnchorsFromSector(
@@ -142,7 +142,7 @@ public final class ClusterAnchorsBuilder {
             return;
         }
 
-        // Sample the view's grouping once and resolve ownership under it, so the anchors
+        // Sample the view's grouping once and resolve holding under it, so the anchors
         // key off the same snapshot their names and colours are classified against.
         var grouping = view.resolveGrouping();
 
@@ -153,12 +153,12 @@ public final class ClusterAnchorsBuilder {
                 sector,
                 RenderStyleReader.readGlobalStyle().desaturationDarkening());
                 
-        // The debug border-tracing path never filters - it resolves real dominant owners from the
+        // The debug border-tracing path never filters - it resolves real dominant holders from the
         // sector - so it recedes nothing and names no synthetic spotlight key.
         rebuildClusterAnchors(
                 anchors,
                 geometryCache,
-                SectorPolitics.resolveDominantOwnerBySystemId(sector, grouping),
+                SectorPolitics.resolveDominantHolderBySystemId(sector, grouping),
                 sector,
                 desaturationPalette,
                 view,

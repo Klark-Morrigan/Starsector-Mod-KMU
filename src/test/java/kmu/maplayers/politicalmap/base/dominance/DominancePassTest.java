@@ -23,7 +23,7 @@ class DominancePassTest {
         @Test
         void rejectsNullRules() {
             assertThatThrownBy(() ->
-                    new DominancePass(null, false, OwnershipGrouping.identity()))
+                    new DominancePass(null, false, HolderGrouping.identity()))
                     .isInstanceOf(NullPointerException.class);
         }
 

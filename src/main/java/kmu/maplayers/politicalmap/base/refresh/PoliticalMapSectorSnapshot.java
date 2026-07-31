@@ -26,17 +26,17 @@ import java.util.Map;
  * Visibility drives a geometry rebuild, which is inherently whole-map - the
  * Voronoi partition depends on the entire set of sites - so a scalar hash that
  * only answers "did the drawn set change?" is all the geometry step can act on.
- * Ownership drives a per-system re-derive: the political overlay reshapes just the
- * systems whose owner changed and their neighbours, so a per-system owner map lets
+ * Holder drives a per-system re-derive: the political overlay reshapes just the
+ * systems whose holder changed and their neighbours, so a per-system holder map lets
  * the watcher name exactly which systems went stale rather than forcing a
- * whole-map re-colour. Keeping ownership system-scoped is what lets the watcher
+ * whole-map re-colour. Keeping holding system-scoped is what lets the watcher
  * feed the same targeted stale set the event listeners do, so a change a listener
  * already marked and the watcher's own diff dedupe to one reshape.
  *
  * <p>Both come from a single walk. Each system is read from the economy once - the
  * same footprint read sizes its dominance and tells whether it is inhabited - and
  * that one read feeds both outputs. The concerns stay separated: the visibility
- * contribution is {@link MapVisibility}'s and the dominant owner is
+ * contribution is {@link MapVisibility}'s and the dominant holder is
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
  */
 public record PoliticalMapSectorSnapshot(
@@ -56,9 +56,9 @@ public record PoliticalMapSectorSnapshot(
      * @param devToggles the dev reveal toggles for this pass - show-all-factions folds
      *                   undiscovered colonies into dominance and inhabitation,
      *                   force-all-systems admits every system to the drawn set
-     * @return the visibility fingerprint and the dominant owner (by faction id) of each
+     * @return the visibility fingerprint and the dominant holder (by faction id) of each
      *         owned on-map system; a drawn-but-unowned system (a decivilised shell) is
-     *         absent from the owner map
+     *         absent from the holder map
      */
     public static PoliticalMapSectorSnapshot scan(
             SectorAPI sector,
@@ -81,9 +81,9 @@ public record PoliticalMapSectorSnapshot(
      * @param devToggles the dev reveal toggles for this pass - show-all-factions folds
      *                   undiscovered colonies into dominance and inhabitation,
      *                   force-all-systems admits every system to the drawn set
-     * @return the visibility fingerprint and the dominant owner (by faction id) of
+     * @return the visibility fingerprint and the dominant holder (by faction id) of
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
-     *         shell) is absent from the owner map
+     *         shell) is absent from the holder map
      */
     public static PoliticalMapSectorSnapshot scan(
             SectorAPI sector,
@@ -133,8 +133,8 @@ public record PoliticalMapSectorSnapshot(
                     hasRevealedDecivilised);
                     
             // A decivilised-only system is drawn yet unowned, so it counts toward
-            // visibility but is left out of the owner map - a system gaining or
-            // losing an owner then reads as a diff against that absence.
+            // visibility but is left out of the holder map - a system gaining or
+            // losing an holder then reads as a diff against that absence.
             var dominantFactionId =
                     SystemDominance.resolveDominantFactionId(footprintByFactionId);
             if (dominantFactionId != null) {

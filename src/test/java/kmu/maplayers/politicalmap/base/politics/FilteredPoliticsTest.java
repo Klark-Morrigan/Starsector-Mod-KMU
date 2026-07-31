@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins {@link FilteredPolitics}'s pure rules on hand-built footprints: the three-way presence
  * classification that decides how a spotlighted bloc draws in each system, and the group-key
  * helper the render layer reads to tell a spotlit cell from a receding one. The presence-aware
- * owner assembly - the synthetic key, palette reuse, the contested set, and the real-owner
+ * holder assembly - the synthetic key, palette reuse, the contested set, and the real-holder
  * fallback - reads the live economy, so it is covered in {@link FilteredPoliticsIntegrationTest}.
  */
 class FilteredPoliticsTest {
@@ -26,7 +26,7 @@ class FilteredPoliticsTest {
         @Test
         void returnsAbsentWhenTheSelectedBlocHasNoFootprint() {
             // A rival holds the system and the selected bloc owns nothing here, so its real
-            // owner draws (receded) rather than the spotlighted bloc.
+            // holder draws (receded) rather than the spotlighted bloc.
             var footprints = orderedFootprints("hegemony", new MarketFootprint(9, 5, 5));
 
             assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "tritachyon"))

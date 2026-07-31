@@ -4,7 +4,7 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.settings.FactionPaletteChoice;
@@ -33,8 +33,8 @@ final class ClusterLabelStylingTest {
     private static final Color SECONDARY = Color.BLUE;
 
     // The bloc whose shades a resolved name should carry.
-    private static final DominantOwner FACTION_F =
-            new DominantOwner("F", PRIMARY, SECONDARY);
+    private static final DominantHolder FACTION_F =
+            new DominantHolder("F", PRIMARY, SECONDARY);
 
     // A garish pair no test with an identity adjustment ever reads, so a name that
     // desaturated when it should not stands out.
@@ -184,7 +184,7 @@ final class ClusterLabelStylingTest {
         @Test
         void resolveLabelColorDesaturatesToThePassPaletteForADesaturatedBloc() {
             // A desaturated bloc's label follows the pass's shared desaturation palette
-            // instead of the owner's own shades, at full alpha since mute is off here.
+            // instead of the holder's own shades, at full alpha since mute is off here.
             var color = ClusterLabelStyling.resolveLabelColor(FACTION_F,
                     nameStyles(FactionPaletteChoice.PRIMARY),
                     factionStyled(new BlocStyleAdjustment(FULL_OPACITY, true)),
@@ -235,8 +235,8 @@ final class ClusterLabelStylingTest {
 
         // A second bloc, so a lookup that answered the wrong bloc's shade is visible.
         private static final Color OTHER_PRIMARY = Color.CYAN;
-        private static final DominantOwner FACTION_G =
-                new DominantOwner("G", OTHER_PRIMARY, Color.DARK_GRAY);
+        private static final DominantHolder FACTION_G =
+                new DominantHolder("G", OTHER_PRIMARY, Color.DARK_GRAY);
 
         @Test
         void newLabelColorResolverAnswersTheShadeOfTheBlocItIsAskedFor() {

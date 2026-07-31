@@ -26,7 +26,7 @@ import java.util.Objects;
  * bloc, not which one is spotlighted - so the filter revision is deliberately absent from the key: a
  * pick or a clear moves the lit row without invalidating the list.
  *
- * <p>The economy can drift between rebuild triggers (a colony resized without changing owner leaves
+ * <p>The economy can drift between rebuild triggers (a colony resized without changing holder leaves
  * the settings and grouping revisions untouched), so a metric can lag until the next settings, view,
  * or alliance-set change forces a recompute - the same cadence the overlay's own full territory
  * rebuild reconciles on, so the picker numbers and the painted map stay in step.

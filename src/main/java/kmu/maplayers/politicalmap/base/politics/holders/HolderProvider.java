@@ -1,32 +1,32 @@
-package kmu.maplayers.politicalmap.base.politics.ownership;
+package kmu.maplayers.politicalmap.base.politics.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 /**
- * The source a political-map view resolves its per-system ownership from, so the render
- * pipeline reads ownership through one seam and never names a concrete resolver.
+ * The source a political-map view resolves its per-system holder from, so the render
+ * pipeline reads holders through one seam and never names a concrete resolver.
  *
  * <p>A view supplies its own provider the same way it supplies its grouping: the pass hands
  * the provider the sector, the once-sampled grouping, and the current filter selection, and
- * gets back the {@link OwnershipResolution} every later stage shapes, borders, and labels.
- * Lifting the resolver behind this seam makes a view that paints ownership derived some other
+ * gets back the {@link HolderResolution} every later stage shapes, borders, and labels.
+ * Lifting the resolver behind this seam makes a view that paints holding derived some other
  * way a swapped-in provider rather than a branch in the pass.
  */
-public interface OwnershipProvider {
+public interface HolderProvider {
 
     /**
      * Resolves who paints each star system for one build.
      *
      * @param sector         the sector whose economy the resolution reads; null yields empty
-     *                       ownership
+     *                       holding
      * @param grouping       the view's grouping, sampled once for the whole pass, that collapses
      *                       factions into blocs before dominance is compared
      * @param selectedBlocId the spotlighted bloc's id, or null when no bloc is filtered - a
      *                       provider that spotlights reads it, one that does not ignores it
-     * @return the ownership per system and the systems drawn hatched
+     * @return the holding per system and the systems drawn hatched
      */
-    OwnershipResolution resolveOwnership(
-            SectorAPI sector, OwnershipGrouping grouping, String selectedBlocId);
+    HolderResolution resolveHolder(
+            SectorAPI sector, HolderGrouping grouping, String selectedBlocId);
 }

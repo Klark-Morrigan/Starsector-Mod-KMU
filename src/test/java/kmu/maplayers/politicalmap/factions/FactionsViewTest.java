@@ -9,14 +9,14 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
-import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
+import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 
 import org.junit.jupiter.api.Nested;
@@ -42,29 +42,29 @@ final class FactionsViewTest {
 
     // The faction view ignores its grouping argument (its own grouping is always identity),
     // so any grouping stands in where the interface demands one.
-    private static final OwnershipGrouping ANY_GROUPING = OwnershipGrouping.identity();
+    private static final HolderGrouping ANY_GROUPING = HolderGrouping.identity();
 
     @Nested
     class ResolveGrouping {
 
         @Test
         void resolveGroupingReturnsTheIdentityGrouping() {
-            // Every faction is its own bloc, so the pipeline resolves plain faction ownership.
+            // Every faction is its own bloc, so the pipeline resolves plain faction holding.
             assertThat(FactionsView.INSTANCE.resolveGrouping())
-                    .isSameAs(OwnershipGrouping.identity());
+                    .isSameAs(HolderGrouping.identity());
         }
     }
 
     @Nested
-    class ResolveOwnershipProvider {
+    class ResolveHolderProvider {
 
         @Test
-        void resolveOwnershipProviderReturnsTheDefaultProvider() {
-            // The faction view resolves ownership no differently from the pipeline's default -
-            // each system's dominant owner, extended with the systems it merely claims - so it
+        void resolveHolderProviderReturnsTheDefaultProvider() {
+            // The faction view resolves holding no differently from the pipeline's default -
+            // each system's dominant holder, extended with the systems it merely claims - so it
             // inherits the shared claim-augmented default rather than supplying one of its own.
-            assertThat(FactionsView.INSTANCE.resolveOwnershipProvider())
-                    .isSameAs(ClaimAugmentedOwnershipProvider.INSTANCE);
+            assertThat(FactionsView.INSTANCE.resolveHolderProvider())
+                    .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
         }
     }
 

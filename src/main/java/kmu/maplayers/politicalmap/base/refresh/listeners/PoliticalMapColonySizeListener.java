@@ -7,16 +7,16 @@ import kmu.maplayers.politicalmap.base.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
 /**
- * Marks a system's political-map ownership stale when one of its colonies grows
+ * Marks a system's political-map holding stale when one of its colonies grows
  * or shrinks, so a size change that hands the system to another faction repaints
  * without waiting on a reload.
  *
- * <p>Ownership on the map is decided by combined colony size, so a resize is the
+ * <p>Holder on the map is decided by combined colony size, so a resize is the
  * one economy change that can flip which faction dominates a system. The engine
- * fires no ownership event, but it does fire {@link ColonySizeChangeListener} on
+ * fires no holding event, but it does fire {@link ColonySizeChangeListener} on
  * every resize - so this translates that into a targeted, politics-only refresh
  * of just the changed system, leaving the whole-economy rescan for the coarser
- * content refresh. Whether the resize actually flips the owner is decided later,
+ * content refresh. Whether the resize actually flips the holder is decided later,
  * when the plugin re-derives that one system; a resize that does not change the
  * winner costs only that re-derivation, not a redraw.
  *

@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
 /**
- * How a cluster's label spells out its owner's name - its full name, its short name, or not at all -
+ * How a cluster's label spells out its holder's name - its full name, its short name, or not at all -
  * the player's choice behind the sidebar's Full/Short/No name radio.
  *
  * <p>A faction supplies two authored names: a long form (its full title) and a short form (an

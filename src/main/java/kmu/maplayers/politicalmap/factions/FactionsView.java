@@ -13,7 +13,7 @@ import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
@@ -28,7 +28,7 @@ import java.util.Optional;
  * independent space recedes to the muted independent style, and a bloc's label is the
  * owning faction's own display name. These reproduce the political map's original
  * per-faction behaviour exactly - the faction view is the identity case the shared
- * pipeline was carved out of, so its grouping is {@link OwnershipGrouping#identity()}
+ * pipeline was carved out of, so its grouping is {@link HolderGrouping#identity()}
  * and its two per-bloc decisions read the bloc id as a plain faction id.
  */
 public final class FactionsView implements PoliticalMapView {
@@ -62,15 +62,15 @@ public final class FactionsView implements PoliticalMapView {
     }
 
     @Override
-    public OwnershipGrouping resolveGrouping() {
-        // Every faction is its own bloc, so the pipeline resolves plain faction ownership.
-        return OwnershipGrouping.identity();
+    public HolderGrouping resolveGrouping() {
+        // Every faction is its own bloc, so the pipeline resolves plain faction holding.
+        return HolderGrouping.identity();
     }
 
     @Override
     public boolean shouldUseIndependentStyle(
             String blocId,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             BlocStyleAdjustment adjustment) {
         // Genuine independent space always takes the independent style. A faction the recede has
         // desaturated takes it too: desaturation means "read as background ground", so the bloc
@@ -89,7 +89,7 @@ public final class FactionsView implements PoliticalMapView {
     @Override
     public BlocStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
-            OwnershipGrouping grouping) {
+            HolderGrouping grouping) {
         // The faction view dims or recolours no bloc - every faction paints exactly as its
         // style classification says, so there is nothing for the pipeline to adjust.
         return BlocStyleAdjustment.NONE;
@@ -98,7 +98,7 @@ public final class FactionsView implements PoliticalMapView {
     @Override
     public String resolveName(
             String blocId,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             SectorAPI sector,
             FactionNameFormatChoice nameFormat) {
         // A faction bloc id is a real faction id, so the label is the faction's own name

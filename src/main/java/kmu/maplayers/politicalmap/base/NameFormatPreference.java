@@ -6,7 +6,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 /**
- * How cluster labels spell their owners' names - full, short, or not at all - persisted per save.
+ * How cluster labels spell their holders' names - full, short, or not at all - persisted per save.
  * Layer-agnostic: every view labels its clusters the same way, so one stored choice backs them all
  * rather than each view holding its own.
  *
@@ -34,7 +34,7 @@ public final class NameFormatPreference {
     }
 
     /**
-     * @return how cluster labels spell their owners' names, including whether they draw at all; full
+     * @return how cluster labels spell their holders' names, including whether they draw at all; full
      *         names before a save exists or when no choice was ever picked
      */
     public static FactionNameFormatChoice getSelectedNameFormat() {
@@ -46,7 +46,7 @@ public final class NameFormatPreference {
      * Persists the chosen name format in this save and restyles the overlay so the labels re-fit (or
      * disappear) at once. A no-op before the sector exists, since there is no save to write into yet.
      *
-     * @param choice how cluster labels should spell their owners' names, or that they draw none
+     * @param choice how cluster labels should spell their holders' names, or that they draw none
      */
     public static void selectNameFormat(FactionNameFormatChoice choice) {
         // Repaint only on a real write: before the sector exists the write no-ops and reports no

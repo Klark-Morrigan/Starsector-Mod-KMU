@@ -7,7 +7,7 @@ import kmlib.starsector.factions.FactionCrests;
 
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.List;
  * <p>Separates "who ranks where" - {@code SystemStandings}, pure over footprints and a grouping -
  * from "how a group and its factions present", the Starsector and grouping lookups gathered here.
  * Confining {@link FactionAPI} and the grouping's label and crest reads to this resolver keeps the
- * render layer consuming plain rows, mirroring how {@code SectorPolitics} confines the ownership
+ * render layer consuming plain rows, mirroring how {@code SectorPolitics} confines the holding
  * palette lookups.
  *
  * <p>A member is always a faction, resolved by its long name and crest. A group header presents by
@@ -49,7 +49,7 @@ public final class StandingRowResolver {
     public static List<StandingGroupRow> resolveRows(
             SectorAPI sector,
             List<GroupStanding> standings,
-            OwnershipGrouping grouping) {
+            HolderGrouping grouping) {
         var rows = new ArrayList<StandingGroupRow>(standings.size());
         for (var standing : standings) {
             rows.add(resolveGroupRow(sector, standing, grouping));
@@ -63,7 +63,7 @@ public final class StandingRowResolver {
     private static StandingGroupRow resolveGroupRow(
             SectorAPI sector,
             GroupStanding standing,
-            OwnershipGrouping grouping) {
+            HolderGrouping grouping) {
         var members = resolveMemberRows(sector, standing.members());
         var blocId = standing.blocId();
         // An alliance bloc nests its members under the header; a lone faction does not. Keyed on the

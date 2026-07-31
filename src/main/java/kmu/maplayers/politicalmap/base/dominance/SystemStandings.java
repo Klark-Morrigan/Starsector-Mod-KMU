@@ -14,7 +14,7 @@ import java.util.Map;
  * tooltip shows, grouped by the active view.
  *
  * <p>Turns a single hovered system into the breakdown the tooltip lists, reusing the map's own
- * dominance weighting so the numbers match the fills and its own {@link OwnershipGrouping} so a
+ * dominance weighting so the numbers match the fills and its own {@link HolderGrouping} so a
  * group's aggregate is exactly the territory that view paints as one bloc. Each faction's
  * {@link MarketFootprint#totalWeight()} folds into its group; groups rank by their summed score and
  * a group's members rank by their own, ties breaking by id at both tiers so the ordering is total.
@@ -78,7 +78,7 @@ public final class SystemStandings {
      *         empty when the footprint map is empty
      */
     public static List<GroupStanding> rankByDominationScore(
-            Map<String, MarketFootprint> footprintByFactionId, OwnershipGrouping grouping) {
+            Map<String, MarketFootprint> footprintByFactionId, HolderGrouping grouping) {
         var membersByBlocId = collectMembersByBloc(footprintByFactionId, grouping);
         var groups = new ArrayList<GroupStanding>(membersByBlocId.size());
         for (var entry : membersByBlocId.entrySet()) {
@@ -92,7 +92,7 @@ public final class SystemStandings {
     // one bucket while every other faction is its own. First-seen bloc order is kept here only for a
     // stable build; the caller sorts the groups into ranked order regardless.
     private static Map<String, List<FactionStanding>> collectMembersByBloc(
-            Map<String, MarketFootprint> footprintByFactionId, OwnershipGrouping grouping) {
+            Map<String, MarketFootprint> footprintByFactionId, HolderGrouping grouping) {
         var membersByBlocId = new LinkedHashMap<String, List<FactionStanding>>();
         for (var entry : footprintByFactionId.entrySet()) {
             var blocId = grouping.resolveBlocId(entry.getKey());

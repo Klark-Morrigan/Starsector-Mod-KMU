@@ -11,7 +11,7 @@ import kmu.maplayers.base.render.regions.ClusterBorderTrace;
 import kmu.maplayers.base.render.regions.FillSplit;
 import kmu.maplayers.base.render.regions.SplitFillBuilder;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 
@@ -42,9 +42,9 @@ public final class FactionTerritoryBuilder {
     /**
      * Builds one bloc's territory from its member cells.
      *
-     * @param territories   this pass's retained ownership, theme, and filter state
+     * @param territories   this pass's retained holding, theme, and filter state
      * @param geometryCache the raw cells the border is traced from
-     * @param blocId        the bloc's owner - a faction id under the faction view, or
+     * @param blocId        the bloc's holder - a faction id under the faction view, or
      *                      one of the filter's synthetic spotlight keys
      * @param memberCellIds the cells this bloc draws
      * @return the bloc's fill and border, or null when it paints neither, or when its cells
@@ -65,11 +65,11 @@ public final class FactionTerritoryBuilder {
         var adjustment = styling.adjustment();
 
         // Every system of a bloc shares its palette, so any member resolves the same colours.
-        var owner = territories.getOwnerBySystemId()
+        var holder = territories.getHolderBySystemId()
                 .get(cellGrouping.resolveDrawnSystemIdOf(memberCellIds.get(0)));
         var palette = MapPalettes.resolveEffectivePalette(
                 adjustment,
-                owner,
+                holder,
                 territories.getDesaturationPalette());
         var fillColor = MapPalettes.pickPaletteColor(
                 style.fill().color(),
@@ -130,7 +130,7 @@ public final class FactionTerritoryBuilder {
     }
 
     /**
-     * Builds every bloc's territory into the territories, keyed by its owner. Each bloc
+     * Builds every bloc's territory into the territories, keyed by its holder. Each bloc
      * is independent - its cluster(s) trace only its own cells - so the incremental refresh can
      * rebuild one entry without touching the rest.
      *
@@ -141,7 +141,7 @@ public final class FactionTerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
 
-        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByOwner();
+        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByHolder();
         for (var bloc : grouped.entrySet()) {
             var territory = buildFactionTerritory(
                     territories,
@@ -189,8 +189,8 @@ public final class FactionTerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
 
-        return DominantOwner.mapCellGrouping(
+        return DominantHolder.mapCellGrouping(
                 geometryCache.getSystemIdByCellId(),
-                territories.getOwnerBySystemId());
+                territories.getHolderBySystemId());
     }
 }

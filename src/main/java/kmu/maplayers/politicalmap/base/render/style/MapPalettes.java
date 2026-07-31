@@ -9,7 +9,7 @@ import kmlib.starsector.factions.StarsectorFactionColors;
 
 import kmu.maplayers.base.theme.ElementPaint;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.settings.FactionPaletteChoice;
 
 import java.awt.Color;
@@ -28,7 +28,7 @@ public final class MapPalettes {
     }
 
     /**
-     * The two shades a bloc actually paints in under its style adjustment: its owner's own
+     * The two shades a bloc actually paints in under its style adjustment: its holder's own
      * bright and dark shades normally, or the pass's shared desaturation palette when the
      * adjustment desaturates the bloc. The single home for the "desaturate swaps the
      * palette" rule, so a cell's seams, a faction's fill and border, and the bloc's name
@@ -36,11 +36,11 @@ public final class MapPalettes {
      */
     public static FactionPalette resolveEffectivePalette(
             BlocStyleAdjustment adjustment,
-            DominantOwner owner,
+            DominantHolder holder,
             FactionPalette desaturationPalette) {
         return resolveEffectivePalette(
                 adjustment,
-                new FactionPalette(owner.primaryColor(), owner.secondaryColor()),
+                new FactionPalette(holder.primaryColor(), holder.secondaryColor()),
                 desaturationPalette);
     }
 
@@ -49,9 +49,9 @@ public final class MapPalettes {
      * shades themselves rather than over whoever holds them: the ground's own pair normally, the
      * pass's shared desaturation palette once the adjustment desaturates it.
      *
-     * <p>Ground with no owner has shades all the same - a factionless cell's two neutral slots -
+     * <p>Ground with no holder has shades all the same - a factionless cell's two neutral slots -
      * yet still recolours by the same rule, so the swap is expressed over a palette and the
-     * owner-keyed form above resolves to this one. That keeps "desaturate swaps the palette" a
+     * holder-keyed form above resolves to this one. That keeps "desaturate swaps the palette" a
      * single rule no matter what the un-desaturated shades came from.
      */
     public static FactionPalette resolveEffectivePalette(
@@ -88,23 +88,23 @@ public final class MapPalettes {
     }
 
     /**
-     * Picks the palette shade of a piece of ground itself: its owner's, or the shared neutral
+     * Picks the palette shade of a piece of ground itself: its holder's, or the shared neutral
      * colour when nothing owns it - a factionless system (decivilised, or uninhabited) has no
      * palette of its own, so both shades resolve neutral, exactly as its cell's own outline
      * draws. Null for a NONE ("No color") choice, so the caller skips the element.
      *
-     * <p>Reads the owner's authored shades untouched, with no per-bloc adjustment folded in,
+     * <p>Reads the holder's authored shades untouched, with no per-bloc adjustment folded in,
      * so this answers "whose ground is this" rather than "how is this ground painted right
      * now". The two diverge under a recede: ground the map has sunk to grey still belongs to
-     * its owner, and an element whose whole job is to name that owner should say so.
+     * its holder, and an element whose whole job is to name that holder should say so.
      */
-    public static Color pickOwnerPaletteColor(
+    public static Color pickHolderPaletteColor(
             ElementPaint choice,
-            DominantOwner owner,
+            DominantHolder holder,
             Color neutralColor) {
-        return owner == null
+        return holder == null
                 ? pickPaletteColor(choice, neutralColor, neutralColor)
-                : pickPaletteColor(choice, owner.primaryColor(), owner.secondaryColor());
+                : pickPaletteColor(choice, holder.primaryColor(), holder.secondaryColor());
     }
 
     /**

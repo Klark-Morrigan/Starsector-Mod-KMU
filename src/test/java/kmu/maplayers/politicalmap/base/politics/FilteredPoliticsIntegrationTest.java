@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import org.junit.jupiter.api.Nested;
@@ -25,12 +25,12 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.vi
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Integration coverage for {@link FilteredPolitics}'s presence-aware owner assembly end to end:
+ * Integration coverage for {@link FilteredPolitics}'s presence-aware holder assembly end to end:
  * reading a stubbed economy through {@link KnownMarketFootprints}, classifying the spotlighted
- * bloc's presence, and colouring each system's owner. Exercises the wiring the pure-rule unit test
+ * bloc's presence, and colouring each system's holder. Exercises the wiring the pure-rule unit test
  * cannot - that a dominated system carries the selected bloc's palette under the spotlit key, a
  * present-but-dominated system carries that same key yet is reported contested, an absent system
- * keeps its real (receding) owner, and the whole spotlit footprint keys alike so it fuses into one
+ * keeps its real (receding) holder, and the whole spotlit footprint keys alike so it fuses into one
  * territory. The stubbed economy is wired through the shared {@link SectorPoliticsFixtures} fixture.
  */
 class FilteredPoliticsIntegrationTest {
@@ -39,10 +39,10 @@ class FilteredPoliticsIntegrationTest {
     // The faction-view pass most tests filter under: the stability rule, the normal filter, and the
     // identity grouping. The alliance-grouping test builds its own pass.
     private static final DominancePass STABILITY_PASS =
-            new DominancePass(STABILITY_WEIGHTED, false, OwnershipGrouping.identity());
+            new DominancePass(STABILITY_WEIGHTED, false, HolderGrouping.identity());
 
     @Nested
-    class ResolveFilteredOwnership {
+    class ResolveFilteredHolder {
 
         @Test
         void marksADominatedSystemWithTheSpotlitKeyInTheSelectedBlocPaletteAndNotContested() {
@@ -54,12 +54,12 @@ class FilteredPoliticsIntegrationTest {
                     visibleMarket(hegemony, 5), visibleMarket(tritachyon, 3));
 
             var filtered = resolveFor(sector, "hegemony");
-            var owner = filtered.ownerBySystemId().get("owned-system");
+            var holder = filtered.ownerBySystemId().get("owned-system");
 
-            assertThat(FilteredPolitics.isSpotlitBloc(owner.factionId())).isTrue();
+            assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId())).isTrue();
             assertThat(filtered.contestedSystemIds()).doesNotContain("owned-system");
-            assertThat(owner.primaryColor()).isEqualTo(HEGEMONY_BRIGHT);
-            assertThat(owner.secondaryColor()).isEqualTo(dark(HEGEMONY_BRIGHT));
+            assertThat(holder.primaryColor()).isEqualTo(HEGEMONY_BRIGHT);
+            assertThat(holder.secondaryColor()).isEqualTo(dark(HEGEMONY_BRIGHT));
         }
 
         @Test
@@ -73,18 +73,18 @@ class FilteredPoliticsIntegrationTest {
                     visibleMarket(hegemony, 5), visibleMarket(tritachyon, 3));
 
             var filtered = resolveFor(sector, "tritachyon");
-            var owner = filtered.ownerBySystemId().get("owned-system");
+            var holder = filtered.ownerBySystemId().get("owned-system");
 
-            assertThat(FilteredPolitics.isSpotlitBloc(owner.factionId())).isTrue();
+            assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId())).isTrue();
             assertThat(filtered.contestedSystemIds()).contains("owned-system");
-            assertThat(owner.primaryColor()).isEqualTo(TRITACHYON_BRIGHT);
-            assertThat(owner.secondaryColor()).isEqualTo(dark(TRITACHYON_BRIGHT));
+            assertThat(holder.primaryColor()).isEqualTo(TRITACHYON_BRIGHT);
+            assertThat(holder.secondaryColor()).isEqualTo(dark(TRITACHYON_BRIGHT));
         }
 
         @Test
-        void keepsTheRealRecedingOwnerWhereTheSelectedBlocIsAbsent() {
+        void keepsTheRealRecedingHolderWhereTheSelectedBlocIsAbsent() {
             // The selected hegemony owns nothing in the tritachyon system, so that cell keeps its
-            // real tritachyon owner - which isSpotlitBloc rejects, so the caller recedes it - and is
+            // real tritachyon holder - which isSpotlitBloc rejects, so the caller recedes it - and is
             // never reported contested.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
@@ -93,12 +93,12 @@ class FilteredPoliticsIntegrationTest {
                     systemMarkets("tritachyon-system", visibleMarket(tritachyon, 3)));
 
             var filtered = resolveFor(sector, "hegemony");
-            var owner = filtered.ownerBySystemId().get("tritachyon-system");
+            var holder = filtered.ownerBySystemId().get("tritachyon-system");
 
-            assertThat(owner.factionId()).isEqualTo("tritachyon");
-            assertThat(FilteredPolitics.isSpotlitBloc(owner.factionId())).isFalse();
+            assertThat(holder.factionId()).isEqualTo("tritachyon");
+            assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId())).isFalse();
             assertThat(filtered.contestedSystemIds()).doesNotContain("tritachyon-system");
-            assertThat(owner.primaryColor()).isEqualTo(TRITACHYON_BRIGHT);
+            assertThat(holder.primaryColor()).isEqualTo(TRITACHYON_BRIGHT);
         }
 
         @Test
@@ -142,24 +142,24 @@ class FilteredPoliticsIntegrationTest {
         void paintsASpotlitAllianceInItsDominantMembersPalette() {
             // Under the alliance grouping the selected bloc is an alliance id; its spotlit cell
             // paints in its dominant member's (hegemony's) palette, reusing the same colour path
-            // the normal alliance owner does.
+            // the normal alliance holder does.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
             var persean = faction("persean", PERSEAN_BRIGHT);
             var sector = sectorWith("contested-system", List.of(hegemony, tritachyon, persean),
                     visibleMarket(hegemony, 2), visibleMarket(tritachyon, 2),
                     visibleMarket(persean, 3));
-            var grouping = new OwnershipGrouping(
+            var grouping = new HolderGrouping(
                     Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
                     Map.of("alliance-1", "hegemony"),
                     Map.of("alliance-1", "Allied Powers"));
 
-            var owner = FilteredPolitics.resolveFilteredOwnership(
+            var holder = FilteredPolitics.resolveFilteredHolder(
                     sector, new DominancePass(STABILITY_WEIGHTED, false, grouping), "alliance-1")
                     .ownerBySystemId().get("contested-system");
 
-            assertThat(FilteredPolitics.isSpotlitBloc(owner.factionId())).isTrue();
-            assertThat(owner.primaryColor()).isEqualTo(HEGEMONY_BRIGHT);
+            assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId())).isTrue();
+            assertThat(holder.primaryColor()).isEqualTo(HEGEMONY_BRIGHT);
         }
 
         @Test
@@ -167,7 +167,7 @@ class FilteredPoliticsIntegrationTest {
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var sector = sectorWith("owned-system", List.of(hegemony), visibleMarket(hegemony, 5));
 
-            var filtered = FilteredPolitics.resolveFilteredOwnership(sector, STABILITY_PASS, null);
+            var filtered = FilteredPolitics.resolveFilteredHolder(sector, STABILITY_PASS, null);
 
             assertThat(filtered.ownerBySystemId()).isEmpty();
             assertThat(filtered.contestedSystemIds()).isEmpty();
@@ -176,17 +176,17 @@ class FilteredPoliticsIntegrationTest {
         @Test
         void isEmptyForNullSector() {
             var filtered =
-                    FilteredPolitics.resolveFilteredOwnership(null, STABILITY_PASS, "hegemony");
+                    FilteredPolitics.resolveFilteredHolder(null, STABILITY_PASS, "hegemony");
 
             assertThat(filtered.ownerBySystemId()).isEmpty();
             assertThat(filtered.contestedSystemIds()).isEmpty();
         }
     }
 
-    // Resolves the presence-aware ownership for a selected faction under the identity grouping and
+    // Resolves the presence-aware holding for a selected faction under the identity grouping and
     // the shared stability rule, the shape every faction-view filter test reads.
-    private static FilteredPolitics.FilteredOwnership resolveFor(
+    private static FilteredPolitics.FilteredHolder resolveFor(
             SectorAPI sector, String selectedBlocId) {
-        return FilteredPolitics.resolveFilteredOwnership(sector, STABILITY_PASS, selectedBlocId);
+        return FilteredPolitics.resolveFilteredHolder(sector, STABILITY_PASS, selectedBlocId);
     }
 }

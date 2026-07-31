@@ -14,8 +14,8 @@ import org.apache.log4j.Logger;
  * applies the same seat guard and emits the same log line instead of copying
  * them.
  *
- * <p>Ownership on the map is decided per system from combined colony size, so an
- * event that changes a colony's owner or size can only shift dominance in that
+ * <p>Holder on the map is decided per system from combined colony size, so an
+ * event that changes a colony's holder or size can only shift dominance in that
  * colony's own system. This resolves the market's seated system, ignores a
  * market not seated in one (a deep-hyperspace station seeds no cell, so its
  * change can repaint nothing), and marks just that system stale via
@@ -35,7 +35,7 @@ public final class MarketPoliticsRefresh {
      * unseated market, and logs the triggering event so a cell that does (or does
      * not) repaint can be traced back to it.
      *
-     * @param market  the market whose owner or size changed; null is ignored
+     * @param market  the market whose holder or size changed; null is ignored
      * @param event   short phrase naming what happened, e.g. "colony resize", used
      *                verbatim in the log line
      * @param context extra {@code key=value} detail for the log line, e.g.

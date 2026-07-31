@@ -581,7 +581,7 @@ class KnownMarketFootprintsIntegrationTest {
     }
 
     // A visible owned market that owns an attached defensive station - a "station"-tagged
-    // connected entity, the ownership link vanilla itself reads.
+    // connected entity, the holding link vanilla itself reads.
     private static MarketAPI stationedMarket(FactionAPI faction, int size) {
         return withConnectedEntities(visibleMarket(faction, size), stationEntity());
     }
@@ -628,7 +628,7 @@ class KnownMarketFootprintsIntegrationTest {
         return withPatrolStats(visibleMarket(faction, size), small, medium, large);
     }
 
-    // Stubs the market's connected entities - the ownership link the station scan reads -
+    // Stubs the market's connected entities - the holding link the station scan reads -
     // to the given entities.
     private static MarketAPI withConnectedEntities(MarketAPI market,
             SectorEntityToken... entities) {

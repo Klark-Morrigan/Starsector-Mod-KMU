@@ -15,7 +15,7 @@ import java.util.Objects;
  * carried as one unit so a pass reads the same rule, reveal, and grouping for every system it
  * walks.
  *
- * <p>The dominance pipeline resolves ownership under three knobs that always travel together:
+ * <p>The dominance pipeline resolves holders under three knobs that always travel together:
  * the weighting rule that scores each market, the dev reveal that decides whether undiscovered
  * colonies count, and the grouping that folds factions into blocs. Threading them as three loose
  * parameters bred a ladder of overloads and a seven-argument inner resolve; bundling them here
@@ -24,7 +24,7 @@ import java.util.Objects;
  *
  * <p>Beyond holding the knobs, the pass performs the two per-system reads they drive - the market
  * footprints regrouped under its grouping ({@link #readBlocFootprints}) and the tie-break that
- * settles a dead heat ({@link #tieBreakFor}) - so the ownership and stats resolvers share one
+ * settles a dead heat ({@link #tieBreakFor}) - so the holder and stats resolvers share one
  * definition of each rather than re-deriving it from the loose knobs at every call site.
  *
  * @param rules                            the weighting rule scoring each market's dominance worth
@@ -38,7 +38,7 @@ import java.util.Objects;
 public record DominancePass(
         DominanceRules rules,
         boolean shouldIncludeUndiscoveredMarkets,
-        OwnershipGrouping grouping) {
+        HolderGrouping grouping) {
 
     public DominancePass {
         Objects.requireNonNull(rules, "rules");
@@ -53,7 +53,7 @@ public record DominancePass(
      * @param grouping the grouping this pass folds factions into blocs under
      * @return a pass carrying the live rule and reveal paired with the grouping
      */
-    public static DominancePass readFromLunaSettings(OwnershipGrouping grouping) {
+    public static DominancePass readFromLunaSettings(HolderGrouping grouping) {
         return new DominancePass(
                 DominanceRules.readFromLunaSettings(),
                 PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions(),
@@ -67,7 +67,7 @@ public record DominancePass(
      * @return a pass carrying the live rule and reveal under the identity grouping
      */
     public static DominancePass readFromLunaSettings() {
-        return readFromLunaSettings(OwnershipGrouping.identity());
+        return readFromLunaSettings(HolderGrouping.identity());
     }
 
     /**
@@ -92,7 +92,7 @@ public record DominancePass(
     /**
      * This system's per-bloc footprints under the pass's rule, reveal, and grouping: the per-faction
      * footprints regrouped into per-bloc footprints (a no-op fold under identity, a member-summing
-     * merge under an alliance grouping). The one read shared by the ownership resolve and the
+     * merge under an alliance grouping). The one read shared by the holder resolve and the
      * filter's presence resolve, so both rank the same footprints.
      *
      * @param sector the sector whose economy is read; assumed non-null with a non-null economy,

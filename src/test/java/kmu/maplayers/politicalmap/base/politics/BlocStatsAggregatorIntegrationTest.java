@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import org.junit.jupiter.api.Nested;
@@ -40,7 +40,7 @@ class BlocStatsAggregatorIntegrationTest {
     // The faction-view pass most tests aggregate under: the stability rule, the normal filter, and
     // the identity grouping. The alliance-grouping test builds its own pass.
     private static final DominancePass STABILITY_PASS =
-            new DominancePass(STABILITY_WEIGHTED, false, OwnershipGrouping.identity());
+            new DominancePass(STABILITY_WEIGHTED, false, HolderGrouping.identity());
 
     @Nested
     class AggregateBlocStats {
@@ -63,7 +63,7 @@ class BlocStatsAggregatorIntegrationTest {
 
         @Test
         void aggregateBlocStatsCountsDominationOnlyForTheSystemWinner() {
-            // Two factions share a system: the heavier is its one dominant owner, so it alone takes a
+            // Two factions share a system: the heavier is its one dominant holder, so it alone takes a
             // domination count while both take a presence - the metric that tells "wins" from "holds".
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
@@ -86,7 +86,7 @@ class BlocStatsAggregatorIntegrationTest {
             var sector = sectorWithSystems(List.of(hegemony, tritachyon),
                     systemMarkets("system-a", visibleMarket(hegemony, 2)),
                     systemMarkets("system-b", visibleMarket(tritachyon, 3)));
-            var grouping = new OwnershipGrouping(
+            var grouping = new HolderGrouping(
                     Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
                     Map.of("alliance-1", "hegemony"),
                     Map.of("alliance-1", "Allied Powers"));
@@ -113,7 +113,7 @@ class BlocStatsAggregatorIntegrationTest {
         @Test
         void aggregateBlocStatsSkipsConditionOnlyMarkets() {
             // A bare rock's condition-only market is no colony, so it never marks a bloc's presence -
-            // matching the ownership pass, so a bloc is offered exactly when it could paint.
+            // matching the holding pass, so a bloc is offered exactly when it could paint.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var sector = sectorWithSystems(List.of(hegemony),
                     systemMarkets("bare-system", conditionOnlyMarket(hegemony, 6)));
@@ -128,7 +128,7 @@ class BlocStatsAggregatorIntegrationTest {
     }
 
     // A bare rock's condition-only market (the placeholder every uninhabited planet carries): no
-    // colony, so it confers no ownership and marks no bloc presence. Local to this suite.
+    // colony, so it confers no holding and marks no bloc presence. Local to this suite.
     private static MarketAPI conditionOnlyMarket(FactionAPI faction, int size) {
         return SectorPoliticsFixtures.market(faction, size, true, false, false, FULL_STABILITY);
     }

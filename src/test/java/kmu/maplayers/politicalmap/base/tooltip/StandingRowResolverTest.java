@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ final class StandingRowResolverTest {
                     new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
 
             var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, OwnershipGrouping.identity());
+                    sectorMock, standings, HolderGrouping.identity());
 
             // A singleton group renders flat: its header is exactly its one member, both carrying the
             // faction's long title and crest.
@@ -57,7 +57,7 @@ final class StandingRowResolverTest {
                     new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
 
             var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, OwnershipGrouping.identity());
+                    sectorMock, standings, HolderGrouping.identity());
 
             assertThat(rows).containsExactly(new StandingGroupRow(
                     "hegemony", "The Hegemony", null, 7, false,
@@ -113,7 +113,7 @@ final class StandingRowResolverTest {
         void resolveRowsIsEmptyForEmptyStandings() {
             // An uninhabited system ranks no groups, so the tooltip has no rows to draw.
             assertThat(StandingRowResolver.resolveRows(
-                    mock(SectorAPI.class), List.of(), OwnershipGrouping.identity()))
+                    mock(SectorAPI.class), List.of(), HolderGrouping.identity()))
                     .isEmpty();
         }
 
@@ -130,7 +130,7 @@ final class StandingRowResolverTest {
                             "tritachyon", 4, List.of(new FactionStanding("tritachyon", 4))));
 
             var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, OwnershipGrouping.identity());
+                    sectorMock, standings, HolderGrouping.identity());
 
             assertThat(rows).extracting(StandingGroupRow::groupId)
                     .containsExactly("hegemony", "tritachyon");
@@ -146,7 +146,7 @@ final class StandingRowResolverTest {
                     new GroupStanding("ghost", 5, List.of(new FactionStanding("ghost", 5))));
 
             var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, OwnershipGrouping.identity());
+                    sectorMock, standings, HolderGrouping.identity());
 
             assertThat(rows).containsExactly(new StandingGroupRow(
                     "ghost", "ghost", null, 5, false,
@@ -173,8 +173,8 @@ final class StandingRowResolverTest {
 
     // Two allied factions folded into one bloc coloured (and so crested) by its lead member hegemony,
     // matching the grouping the ranking step produces for an alliance.
-    private static OwnershipGrouping allianceGrouping() {
-        return new OwnershipGrouping(
+    private static HolderGrouping allianceGrouping() {
+        return new HolderGrouping(
                 Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
                 Map.of("alliance-1", "hegemony"),
                 Map.of("alliance-1", "Allied Powers"));

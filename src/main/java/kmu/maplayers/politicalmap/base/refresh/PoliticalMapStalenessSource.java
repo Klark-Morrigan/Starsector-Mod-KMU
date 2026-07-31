@@ -22,8 +22,8 @@ import java.util.Map;
  * reacts to each half on its own axis. The visibility fingerprint tracks which systems are
  * drawn; when its scalar hash moves the geometry is stale, so this requests a whole-map
  * geometry rebuild - the Voronoi partition depends on the full set of sites, so there is
- * nothing finer to act on. The owner map tracks who holds each system; this diffs it against
- * the last poll and marks exactly the systems whose owner changed politics-stale, the same
+ * nothing finer to act on. The holder map tracks who holds each system; this diffs it against
+ * the last poll and marks exactly the systems whose holder changed politics-stale, the same
  * targeted signal the event listeners raise. Feeding that shared set is what keeps this from
  * doubling a listener's work: a colony a listener already marked and one this diff
  * re-discovers collapse to a single reshape, and a change no listener saw is caught here and
@@ -56,10 +56,10 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private boolean hasPolled;
     private int lastVisibilityFingerprint;
     private int lastAllianceFingerprint;
-    private Map<String, String> lastOwnerBySystemId = Map.of();
+    private Map<String, String> lastHolderBySystemId = Map.of();
 
     // Re-reads the snapshot and stages on-map positions, then hands each axis its own
-    // routing: a visibility move or an accepted system move rebuilds geometry, an owner-map
+    // routing: a visibility move or an accepted system move rebuilds geometry, an holder-map
     // diff marks just the changed systems stale, an alliance-fingerprint move bumps the
     // alliance revision. The first poll only establishes the baselines.
     @Override
@@ -86,7 +86,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         // baseline, so no axis can be read without seeing how it treats a baseline poll.
         var isFirstPoll = !hasPolled;
         markGeometryChange(snapshot, hasMovingSetChanged, isFirstPoll);
-        markOwnerChanges(snapshot.ownerBySystemId(), isFirstPoll);
+        markHolderChanges(snapshot.ownerBySystemId(), isFirstPoll);
         markAllianceSetChange(isFirstPoll);
         hasPolled = true;
     }
@@ -118,27 +118,27 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
     }
 
-    // Marks politics-stale every system whose owner differs from the last poll: a system
-    // that gained an owner or changed hands (present now with a new id), and one that lost
-    // its owner (dropped since). Each mark funnels into the same set the listeners raise,
+    // Marks politics-stale every system whose holder differs from the last poll: a system
+    // that gained an holder or changed hands (present now with a new id), and one that lost
+    // its holder (dropped since). Each mark funnels into the same set the listeners raise,
     // so an overlapping change reshapes once and is traced by markSystemGroupingStale's own
     // log line. The baseline advances even on the first poll, which has no prior to diff.
-    private void markOwnerChanges(Map<String, String> currentOwnerBySystemId,
+    private void markHolderChanges(Map<String, String> currentHolderBySystemId,
             boolean isFirstPoll) {
 
         if (!isFirstPoll) {
-            for (var entry : currentOwnerBySystemId.entrySet()) {
-                if (!entry.getValue().equals(lastOwnerBySystemId.get(entry.getKey()))) {
+            for (var entry : currentHolderBySystemId.entrySet()) {
+                if (!entry.getValue().equals(lastHolderBySystemId.get(entry.getKey()))) {
                     MapLayerRefresh.markSystemGroupingStale(entry.getKey());
                 }
             }
-            for (var systemId : lastOwnerBySystemId.keySet()) {
-                if (!currentOwnerBySystemId.containsKey(systemId)) {
+            for (var systemId : lastHolderBySystemId.keySet()) {
+                if (!currentHolderBySystemId.containsKey(systemId)) {
                     MapLayerRefresh.markSystemGroupingStale(systemId);
                 }
             }
         }
-        lastOwnerBySystemId = currentOwnerBySystemId;
+        lastHolderBySystemId = currentHolderBySystemId;
     }
 
     // Fingerprints the live alliance set and bumps the shared alliance revision when it

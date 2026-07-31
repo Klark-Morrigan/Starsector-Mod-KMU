@@ -11,8 +11,8 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.settings.FactionPaletteChoice;
 
@@ -66,10 +66,10 @@ final class StyledCellBuilderTest {
         private static final Color DESATURATED_PRIMARY = Color.GREEN;
         private static final Color DESATURATED_SECONDARY = Color.YELLOW;
         // The neutral shade a factionless cell resolves both its palette slots to, distinct from
-        // every owner/desaturation colour so an observed outline names the factionless path.
+        // every holder/desaturation colour so an observed outline names the factionless path.
         private static final Color FACTIONLESS_NEUTRAL = Color.PINK;
-        private static final DominantOwner OWNER =
-                new DominantOwner("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
+        private static final DominantHolder OWNER =
+                new DominantHolder("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
         // An owned cell's fill and national border are per cluster (in FactionTerritory),
         // so fill and outer are "No color" here and only inner - the interior seam -
         // resolves a real color, the one slot these tests can observe.
@@ -79,7 +79,7 @@ final class StyledCellBuilderTest {
                 new ElementStyle(FactionPaletteChoice.SECONDARY, 1.0), 1.0);
 
         @Test
-        void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheOwnerPaletteWhenNotDesaturated() {
+        void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, false))),
                     SYSTEM_ID, ownedCell());
@@ -109,7 +109,7 @@ final class StyledCellBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemLeavesTheOwnerPaletteAndOpacityUntouchedForTheNoneAdjustment() {
+        void buildStyledCellForSystemLeavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                     drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
                     SYSTEM_ID, ownedCell());
@@ -135,7 +135,7 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemRecedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
             // Under an active filter the view's per-bloc seams are bypassed: a real (non-spotlit)
-            // owner takes the pass's shared recede, not whatever the view would have said. The view
+            // holder takes the pass's shared recede, not whatever the view would have said. The view
             // stub returns the identity adjustment, so seeing the recede applied proves the filter,
             // not the view, styled the cell.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
@@ -149,7 +149,7 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemDrawsACellWithNoStarAsUninhabitedGround() {
             // A cell that draws as no system - a shard of a dead star's leftover space the
-            // redistribution pass leaves behind - has no owner and no market to have died, so it
+            // redistribution pass leaves behind - has no holder and no market to have died, so it
             // paints as plain uninhabited ground. The null star must resolve through the draws-as
             // map without being taken for decivilised: the decivilised category is "No color"
             // here, so had the null id been routed there the cell would have dropped to null.
@@ -291,9 +291,9 @@ final class StyledCellBuilderTest {
         }
 
         // The shared factionless backdrop: the two factionless styles plus the pass's spotlight
-        // state, since a factionless cell's recede is the filter's. Carries an immutable owner map
+        // state, since a factionless cell's recede is the filter's. Carries an immutable holder map
         // AND an immutable decivilised set, both null-hostile: a clean result for a null system
-        // proves that path reads neither - it resolves no owner and is not taken for decivilised
+        // proves that path reads neither - it resolves no holder and is not taken for decivilised
         // without ever probing a map with the null key.
         private static PoliticalMapTerritories factionlessDrawablesWith(
                 CategoryStyle decivilisedStyle,
@@ -312,7 +312,7 @@ final class StyledCellBuilderTest {
                             FACTIONLESS_NEUTRAL,
                             new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
                     new ViewGrouping(viewMockAdjusting(BlocStyleAdjustment.NONE),
-                            OwnershipGrouping.identity()),
+                            HolderGrouping.identity()),
                     new FilterSnapshot(selectedBlocId, recede, Set.of()));
         }
 
@@ -369,13 +369,13 @@ final class StyledCellBuilderTest {
         // only the view stub, whether the pass filters, and the recede it applies vary.
         private static PoliticalMapTerritories drawablesWith(PoliticalMapView viewMock,
                 boolean isFiltering, BlocStyleAdjustment recede) {
-            // A filtered pass carries the selected bloc's id; the fixture's owner is never that
+            // A filtered pass carries the selected bloc's id; the fixture's holder is never that
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
             return new PoliticalMapTerritories(
                     Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of(),
                     new MapStyling(PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE), Color.GRAY,
                             new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
-                    new ViewGrouping(viewMock, OwnershipGrouping.identity()),
+                    new ViewGrouping(viewMock, HolderGrouping.identity()),
                     new FilterSnapshot(isFiltering ? "selected-bloc" : null, recede, Set.of()));
         }
 

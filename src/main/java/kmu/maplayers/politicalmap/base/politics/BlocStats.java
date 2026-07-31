@@ -19,7 +19,7 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
  *
  * <p>Plain data with no Starsector types, so the aggregation is exercised on hand-built inputs.
  *
- * @param domination the number of systems the bloc is the dominant owner of, under the active
+ * @param domination the number of systems the bloc is the dominant holder of, under the active
  *                   grouping
  * @param presence   the number of systems the bloc holds a counted market in; a bloc in these stats
  *                   at all has presence of at least one
@@ -35,7 +35,7 @@ public record BlocStats(int domination, int presence, int score, int marketSize)
      * Folds one system the bloc holds a market in into these stats: a present-system entry always,
      * a domination count only when the bloc wins that system.
      *
-     * @param isDominant       whether the bloc is this system's dominant owner, which adds one to
+     * @param isDominant       whether the bloc is this system's dominant holder, which adds one to
      *                         domination; a present-but-not-dominant bloc adds to presence alone
      * @param systemScore      the bloc's combined dominance weight in this system, added to score
      * @param systemMarketSize the summed raw colony size of the bloc's markets in this system, added

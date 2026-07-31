@@ -11,8 +11,8 @@ import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
@@ -27,7 +27,7 @@ import java.util.Set;
 /**
  * The built map state a single full rebuild produces and the incremental refresh then
  * edits in place: the two draw lists the renderer paints, plus the derivation inputs an
- * incremental re-shape needs to rebuild a handful of cells against the same ownership
+ * incremental re-shape needs to rebuild a handful of cells against the same holding
  * and styles the full rebuild used.
  *
  * <p>The styled-cell and faction-territory maps are the render output - the per-cell
@@ -36,16 +36,16 @@ import java.util.Set;
  * retained inputs, grouped into three cohesive snapshots: {@link MapStyling} (the theme,
  * the neutral color, and the desaturation palette - how each category draws and what a
  * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
- * grouping - how ownership is grouped and which blocs recede to the independent style),
- * and {@link FilterSnapshot} (the spotlight state). The owner-by-system, decivilised-system,
+ * grouping - how holding is grouped and which blocs recede to the independent style),
+ * and {@link FilterSnapshot} (the spotlight state). The holder-by-system, decivilised-system,
  * and unfilled-system sets ride alongside as who holds each system and how its fill is drawn.
  * An incremental re-shape reads them all back so it classifies a cell exactly as the full
  * build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
- * not values: the styled-cell, faction-territory, and owner-by-system maps are mutated
+ * not values: the styled-cell, faction-territory, and holder-by-system maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions an
- * ownership change touched. The styling, decivilised and unfilled sets, view grouping, and
+ * holder change touched. The styling, decivilised and unfilled sets, view grouping, and
  * filter snapshot are set once at build and only read after, so an incremental pass re-shapes
  * against the exact inputs the full build baked in.
  */
@@ -58,13 +58,13 @@ public final class PoliticalMapTerritories {
     // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
     // hover is exactly what the frame painted.
     private final Map<String, List<double[]>> fillPolygonByCellId = new LinkedHashMap<>();
-    // Retained derivation inputs. The owner map is mutated in place as systems flip; the
+    // Retained derivation inputs. The holder map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
-    private final Map<String, DominantOwner> ownerBySystemId;
+    private final Map<String, DominantHolder> ownerBySystemId;
     private final Set<String> decivilisedSystemIds;
     // The owned systems drawn with no fill: held by their bloc for border and label but painting
     // nothing inside its one frontier, so a held/claimed boundary reads as a seam where the fill
-    // stops. Set once at build alongside the owner map, read by the per-faction fill split.
+    // stops. Set once at build alongside the holder map, read by the per-faction fill split.
     private final Set<String> unfilledSystemIds;
     // The three cohesive input snapshots: the resolved paint scheme, the view and its once-sampled
     // grouping, and the spotlight state. The flat getters below unwrap them so every reader keeps
@@ -73,12 +73,12 @@ public final class PoliticalMapTerritories {
     private final ViewGrouping viewGrouping;
     private final FilterSnapshot filter;
     // Which contiguous territory each system sits in, re-derived by reindexClusters whenever the
-    // owner map changes. Seeded empty so a build that never indexes (and the empty placeholder)
+    // holder map changes. Seeded empty so a build that never indexes (and the empty placeholder)
     // still answers a lookup rather than tripping over a null.
     private SystemClusterIndex clusterIndex = SystemClusterIndex.indexClusters(List.of());
 
     public PoliticalMapTerritories(
-            Map<String, DominantOwner> ownerBySystemId,
+            Map<String, DominantHolder> ownerBySystemId,
             Set<String> decivilisedSystemIds,
             Set<String> unfilledSystemIds,
             MapStyling styling,
@@ -111,7 +111,7 @@ public final class PoliticalMapTerritories {
                     new FactionPalette(Color.GRAY, Color.GRAY)),
                 new ViewGrouping(
                     view,
-                    OwnershipGrouping.identity()),
+                    HolderGrouping.identity()),
                 new FilterSnapshot(
                     null,
                     BlocStyleAdjustment.NONE,
@@ -169,9 +169,9 @@ public final class PoliticalMapTerritories {
     }
 
     /**
-     * Re-derives the cluster index from the current owners.
+     * Re-derives the cluster index from the current holders.
      *
-     * <p>Clusters are a function of ownership, so any pass that edits the owner map re-runs this:
+     * <p>Clusters are a function of holding, so any pass that edits the holder map re-runs this:
      * a single system flipping can sever one territory in two or bridge two into one, which no
      * amount of patching the old index would catch.
      *
@@ -184,14 +184,14 @@ public final class PoliticalMapTerritories {
             Map<String, String> systemIdByCellId) {
         clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
                 cellEdgesByCellId,
-                DominantOwner.mapCellGrouping(systemIdByCellId, ownerBySystemId)));
+                DominantHolder.mapCellGrouping(systemIdByCellId, ownerBySystemId)));
     }
 
     public Map<String, FactionTerritory> getFactionTerritoryByFactionId() {
         return factionTerritoryByFactionId;
     }
 
-    public Map<String, DominantOwner> getOwnerBySystemId() {
+    public Map<String, DominantHolder> getHolderBySystemId() {
         return ownerBySystemId;
     }
 
@@ -255,7 +255,7 @@ public final class PoliticalMapTerritories {
         return viewGrouping.view();
     }
 
-    public OwnershipGrouping getGrouping() {
+    public HolderGrouping getGrouping() {
         return viewGrouping.grouping();
     }
 

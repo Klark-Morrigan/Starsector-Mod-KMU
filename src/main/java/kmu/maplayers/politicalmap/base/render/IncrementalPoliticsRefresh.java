@@ -13,7 +13,7 @@ import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
@@ -30,14 +30,14 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Folds the per-system ownership changes a colony resize marked into the standing
+ * Folds the per-system holder changes a colony resize marked into the standing
  * draw lists, re-deriving and re-shaping only the affected systems and their
  * neighbours rather than rebuilding the whole map.
  *
- * <p>A resize that does not flip a system's owner costs just the re-derivation; a flip
+ * <p>A resize that does not flip a system's holder costs just the re-derivation; a flip
  * re-shapes the ring of cells around it (each neighbour's shared edge flips between a
  * same-faction seam and a national border) and rebuilds the two factions' territories
- * (the old owner's and the new one's) through the same {@link StyledCellBuilder} and
+ * (the old holder's and the new one's) through the same {@link StyledCellBuilder} and
  * {@link FactionTerritoryBuilder} primitives a full rebuild uses, so the incremental result
  * matches a full rebuild.
  */
@@ -48,11 +48,11 @@ final class IncrementalPoliticsRefresh {
     private IncrementalPoliticsRefresh() {
     }
 
-    // Drains the systems a colony resize marked stale and folds their ownership changes
+    // Drains the systems a colony resize marked stale and folds their holder changes
     // into the standing territories, the placements, and the name labels. The stale drain
     // runs first, so a frame with nothing marked returns before touching the sector - the
     // cheap per-frame path. The placement and label lists ride along because they are the
-    // plugin's own overlays, not part of the territories, yet must track the same ownership
+    // plugin's own overlays, not part of the territories, yet must track the same holding
     // the cells do.
     static void applyStalePoliticsUpdates(
             PoliticalMapTerritories territories,
@@ -71,9 +71,9 @@ final class IncrementalPoliticsRefresh {
             var affectedFactionIds = new LinkedHashSet<String>();
 
             // Re-derive every marked system first, so re-shaping below reads a fully
-            // updated owner map even when two adjacent systems flipped in one batch.
+            // updated holder map even when two adjacent systems flipped in one batch.
             for (var systemId : staleSystemIds) {
-                rederiveSystemOwner(
+                rederiveSystemHolder(
                         territories,
                         geometryCache,
                         sector,
@@ -83,10 +83,10 @@ final class IncrementalPoliticsRefresh {
                         affectedFactionIds);
             }
             if (affectedFactionIds.isEmpty()) {
-                // Every marked system resized without flipping its owner - nothing to
+                // Every marked system resized without flipping its holder - nothing to
                 // redraw. Logged so an un-updated colour can be confirmed a no-op flip
                 // rather than a missed event.
-                LOG.debug("Political map politics update: no owner changed; stale="
+                LOG.debug("Political map politics update: no holder changed; stale="
                         + staleSystemIds.size());
                 return;
             }
@@ -96,19 +96,19 @@ final class IncrementalPoliticsRefresh {
 
             // A flip changes which systems are contiguous - it can sever one territory in two or
             // bridge two into one - so the cursor read's cluster index is re-derived off the
-            // updated owners here, in step with the cells that just re-shaped.
+            // updated holders here, in step with the cells that just re-shaped.
             territories.reindexClusters(
                     geometryCache.getCellEdgesByCellId(),
                     geometryCache.getSystemIdByCellId());
 
-            // Only the old and new owners' territories can have changed shape; every
+            // Only the old and new holders' territories can have changed shape; every
             // other faction's rings trace unchanged cells, so they are left as-is. A faction's
             // members are the cells it draws, so they are grouped from the cells here to match
             // what buildFactionTerritory traces.
-            var cellsByFaction = DominantOwner.mapCellGrouping(
+            var cellsByFaction = DominantHolder.mapCellGrouping(
                     geometryCache.getSystemIdByCellId(),
-                    territories.getOwnerBySystemId())
-                    .groupCellIdsByOwner();
+                    territories.getHolderBySystemId())
+                    .groupCellIdsByHolder();
 
             for (var factionId : affectedFactionIds) {
                 rebuildFactionTerritoryInPlace(
@@ -119,7 +119,7 @@ final class IncrementalPoliticsRefresh {
             }
 
             // A flip can split or merge clusters (a lost system severs one, a gained
-            // one bridges two), so re-fit every placement off the updated owners rather than
+            // one bridges two), so re-fit every placement off the updated holders rather than
             // patching the touched factions' anchors alone. A no-op while both consumers are
             // off. Runs only on a real flip - the early return above already left. The name
             // labels then rebuild from the re-fitted placements so a renamed or relocated
@@ -127,7 +127,7 @@ final class IncrementalPoliticsRefresh {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                     clusterAnchors,
                     geometryCache,
-                    territories.getOwnerBySystemId(),
+                    territories.getHolderBySystemId(),
                     sector,
                     territories.getDesaturationPalette(),
                     territories.getView(),
@@ -147,12 +147,12 @@ final class IncrementalPoliticsRefresh {
         });
     }
 
-    // Re-derives one system's owner and, when it actually changed, records the cells to
+    // Re-derives one system's holder and, when it actually changed, records the cells to
     // re-shape (the system and its neighbours, whose edge against it flips between a
     // same-faction seam and a national border) and the factions whose territory must
-    // rebuild (the old and new owner). A system with no cell seeds no drawing, so it is
-    // skipped: a resize changes ownership over existing cells, never map membership.
-    private static void rederiveSystemOwner(
+    // rebuild (the old and new holder). A system with no cell seeds no drawing, so it is
+    // skipped: a resize changes holding over existing cells, never map membership.
+    private static void rederiveSystemHolder(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             SectorAPI sector,
@@ -165,30 +165,30 @@ final class IncrementalPoliticsRefresh {
             return;
         }
 
-        // Re-derive under the grouping the full build resolved this system's owner with,
+        // Re-derive under the grouping the full build resolved this system's holder with,
         // so a single-system refresh lands the same winning bloc the bulk pass would.
-        var newOwner = SectorPolitics.resolveDominantOwner(
+        var newHolder = SectorPolitics.resolveDominantHolder(
                 sector,
                 systemById.get(systemId),
                 territories.getGrouping());
 
-        var oldOwner = territories.getOwnerBySystemId().get(systemId);
+        var oldHolder = territories.getHolderBySystemId().get(systemId);
 
-        // DominantOwner is a record, so equality covers the faction and its palette: a
+        // DominantHolder is a record, so equality covers the faction and its palette: a
         // resize that leaves the same winner leaves the drawing identical.
-        if (Objects.equals(oldOwner, newOwner)) {
+        if (Objects.equals(oldHolder, newHolder)) {
             return;
         }
-        if (newOwner == null) {
-            territories.getOwnerBySystemId().remove(systemId);
+        if (newHolder == null) {
+            territories.getHolderBySystemId().remove(systemId);
         } else {
-            territories.getOwnerBySystemId().put(systemId, newOwner);
+            territories.getHolderBySystemId().put(systemId, newHolder);
         }
-        if (oldOwner != null) {
-            affectedFactionIds.add(oldOwner.factionId());
+        if (oldHolder != null) {
+            affectedFactionIds.add(oldHolder.factionId());
         }
-        if (newOwner != null) {
-            affectedFactionIds.add(newOwner.factionId());
+        if (newHolder != null) {
+            affectedFactionIds.add(newHolder.factionId());
         }
         cellsToReshape.add(systemId);
         cellsToReshape.addAll(neighbourSystemIdsOf(geometryCache, systemId));
@@ -206,7 +206,7 @@ final class IncrementalPoliticsRefresh {
     }
 
     // The systems whose cell borders this one, read from the adjacency graph. When this
-    // system's owner flips, each neighbour's shared edge flips between a same-faction
+    // system's holder flips, each neighbour's shared edge flips between a same-faction
     // seam and a national border, so every neighbour re-shapes too.
     private static Set<String> neighbourSystemIdsOf(
             CellGeometryCache geometryCache,
@@ -224,7 +224,7 @@ final class IncrementalPoliticsRefresh {
         return neighbours;
     }
 
-    // Re-shapes one cell against the now-updated owners and replaces its draw record, or
+    // Re-shapes one cell against the now-updated holders and replaces its draw record, or
     // drops it when the cell contributes nothing (inset-collapsed, or factionless with
     // neither its fill nor its outline drawn).
     private static void reshapeCellInPlace(
@@ -237,16 +237,16 @@ final class IncrementalPoliticsRefresh {
             territories.removeStyledCell(cellId);
             return;
         }
-        // The system the cell draws as, whose owner colours and keys it. Every cell here is a
+        // The system the cell draws as, whose holder colours and keys it. Every cell here is a
         // star's own ground, so it resolves to that star, but the resolve is explicit so an
-        // absorbed cell would key by its owner rather than its own missing star.
+        // absorbed cell would key by its holder rather than its own missing star.
         var drawnSystemId = geometryCache.getSystemIdByCellId().get(cellId);
-        var owner = territories.getOwnerBySystemId().get(drawnSystemId);
-        var ownerFactionId = owner == null ? null : owner.factionId();
+        var holder = territories.getHolderBySystemId().get(drawnSystemId);
+        var ownerFactionId = holder == null ? null : holder.factionId();
         var shaped = CellShaper.shapeCell(
                 edges,
                 ownerFactionId,
-                DominantOwner.mapFactionIdBySystemId(territories.getOwnerBySystemId()),
+                DominantHolder.mapFactionIdBySystemId(territories.getHolderBySystemId()),
                 CellShaper.BORDER_INSET_DISTANCE);
                 
         var styled = StyledCellBuilder.buildStyledCellForSystem(territories, drawnSystemId, shaped);

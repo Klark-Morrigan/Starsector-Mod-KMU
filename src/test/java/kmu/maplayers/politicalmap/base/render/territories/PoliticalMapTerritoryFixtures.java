@@ -10,8 +10,8 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
 import java.awt.Color;
@@ -45,7 +45,7 @@ public final class PoliticalMapTerritoryFixtures {
     }
 
     /**
-     * A territories carrying the given owners and nothing else: empty draw lists, an inert theme
+     * A territories carrying the given holders and nothing else: empty draw lists, an inert theme
      * and grouping, and no filter.
      *
      * <p>The view is a Mockito mock rather than a concrete one so a test naming no view stays
@@ -56,7 +56,7 @@ public final class PoliticalMapTerritoryFixtures {
      * @return a live territories, ready to have draw records written into it
      */
     public static PoliticalMapTerritories createTerritoriesOwnedBy(
-            Map<String, DominantOwner> ownerBySystemId) {
+            Map<String, DominantHolder> ownerBySystemId) {
         return new PoliticalMapTerritories(
                 new LinkedHashMap<>(ownerBySystemId),
                 new LinkedHashSet<>(),
@@ -67,7 +67,7 @@ public final class PoliticalMapTerritoryFixtures {
                     new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR)),
                 new ViewGrouping(
                     mock(PoliticalMapView.class),
-                    OwnershipGrouping.identity()),
+                    HolderGrouping.identity()),
                 new FilterSnapshot(null, BlocStyleAdjustment.NONE, new LinkedHashSet<>()));
     }
 
@@ -77,7 +77,7 @@ public final class PoliticalMapTerritoryFixtures {
      *
      * <p>For the suites whose subject is which ground a builder draws rather than what it draws
      * it in: with all four categories identical, a difference in the output can only have come
-     * from the geometry or the ownership, never from a category the fixture happened to style
+     * from the geometry or the holding, never from a category the fixture happened to style
      * differently.
      *
      * @param style the bundle every category paints from

@@ -7,9 +7,9 @@ import kmlib.math.hashing.Fingerprints;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.ownership.ClaimsOwnershipProvider;
-import kmu.maplayers.politicalmap.base.politics.ownership.OwnershipProvider;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
+import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.util.KmuStrings;
 
@@ -17,7 +17,7 @@ import kmu.util.KmuStrings;
  * The claims view's render rules: every star system a faction claims shows here as solid territory
  * in the claimant's colours - the faction layer's look, keyed off the vanilla claim mechanic rather
  * than held markets. Claims are grouped strictly by claiming faction with no alliance rollup, so the
- * grouping is {@link OwnershipGrouping#identity()} and a claimed system reads under its own faction's
+ * grouping is {@link HolderGrouping#identity()} and a claimed system reads under its own faction's
  * border and name.
  *
  * <p>A bloc's styling and label are the faction view's exactly - an independent claimant recedes like
@@ -61,23 +61,23 @@ public final class ClaimsView implements PoliticalMapView {
     }
 
     @Override
-    public OwnershipGrouping resolveGrouping() {
+    public HolderGrouping resolveGrouping() {
         // Claims are grouped strictly by claiming faction - no alliance rollup on this layer - so the
-        // pipeline resolves plain faction ownership.
-        return OwnershipGrouping.identity();
+        // pipeline resolves plain faction holding.
+        return HolderGrouping.identity();
     }
 
     @Override
-    public OwnershipProvider resolveOwnershipProvider() {
-        // Ownership is the claim mechanic itself: every claimed system painted solid in its
+    public HolderProvider resolveHolderProvider() {
+        // Holder is the claim mechanic itself: every claimed system painted solid in its
         // claimant's colours, rather than the held-plus-claims default the faction view resolves.
-        return ClaimsOwnershipProvider.INSTANCE;
+        return ClaimsHolderProvider.INSTANCE;
     }
 
     @Override
     public boolean shouldUseIndependentStyle(
             String blocId,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             BlocStyleAdjustment adjustment) {
         // A claimant bloc styles exactly as the faction view styles a held one, so an independent
         // claimant recedes to the muted style like independent ground; delegated so the two views
@@ -88,7 +88,7 @@ public final class ClaimsView implements PoliticalMapView {
     @Override
     public BlocStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
-            OwnershipGrouping grouping) {
+            HolderGrouping grouping) {
         // The claims view dims or recolours no bloc, exactly as the faction view does not; delegated
         // to keep that one decision in a single place.
         return FactionsView.INSTANCE.resolveBlocStyleAdjustment(blocId, grouping);
@@ -97,7 +97,7 @@ public final class ClaimsView implements PoliticalMapView {
     @Override
     public String resolveName(
             String blocId,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             SectorAPI sector,
             FactionNameFormatChoice nameFormat) {
         // A claim bloc id is a plain faction id under identity grouping, so the label is the claiming

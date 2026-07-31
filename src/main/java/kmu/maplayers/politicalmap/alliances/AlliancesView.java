@@ -16,7 +16,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
@@ -85,7 +85,7 @@ public final class AlliancesView implements PoliticalMapView {
     }
 
     @Override
-    public OwnershipGrouping resolveGrouping() {
+    public HolderGrouping resolveGrouping() {
         // The live Nexerelin alliance set, sampled once per rebuild. Falls back to identity if Nex
         // is somehow absent, though the view is only ever registered when it is present.
         return NexerelinAlliances.resolveGrouping();
@@ -94,7 +94,7 @@ public final class AlliancesView implements PoliticalMapView {
     @Override
     public boolean shouldUseIndependentStyle(
             String blocId,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             BlocStyleAdjustment adjustment) {
         // Genuine independent space always takes the independent style, exactly as the faction view
         // classifies it. A non-allied faction takes it too once it desaturates: desaturation means
@@ -119,7 +119,7 @@ public final class AlliancesView implements PoliticalMapView {
     @Override
     public BlocStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
-            OwnershipGrouping grouping) {
+            HolderGrouping grouping) {
         // An alliance keeps its full colour; only a non-alliance bloc recedes. The view owns just
         // that gate - how far a receded bloc dims or desaturates is its own non-allied recede set's
         // decision, so every non-allied faction takes the one adjustment that set resolves. Keeping
@@ -134,7 +134,7 @@ public final class AlliancesView implements PoliticalMapView {
     @Override
     public String resolveName(
             String blocId,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             SectorAPI sector,
             FactionNameFormatChoice nameFormat) {
         var allianceName = grouping.resolveAllianceName(blocId);
@@ -159,7 +159,7 @@ public final class AlliancesView implements PoliticalMapView {
             DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
         // Under this view only alliances are filter targets - a lone faction is not spotlightable
-        // here, matching the view's role of grouping ownership by alliance. The alliance grouping
+        // here, matching the view's role of grouping holders by alliance. The alliance grouping
         // folds each alliance's members into one bloc, so the shared stats read already ranks an
         // alliance as a unit; the view just drops the present blocs that are lone factions and
         // carries each surviving alliance's stats onto its option for the picker to sort and label by.

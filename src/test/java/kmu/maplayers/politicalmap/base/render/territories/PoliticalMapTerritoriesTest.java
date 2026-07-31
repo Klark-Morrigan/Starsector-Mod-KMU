@@ -15,8 +15,8 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.settings.FactionPaletteChoice;
 
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.mock;
  *
  * <p>Also pins the two invariants the cursor read leans on, since a break in either is invisible
  * until a hover lands on the wrong cell: that a cell's draw record and the shape it is hit-tested
- * against are written and dropped together, and that the cluster index tracks ownership through
+ * against are written and dropped together, and that the cluster index tracks holding through
  * the splits and merges a single flip can cause.
  */
 final class PoliticalMapTerritoriesTest {
@@ -65,7 +65,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.isEmpty()).isTrue();
             assertThat(territories.getStyledCellByCellId()).isEmpty();
             assertThat(territories.getFactionTerritoryByFactionId()).isEmpty();
-            assertThat(territories.getOwnerBySystemId()).isEmpty();
+            assertThat(territories.getHolderBySystemId()).isEmpty();
             assertThat(territories.getDecivilisedSystemIds()).isEmpty();
             assertThat(territories.getUnfilledSystemIds()).isEmpty();
             assertThat(territories.getNeutralColor()).isEqualTo(Color.GRAY);
@@ -110,7 +110,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void gettersReturnEachConstructorInputInItsMatchingSlot() {
-            Map<String, DominantOwner> owners = new LinkedHashMap<>();
+            Map<String, DominantHolder> holders = new LinkedHashMap<>();
             Set<String> decivilised = new LinkedHashSet<>();
             // A distinct unfilled set so a swapped slot is caught by identity, held apart from the
             // decivilised set it sits beside.
@@ -136,7 +136,7 @@ final class PoliticalMapTerritoriesTest {
                     ThemeFixtures.NO_HOVER_HIGHLIGHT, 0.3);
             var renderStyle = new RenderStyle(globalStyle, categories);
             PoliticalMapView viewMock = mock(PoliticalMapView.class);
-            var grouping = OwnershipGrouping.identity();
+            var grouping = HolderGrouping.identity();
             // A distinct, non-identity adjustment so a swapped recede field is caught by value.
             var recedeAdjustment = new BlocStyleAdjustment(0.25, true);
             // A non-null selected bloc so the filter snapshot is caught by value and isFiltering()
@@ -145,7 +145,7 @@ final class PoliticalMapTerritoriesTest {
             // A distinct contested set so a swapped filter-snapshot field is caught by identity.
             Set<String> contested = new LinkedHashSet<>(Set.of("contested-system"));
 
-            var territories = new PoliticalMapTerritories(owners, decivilised, unfilled,
+            var territories = new PoliticalMapTerritories(holders, decivilised, unfilled,
                     new MapStyling(renderStyle, neutral, desaturationPalette),
                     new ViewGrouping(viewMock, grouping),
                     new FilterSnapshot(selectedBlocId, recedeAdjustment, contested));
@@ -154,7 +154,7 @@ final class PoliticalMapTerritoriesTest {
             // they start empty and stay mutable for the incremental refresh to edit in place.
             assertThat(territories.getStyledCellByCellId()).isEmpty();
             assertThat(territories.getFactionTerritoryByFactionId()).isEmpty();
-            assertThat(territories.getOwnerBySystemId()).isSameAs(owners);
+            assertThat(territories.getHolderBySystemId()).isSameAs(holders);
             assertThat(territories.getDecivilisedSystemIds()).isSameAs(decivilised);
             assertThat(territories.getUnfilledSystemIds()).isSameAs(unfilled);
             assertThat(territories.getNeutralColor()).isSameAs(neutral);
@@ -282,7 +282,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
                     .containsExactlyInAnyOrder("A", "B", "C");
 
-            territories.getOwnerBySystemId().put("B", ownerOf("RIVAL"));
+            territories.getHolderBySystemId().put("B", ownerOf("RIVAL"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
@@ -301,7 +301,7 @@ final class PoliticalMapTerritoriesTest {
             var territories = ownedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
             reindex(territories, edges);
 
-            territories.getOwnerBySystemId().put("B", ownerOf("F"));
+            territories.getHolderBySystemId().put("B", ownerOf("F"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
@@ -320,10 +320,10 @@ final class PoliticalMapTerritoriesTest {
         }
     }
 
-    // A territories holding the given owners, the one input the cluster index is derived from;
+    // A territories holding the given holders, the one input the cluster index is derived from;
     // every other slot is an inert placeholder.
     private static PoliticalMapTerritories ownedBy(Map<String, String> factionIdBySystemId) {
-        var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
+        var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         for (var entry : factionIdBySystemId.entrySet()) {
             ownerBySystemId.put(entry.getKey(), ownerOf(entry.getValue()));
         }
@@ -331,8 +331,8 @@ final class PoliticalMapTerritoriesTest {
     }
 
     // Clustering keys off the faction id alone, so the palette shades are inert here.
-    private static DominantOwner ownerOf(String factionId) {
-        return new DominantOwner(factionId, Color.GRAY, Color.GRAY);
+    private static DominantHolder ownerOf(String factionId) {
+        return new DominantHolder(factionId, Color.GRAY, Color.GRAY);
     }
 
     // One cell edge facing the given neighbour system. Clustering reads only the adjacency tag,

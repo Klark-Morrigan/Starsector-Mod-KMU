@@ -15,14 +15,14 @@ import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
-import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
+import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.settings.KmuLunaSettings;
 
@@ -60,7 +60,7 @@ final class AlliancesViewTest {
 
     // An alliance grouping with one alliance bloc "rebel_pact" fusing two members, coloured off the
     // sorted-first member and named "Rebel Pact"; a faction not in the map stays its own lone bloc.
-    private static final OwnershipGrouping ALLIANCE_GROUPING = new OwnershipGrouping(
+    private static final HolderGrouping ALLIANCE_GROUPING = new HolderGrouping(
             Map.of("rebels", "rebel_pact", "pirates", "rebel_pact"),
             Map.of("rebel_pact", "rebels"),
             Map.of("rebel_pact", "Rebel Pact"));
@@ -112,22 +112,22 @@ final class AlliancesViewTest {
                 stubNexEnabled(globalMock, false);
 
                 assertThat(AlliancesView.INSTANCE.resolveGrouping())
-                        .isSameAs(OwnershipGrouping.identity());
+                        .isSameAs(HolderGrouping.identity());
             }
         }
     }
 
     @Nested
-    class ResolveOwnershipProvider {
+    class ResolveHolderProvider {
 
         @Test
-        void resolveOwnershipProviderReturnsTheDefaultProvider() {
+        void resolveHolderProviderReturnsTheDefaultProvider() {
             // The alliances view rolls factions into alliance blocs through its grouping, but the
-            // ownership source underneath is the same dominant-owner resolution the faction view
+            // holding source underneath is the same dominant-holder resolution the faction view
             // uses - extended with claimed systems - so it inherits the shared claim-augmented
             // default rather than supplying one of its own.
-            assertThat(AlliancesView.INSTANCE.resolveOwnershipProvider())
-                    .isSameAs(ClaimAugmentedOwnershipProvider.INSTANCE);
+            assertThat(AlliancesView.INSTANCE.resolveHolderProvider())
+                    .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
         }
     }
 

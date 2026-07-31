@@ -12,7 +12,7 @@ import kmu.maplayers.base.render.regions.VertexRuns;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 
@@ -47,12 +47,12 @@ public final class StyledCellBuilder {
      * inset-collapsed cell, or a factionless cell with neither its fill nor its outline drawn.
      *
      * <p>Takes the system the cell draws as rather than the cell itself, since everything read
-     * here - the owner, the palette, whether the ground is decivilised - is known per system
+     * here - the holder, the palette, whether the ground is decivilised - is known per system
      * and not per cell.
      *
-     * @param territories this pass's retained ownership, theme, and filter state
+     * @param territories this pass's retained holding, theme, and filter state
      * @param systemId    the system the cell draws as, or null for a cell with no star of its
-     *                    own, which draws as plain uninhabited ground - it has no owner to
+     *                    own, which draws as plain uninhabited ground - it has no holder to
      *                    colour it and no market to have died
      * @param shaped      the cell's inset shape
      * @return the cell's draw record, or null when it puts no ink on the map
@@ -68,34 +68,34 @@ public final class StyledCellBuilder {
         if (shaped.fillPolygon().isEmpty()) {
             return null;
         }
-        // A cell with no star of its own has no owner to look up, so the null id skips the owner
+        // A cell with no star of its own has no holder to look up, so the null id skips the holder
         // map rather than probing it for a key it does not hold - keeping the null-star path clear
-        // of whether the owner map happens to tolerate a null-key get.
-        var owner = systemId == null
+        // of whether the holder map happens to tolerate a null-key get.
+        var holder = systemId == null
                 ? null
-                : territories.getOwnerBySystemId().get(systemId);
-        return owner == null
+                : territories.getHolderBySystemId().get(systemId);
+        return holder == null
                 ? buildFactionlessCell(territories, systemId, shaped)
-                : buildOwnedCell(territories, owner, shaped);
+                : buildOwnedCell(territories, holder, shaped);
     }
 
-    // A fused cell: its seams, in the owner's effective palette. Its fill and border are the
+    // A fused cell: its seams, in the holder's effective palette. Its fill and border are the
     // cluster's, drawn from the cluster's own shape, so this form has no slot for either. The style
     // and adjustment come from the pass's one styling read, so the seams paint exactly as the
-    // cluster paints its fill and border. Desaturating swaps the owner's own palette for the pass's
+    // cluster paints its fill and border. Desaturating swaps the holder's own palette for the pass's
     // shared desaturation palette, and the opacity multiplier scales every alpha on top of the
     // style's own opacities.
     private static StyledCell buildOwnedCell(
             PoliticalMapTerritories territories,
-            DominantOwner owner,
+            DominantHolder holder,
             ShapedCell shaped) {
 
-        var styling = territories.resolveBlocStyling(owner.factionId());
+        var styling = territories.resolveBlocStyling(holder.factionId());
         var style = styling.style();
         var adjustment = styling.adjustment();
         var palette = MapPalettes.resolveEffectivePalette(
                 adjustment,
-                owner,
+                holder,
                 territories.getDesaturationPalette());
         return new StyledCell.FusedCell(
                 VertexRuns.flattenEdgesOfClass(shaped, false),
@@ -125,7 +125,7 @@ public final class StyledCellBuilder {
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
-        // Factionless ground has no owner palette, so both slots hold the shared neutral colour:
+        // Factionless ground has no holder palette, so both slots hold the shared neutral colour:
         // whichever slot an element names, it paints neutral - unless the recede desaturates the
         // cell, in which case it recolours off the pass's desaturation palette exactly as a
         // receded bloc does.

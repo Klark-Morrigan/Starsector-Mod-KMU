@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -79,7 +79,7 @@ final class BlocStyleResolverTest {
             // proves the filter left the view's base-style call live.
             var decision = BlocStyleResolver.resolveBlocStyleDecision(true, "independent",
                     viewMockDeciding(true, BlocStyleAdjustment.NONE),
-                    OwnershipGrouping.identity(), new BlocStyleAdjustment(0.3, true));
+                    HolderGrouping.identity(), new BlocStyleAdjustment(0.3, true));
 
             assertThat(decision.usesIndependentStyle()).isTrue();
         }
@@ -93,7 +93,7 @@ final class BlocStyleResolverTest {
             var viewRecede = new BlocStyleAdjustment(0.5, false);
             var sharedRecede = new BlocStyleAdjustment(0.3, true);
             var decision = BlocStyleResolver.resolveBlocStyleDecision(true, "hegemony",
-                    viewMockDeciding(false, viewRecede), OwnershipGrouping.identity(), sharedRecede);
+                    viewMockDeciding(false, viewRecede), HolderGrouping.identity(), sharedRecede);
 
             assertThat(decision.usesIndependentStyle()).isFalse();
             assertThat(decision.adjustment()).isEqualTo(new BlocStyleAdjustment(0.3, true));
@@ -109,9 +109,9 @@ final class BlocStyleResolverTest {
             var viewMock = viewMockDeciding(false, new BlocStyleAdjustment(0.5, false));
 
             BlocStyleResolver.resolveBlocStyleDecision(true, "hegemony", viewMock,
-                    OwnershipGrouping.identity(), new BlocStyleAdjustment(0.3, true));
+                    HolderGrouping.identity(), new BlocStyleAdjustment(0.3, true));
 
-            verify(viewMock).shouldUseIndependentStyle("hegemony", OwnershipGrouping.identity(),
+            verify(viewMock).shouldUseIndependentStyle("hegemony", HolderGrouping.identity(),
                     new BlocStyleAdjustment(0.3, true));
         }
 
@@ -123,9 +123,9 @@ final class BlocStyleResolverTest {
             var viewMock = viewMockDeciding(true, adjustment);
 
             BlocStyleResolver.resolveBlocStyleDecision(false, "pirates", viewMock,
-                    OwnershipGrouping.identity(), BlocStyleAdjustment.NONE);
+                    HolderGrouping.identity(), BlocStyleAdjustment.NONE);
 
-            verify(viewMock).shouldUseIndependentStyle("pirates", OwnershipGrouping.identity(),
+            verify(viewMock).shouldUseIndependentStyle("pirates", HolderGrouping.identity(),
                     adjustment);
         }
 
@@ -135,7 +135,7 @@ final class BlocStyleResolverTest {
             // recede test and its per-bloc adjustment, so a normal pass styles exactly as before.
             var adjustment = new BlocStyleAdjustment(0.5, true);
             var decision = BlocStyleResolver.resolveBlocStyleDecision(false, "pirates",
-                    viewMockDeciding(true, adjustment), OwnershipGrouping.identity(),
+                    viewMockDeciding(true, adjustment), HolderGrouping.identity(),
                     BlocStyleAdjustment.NONE);
 
             assertThat(decision.usesIndependentStyle()).isTrue();

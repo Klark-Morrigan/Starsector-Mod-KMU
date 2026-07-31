@@ -13,11 +13,11 @@ import java.util.List;
  * lists this frame painted, so a highlight can only ever trace ground the map is showing.
  *
  * <p>The three answers all turn on who holds the hovered system. Its painted extent is the
- * shape the build recorded for that cell; the loops it might sit inside are its owner's traced
+ * shape the build recorded for that cell; the loops it might sit inside are its holder's traced
  * borders, which carry one ring per disjoint cluster and per enclave; and the shade is the
- * owner's own palette, or the shared neutral colour where nothing owns the ground.
+ * holder's own palette, or the shared neutral colour where nothing owns the ground.
  *
- * <p>The border loops are the owner's rather than the hovered cluster's because the build bakes
+ * <p>The border loops are the holder's rather than the hovered cluster's because the build bakes
  * them per bloc - which of them encloses this particular cell is a geometric question, and one
  * the highlight pass answers for itself.
  *
@@ -35,19 +35,19 @@ public record PoliticalMapHoverHighlightSource(PoliticalMapTerritories territori
         // Factionless ground (decivilised, or uninhabited while its outline is drawn) fuses into
         // no territory, so it has no frontier at all and offers no candidates - its cell still
         // washes, just without a halo.
-        var owner = territories.getOwnerBySystemId().get(cellId);
-        if (owner == null) {
+        var holder = territories.getHolderBySystemId().get(cellId);
+        if (holder == null) {
             return List.of();
         }
-        var territory = territories.getFactionTerritoryByFactionId().get(owner.factionId());
+        var territory = territories.getFactionTerritoryByFactionId().get(holder.factionId());
         return territory == null ? List.of() : territory.borderLoops();
     }
 
     @Override
     public Color resolveHighlightColourOf(String cellId, ElementPaint paletteChoice) {
-        return MapPalettes.pickOwnerPaletteColor(
+        return MapPalettes.pickHolderPaletteColor(
                 paletteChoice,
-                territories.getOwnerBySystemId().get(cellId),
+                territories.getHolderBySystemId().get(cellId),
                 territories.getNeutralColor());
     }
 

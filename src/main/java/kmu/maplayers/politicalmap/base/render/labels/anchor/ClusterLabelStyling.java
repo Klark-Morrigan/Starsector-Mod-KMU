@@ -14,8 +14,8 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
@@ -46,7 +46,7 @@ import java.util.function.Function;
 final class ClusterLabelStyling {
 
     // The stand-in name shape (length as a multiple of line height) sized against when
-    // no real measurement exists - the label font failed to load, or a cluster's owner
+    // no real measurement exists - the label font failed to load, or a cluster's holder
     // resolves no display name. A plausible faction-name proportion, so the debug band
     // still shows a realistic footprint; no name is drawn from a stand-in fit.
     private static final double FALLBACK_NAME_ASPECT = 6.0;
@@ -55,11 +55,11 @@ final class ClusterLabelStyling {
     private ClusterLabelStyling() {
     }
 
-    // The colour a cluster's name (and its debug dot) draws in: the shade the owner's
+    // The colour a cluster's name (and its debug dot) draws in: the shade the holder's
     // national border resolves to, so the name inherits the border's own colour rather
     // than a fixed bright pick. A bloc drawn in the independent style carries the
     // independent outer-border choice, every other bloc the faction one, resolved against
-    // this bloc's two shades - the owner's own palette, or the pass's shared desaturation
+    // this bloc's two shades - the holder's own palette, or the pass's shared desaturation
     // palette when the adjustment desaturates this bloc - by the same MapPalettes
     // mapping the border itself uses. A hidden border ("No color") still needs a legible
     // name, so it falls back to the resolved primary shade. The same faction-vs-independent
@@ -67,7 +67,7 @@ final class ClusterLabelStyling {
     // multiplier, and fades the resolved colour by the product (the debug dot, sharing this
     // colour, dims and recolours with the name).
     static Color resolveLabelColor(
-            DominantOwner owner,
+            DominantHolder holder,
             BlocNameStyles nameStyles,
             BlocStyleDecision styleDecision,
             FactionPalette desaturationPalette) {
@@ -84,7 +84,7 @@ final class ClusterLabelStyling {
         // never drift from the fill and border it labels.
         var palette = MapPalettes.resolveEffectivePalette(
                 styleDecision.adjustment(),
-                owner,
+                holder,
                 desaturationPalette);
         var color = MapPalettes.pickPaletteColor(
                 choice,
@@ -101,17 +101,17 @@ final class ClusterLabelStyling {
     }
 
     // The per-bloc label colours one rebuild draws in, as the plain colour-by-key function the
-    // placement search takes. Each bloc's shade is resolved from any one of its owners (every
+    // placement search takes. Each bloc's shade is resolved from any one of its holders (every
     // system of a bloc carries the same two palette shades, so the first one found speaks for
     // the whole bloc) under that bloc's shared style decision, and cached per bloc id since
     // every cluster of a bloc draws its name the same.
     static Function<String, Color> newLabelColorResolver(
-            Map<String, DominantOwner> ownerBySystemId,
+            Map<String, DominantHolder> ownerBySystemId,
             BlocNameStyles nameStyles,
             Function<String, BlocStyleDecision> styleDecisionByBlocId,
             FactionPalette desaturationPalette) {
 
-        var ownerByBlocId = mapOwnerByBlocId(ownerBySystemId);
+        var ownerByBlocId = mapHolderByBlocId(ownerBySystemId);
         return memoisePerBlocId(blocId -> resolveLabelColor(
                 ownerByBlocId.get(blocId),
                 nameStyles,
@@ -126,7 +126,7 @@ final class ClusterLabelStyling {
     static Function<String, BlocStyleDecision> newBlocStyleDecisionResolver(
             boolean isFiltering,
             PoliticalMapView view,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             BlocStyleAdjustment recedeAdjustment) {
 
         return memoisePerBlocId(blocId -> BlocStyleResolver.resolveBlocStyleDecision(
@@ -145,7 +145,7 @@ final class ClusterLabelStyling {
     static Function<String, LabelLengthEstimator> newNameEstimatorResolver(
             SectorAPI sector,
             PoliticalMapView view,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             boolean isFiltering,
             String selectedBlocId) {
 
@@ -171,15 +171,15 @@ final class ClusterLabelStyling {
         return blocId -> valueByBlocId.computeIfAbsent(blocId, resolver);
     }
 
-    // One owner per bloc id, so a bloc's shade can be resolved from its id alone. Every system
+    // One holder per bloc id, so a bloc's shade can be resolved from its id alone. Every system
     // of a bloc resolves to the same two palette shades, so which of them is kept is
     // immaterial; first seen wins.
-    private static Map<String, DominantOwner> mapOwnerByBlocId(
-            Map<String, DominantOwner> ownerBySystemId) {
+    private static Map<String, DominantHolder> mapHolderByBlocId(
+            Map<String, DominantHolder> ownerBySystemId) {
 
-        var ownerByBlocId = new HashMap<String, DominantOwner>();
-        for (var owner : ownerBySystemId.values()) {
-            ownerByBlocId.putIfAbsent(owner.factionId(), owner);
+        var ownerByBlocId = new HashMap<String, DominantHolder>();
+        for (var holder : ownerBySystemId.values()) {
+            ownerByBlocId.putIfAbsent(holder.factionId(), holder);
         }
         return ownerByBlocId;
     }
@@ -206,7 +206,7 @@ final class ClusterLabelStyling {
     private static LabelLengthEstimator resolveNameEstimator(
             SectorAPI sector,
             PoliticalMapView view,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             LazyFont font,
             FactionNameFormatChoice nameFormat,
             String blocId) {

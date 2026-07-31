@@ -9,8 +9,8 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
@@ -60,13 +60,13 @@ final class FactionTerritoryBuilderTest {
     private static final String ISLAND_SYSTEM = "island";
     private static final String EXCLAVE_SYSTEM = "exclave";
     private static final String RIVAL_SYSTEM = "rival";
-    // The owner's two shades, kept distinct so an observed paint names which slot it came from.
+    // The holder's two shades, kept distinct so an observed paint names which slot it came from.
     private static final Color OWNER_PRIMARY = Color.RED;
     private static final Color OWNER_SECONDARY = Color.BLUE;
-    private static final DominantOwner HEGEMONY_OWNER =
-            new DominantOwner(HEGEMONY, OWNER_PRIMARY, OWNER_SECONDARY);
-    private static final DominantOwner TRITACHYON_OWNER =
-            new DominantOwner(TRITACHYON, OWNER_PRIMARY, OWNER_SECONDARY);
+    private static final DominantHolder HEGEMONY_OWNER =
+            new DominantHolder(HEGEMONY, OWNER_PRIMARY, OWNER_SECONDARY);
+    private static final DominantHolder TRITACHYON_OWNER =
+            new DominantHolder(TRITACHYON, OWNER_PRIMARY, OWNER_SECONDARY);
     private static final double FILL_OPACITY = 0.5;
     private static final double BORDER_OPACITY = 0.25;
     private static final double BORDER_WIDTH = 3.0;
@@ -288,19 +288,19 @@ final class FactionTerritoryBuilderTest {
 
     private static PoliticalMapTerritories territoriesStyledBy(
             CategoryStyle style,
-            Map<String, DominantOwner> ownerBySystemId) {
+            Map<String, DominantHolder> ownerBySystemId) {
         return new PoliticalMapTerritories(
                 ownerBySystemId, Set.of(), Set.of(),
                 new MapStyling(
                         PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(style),
                         Color.GRAY,
                         new FactionPalette(Color.GREEN, Color.YELLOW)),
-                new ViewGrouping(viewMockAdjustingNothing(), OwnershipGrouping.identity()),
+                new ViewGrouping(viewMockAdjustingNothing(), HolderGrouping.identity()),
                 new FilterSnapshot(null, BlocStyleAdjustment.NONE, Set.of()));
     }
 
     // A view stub that styles every bloc as its own faction and recedes none of them, so the
-    // paints below come from the category style and the owner's palette alone.
+    // paints below come from the category style and the holder's palette alone.
     private static PoliticalMapView viewMockAdjustingNothing() {
         var viewMock = mock(PoliticalMapView.class);
         when(viewMock.shouldUseIndependentStyle(any(), any(), any())).thenReturn(false);

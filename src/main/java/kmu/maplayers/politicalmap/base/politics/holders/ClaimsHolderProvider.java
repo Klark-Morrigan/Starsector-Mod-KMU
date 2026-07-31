@@ -1,19 +1,19 @@
-package kmu.maplayers.politicalmap.base.politics.ownership;
+package kmu.maplayers.politicalmap.base.politics.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.VanillaClaimReader;
 
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorClaims;
 
 import java.util.Set;
 
 /**
- * The ownership source the Claims view resolves under: every claimed star system painted solid
+ * The holding source the Claims view resolves under: every claimed star system painted solid
  * in its claimant's colours, with nothing held-derived. This is the claim mechanic standing on
- * its own - where {@link ClaimAugmentedOwnershipProvider} layers claims onto held dominance as
+ * its own - where {@link ClaimAugmentedHolderProvider} layers claims onto held dominance as
  * unfilled extensions, this paints claims as the whole territory, so a claimed system fills solid
  * exactly as a held one does on the faction view.
  *
@@ -22,30 +22,30 @@ import java.util.Set;
  * ignored and every claimed system paints at full strength. The resolution therefore carries no
  * fill exceptions, which lets the fill split take its whole-region-solid fast path.
  */
-public final class ClaimsOwnershipProvider implements OwnershipProvider {
+public final class ClaimsHolderProvider implements HolderProvider {
 
     /**
      * The one shared instance, reading vanilla claims. Stateless once built - the claim reader it
-     * wraps is stateless - so every pass reuses it, and the Claims view resolves ownership through
+     * wraps is stateless - so every pass reuses it, and the Claims view resolves holding through
      * it.
      */
-    public static final ClaimsOwnershipProvider INSTANCE =
-            new ClaimsOwnershipProvider(new VanillaClaimReader());
+    public static final ClaimsHolderProvider INSTANCE =
+            new ClaimsHolderProvider(new VanillaClaimReader());
 
     private final ClaimReader claimReader;
 
-    ClaimsOwnershipProvider(ClaimReader claimReader) {
+    ClaimsHolderProvider(ClaimReader claimReader) {
         this.claimReader = claimReader;
     }
 
     @Override
-    public OwnershipResolution resolveOwnership(
-            SectorAPI sector, OwnershipGrouping grouping, String selectedBlocId) {
-        // Claim ownership is the whole territory here, so every claimed system paints solid: no
+    public HolderResolution resolveHolder(
+            SectorAPI sector, HolderGrouping grouping, String selectedBlocId) {
+        // A claim covers the whole territory here, so every claimed system paints solid: no
         // contested and no unfilled systems, which the fill split reads as its whole-region-solid
         // fast path. The selected bloc is ignored, since this view offers no spotlight.
-        return new OwnershipResolution(
-                SectorClaims.resolveClaimingOwnerBySystemId(sector, grouping, claimReader),
+        return new HolderResolution(
+                SectorClaims.resolveClaimingHolderBySystemId(sector, grouping, claimReader),
                 Set.of(),
                 Set.of());
     }

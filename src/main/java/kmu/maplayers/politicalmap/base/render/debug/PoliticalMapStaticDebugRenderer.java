@@ -19,7 +19,7 @@ import java.util.List;
  *
  * <p>Static because, unlike the production
  * {@link kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer} (which pairs with
- * {@link kmu.maplayers.politicalmap.base.render.IncrementalPoliticsRefresh} to fold ownership
+ * {@link kmu.maplayers.politicalmap.base.render.IncrementalPoliticsRefresh} to fold holding
  * changes into its draw lists in place), this overlay has no incremental path: a colony flip
  * rebuilds the whole overlay, so nothing here updates a subset of it between full rebuilds.
  *

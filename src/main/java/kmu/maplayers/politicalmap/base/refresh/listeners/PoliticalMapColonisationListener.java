@@ -9,26 +9,26 @@ import kmu.maplayers.politicalmap.base.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
 /**
- * Marks a system's political-map ownership stale when the player founds a colony
+ * Marks a system's political-map holding stale when the player founds a colony
  * on one of its planets or abandons an existing one, so planting or dropping a
  * colony repaints its system live rather than only on reload.
  *
- * <p>Ownership on the map is decided by combined colony size, so adding a colony
- * introduces a new owner-and-size to its system and abandoning one removes it -
+ * <p>Holder on the map is decided by combined colony size, so adding a colony
+ * introduces a new holder-and-size to its system and abandoning one removes it -
  * both the same per-system dominance change a resize, a deciv, or a discovery
  * makes. Neither is caught by the sibling listeners: founding is not a resize
  * (the colony is created at its starting size, not grown into it) and abandoning
  * is not a decivilisation (the market is pulled from the economy without turning
  * neutral first). So this routes both through the same targeted refresh
  * ({@link MapLayerRefresh#markSystemGroupingStale}), re-deriving only the
- * affected system and its neighbours; whether the change flips the dominant owner
+ * affected system and its neighbours; whether the change flips the dominant holder
  * is decided later, when the plugin re-derives that one system.
  *
  * <p>Only the changed colony's own system is marked - a colony's size affects
  * dominance in its own system alone. Whether founding or abandonment also changes
  * which systems appear on the map is a separate reachability axis owned by
  * {@link PoliticalMapStalenessSource}. Mirrors {@link PoliticalMapDecivListener} on
- * the ownership axis; this covers only player colonisation, since the engine
+ * the holding axis; this covers only player colonisation, since the engine
  * fires no listener for an NPC faction founding a colony.
  */
 public class PoliticalMapColonisationListener implements PlayerColonizationListener {

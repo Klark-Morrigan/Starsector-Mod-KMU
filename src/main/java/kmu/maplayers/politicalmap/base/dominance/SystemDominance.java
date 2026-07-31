@@ -45,7 +45,7 @@ public final class SystemDominance {
      * @param footprintByFactionId each faction's footprint in the system; an
      *                             empty map means no owned markets
      * @return the dominant faction's id, or {@code null} when the map is empty
-     *         (an uninhabited system has no owner)
+     *         (an uninhabited system has no holder)
      */
     public static String resolveDominantFactionId(
             Map<String, MarketFootprint> footprintByFactionId) {
@@ -67,7 +67,7 @@ public final class SystemDominance {
      * @param tieBreak             consulted only when two blocs tie on all three
      *                             weight levels; the id it orders first wins
      * @return the dominant faction's id, or {@code null} when the map is empty
-     *         (an uninhabited system has no owner)
+     *         (an uninhabited system has no holder)
      */
     public static String resolveDominantFactionId(
             Map<String, MarketFootprint> footprintByFactionId, Comparator<String> tieBreak) {

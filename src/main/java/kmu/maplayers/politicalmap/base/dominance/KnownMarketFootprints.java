@@ -16,7 +16,7 @@ import java.util.Map;
  * Reads one star system's known owned markets from the live economy into the
  * per-faction footprints the dominance rule compares.
  *
- * <p>The economy / {@code MarketAPI} half of the ownership pipeline: it applies
+ * <p>The economy / {@code MarketAPI} half of the holder pipeline: it applies
  * the "counts as a colony" filter - a market is in only when a faction owns it,
  * it is not a bare planet's condition-only placeholder, and the player knows it
  * exists - and weighs each surviving market for dominance. A market's weight is the
@@ -72,7 +72,7 @@ public final class KnownMarketFootprints {
      *
      * <p>Condition-only markets (the placeholder market every uninhabited planet
      * carries for hazard and atmosphere conditions) are skipped: they are not a
-     * colony, so they confer no ownership. Decivilised colonies are already absent
+     * colony, so they hold nothing. Decivilised colonies are already absent
      * - vanilla drops them from the economy - so they need no extra guard here.
      *
      * @param sector                       the sector whose economy is read; assumed

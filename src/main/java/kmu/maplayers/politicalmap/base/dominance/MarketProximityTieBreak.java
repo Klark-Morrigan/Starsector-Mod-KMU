@@ -15,10 +15,10 @@ import java.util.Map;
  * so a tie resolves the same on every view instead of by the arbitrary ordering of bloc ids.
  *
  * <p>A tie once fell to the lowest id, which is a faction id on the faction view but an
- * alliance's own id on the alliances view - so the same two tied markets could flip owner
+ * alliance's own id on the alliances view - so the same two tied markets could flip holder
  * between views purely because an alliance id sorts differently than the member faction's. A
  * physical measure - proximity to the system centre - is the same on both views, so a system
- * a tie decides paints the same owner however factions are grouped.
+ * a tie decides paints the same holder however factions are grouped.
  *
  * <p>Distance is measured from the star nearest the system centre (the star itself in a
  * single-star system) along each market's orbit, summing the circular-orbit radii up the
@@ -64,7 +64,7 @@ public final class MarketProximityTieBreak {
             SectorAPI sector,
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping) {
+            HolderGrouping grouping) {
         return new Comparator<>() {
             // Built on the first compare - i.e. the first tie in this system - then reused for
             // any further ties, so the geometry is read once and only when a tie needs it.
@@ -101,7 +101,7 @@ public final class MarketProximityTieBreak {
             SectorAPI sector,
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets,
-            OwnershipGrouping grouping) {
+            HolderGrouping grouping) {
         var centremostStar = StarSystems.getCentremostStar(system);
         var minDistanceByBlocId = new LinkedHashMap<String, Double>();
         for (var market : sector.getEconomy().getMarkets(system)) {

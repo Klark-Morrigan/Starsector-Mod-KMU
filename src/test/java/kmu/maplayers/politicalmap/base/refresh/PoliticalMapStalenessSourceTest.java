@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the political map's staleness routing: it reads the snapshot in one walk and sends
  * each axis to its own refresh - a visibility or moving-set move rebuilds geometry, an
- * owner-map diff marks exactly the changed systems politics-stale (the same set the event
+ * holder-map diff marks exactly the changed systems politics-stale (the same set the event
  * listeners feed), and an alliance-fingerprint move bumps the alliance revision - while the
  * first poll only establishes the baselines. Asserts on the real geometry and alliance
  * counters' deltas and the real stale set rather than mocking {@link MapLayerRefresh}
@@ -37,10 +37,10 @@ import static org.mockito.Mockito.when;
  */
 final class PoliticalMapStalenessSourceTest {
     // A fixed alliance fingerprint the non-alliance tests hold steady across polls, so the
-    // alliance axis stays quiet while they assert on geometry and ownership.
+    // alliance axis stays quiet while they assert on geometry and holding.
     private static final int STEADY_ALLIANCE_FINGERPRINT = 7;
     // One owned system, returned identically on both polls by the runs that mean to leave the
-    // visibility and ownership axes quiet.
+    // visibility and holding axes quiet.
     private static final PoliticalMapSectorSnapshot STEADY_SNAPSHOT =
             new PoliticalMapSectorSnapshot(1, Map.of("a", "hegemony"));
 
@@ -58,8 +58,8 @@ final class PoliticalMapStalenessSourceTest {
 
         @Test
         void visibilityChangeRequestsGeometryRefreshOnly() {
-            // Same ownership, moved visibility: a system joined or left the map, so
-            // the cells rebuild but no owner reshapes.
+            // Same holding, moved visibility: a system joined or left the map, so
+            // the cells rebuild but no holder reshapes.
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
                     snapshot(1, "a", "hegemony"), snapshot(9, "a", "hegemony")), 2);
 
@@ -88,7 +88,7 @@ final class PoliticalMapStalenessSourceTest {
 
         @Test
         void ownerLostMarksTheSystemStale() {
-            // A colony decivilised or abandoned drops from the owner map, so its
+            // A colony decivilised or abandoned drops from the holder map, so its
             // system is marked stale to repaint neutral.
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
                     snapshot(1, "a", "hegemony"), snapshot(1, Map.of())), 2);
@@ -97,7 +97,7 @@ final class PoliticalMapStalenessSourceTest {
         }
 
         @Test
-        void bothAxesMovingRefreshGeometryAndMarkOwnerStale() {
+        void bothAxesMovingRefreshGeometryAndMarkHolderStale() {
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
                     snapshot(1, "a", "hegemony"), snapshot(9, "a", "tritachyon")), 2);
 
@@ -106,10 +106,10 @@ final class PoliticalMapStalenessSourceTest {
         }
 
         @Test
-        void movingSetChangeRequestsGeometryRefreshWithoutMarkingOwnerStale() {
-            // Unmoved visibility and ownership, but a system started or stopped moving:
+        void movingSetChangeRequestsGeometryRefreshWithoutMarkingHolderStale() {
+            // Unmoved visibility and holding, but a system started or stopped moving:
             // it joins or leaves the partition, so the geometry counter advances and no
-            // owner is reshaped.
+            // holder is reshaped.
             var outcome = pollThenReadRefreshOutcome(
                     PollInputs.buildForMovingSetChange(true), 2);
 
@@ -131,7 +131,7 @@ final class PoliticalMapStalenessSourceTest {
         @Test
         void allianceFingerprintChangeRequestsAllianceRefreshOnly() {
             // An alliance formed, dissolved, or changed members: the fingerprint moved, so
-            // the alliance revision bumps while the geometry and ownership axes stay put.
+            // the alliance revision bumps while the geometry and holding axes stay put.
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForAllianceChange(11, 22), 2);
 
             assertThat(outcome.allianceDelta()).isEqualTo(1);
@@ -245,7 +245,7 @@ final class PoliticalMapStalenessSourceTest {
             boolean hasMovingSetChangedOnSecondPoll) {
 
         // Two snapshots that may differ, every other axis quiet - what the geometry and
-        // ownership assertions need.
+        // holding assertions need.
         private static PollInputs buildForSnapshotChange(PoliticalMapSectorSnapshot first,
                 PoliticalMapSectorSnapshot second) {
             return new PollInputs(first, second, STEADY_ALLIANCE_FINGERPRINT,

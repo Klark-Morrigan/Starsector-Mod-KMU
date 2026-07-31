@@ -18,7 +18,7 @@ package kmu.maplayers.politicalmap.base;
  * @param opacityMultiplier the fraction of its normal opacity the bloc's fills, borders,
  *                          and name draw at; 1.0 leaves them unchanged
  * @param desaturate        whether the bloc recolours to the pipeline's desaturation
- *                          palette instead of its owner's own shades
+ *                          palette instead of its holder's own shades
  */
 public record BlocStyleAdjustment(double opacityMultiplier, boolean desaturate) {
 

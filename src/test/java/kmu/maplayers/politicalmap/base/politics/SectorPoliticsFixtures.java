@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Shared Mockito wiring for the {@code base.politics} integration tests: the stubbed factions,
- * markets, and sectors the ownership pipeline reads. One home for these builders so the three
+ * markets, and sectors the holder pipeline reads. One home for these builders so the three
  * integration suites - {@link KnownMarketFootprintsIntegrationTest} (the footprint read),
  * {@link SectorPoliticsIntegrationTest} (the dominance-and-palette resolve), and
  * {@link FilteredPoliticsIntegrationTest} (the presence-aware filter resolve) - wire an economy

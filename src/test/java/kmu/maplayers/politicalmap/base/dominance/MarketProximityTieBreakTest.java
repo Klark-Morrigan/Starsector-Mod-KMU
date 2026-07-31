@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins {@link MarketProximityTieBreak}: a tie resolves by which bloc holds the market nearest
  * the system's central star, and the same physical market decides whatever view groups the
- * factions - so a tie never flips owner between the faction and alliance views. The geometry
+ * factions - so a tie never flips holder between the faction and alliance views. The geometry
  * itself - finding the central star and summing an orbit chain to it - is
  * {@link kmlib.starsector.systems.StarSystems}'s contract, pinned in its own suite; these tests
  * run the real geometry over simple single-star setups and turn on the bloc mapping, stubbing
@@ -46,7 +46,7 @@ class MarketProximityTieBreakTest {
 
     // The alliance grouping that folds hegemony into a hegemony-coloured bloc, so a test can
     // show the same market decides the tie under an alliance view as under the faction view.
-    private static final OwnershipGrouping GREATER_HEGEMONY = new OwnershipGrouping(
+    private static final HolderGrouping GREATER_HEGEMONY = new HolderGrouping(
             Map.of("hegemony", "greater_hegemony"),
             Map.of("greater_hegemony", "hegemony"),
             Map.of("greater_hegemony", "Greater Hegemony"));
@@ -65,7 +65,7 @@ class MarketProximityTieBreakTest {
                         marketOwnedBy("blackrock", orbitingEntity(ORBIT_FAR, starMock)));
 
                 var comparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, OwnershipGrouping.identity());
+                        sectorMock, systemMock, false, HolderGrouping.identity());
 
                 // hegemony's market orbits nearer the star, so it is ordered before blackrock.
                 assertThat(comparator.compare("hegemony", "blackrock")).isNegative();
@@ -108,7 +108,7 @@ class MarketProximityTieBreakTest {
                         marketOwnedBy("blackrock", orbitingEntity(ORBIT_FAR, starMock)));
 
                 var factionComparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, OwnershipGrouping.identity());
+                        sectorMock, systemMock, false, HolderGrouping.identity());
                 var allianceComparator = MarketProximityTieBreak.forSystem(
                         sectorMock, systemMock, false, GREATER_HEGEMONY);
 
@@ -129,7 +129,7 @@ class MarketProximityTieBreakTest {
                         marketOwnedBy("blackrock", orbitingEntity(ORBIT_FAR, starMock)));
 
                 var comparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, OwnershipGrouping.identity());
+                        sectorMock, systemMock, false, HolderGrouping.identity());
 
                 // Building the comparator touches no geometry; only the first compare - the
                 // first tie - walks the economy, so a system that never ties costs nothing.
@@ -152,7 +152,7 @@ class MarketProximityTieBreakTest {
                         marketOwnedBy("blackrock", orbitingEntity(ORBIT_FAR, starMock)));
 
                 var comparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, OwnershipGrouping.identity());
+                        sectorMock, systemMock, false, HolderGrouping.identity());
 
                 assertThat(comparator.compare("hegemony", "blackrock")).isPositive();
             }

@@ -1,10 +1,10 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
 /**
- * One owner's market footprint within a single star system, reduced to the
+ * One holder's market footprint within a single star system, reduced to the
  * three quantities the dominance rule compares. Named for what it aggregates -
- * an owner's markets - and kept free of who the owner is, so the same value
- * serves any way markets are grouped into an owner.
+ * an holder's markets - and kept free of who the holder is, so the same value
+ * serves any way markets are grouped into an holder.
  *
  * <p>Every quantity is a dominance weight - a market's size rating scaled by
  * its stability on the fixed-point grid {@link KnownMarketFootprints} defines -
@@ -12,12 +12,12 @@ package kmu.maplayers.politicalmap.base.dominance;
  *
  * <p>A plain value with no Starsector types so {@link SystemDominance} can be
  * exercised on hand-built inputs: {@link KnownMarketFootprints} reads the live
- * economy and folds each owned market into its owner's footprint, while the rule
+ * economy and folds each owned market into its holder's footprint, while the rule
  * only ever sees these totals.
  */
 public record MarketFootprint(int totalWeight, int largestMarketWeight, int planetWeight) {
 
-    // An owner with no counted markets; the identity for folding markets in.
+    // An holder with no counted markets; the identity for folding markets in.
     public static final MarketFootprint EMPTY = new MarketFootprint(0, 0, 0);
 
     /**
@@ -39,7 +39,7 @@ public record MarketFootprint(int totalWeight, int largestMarketWeight, int plan
     }
 
     /**
-     * Folds another owner's footprint into this one, combining two already-reduced
+     * Folds another holder's footprint into this one, combining two already-reduced
      * footprints as a bloc.
      *
      * <p>Merging is exactly folding the other footprint's markets in without
@@ -50,8 +50,8 @@ public record MarketFootprint(int totalWeight, int largestMarketWeight, int plan
      * unit; folding {@link #EMPTY} in leaves a footprint unchanged, so a lone-faction
      * bloc under the identity grouping is untouched.
      *
-     * @param other the other owner's footprint to combine into this one
-     * @return a new footprint holding both owners' markets
+     * @param other the other holder's footprint to combine into this one
+     * @return a new footprint holding both holders' markets
      */
     public MarketFootprint merge(MarketFootprint other) {
         return new MarketFootprint(

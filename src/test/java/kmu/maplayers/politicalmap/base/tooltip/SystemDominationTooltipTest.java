@@ -12,7 +12,7 @@ import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -83,12 +83,12 @@ final class SystemDominationTooltipTest {
             new StationWeighting(false, 1.0, 0.5, 0.5),
             new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5)),
         false,
-        OwnershipGrouping.identity());
+        HolderGrouping.identity());
 
     // The grouping the active view answers with, and deliberately not the identity one: a grouping the
     // ranking could have reached for on its own would let a tooltip that ignored the view still pass
     // the case below. Asserted by identity, since what matters is that this instance is the one used.
-    private static final OwnershipGrouping VIEW_GROUPING = new OwnershipGrouping(
+    private static final HolderGrouping VIEW_GROUPING = new HolderGrouping(
         Map.of("hegemony", "rebel_pact"),
         Map.of("rebel_pact", "hegemony"),
         Map.of("rebel_pact", "Rebel Pact"));

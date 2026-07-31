@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.function.BinaryOperator;
 
 /**
- * The rule that collapses faction ids into "bloc" ids for one ownership pass, so
+ * The rule that collapses faction ids into "bloc" ids for one holder pass, so
  * the dominance pipeline resolves a bloc as a single unit while the geometry,
  * clustering, and labels all key off one id per system unchanged.
  *
- * <p>A bloc is whatever a political-map view groups ownership by: in the faction
+ * <p>A bloc is whatever a political-map view groups holders by: in the faction
  * view a bloc is a single faction (the identity grouping); in the alliances view a
  * bloc is an alliance for its member factions and a lone faction for everyone else.
  * Because {@link SystemDominance} already ranks an opaque {@code Map<key, footprint>},
@@ -32,7 +32,7 @@ import java.util.function.BinaryOperator;
  *                             faction bloc is absent, so a present entry is also the
  *                             test of whether a bloc is an alliance
  */
-public record OwnershipGrouping(
+public record HolderGrouping(
         Map<String, String> blocIdByFactionId,
         Map<String, String> colorFactionIdByBlocId,
         Map<String, String> allianceNameByBlocId) {
@@ -40,15 +40,15 @@ public record OwnershipGrouping(
     // The faction-mode grouping: every map empty, so each faction is its own bloc,
     // no bloc is an alliance, and each bloc's colour faction is itself. Shared as a
     // singleton because it is immutable and the default every no-grouping pass uses.
-    private static final OwnershipGrouping IDENTITY =
-            new OwnershipGrouping(Map.of(), Map.of(), Map.of());
+    private static final HolderGrouping IDENTITY =
+            new HolderGrouping(Map.of(), Map.of(), Map.of());
 
     /**
      * Defensively copies each map into an immutable snapshot, so a grouping handed
      * around the pipeline cannot be mutated after it is built and its lookups stay
      * stable for the whole pass.
      */
-    public OwnershipGrouping {
+    public HolderGrouping {
         blocIdByFactionId = Map.copyOf(blocIdByFactionId);
         colorFactionIdByBlocId = Map.copyOf(colorFactionIdByBlocId);
         allianceNameByBlocId = Map.copyOf(allianceNameByBlocId);
@@ -61,7 +61,7 @@ public record OwnershipGrouping(
      *
      * @return the shared faction-mode grouping
      */
-    public static OwnershipGrouping identity() {
+    public static HolderGrouping identity() {
         return IDENTITY;
     }
 

@@ -13,8 +13,8 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantOwner;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
@@ -49,9 +49,9 @@ import static org.mockito.Mockito.when;
  * Pins the fold {@link IncrementalPoliticsRefresh} performs when a colony resize marks
  * systems stale: which systems are re-derived, which cells that obliges to re-shape, and
  * which factions' territories that obliges to rebuild. The claim under test is the one the
- * incremental path exists to make - that it touches the systems whose ownership actually
+ * incremental path exists to make - that it touches the systems whose holding actually
  * moved and their neighbours, and nothing else - since anything wider costs the frame it
- * was written to save, and anything narrower leaves the map drawing a stale owner.
+ * was written to save, and anything narrower leaves the map drawing a stale holder.
  *
  * <p>A unit test, so the primitives the fold delegates to are mocked at their static seams:
  * the dominance resolve that answers who holds a system, the two builders that turn a
@@ -150,7 +150,7 @@ final class IncrementalPoliticsRefreshTest {
 
         @Test
         void applyStalePoliticsUpdatesSkipsAStaleSystemThatSeedsNoCell() {
-            // A resize changes ownership over ground already drawn; it never admits a
+            // A resize changes holding over ground already drawn; it never admits a
             // system to the map, so one with no cell has nothing to re-shape and must not
             // reach the re-derive at all.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
@@ -163,7 +163,7 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesRedrawsNothingWhenTheOwnerDidNotChange() {
+        void applyStalePoliticsUpdatesRedrawsNothingWhenTheHolderDidNotChange() {
             // The common resize: a colony grows, its faction still wins, and the drawing is
             // identical - so the whole redraw below the re-derive must be skipped.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
@@ -172,27 +172,27 @@ final class IncrementalPoliticsRefreshTest {
 
             applyTo(territories);
 
-            assertThat(territories.getOwnerBySystemId())
+            assertThat(territories.getHolderBySystemId())
                     .containsExactly(entryOwnedBy(FLIPPED_SYSTEM, HEGEMONY));
             styledCellsMock.verifyNoInteractions();
             territoriesMock.verifyNoInteractions();
         }
 
         @Test
-        void applyStalePoliticsUpdatesRecordsTheNewOwnerWhenASystemChangesHands() {
+        void applyStalePoliticsUpdatesRecordsTheNewHolderWhenASystemChangesHands() {
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
             resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
 
             applyTo(territories);
 
-            assertThat(territories.getOwnerBySystemId().get(FLIPPED_SYSTEM).factionId())
+            assertThat(territories.getHolderBySystemId().get(FLIPPED_SYSTEM).factionId())
                     .isEqualTo(TRITACHYON);
         }
 
         @Test
-        void applyStalePoliticsUpdatesDropsTheOwnerOfASystemThatLostItsLastColony() {
-            // Decivilised or bombed out: the system stays drawn but holds no owner, so the
+        void applyStalePoliticsUpdatesDropsTheHolderOfASystemThatLostItsLastColony() {
+            // Decivilised or bombed out: the system stays drawn but holds no holder, so the
             // entry goes rather than being left pointing at the faction that lost it.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
             resolvesTo(FLIPPED_SYSTEM, null);
@@ -200,12 +200,12 @@ final class IncrementalPoliticsRefreshTest {
 
             applyTo(territories);
 
-            assertThat(territories.getOwnerBySystemId()).doesNotContainKey(FLIPPED_SYSTEM);
+            assertThat(territories.getHolderBySystemId()).doesNotContainKey(FLIPPED_SYSTEM);
         }
 
         @Test
         void applyStalePoliticsUpdatesReshapesTheFlippedSystemAndItsNeighbour() {
-            // The neighbour's own owner did not move, but the edge it shares with the
+            // The neighbour's own holder did not move, but the edge it shares with the
             // flipped system just turned from a same-faction seam into a national border,
             // so it has to be re-shaped too or the border draws down one side only.
             var territories = ownedBy(Map.of(
@@ -249,15 +249,15 @@ final class IncrementalPoliticsRefreshTest {
 
         // What the re-derive answers for one system this pass. Every case stubs the systems
         // it marks; an unstubbed one comes back null, which reads as a system that lost its
-        // owner rather than as a missing stub.
-        private void resolvesTo(String systemId, DominantOwner owner) {
+        // holder rather than as a missing stub.
+        private void resolvesTo(String systemId, DominantHolder holder) {
             // The grouping matcher is typed because a sibling entry point takes a resolved
             // dominance pass in the same slot, and a bare any() would name neither.
-            politicsMock.when(() -> SectorPolitics.resolveDominantOwner(
+            politicsMock.when(() -> SectorPolitics.resolveDominantHolder(
                             any(),
                             argThatIsSystem(systemId),
-                            any(OwnershipGrouping.class)))
-                    .thenReturn(owner);
+                            any(HolderGrouping.class)))
+                    .thenReturn(holder);
         }
 
         // Runs the refresh over the two-cell geometry every case shares, with the anchor and
@@ -300,20 +300,20 @@ final class IncrementalPoliticsRefreshTest {
     }
 
     private static PoliticalMapTerritories ownedBy(Map<String, String> factionIdBySystemId) {
-        var ownerBySystemId = new LinkedHashMap<String, DominantOwner>();
+        var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         for (var entry : factionIdBySystemId.entrySet()) {
             ownerBySystemId.put(entry.getKey(), ownerOf(entry.getValue()));
         }
         return PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(ownerBySystemId);
     }
 
-    // The fold compares whole owners, so the shades matter only in that two owners of the
+    // The fold compares whole holders, so the shades matter only in that two holders of the
     // same faction must compare equal; one shared placeholder pair gives that.
-    private static DominantOwner ownerOf(String factionId) {
-        return new DominantOwner(factionId, Color.GRAY, Color.GRAY);
+    private static DominantHolder ownerOf(String factionId) {
+        return new DominantHolder(factionId, Color.GRAY, Color.GRAY);
     }
 
-    private static Map.Entry<String, DominantOwner> entryOwnedBy(
+    private static Map.Entry<String, DominantHolder> entryOwnedBy(
             String systemId, String factionId) {
         return Map.entry(systemId, ownerOf(factionId));
     }

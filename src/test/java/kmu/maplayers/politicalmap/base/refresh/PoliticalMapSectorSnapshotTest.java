@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
  * and dominance rule ({@link kmu.maplayers.politicalmap.base.dominance.SystemDominance}) over a
  * stubbed economy. Exercised together because the point of the snapshot is the
  * separation of shapes: one sector walk yields a scalar visibility fingerprint that
- * moves when the on-map set changes and a per-system owner map that moves when a
+ * moves when the on-map set changes and a per-system holder map that moves when a
  * drawn system changes hands, each without the other.
  */
 class PoliticalMapSectorSnapshotTest {
@@ -87,9 +87,9 @@ class PoliticalMapSectorSnapshotTest {
         }
 
         @Test
-        void ownerMapChangesWhenAColonysOwnerChangesButVisibilityHolds() {
+        void ownerMapChangesWhenAColonysHolderChangesButVisibilityHolds() {
             // The AI-captures-or-founds case: the same system stays on the map, but
-            // its owner flips. The owner map must move while the visibility hash
+            // its holder flips. The holder map must move while the visibility hash
             // stays put, so only that system reshapes and no geometry rebuilds.
             var before = scanUnderStabilityWeighting(
                     sectorWith(system("a"), ownedMarket("hegemony", 5)));
@@ -103,8 +103,8 @@ class PoliticalMapSectorSnapshotTest {
 
         @Test
         void ownerMapOmitsADecivilisedShellThatStillCountsForVisibility() {
-            // A revealed dead colony is drawn (visibility) but confers no owner, so
-            // it is absent from the owner map - the mirror image of an owned system.
+            // A revealed dead colony is drawn (visibility) but confers no holder, so
+            // it is absent from the holder map - the mirror image of an owned system.
             var snapshot = scanUnderStabilityWeighting(sectorWith(decivilisedSystem("a")));
 
             assertThat(snapshot.visibilityFingerprint()).isNotZero();
@@ -148,7 +148,7 @@ class PoliticalMapSectorSnapshotTest {
     }
 
     // An unreachable system holding a revealed decivilised planet: on the map as a
-    // dead colony, yet unowned, so it drives visibility without an owner.
+    // dead colony, yet unowned, so it drives visibility without an holder.
     private static StarSystemAPI decivilisedSystem(String id) {
         var planet = decivilisedPlanet();
         var systemMock = system(id);
@@ -178,7 +178,7 @@ class PoliticalMapSectorSnapshotTest {
         when(marketMock.getFaction()).thenReturn(factionMock);
         when(marketMock.getSize()).thenReturn(size);
         // Full stability, so the market weighs its whole size and the snapshot
-        // tests stay about visibility and owner diffs, not the weight scaling.
+        // tests stay about visibility and holder diffs, not the weight scaling.
         when(marketMock.getStabilityValue()).thenReturn(FULL_STABILITY);
         when(marketMock.isPlanetConditionMarketOnly()).thenReturn(false);
         when(marketMock.isHidden()).thenReturn(false);

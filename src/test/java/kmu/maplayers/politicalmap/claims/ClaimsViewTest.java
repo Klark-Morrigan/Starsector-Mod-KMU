@@ -7,8 +7,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
-import kmu.maplayers.politicalmap.base.politics.ownership.ClaimsOwnershipProvider;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.util.KmuStrings;
 
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the claims view's render rules: it is the faction view's look keyed off the vanilla claim
- * mechanic, so its grouping is identity, its ownership comes from the claims-only provider, and its
+ * mechanic, so its grouping is identity, its holding comes from the claims-only provider, and its
  * bloc styling and label delegate to the faction view. It offers no spotlight, so its selectable set
  * is always empty. Reproducing these here is what lets the shared pipeline read the claims view
  * through {@link kmu.maplayers.politicalmap.base.PoliticalMapView} without naming it.
@@ -30,7 +30,7 @@ final class ClaimsViewTest {
 
     // The claims view ignores its grouping argument (its own grouping is always identity), so any
     // grouping stands in where the interface demands one.
-    private static final OwnershipGrouping ANY_GROUPING = OwnershipGrouping.identity();
+    private static final HolderGrouping ANY_GROUPING = HolderGrouping.identity();
 
     @Nested
     class GetId {
@@ -57,21 +57,21 @@ final class ClaimsViewTest {
         @Test
         void resolveGroupingReturnsTheIdentityGrouping() {
             // Claims group strictly by claiming faction with no alliance rollup, so the pipeline
-            // resolves plain faction ownership.
+            // resolves plain faction holding.
             assertThat(ClaimsView.INSTANCE.resolveGrouping())
-                    .isSameAs(OwnershipGrouping.identity());
+                    .isSameAs(HolderGrouping.identity());
         }
     }
 
     @Nested
-    class ResolveOwnershipProvider {
+    class ResolveHolderProvider {
 
         @Test
-        void resolveOwnershipProviderReturnsTheClaimsOnlyProvider() {
-            // Ownership is the claim mechanic itself, so the view supplies the claims-only provider
+        void resolveHolderProviderReturnsTheClaimsOnlyProvider() {
+            // Holder is the claim mechanic itself, so the view supplies the claims-only provider
             // rather than inheriting the held-plus-claims default.
-            assertThat(ClaimsView.INSTANCE.resolveOwnershipProvider())
-                    .isSameAs(ClaimsOwnershipProvider.INSTANCE);
+            assertThat(ClaimsView.INSTANCE.resolveHolderProvider())
+                    .isSameAs(ClaimsHolderProvider.INSTANCE);
         }
     }
 

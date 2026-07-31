@@ -8,7 +8,7 @@ import kmu.maplayers.base.theme.MapStyleCategory;
  * per-category {@link CategoryStyle} bundles are held under. Two are owned (a coloured fill,
  * national border, and interior seams) and two are factionless (a neutral-coloured outline, and
  * a fill where the ground was once settled): a bloc paints in {@link #FACTION} or, where it
- * recedes to independent-held space, {@link #INDEPENDENT}; a system with no owner draws in
+ * recedes to independent-held space, {@link #INDEPENDENT}; a system with no holder draws in
  * {@link #DECIVILISED} when a revealed dead world sits there and {@link #UNINHABITED}
  * otherwise. Making the category a type (rather than four hardcoded reader methods and
  * four fields) lets the theme carry the four styles as one keyed map the builders index.

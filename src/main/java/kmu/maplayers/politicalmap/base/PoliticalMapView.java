@@ -5,10 +5,10 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.politics.ownership.ClaimAugmentedOwnershipProvider;
-import kmu.maplayers.politicalmap.base.politics.ownership.OwnershipProvider;
+import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
+import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,27 +62,27 @@ public interface PoliticalMapView {
     int getContentRevision();
 
     /**
-     * The ownership grouping this view resolves its pass under: identity for the
+     * The holder grouping this view resolves its pass under: identity for the
      * faction view (every faction its own bloc), alliance blocs for the alliances
      * view. Resolved once per rebuild and threaded through the pipeline, so a live set
      * is sampled a single time per pass and every stage keys off the same snapshot.
      *
      * @return the grouping that collapses factions into blocs for this pass
      */
-    OwnershipGrouping resolveGrouping();
+    HolderGrouping resolveGrouping();
 
     /**
-     * The source this view resolves its per-system ownership from: for the faction and alliance
-     * views (the default), each inhabited system's dominant owner, extended with each system a
+     * The source this view resolves its per-system holder from: for the faction and alliance
+     * views (the default), each inhabited system's dominant holder, extended with each system a
      * bloc claims but does not hold, drawn as an unfilled part of that bloc's territory; a view
-     * painting ownership it derives some other way supplies its own source. Supplied per view so
-     * the pipeline reads ownership through one seam without naming a concrete resolver, exactly as
+     * painting holders it derives some other way supplies its own source. Supplied per view so
+     * the pipeline reads holders through one seam without naming a concrete resolver, exactly as
      * it reads {@link #resolveGrouping}.
      *
-     * @return the provider that resolves this view's per-system ownership
+     * @return the provider that resolves this view's per-system holder
      */
-    default OwnershipProvider resolveOwnershipProvider() {
-        return ClaimAugmentedOwnershipProvider.INSTANCE;
+    default HolderProvider resolveHolderProvider() {
+        return ClaimAugmentedHolderProvider.INSTANCE;
     }
 
     /**
@@ -106,7 +106,7 @@ public interface PoliticalMapView {
      */
     boolean shouldUseIndependentStyle(
             String blocId,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             BlocStyleAdjustment adjustment);
 
     /**
@@ -123,7 +123,7 @@ public interface PoliticalMapView {
      * @return the per-bloc styling adjustment; {@link BlocStyleAdjustment#NONE} to draw the
      *         bloc exactly as classified
      */
-    BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, OwnershipGrouping grouping);
+    BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, HolderGrouping grouping);
 
     /**
      * The label a bloc reads under this view: a faction's display name for a faction
@@ -140,7 +140,7 @@ public interface PoliticalMapView {
      */
     String resolveName(
             String blocId,
-            OwnershipGrouping grouping,
+            HolderGrouping grouping,
             SectorAPI sector,
             FactionNameFormatChoice nameFormat);
 
@@ -161,7 +161,7 @@ public interface PoliticalMapView {
      * thread them.
      *
      * <p>The spotlight is optional: the default offers no selectable blocs, so a view that paints an
-     * ownership the shared market-presence gate cannot rank (the claims view, whose presence is claim
+     * whose holders the shared market-presence gate cannot rank (the claims view, whose presence is claim
      * presence, not market presence) inherits an empty picker rather than overriding with three
      * arguments it would ignore. A view opts into the spotlight by overriding this, the same way it
      * opts into its own body controls.
@@ -218,7 +218,7 @@ public interface PoliticalMapView {
      * supplies here, and the shared dispatcher draws it - nothing when it supplies nothing - so a view
      * opts into a tooltip by injecting one rather than flipping a flag:
      * the faction and alliance views inject the domination breakdown, and the claims view - whose
-     * ownership that breakdown does not describe - injects none and gets its own surface later.
+     * whose holders that breakdown does not describe - injects none and gets its own surface later.
      * Defaulting to empty makes "no tooltip" the base case, the same shape as
      * {@link #resolveSelectableBlocs} defaulting to no spotlight, so a new view opts in only when it
      * has a tooltip to show.
