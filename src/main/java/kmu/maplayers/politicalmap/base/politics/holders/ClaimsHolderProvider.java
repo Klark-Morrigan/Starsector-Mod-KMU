@@ -20,7 +20,7 @@ import java.util.Set;
  * <p>It reads no filter. The Claims view offers no spotlight - claim presence is not the market
  * presence the shared picker derives its selectable set from - so the selected-bloc argument is
  * ignored and every claimed system paints at full strength. The resolution therefore carries no
- * fill exceptions, which lets the fill split take its whole-region-solid fast path.
+ * fill exceptions, which lets the fill split take its whole-cluster-solid fast path.
  */
 public final class ClaimsHolderProvider implements HolderProvider {
 
@@ -42,7 +42,7 @@ public final class ClaimsHolderProvider implements HolderProvider {
     public HolderResolution resolveHolder(
             SectorAPI sector, HolderGrouping grouping, String selectedBlocId) {
         // A claim covers the whole territory here, so every claimed system paints solid: no
-        // contested and no unfilled systems, which the fill split reads as its whole-region-solid
+        // contested and no unfilled systems, which the fill split reads as its whole-cluster-solid
         // fast path. The selected bloc is ignored, since this view offers no spotlight.
         return new HolderResolution(
                 SectorClaims.resolveClaimingHolderBySystemId(sector, grouping, claimReader),

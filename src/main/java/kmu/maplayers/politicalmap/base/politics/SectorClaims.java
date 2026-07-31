@@ -37,7 +37,7 @@ public final class SectorClaims {
      * coloured through {@link SectorPolitics#resolveBlocHolder}, so a claim carries the same
      * bloc key and palette a held system of that bloc would. A system with no claim is absent;
      * a claim whose colour faction does not resolve is dropped, exactly as an unresolved held
-     * holder is, so it does not paint a colourless region.
+     * holder is, so it does not paint a colourless cluster.
      *
      * @param sector      the sector whose systems are walked and whose faction palette is read;
      *                    null yields an empty map

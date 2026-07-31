@@ -17,6 +17,7 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.FactionPaletteChoice;
@@ -52,7 +53,7 @@ import static org.mockito.Mockito.when;
  * system in the sector and shows nothing.
  *
  * <p>The geometry itself is pinned elsewhere - the ring trace by
- * {@link kmu.maplayers.base.render.regions.ClusterBorderTraceIntegrationTest}, the smoothing
+ * {@link kmu.maplayers.base.render.clusters.ClusterBorderTraceIntegrationTest}, the smoothing
  * passes by their own suites - so it runs for real here and is only ever counted, never measured.
  * Cells are hand-built 2000-unit squares, comfortably clear of the fixed border channel, so which
  * cells touch is plain to read. The sector reads (holding, decivilisation) and the two settings
@@ -84,7 +85,7 @@ final class DebugBorderTracingBuilderTest {
     private static final int CORNER_SEGMENTS = 4;
     private static final double CHAMFER_ANGLE_RADIANS = 0.5;
     private static final ElementStyle DRAWN_OUTLINE =
-            new ElementStyle(FactionPaletteChoice.PRIMARY.resolveElementPaint(), 1.0);
+            new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 1.0);
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
             HELD_SYSTEM, List.of(
                     edgeFacing(0, 0, 2000, 0, null),

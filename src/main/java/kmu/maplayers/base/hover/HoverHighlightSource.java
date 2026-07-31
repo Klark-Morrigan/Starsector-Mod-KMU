@@ -6,7 +6,7 @@ import java.awt.Color;
 import java.util.List;
 
 /**
- * The three things about a hovered cell only the layer that owns the map's regions can
+ * The three things about a hovered cell only the layer that owns the map's clusters can
  * answer: the extent it painted there, the border loops the cell might sit inside, and the
  * shade the ground under it draws in.
  *
@@ -23,12 +23,12 @@ import java.util.List;
 public interface HoverHighlightSource {
 
     /**
-     * The border loops the cell could sit inside - the layer's own traced regions, from which
+     * The border loops the cell could sit inside - the layer's own traced clusters, from which
      * the highlight picks the one that actually encloses it.
      *
      * @param cellId the hovered cell
      * @return the candidate loops as {@code [x, y, x, y, ...]} runs, empty when the cell
-     *         fuses into no region or the region it fuses into traced no border
+     *         fuses into no cluster or the cluster it fuses into traced no border
      */
     List<float[]> resolveCandidateFrontierLoopsOf(String cellId);
 

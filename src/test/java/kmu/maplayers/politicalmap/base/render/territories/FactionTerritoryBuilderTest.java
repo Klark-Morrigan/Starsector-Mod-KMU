@@ -11,6 +11,7 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
@@ -43,8 +44,8 @@ import static org.mockito.Mockito.when;
  * makes an enclave read as an enclave.
  *
  * <p>The geometry underneath is pinned elsewhere and only wired here: the ring trace by
- * {@link kmu.maplayers.base.render.regions.ClusterBorderTraceIntegrationTest}, the fill's carve by
- * {@link kmu.maplayers.base.render.regions.SplitFillBuilderTest}, the palette rules by
+ * {@link kmu.maplayers.base.render.clusters.ClusterBorderTraceIntegrationTest}, the fill's carve by
+ * {@link kmu.maplayers.base.render.clusters.SplitFillBuilderTest}, the palette rules by
  * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes}'s own suite. Cells are
  * hand-built 2000-unit squares, sized well clear of the fixed border channel, so which cells
  * touch is plain to read.
@@ -313,24 +314,24 @@ final class FactionTerritoryBuilderTest {
     // are told apart by colour; the interior seam is a per-cell record and never read here.
     private static CategoryStyle drawnStyle() {
         return new CategoryStyle(
-                new ElementStyle(FactionPaletteChoice.PRIMARY, FILL_OPACITY),
-                new ElementStyle(FactionPaletteChoice.SECONDARY, BORDER_OPACITY), BORDER_WIDTH,
-                new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), FILL_OPACITY),
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.SECONDARY), BORDER_OPACITY), BORDER_WIDTH,
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 1.0);
     }
 
     // The fill on and the border switched off - the one slot combination that still draws.
     private static CategoryStyle fillOnlyStyle() {
         return new CategoryStyle(
-                new ElementStyle(FactionPaletteChoice.PRIMARY, FILL_OPACITY),
-                new ElementStyle(FactionPaletteChoice.NONE, BORDER_OPACITY), BORDER_WIDTH,
-                new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), FILL_OPACITY),
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), BORDER_OPACITY), BORDER_WIDTH,
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 1.0);
     }
 
     // Every slot "No color" - a bloc the player has switched off entirely.
     private static CategoryStyle noColourStyle() {
         return new CategoryStyle(
-                new ElementStyle(FactionPaletteChoice.NONE, FILL_OPACITY),
-                new ElementStyle(FactionPaletteChoice.NONE, BORDER_OPACITY), BORDER_WIDTH,
-                new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), FILL_OPACITY),
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), BORDER_OPACITY), BORDER_WIDTH,
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 1.0);
     }
 }

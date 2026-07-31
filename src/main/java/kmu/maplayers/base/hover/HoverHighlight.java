@@ -5,12 +5,12 @@ import kmlib.opengl.GlVertexRuns;
 import java.util.List;
 
 /**
- * The geometry one hover lights up: the frontier of the region the cursor is inside, and
+ * The geometry one hover lights up: the frontier of the cluster the cursor is inside, and
  * the single cell it is actually in.
  *
  * <p>Every run is world-coordinate and GL-ready, resolved from geometry the map already
  * baked. {@code glowLoops} are {@code GL_LINE_LOOP} runs - normally the one loop enclosing
- * the hovered cell, empty when the cell belongs to no region (a cell that fuses into nothing
+ * the hovered cell, empty when the cell belongs to no cluster (a cell that fuses into nothing
  * has no frontier to bloom). {@code washTriangles} is the hovered cell's painted extent as a
  * {@code GL_TRIANGLES} soup and {@code washOutline} the same extent as {@code GL_LINE_LOOP}
  * rings - one normally, but more where the extent is clipped to the frontier into disjoint

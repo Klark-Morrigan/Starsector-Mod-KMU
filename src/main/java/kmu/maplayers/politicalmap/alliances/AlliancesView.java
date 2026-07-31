@@ -31,7 +31,7 @@ import java.util.Optional;
 
 /**
  * The alliances view's render rules: allied factions fuse into one bloc per alliance so an
- * alliance reads as a single coloured, named region, while every unaligned faction keeps its
+ * alliance reads as a single coloured, named cluster, while every unaligned faction keeps its
  * own border and name. Two orthogonal knobs recede a non-allied faction: Mute dims its opacity
  * by the muted modifier while leaving its faction style and colours intact, and Desaturate makes
  * it adopt the independent style - the independent borders and seams plus the desaturation

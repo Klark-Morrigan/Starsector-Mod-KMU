@@ -89,7 +89,7 @@ final class SectorClaimsIntegrationTest {
         @Test
         void resolveClaimingHolderBySystemIdDropsAClaimWhoseColourFactionDoesNotResolve() {
             // A claimant the sector cannot resolve to a faction (its palette gone) yields a null
-            // holder, which is dropped rather than painting a colourless region - mirroring how an
+            // holder, which is dropped rather than painting a colourless cluster - mirroring how an
             // unresolved held holder drops its system.
             var sectorMock = sectorWithSystems(List.of(), systemMarkets("claimed"));
             var claimReaderFake = new ClaimReaderFake();

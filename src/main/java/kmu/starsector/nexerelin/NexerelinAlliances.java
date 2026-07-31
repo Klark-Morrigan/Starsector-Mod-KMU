@@ -2,11 +2,11 @@ package kmu.starsector.nexerelin;
 
 import com.fs.starfarer.api.Global;
 
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 /**
  * The soft-dependency gate for the political map's alliance grouping: it answers
- * whether Nexerelin is present and, when it is, builds an {@link OwnershipGrouping}
+ * whether Nexerelin is present and, when it is, builds an {@link HolderGrouping}
  * from the live alliance set. The sole reference to the Nex-coupled
  * {@link NexAllianceSource} lives in the nested {@link Holder}, which the classloader
  * does not resolve until the mod-enabled gate has passed, so a Nex-free install never
@@ -38,17 +38,17 @@ public final class NexerelinAlliances {
     }
 
     /**
-     * The grouping for the live alliance set, or {@link OwnershipGrouping#identity()}
+     * The grouping for the live alliance set, or {@link HolderGrouping#identity()}
      * when Nexerelin is absent. Short-circuits on the gate before touching
      * {@link Holder}, so the Nex-coupled source is never loaded without Nex.
      *
      * @return the alliance grouping when Nex is present, else the faction grouping
      */
-    public static OwnershipGrouping resolveGrouping() {
+    public static HolderGrouping resolveGrouping() {
         // Short-circuit before referencing Holder so a Nex-free install never loads the
         // class that names NexAllianceSource, which imports exerelin.*.
         if (!isAvailable()) {
-            return OwnershipGrouping.identity();
+            return HolderGrouping.identity();
         }
         return Holder.resolveGrouping();
     }
@@ -79,7 +79,7 @@ public final class NexerelinAlliances {
 
         private static final AllianceSource SOURCE = new NexAllianceSource();
 
-        private static OwnershipGrouping resolveGrouping() {
+        private static HolderGrouping resolveGrouping() {
             return AllianceGroupingFactory.buildFrom(SOURCE.readAlliances());
         }
 

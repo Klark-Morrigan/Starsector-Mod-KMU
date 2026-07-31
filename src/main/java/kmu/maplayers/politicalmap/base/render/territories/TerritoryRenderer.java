@@ -5,9 +5,9 @@ import kmlib.opengl.GlRuns;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.base.render.regions.StyledCell;
-import kmu.maplayers.base.render.regions.StyledCell.FusedCell;
-import kmu.maplayers.base.render.regions.StyledCell.LoneCell;
+import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
+import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 
 import org.lwjgl.opengl.GL11;
 
@@ -111,7 +111,7 @@ public final class TerritoryRenderer {
         }
         // Then the lone cells' own fills - dead colonies washed in the neutral colour. They fill
         // per cell rather than per cluster because factionless ground never fuses into one, and
-        // they cover no faction's region, so drawing them after the cluster fills is a matter of
+        // they cover no faction's cluster, so drawing them after the cluster fills is a matter of
         // grouping the fill pass rather than of layering. A fused cell is not reached at all: its
         // fill is its cluster's, drawn above, so this pass sees only the cells that have one.
         drawEachCellOfForm(

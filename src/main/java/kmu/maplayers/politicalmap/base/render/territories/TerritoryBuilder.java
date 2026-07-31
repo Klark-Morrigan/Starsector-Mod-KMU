@@ -142,12 +142,12 @@ public final class TerritoryBuilder {
             }
             // The clusters the cursor read resolves a hovered cell's whole territory through.
             // Derived here off the same keys the shaping just fused the cells by, so a highlighted
-            // territory is exactly the one the map merged into a single region.
+            // territory is exactly the one the map merged into a single cluster.
             territories.reindexClusters(
                     geometryCache.getCellEdgesByCellId(),
                     geometryCache.getSystemIdByCellId());
 
-            // Each owned faction's territory: one region per cluster (traced across all
+            // Each owned faction's territory: one cluster per cluster (traced across all
             // its cells so a multi-system cluster reads as one frontier), tessellated for
             // the fill and flattened for the border - the same shape for both. Built off
             // the same raw cells and holders the seams used, and profiled on its own since

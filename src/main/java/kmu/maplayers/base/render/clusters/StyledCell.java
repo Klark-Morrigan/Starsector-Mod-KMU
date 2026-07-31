@@ -1,14 +1,14 @@
-package kmu.maplayers.base.render.regions;
+package kmu.maplayers.base.render.clusters;
 
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 /**
  * One cell ready to draw - in whichever of the two forms a cell takes, named.
  *
- * <p>A cell that fused into a region ({@link FusedCell}) has no fill or outline of its own:
- * both are drawn once for the whole region, from the region's own tessellated shape, so all
+ * <p>A cell that fused into a cluster ({@link FusedCell}) has no fill or outline of its own:
+ * both are drawn once for the whole cluster, from the cluster's own tessellated shape, so all
  * the cell contributes is the seam where it meets a sibling. A cell that fused with nothing
- * ({@link LoneCell}) is its own region, so it carries its own fill and outline and has no
+ * ({@link LoneCell}) is its own cluster, so it carries its own fill and outline and has no
  * seam - there is no sibling on any side of it to divide from.
  *
  * <p>Two types rather than one record carrying both halves, because each half is meaningless
@@ -27,9 +27,9 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 public sealed interface StyledCell {
 
     /**
-     * A cell fused into a region: it draws only the seam edges where it meets a sibling in
-     * that region, at the seam's own paint and width. The fill and the border belong to the
-     * region and are drawn from the region's shape rather than from this cell's.
+     * A cell fused into a cluster: it draws only the seam edges where it meets a sibling in
+     * that cluster, at the seam's own paint and width. The fill and the border belong to the
+     * cluster and are drawn from the cluster's shape rather than from this cell's.
      *
      * @param seamEdges the seam segments this cell contributes, as GL_LINES vertices
      * @param seamPaint the colour and opacity the seams stroke at
@@ -43,7 +43,7 @@ public sealed interface StyledCell {
     }
 
     /**
-     * A cell that fused with nothing and so stands as its own region: it draws its own fill
+     * A cell that fused with nothing and so stands as its own cluster: it draws its own fill
      * and its own outline, and has no seam. The fill is triangulated from the same ring the
      * outline strokes, so a rounded outline and its fill cannot drift apart at the corners.
      *

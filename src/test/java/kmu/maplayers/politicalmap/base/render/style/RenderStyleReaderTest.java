@@ -61,10 +61,10 @@ final class RenderStyleReaderTest {
                 var style = RenderStyleReader.readFactionStyle();
 
                 assertThat(style).isEqualTo(new CategoryStyle(
-                        new ElementStyle(FactionPaletteChoice.PRIMARY, FILL_OPACITY),
-                        new ElementStyle(FactionPaletteChoice.SECONDARY, OUTER_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), FILL_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.SECONDARY), OUTER_OPACITY),
                         OUTER_WIDTH,
-                        new ElementStyle(FactionPaletteChoice.NONE, INNER_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), INNER_OPACITY),
                         INNER_WIDTH));
             }
         }
@@ -96,10 +96,10 @@ final class RenderStyleReaderTest {
                 var style = RenderStyleReader.readIndependentStyle();
 
                 assertThat(style).isEqualTo(new CategoryStyle(
-                        new ElementStyle(FactionPaletteChoice.SECONDARY, FILL_OPACITY),
-                        new ElementStyle(FactionPaletteChoice.PRIMARY, OUTER_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.SECONDARY), FILL_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), OUTER_OPACITY),
                         OUTER_WIDTH,
-                        new ElementStyle(FactionPaletteChoice.NONE, INNER_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), INNER_OPACITY),
                         INNER_WIDTH));
             }
         }
@@ -124,8 +124,8 @@ final class RenderStyleReaderTest {
                 // the neutral colour for factionless ground), with only the inner seam off -
                 // and each takes its own opacity, so a swapped pair would show as a value swap.
                 assertThat(style).isEqualTo(new CategoryStyle(
-                        new ElementStyle(FactionPaletteChoice.PRIMARY, NEUTRAL_FILL_OPACITY),
-                        new ElementStyle(FactionPaletteChoice.PRIMARY, NEUTRAL_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), NEUTRAL_FILL_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), NEUTRAL_OPACITY),
                         NEUTRAL_WIDTH,
                         ElementStyle.NOT_DRAWN,
                         0));
@@ -172,7 +172,7 @@ final class RenderStyleReaderTest {
 
                 assertThat(style).isEqualTo(new CategoryStyle(
                         ElementStyle.NOT_DRAWN,
-                        new ElementStyle(FactionPaletteChoice.PRIMARY, NEUTRAL_OPACITY),
+                        new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), NEUTRAL_OPACITY),
                         NEUTRAL_WIDTH,
                         ElementStyle.NOT_DRAWN,
                         0));
@@ -193,8 +193,10 @@ final class RenderStyleReaderTest {
                 var style = RenderStyleReader.readUninhabitedStyle();
 
                 // The outer slot turns off, yet its opacity and width still pass through so the
-                // sole difference from the drawn case is the slot.
-                assertThat(style.outer().color()).isEqualTo(FactionPaletteChoice.NONE);
+                // sole difference from the drawn case is the slot. Off reaches the theme as an
+                // absent selection rather than as a named "No color", since the tier reads
+                // absence as "paints nothing" without knowing this map's option set.
+                assertThat(style.outer().color()).isNull();
                 assertThat(style.outer().opacity()).isEqualTo(NEUTRAL_OPACITY);
                 assertThat(style.outerWidth()).isEqualTo(NEUTRAL_WIDTH);
             }
@@ -331,7 +333,7 @@ final class RenderStyleReaderTest {
 
                 var hover = RenderStyleReader.readHoverHighlightStyle();
 
-                assertThat(hover.color()).isEqualTo(FactionPaletteChoice.SECONDARY);
+                assertThat(hover.color()).isEqualTo(FactionPaletteShade.SECONDARY);
                 assertThat(hover.glow().opacity()).isEqualTo(GLOW_OPACITY);
                 assertThat(hover.glow().width()).isEqualTo(GLOW_WIDTH);
                 assertThat(hover.glow().layers()).isEqualTo(GLOW_LAYERS);

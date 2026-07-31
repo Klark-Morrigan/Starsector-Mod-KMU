@@ -1,6 +1,6 @@
 # Cluster-name overlay (`base.labels`)
 
-The names drawn across a map layer's regions, and the geometry that decides where each one sits. An
+The names drawn across a map layer's clusters, and the geometry that decides where each one sits. An
 *independent overlay*: it is layered over whichever base view is live and is not part of the
 production fills and borders, so it owns none of the territory draw packets.
 

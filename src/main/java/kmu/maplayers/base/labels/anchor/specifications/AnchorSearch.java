@@ -1,6 +1,6 @@
 package kmu.maplayers.base.labels.anchor.specifications;
 
-import kmu.maplayers.base.render.regions.ClusterBorderTrace;
+import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 
 /**
  * Where the cluster-anchor search generates and clips its candidate lines: the border

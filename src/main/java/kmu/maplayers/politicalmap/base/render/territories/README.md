@@ -1,6 +1,6 @@
 # Territory fills and borders (`render.territories`)
 
-The production draw of the political map: each faction's coloured region, its national border,
+The production draw of the political map: each faction's coloured cluster, its national border,
 and the per-cell province seams and factionless outlines. This is the base layer the labels
 overlay sits over - what the player reads as "who holds what".
 
@@ -37,7 +37,7 @@ identical to a full rebuild.
   same loops, so they cannot drift apart.
 
 The shaping the two builders drive is the framework's, in
-[`base.render.regions`](../../../../base/render/regions/README.md): `BorderSmoothing` sands spikes
+[`base.render.clusters`](../../../../base/render/clusters/README.md): `BorderSmoothing` sands spikes
 and rounds corners of the traced borders, `VertexRuns` flattens shaped cells into GL vertex runs,
 and `StyledCell` is the per-cell packet they bake into, in whichever of its two forms. Element
 colours, opacities, and widths
@@ -77,7 +77,7 @@ own cell draws its inset outline - and, for a decivilised system, its neutral fi
 in the neutral style on the far side of that channel.
 
 Those factionless fills are per cell rather than per cluster: factionless ground never fuses into
-a cluster, so it has no traced region to fill from and each cell tessellates its own outline
+a cluster, so it has no traced cluster to fill from and each cell tessellates its own outline
 instead. Which is why a `LoneCell` carries fill triangles at all, where an owned cell has no fill of
 its own to carry and takes it from its `FactionTerritory`.
 
@@ -93,19 +93,19 @@ place: the two draw lists (`FactionTerritory` per owned faction, `StyledCell` pe
 retained ownership, theme, and filter inputs a re-shape needs. `FactionTerritory` is this package's
 own - one faction's fill triangles, contested-hatch segments, and border loops; the per-cell
 `StyledCell` beside it is the framework's packet, described in
-[`base.render.regions`](../../../../base/render/regions/README.md).
+[`base.render.clusters`](../../../../base/render/clusters/README.md).
 
 ## The split fill: solid, hatched, unfilled
 
 A bloc's footprint is traced as one border whatever its members' fills; the fill is what varies per
 system inside it, across three states. **Solid** is the default - a bloc that only dominates fills
-its whole region from that one border and pays nothing for the split, the common case. The two
-exceptions each carve a sub-region out of the solid, hatched and unfilled, and both are decided
+its whole cluster from that one border and pays nothing for the split, the common case. The two
+exceptions each carve a sub-cluster out of the solid, hatched and unfilled, and both are decided
 upstream in `politics.ownership`; this section is how the draw honours them.
 
 The machinery is the framework's - `FillSplit` partitions the members and `SplitFillBuilder`
-tessellates each state as its own region inside the one border; see
-[`base.render.regions`](../../../../base/render/regions/README.md) for how, and why a state fills
+tessellates each state as its own cluster inside the one border; see
+[`base.render.clusters`](../../../../base/render/clusters/README.md) for how, and why a state fills
 from its own traced rings rather than from its members' cells. What is political is which systems
 land in the two non-solid sets, and what that reads as on the map.
 
@@ -124,7 +124,7 @@ shaper truncates it where it runs into a pulled-in border.
 
 **Unfilled.** A claim extension - a system a bloc claims but does not hold - sits inside its bloc's
 one border for outline and label but paints no fill at all, so the split simply skips it. Same
-shape as the hatch sub-region (one border, a sub-region drawn differently) but the sub-region is
+shape as the hatch sub-cluster (one border, a sub-cluster drawn differently) but the sub-cluster is
 empty rather than hatched, so a held/claimed boundary reads as the seam where the fill stops inside
 a continuous frontier. Which systems are unfilled is resolved in
 [`politics.ownership`](../../politics/ownership/README.md); this package only honours the set.
@@ -145,7 +145,7 @@ that sits on top is the framework's [`base.labels`](../../../../base/labels/READ
 names and shades this layer resolves in `render.labels.anchor`. The *shape work* the two builders
 drive - the border-ring trace, the smoothing passes, the vertex packing, the `StyledCell` packet,
 and the split-fill machinery - is the framework's
-[`base.render.regions`](../../../../base/render/regions/README.md), which knows nothing of who
+[`base.render.clusters`](../../../../base/render/clusters/README.md), which knows nothing of who
 holds what; the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
 *incremental refresh* that folds per-system ownership changes into the packets is
 `render.IncrementalPoliticsRefresh`, at the render root alongside the plugin and the per-frame

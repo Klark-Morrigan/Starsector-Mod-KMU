@@ -134,7 +134,7 @@ final class EdgeClassifierTest {
 
         @Test
         void classifyAcrossReturnsInteriorSeamForSameGroundUnderAKey() {
-            // A cut interior to one key's absorbed region: the far side is that key's own
+            // A cut interior to one key's absorbed cluster: the far side is that key's own
             // ground, so it fuses whatever key sits either side, with no system to look up.
             var edge = edgeFacing(EdgeTarget.SAME_OWNER);
 

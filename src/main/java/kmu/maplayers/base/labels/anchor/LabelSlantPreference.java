@@ -6,7 +6,7 @@ import kmlib.math.geometry.PrincipalAxis;
  * The angle a cluster's label prefers to lean at, and the score penalty a candidate
  * line pays for departing from it. The anchor search leans a name along the cluster's
  * own principal axis rather than screen-horizontal, so most labels pick up the gentle
- * slant of the region they sit in instead of reading as artificially level.
+ * slant of the cluster they sit in instead of reading as artificially level.
  *
  * <p>Two guards keep that lean sane. A cap ({@code maxSlantDegrees}) stops a tall
  * cluster from standing its name vertical - the anti-verticality preference, expressed

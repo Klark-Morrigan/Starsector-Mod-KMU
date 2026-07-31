@@ -11,7 +11,7 @@ import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.labels.anchor.specifications.LeanScoring;
-import kmu.maplayers.base.render.regions.ClusterBorderTrace;
+import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -81,7 +81,7 @@ final class ClusterAnchorPlacementTest {
 
         // Two 1000-unit cells side by side: the cluster spans x 0..2000, y 0..1000, so
         // the border rings inset to x 150..1850, y 150..850 and a horizontal line is the
-        // longest interior chord by far (the region is wide and short, so every slanted
+        // longest interior chord by far (the cluster is wide and short, so every slanted
         // line is height-limited and much shorter).
         private static final Map<String, List<CellEdge>> HORIZONTAL_PAIR_EDGES = Map.of(
                 "A", squareCellEdges(0, 0, null, "B", null, null),
@@ -113,7 +113,7 @@ final class ClusterAnchorPlacementTest {
         private static final CellGrouping SQUARE_GRID_GROUPING = grouping(Map.of(
                 "A", GROUP_KEY, "B", GROUP_KEY, "C", GROUP_KEY, "D", GROUP_KEY));
         // Sites strung vertically down the square's centre: the cluster's principal axis
-        // reads vertical though the region is square, the setup that makes the penalty
+        // reads vertical though the cluster is square, the setup that makes the penalty
         // flip the accepted line horizontal.
         private static final Map<String, double[]> SQUARE_GRID_VERTICAL_SITES = Map.of(
                 "A", new double[] {1000, 200}, "B", new double[] {1000, 700},
@@ -240,7 +240,7 @@ final class ClusterAnchorPlacementTest {
 
         @Test
         void computeClusterAnchorsFlipsAWideVerticalCloudHorizontalUnderThePenalty() {
-            // The region is square, so its horizontal and vertical chords are the same
+            // The cluster is square, so its horizontal and vertical chords are the same
             // 1700 units even though the site cloud is strung vertically. The penalty
             // docks the vertical line by half and leaves the horizontal one whole, so the
             // accepted line runs horizontal against the cloud's own axis.
@@ -506,9 +506,9 @@ final class ClusterAnchorPlacementTest {
 
         @Test
         void computeClusterAnchorsCapsTheBandGirthSoTheWholeBandStaysInsideTheBorder() {
-            // A slab region 700 tall once inset (y 150..850). A fat name (aspect 1) wants
+            // A slab cluster 700 tall once inset (y 150..850). A fat name (aspect 1) wants
             // all the girth it can get, but the band cannot exceed the 700 the border
-            // allows, so the fit caps the girth at the region rather than overrun it - and
+            // allows, so the fit caps the girth at the cluster rather than overrun it - and
             // the whole band, centreline give or take half its girth, stays within
             // y 150..850. The thin centreline of the line fit hid this; the band makes the
             // "too close to the border" case explicit and keeps it inside.
@@ -523,7 +523,7 @@ final class ClusterAnchorPlacementTest {
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNotNull();
             assertThat(anchor.acceptedAxis().startY()).isCloseTo(500.0, within(1.0));
-            // Girth capped just under the 700-tall region, never crossing the border.
+            // Girth capped just under the 700-tall cluster, never crossing the border.
             assertThat(anchor.thickness()).isGreaterThan(600f);
             assertThat(anchor.thickness()).isLessThanOrEqualTo(700f);
             assertThat(anchor.anchorY() - anchor.thickness() / 2f).isGreaterThanOrEqualTo(149f);
@@ -536,7 +536,7 @@ final class ClusterAnchorPlacementTest {
             // tall cannot run big on one line - the side caps a single line's font. Stacking
             // it into two lines halves the length each line needs and spends the square's
             // spare girth, so the two-line box carries a strictly taller font and the fit
-            // chooses it over one line and over three (which the region's girth cannot make
+            // chooses it over one line and over three (which the cluster's girth cannot make
             // taller).
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
@@ -616,7 +616,7 @@ final class ClusterAnchorPlacementTest {
         // hugs its centreline and the accepted line reproduces the pre-band line fit,
         // letting the line-fit tests above pin the same geometry they always did while
         // the band-fit tests exercise real girth. A single line with a wide font ceiling,
-        // so the girth is capped by the region, never the knob, and never split.
+        // so the girth is capped by the cluster, never the knob, and never split.
         private static final double SLENDER_ASPECT = 500.0;
         private static final double NO_MIN_FONT_SIZE = 0.0;
         private static final double AMPLE_MAX_FONT_SIZE = 2000.0;

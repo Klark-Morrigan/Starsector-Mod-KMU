@@ -3,7 +3,7 @@
 The shapes a map layer is drawn out of. Every system the map draws gets one
 cell - its patch of hyperspace - and every cell knows what lies across each of its
 edges. Fills, borders, labels, and hover all read that one structure, so what the
-player sees as one region is a set of cells that agreed on where their shared
+player sees as one cluster is a set of cells that agreed on where their shared
 edges are.
 
 Nothing here knows what an owner means, or that ownership is what a layer paints at
@@ -17,7 +17,7 @@ Part of [the map-layer framework](../../README.md); see the
 ## Index
 
 - [Cells and edges](#cells-and-edges)
-- [From edges to regions](#from-edges-to-regions)
+- [From edges to clusters](#from-edges-to-clusters)
 - [Clusters](#clusters)
 - [Reading a point back](#reading-a-point-back)
 - [Why the cells are cached, not rebuilt](#why-the-cells-are-cached-not-rebuilt)
@@ -43,7 +43,7 @@ ground an owner holds without a star in it, or space no owner holds - so
 cell resolves to the system it draws as, and that system resolves to an
 owner.
 
-## From edges to regions
+## From edges to clusters
 
 [`EdgeClassifier`](EdgeClassifier.java) turns an edge into an
 [`EdgeClass`](EdgeClass.java) by comparing the owners on its two sides:
@@ -74,12 +74,12 @@ whole cluster.
 
 [`CellHitTest`](CellHitTest.java) resolves a world point to the system whose cell
 covers it - the cursor-to-system read behind hover. It tests against the *shaped*
-fill polygon, not the raw cell, so the answer matches the painted region rather
+fill polygon, not the raw cell, so the answer matches the painted cluster rather
 than the mathematical partition underneath it.
 
 [`SystemClusterIndex`](SystemClusterIndex.java) answers the other direction: given
 one system, which whole cluster does it belong to. It is built by indexing the
-clustering the map already ran, so a highlighted region is exactly the region that
+clustering the map already ran, so a highlighted cluster is exactly the cluster that
 carries one name.
 
 ## Why the cells are cached, not rebuilt

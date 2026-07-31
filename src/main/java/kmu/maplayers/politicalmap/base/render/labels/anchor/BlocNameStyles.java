@@ -1,11 +1,12 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
 import kmu.settings.KmuLunaSettings;
 
 /**
  * How a cluster name is coloured and faded, per holder group: the outer-border colour choice
- * the name inherits (the same one the national border reads, so a name never drifts from the
+ * the name inherits (the same one the cluster border reads, so a name never drifts from the
  * border it labels) beside that group's own name opacity.
  *
  * <p>Two groups rather than one because independent space is styled apart from the core
@@ -29,10 +30,10 @@ public record BlocNameStyles(ElementStyle factionNameStyle, ElementStyle indepen
     public static BlocNameStyles readFromLunaSettings() {
         return new BlocNameStyles(
                 new ElementStyle(
-                        KmuLunaSettings.getFactionOuterBorderColor().resolveElementPaint(),
+                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionOuterBorderColor()),
                         KmuLunaSettings.getFactionNameOpacity()),
                 new ElementStyle(
-                        KmuLunaSettings.getIndependentOuterBorderColor().resolveElementPaint(),
+                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentOuterBorderColor()),
                         KmuLunaSettings.getIndependentNameOpacity()));
     }
 }

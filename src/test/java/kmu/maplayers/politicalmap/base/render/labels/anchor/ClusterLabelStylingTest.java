@@ -6,6 +6,7 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.settings.FactionPaletteChoice;
 
@@ -73,8 +74,8 @@ final class ClusterLabelStylingTest {
             double factionNameOpacity,
             double independentNameOpacity) {
         return new BlocNameStyles(
-                new ElementStyle(factionOuterColor, factionNameOpacity),
-                new ElementStyle(independentOuterColor, independentNameOpacity));
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(factionOuterColor), factionNameOpacity),
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(independentOuterColor), independentNameOpacity));
     }
 
     @Nested

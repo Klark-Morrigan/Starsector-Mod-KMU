@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.geometry.ShapedCell;
-import kmu.maplayers.base.render.regions.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
@@ -13,6 +13,7 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.settings.FactionPaletteChoice;
 
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.when;
  * <p>The style cascade these read through is pinned by
  * {@link kmu.maplayers.politicalmap.base.render.style.BlocStylingTest}, the palette rules by
  * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes}'s own suite, and the footprint
- * fill's partition by {@link kmu.maplayers.base.render.regions.FillSplitTest}.
+ * fill's partition by {@link kmu.maplayers.base.render.clusters.FillSplitTest}.
  */
 final class StyledCellBuilderTest {
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
@@ -74,9 +75,9 @@ final class StyledCellBuilderTest {
         // so fill and outer are "No color" here and only inner - the interior seam -
         // resolves a real color, the one slot these tests can observe.
         private static final CategoryStyle STYLE = new CategoryStyle(
-                new ElementStyle(FactionPaletteChoice.NONE, 1.0),
-                new ElementStyle(FactionPaletteChoice.NONE, 1.0), 3.0,
-                new ElementStyle(FactionPaletteChoice.SECONDARY, 1.0), 1.0);
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0),
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 3.0,
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.SECONDARY), 1.0), 1.0);
 
         @Test
         void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
@@ -164,7 +165,7 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemFillsADecivilisedCellInTheNeutralColor() {
             // Dead colonies carry a fill of their own - factionless ground fills per cell, since
-            // it never fuses into a cluster with a tessellated region to fill from - so both the
+            // it never fuses into a cluster with a tessellated cluster to fill from - so both the
             // paint and the baked triangles have to come back off the cell itself.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                     factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
@@ -320,36 +321,36 @@ final class StyledCellBuilderTest {
         // colour for a factionless cell), so a factionless cell built under it comes back drawable.
         private static CategoryStyle drawnOutlineStyle() {
             return new CategoryStyle(
-                    new ElementStyle(FactionPaletteChoice.NONE, 1.0),
-                    new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0), 3.0,
-                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0),
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 1.0), 3.0,
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 1.0);
         }
 
         // The decivilised shape: both a fill and an outline drawn, each in the neutral colour a
         // factionless cell resolves a PRIMARY slot to.
         private static CategoryStyle filledOutlineStyle() {
             return new CategoryStyle(
-                    new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0),
-                    new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0), 3.0,
-                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 1.0),
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 1.0), 3.0,
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 1.0);
         }
 
         // A fill with its outline zeroed out - the one setting combination that can hide a
         // factionless outline now that neither element carries a colour choice.
         private static CategoryStyle fillOnlyStyle() {
             return new CategoryStyle(
-                    new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0),
-                    new ElementStyle(FactionPaletteChoice.PRIMARY, 0.0), 3.0,
-                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 1.0),
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 0.0), 3.0,
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 1.0);
         }
 
         // A category that draws nothing - every slot "No color" - so a cell built under it drops
         // to null rather than a drawable record.
         private static CategoryStyle noColorStyle() {
             return new CategoryStyle(
-                    new ElementStyle(FactionPaletteChoice.NONE, 1.0),
-                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 3.0,
-                    new ElementStyle(FactionPaletteChoice.NONE, 1.0), 1.0);
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0),
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 3.0,
+                    new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 1.0);
         }
 
         // An un-filtered pass over one owned system, styled by the given view stub - the backdrop
@@ -389,7 +390,7 @@ final class StyledCellBuilderTest {
         }
     }
 
-    // Narrows a built cell to the fused form - a cell inside a region, carrying only its seams.
+    // Narrows a built cell to the fused form - a cell inside a cluster, carrying only its seams.
     // Failing here is itself the assertion for a case about an owned cell: the builder choosing the
     // other form would mean the cell claimed a fill and an outline of its own.
     private static StyledCell.FusedCell requireFusedCell(StyledCell styled) {
@@ -397,7 +398,7 @@ final class StyledCellBuilderTest {
         return (StyledCell.FusedCell) styled;
     }
 
-    // Narrows a built cell to the lone form - a cell that is its own region, carrying its fill and
+    // Narrows a built cell to the lone form - a cell that is its own cluster, carrying its fill and
     // outline. As above, the narrowing doubles as the assertion that the builder read the cell as
     // factionless ground rather than as part of a cluster.
     private static StyledCell.LoneCell requireLoneCell(StyledCell styled) {

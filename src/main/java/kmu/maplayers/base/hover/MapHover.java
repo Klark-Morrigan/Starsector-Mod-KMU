@@ -7,7 +7,7 @@ import java.util.List;
  * contiguous cluster that cell belongs to.
  *
  * <p>Two nested scopes rather than one because a map answers a hover at two levels - the cell is
- * the scope a per-system breakdown is about, while the cluster is the scope a region-wide highlight
+ * the scope a per-system breakdown is about, while the cluster is the scope a cluster-wide highlight
  * reads at. Carried together in one value so every reader sees one consistent pair: a cell and the
  * cluster around it can never be from different frames.
  *

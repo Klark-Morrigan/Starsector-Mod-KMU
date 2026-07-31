@@ -9,7 +9,6 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,13 +37,13 @@ final class MapPalettesTest {
         @Test
         void pickPaletteColorReturnsThePrimaryShadeForAPrimaryChoice() {
             assertThat(MapPalettes.pickPaletteColor(
-                    FactionPaletteChoice.PRIMARY, PRIMARY, SECONDARY)).isEqualTo(PRIMARY);
+                    FactionPaletteShade.PRIMARY, PRIMARY, SECONDARY)).isEqualTo(PRIMARY);
         }
 
         @Test
         void pickPaletteColorReturnsTheSecondaryShadeForASecondaryChoice() {
             assertThat(MapPalettes.pickPaletteColor(
-                    FactionPaletteChoice.SECONDARY, PRIMARY, SECONDARY)).isEqualTo(SECONDARY);
+                    FactionPaletteShade.SECONDARY, PRIMARY, SECONDARY)).isEqualTo(SECONDARY);
         }
 
         @Test
@@ -52,7 +51,7 @@ final class MapPalettesTest {
             // NONE is the player's "No color" choice; a null color signals the render
             // layer to skip that element.
             assertThat(MapPalettes.pickPaletteColor(
-                    FactionPaletteChoice.NONE, PRIMARY, SECONDARY)).isNull();
+                    null, PRIMARY, SECONDARY)).isNull();
         }
     }
 
@@ -68,9 +67,9 @@ final class MapPalettesTest {
         @Test
         void pickHolderPaletteColorReturnsTheHoldersShadeForTheChoice() {
             assertThat(MapPalettes.pickHolderPaletteColor(
-                    FactionPaletteChoice.PRIMARY, OWNER, NEUTRAL)).isEqualTo(PRIMARY);
+                    FactionPaletteShade.PRIMARY, OWNER, NEUTRAL)).isEqualTo(PRIMARY);
             assertThat(MapPalettes.pickHolderPaletteColor(
-                    FactionPaletteChoice.SECONDARY, OWNER, NEUTRAL)).isEqualTo(SECONDARY);
+                    FactionPaletteShade.SECONDARY, OWNER, NEUTRAL)).isEqualTo(SECONDARY);
         }
 
         @Test
@@ -78,17 +77,17 @@ final class MapPalettesTest {
             // A factionless system has no palette, so both shades resolve neutral - the same
             // substitution its own cell outline draws under.
             assertThat(MapPalettes.pickHolderPaletteColor(
-                    FactionPaletteChoice.PRIMARY, null, NEUTRAL)).isEqualTo(NEUTRAL);
+                    FactionPaletteShade.PRIMARY, null, NEUTRAL)).isEqualTo(NEUTRAL);
             assertThat(MapPalettes.pickHolderPaletteColor(
-                    FactionPaletteChoice.SECONDARY, null, NEUTRAL)).isEqualTo(NEUTRAL);
+                    FactionPaletteShade.SECONDARY, null, NEUTRAL)).isEqualTo(NEUTRAL);
         }
 
         @Test
         void pickHolderPaletteColorReturnsNullForNoColorWhoeverHoldsTheGround() {
             assertThat(MapPalettes.pickHolderPaletteColor(
-                    FactionPaletteChoice.NONE, OWNER, NEUTRAL)).isNull();
+                    null, OWNER, NEUTRAL)).isNull();
             assertThat(MapPalettes.pickHolderPaletteColor(
-                    FactionPaletteChoice.NONE, null, NEUTRAL)).isNull();
+                    null, null, NEUTRAL)).isNull();
         }
     }
 

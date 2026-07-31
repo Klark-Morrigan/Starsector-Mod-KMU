@@ -1,13 +1,13 @@
 package kmu.starsector.nexerelin;
 
-import kmu.maplayers.politicalmap.base.dominance.OwnershipGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Folds a flat list of {@link AllianceRecord}s into the {@link OwnershipGrouping} the
+ * Folds a flat list of {@link AllianceRecord}s into the {@link HolderGrouping} the
  * dominance pipeline reads: every member faction maps to its alliance's bloc id, each
  * bloc colours off its dominant member, and each bloc carries the alliance name. Pure
  * over plain data - no Nexerelin or Starsector type - so it is exercised directly on
@@ -24,13 +24,13 @@ public final class AllianceGroupingFactory {
      * contributes nothing (there is no dominant member to colour off and no faction to
      * fold), and an overlapping member - one named by two records - resolves to the
      * later record in list order, keeping the fold total and deterministic per input.
-     * With no records the result is {@link OwnershipGrouping#identity()}, the faction
+     * With no records the result is {@link HolderGrouping#identity()}, the faction
      * grouping.
      *
      * @param alliances the live alliance records, in any order
      * @return a grouping folding each alliance's members into its bloc
      */
-    public static OwnershipGrouping buildFrom(List<AllianceRecord> alliances) {
+    public static HolderGrouping buildFrom(List<AllianceRecord> alliances) {
         Map<String, String> blocIdByFactionId = new HashMap<>();
         Map<String, String> colorFactionIdByBlocId = new HashMap<>();
         Map<String, String> allianceNameByBlocId = new HashMap<>();
@@ -48,7 +48,7 @@ public final class AllianceGroupingFactory {
             colorFactionIdByBlocId.put(blocId, members.get(0));
             allianceNameByBlocId.put(blocId, alliance.name());
         }
-        return new OwnershipGrouping(
+        return new HolderGrouping(
                 blocIdByFactionId, colorFactionIdByBlocId, allianceNameByBlocId);
     }
 }

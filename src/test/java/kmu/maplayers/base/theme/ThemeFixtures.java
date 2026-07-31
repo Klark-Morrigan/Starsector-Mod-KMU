@@ -1,6 +1,5 @@
 package kmu.maplayers.base.theme;
 
-
 /**
  * Shared fixtures for the tests that need a theme they are not testing: the global tier and the
  * hover highlight in the shape that reads nothing back.

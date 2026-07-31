@@ -6,7 +6,7 @@ import java.util.List;
  * One live alliance flattened to plain data, so the grouping logic can be built and
  * tested without touching a Nexerelin type. A {@link NexAllianceSource} reads these
  * off the running game and {@link AllianceGroupingFactory} folds them into an
- * {@code OwnershipGrouping}; every field here is a snapshot taken at read time, not a
+ * {@code HolderGrouping}; every field here is a snapshot taken at read time, not a
  * live handle back into Nexerelin.
  *
  * @param allianceId              the alliance's stable id (its Nexerelin {@code uuId}),

@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
-import kmu.maplayers.base.render.regions.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
@@ -94,7 +94,7 @@ public final class PoliticalMapTerritoryFixtures {
     /**
      * A cell draw record that exists but puts no ink on the map - an empty run under a hidden
      * paint. Takes the fused form, which is the smaller of the two and the one a cell inside a
-     * region has, since a caller wanting only a cell's presence cares about neither.
+     * cluster has, since a caller wanting only a cell's presence cares about neither.
      *
      * @return a placeholder styled cell
      */

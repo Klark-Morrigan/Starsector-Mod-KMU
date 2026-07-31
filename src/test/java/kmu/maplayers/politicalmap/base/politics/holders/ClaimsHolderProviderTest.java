@@ -46,7 +46,7 @@ final class ClaimsHolderProviderTest {
                 var resolution = provider.resolveHolder(sectorMock, grouping, null);
 
                 // The claim resolve is the whole holder map, and nothing draws hatched or unfilled -
-                // every claim paints solid, so the fill split takes its whole-region-solid fast path.
+                // every claim paints solid, so the fill split takes its whole-cluster-solid fast path.
                 assertThat(resolution.ownerBySystemId())
                         .containsExactly(Map.entry("claimed", claimHolder));
                 assertThat(resolution.contestedSystemIds()).isEmpty();

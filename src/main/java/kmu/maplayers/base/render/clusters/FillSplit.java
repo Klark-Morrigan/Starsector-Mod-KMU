@@ -1,4 +1,4 @@
-package kmu.maplayers.base.render.regions;
+package kmu.maplayers.base.render.clusters;
 
 import kmu.maplayers.base.geometry.CellGrouping;
 
@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A region's members partitioned into the three {@link FillState}s its fill paints apart, so
+ * A cluster's members partitioned into the three {@link FillState}s its fill paints apart, so
  * one frontier can enclose ground that does not all fill the same way.
  *
- * <p>Each state carries its members at both levels the fill needs them - the cells a region
+ * <p>Each state carries its members at both levels the fill needs them - the cells a cluster
  * is traced from, and the systems its keys and coincident set are addressed by. The two
  * differ wherever the footprint holds a cell with no star of its own: such a cell joins a
- * region's outline but names no system to key or to mark coincident.
+ * cluster's outline but names no system to key or to mark coincident.
  *
  * <p>Pure partition, free of geometry: which state a system draws in is decided from plain id
  * sets here, and turning that partition into triangles is {@link SplitFillBuilder}'s job.
@@ -29,8 +29,8 @@ public record FillSplit(
      *
      * @param cellGrouping       resolves which system each member cell draws as
      * @param memberCellIds      the footprint's cells
-     * @param hatchedSystemIds   the region's systems that draw hatched rather than solid
-     * @param unfilledSystemIds  the region's systems that draw no fill at all
+     * @param hatchedSystemIds   the cluster's systems that draw hatched rather than solid
+     * @param unfilledSystemIds  the cluster's systems that draw no fill at all
      * @return the three states, each holding its own cells and systems
      */
     public static FillSplit splitMembersByFillState(
@@ -59,7 +59,7 @@ public record FillSplit(
      *
      * <p>Unfilled takes precedence over hatched, since a system drawn empty is empty whatever
      * else the layer says about it. A cell with no star of its own has no per-system fill
-     * state, so it fills solid with the region's ground rather than probing either set with a
+     * state, so it fills solid with the cluster's ground rather than probing either set with a
      * null key.
      */
     public static FillState classifyFillState(
@@ -132,22 +132,22 @@ public record FillSplit(
     }
 
     /**
-     * The three ways a system inside one region can draw its fill, and the vocabulary the rest
+     * The three ways a system inside one cluster can draw its fill, and the vocabulary the rest
      * of the framework states a fill outcome in. Purely how the ground paints - which systems
      * fall in which state is the layer's call, made before the split is handed over, so the
      * geometry below never has to know what the layer means by the distinction.
      */
     public enum FillState {
-        /** Painted in the region's own colour. */
+        /** Painted in the cluster's own colour. */
         SOLID,
-        /** Painted in the region's colour, cut with the sector-wide hatch pattern. */
+        /** Painted in the cluster's colour, cut with the sector-wide hatch pattern. */
         HATCHED,
-        /** Painted with no fill: the ground still carries the region's border and label. */
+        /** Painted with no fill: the ground still carries the cluster's border and label. */
         UNFILLED
     }
 
     /**
-     * One fill state's members, held as both the cells a region is traced from and the
+     * One fill state's members, held as both the cells a cluster is traced from and the
      * systems its keys and coincident set are addressed by.
      *
      * <p>Both sets are insertion-ordered and mutable: the split fills them cell by cell as it

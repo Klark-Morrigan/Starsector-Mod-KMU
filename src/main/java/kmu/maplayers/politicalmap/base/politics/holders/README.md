@@ -73,7 +73,7 @@ are three states - one default and two exceptions:
 - **Unfilled** (`unfilledSystemIds`) - held for border and label, but painting nothing inside the
   border. This is how a claimed-but-unheld system looks on the faction and alliance layers.
 
-When both exception sets are empty, the whole region is solid. The render split reads that as a fast
+When both exception sets are empty, the whole cluster is solid. The render split reads that as a fast
 path, so a view that never contests or unfills pays nothing for the split.
 
 ## The three sources

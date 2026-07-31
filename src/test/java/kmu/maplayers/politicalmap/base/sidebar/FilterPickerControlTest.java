@@ -176,7 +176,7 @@ final class FilterPickerControlTest {
 
                 // A vertical table by type; re-picking the lit row clears the spotlight (DESELECT).
                 assertThat(picker.reselect()).isEqualTo(ReselectBehaviour.DESELECT);
-                // The list is the body's scrolling region, so a long bloc list scrolls within the
+                // The list is the body's scrolling cluster, so a long bloc list scrolls within the
                 // capped body while the controls above and below it stay pinned.
                 assertThat(picker.scrolls()).isTrue();
                 // Labels are the bloc names, the icons the crests, aligned index for index so a

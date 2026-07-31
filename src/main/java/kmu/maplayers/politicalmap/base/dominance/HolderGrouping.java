@@ -110,7 +110,7 @@ public record HolderGrouping(
     /**
      * The faction whose authored palette a bloc paints in: an alliance's dominant
      * member, or - for a faction bloc - the faction itself. Lets the render layer
-     * colour an alliance region in a real faction's shades without the bloc id
+     * colour an alliance cluster in a real faction's shades without the bloc id
      * needing to be a faction id.
      *
      * @param blocId the bloc to colour

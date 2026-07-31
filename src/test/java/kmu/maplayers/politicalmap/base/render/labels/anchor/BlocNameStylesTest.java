@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
@@ -40,10 +41,10 @@ final class BlocNameStylesTest {
                 var nameStyles = BlocNameStyles.readFromLunaSettings();
 
                 assertThat(nameStyles.factionNameStyle().color())
-                        .isEqualTo(FactionPaletteChoice.PRIMARY);
+                        .isEqualTo(FactionPaletteShade.PRIMARY);
                 assertThat(nameStyles.factionNameStyle().opacity()).isEqualTo(FACTION_NAME_OPACITY);
                 assertThat(nameStyles.independentNameStyle().color())
-                        .isEqualTo(FactionPaletteChoice.SECONDARY);
+                        .isEqualTo(FactionPaletteShade.SECONDARY);
                 assertThat(nameStyles.independentNameStyle().opacity())
                         .isEqualTo(INDEPENDENT_NAME_OPACITY);
             }

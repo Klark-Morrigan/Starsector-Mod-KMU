@@ -55,7 +55,7 @@ public record CellGrouping(
     }
 
     /**
-     * Inverts the grouping into each owner's member cells, so an owner's region can be traced
+     * Inverts the grouping into each owner's member cells, so an owner's cluster can be traced
      * from the cells that actually draw it rather than from the systems behind them - the
      * two differ wherever an owner holds ground no star of its own sits in.
      *

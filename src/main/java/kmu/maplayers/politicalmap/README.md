@@ -1,7 +1,7 @@
 # Political map (`politicalmap`)
 
 An overlay that colours the sector by who controls it. Each bloc's territory shows as a filled,
-bordered, named region over the campaign map, on the full map screen and on the intel screen's
+bordered, named cluster over the campaign map, on the full map screen and on the intel screen's
 map preview alike.
 
 The political map is one of the layers the tab strip offers; picking its tab opens a
@@ -24,7 +24,7 @@ Part of [map layers](../README.md); see the
 
 For each controlling bloc the overlay draws four things:
 
-- a coloured region,
+- a coloured cluster,
 - a border around it,
 - faint seams inside it,
 - the bloc's name across it.
@@ -57,7 +57,7 @@ Notes on each:
 
 - **Factions.** The plain case. Every faction is its own bloc. Only genuine independent space
   fades to the muted style. A bloc is named after its faction.
-- **Alliances.** Allied factions merge into one coloured, named region per alliance. Unaligned
+- **Alliances.** Allied factions merge into one coloured, named cluster per alliance. Unaligned
   factions keep their own border and name. Two toggles fade a non-allied faction: *Mute* dims it,
   *Desaturate* makes it read as background ground. With both off, a lone faction looks exactly as
   it does on the Factions view.
@@ -99,7 +99,7 @@ fill states are [ownership resolution](base/politics/ownership/README.md).
 - **[Ownership resolution](base/politics/ownership/README.md)** - the per-view ownership seam, the
   three sources, the three fill states, and the claim mechanic.
 - **[Territory fills and borders](base/render/territories/README.md)** - how cells become each
-  bloc's coloured region, border, seams, and split fill.
+  bloc's coloured cluster, border, seams, and split fill.
 - **[Render style layer](base/render/style/README.md)** - the four categories this map divides the
   ground into, and how player settings become each territory's colours, widths, and opacities.
 - **`base/render/labels/anchor`** - what a cluster's name reads and what shade it draws in: the

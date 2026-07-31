@@ -69,7 +69,7 @@ public final class MapLayerRefresh {
      */
     public static void requestRefresh(MapLayerRefreshSignal signal) {
         // The one seam every coarse change funnels through. Logged with the signal and the
-        // resulting counter so an overlay that failed to repaint - a stale region, a toggle that
+        // resulting counter so an overlay that failed to repaint - a stale cluster, a toggle that
         // did nothing - can be traced to whether the request was even issued.
         var revision = resolveCounter(signal).incrementAndGet();
         LOG.debug("Map layer refresh requested; signal=" + signal.getId()

@@ -4,7 +4,7 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.EdgeTarget;
-import kmu.maplayers.base.render.regions.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -17,6 +17,7 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.settings.FactionPaletteChoice;
 
@@ -218,7 +219,7 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void removeStyledCellDropsTheDrawRecordAndItsShapeTogether() {
             // A cell that draws nothing can be hovered no more than it can be seen, so the
-            // shape must go with the draw record rather than linger as a phantom hit region.
+            // shape must go with the draw record rather than linger as a phantom hit cluster.
             var territories = drawablesWith(Map.of(), Map.of());
             territories.putStyledCell("system", anyStyledCell(), squarePolygon());
 
@@ -386,7 +387,7 @@ final class PoliticalMapTerritoriesTest {
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
     // interchangeable style bundles are distinct instances.
     private static CategoryStyle styleMarked(double marker) {
-        var element = new ElementStyle(FactionPaletteChoice.PRIMARY, marker);
+        var element = new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), marker);
         return new CategoryStyle(element, element, marker, element, marker);
     }
 }

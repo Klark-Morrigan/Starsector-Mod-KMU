@@ -13,7 +13,7 @@ import org.lwjgl.opengl.GL11;
 import java.awt.Color;
 
 /**
- * Draws the map's answer to the cursor: a halo blooming off the hovered region's frontier
+ * Draws the map's answer to the cursor: a halo blooming off the hovered cluster's frontier
  * and a wash lifting the one cell the cursor is in.
  *
  * <p>Both burn additively rather than blending over the map. A halo is layers of the same
@@ -130,8 +130,8 @@ public final class HoverHighlightRenderer {
     }
 
     // Lifts the hovered cell: its whole painted extent brightened, then its boundary traced all
-    // the way round. The trace is what names an interior cell - one walled in by its own region
-    // draws no border of its own, so without it a wash inside a same-coloured region would
+    // the way round. The trace is what names an interior cell - one walled in by its own cluster
+    // draws no border of its own, so without it a wash inside a same-coloured cluster would
     // have no edge to read.
     private static void drawWash(
             HoverHighlight highlight,

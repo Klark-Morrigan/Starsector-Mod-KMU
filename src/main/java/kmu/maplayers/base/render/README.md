@@ -45,7 +45,7 @@ alias or an existing save fails to load.
 
 ## What is not here
 
-- **[Regions](regions/README.md)** - the shape work a painting layer draws through this surface:
+- **[Clusters](clusters/README.md)** - the shape work a painting layer draws through this surface:
   the cluster-border trace, the smoothing passes, the vertex packing, and the split fill that puts
   several fills inside one border.
 - **`base.layer`** - which layers exist, which one each screen has picked, and how that pick is

@@ -9,8 +9,8 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.render.regions.BorderSmoothing;
-import kmu.maplayers.base.render.regions.ClusterBorderTrace;
+import kmu.maplayers.base.render.clusters.BorderSmoothing;
+import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -77,7 +77,7 @@ public final class DebugBorderTracingBuilder {
         var despikedLoops = new ArrayList<float[]>();
         var roundedLoops = new ArrayList<float[]>();
 
-        for (var memberCellIds : cellGrouping.groupCellIdsByHolder().values()) {
+        for (var memberCellIds : cellGrouping.groupCellIdsByOwner().values()) {
             // Whole clusters, so no neighbour is coincident: every boundary edge takes the
             // uniform channel, exactly as the drawn national border does.
             var insetRings = borderTrace.traceRings(
@@ -136,7 +136,7 @@ public final class DebugBorderTracingBuilder {
         // draw makes, which is what keeps the overlay showing the cells the map would show.
         var renderStyle = RenderStyleReader.readRenderStyle();
         for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
-            if (cellGrouping.resolveHolderOf(entry.getKey()) != null) {
+            if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
                 continue;
             }
             // A factionless cell resolves its decivilised/uninhabited style through the system

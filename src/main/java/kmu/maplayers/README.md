@@ -73,7 +73,7 @@ about what the overlay means.
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;
   a layer that only switches (No Layer) supplies none, which is read as nothing to draw.
-- **[Regions](base/render/regions/README.md)** - the shape work under that surface: turning shaped
+- **[Clusters](base/render/clusters/README.md)** - the shape work under that surface: turning shaped
   cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
   border - none of which interprets a key.
@@ -98,7 +98,7 @@ about what the overlay means.
   can invert a cursor pixel to a world point), and `HoverHighlight` (the loops and triangles one
   hover lights up). `HoverHighlightGeometry` resolves that geometry and `HoverHighlightRenderer`
   burns the halo and the wash, both over a `HoverHighlightSource` - the three questions only the
-  layer that owns the regions can answer: the extent it painted under the cursor, the loops the
+  layer that owns the clusters can answer: the extent it painted under the cursor, the loops the
   cell might sit inside, and the shade its ground draws in.
 - **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
   `MapLayerCellTooltip` owns the gates every hover box shares (the settings toggle, the sector map

@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.within;
  *  - a cell facing a present but unowned neighbour keeps that frontier edge as border,
  *  - a group with no geometry yields no rings,
  *  - an inset that swallows a cluster drops the ring rather than folding it over,
- *  - a region naming a neighbour coincident keeps that shared edge on the raw cell border.
+ *  - a cluster naming a neighbour coincident keeps that shared edge on the raw cell border.
  *
  * <p>Cells here are hand-built squares rather than real Voronoi output, since the
  * border tracer only reads the adjacency graph and owners - the geometry source is
@@ -144,7 +144,7 @@ final class SystemClusterBordersTest {
         @Test
         void two_regions_traced_against_each_other_meet_exactly_on_their_coincident_edge() {
             // Cells A [0,0]..[10,10] and B [10,0]..[20,10] share the x = 10 edge but carry
-            // different keys, so each traces as its own region. Naming the other as coincident
+            // different keys, so each traces as its own cluster. Naming the other as coincident
             // leaves that shared edge un-inset from both sides: A's border reaches x = 10 and B's
             // starts at x = 10, so the two fills abut on the raw cell edge with no wedge between
             // them. Their outward edges still take the plain channel.

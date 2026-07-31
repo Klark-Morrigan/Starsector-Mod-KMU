@@ -11,8 +11,8 @@ import java.util.List;
  * Works out what a hover lights up: which of the candidate border loops encloses the hovered
  * cell, and that cell's own painted extent as fillable geometry.
  *
- * <p>The loop has to be searched for because a map bakes its borders per region, not per
- * cluster: a region carries one loop for each of its disjoint clusters and one for each
+ * <p>The loop has to be searched for because a map bakes its borders per cluster, not per
+ * cluster: a cluster carries one loop for each of its disjoint clusters and one for each
  * enclave bitten out of them, with nothing naming which is which. The cluster the cursor is in
  * is therefore identified geometrically - by which loop contains the hovered cell - rather
  * than by an index, which would mean keying the whole build per cluster to answer a question
@@ -21,8 +21,8 @@ import java.util.List;
  * <p>Two details make that search exact. The cell is represented by the average of its
  * vertices rather than by the cursor itself: a cursor a pixel inside the cell's edge can fall
  * outside a frontier whose corners rounding has cut inward, which would drop the halo just as
- * the player pushes into a corner. And where loops nest - a region's enclave inside a rival
- * inside that same region's own cluster - three loops contain the point, so the smallest one
+ * the player pushes into a corner. And where loops nest - a cluster's enclave inside a rival
+ * inside that same cluster's own cluster - three loops contain the point, so the smallest one
  * wins, which is the enclave's own frontier rather than the distant cluster's.
  *
  * <p>Both answers are memoised against the hovered cell and the geometry behind it, since
@@ -62,7 +62,7 @@ public final class HoverHighlightGeometry {
         if (paintedExtent.isEmpty()) {
             return HoverHighlight.NONE;
         }
-        // A cell that fuses into no region - or one whose region traced no border at all - has no
+        // A cell that fuses into no cluster - or one whose cluster traced no border at all - has no
         // candidates, so nothing encloses it and it washes without a halo.
         var frontierLoops = source.resolveCandidateFrontierLoopsOf(cellId);
         if (cellId.equals(resolvedCellId)
@@ -86,7 +86,7 @@ public final class HoverHighlightGeometry {
         var enclosingLoop = findEnclosingLoop(frontierLoops, paintedExtent);
 
         // Resolve the wash to boundary loops once, then fill and trace both come off it - so the
-        // wash and its outline are the same region by construction (as a region's fill and its
+        // wash and its outline are the same cluster by construction (as a cluster's fill and its
         // border already are), and the clip runs a single tessellation rather than one per half.
         var washLoops = clipCellToFrontier(paintedExtent, enclosingLoop);
         return new HoverHighlight(
@@ -103,7 +103,7 @@ public final class HoverHighlightGeometry {
     // The hovered cell as the boundary loops its wash fills and traces, clamped to the frontier it
     // sits inside so neither spills past the rounded border - it stops at the exact line the border
     // strokes instead of keeping the sharp mitered corner the border's rounding cut away, the same
-    // clip a region's own fill applies to itself. A cell no loop encloses has no frontier (null
+    // clip a cluster's own fill applies to itself. A cell no loop encloses has no frontier (null
     // loop), so it resolves to the cell's own boundary. The clip can bite the extent into more than
     // one loop, so it returns however many the overlap has.
     private static List<List<double[]>> clipCellToFrontier(

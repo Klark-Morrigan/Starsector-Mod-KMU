@@ -1,10 +1,10 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritory;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
-import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -96,7 +96,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                     Map.of("A", square(10, 10, 80)),
                     territoryWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf("A", FactionPaletteChoice.SECONDARY))
+            assertThat(source.resolveHighlightColourOf("A", FactionPaletteShade.SECONDARY))
                     .isEqualTo(SECONDARY);
         }
 
@@ -109,7 +109,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                     Map.of("A", square(10, 10, 80)),
                     null));
 
-            assertThat(source.resolveHighlightColourOf("A", FactionPaletteChoice.PRIMARY))
+            assertThat(source.resolveHighlightColourOf("A", FactionPaletteShade.PRIMARY))
                     .isEqualTo(PoliticalMapTerritoryFixtures.NEUTRAL_COLOUR);
         }
 
@@ -122,7 +122,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                     Map.of("A", square(10, 10, 80)),
                     territoryWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf("A", FactionPaletteChoice.NONE)).isNull();
+            assertThat(source.resolveHighlightColourOf("A", null)).isNull();
         }
     }
 

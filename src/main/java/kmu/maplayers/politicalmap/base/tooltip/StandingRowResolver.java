@@ -26,7 +26,7 @@ import java.util.List;
  * its kind: a lone-faction group reuses its one member's name and crest, so a singleton reads
  * identically to the member it wraps and the flat faction view falls out for free; an alliance group
  * takes its name from the grouping and its crest from the alliance's colour (lead) faction, the same
- * crest the alliances view paints the bloc's region by. A blank or absent crest resolves to a null
+ * crest the alliances view paints the bloc's cluster by. A blank or absent crest resolves to a null
  * path the render layer draws around, so a header or member with no authored crest still shows its
  * name and score.
  */
@@ -73,7 +73,7 @@ public final class StandingRowResolver {
         String crestSpritePath;
         if (nestsMembers) {
             // An alliance header carries the alliance's own name and its lead (colour) member's
-            // crest - the same name and crest the alliances view paints the bloc's region by.
+            // crest - the same name and crest the alliances view paints the bloc's cluster by.
             displayName = grouping.resolveAllianceName(blocId);
             crestSpritePath = FactionCrests.resolveCrestPath(
                     sector.getFaction(grouping.resolveColorFactionId(blocId)));

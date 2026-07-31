@@ -31,7 +31,7 @@ import java.util.Set;
  * <p>A caller that carves one cluster out of a larger same-owner body can name the
  * neighbours it was carved away from as <em>coincident</em>: their shared boundary edge
  * insets by nothing, so it stays on the raw cell border. Both sides of such an edge trace
- * it at the same place, so the two carved regions meet exactly - no channel between them,
+ * it at the same place, so the two carved clusters meet exactly - no channel between them,
  * no overlap. A caller tracing a whole cluster names none, and every boundary edge then
  * takes the uniform channel.
  *
@@ -69,7 +69,7 @@ public final class SystemClusterBorders {
      *                        from a fused seam
      * @param coincidentNeighbourSystemIds the neighbours whose shared boundary edge insets
      *                        by nothing and so stays on the raw cell border, letting two
-     *                        regions traced against each other meet exactly; empty for a
+     *                        clusters traced against each other meet exactly; empty for a
      *                        trace that gives every boundary edge the uniform channel
      * @param borderInset     inward inset applied to each ring, matching the fills'
      *                        channel so the border lands on the fill edge
@@ -154,7 +154,7 @@ public final class SystemClusterBorders {
             CellEdge edge,
             Set<String> coincidentNeighbourSystemIds,
             double borderInset) {
-        // A coincident neighbour's edge stays on the raw cell border, so the region traced
+        // A coincident neighbour's edge stays on the raw cell border, so the cluster traced
         // from the other side lands on the same line and the two abut with no channel
         // between them. Only an edge naming a system can be coincident: a reach bound has
         // no neighbour to be carved away from, and a same-ground cut is no boundary at

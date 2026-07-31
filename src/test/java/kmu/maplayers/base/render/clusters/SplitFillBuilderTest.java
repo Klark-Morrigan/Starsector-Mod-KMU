@@ -1,4 +1,4 @@
-package kmu.maplayers.base.render.regions;
+package kmu.maplayers.base.render.clusters;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Pins which of the three fills a region actually pays for: nothing at all for a "No color"
+ * Pins which of the three fills a cluster actually pays for: nothing at all for a "No color"
  * fill, one tessellation of the frontier when every member fills solid, and a per-state carve
- * only when the region is spotlit or genuinely holds non-solid ground.
+ * only when the cluster is spotlit or genuinely holds non-solid ground.
  *
- * <p>That fast path is the point - the common case is a region that only fills solid, and it
+ * <p>That fast path is the point - the common case is a cluster that only fills solid, and it
  * must come out of the same smoothed loops the border strokes rather than out of a trace of
  * its own, or the fill and the border stop in different places.
  *
@@ -29,14 +29,14 @@ import static org.assertj.core.api.Assertions.within;
  * channel, so the areas below are checkable by hand.
  */
 final class SplitFillBuilderTest {
-    private static final String REGION_KEY = "region";
+    private static final String REGION_KEY = "cluster";
     private static final String HELD_SYSTEM = "A";
     private static final String HATCHED_SYSTEM = "B";
     private static final HatchStyle HATCH = new HatchStyle(200, Math.PI / 4, 1);
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
 
-    // Two cells of the one region, meeting along x = 2000: A spans [0, 2000], B spans [2000, 4000],
+    // Two cells of the one cluster, meeting along x = 2000: A spans [0, 2000], B spans [2000, 4000],
     // both 2000 tall. Their shared edge is a same-owner seam; every other edge is a border.
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
             HELD_SYSTEM, List.of(
@@ -60,7 +60,7 @@ final class SplitFillBuilderTest {
 
         @Test
         void buildFillDrawsNothingForANoColorFill() {
-            // A region the player has switched the fill off for pays no tessellation at all,
+            // A cluster the player has switched the fill off for pays no tessellation at all,
             // rather than baking triangles the draw pass would then skip.
             var fill = builder().buildFill(false, solidOnlySplit(), REGION_KEY, null);
 
@@ -90,7 +90,7 @@ final class SplitFillBuilderTest {
         @Test
         void buildFillCarvesPerStateForASpotlitRegionThatFillsSolidThroughout() {
             // The spotlight always splits: its fill is per state even where it dominates
-            // everywhere, so a spotlit region does not fall into the solid fast path.
+            // everywhere, so a spotlit cluster does not fall into the solid fast path.
             var solid = builder().buildFill(false, solidOnlySplit(), REGION_KEY, Color.RED);
             var spotlit = builder().buildFill(true, solidOnlySplit(), REGION_KEY, Color.RED);
 

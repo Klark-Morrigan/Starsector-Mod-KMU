@@ -44,8 +44,8 @@ final class HoverHighlightGeometryTest {
 
         @Test
         void a_distant_candidate_never_glows_for_a_cell_it_does_not_enclose() {
-            // One region, two disjoint clusters - the whole reason the loop is searched for
-            // rather than taken as "the region's border".
+            // One cluster, two disjoint clusters - the whole reason the loop is searched for
+            // rather than taken as "the cluster's border".
             var hoveredLoop = squareRun(0, 0, 100);
             var distantLoop = squareRun(500, 0, 100);
             var sourceFake = sourceOf(
@@ -60,8 +60,8 @@ final class HoverHighlightGeometryTest {
 
         @Test
         void nested_loops_resolve_the_innermost_one_around_the_cell() {
-            // The region's enclave, walled inside a rival that is itself walled inside the
-            // region's own cluster: three of its loops enclose the cell, and only the tightest
+            // The cluster's enclave, walled inside a rival that is itself walled inside the
+            // cluster's own cluster: three of its loops enclose the cell, and only the tightest
             // is the cluster the cell actually belongs to.
             var outerCluster = squareRun(0, 0, 1000);
             var enclaveInsideRival = squareRun(400, 400, 100);
@@ -105,7 +105,7 @@ final class HoverHighlightGeometryTest {
 
         @Test
         void a_cell_with_no_candidate_loops_washes_with_no_halo() {
-            // Ground that fuses into no region, or whose region traced no border at all: there is
+            // Ground that fuses into no cluster, or whose cluster traced no border at all: there is
             // no frontier to bloom - but the cell itself is still what the cursor is on.
             var sourceFake = sourceOf(square(10, 10, 80), List.of());
 
@@ -187,7 +187,7 @@ final class HoverHighlightGeometryTest {
                     sourceOf(square(10, 10, 80), List.of(squareRun(0, 0, 100))),
                     hoverOf(CELL_ID));
 
-            // An incremental re-shape replaces the cell's extent and its region's loops; the
+            // An incremental re-shape replaces the cell's extent and its cluster's loops; the
             // retained answer describes geometry the map no longer paints.
             var reshapedLoop = squareRun(0, 0, 60);
             var second = geometry.resolveHighlightFor(

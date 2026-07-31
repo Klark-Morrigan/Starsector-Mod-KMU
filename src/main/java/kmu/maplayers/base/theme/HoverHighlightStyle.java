@@ -1,6 +1,5 @@
 package kmu.maplayers.base.theme;
 
-
 /**
  * How the map answers the cursor: the {@link HoverGlowStyle} halo around the hovered
  * territory and the {@link HoverWashStyle} lift on the hovered cell, both drawn in one

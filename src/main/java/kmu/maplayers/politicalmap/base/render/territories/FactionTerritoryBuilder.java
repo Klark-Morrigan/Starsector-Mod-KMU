@@ -6,10 +6,10 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.base.render.regions.BorderSmoothing;
-import kmu.maplayers.base.render.regions.ClusterBorderTrace;
-import kmu.maplayers.base.render.regions.FillSplit;
-import kmu.maplayers.base.render.regions.SplitFillBuilder;
+import kmu.maplayers.base.render.clusters.BorderSmoothing;
+import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
+import kmu.maplayers.base.render.clusters.FillSplit;
+import kmu.maplayers.base.render.clusters.SplitFillBuilder;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
@@ -84,7 +84,7 @@ public final class FactionTerritoryBuilder {
         }
 
         // One trace for the whole territory: the national border's rings, and - for a spotlit
-        // footprint - the per-state sub-region rings its fill splits into, so border and fill
+        // footprint - the per-state sub-cluster rings its fill splits into, so border and fill
         // offset under identical parameters and cannot drift apart.
         var borderTrace = ClusterBorderTrace.readFromLunaSettings();
         var insetRings = borderTrace.traceRings(
@@ -141,7 +141,7 @@ public final class FactionTerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
 
-        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByHolder();
+        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByOwner();
         for (var bloc : grouped.entrySet()) {
             var territory = buildFactionTerritory(
                     territories,

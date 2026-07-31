@@ -1,4 +1,4 @@
-package kmu.maplayers.base.render.regions;
+package kmu.maplayers.base.render.clusters;
 
 import kmlib.opengl.GlVertexRuns;
 

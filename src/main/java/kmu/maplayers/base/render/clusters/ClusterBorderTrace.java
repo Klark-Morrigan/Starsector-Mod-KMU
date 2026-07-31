@@ -1,4 +1,4 @@
-package kmu.maplayers.base.render.regions;
+package kmu.maplayers.base.render.clusters;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -44,10 +44,10 @@ public record ClusterBorderTrace(
         return traceRings(memberCellIds, edgesByCellId, grouping, Set.of());
     }
 
-    // Traces one region's rings while opting a set of neighbours out of the border channel:
-    // the boundary edge shared with any of them insets by nothing, so a region traced from
+    // Traces one cluster's rings while opting a set of neighbours out of the border channel:
+    // the boundary edge shared with any of them insets by nothing, so a cluster traced from
     // the far side of that edge lands on the same line and the two abut exactly. This is how
-    // one same-owner body is carved into regions that meet without a channel opening between
+    // one same-owner body is carved into clusters that meet without a channel opening between
     // them; the channel still applies to every other boundary edge.
     public List<List<double[]>> traceRings(
             Collection<String> memberCellIds,

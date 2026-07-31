@@ -90,7 +90,7 @@ public final class FilterPickerControl {
                 RecedeControl.buildControls(
                         RecedePreferences.FILTER,
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))));
-        // The bloc list is the body's one scrolling region: when the picker plus the controls above and
+        // The bloc list is the body's one scrolling cluster: when the picker plus the controls above and
         // below it would run the box past the bottom margin, the list gives up the difference and
         // scrolls while everything around it stays pinned. asScrolling marks the list; the capped
         // layout, renderer, and input listener all read that one flag.

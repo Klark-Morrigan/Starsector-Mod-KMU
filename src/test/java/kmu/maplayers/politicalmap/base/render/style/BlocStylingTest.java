@@ -84,7 +84,7 @@ final class BlocStylingTest {
                     theme(),
                     new BlocStyleDecision(true, new BlocStyleAdjustment(1.0, true)));
 
-            assertThat(styling.style().fill().color()).isEqualTo(FactionPaletteChoice.SECONDARY);
+            assertThat(styling.style().fill().color()).isEqualTo(FactionPaletteShade.SECONDARY);
         }
 
         @Test
@@ -105,13 +105,13 @@ final class BlocStylingTest {
     // factionless categories are never reached by this cascade, so they reuse the faction bundle.
     private static RenderStyle theme() {
         var factionStyle = new CategoryStyle(
-                new ElementStyle(FactionPaletteChoice.PRIMARY, FACTION_FILL_OPACITY),
-                new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0), 3.0,
-                new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0), 1.0);
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), FACTION_FILL_OPACITY),
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 1.0), 3.0,
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), 1.0), 1.0);
         var independentStyle = new CategoryStyle(
-                new ElementStyle(FactionPaletteChoice.SECONDARY, INDEPENDENT_FILL_OPACITY),
-                new ElementStyle(FactionPaletteChoice.SECONDARY, INDEPENDENT_OUTER_OPACITY), 3.0,
-                new ElementStyle(FactionPaletteChoice.SECONDARY, 1.0), INDEPENDENT_INNER_WIDTH);
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.SECONDARY), INDEPENDENT_FILL_OPACITY),
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.SECONDARY), INDEPENDENT_OUTER_OPACITY), 3.0,
+                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.SECONDARY), 1.0), INDEPENDENT_INNER_WIDTH);
         Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
         categories.put(PoliticalMapCategory.FACTION, factionStyle);
         categories.put(PoliticalMapCategory.INDEPENDENT, independentStyle);

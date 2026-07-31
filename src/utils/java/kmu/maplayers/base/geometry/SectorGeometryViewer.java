@@ -348,14 +348,14 @@ final class SectorGeometryViewer {
             // paints an enclave as another island of the bloc's colour, which is the opposite of
             // what it means.
             for (var entry : geometry.ringsByOwner().entrySet()) {
-                var region = new Path2D.Double(Path2D.WIND_EVEN_ODD);
+                var cluster = new Path2D.Double(Path2D.WIND_EVEN_ODD);
                 for (var ring : entry.getValue()) {
-                    region.append(buildPath(ring), false);
+                    cluster.append(buildPath(ring), false);
                 }
                 g2.setColor(pickBlocColour(entry.getKey(), BLOC_FILL_ALPHA));
-                g2.fill(region);
+                g2.fill(cluster);
                 g2.setColor(pickBlocColour(entry.getKey(), OPAQUE_ALPHA));
-                g2.draw(region);
+                g2.draw(cluster);
             }
             g2.setColor(SITE_COLOUR);
             for (var site : fixture.getSites()) {

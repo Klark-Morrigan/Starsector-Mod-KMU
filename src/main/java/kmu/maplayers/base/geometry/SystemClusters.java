@@ -19,7 +19,7 @@ import java.util.Set;
  *
  * <p>Pure graph work over the adjacency edges and the per-system owners, using the same
  * {@link EdgeClassifier} rule the fills merge on: a cell fuses with a neighbour into one
- * cluster in exactly the cases their fills fuse into one region. Unowned and cell-less
+ * cluster in exactly the cases their fills fuse into one cluster. Unowned and cell-less
  * systems carry no label, so they are left out entirely. Kept free of geometry maths
  * and GL - it decides membership only; the render layer fits an anchor to each cluster.
  */

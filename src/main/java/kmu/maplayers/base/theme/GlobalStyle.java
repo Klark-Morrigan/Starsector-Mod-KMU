@@ -3,7 +3,7 @@ package kmu.maplayers.base.theme;
 /**
  * The sector-wide render style - the tier of the {@link RenderStyle} theme that does not
  * vary by category or territory: the {@link HatchStyle} hatched ground is cut with, the
- * {@link BorderSmoothingStyle} region frontiers are rounded by, the
+ * {@link BorderSmoothingStyle} cluster frontiers are rounded by, the
  * {@link HoverHighlightStyle} the cursor's answer draws in, and
  * {@code desaturationDarkening}, how far receded ground is sunk toward black. Holding these
  * once (rather than reading each ad hoc where it is used) gives the global tier a single home;

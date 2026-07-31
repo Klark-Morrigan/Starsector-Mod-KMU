@@ -1,7 +1,7 @@
-package kmu.maplayers.base.render.regions;
+package kmu.maplayers.base.render.clusters;
 
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.base.render.regions.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the pure partition behind a region's fill: which state each member system draws
+ * Pins the pure partition behind a cluster's fill: which state each member system draws
  * in, how the members land in the three buckets at both the cell and system level, and which
  * systems one state names as its coincident neighbours. All of it decidable from plain id sets,
  * which is why it lives apart from the tessellation in {@link SplitFillBuilder}.
@@ -22,7 +22,7 @@ final class FillSplitTest {
     private static final String SOLID_SYSTEM = "solid-system";
     private static final String HATCHED_SYSTEM = "hatched-system";
     private static final String UNFILLED_SYSTEM = "unfilled-system";
-    // A cell holding ground its region covers without a star of its own in it - present among the
+    // A cell holding ground its cluster covers without a star of its own in it - present among the
     // members' cells, absent from their systems.
     private static final String STARLESS_CELL = "starless-cell";
 
@@ -59,7 +59,7 @@ final class FillSplitTest {
 
         @Test
         void classifyFillStateReturnsSolidForACellWithNoStarOfItsOwn() {
-            // A null system id has no per-system fill state, so it fills solid with the region's
+            // A null system id has no per-system fill state, so it fills solid with the cluster's
             // ground rather than probing either exception set with a null key.
             assertThat(FillSplit.classifyFillState(null, Set.of("other"), Set.of("other")))
                     .isEqualTo(FillState.SOLID);
@@ -80,7 +80,7 @@ final class FillSplitTest {
 
         @Test
         void splitMembersByFillStateKeepsAStarlessCellAmongTheCellsButNotTheSystems() {
-            // A cell with no star of its own is real ground to trace a region from, so it joins
+            // A cell with no star of its own is real ground to trace a cluster from, so it joins
             // the solid state's cells - but it names no system, so nothing may key or mark it.
             var split = splitFootprint();
 
@@ -99,7 +99,7 @@ final class FillSplitTest {
 
         @Test
         void hasNonSolidMembersIsFalseWhenEveryMemberFillsSolid() {
-            // The fast path a territory takes to fill as one region: nothing to split apart.
+            // The fast path a territory takes to fill as one cluster: nothing to split apart.
             var split = FillSplit.splitMembersByFillState(
                     groupingOf(Map.of("cell-solid", SOLID_SYSTEM)),
                     List.of("cell-solid"),

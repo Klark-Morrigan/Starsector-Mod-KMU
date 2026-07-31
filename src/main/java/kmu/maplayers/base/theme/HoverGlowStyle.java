@@ -2,7 +2,7 @@ package kmu.maplayers.base.theme;
 
 /**
  * The halo the hovered territory's frontier blooms with - the outer edge of the contiguous
- * region the cursor is inside, so the player reads how far that territory reaches without
+ * cluster the cursor is inside, so the player reads how far that territory reaches without
  * the map lighting up its interior seams.
  *
  * <p>A halo has no single width or alpha: it is several strokes of the same loop, widening

@@ -34,7 +34,7 @@ public enum MapLayerCommonRefreshSignal implements MapLayerRefreshSignal {
     FILTER,
 
     /**
-     * A toggle restyling the whole map rather than one region flipped. Sidebar-only per-save
+     * A toggle restyling the whole map rather than one cluster flipped. Sidebar-only per-save
      * state again, and read at the pipeline level for the same reason the filter is: the change
      * lands across everything drawn, whatever the layer is currently drawing.
      */
