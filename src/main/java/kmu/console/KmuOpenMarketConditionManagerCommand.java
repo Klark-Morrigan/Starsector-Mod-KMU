@@ -23,10 +23,11 @@ import java.util.function.Supplier;
 import static kmu.util.KmuValues.normalizeText;
 
 public final class KmuOpenMarketConditionManagerCommand extends KmlibBaseConsoleCommand {
+
     // No parameters; declaring the spec still makes the parser reject a stray
     // argument as bad syntax rather than silently ignoring it.
     private static final ParameterSpec SPEC =
-            ParameterSpec.takingNoArguments("Usage: kmu_mcm_open.");
+        ParameterSpec.takingNoArguments("Usage: kmu_mcm_open.");
 
     private final Supplier<KmuConditionEditorOpenResult> openEditor;
 
@@ -49,8 +50,8 @@ public final class KmuOpenMarketConditionManagerCommand extends KmlibBaseConsole
         // command's precondition check and feedback match every other KM
         // console command rather than maintaining a parallel inline check.
         var parsed = readInput(context, args)
-                .requireCampaign()
-                .parseArguments(SPEC);
+            .requireCampaign()
+            .parseArguments(SPEC);
         if (!parsed.isValid()) {
             return parsed.getResult();
         }
@@ -76,9 +77,9 @@ public final class KmuOpenMarketConditionManagerCommand extends KmlibBaseConsole
 
     private String messageFor(KmuConditionEditorOpenResult result) {
         var causeMessage = result.getCause()
-                .map(RuntimeException::getMessage)
-                .map(message -> normalizeText(message))
-                .orElse(null);
+            .map(RuntimeException::getMessage)
+            .map(message -> normalizeText(message))
+            .orElse(null);
         if (result.getStatus() == KmuConditionEditorOpenStatus.FAILED
                 && causeMessage != null) {
             var message = result.getMessage();
@@ -91,14 +92,16 @@ public final class KmuOpenMarketConditionManagerCommand extends KmlibBaseConsole
     }
 
     private static KmuConditionEditorEntryPoint createDefaultEntryPoint() {
+
         var conditionService = new KmuConditionService(
-                new StarsectorConditionRepository(),
-                KmuErrorReporter.noop(),
-                new StarsectorConditionOfferPolicy(KmuLunaSettings::shouldOfferAllConditions));
+            new StarsectorConditionRepository(),
+            KmuErrorReporter.noop(),
+            new StarsectorConditionOfferPolicy(KmuLunaSettings::shouldOfferAllConditions));
+            
         return new KmuConditionEditorEntryPoint(
-                new StarsectorMarketUiContextResolver(),
-                new KmuConditionPickerEditor(
-                        conditionService,
-                        new StarsectorInteractionDialogPickerOpener()));
+            new StarsectorMarketUiContextResolver(),
+            new KmuConditionPickerEditor(
+                conditionService,
+                new StarsectorInteractionDialogPickerOpener()));
     }
 }
