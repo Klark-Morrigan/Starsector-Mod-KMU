@@ -184,6 +184,26 @@ final class LunaSettingsCsvIntegrationTest {
                     SETTINGS_CSV)
                 .isSubsetOf(KNOWN_TABS);
         }
+
+        // The other direction: a tab the file no longer places anything on is a tab that does not
+        // exist on the screen, so leaving it listed above would let the next typo match a dead name
+        // instead of failing.
+        @Test
+        void everyKnownTabHoldsAtLeastOneRow() {
+            assertThat(readDeclaredTabs())
+                .as("tabs the layout names that %s places no row on", SETTINGS_CSV)
+                .containsAll(KNOWN_TABS);
+        }
+
+        @Test
+        void everyValueRowSitsOnItsSectionTab() {
+            assertThat(findRowsStrandedFromTheirSection())
+                .as(
+                    "value rows in %s on a different tab from the section caption above them, so"
+                        + " the section's heading and its knobs draw on different tabs",
+                    SETTINGS_CSV)
+                .isEmpty();
+        }
     }
 
     // The Radio fields whose stored label a LabeledChoice enum maps back to a choice. Listed here
@@ -224,12 +244,42 @@ final class LunaSettingsCsvIntegrationTest {
             .toList();
     }
 
-    // Every field the screen stores a value for, in file order.
-    private static List<String> readValueFieldIds() {
+    // The value rows placed on a different tab from the caption that heads their section. LunaLib
+    // draws a section as the caption plus the rows following it, so the file's order is what binds
+    // the two - a row moved between tabs on its own leaves its heading behind, and a row added under
+    // the wrong caption inherits a tab nobody chose for it.
+    private static List<String> findRowsStrandedFromTheirSection() {
+        var strandedFieldIds = new ArrayList<String>();
+
+        // Empty until the first caption, so a value row ahead of every caption reads as stranded -
+        // it has no section to belong to.
+        var sectionTab = "";
+        
+        for (var row : readFieldRows()) {
+            if (HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN))) {
+                sectionTab = row.get(TAB_COLUMN);
+            } else if (!sectionTab.equals(row.get(TAB_COLUMN))) {
+                strandedFieldIds.add(row.get(FIELD_ID_COLUMN));
+            }
+        }
+        return strandedFieldIds;
+    }
+
+    // Every row the file declares for a KMU field, section captions included, in file order. The
+    // spacing rows between sections and the file's own column-header line carry no prefixed id, so
+    // the prefix is also what tells a row from the file's furniture.
+    private static List<List<String>> readFieldRows() {
         return readSettingsRows()
             .stream()
-            .filter(row -> row.size() > FIELD_TYPE_COLUMN)
+            .filter(row -> row.size() > TAB_COLUMN)
             .filter(row -> row.get(FIELD_ID_COLUMN).startsWith(FIELD_ID_PREFIX))
+            .toList();
+    }
+
+    // Every field the screen stores a value for, in file order.
+    private static List<String> readValueFieldIds() {
+        return readFieldRows()
+            .stream()
             .filter(row -> !HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
             .map(row -> row.get(FIELD_ID_COLUMN))
             .toList();
@@ -239,20 +289,17 @@ final class LunaSettingsCsvIntegrationTest {
     // but it is still a row the file declares, so a source naming one is not naming a key that does not
     // exist.
     private static List<String> readDeclaredFieldIds() {
-        return readSettingsRows()
+        return readFieldRows()
             .stream()
             .map(row -> row.get(FIELD_ID_COLUMN))
-            .filter(fieldId -> fieldId.startsWith(FIELD_ID_PREFIX))
             .toList();
     }
 
-    // The tab every prefixed row asks to be placed on, section captions included: a caption is what
-    // carries a section onto a tab, so it is placed the same way a value row is.
+    // The tab every row asks to be placed on, section captions included: a caption is what carries a
+    // section onto a tab, so it is placed the same way a value row is.
     private static List<String> readDeclaredTabs() {
-        return readSettingsRows()
+        return readFieldRows()
             .stream()
-            .filter(row -> row.size() > TAB_COLUMN)
-            .filter(row -> row.get(FIELD_ID_COLUMN).startsWith(FIELD_ID_PREFIX))
             .map(row -> row.get(TAB_COLUMN))
             .toList();
     }
