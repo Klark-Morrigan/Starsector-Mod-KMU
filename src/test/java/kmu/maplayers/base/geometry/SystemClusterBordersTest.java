@@ -12,15 +12,15 @@ import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins the contract of {@link SystemClusterBorders#traceBorderRings}:
- *  - two same-key cells fuse into one border ring (their shared seam dropped),
- *  - a cell facing a different key keeps that shared edge as border,
- *  - a cell facing a present but ungrouped neighbour keeps that frontier edge as border,
+ *  - two same-owner cells fuse into one border ring (their shared seam dropped),
+ *  - a cell facing a different owner keeps that shared edge as border,
+ *  - a cell facing a present but unowned neighbour keeps that frontier edge as border,
  *  - a group with no geometry yields no rings,
  *  - an inset that swallows a cluster drops the ring rather than folding it over,
  *  - a region naming a neighbour coincident keeps that shared edge on the raw cell border.
  *
  * <p>Cells here are hand-built squares rather than real Voronoi output, since the
- * border tracer only reads the adjacency graph and grouping keys - the geometry source is
+ * border tracer only reads the adjacency graph and owners - the geometry source is
  * irrelevant to which edges become border and how the boundary chains.
  */
 final class SystemClusterBordersTest {
@@ -42,7 +42,7 @@ final class SystemClusterBordersTest {
     }
 
     // The grouping to trace under: each cell drawing as its own star (identity draws-as over
-    // the cell set), keyed by the given grouping keys.
+    // the cell set), keyed by the given owners.
     private static CellGrouping grouping(
             Map<String, List<CellEdge>> edges, Map<String, String> owners) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
@@ -79,7 +79,7 @@ final class SystemClusterBordersTest {
         @Test
         void an_edge_facing_a_different_key_stays_a_border() {
             // The same two adjacent cells, but B is held by G. From F's group of
-            // just A, the shared edge now faces a different key, so it is a border
+            // just A, the shared edge now faces a different owner, so it is a border
             // and A's whole square outlines one ring.
             var edges = Map.of(
                     "A", List.of(
@@ -95,8 +95,8 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void an_edge_facing_an_ungrouped_neighbour_stays_a_border() {
-            // A [0,0]..[10,10] is held by F; its right edge faces a present but ungrouped
+        void an_edge_facing_an_unowned_neighbour_stays_a_border() {
+            // A [0,0]..[10,10] is held by F; its right edge faces a present but unowned
             // neighbour B (a dead star - a cell, no key). That grouped-vs-empty edge is an
             // open frontier, which still bounds the cluster, so A's whole square outlines
             // one ring. Were the frontier edge treated as a non-border and dropped, the

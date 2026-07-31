@@ -12,7 +12,7 @@ import java.util.Map;
  * <p>The anchor for hover feedback: which cell washes, which cluster the highlight
  * follows, and which system the standings break down. Tested against each cell's
  * shaped fill polygon rather than its raw Voronoi cell, so the answer matches the
- * painted territory: the border inset, the frontier setback, and any keep-out
+ * painted cells: the border inset, the frontier setback, and any keep-out
  * clipping are already baked into that shape. The border channel between two cells
  * is therefore genuinely nobody's - a point there resolves to no system, exactly as
  * it draws.

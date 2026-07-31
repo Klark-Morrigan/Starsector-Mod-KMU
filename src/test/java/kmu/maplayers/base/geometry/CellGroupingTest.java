@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins {@link CellGrouping}: a cell is resolved to the system it draws as and that system to
- * its grouping key, in two lookups rather than one - so an absorbed wedge keyed to a system
+ * its owner, in two lookups rather than one - so an absorbed wedge keyed to a system
  * that is not its own star, and a shard keyed to no star at all, both resolve correctly.
  *
  * <p>The redistribution pass makes these two kinds of cell real; here they are hand-built,
@@ -53,15 +53,15 @@ final class CellGroupingTest {
 
         @Test
         void resolveGroupKeyOfReturnsNullWhenTheCellHasNoSystem() {
-            // No star to look a key up through, so a shard is ungrouped whatever the key map says.
+            // No star to look a key up through, so a shard is unowned whatever the key map says.
             var grouping = new CellGrouping(Map.of("A", "A"), Map.of("A", "F"));
 
             assertThat(grouping.resolveOwnerOf("shard")).isNull();
         }
 
         @Test
-        void resolveGroupKeyOfReturnsNullWhenTheDrawnSystemIsUngrouped() {
-            // The cell draws as a real star, but that star holds no market, so it is ungrouped.
+        void resolveGroupKeyOfReturnsNullWhenTheDrawnSystemIsUnowned() {
+            // The cell draws as a real star, but that star holds no market, so it is unowned.
             var grouping = new CellGrouping(Map.of("A", "A"), Map.of());
 
             assertThat(grouping.resolveOwnerOf("A")).isNull();
@@ -87,10 +87,10 @@ final class CellGroupingTest {
 
         @Test
         void groupCellIdsByKeyOmitsCellsWithNoResolvedKey() {
-            // A shard (no star) and a cell drawing as an ungrouped star both resolve no key, so
+            // A shard (no star) and a cell drawing as an unowned star both resolve no key, so
             // neither joins any bucket - they stay neutral ground, grouped under nobody.
             var grouping = new CellGrouping(
-                    Map.of("A", "A", "ungrouped", "U"),
+                    Map.of("A", "A", "unowned", "U"),
                     Map.of("A", "F"));
 
             var cellsByKey = grouping.groupCellIdsByOwner();

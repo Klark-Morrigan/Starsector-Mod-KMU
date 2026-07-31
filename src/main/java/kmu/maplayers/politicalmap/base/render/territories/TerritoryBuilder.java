@@ -121,7 +121,7 @@ public final class TerritoryBuilder {
                     new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
 
             // Shape the raw cells into merged clusters once, ownership-aware. The agnostic
-            // geometry clusters by grouping key, so hand it each system's faction id as the
+            // geometry clusters by owner, so hand it each system's faction id as the
             // key. Cells consumed by the inset (fewer than three vertices left) drop out.
             var shapeStart = System.nanoTime();
             var cellGrouping = resolveCellGrouping(territories, geometryCache);

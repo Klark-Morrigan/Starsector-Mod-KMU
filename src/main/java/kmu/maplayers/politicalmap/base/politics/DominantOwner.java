@@ -26,7 +26,7 @@ import java.util.Map;
 public record DominantOwner(String factionId, Color primaryColor, Color secondaryColor) {
 
     /**
-     * Maps each owned system to its dominant-faction id - the per-system grouping key the
+     * Maps each owned system to its dominant-faction id - the per-system owner the
      * political-map geometry clusters by. Adapts the faction ownership map to the opaque
      * {@code Map<String, String>} the agnostic geometry ({@code CellShaper},
      * {@code SystemClusters}, {@code SystemClusterBorders}, {@code ClusterBorderTrace}) fuses on, so

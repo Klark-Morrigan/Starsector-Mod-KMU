@@ -77,11 +77,11 @@ public final class MapLayerRefresh {
     }
 
     /**
-     * Marks one system's grouping key stale so the overlay re-derives just it (and
+     * Marks one system's owner stale so the overlay re-derives just it (and
      * its neighbours) rather than rescanning every system - used when a producer can
      * name the one system whose key may have moved.
      *
-     * @param systemId the system whose grouping key may have changed; null is
+     * @param systemId the system whose owner may have changed; null is
      *                 ignored
      */
     public static void markSystemGroupingStale(String systemId) {

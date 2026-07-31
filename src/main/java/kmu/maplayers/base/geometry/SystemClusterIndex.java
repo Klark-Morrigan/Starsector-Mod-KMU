@@ -17,7 +17,7 @@ import java.util.Map;
  * <p>Deriving the index from {@link SystemClusters}' own output rather than walking the
  * adjacency graph again is what keeps the highlight and the labels agreeing on where one
  * cluster ends: the same components decide both, so a highlighted cluster is exactly the
- * cluster that carries one name. Disjoint pockets of one key stay distinct, since they
+ * cluster that carries one name. Disjoint pockets of one owner stay distinct, since they
  * are distinct components.
  *
  * <p>Pure lookup over plain ids - no geometry, no GL, no Starsector types.
@@ -37,10 +37,10 @@ public final class SystemClusterIndex {
      * cluster.
      *
      * <p>A system belongs to at most one cluster (they are connected components of one graph),
-     * so no member can be claimed twice; a system absent from every cluster - ungrouped or
+     * so no member can be claimed twice; a system absent from every cluster - unowned or
      * cell-less - is simply absent from the index.
      *
-     * @param clusters the contiguous same-key clusters, as {@link SystemClusters#findClusters}
+     * @param clusters the contiguous same-owner clusters, as {@link SystemClusters#findClusters}
      *                 returns them: one member list per cluster
      * @return an index over those clusters; lookups on it never see the caller's later edits,
      *         and the member lists it hands back cannot be modified
@@ -66,7 +66,7 @@ public final class SystemClusterIndex {
      *
      * @param systemId the system to resolve; null (nothing hovered) resolves to no cluster
      * @return the member ids of its cluster, or an empty list when the system carries no
-     *         cluster - it is ungrouped, cell-less, or unknown to this index
+     *         cluster - it is unowned, cell-less, or unknown to this index
      */
     public List<String> findClusterMembersOf(String systemId) {
         return clusterMembersBySystemId.getOrDefault(systemId, List.of());

@@ -44,7 +44,7 @@ public final class FactionTerritoryBuilder {
      *
      * @param territories   this pass's retained ownership, theme, and filter state
      * @param geometryCache the raw cells the border is traced from
-     * @param blocId        the bloc's grouping key - a faction id under the faction view, or
+     * @param blocId        the bloc's owner - a faction id under the faction view, or
      *                      one of the filter's synthetic spotlight keys
      * @param memberCellIds the cells this bloc draws
      * @return the bloc's fill and border, or null when it paints neither, or when its cells
@@ -130,7 +130,7 @@ public final class FactionTerritoryBuilder {
     }
 
     /**
-     * Builds every bloc's territory into the territories, keyed by its grouping key. Each bloc
+     * Builds every bloc's territory into the territories, keyed by its owner. Each bloc
      * is independent - its cluster(s) trace only its own cells - so the incremental refresh can
      * rebuild one entry without touching the rest.
      *

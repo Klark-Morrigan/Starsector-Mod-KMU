@@ -16,7 +16,7 @@ import java.util.TreeMap;
  * looks - three copies of "how the map is assembled" would drift, and then a picture would
  * stop being evidence about what the tests check.
  *
- * <p>Everything is keyed by CELL rather than by system, and the grouping keys travel with
+ * <p>Everything is keyed by CELL rather than by system, and the owners travel with
  * the cells rather than being read back off the fixture. Today the two are the same thing:
  * one cell per system, keyed exactly as the fixture says. They stop being the same thing
  * under the frontier's redistribution, where a cell may be an absorbed wedge keyed to a
@@ -32,10 +32,10 @@ import java.util.TreeMap;
  * LOOKS - only what shape it is.
  *
  * @param cellEdgesByCellId  each cell, as its adjacency-tagged edges
- * @param ownerByCellId   the grouping key per cell; a cell absent from the map is
- *                           ungrouped, which is what makes it neutral ground
+ * @param ownerByCellId   the owner per cell; a cell absent from the map is
+ *                           unowned, which is what makes it neutral ground
  * @param shapedCellByCellId each cell after the border channel is cut inward
- * @param ringsByOwner     each grouping key's traced cluster rings
+ * @param ringsByOwner     each owner's traced cluster rings
  */
 record SectorGeometry(
         Map<String, List<CellEdge>> cellEdgesByCellId,
@@ -44,7 +44,7 @@ record SectorGeometry(
         Map<String, List<List<double[]>>> ringsByOwner) {
 
     /**
-     * Runs the full pipeline: partition the sites, shape each cell, trace each grouping key.
+     * Runs the full pipeline: partition the sites, shape each cell, trace each owner.
      *
      * @param fixture    the sector to build
      * @param parameters the knobs to build it under
@@ -79,11 +79,11 @@ record SectorGeometry(
     }
 
     /**
-     * The cells each grouping key holds, sorted so a failure names the same key run to run and a
+     * The cells each owner holds, sorted so a failure names the same key run to run and a
      * drawing's layer order does not shift under a map iteration change.
      *
-     * @param ownerByCellId the grouping key per cell
-     * @return member cell ids per grouping key
+     * @param ownerByCellId the owner per cell
+     * @return member cell ids per owner
      */
     static Map<String, List<String>> groupCellIdsByOwner(Map<String, String> ownerByCellId) {
         var members = new TreeMap<String, List<String>>();

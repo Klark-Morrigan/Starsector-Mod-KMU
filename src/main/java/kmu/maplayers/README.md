@@ -74,7 +74,7 @@ about what the overlay means.
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;
   a layer that only switches (No Layer) supplies none, which is read as nothing to draw.
 - **[Regions](base/render/regions/README.md)** - the shape work under that surface: turning shaped
-  cells and opaque grouping keys into borders, fills, and GL-ready runs. The cluster-border trace,
+  cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
   border - none of which interprets a key.
 - **`base/visibility`** - which star systems a layer draws at all: `MapVisibility` admits a
@@ -88,7 +88,7 @@ about what the overlay means.
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
   how it is drawn. What the name reads and what shade it takes arrive from the layer as functions
-  of a grouping key, so the overlay names nothing itself.
+  of an owner, so the overlay names nothing itself.
 - **[The theme records](base/theme/README.md)** - the player's appearance choices as inert value
   types, read once per rebuild. The per-category tier is keyed on an open interface, so a layer
   brings its own categories and its own reader to populate them.

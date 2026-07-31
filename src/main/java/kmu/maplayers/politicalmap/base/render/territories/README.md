@@ -115,7 +115,7 @@ frontier, and the fill splits: solid where the bloc dominates, a pre-clipped dia
 is only present ("mine, but contested").
 
 The footprint's interior divisions carry no geometry of their own: the whole footprint shares one
-grouping key, so a solid/hatch transition is an interior seam like any other and its two cells
+owner, so a solid/hatch transition is an interior seam like any other and its two cells
 already stroke it in the province style. Giving those divisions the frontier's own border style
 instead would put a heavy line under the faction's name label, which the label has to stay legible
 over, and would need raw cell edges to draw - untrimmed, so they overshoot the inset frontier and

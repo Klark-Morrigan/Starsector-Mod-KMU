@@ -54,5 +54,5 @@ alias or an existing save fails to load.
   layer answers them through.
 - **`base.tooltip`** - what the box floating beside that cursor says, drawn in a later UI pass than
   this one and dispatched through the same active-layer read.
-- What any layer actually paints, and what its grouping keys mean, belongs to that layer; for the
+- What any layer actually paints, and what its owners mean, belongs to that layer; for the
   one layer that paints today that is [`politicalmap`](../../politicalmap/README.md).

@@ -127,7 +127,7 @@ final class SectorFixture {
     }
 
     /**
-     * The grouping key per system, in the shape every geometry consumer takes: an owned
+     * The owner per system, in the shape every geometry consumer takes: an owned
      * system maps to its bloc id, and an unowned one is absent from the map entirely -
      * which is what makes it a frontier star to {@link EdgeClassifier}.
      *
@@ -192,7 +192,7 @@ final class SectorFixture {
                 Double.parseDouble(columns[COLUMN_X]),
                 Double.parseDouble(columns[COLUMN_Y])});
         // An unowned system carries no key at all rather than an empty one, so it reads as
-        // ungrouped to every consumer exactly as a real uninhabited system does.
+        // unowned to every consumer exactly as a real uninhabited system does.
         if (!columns[COLUMN_GROUP_KEY].isEmpty()) {
             ownerBySystemId.put(systemId, columns[COLUMN_GROUP_KEY]);
         }

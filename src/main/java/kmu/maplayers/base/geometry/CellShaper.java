@@ -8,19 +8,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Shapes each raw cell into a merged cluster polygon, fused by grouping key.
+ * Shapes each raw cell into a merged cluster polygon, fused by owner.
  *
- * <p>An edge shared with a same-key neighbour is left on the true cell border, so the two
+ * <p>An edge shared with a same-owner neighbour is left on the true cell border, so the two
  * cells' fills meet exactly along it and fuse into one cluster with no seam. Every other edge -
- * against a different key, ungrouped space, or the map frontier - is pulled inward, so a
+ * against a different owner, unowned space, or the map frontier - is pulled inward, so a
  * cluster keeps the uniform border channel against everything outside it. A kept seam edge is
  * truncated where it runs into a pulled-in border, so its ends stay within the padded border
  * rather than reaching the raw cell corner on the midline between cells.
  *
- * <p>Pure geometry over the adjacency graph and the per-system grouping keys: it decides which
+ * <p>Pure geometry over the adjacency graph and the per-system owners: it decides which
  * edges merge with {@link EdgeClassifier}'s rule and offsets the rest with
  * {@link PolygonOffsets#insetSelectedEdges}, handing the render layer a ready fill polygon and a
- * per-edge boundary flag so it never re-derives adjacency. The key is opaque here, so the same
+ * per-edge boundary flag so it never re-derives adjacency. The owner is opaque here, so the same
  * clustering serves any layer.
  */
 public final class CellShaper {
@@ -48,9 +48,9 @@ public final class CellShaper {
      *
      * @param edgesByCellId each cell's raw edges, in winding order, tagged with what lies
      *                      across them
-     * @param grouping      which system each cell draws as and each system's grouping key -
-     *                      a cell with no system, or whose system is ungrouped, shapes as
-     *                      ungrouped
+     * @param grouping      which system each cell draws as and each system's owner -
+     *                      a cell with no system, or whose system is unowned, shapes as
+     *                      unowned
      * @param borderInset   inward inset applied to every border edge
      * @return one shaped cell per input cell, keyed by cell id, in iteration order
      */
@@ -73,14 +73,14 @@ public final class CellShaper {
 
     /**
      * Shapes one cell into its merged-cluster polygon, for the incremental
-     * refresh path that re-shapes just the cells around a grouping change rather
+     * refresh path that re-shapes just the cells around an ownership change rather
      * than the whole map. Same rule as {@link #shapeCells}, applied to one cell.
      *
      * @param edges              the cell's raw edges, in winding order, each tagged
      *                           with what lies across it
-     * @param cellOwner        the grouping key of this cell, or null if ungrouped
-     * @param ownerBySystemId the grouping key per system, to classify each edge
-     *                           as a same-key seam or a border
+     * @param cellOwner        the owner of this cell, or null if unowned
+     * @param ownerBySystemId the owner per system, to classify each edge
+     *                           as a same-owner seam or a border
      * @param borderInset        inward inset applied to every border edge
      * @return the shaped cell: its inset fill polygon and per-edge boundary flags
      */
@@ -100,8 +100,8 @@ public final class CellShaper {
         return new ShapedCell(inset.vertices(), inset.edgeIsInset());
     }
 
-    // The inward inset one edge receives: none for a same-key seam (left on the raw cell
-    // border to fuse), the border channel for every other edge - a different key, ungrouped
+    // The inward inset one edge receives: none for a same-owner seam (left on the raw cell
+    // border to fuse), the border channel for every other edge - a different owner, unowned
     // space, or the map frontier alike - so the cluster keeps one uniform channel against
     // everything outside it.
     private static double computeEdgeInset(

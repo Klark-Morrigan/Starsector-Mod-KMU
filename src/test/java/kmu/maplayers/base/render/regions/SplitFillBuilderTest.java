@@ -37,7 +37,7 @@ final class SplitFillBuilderTest {
     private static final double MITER_SPIKE_LIMIT = 4.0;
 
     // Two cells of the one region, meeting along x = 2000: A spans [0, 2000], B spans [2000, 4000],
-    // both 2000 tall. Their shared edge is a same-key seam; every other edge is a border.
+    // both 2000 tall. Their shared edge is a same-owner seam; every other edge is a border.
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
             HELD_SYSTEM, List.of(
                     edge(0, 0, 2000, 0, null),

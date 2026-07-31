@@ -1,15 +1,15 @@
 package kmu.maplayers.base.geometry;
 
 /**
- * How a cell edge sits relative to the grouping either side of it falls under.
+ * How a cell edge sits relative to the owners either side of it.
  *
- * <p>An interior seam runs between two systems sharing a grouping key; a boundary
- * runs against a different key, between two ungrouped sides, or along the map
- * frontier; an open frontier runs between a grouped system and an ungrouped
+ * <p>An interior seam runs between two systems sharing an owner; a boundary
+ * runs against a different owner, between two unowned sides, or along the map
+ * frontier; an open frontier runs between a owned system and an unowned
  * neighbour it can reach toward. The seam-vs-boundary split drives whether the edge
  * draws as a faint interior line or a bold cell-cluster border; the
- * boundary-vs-open-frontier split lets a consumer push a grouped edge out into
- * ungrouped space while a plain boundary keeps its inward inset.
+ * boundary-vs-open-frontier split lets a consumer push a owned edge out into
+ * unowned space while a plain boundary keeps its inward inset.
  *
  * <p>Drawing that only cares seam-or-border reads {@link #isBoundary()}, which folds
  * OPEN_FRONTIER back in with BOUNDARY, so the finer class is inert until a consumer

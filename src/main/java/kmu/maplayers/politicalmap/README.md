@@ -110,7 +110,7 @@ Everything above is drawn over the systems the framework's `base/visibility` adm
 [cell geometry](../base/geometry/README.md), styled against the
 [theme records](../base/theme/README.md), named by the
 [cluster-name overlay](../base/labels/README.md), and hovered through `base/hover` - all of which
-belong to the framework rather than to this layer: they work on an opaque grouping key, and the views
+belong to the framework rather than to this layer: they work on an opaque owner, and the views
 decide that the key names a bloc.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),

@@ -3,7 +3,7 @@ package kmu.maplayers.base.theme;
 /**
  * One category's style, read once per rebuild and applied to every cluster
  * of that category: the fill, outer-border, and inner-seam elements, plus the width each
- * border strokes at. An ungrouped category always leaves its inner seam not drawn - its
+ * border strokes at. An unowned category always leaves its inner seam not drawn - its
  * cells never fuse into clusters, so there are no interior seams to stroke - and draws
  * its fill only where the ground was once settled.
  *

@@ -140,8 +140,8 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void an_ungrouped_cell_borders_on_every_edge_and_fuses_on_none(String sector) {
-            // An ungrouped system shares its key with nobody - EdgeClassifier rules even a
+        void an_unowned_cell_borders_on_every_edge_and_fuses_on_none(String sector) {
+            // An unowned system shares its key with nobody - EdgeClassifier rules even a
             // neighbouring empty cell a plain boundary - so a dead star's cell is bordered
             // the whole way round. This is the base the frontier's redistribution alters, so
             // it is worth pinning before it moves.

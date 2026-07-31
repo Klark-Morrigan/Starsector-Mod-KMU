@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.within;
  * thick to fit collapses to the dot.
  *
  * <p>The colour and name a cluster draws in arrive injected as plain functions of its
- * grouping key, so what is pinned here is that the search asks with the right key and
+ * owner, so what is pinned here is that the search asks with the right key and
  * carries the answers onto the anchor - what those answers should be belongs to whoever
  * resolves them.
  */
@@ -50,13 +50,13 @@ final class ClusterAnchorPlacementTest {
     // colour apart from any default.
     private static final Color LABEL_COLOR = Color.RED;
 
-    // The colour seam the geometry tests run under: one shade for every grouping key, since
+    // The colour seam the geometry tests run under: one shade for every owner, since
     // none of them assert on colour.
     private static final Function<String, Color> FIXED_LABEL_COLORS = owner -> LABEL_COLOR;
 
     // The grouping the anchor search traces under: each cell drawing as its own star (identity
     // draws-as over the group-key map's cells, all grouped cluster members here), keyed by the
-    // given grouping keys.
+    // given owners.
     private static CellGrouping grouping(Map<String, String> ownerBySystemId) {
         var systemIdByCellId = new LinkedHashMap<String, String>();
         for (var cellId : ownerBySystemId.keySet()) {
@@ -75,7 +75,7 @@ final class ClusterAnchorPlacementTest {
         private static final double WELD_TOLERANCE = 1.0;
         private static final double MITER_LIMIT = 4.0;
 
-        // The one grouping key every fixture cluster falls under, so a cluster's key is
+        // The one owner every fixture cluster falls under, so a cluster's key is
         // known where a test asserts the search looked one up.
         private static final String GROUP_KEY = "F";
 

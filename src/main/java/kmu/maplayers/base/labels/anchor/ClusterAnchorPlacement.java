@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Fits the label placements: one {@link ClusterAnchor} per contiguous same-key cluster, its
+ * Fits the label placements: one {@link ClusterAnchor} per contiguous same-owner cluster, its
  * label box the highest-scoring of many candidate lines swept across the cluster. This class
  * generates the candidates (a direction fan crossed at parallel offsets) and selects among
  * them; {@link LabelBoxFitter} sizes each into the largest box holding the cluster's name -
@@ -35,7 +35,7 @@ import java.util.function.Function;
  * preferred lean is capped short of vertical and fades to level for round clusters whose axis
  * carries no real direction.
  *
- * <p>Pure geometry over opaque grouping keys: what a key means, what its name reads and what
+ * <p>Pure geometry over opaque owner ids: what a key means, what its name reads and what
  * shade it draws in all arrive injected as plain functions of the key, so the search reads no
  * settings, ownership, or filter state, names nothing on the map, and is exercised on
  * hand-built clusters.
@@ -52,7 +52,7 @@ public final class ClusterAnchorPlacement {
      * the fan, and the dot's fallback position - but has no privileged pull on the accepted
      * line, which is free to sit off-centre wherever the cluster is roomiest.
      *
-     * <p>A cluster's two non-geometric attributes are looked up by its grouping key, taken
+     * <p>A cluster's two non-geometric attributes are looked up by its owner, taken
      * from the first member's key since every member of a cluster shares one: the name the fit
      * sizes and wraps against, and the shade the name (and its debug dot) draws in. Both are
      * plain functions of the key, so the search never asks what a key means; the candidate
@@ -64,7 +64,7 @@ public final class ClusterAnchorPlacement {
      * @param siteBySystemId           each system's world position, for the axis fit and the
      *                                 icon keep-outs
      * @param grouping                 which system each cell draws as and each system's
-     *                                 grouping key
+     *                                 owner
      * @param spec                     the search's whole tuning surface
      * @param labelColorByGroupKey     the shade a group's name and dot draw in
      * @param nameEstimatorByGroupKey  the name measurement a group's boxes are sized against

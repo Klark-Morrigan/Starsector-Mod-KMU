@@ -30,10 +30,10 @@ import java.util.Map;
  * pokes out past the line the border strokes.
  */
 public final class SplitFillBuilder {
-    // The suffixes that split a region's one grouping key into a key per fill state, so the border
+    // The suffixes that split a region's one owner into a key per fill state, so the border
     // tracer traces the solid, hatched, and unfilled members as separate regions rather than the
     // one body their shared key makes them. Appended to the region's own key, which already carries
-    // a sentinel prefix no real grouping key can hold, so no derived key can collide with another
+    // a sentinel prefix no real owner can hold, so no derived key can collide with another
     // region's.
     private static final String SOLID_SUB_REGION_SUFFIX = "#solid";
     private static final String HATCHED_SUB_REGION_SUFFIX = "#hatched";
@@ -50,7 +50,7 @@ public final class SplitFillBuilder {
      *                          the same map the trace itself takes, rather than whatever cache
      *                          the caller happens to hold it in
      * @param cellGrouping      which system each cell draws as, paired with each system's
-     *                          grouping key - the keys the sub-regions are derived from
+     *                          owner - the keys the sub-regions are derived from
      * @param borderTrace       the trace parameters the whole fill shares with its border
      * @param borderLoops       the smoothed frontier every drawn state is clipped to
      * @param hatch             the sector-wide hatch geometry the hatched sub-region is cut with
@@ -81,7 +81,7 @@ public final class SplitFillBuilder {
      *
      * @param isSpotlit  whether this is the filter's spotlighted footprint
      * @param split      the footprint's members by fill state
-     * @param regionKey  the region's grouping key, which the sub-region keys are derived from
+     * @param regionKey  the region's owner, which the sub-region keys are derived from
      * @param fillColor  the resolved fill colour, or null for a "No color" fill that draws
      *                   no region at all
      * @return the fill's solid triangles and hatch segments

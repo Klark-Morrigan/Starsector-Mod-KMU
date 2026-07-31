@@ -1,8 +1,8 @@
 # Regions: cells into drawable ground (`base.render.regions`)
 
-The shape work every painting layer needs: turning shaped cells and opaque grouping keys into the
-borders, fills, and GL-ready runs a renderer emits. Same-key cells fuse into one region, and a
-cell that fuses with nobody is drawn as its own. Nothing here interprets a key, so a layer's
+The shape work every painting layer needs: turning shaped cells and opaque owner ids into the
+borders, fills, and GL-ready runs a renderer emits. Same-owner cells fuse into one region, and a
+cell that fuses with nobody is drawn as its own. Nothing here interprets an owner, so a layer's
 meaning never reaches it.
 
 Part of [the render surface](../README.md), in Klark Morrigan's Utilities; see the
@@ -25,8 +25,8 @@ which it was.
 
 | Term | Means |
 | --- | --- |
-| **grouping key** | the opaque id a layer partitions its cells by; same-key cells fuse |
-| **region** | the ground one grouping key paints, enclosed by one traced border |
+| **owner** | the opaque id a layer partitions its cells by; same-owner cells fuse |
+| **region** | the ground one owner paints, enclosed by one traced border |
 | **fill state** | how ground inside a region paints: solid, hatched, or unfilled |
 | **coincident** | a neighbour whose shared edge insets by nothing, so two regions abut flush |
 
@@ -38,7 +38,7 @@ tessellates, or styles ground refers to it rather than restating what a state me
 `ClusterBorderTrace` is the parameters of one border-ring trace plus the trace itself. Every ring
 a layer draws, or fits a name inside, comes from here, which is what makes "a name is clipped
 against the rings the player sees" true by construction rather than by two call sites agreeing. It
-is agnostic to what a cluster is grouped by: the caller supplies the keys, and same-key cells fuse.
+is agnostic to what a cluster is keyed by: the caller supplies the owners, and same-owner cells fuse.
 
 The channel it insets every boundary edge by is not its own - it is
 `base.geometry.CellShaper.BORDER_INSET_DISTANCE`, the value the cells were shaped to. It is fixed
@@ -48,7 +48,7 @@ top of it *is* tunable, off the Dev tab.
 
 The second `traceRings` overload opts a set of neighbours out of that channel. The edge shared with
 a *coincident* neighbour insets by nothing, so a region traced from either side lands on the same
-line and the two abut exactly - which is how one same-key body is carved into regions that meet
+line and the two abut exactly - which is how one same-owner body is carved into regions that meet
 without a gap opening between them.
 
 ## Smoothing and packing
@@ -86,8 +86,8 @@ for the machinery. Built per region around the context the whole fill shares (th
 grouping, the trace, the smoothed loops, the hatch geometry).
 
 Each drawn state fills from its own traced rings, not from its members' individual cells. The
-region's one grouping key is suffixed per state, so the tracer - which fuses same-key cells -
-traces each state as its own region, while every system outside keeps its real key and the states'
+region's one owner is suffixed per state, so the tracer - which fuses same-owner cells -
+traces each state as its own region, while every system outside keeps its real owner and the states'
 outer edge therefore lands exactly where the border draws it. Each state names the others' members
 as coincident, so the boundary they share insets by nothing and the fills abut on the raw cell
 edge. Filling per cell instead would truncate each member's kept edges against its own inset

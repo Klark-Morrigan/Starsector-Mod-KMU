@@ -16,7 +16,7 @@ import java.util.Set;
  * ring a map layer draws, or fits a name inside, comes from. That is what makes "a name is
  * clipped against the rings the player sees" hold by construction: a new trace parameter lands
  * here once and every consumer picks it up together. Agnostic to what a cluster is grouped by;
- * the caller supplies the grouping keys.
+ * the caller supplies the owners.
  *
  * @param weldTolerance   largest gap between two reports of a shared corner still
  *                        welded into one when chaining the boundary
@@ -47,7 +47,7 @@ public record ClusterBorderTrace(
     // Traces one region's rings while opting a set of neighbours out of the border channel:
     // the boundary edge shared with any of them insets by nothing, so a region traced from
     // the far side of that edge lands on the same line and the two abut exactly. This is how
-    // one same-key body is carved into regions that meet without a channel opening between
+    // one same-owner body is carved into regions that meet without a channel opening between
     // them; the channel still applies to every other boundary edge.
     public List<List<double[]>> traceRings(
             Collection<String> memberCellIds,

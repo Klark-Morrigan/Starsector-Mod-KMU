@@ -48,14 +48,14 @@ import java.util.Set;
  * <p>Each cell is kept as a list of {@link CellEdge}s - the raw convex
  * cell and, at once, the cell-adjacency graph. Every edge is tagged with what lies
  * across it, which the render layer classifies into interior seams and cluster
- * boundaries once it knows the grouping, then shapes into merged cell clusters.
+ * boundaries once it knows each cell's owner, then shapes into merged cell clusters.
  * The cells are keyed by cell id and paired with the system each draws as: here every
  * cell is one star's own ground, so the two coincide, but the cells are a partition of
  * space rather than a list of stars and a consumer must not assume a cell's key names a
  * system. The cache holds the
  * raw cells rather than any shaped outline: the inset that leaves a cluster its
- * border channel is grouping-dependent - two same-key cells fuse along their
- * shared edge - so it belongs to the render pass, not to this grouping-agnostic
+ * border channel is ownership-dependent - two same-owner cells fuse along their
+ * shared edge - so it belongs to the render pass, not to this ownership-agnostic
  * geometry that rebuilds only on an access change.
  *
  * <p>Geometry only, no GL: the partition can be reasoned about and tested on a
@@ -224,7 +224,7 @@ public final class CellGeometryCache {
 
     /**
      * @return the system each cell draws as, keyed by cell id - the map a consumer resolves a
-     *         cell's key, palette, and name through. Every cell here is one star's own
+     *         cell's owner, palette, and name through. Every cell here is one star's own
      *         ground, so each maps to the star it was seeded from. An unmodifiable live view.
      */
     public Map<String, String> getSystemIdByCellId() {

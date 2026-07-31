@@ -18,7 +18,7 @@ import java.util.Map;
  * claimant through the same grouping fold and palette lookup the held pass uses. Reusing
  * {@link SectorPolitics#resolveBlocOwner} gives a claim the identical alliance rollup and
  * authored-palette resolve a held owner gets, so a claimed system and a held one of the same
- * bloc resolve to an equal {@link DominantOwner} - and therefore share a grouping key and
+ * bloc resolve to an equal {@link DominantOwner} - and therefore share an owner and
  * fuse into one territory downstream.
  *
  * <p>The claimant comes from the port, not the {@code Misc} static behind it, so the resolve

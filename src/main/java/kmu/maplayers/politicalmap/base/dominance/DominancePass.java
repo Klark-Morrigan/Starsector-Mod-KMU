@@ -72,7 +72,7 @@ public record DominancePass(
 
     /**
      * This system's per-faction footprints under the pass's rule and reveal, before any grouping:
-     * each faction's known markets folded into its own footprint. The ungrouped read the per-bloc
+     * each faction's known markets folded into its own footprint. The unowned read the per-bloc
      * read below builds on, and the one a two-tier standings breakdown needs whole so it can rank a
      * bloc's members individually - both taking the read from the pass rather than re-deriving it
      * from the loose knobs.

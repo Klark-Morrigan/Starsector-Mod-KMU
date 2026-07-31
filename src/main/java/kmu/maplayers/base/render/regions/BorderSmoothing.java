@@ -91,7 +91,7 @@ public final class BorderSmoothing {
 
     /**
      * Rounds one closed loop's corners. The single-loop entry point for ground that is already
-     * one convex ring and so needs no chaining or envelope resolve - an ungrouped cell's lone
+     * one convex ring and so needs no chaining or envelope resolve - an unowned cell's lone
      * outline - so that outline reaches the same rounding as a cluster border through the same
      * profile, rather than through a second call site that names the knobs again.
      *

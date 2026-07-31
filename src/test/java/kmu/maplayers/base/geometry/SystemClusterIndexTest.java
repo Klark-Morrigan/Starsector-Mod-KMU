@@ -50,7 +50,7 @@ final class SystemClusterIndexTest {
     class FindClusterMembersOf {
         @Test
         void a_member_of_a_two_system_cluster_resolves_to_both_members() {
-            // Two same-key neighbours fuse into one cluster, so hovering either lights the
+            // Two same-owner neighbours fuse into one cluster, so hovering either lights the
             // pair - the whole contiguous cluster, not the one cell under the cursor.
             var index = SystemClusterIndex.indexClusters(List.of(List.of("A", "B")));
 
@@ -78,7 +78,7 @@ final class SystemClusterIndexTest {
         @Test
         void a_system_in_no_cluster_resolves_to_nothing() {
             // A differently-keyed neighbour is a cluster of its own and never a member of
-            // this one; an ungrouped or cell-less system carries no cluster at all, and
+            // this one; an unowned or cell-less system carries no cluster at all, and
             // neither is an error - the hover simply has nothing to highlight.
             var index = SystemClusterIndex.indexClusters(List.of(List.of("A")));
 

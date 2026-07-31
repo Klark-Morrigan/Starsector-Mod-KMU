@@ -13,13 +13,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Traces the inset border rings that outline one grouping key's system cluster(s).
+ * Traces the inset border rings that outline one owner's system cluster(s).
  *
  * <p>Where {@link CellShaper} shapes each cell on its
  * own, this looks at a whole cluster: it gathers the boundary edges of every
- * cell one key draws - the edges against a different key, ungrouped space, or
- * the map frontier, with same-grouping seams dropped - and chains them into the
- * closed rings that outline the cluster. Disjoint pockets of the key and
+ * cell one owner draws - the edges against a different owner, unowned space, or
+ * the map frontier, with same-owner seams dropped - and chains them into the
+ * closed rings that outline the cluster. Disjoint pockets of the owner and
  * enclaves carved out of it each come back as their own ring. Every ring is inset
  * inward by the same channel the fills use, so the border sits on the fill's outer
  * edge. The rings are handed back un-rounded: the inset of a fused cluster can
@@ -28,14 +28,14 @@ import java.util.Set;
  * clipped away by that resolve. Interior seams are never touched - they stay
  * sharp, drawn per cell.
  *
- * <p>A caller that carves one cluster out of a larger same-key body can name the
+ * <p>A caller that carves one cluster out of a larger same-owner body can name the
  * neighbours it was carved away from as <em>coincident</em>: their shared boundary edge
  * insets by nothing, so it stays on the raw cell border. Both sides of such an edge trace
  * it at the same place, so the two carved regions meet exactly - no channel between them,
  * no overlap. A caller tracing a whole cluster names none, and every boundary edge then
  * takes the uniform channel.
  *
- * <p>Pure geometry over the adjacency graph and the resolved grouping keys, using the same
+ * <p>Pure geometry over the adjacency graph and the resolved owners, using the same
  * {@link EdgeClassifier} rule the fills merge on, so a system's edge is a border in
  * exactly the cases its fill leaves a channel. Kept free of GL and of styling: it
  * hands back plain rings the render layer colors and strokes.
@@ -50,7 +50,7 @@ public final class SystemClusterBorders {
     }
 
     /**
-     * Traces the inset border rings for one group of same-key systems - the
+     * Traces the inset border rings for one group of same-owner systems - the
      * raw material the render layer then cleans, rounds, and strokes.
      *
      * <p>These rings are inset but not yet rounded: a miter/bevel inset of a fused
@@ -59,13 +59,13 @@ public final class SystemClusterBorders {
      * only then rounds it - rounding before that resolve would see the arc clipped
      * off at the crossing and left a sharp corner.
      *
-     * @param groupCellIds    the cells sharing one grouping key whose fused
+     * @param groupCellIds    the cells sharing one owner whose fused
      *                        cluster(s) to outline; cells absent from
      *                        {@code edgesByCellId} are skipped
      * @param edgesByCellId   each cell's raw edges, tagged with what lies across
      *                        them - the adjacency graph
-     * @param grouping        which system each cell draws as and each system's grouping
-     *                        key, to tell a border edge (different or no key across it)
+     * @param grouping        which system each cell draws as and each system's owner,
+     *                        owner, to tell a border edge (a different or absent owner across it)
      *                        from a fused seam
      * @param coincidentNeighbourSystemIds the neighbours whose shared boundary edge insets
      *                        by nothing and so stays on the raw cell border, letting two
@@ -114,8 +114,8 @@ public final class SystemClusterBorders {
     }
 
     // Gathers, across every cell in the group, the edges that face outside the
-    // cluster (a different key, no key, or the map frontier) as directed segments,
-    // each paired with the distance its ring edge later insets by. Same-key
+    // cluster (a different owner, no owner, or the map frontier) as directed segments,
+    // each paired with the distance its ring edge later insets by. Same-owner
     // seams are dropped, so the surviving segments trace only the cluster's outer
     // boundary and its enclaves.
     private static BoundarySegments collectBoundarySegments(
@@ -149,7 +149,7 @@ public final class SystemClusterBorders {
 
     // The inward miter inset one boundary segment receives: nothing (zero) across a
     // coincident neighbour, the border channel for every other boundary edge - an organised
-    // boundary, ungrouped space, or the map bound alike.
+    // boundary, unowned space, or the map bound alike.
     private static double computeEdgeInset(
             CellEdge edge,
             Set<String> coincidentNeighbourSystemIds,
@@ -199,7 +199,7 @@ public final class SystemClusterBorders {
         return rawArea > 0 && insetArea > rawArea;
     }
 
-    // One key group's boundary segments paired with the miter inset each receives,
+    // One owner's boundary segments paired with the miter inset each receives,
     // kept parallel so the distance survives chaining onto the ring edge it forms (the
     // channel for an ordinary boundary, nothing across a coincident neighbour).
     private record BoundarySegments(List<Segment> segments, double[] edgeDistances) {

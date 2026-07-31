@@ -11,11 +11,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Pins {@link CellShaper}: a same-key shared edge is left on the true cell
+ * Pins {@link CellShaper}: a same-owner shared edge is left on the true cell
  * border (so two cells fuse into one cluster along it) while its ends are truncated
- * within the padded border; every other edge - a different key, ungrouped space,
- * or a frontier - is pulled inward by the one uniform channel; an ungrouped cell has no
- * interior seams; and two neighbouring same-key cells keep the very same shared
+ * within the padded border; every other edge - a different owner, unowned space,
+ * or a frontier - is pulled inward by the one uniform channel; an unowned cell has no
+ * interior seams; and two neighbouring same-owner cells keep the very same shared
  * line, so their fills meet.
  */
 final class CellShaperTest {
@@ -29,9 +29,9 @@ final class CellShaperTest {
         @Test
         void shapeCellsLeavesASameKeySharedEdgeOnTheRawLineAsASeam() {
             // Cell "a" is the unit square; its right edge (x = 10) is shared with a
-            // same-key "b", the other three are frontiers. Only the shared edge
+            // same-owner "b", the other three are frontiers. Only the shared edge
             // stays a seam (not a boundary), on the raw x = 10 line, so a
-            // same-key "b" filling up to x = 10 fuses with it.
+            // same-owner "b" filling up to x = 10 fuses with it.
             var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b")),
                     Map.of("a", "hegemony", "b", "hegemony"), INSET).get("a");
@@ -70,8 +70,8 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsMakesEveryEdgeOfAnUngroupedCellABoundary() {
-            // "a" is absent from the grouping-key map (ungrouped): it fuses with no one, so
+        void shapeCellsMakesEveryEdgeOfAnUnownedCellABoundary() {
+            // "a" is absent from the grouping-key map (unowned): it fuses with no one, so
             // every edge - even the one shared with a grouped "b" - is a boundary.
             var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b")),
@@ -82,7 +82,7 @@ final class CellShaperTest {
 
         @Test
         void shapeCellsMakesAFrontierEdgeABoundary() {
-            // A lone grouped cell touches no neighbour, so every edge is a frontier
+            // A lone owned cell touches no neighbour, so every edge is a frontier
             // into empty space - all boundaries, none merged.
             var shaped = shape(
                     Map.of("a", squareCellSharedOnRight(null)),
@@ -107,8 +107,8 @@ final class CellShaperTest {
         @Test
         void shapeCellsInsetsAnOpenFrontierEdgeByThePlainChannelFromEitherSide() {
             // An open frontier - one side grouped, the other not - takes the same uniform
-            // channel every other boundary does, from whichever side shapes it. Ungrouped
-            // "a" facing grouped "b" stops at x = 98, and grouped "a" facing ungrouped "b"
+            // channel every other boundary does, from whichever side shapes it. Unowned
+            // "a" facing grouped "b" stops at x = 98, and grouped "a" facing unowned "b"
             // stops there too; neither side reaches past the channel toward the other's star.
             var emptySide = shape(
                     Map.of("a", bigSquareCellSharedOnRight("b")),
@@ -141,7 +141,7 @@ final class CellShaperTest {
     }
 
     // The grouping to shape under: each cell drawing as its own star (identity draws-as over
-    // the cell set), keyed by the given grouping keys.
+    // the cell set), keyed by the given owners.
     private static CellGrouping grouping(
             Map<String, List<CellEdge>> edges, Map<String, String> owners) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();

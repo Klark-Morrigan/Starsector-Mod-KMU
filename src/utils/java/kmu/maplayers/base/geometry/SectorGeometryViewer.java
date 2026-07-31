@@ -332,8 +332,8 @@ final class SectorGeometryViewer {
                 g2.draw(buildPath(toRing(edges)));
             }
             g2.setStroke(new BasicStroke(RING_STROKE));
-            // Ungrouped per the geometry's own keys, not the fixture's: a cell the build
-            // grouped or ungrouped must be drawn as the build left it.
+            // Unowned per the geometry's own keys, not the fixture's: a cell the build
+            // grouped or unowned must be drawn as the build left it.
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
                 if (geometry.ownerByCellId().containsKey(entry.getKey())
                         || entry.getValue().fillPolygon().size()

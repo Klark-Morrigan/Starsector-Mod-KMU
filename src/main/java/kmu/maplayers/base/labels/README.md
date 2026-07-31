@@ -5,7 +5,7 @@ The names drawn across a map layer's regions, and the geometry that decides wher
 production fills and borders, so it owns none of the territory draw packets.
 
 Nothing here knows who holds anything. A cluster arrives as a set of systems sharing an opaque
-*grouping key*, and the two things a name needs beyond geometry - what it reads and what shade it
+*owner*, and the two things a name needs beyond geometry - what it reads and what shade it
 draws in - arrive as plain functions of that key, resolved by whichever layer knows what the key
 means. So the same overlay serves names for factions, alliances, or anything a future layer
 partitions the sector on.
@@ -41,7 +41,7 @@ is taken against. Its tuning is read into `LabelAnchorSpecification` (see `ancho
 The anchor is computed once and shared by both consumers below, so a name and its debug dot never
 disagree.
 
-The search takes each cluster's name measurement and colour as functions of its grouping key, keyed
+The search takes each cluster's name measurement and colour as functions of its owner, keyed
 off the key its members carry. That is the whole seam between a layer and this overlay: the layer
 decides who a key is and what it looks like, the search decides where its name goes.
 

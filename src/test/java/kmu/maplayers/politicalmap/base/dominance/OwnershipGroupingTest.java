@@ -160,7 +160,7 @@ class OwnershipGroupingTest {
 
     // Two allied factions folded into one bloc whose colour faction and dominant
     // member is hegemony, with tritachyon left an outsider mapped to itself, so a
-    // test can probe both the grouped and the ungrouped path off one instance.
+    // test can probe both the grouped and the unowned path off one instance.
     private static OwnershipGrouping allianceGrouping() {
         return new OwnershipGrouping(
                 Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),

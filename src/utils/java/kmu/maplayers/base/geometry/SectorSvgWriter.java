@@ -105,10 +105,10 @@ final class SectorSvgWriter {
         }
     }
 
-    // Only ungrouped cells draw their own fill and outline on the real map; a grouped cell
+    // Only unowned cells draw their own fill and outline on the real map; a owned cell
     // contributes its fill through its bloc's traced cluster instead, so drawing it here
     // too would show a border the game never paints. The key comes off the geometry rather
-    // than the fixture, so a cell the build itself grouped - or ungrouped - is drawn as the
+    // than the fixture, so a cell the build itself grouped - or unowned - is drawn as the
     // build left it, not as the sector was handed in.
     private static void appendNeutralCells(StringBuilder svg, SectorGeometry geometry) {
         for (var entry : geometry.shapedCellByCellId().entrySet()) {

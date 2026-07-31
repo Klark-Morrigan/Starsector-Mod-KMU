@@ -10,10 +10,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the contract of {@link SystemClusters#findClusters}:
- *  - adjacent same-key cells fuse into one cluster, transitively along a chain,
- *  - same-key cells with no shared border stay separate clusters,
+ *  - adjacent same-owner cells fuse into one cluster, transitively along a chain,
+ *  - same-owner cells with no shared border stay separate clusters,
  *  - adjacent cells of different keys never fuse,
- *  - ungrouped and cell-less systems carry no cluster,
+ *  - unowned and cell-less systems carry no cluster,
  *  - a cluster's members are the systems its cells draw as, so a cell with no system of its
  *    own adds no member yet still connects the cells on either side of it.
  *
@@ -35,7 +35,7 @@ final class SystemClustersTest {
     }
 
     // The grouping the clustering runs over: each cell drawing as its own star (identity
-    // draws-as over the cell set), keyed by the given grouping keys.
+    // draws-as over the cell set), keyed by the given owners.
     private static CellGrouping grouping(
             Map<String, List<CellEdge>> edges, Map<String, String> owners) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
@@ -108,9 +108,9 @@ final class SystemClustersTest {
         }
 
         @Test
-        void an_ungrouped_system_carries_no_cluster() {
+        void an_unowned_system_carries_no_cluster() {
             // B has a cell but no key, so it never seeds a cluster; only grouped A does,
-            // and the seam into ungrouped B does not fuse.
+            // and the seam into unowned B does not fuse.
             var edges = Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A")));
