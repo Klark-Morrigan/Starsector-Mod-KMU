@@ -38,30 +38,33 @@ public final class KmuConditionPickerModelFactory {
         var specs = conditionService.listConditionSpecsVisibleForMarket(market);
 
         return new KmuConditionPickerModel(
-                specs.stream()
-                        .map(spec -> toEntry(spec, currentConditionIds, market))
-                        .collect(Collectors.toUnmodifiableList()),
-                locationFactory.create(market));
+            specs.stream()
+                .map(spec -> toEntry(spec, currentConditionIds, market))
+                .collect(Collectors.toUnmodifiableList()),
+            locationFactory.create(market));
     }
 
     private KmuConditionPickerEntry toEntry(
             KmuConditionSpec spec,
             Set<String> currentConditionIds,
             KmuEditableMarket market) {
+
         var state = currentConditionIds.contains(spec.getId())
-                ? KmuConditionPickerEntryState.PRESENT
-                : KmuConditionPickerEntryState.ABSENT;
+            ? KmuConditionPickerEntryState.PRESENT
+            : KmuConditionPickerEntryState.ABSENT;
+
         var liveCondition = liveConditionFor(spec, state, market);
+
         return new KmuConditionPickerEntry(
-                spec.getId(),
-                spec.getName(),
-                iconFor(spec, liveCondition),
-                state,
-                tooltipText(spec),
-                spec.getSourceModName(),
-                tooltipRendererFor(liveCondition).orElse(null),
-                isSuppressed(spec, state, market),
-                liveCondition.map(this::isHidden).orElse(false));
+            spec.getId(),
+            spec.getName(),
+            iconFor(spec, liveCondition),
+            state,
+            tooltipText(spec),
+            spec.getSourceModName(),
+            tooltipRendererFor(liveCondition).orElse(null),
+            isSuppressed(spec, state, market),
+            liveCondition.map(this::isHidden).orElse(false));
     }
 
     private String tooltipText(KmuConditionSpec spec) {
@@ -75,16 +78,18 @@ public final class KmuConditionPickerModelFactory {
     private String iconFor(
             KmuConditionSpec spec,
             Optional<MarketConditionAPI> liveCondition) {
+
         return liveCondition
-                .map(this::liveIconName)
-                .filter(icon -> hasText(icon))
-                .orElse(spec.getIcon());
+            .map(this::liveIconName)
+            .filter(icon -> hasText(icon))
+            .orElse(spec.getIcon());
     }
 
     private boolean isSuppressed(
             KmuConditionSpec spec,
             KmuConditionPickerEntryState state,
             KmuEditableMarket market) {
+
         if (state != KmuConditionPickerEntryState.PRESENT) {
             return false;
         }
@@ -99,7 +104,9 @@ public final class KmuConditionPickerModelFactory {
             KmuConditionSpec spec,
             KmuConditionPickerEntryState state,
             KmuEditableMarket market) {
-        if (state != KmuConditionPickerEntryState.PRESENT || !(market instanceof StarsectorEditableMarket)) {
+
+        if (state != KmuConditionPickerEntryState.PRESENT
+                || !(market instanceof StarsectorEditableMarket)) {
             return Optional.empty();
         }
         try {

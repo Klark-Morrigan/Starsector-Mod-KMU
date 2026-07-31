@@ -44,6 +44,7 @@ public final class KmuConditionPickerContainer {
             KmuConditionPickerModel model,
             Consumer<KmuConditionPickerAction> actionConsumer,
             float width) {
+
         Objects.requireNonNull(headerBody, "headerBody");
         Objects.requireNonNull(gridBody, "gridBody");
         Objects.requireNonNull(model, "model");
@@ -51,8 +52,14 @@ public final class KmuConditionPickerContainer {
 
         var locationParagraphs = KmuConditionPickerLocationParagraphFactory.get(model);
         var summaryParagraphs = KmuConditionPickerSummaryParagraphFactory.get(model);
+
         var infoRow = KmuConditionPickerInfoRow.render(
-                panel, locationParagraphs, summaryParagraphs, model.getLocation().getFaction(), width);
+            panel,
+            locationParagraphs,
+            summaryParagraphs,
+            model.getLocation().getFaction(),
+            width);
+
         var summaryLabel = infoRow.getConditionsLabel();
         headerBody.addCustom(infoRow.getPanel(), ITEM_TOP_PAD);
         var summaryComponents = new ArrayList<UIComponentAPI>();
@@ -62,19 +69,20 @@ public final class KmuConditionPickerContainer {
         // but if no entries are renderable, show localized UI copy and skip the grid.
         if (model.isEmpty()) {
             gridBody.addPara(
-                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_EMPTY),
-                    StarsectorUiColor.VANILLA_GRAY.resolve(),
-                    ITEM_TOP_PAD);
+                KmuStrings.get(KmuStrings.CONDITION_MANAGER_EMPTY),
+                StarsectorUiColor.VANILLA_GRAY.resolve(),
+                ITEM_TOP_PAD);
             return new KmuConditionPickerRenderResult(summaryLabel, summaryComponents, null);
         }
 
         var gridHandle = grid.addTo(
-                panel,
-                gridBody,
-                model,
-                KmuConditionIconGrid.computeGridWidth(width),
-                ITEM_TOP_PAD,
-                actionConsumer);
+            panel,
+            gridBody,
+            model,
+            KmuConditionIconGrid.computeGridWidth(width),
+            ITEM_TOP_PAD,
+            actionConsumer);
+
         var allComponents = new ArrayList<UIComponentAPI>(summaryComponents);
         allComponents.addAll(gridHandle.getComponents());
         return new KmuConditionPickerRenderResult(summaryLabel, allComponents, gridHandle);
@@ -86,8 +94,13 @@ public final class KmuConditionPickerContainer {
      */
     public static float computeHeaderHeight(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
+        
         var locationLines = KmuConditionPickerLocationParagraphFactory.get(model).size();
         var summaryLines = KmuConditionPickerSummaryParagraphFactory.get(model).size();
-        return KmuConditionPickerInfoRow.computeHeight(ITEM_TOP_PAD, locationLines, summaryLines);
+
+        return KmuConditionPickerInfoRow.computeHeight(
+            ITEM_TOP_PAD,
+            locationLines,
+            summaryLines);
     }
 }

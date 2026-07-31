@@ -8,14 +8,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class KmuConditionEditorEntryPoint {
+    
     // Failure messages, each reported to the error sink and returned on the
     // result, so the two copies cannot drift.
     private static final String FAILED_TO_RESOLVE_MARKET_CONTEXT =
-            "Failed to resolve current market context.";
+        "Failed to resolve current market context.";
     private static final String FAILED_TO_VALIDATE_TARGET =
-            "Failed to validate MCM target.";
+        "Failed to validate MCM target.";
     private static final String FAILED_TO_OPEN_MANAGER =
-            "Failed to open Market Condition Manager.";
+        "Failed to open Market Condition Manager.";
 
     private final KmuMarketUiContextResolver contextResolver;
     private final KmuConditionEditor editor;
@@ -57,8 +58,8 @@ public final class KmuConditionEditorEntryPoint {
         } catch (RuntimeException exception) {
             errorReporter.report(FAILED_TO_RESOLVE_MARKET_CONTEXT, exception);
             return KmuConditionEditorOpenResult.failed(
-                    FAILED_TO_RESOLVE_MARKET_CONTEXT,
-                    exception);
+                FAILED_TO_RESOLVE_MARKET_CONTEXT,
+                exception);
         }
 
         if (!context.isPresent()) {
@@ -72,8 +73,8 @@ public final class KmuConditionEditorEntryPoint {
         } catch (RuntimeException exception) {
             errorReporter.report(FAILED_TO_VALIDATE_TARGET, exception);
             return KmuConditionEditorOpenResult.failed(
-                    FAILED_TO_VALIDATE_TARGET,
-                    exception);
+                FAILED_TO_VALIDATE_TARGET,
+                exception);
         }
 
         if (unsupportedReason.isPresent()) {
@@ -86,8 +87,8 @@ public final class KmuConditionEditorEntryPoint {
         } catch (RuntimeException exception) {
             errorReporter.report(FAILED_TO_OPEN_MANAGER, exception);
             return KmuConditionEditorOpenResult.failed(
-                    FAILED_TO_OPEN_MANAGER,
-                    exception);
+                FAILED_TO_OPEN_MANAGER,
+                exception);
         }
     }
 }

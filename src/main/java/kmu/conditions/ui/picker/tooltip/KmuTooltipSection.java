@@ -35,11 +35,12 @@ public final class KmuTooltipSection {
         Objects.requireNonNull(lines, "lines");
 
         tooltip.addSectionHeading(
-                title,
-                style.titleColor(),
-                style.backgroundColor(),
-                Alignment.MID,
-                HEADING_PAD);
+            title,
+            style.titleColor(),
+            style.backgroundColor(),
+            Alignment.MID,
+            HEADING_PAD);
+            
         for (var line : lines) {
             if (hasText(line)) {
                 tooltip.addPara(line, style.bodyColor(), LINE_PAD);

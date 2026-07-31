@@ -21,34 +21,34 @@ public final class KmuConditionEditorOpenResult {
 
     public static KmuConditionEditorOpenResult opened() {
         return new KmuConditionEditorOpenResult(
-                KmuConditionEditorOpenStatus.OPENED,
-                "Opened Market Condition Manager.",
-                null);
+            KmuConditionEditorOpenStatus.OPENED,
+            "Opened Market Condition Manager.",
+            null);
     }
 
     public static KmuConditionEditorOpenResult noMarketContext() {
         return new KmuConditionEditorOpenResult(
-                KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT,
-                "No active context supports market condition editing.",
-                null);
+            KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT,
+            "No active context supports market condition editing.",
+            null);
     }
 
     public static KmuConditionEditorOpenResult unsupportedTarget(String reason) {
         var normalizedReason = normalizeText(reason);
         var message = normalizedReason == null
-                ? "Current market does not support market condition editing."
-                : normalizedReason;
+            ? "Current market does not support market condition editing."
+            : normalizedReason;
         return new KmuConditionEditorOpenResult(
-                KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET,
-                message,
-                null);
+            KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET,
+            message,
+            null);
     }
 
     public static KmuConditionEditorOpenResult failed(String message, RuntimeException cause) {
         return new KmuConditionEditorOpenResult(
-                KmuConditionEditorOpenStatus.FAILED,
-                Objects.requireNonNull(message, "message"),
-                Objects.requireNonNull(cause, "cause"));
+            KmuConditionEditorOpenStatus.FAILED,
+            Objects.requireNonNull(message, "message"),
+            Objects.requireNonNull(cause, "cause"));
     }
 
     public KmuConditionEditorOpenStatus getStatus() {

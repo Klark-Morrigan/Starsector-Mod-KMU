@@ -47,18 +47,24 @@ final class StarsectorConditionPickerLocationFactory {
 
         var faction = factionFor(starsectorMarket);
         return new KmuConditionPickerLocation(
-                planetName(starsectorMarket),
-                planetType(starsectorMarket),
-                pickerFaction(faction),
-                starSystemName(starsectorMarket),
-                gravityWellTypeName(starsectorMarket),
-                gravityWellName(starsectorMarket),
-                constellationName(starsectorMarket));
+            planetName(starsectorMarket),
+            planetType(starsectorMarket),
+            pickerFaction(faction),
+            starSystemName(starsectorMarket),
+            gravityWellTypeName(starsectorMarket),
+            gravityWellName(starsectorMarket),
+            constellationName(starsectorMarket));
     }
 
     private KmuConditionPickerLocation unknownLocation() {
         return new KmuConditionPickerLocation(
-                null, null, null, null, null, null, null);
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
     }
 
     private String marketName(MarketAPI market) {
@@ -124,9 +130,14 @@ final class StarsectorConditionPickerLocationFactory {
 
         var crestSprite = FactionCrests.resolveCrestPath(faction);
         var relationship =
-                StarsectorPlayerRelationshipFormatter.formatPlayerRelationship(faction);
-        return new KmuPickerFaction(name, color, crestSprite,
-                relationship.getDescription(), relationship.getColor());
+            StarsectorPlayerRelationshipFormatter.formatPlayerRelationship(faction);
+
+        return new KmuPickerFaction(
+            name,
+            color,
+            crestSprite,
+            relationship.getDescription(),
+            relationship.getColor());
     }
 
     private String starSystemName(MarketAPI market) {
@@ -169,8 +180,8 @@ final class StarsectorConditionPickerLocationFactory {
         }
 
         var customSpecName = entity.getCustomEntitySpec() == null
-                ? null
-                : normalizeText(entity.getCustomEntitySpec().getNameInText());
+            ? null
+            : normalizeText(entity.getCustomEntitySpec().getNameInText());
         if (customSpecName != null) {
             return customSpecName;
         }
@@ -217,8 +228,8 @@ final class StarsectorConditionPickerLocationFactory {
             return typeName;
         }
         return planet.getSpec() == null
-                ? null
-                : normalizeText(planet.getSpec().getName());
+            ? null
+            : normalizeText(planet.getSpec().getName());
     }
 
     private String constellationName(MarketAPI market) {
@@ -230,8 +241,9 @@ final class StarsectorConditionPickerLocationFactory {
         }
 
         var constellationName = constellation == null
-                ? null
-                : normalizeText(constellation.getNameWithType());
+            ? null
+            : normalizeText(constellation.getNameWithType());
+            
         if (constellationName == null && constellation != null) {
             constellationName = normalizeText(constellation.getName());
         }

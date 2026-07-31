@@ -21,7 +21,7 @@ public final class KmuConditionPickerRenderResult {
             KmuConditionIconGrid.GridHandle gridHandle) {
         this.summaryLabel = summaryLabel;
         this.customComponents = Collections.unmodifiableList(new ArrayList<>(
-                Objects.requireNonNull(customComponents, "customComponents")));
+            Objects.requireNonNull(customComponents, "customComponents")));
         this.gridHandle = gridHandle;
     }
 

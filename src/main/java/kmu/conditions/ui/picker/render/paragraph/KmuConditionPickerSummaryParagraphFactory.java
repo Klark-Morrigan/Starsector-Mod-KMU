@@ -94,11 +94,12 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         appendToken(ctx, new TokenSpec(", ", totalToken, grey, true));
 
         var headerParagraph = new HighlightedParagraph(
-                KmuStrings.get(KmuStrings.CONDITION_MANAGER_SUMMARY),
-                StarsectorUiColor.VANILLA_GRAY.resolve());
+            KmuStrings.get(KmuStrings.CONDITION_MANAGER_SUMMARY),
+            StarsectorUiColor.VANILLA_GRAY.resolve());
+            
         var countsParagraph = new HighlightedParagraph(
-                ctx.sb.toString(),
-                ctx.highlights.toArray(new Highlight[0]));
+            ctx.sb.toString(),
+            ctx.highlights.toArray(new Highlight[0]));
 
         var result = new ArrayList<HighlightedParagraph>();
         result.add(headerParagraph);

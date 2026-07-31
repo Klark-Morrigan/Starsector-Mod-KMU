@@ -64,83 +64,111 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
     private static HighlightedParagraph buildHeaderLine() {
         return new HighlightedParagraph(
-                KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION),
-                StarsectorUiColor.VANILLA_GRAY.resolve());
+            KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION),
+            StarsectorUiColor.VANILLA_GRAY.resolve());
     }
 
     private static HighlightedParagraph buildUnknownLine(Color highlightColor) {
         var unknown = KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION_UNKNOWN);
-        return new HighlightedParagraph(unknown, new Highlight(unknown, highlightColor));
+        return new HighlightedParagraph(
+            unknown,
+            new Highlight(unknown, highlightColor));
     }
 
     private static Optional<HighlightedParagraph> buildPlanetLine(
-            KmuConditionPickerLocation location, Color highlightColor, Color defaultTextColor) {
+            KmuConditionPickerLocation location,
+            Color highlightColor,
+            Color defaultTextColor) {
+
         var segments = new ArrayList<String>();
         var highlights = new ArrayList<Highlight>();
 
         if (location.getPlanetName().isPresent()) {
+
             joinWithParenthetical(location.getPlanetName(), location.getPlanetType())
-                    .ifPresent(segments::add);
-            highlights.add(new Highlight(location.getPlanetName().get(), highlightColor));
+                .ifPresent(segments::add);
+
+            highlights.add(new Highlight(
+                location.getPlanetName().get(),
+                highlightColor));
         }
 
         location.getFaction().ifPresent(faction -> {
+
             buildOwnershipSegment(faction).ifPresent(segments::add);
+
             highlights.add(new Highlight(
-                    faction.getName(),
-                    faction.getColor().orElse(defaultTextColor)));
+                faction.getName(),
+                faction.getColor().orElse(defaultTextColor)));
+
             faction.getRelationshipDescription().ifPresent(rel ->
-                    highlights.add(new Highlight(
-                            rel,
-                            faction.getRelationshipColor().orElse(defaultTextColor))));
+                highlights.add(new Highlight(
+                    rel,
+                    faction.getRelationshipColor().orElse(defaultTextColor))));
         });
 
         if (segments.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(new HighlightedParagraph(
-                String.join(" - ", segments),
-                highlights.toArray(new Highlight[0])));
+            String.join(" - ", segments),
+            highlights.toArray(new Highlight[0])));
     }
 
     private static Optional<HighlightedParagraph> buildSystemLine(
-            KmuConditionPickerLocation location, Color highlightColor) {
+            KmuConditionPickerLocation location,
+            Color highlightColor) {
+
         if (!location.getStarSystemName().isPresent()) {
             return Optional.empty();
         }
 
         var gravityWellName = getDisplayableGravityWellName(location);
         var highlights = new ArrayList<Highlight>();
-
         var text = joinWithParenthetical(
-                location.getStarSystemName(), buildSystemParenthetical(location, gravityWellName));
-        highlights.add(new Highlight(location.getStarSystemName().get(), highlightColor));
-        gravityWellName.ifPresent(name -> highlights.add(new Highlight(name, highlightColor)));
+            location.getStarSystemName(),
+            buildSystemParenthetical(location, gravityWellName));
+
+        highlights.add(new Highlight(
+            location.getStarSystemName().get(),
+            highlightColor));
+
+        gravityWellName.ifPresent(name -> highlights.add(new Highlight(
+            name,
+            highlightColor)));
 
         return text.map(t -> new HighlightedParagraph(
-                t,
-                highlights.toArray(new Highlight[0])));
+            t,
+            highlights.toArray(new Highlight[0])));
     }
 
     private static Optional<HighlightedParagraph> buildConstellationLine(
-            KmuConditionPickerLocation location, Color highlightColor) {
+            KmuConditionPickerLocation location,
+            Color highlightColor) {
+
         return location.getConstellationName().map(name ->
-                new HighlightedParagraph(name, new Highlight(name, highlightColor)));
+            new HighlightedParagraph(name, new Highlight(name, highlightColor)));
     }
 
     private static Optional<String> buildOwnershipSegment(KmuPickerFaction faction) {
         var text = "owned by " + faction.getName();
         return Optional.of(faction.getRelationshipDescription()
-                .map(rel -> text + " (" + rel + ")")
-                .orElse(text));
+            .map(rel -> text + " (" + rel + ")")
+            .orElse(text));
     }
 
     private static Optional<String> buildSystemParenthetical(
-            KmuConditionPickerLocation location, Optional<String> gravityWellName) {
+            KmuConditionPickerLocation location,
+            Optional<String> gravityWellName) {
+
         var parts = new ArrayList<String>();
+
         gravityWellName.ifPresent(parts::add);
         location.getGravityWellTypeName().ifPresent(parts::add);
-        return parts.isEmpty() ? Optional.empty() : Optional.of(String.join(", ", parts));
+
+        return parts.isEmpty()
+            ? Optional.empty()
+            : Optional.of(String.join(", ", parts));
     }
 
     // Suppress entity name when it duplicates the type label (e.g. barycenter
@@ -149,9 +177,9 @@ public final class KmuConditionPickerLocationParagraphFactory {
     // ("Kumari A") not contained in "Kumari System", so that case is preserved.
     private static Optional<String> getDisplayableGravityWellName(
             KmuConditionPickerLocation location) {
-        return location.getGravityWellName()
-                .filter(name -> !name.equals(location.getGravityWellTypeName().orElse(null)))
-                .filter(name -> !location.getStarSystemName().map(s -> s.contains(name)).orElse(false));
-    }
 
+        return location.getGravityWellName()
+            .filter(name -> !name.equals(location.getGravityWellTypeName().orElse(null)))
+            .filter(name -> !location.getStarSystemName().map(s -> s.contains(name)).orElse(false));
+    }
 }

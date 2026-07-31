@@ -39,6 +39,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
     private final CustomUIPanelPlugin panelPlugin = new ActionPanelPlugin();
     private final List<UIComponentAPI> renderedCustomComponents = new ArrayList<>();
     private CustomPanelAPI panel;
+
     // Labels (location, summary) live in a non-scrollable element so they stay
     // pinned while the user scrolls through the condition grid below.
     private TooltipMakerAPI headerBody;
@@ -169,11 +170,12 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         });
 
         renderResult = new KmuConditionPickerContainer(panel).render(
-                headerBody,
-                gridBody,
-                model,
-                this::handleAction,
-                width);
+            headerBody,
+            gridBody,
+            model,
+            this::handleAction,
+            width);
+
         renderedCustomComponents.addAll(renderResult.getCustomComponents());
         panel.addUIElement(headerBody).inTL(0f, 0f);
         panel.addUIElement(gridBody).inTL(0f, headerH);
@@ -186,9 +188,12 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
 
         var summaryLabel = renderResult.getSummaryLabel();
         if (summaryLabel != null) {
+
             // Item 1 is the counts line; item 0 is the static "Conditions:" header.
-            var countsParagraph =
-                    KmuConditionPickerSummaryParagraphFactory.get(actionHandler.getModel()).get(1);
+            var countsParagraph = KmuConditionPickerSummaryParagraphFactory
+                .get(actionHandler.getModel())
+                .get(1);
+
             summaryLabel.setText(countsParagraph.getText());
             countsParagraph.applyTo(summaryLabel);
         }
@@ -198,8 +203,8 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
             return;
         }
         actionHandler.getModel()
-                .findEntry(conditionId.get())
-                .ifPresent(renderResult::updateEntry);
+            .findEntry(conditionId.get())
+            .ifPresent(renderResult::updateEntry);
     }
 
     private void removeRenderedCustomComponents() {

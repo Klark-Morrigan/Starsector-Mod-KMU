@@ -37,8 +37,8 @@ public final class KmuConditionPickerModel {
 
     public int getPresentCount() {
         return (int) entries.stream()
-                .filter(KmuConditionPickerEntry::isPresent)
-                .count();
+            .filter(KmuConditionPickerEntry::isPresent)
+            .count();
     }
 
     public int getAbsentCount() {
@@ -47,26 +47,26 @@ public final class KmuConditionPickerModel {
 
     public int getHiddenCount() {
         return (int) entries.stream()
-                .filter(KmuConditionPickerEntry::isHidden)
-                .count();
+            .filter(KmuConditionPickerEntry::isHidden)
+            .count();
     }
 
     public int getSuppressedCount() {
         return (int) entries.stream()
-                .filter(KmuConditionPickerEntry::isSuppressed)
-                .count();
+            .filter(KmuConditionPickerEntry::isSuppressed)
+            .count();
     }
 
     public int getVisibleCount() {
         return (int) entries.stream()
-                .filter(e -> e.isPresent() && !e.isHidden())
-                .count();
+            .filter(e -> e.isPresent() && !e.isHidden())
+            .count();
     }
 
     public int getAvailableCount() {
         return (int) entries.stream()
-                .filter(e -> !e.isPresent())
-                .count();
+            .filter(e -> !e.isPresent())
+            .count();
     }
 
     public Optional<KmuConditionPickerEntry> findEntry(String conditionId) {
@@ -75,7 +75,7 @@ public final class KmuConditionPickerModel {
             return Optional.empty();
         }
         return entries.stream()
-                .filter(entry -> entry.getConditionId().equals(normalizedId))
-                .findFirst();
+            .filter(entry -> entry.getConditionId().equals(normalizedId))
+            .findFirst();
     }
 }

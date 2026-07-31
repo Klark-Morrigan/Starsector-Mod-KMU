@@ -19,16 +19,21 @@ import java.util.Optional;
  * which elements are present.
  */
 final class KmuConditionPickerInfoRow {
+
     /** Height of one text line, matching the approximate rendered font height. */
     static final float LINE_HEIGHT = 20f;
+
     /** Side length of the faction crest icon. 4x LINE_HEIGHT for visual prominence. */
     static final float ICON_SIZE = 80f;
+
     /** Gap between the faction icon and the text column to its right. */
     private static final float ICON_PAD = 16f;
+
     /** Vertical gap inserted between the location and summary sections. */
     private static final float SECTION_PAD = 8f;
 
     private final CustomPanelAPI rowPanel;
+
     /** The label for the conditions count line - updated live when entries change. */
     private final LabelAPI conditionsLabel;
 
@@ -55,6 +60,7 @@ final class KmuConditionPickerInfoRow {
             List<HighlightedParagraph> summaryParagraphs,
             Optional<KmuPickerFaction> faction,
             float width) {
+
         Objects.requireNonNull(panel, "panel");
         Objects.requireNonNull(locationParagraphs, "locationParagraphs");
         Objects.requireNonNull(summaryParagraphs, "summaryParagraphs");
@@ -105,7 +111,12 @@ final class KmuConditionPickerInfoRow {
     }
 
     private static LabelAPI renderText(
-            CustomPanelAPI row, HighlightedParagraph paragraph, float x, float y, float width) {
+            CustomPanelAPI row,
+            HighlightedParagraph paragraph,
+            float x,
+            float y,
+            float width) {
+                
         var textEl = row.createUIElement(width, LINE_HEIGHT, false);
         var label = paragraph.addTo(textEl);
         row.addUIElement(textEl).inTL(x, y);

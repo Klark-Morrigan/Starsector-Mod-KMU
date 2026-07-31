@@ -53,9 +53,9 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
         tooltip.addTitle(entry.getName());
         if (hasText(entry.getTooltipText())) {
             tooltip.addPara(
-                    entry.getTooltipText(),
-                    StarsectorUiColor.VANILLA_TEXT.resolve(),
-                    METADATA_PAD);
+                entry.getTooltipText(),
+                StarsectorUiColor.VANILLA_TEXT.resolve(),
+                METADATA_PAD);
         }
         addStatusSections(tooltip, entry);
         addMetadataFooter(tooltip, entry);
@@ -65,6 +65,7 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
             TooltipMakerAPI tooltip,
             boolean expanded,
             KmuConditionTooltipRenderer renderer) {
+
         try {
             renderer.createTooltip(tooltip, expanded);
             return true;
@@ -76,17 +77,17 @@ public final class KmuConditionEntryTooltipCreator implements TooltipMakerAPI.To
     private void addStatusSections(TooltipMakerAPI tooltip, KmuConditionPickerEntry entry) {
         if (entry.isSuppressed()) {
             KmuTooltipSection.add(
-                    tooltip,
-                    KmuTooltipSectionStyle.WARNING,
-                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE),
-                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY));
+                tooltip,
+                KmuTooltipSectionStyle.WARNING,
+                KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE),
+                KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY));
         }
         if (entry.isHidden()) {
             KmuTooltipSection.add(
-                    tooltip,
-                    KmuTooltipSectionStyle.WARNING,
-                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE),
-                    KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY));
+                tooltip,
+                KmuTooltipSectionStyle.WARNING,
+                KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE),
+                KmuStrings.get(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY));
         }
     }
 

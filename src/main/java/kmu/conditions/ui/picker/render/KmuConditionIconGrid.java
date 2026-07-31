@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 public final class KmuConditionIconGrid {
     public static final int DEFAULT_COLUMNS = 12;
     static final float CELL_GAP = 8f;
+
     /** Space reserved on the right so the scroll bar does not overlap grid content. */
     static final float SCROLLBAR_RIGHT_PAD = 18f;
 
@@ -46,6 +47,7 @@ public final class KmuConditionIconGrid {
             float width,
             float pad,
             Consumer<KmuConditionPickerAction> actionConsumer) {
+
         Objects.requireNonNull(parentPanel, "parentPanel");
         Objects.requireNonNull(tooltip, "tooltip");
         Objects.requireNonNull(model, "model");
@@ -56,9 +58,10 @@ public final class KmuConditionIconGrid {
         var placements = computeLayout(metrics, width);
         var height = computeHeightForPlacements(placements);
         var gridPanel = parentPanel.createCustomPanel(
-                width,
-                height,
-                new BaseCustomUIPanelPlugin());
+            width,
+            height,
+            new BaseCustomUIPanelPlugin());
+
         var buttonsByConditionId = new LinkedHashMap<String, KmuConditionIconButton>();
 
         for (var index = 0; index < entries.size(); index++) {
@@ -97,7 +100,7 @@ public final class KmuConditionIconGrid {
     static float computeWidthForSquareColumns(int columns) {
         var safeColumns = Math.max(1, columns);
         return safeColumns * KmuConditionIconButtonSizing.computeSquareButtonWidth()
-                + (safeColumns - 1) * CELL_GAP;
+            + (safeColumns - 1) * CELL_GAP;
     }
 
     /** Left-to-right, top-to-bottom row-wrapping layout. A button that would
