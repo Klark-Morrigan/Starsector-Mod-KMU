@@ -18,9 +18,9 @@ import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
  * @param offsetCount      the number of parallel lines swept per direction
  */
 public record AnchorSearch(
-        ClusterBorderTrace borderTrace,
-        double endInsetDistance,
-        double iconClearance,
-        int directionCount,
-        int offsetCount) {
+    ClusterBorderTrace borderTrace,
+    double endInsetDistance,
+    double iconClearance,
+    int directionCount,
+    int offsetCount) {
 }

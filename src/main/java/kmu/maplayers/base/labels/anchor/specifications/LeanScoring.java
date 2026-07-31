@@ -14,7 +14,7 @@ package kmu.maplayers.base.labels.anchor.specifications;
  *                                tall cluster's axis to vertical
  */
 public record LeanScoring(
-        double verticalPenaltyStrength,
-        double verticalPenaltyExponent,
-        double maxSlantDegrees) {
+    double verticalPenaltyStrength,
+    double verticalPenaltyExponent,
+    double maxSlantDegrees) {
 }

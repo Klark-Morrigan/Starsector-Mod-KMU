@@ -25,10 +25,10 @@ import kmu.settings.KmuLunaSettings;
  * @param nameFit     how a chosen anchor's name is sized into its box
  */
 public record LabelAnchorSpecification(
-        AnchorSearch search,
-        LeanScoring scoring,
-        AnchorDiagnostics diagnostics,
-        NameFitSpecification nameFit) {
+    AnchorSearch search,
+    LeanScoring scoring,
+    AnchorDiagnostics diagnostics,
+    NameFitSpecification nameFit) {
 
     // Reads the live tuning into its sub-records: the search geometry and scoring knobs
     // from the Dev "Label anchors" section (the end-inset multiple resolved against the

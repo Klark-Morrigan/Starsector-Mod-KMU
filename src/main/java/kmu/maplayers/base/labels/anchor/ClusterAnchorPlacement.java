@@ -78,6 +78,7 @@ public final class ClusterAnchorPlacement {
             LabelAnchorSpecification spec,
             Function<String, Color> labelColorByGroupKey,
             Function<String, LabelLengthEstimator> nameEstimatorByGroupKey) {
+
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         for (var memberSystemIds : clusters) {
             var sites = collectClusterSites(memberSystemIds, siteBySystemId);
@@ -87,17 +88,18 @@ public final class ClusterAnchorPlacement {
             var owner = grouping.ownerBySystemId().get(memberSystemIds.get(0));
             var axis = resolveClusterAxis(memberSystemIds, edgesByCellId, sites);
             var rings = spec.search().borderTrace().traceRings(
-                    memberSystemIds,
-                    edgesByCellId,
-                    grouping);
+                memberSystemIds,
+                edgesByCellId,
+                grouping);
+
             anchors.add(
-                    searchClusterAnchor(
-                        rings,
-                        siteBySystemId,
-                        axis,
-                        labelColorByGroupKey.apply(owner),
-                        spec,
-                        nameEstimatorByGroupKey.apply(owner)));
+                searchClusterAnchor(
+                    rings,
+                    siteBySystemId,
+                    axis,
+                    labelColorByGroupKey.apply(owner),
+                    spec,
+                    nameEstimatorByGroupKey.apply(owner)));
         }
         return anchors;
     }
@@ -123,74 +125,123 @@ public final class ClusterAnchorPlacement {
             Color color,
             LabelAnchorSpecification spec,
             LabelLengthEstimator nameEstimator) {
+
         var centroidX = (float) axis.centroidX();
         var centroidY = (float) axis.centroidY();
+
         if (rings.isEmpty()) {
             // No traceable border leaves nothing to prove a candidate interior - the
             // one dead end the search cannot work around, so only the dot can show.
-            return new ClusterAnchor(centroidX, centroidY, color, List.of(), 0f,
-                    null, null, null, 0f, 0);
+            return new ClusterAnchor(
+                centroidX,
+                centroidY,
+                color,
+                List.of(),
+                0f,
+                null,
+                null,
+                null,
+                0f,
+                0);
         }
 
         var fitter = newBoxFitter(spec, nameEstimator);
         var icons = siteBySystemId.values();
         var slant = LabelSlantPreference.resolveFrom(axis, spec.scoring().maxSlantDegrees());
         var directions = buildCandidateDirections(axis, slant, spec.search().directionCount());
-        LabelBoxFitter.BoxFit bestAccepted = null;
         var bestScore = 0.0;
+
+        LabelBoxFitter.BoxFit bestAccepted = null;
         LabelBoxFitter.BoxFit longestAccepted = null;
         RejectedSpan bestRejected = null;
+
         for (var direction : directions) {
             var extent = Points.projectCombinedExtentOnto(rings, -direction[1], direction[0]);
             for (var offsetIndex = 1; offsetIndex <= spec.search().offsetCount(); offsetIndex++) {
-                var through = offsetThroughPoint(axis, direction, extent, offsetIndex,
-                        spec.search().offsetCount());
+
+                var through = offsetThroughPoint(
+                    axis,
+                    direction,
+                    extent,
+                    offsetIndex,
+                    spec.search().offsetCount());
+
                 var chord = new RegionChord(
-                        rings,
-                        icons,
-                        new DirectedLine(through[0], through[1], direction[0], direction[1]));
+                    rings,
+                    icons,
+                    new DirectedLine(through[0], through[1], direction[0], direction[1]));
+
                 var box = fitter.fitLargestBox(chord);
                 if (box != null) {
                     // Selection docks the fitted font height for lines that stray from the
                     // cluster's preferred slant - a sizing-blind choice, so it lives here,
                     // not in the fitter; the unbiased pick keeps the raw-height winner for
                     // the yellow diagnostic.
-                    var score = box.fontHeight() * slant.computePenaltyMultiplier(direction,
-                            spec.scoring().verticalPenaltyStrength(),
-                            spec.scoring().verticalPenaltyExponent());
+                    var score = box.fontHeight() * slant.computePenaltyMultiplier(
+                        direction,
+                        spec.scoring().verticalPenaltyStrength(),
+                        spec.scoring().verticalPenaltyExponent());
+
                     if (bestAccepted == null || score > bestScore) {
                         bestAccepted = box;
                         bestScore = score;
                     }
-                    longestAccepted = Picks.pickHigher(longestAccepted, box,
-                            LabelBoxFitter.BoxFit::fontHeight);
+                    longestAccepted = Picks.pickHigher(
+                        longestAccepted,
+                        box,
+                        LabelBoxFitter.BoxFit::fontHeight);
+
                 } else if (spec.diagnostics().showRejectedAxis()) {
-                    bestRejected = Picks.pickHigher(bestRejected,
-                            findRejectedSpan(fitter, chord, spec.nameFit().minFontHeight()),
-                            RejectedSpan::length);
+                    bestRejected = Picks.pickHigher(
+                        bestRejected,
+                        findRejectedSpan(fitter, chord, spec.nameFit().minFontHeight()),
+                        RejectedSpan::length);
                 }
             }
         }
 
         if (bestAccepted != null) {
             var accepted = bestAccepted.segment();
+
             // The accepted interval has no tie to the centroid any more, so the dot and
             // the label's hang-point are the line's own midpoint.
             var midX = (float) ((accepted.startX() + accepted.endX()) / 2.0);
             var midY = (float) ((accepted.startY() + accepted.endY()) / 2.0);
-            var unbiased = spec.diagnostics().showUnbiasedAxis() && longestAccepted != null
+
+            var unbiased = spec.diagnostics().showUnbiasedAxis()
+                    && longestAccepted != null
                     && !longestAccepted.segment().equals(accepted)
-                    ? longestAccepted.segment() : null;
-            return new ClusterAnchor(midX, midY, color,
-                    nameEstimator.wrapIntoLines(bestAccepted.lineCount()),
-                    (float) bestAccepted.fontHeight(), accepted, null, unbiased,
-                    (float) bestAccepted.thickness(), bestAccepted.lineCount());
+                ? longestAccepted.segment()
+                : null;
+
+            return new ClusterAnchor(
+                midX,
+                midY,
+                color,
+                nameEstimator.wrapIntoLines(bestAccepted.lineCount()),
+                (float) bestAccepted.fontHeight(),
+                accepted,
+                null, // Rejected axis.
+                unbiased,
+                (float) bestAccepted.thickness(),
+                bestAccepted.lineCount());
         }
+
         // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
         // near-miss span rides along only when the rejected toggle asked for it.
         var rejected = bestRejected != null ? bestRejected.segment() : null;
-        return new ClusterAnchor(centroidX, centroidY, color, List.of(), 0f,
-                null, rejected, null, 0f, 0);
+
+        return new ClusterAnchor(
+            centroidX,
+            centroidY,
+            color,
+            List.of(),
+            0f,
+            null,
+            rejected,
+            null,
+            0f,
+            0);
     }
 
     // Builds the box fitter from the tuning and the cluster's name estimator: the
@@ -199,9 +250,13 @@ public final class ClusterAnchorPlacement {
     private static LabelBoxFitter newBoxFitter(
             LabelAnchorSpecification spec,
             LabelLengthEstimator nameEstimator) {
+
         var search = spec.search();
-        return new LabelBoxFitter(spec.nameFit(), search.iconClearance(),
-                search.endInsetDistance(), nameEstimator);
+        return new LabelBoxFitter(
+            spec.nameFit(),
+            search.iconClearance(),
+            search.endInsetDistance(),
+            nameEstimator);
     }
 
     // The candidate directions for one cluster: an even fan of unit directions over the
@@ -211,8 +266,11 @@ public final class ClusterAnchorPlacement {
     // exactly on the cluster's capped lean rather than the nearest spoke. Directions are
     // lines, not arrows - the half-circle covers every slope, and the search treats a
     // direction and its opposite as one line.
-    private static List<double[]> buildCandidateDirections(PrincipalAxis axis,
-            LabelSlantPreference slant, int directionCount) {
+    private static List<double[]> buildCandidateDirections(
+            PrincipalAxis axis,
+            LabelSlantPreference slant,
+            int directionCount) {
+
         var directions = new ArrayList<double[]>(directionCount + 2);
         for (var i = 0; i < directionCount; i++) {
             var angle = Math.PI * i / directionCount;
@@ -235,17 +293,23 @@ public final class ClusterAnchorPlacement {
             double[] extent,
             int offsetIndex,
             int offsetCount) {
+
         var normalX = -direction[1];
         var normalY = direction[0];
         var offset = extent[0] + (extent[1] - extent[0]) * offsetIndex / (offsetCount + 1.0);
         var centroidOffset = axis.centroidX() * normalX + axis.centroidY() * normalY;
         var shift = offset - centroidOffset;
-        return new double[] {axis.centroidX() + shift * normalX, axis.centroidY() + shift * normalY};
+
+        return new double[] {
+            axis.centroidX() + shift * normalX,
+            axis.centroidY() + shift * normalY};
     }
 
     // The best near-miss line for the red diagnostic: a candidate's clear span before the
     // end-margin trim, kept with its length so the longest across candidates wins.
-    private record RejectedSpan(Segment segment, double length) {
+    private record RejectedSpan(
+        Segment segment,
+        double length) {
     }
 
     // A candidate's near-miss span for the red diagnostic: the pre-margin clear span of a
@@ -256,12 +320,14 @@ public final class ClusterAnchorPlacement {
             LabelBoxFitter fitter,
             RegionChord chord,
             double minFontSize) {
+
         var band = fitter.fitBand(chord, minFontSize / 2.0);
         if (band.clearSpan() == null) {
             return null;
         }
-        return new RejectedSpan(chord.toSegment(band.clearSpan()),
-                band.clearSpan()[1] - band.clearSpan()[0]);
+        return new RejectedSpan(
+            chord.toSegment(band.clearSpan()),
+            band.clearSpan()[1] - band.clearSpan()[0]);
     }
 
     // The direction and length to fit a cluster's label line along: the principal axis
@@ -272,8 +338,11 @@ public final class ClusterAnchorPlacement {
     // add to the fan. The site centroid is always kept as the fallback dot position and
     // the sweep's origin regardless of which cloud supplied the direction, so the anchor
     // still falls back to the system's own position, not the cell's vertex-cloud mean.
-    private static PrincipalAxis resolveClusterAxis(List<String> memberSystemIds,
-            Map<String, List<CellEdge>> edgesByCellId, List<double[]> sites) {
+    private static PrincipalAxis resolveClusterAxis(
+            List<String> memberSystemIds,
+            Map<String, List<CellEdge>> edgesByCellId,
+            List<double[]> sites) {
+
         var siteAxis = PrincipalAxis.fitTo(sites);
         if (siteAxis.length() >= Limits.MIN_EDGE_LENGTH) {
             return siteAxis;
@@ -290,12 +359,12 @@ public final class ClusterAnchorPlacement {
         // the slant gate reads the elongation of whichever cloud gave the axis, not the
         // site cloud's (which had no usable spread here).
         return new PrincipalAxis(
-                siteAxis.centroidX(),
-                siteAxis.centroidY(),
-                vertexAxis.axisX(),
-                vertexAxis.axisY(),
-                vertexAxis.length(),
-                vertexAxis.minorLength());
+            siteAxis.centroidX(),
+            siteAxis.centroidY(),
+            vertexAxis.axisX(),
+            vertexAxis.axisY(),
+            vertexAxis.length(),
+            vertexAxis.minorLength());
     }
 
     // Gathers every member cell's raw Voronoi edge endpoints as a point cloud - the
@@ -304,6 +373,7 @@ public final class ClusterAnchorPlacement {
     private static List<double[]> collectClusterCellVertices(
             List<String> memberSystemIds,
             Map<String, List<CellEdge>> edgesByCellId) {
+
         var vertices = new ArrayList<double[]>();
         for (var systemId : memberSystemIds) {
             var edges = edgesByCellId.get(systemId);
@@ -320,8 +390,10 @@ public final class ClusterAnchorPlacement {
 
     // Gathers the {x, y} sites of a cluster's members, skipping any whose site is missing
     // - the point cloud the anchor's axis is fitted to.
-    private static List<double[]> collectClusterSites(List<String> memberSystemIds,
+    private static List<double[]> collectClusterSites(
+            List<String> memberSystemIds,
             Map<String, double[]> siteBySystemId) {
+
         var sites = new ArrayList<double[]>(memberSystemIds.size());
         for (var systemId : memberSystemIds) {
             var site = siteBySystemId.get(systemId);

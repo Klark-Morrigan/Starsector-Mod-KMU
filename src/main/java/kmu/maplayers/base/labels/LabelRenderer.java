@@ -42,8 +42,9 @@ public final class LabelRenderer {
         if (labels.isEmpty() || alphaMult <= 0f) {
             return;
         }
-        KmuProfiling.getProfiler().measure("mapLayer.render.labels",
-                () -> drawLabels(labels, factor, alphaMult));
+        KmuProfiling.getProfiler().measure(
+            "mapLayer.render.labels",
+            () -> drawLabels(labels, factor, alphaMult));
     }
 
     // Scales the modelview by the map factor once, then draws each label at its raw world

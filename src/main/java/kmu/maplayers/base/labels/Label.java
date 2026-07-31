@@ -31,6 +31,10 @@ import java.awt.Color;
  * of per-frame VBO churn; the builder disposes the previous strings whenever it rebuilds
  * the list.
  */
-public record Label(DrawableString text, Color baseColor, float hangX, float hangY,
-        float slantDegrees) {
+public record Label(
+    DrawableString text,
+    Color baseColor,
+    float hangX,
+    float hangY,
+    float slantDegrees) {
 }

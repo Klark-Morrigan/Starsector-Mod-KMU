@@ -27,6 +27,7 @@ import java.util.function.Function;
  * and coordinate convention the base renderers use.
  */
 public final class ClusterAnchorRenderer {
+
     // The anchor dot's diameter in screen pixels (GL_POINTS sizes in pixels, so it
     // stays a constant dot at any zoom) and its axis lines' width. Sized to read over
     // the fills and borders without swamping the systems they mark. The lines' colors

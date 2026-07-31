@@ -13,6 +13,6 @@ package kmu.maplayers.base.labels.anchor.specifications;
  *                         line
  */
 public record AnchorDiagnostics(
-        boolean showRejectedAxis,
-        boolean showUnbiasedAxis) {
+    boolean showRejectedAxis,
+    boolean showUnbiasedAxis) {
 }

@@ -65,7 +65,15 @@ import java.util.List;
  * overflow. Thickness, line count, and font height are all zero on a collapsed fit
  * (dot only), where there is no band.
  */
-public record ClusterAnchor(float anchorX, float anchorY, Color color,
-        List<String> nameLines, float fontHeight, Segment acceptedAxis,
-        Segment rejectedAxis, Segment unbiasedAxis, float thickness, int lineCount) {
+public record ClusterAnchor(
+    float anchorX,
+    float anchorY,
+    Color color,
+    List<String> nameLines,
+    float fontHeight,
+    Segment acceptedAxis,
+    Segment rejectedAxis,
+    Segment unbiasedAxis,
+    float thickness,
+    int lineCount) {
 }
