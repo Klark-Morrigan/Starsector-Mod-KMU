@@ -20,6 +20,11 @@ public final class NoLayer implements MapLayer {
     public static final NoLayer INSTANCE = new NoLayer();
 
     // Jumps here on N by default. Mirrors the Keycode default in LunaSettings.csv.
+    //
+    // The id reads as the political map's because this tab shipped alongside it, before the
+    // framework was carved out. LunaLib stores a rebound key under the field id, so renaming it
+    // would silently reset every player's binding for this tab back to N; the id therefore stays
+    // frozen and only its tab placement and label are framework-scoped.
     private static final String SHORTCUT_FIELD = "kmu_politicalMapNoLayerKey";
 
     private NoLayer() {
@@ -32,7 +37,7 @@ public final class NoLayer implements MapLayer {
 
     @Override
     public String getTabLabelKey() {
-        return KmuStrings.POLITICAL_MAP_TAB_NO_LAYER;
+        return KmuStrings.MAP_LAYER_TAB_NO_LAYER;
     }
 
     @Override

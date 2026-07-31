@@ -20,7 +20,8 @@
 
     "dialog_close": "Close",
 
-    "political_map_tab_no_layer": "No Layer",
+    "map_layer_tab_no_layer": "No Layer",
+
     "political_map_tab_political_map": "Political Map",
 
     "political_map_ctl_uninhabited": "Uninhabited systems",
