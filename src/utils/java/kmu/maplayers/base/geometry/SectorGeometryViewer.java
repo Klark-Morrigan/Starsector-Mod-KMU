@@ -251,7 +251,7 @@ final class SectorGeometryViewer {
         canvas.statusLabel.setText(String.format(
                 "<html>%d systems, %d blocs<br>rebuilt in %d ms<br><br>"
                         + "drag to pan, wheel to zoom</html>",
-                fixture.getSystemIds().size(), geometry.ringsByBlocId().size(), lastBuildMillis));
+                fixture.getSystemIds().size(), geometry.ringsByGroupKey().size(), lastBuildMillis));
     }
 
     private static Color pickBlocColour(String blocId, int alpha) {
@@ -347,7 +347,7 @@ final class SectorGeometryViewer {
             // it - an enclave - instead of painting over it solid. Filling each ring on its own
             // paints an enclave as another island of the bloc's colour, which is the opposite of
             // what it means.
-            for (var entry : geometry.ringsByBlocId().entrySet()) {
+            for (var entry : geometry.ringsByGroupKey().entrySet()) {
                 var region = new Path2D.Double(Path2D.WIND_EVEN_ODD);
                 for (var ring : entry.getValue()) {
                     region.append(buildPath(ring), false);

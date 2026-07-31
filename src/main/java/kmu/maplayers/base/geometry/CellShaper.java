@@ -20,8 +20,8 @@ import java.util.Map;
  * <p>Pure geometry over the adjacency graph and the per-system grouping keys: it decides which
  * edges merge with {@link EdgeClassifier}'s rule and offsets the rest with
  * {@link PolygonOffsets#insetSelectedEdges}, handing the render layer a ready fill polygon and a
- * per-edge boundary flag so it never re-derives adjacency. The key is opaque here (the faction
- * layer keys by dominant-faction id), so the same clustering serves any layer.
+ * per-edge boundary flag so it never re-derives adjacency. The key is opaque here, so the same
+ * clustering serves any layer.
  */
 public final class CellShaper {
     /**

@@ -35,73 +35,73 @@ final class SystemClustersTest {
     }
 
     // The grouping the clustering runs over: each cell drawing as its own star (identity
-    // draws-as over the cell set), keyed by the given owners.
+    // draws-as over the cell set), keyed by the given grouping keys.
     private static CellGrouping grouping(
-            Map<String, List<CellEdge>> edges, Map<String, String> owners) {
+            Map<String, List<CellEdge>> edges, Map<String, String> groupKeys) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
         for (var cellId : edges.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        return new CellGrouping(systemIdByCellId, owners);
+        return new CellGrouping(systemIdByCellId, groupKeys);
     }
 
     @Nested
     class FindClusters {
         @Test
-        void adjacent_same_faction_systems_fuse_into_one_cluster() {
+        void adjacent_same_key_systems_fuse_into_one_cluster() {
             // A and B share a border and both belong to F, so their shared seam fuses
             // them into a single cluster.
             var edges = Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A")));
-            var owners = Map.of("A", "F", "B", "F");
+            var groupKeys = Map.of("A", "F", "B", "F");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactlyInAnyOrder("A", "B");
         }
 
         @Test
-        void a_chain_of_same_faction_systems_fuses_transitively() {
+        void a_chain_of_same_key_systems_fuses_transitively() {
             // A-B and B-C border pairs, all held by F: A and C never touch directly but
             // fuse through B into one cluster.
             var edges = Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A"), edgeTo("C")),
                     "C", List.of(edgeTo("B")));
-            var owners = Map.of("A", "F", "B", "F", "C", "F");
+            var groupKeys = Map.of("A", "F", "B", "F", "C", "F");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactlyInAnyOrder("A", "B", "C");
         }
 
         @Test
-        void same_faction_systems_with_no_shared_border_stay_separate() {
+        void same_key_systems_with_no_shared_border_stay_separate() {
             // Two F systems that face only empty space (a disjoint pocket each) get their
             // own cluster - one label each, not a name stranded between them.
             var edges = Map.of(
                     "A", List.of(boundEdge()),
                     "B", List.of(boundEdge()));
-            var owners = Map.of("A", "F", "B", "F");
+            var groupKeys = Map.of("A", "F", "B", "F");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
 
             assertThat(clusters).hasSize(2);
         }
 
         @Test
-        void adjacent_systems_of_different_factions_do_not_fuse() {
-            // A and B share a border but belong to F and G, so the seam is a national
+        void adjacent_systems_of_different_keys_do_not_fuse() {
+            // A and B share a border but belong to F and G, so the seam is a cluster
             // boundary, not a fusing interior seam: two clusters.
             var edges = Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A")));
-            var owners = Map.of("A", "F", "B", "G");
+            var groupKeys = Map.of("A", "F", "B", "G");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
 
             assertThat(clusters).hasSize(2);
             assertThat(clusters).allSatisfy(cluster -> assertThat(cluster).hasSize(1));
@@ -109,21 +109,21 @@ final class SystemClustersTest {
 
         @Test
         void an_ungrouped_system_carries_no_cluster() {
-            // B has a cell but no owner, so it never seeds a cluster; only owned A does,
+            // B has a cell but no key, so it never seeds a cluster; only grouped A does,
             // and the seam into ungrouped B does not fuse.
             var edges = Map.of(
                     "A", List.of(edgeTo("B")),
                     "B", List.of(edgeTo("A")));
-            var owners = Map.of("A", "F");
+            var groupKeys = Map.of("A", "F");
 
-            var clusters = SystemClusters.findClusters(edges, grouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, grouping(edges, groupKeys));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactly("A");
         }
 
         @Test
-        void nothing_owned_yields_no_clusters() {
+        void nothing_grouped_yields_no_clusters() {
             var edges = Map.of("A", List.of(boundEdge()));
 
             var clusters = SystemClusters.findClusters(edges, grouping(edges, Map.of()));
@@ -132,8 +132,8 @@ final class SystemClustersTest {
         }
 
         @Test
-        void a_cell_drawing_as_another_owners_star_reports_that_star_not_its_own_id() {
-            // Cell "wedge" is absorbed ground drawing as owner F's star A - it has no star of
+        void a_cell_drawing_as_another_systems_star_reports_that_star_not_its_own_id() {
+            // Cell "wedge" is absorbed ground drawing as key F's star A - it has no star of
             // its own. It borders A's own cell, so it fuses into A's cluster, but the cluster's
             // members are the systems the cells draw as, so it reports A once, never "wedge".
             var edges = Map.of(

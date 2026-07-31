@@ -29,29 +29,29 @@ import static org.assertj.core.api.Assertions.within;
  * channel, so the areas below are checkable by hand.
  */
 final class SplitFillBuilderTest {
-    private static final String BLOC_ID = "bloc";
+    private static final String REGION_KEY = "region";
     private static final String HELD_SYSTEM = "A";
-    private static final String CONTESTED_SYSTEM = "B";
+    private static final String HATCHED_SYSTEM = "B";
     private static final HatchStyle HATCH = new HatchStyle(200, Math.PI / 4, 1);
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
 
-    // Two cells of the one bloc, meeting along x = 2000: A spans [0, 2000], B spans [2000, 4000],
+    // Two cells of the one region, meeting along x = 2000: A spans [0, 2000], B spans [2000, 4000],
     // both 2000 tall. Their shared edge is a same-key seam; every other edge is a border.
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
             HELD_SYSTEM, List.of(
                     edge(0, 0, 2000, 0, null),
-                    edge(2000, 0, 2000, 2000, CONTESTED_SYSTEM),
+                    edge(2000, 0, 2000, 2000, HATCHED_SYSTEM),
                     edge(2000, 2000, 0, 2000, null),
                     edge(0, 2000, 0, 0, null)),
-            CONTESTED_SYSTEM, List.of(
+            HATCHED_SYSTEM, List.of(
                     edge(2000, 0, 4000, 0, null),
                     edge(4000, 0, 4000, 2000, null),
                     edge(4000, 2000, 2000, 2000, null),
                     edge(2000, 2000, 2000, 0, HELD_SYSTEM)));
     private static final CellGrouping GROUPING = new CellGrouping(
-            Map.of(HELD_SYSTEM, HELD_SYSTEM, CONTESTED_SYSTEM, CONTESTED_SYSTEM),
-            Map.of(HELD_SYSTEM, BLOC_ID, CONTESTED_SYSTEM, BLOC_ID));
+            Map.of(HELD_SYSTEM, HELD_SYSTEM, HATCHED_SYSTEM, HATCHED_SYSTEM),
+            Map.of(HELD_SYSTEM, REGION_KEY, HATCHED_SYSTEM, REGION_KEY));
     // A frontier the fill is clipped to: the square [0, 1000] x [0, 1000], area 1e6.
     private static final List<List<double[]>> BORDER_LOOPS = List.of(square(0, 0, 1000));
 
@@ -62,7 +62,7 @@ final class SplitFillBuilderTest {
         void buildFillDrawsNothingForANoColorFill() {
             // A region the player has switched the fill off for pays no tessellation at all,
             // rather than baking triangles the draw pass would then skip.
-            var fill = builder().buildFill(false, solidOnlySplit(), BLOC_ID, null);
+            var fill = builder().buildFill(false, solidOnlySplit(), REGION_KEY, null);
 
             assertThat(fill.solidTriangles()).isEmpty();
             assertThat(fill.hatchSegments()).isEmpty();
@@ -72,17 +72,17 @@ final class SplitFillBuilderTest {
         void buildFillTessellatesTheFrontierWhenEveryMemberFillsSolid() {
             // The fast path: no trace of its own, just the smoothed loops the border strokes, so
             // the fill lands exactly where the border does.
-            var fill = builder().buildFill(false, solidOnlySplit(), BLOC_ID, Color.RED);
+            var fill = builder().buildFill(false, solidOnlySplit(), REGION_KEY, Color.RED);
 
             assertThat(totalTriangleArea(fill.solidTriangles())).isCloseTo(1e6, within(1.0));
             assertThat(fill.hatchSegments()).isEmpty();
         }
 
         @Test
-        void buildFillCarvesPerStateWhenTheRegionHoldsContestedGround() {
-            // Non-solid members force the carve even off the spotlight, so held and contested
+        void buildFillCarvesPerStateWhenTheRegionHoldsHatchedGround() {
+            // Non-solid members force the carve even off the spotlight, so solid and hatched
             // ground read apart inside the one frontier.
-            var fill = builder().buildFill(false, contestedSplit(), BLOC_ID, Color.RED);
+            var fill = builder().buildFill(false, hatchedSplit(), REGION_KEY, Color.RED);
 
             assertThat(fill.solidTriangles()).isNotEmpty();
         }
@@ -91,8 +91,8 @@ final class SplitFillBuilderTest {
         void buildFillCarvesPerStateForASpotlitRegionThatFillsSolidThroughout() {
             // The spotlight always splits: its fill is per state even where it dominates
             // everywhere, so a spotlit region does not fall into the solid fast path.
-            var solid = builder().buildFill(false, solidOnlySplit(), BLOC_ID, Color.RED);
-            var spotlit = builder().buildFill(true, solidOnlySplit(), BLOC_ID, Color.RED);
+            var solid = builder().buildFill(false, solidOnlySplit(), REGION_KEY, Color.RED);
+            var spotlit = builder().buildFill(true, solidOnlySplit(), REGION_KEY, Color.RED);
 
             // The carve traces its own rings and clips them to the frontier, so it cannot come
             // back as the frontier's own untouched tessellation the fast path produces.
@@ -100,8 +100,8 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void buildFillLeavesTheHatchEmptyWhenNoMemberIsContested() {
-            var fill = builder().buildFill(true, solidOnlySplit(), BLOC_ID, Color.RED);
+        void buildFillLeavesTheHatchEmptyWhenNoMemberIsHatched() {
+            var fill = builder().buildFill(true, solidOnlySplit(), REGION_KEY, Color.RED);
 
             assertThat(fill.hatchSegments()).isEmpty();
         }
@@ -120,17 +120,17 @@ final class SplitFillBuilderTest {
     private static FillSplit solidOnlySplit() {
         return FillSplit.splitMembersByFillState(
                 GROUPING,
-                List.of(HELD_SYSTEM, CONTESTED_SYSTEM),
+                List.of(HELD_SYSTEM, HATCHED_SYSTEM),
                 Set.of(),
                 Set.of());
     }
 
-    // One member held, one merely contested - the split the carve exists to draw.
-    private static FillSplit contestedSplit() {
+    // One member solid, one hatched - the split the carve exists to draw.
+    private static FillSplit hatchedSplit() {
         return FillSplit.splitMembersByFillState(
                 GROUPING,
-                List.of(HELD_SYSTEM, CONTESTED_SYSTEM),
-                Set.of(CONTESTED_SYSTEM),
+                List.of(HELD_SYSTEM, HATCHED_SYSTEM),
+                Set.of(HATCHED_SYSTEM),
                 Set.of());
     }
 

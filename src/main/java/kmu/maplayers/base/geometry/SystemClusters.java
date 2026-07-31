@@ -13,7 +13,7 @@ import java.util.Set;
  *
  * <p>Where a layer's own grouping gathers every system that shares a key regardless of where
  * it sits, this splits a key into its separate clusters: two same-key systems land in one
- * cluster only when a chain of shared cell borders connects them. So a faction with a homeland
+ * cluster only when a chain of shared cell borders connects them. So a key with a homeland
  * and a far-flung colony comes back as two clusters, each the natural home for its own label -
  * one name per cluster rather than one name stranded between disjoint pockets.
  *
@@ -75,8 +75,8 @@ public final class SystemClusters {
     private static void fuseAcrossSeam(Map<String, String> parentByCellId,
             CellGrouping grouping, String cellId, String ownGroupKey, CellEdge edge) {
         // A system's own cell is keyed by that system's id, so the system an edge names
-        // across it is also the cell across it. Same-territory needs no fusing - it is one
-        // owner's own ground either side, already the same component.
+        // across it is also the cell across it. Same-ground needs no fusing - it is one
+        // the cell's own ground either side, already the same component.
         if (!(edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem)
                 || !parentByCellId.containsKey(acrossSystem.systemId())) {
             return;

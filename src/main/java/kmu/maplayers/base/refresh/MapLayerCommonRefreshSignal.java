@@ -16,27 +16,27 @@ public enum MapLayerCommonRefreshSignal implements MapLayerRefreshSignal {
     GEOMETRY,
 
     /**
-     * A recede toggle (Mute or Desaturate) flipped, so every view that recedes ground rebuilds.
-     * The toggles are sidebar-only per-save state rather than LunaLib fields, so a flip moves no
-     * settings revision and this is the seam that repaints the overlay live instead. A view that
-     * draws no receded ground does not read it, exactly as it ignores any change it does not
-     * render.
+     * A toggle governing how receded ground draws flipped, so whatever paints receded ground
+     * rebuilds. Such toggles are sidebar-only per-save state rather than LunaLib fields, so a
+     * flip moves no settings revision and this is the seam that repaints the overlay live
+     * instead. A layer that recedes nothing does not read it, exactly as it ignores any change
+     * it does not render.
      */
     RECEDE_STYLE,
 
     /**
      * The filter's spotlight selection changed or was cleared. Sidebar-only per-save state like
-     * the recede toggles, and read at the pipeline level rather than by any single view, since
-     * the filter is a mode orthogonal to the active view - either view can be filtered - so a
-     * raise repaints under whichever view is up without a view naming the filter.
+     * the recede toggles, and read at the pipeline level rather than by whatever the layer is
+     * currently drawing, since the filter is a mode orthogonal to that choice - anything the
+     * layer draws can be filtered - so a raise repaints without the drawing half naming the
+     * filter at all.
      */
     FILTER,
 
     /**
-     * A shared appearance toggle flipped - whether uninhabited systems draw their outline,
-     * whether a cluster label spells its owner's full or short name. Sidebar-only per-save state
-     * again, and read at the pipeline level for the same reason the filter is: both restyle the
-     * whole map under whichever view is up.
+     * A toggle restyling the whole map rather than one region flipped. Sidebar-only per-save
+     * state again, and read at the pipeline level for the same reason the filter is: the change
+     * lands across everything drawn, whatever the layer is currently drawing.
      */
     MAP_STYLE;
 

@@ -1,7 +1,7 @@
 package kmu.maplayers.base.theme;
 
 /**
- * The sector-wide smoothing applied to every national border (and to a factionless cell's
+ * The sector-wide smoothing applied to every cluster border (and to an ungrouped cell's
  * lone outline, so it reads consistently): whether to sand thin spikes and whether to round
  * corners, plus the shape each pass works to - the tallest protrusion sanding splices out and
  * the angle at which one counts as a spike, then the corner radius in world units, the arc

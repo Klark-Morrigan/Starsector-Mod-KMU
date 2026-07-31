@@ -13,16 +13,16 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the pure partition behind a bloc footprint's fill: which state each member system draws
+ * Pins the pure partition behind a region's fill: which state each member system draws
  * in, how the members land in the three buckets at both the cell and system level, and which
  * systems one state names as its coincident neighbours. All of it decidable from plain id sets,
  * which is why it lives apart from the tessellation in {@link SplitFillBuilder}.
  */
 final class FillSplitTest {
     private static final String SOLID_SYSTEM = "solid-system";
-    private static final String CONTESTED_SYSTEM = "contested-system";
+    private static final String HATCHED_SYSTEM = "hatched-system";
     private static final String UNFILLED_SYSTEM = "unfilled-system";
-    // A cell holding ground its bloc owns without a star of its own in it - present among the
+    // A cell holding ground its region covers without a star of its own in it - present among the
     // members' cells, absent from their systems.
     private static final String STARLESS_CELL = "starless-cell";
 
@@ -32,13 +32,13 @@ final class FillSplitTest {
         private static final String SYSTEM = "some-system";
 
         @Test
-        void classifyFillStateReturnsSolidWhenTheSystemIsNeitherContestedNorUnfilled() {
+        void classifyFillStateReturnsSolidWhenTheSystemIsNeitherHatchedNorUnfilled() {
             assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(), Set.of()))
                     .isEqualTo(FillState.SOLID);
         }
 
         @Test
-        void classifyFillStateReturnsHatchedWhenTheSystemIsContested() {
+        void classifyFillStateReturnsHatchedWhenTheSystemIsHatched() {
             assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of()))
                     .isEqualTo(FillState.HATCHED);
         }
@@ -51,14 +51,15 @@ final class FillSplitTest {
 
         @Test
         void classifyFillStateFavoursUnfilledOverHatchedWhenTheSystemIsBoth() {
-            // A system drawn empty is empty however dominance falls, so unfilled wins the tie.
+            // A system drawn empty is empty whatever else the layer says about it, so unfilled
+            // wins the tie.
             assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of(SYSTEM)))
                     .isEqualTo(FillState.UNFILLED);
         }
 
         @Test
         void classifyFillStateReturnsSolidForACellWithNoStarOfItsOwn() {
-            // A null system id has no per-system fill state, so it fills solid with the bloc's held
+            // A null system id has no per-system fill state, so it fills solid with the region's
             // ground rather than probing either exception set with a null key.
             assertThat(FillSplit.classifyFillState(null, Set.of("other"), Set.of("other")))
                     .isEqualTo(FillState.SOLID);
@@ -73,7 +74,7 @@ final class FillSplitTest {
             var split = splitFootprint();
 
             assertThat(split.solid().systemIds()).containsExactly(SOLID_SYSTEM);
-            assertThat(split.hatched().systemIds()).containsExactly(CONTESTED_SYSTEM);
+            assertThat(split.hatched().systemIds()).containsExactly(HATCHED_SYSTEM);
             assertThat(split.unfilled().systemIds()).containsExactly(UNFILLED_SYSTEM);
         }
 
@@ -92,7 +93,7 @@ final class FillSplitTest {
     class HasNonSolidMembers {
 
         @Test
-        void hasNonSolidMembersIsTrueWhenTheFootprintHoldsContestedGround() {
+        void hasNonSolidMembersIsTrueWhenTheFootprintHoldsHatchedGround() {
             assertThat(splitFootprint().hasNonSolidMembers()).isTrue();
         }
 
@@ -114,16 +115,16 @@ final class FillSplitTest {
 
         @Test
         void resolveCoincidentSystemIdsOfReturnsTheOtherTwoStatesSystems() {
-            // The solid fill must stop flush against both its contested and its held-but-empty
+            // The solid fill must stop flush against both its hatched and its unfilled
             // neighbours, so both appear - the unfilled state included, though it paints nothing.
             assertThat(splitFootprint().resolveCoincidentSystemIdsOf(FillState.SOLID))
-                    .containsExactlyInAnyOrder(CONTESTED_SYSTEM, UNFILLED_SYSTEM);
+                    .containsExactlyInAnyOrder(HATCHED_SYSTEM, UNFILLED_SYSTEM);
         }
 
         @Test
         void resolveCoincidentSystemIdsOfExcludesTheStatesOwnSystems() {
             assertThat(splitFootprint().resolveCoincidentSystemIdsOf(FillState.HATCHED))
-                    .doesNotContain(CONTESTED_SYSTEM);
+                    .doesNotContain(HATCHED_SYSTEM);
         }
     }
 
@@ -133,10 +134,10 @@ final class FillSplitTest {
         return FillSplit.splitMembersByFillState(
                 groupingOf(Map.of(
                         "cell-solid", SOLID_SYSTEM,
-                        "cell-contested", CONTESTED_SYSTEM,
+                        "cell-hatched", HATCHED_SYSTEM,
                         "cell-unfilled", UNFILLED_SYSTEM)),
-                List.of("cell-solid", "cell-contested", "cell-unfilled", STARLESS_CELL),
-                Set.of(CONTESTED_SYSTEM),
+                List.of("cell-solid", "cell-hatched", "cell-unfilled", STARLESS_CELL),
+                Set.of(HATCHED_SYSTEM),
                 Set.of(UNFILLED_SYSTEM));
     }
 

@@ -10,14 +10,14 @@ import java.util.Map;
  * system landed.
  *
  * <p>Hover asks the question from the other end: the cursor resolves to one system, and the
- * highlight needs the whole contiguous territory around it. Scanning every cluster for the
+ * highlight needs the whole contiguous cluster around it. Scanning every cluster for the
  * hit system each frame would repeat the search the map already ran, so the clusters are
  * indexed by member once per rebuild and each hover is a lookup.
  *
  * <p>Deriving the index from {@link SystemClusters}' own output rather than walking the
  * adjacency graph again is what keeps the highlight and the labels agreeing on where one
- * territory ends: the same components decide both, so a highlighted cluster is exactly the
- * cluster that carries one name. Disjoint pockets of one faction stay distinct, since they
+ * cluster ends: the same components decide both, so a highlighted cluster is exactly the
+ * cluster that carries one name. Disjoint pockets of one key stay distinct, since they
  * are distinct components.
  *
  * <p>Pure lookup over plain ids - no geometry, no GL, no Starsector types.

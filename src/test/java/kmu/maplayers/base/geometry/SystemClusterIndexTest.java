@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Pins the contract of {@link SystemClusterIndex}:
  *  - any member of a cluster resolves to that whole cluster, itself included,
- *  - a system in one of a faction's disjoint pockets resolves to that pocket alone,
+ *  - a system in one of a key's disjoint pockets resolves to that pocket alone,
  *  - a system in no cluster - and no system at all - resolves to nothing.
  *
  * <p>The index reads only the member ids of the clusters handed to it, never the graph they
@@ -51,7 +51,7 @@ final class SystemClusterIndexTest {
         @Test
         void a_member_of_a_two_system_cluster_resolves_to_both_members() {
             // Two same-key neighbours fuse into one cluster, so hovering either lights the
-            // pair - the whole contiguous territory, not the one cell under the cursor.
+            // pair - the whole contiguous cluster, not the one cell under the cursor.
             var index = SystemClusterIndex.indexClusters(List.of(List.of("A", "B")));
 
             assertThat(index.findClusterMembersOf("A")).containsExactly("A", "B");
@@ -60,7 +60,7 @@ final class SystemClusterIndexTest {
 
         @Test
         void a_member_of_a_disjoint_pocket_resolves_to_that_pocket_alone() {
-            // One faction, two unconnected pockets: separate clusters, so hovering the
+            // One key, two unconnected pockets: separate clusters, so hovering the
             // colony must not light the homeland across the sector.
             var index = SystemClusterIndex.indexClusters(
                     List.of(List.of("HOME_A", "HOME_B"), List.of("COLONY")));

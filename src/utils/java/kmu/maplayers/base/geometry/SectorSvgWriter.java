@@ -63,7 +63,7 @@ final class SectorSvgWriter {
         // the cell edge it came from.
         appendRawCells(svg, geometry.cellEdgesByCellId());
         appendNeutralCells(svg, geometry);
-        appendBlocRings(svg, geometry.ringsByBlocId());
+        appendBlocRings(svg, geometry.ringsByGroupKey());
         appendSites(svg, fixture.getSites());
         svg.append("</g>\n</svg>\n");
         try {

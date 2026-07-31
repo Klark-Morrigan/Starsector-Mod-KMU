@@ -33,37 +33,37 @@ final class EdgeClassifierTest {
     class Classify {
 
         @Test
-        void classifyReturnsInteriorSeamWhenBothSidesShareAnOwner() {
+        void classifyReturnsInteriorSeamWhenBothSidesShareAKey() {
             assertThat(EdgeClassifier.classify("hegemony", "hegemony"))
                     .isEqualTo(EdgeClass.INTERIOR_SEAM);
         }
 
         @Test
-        void classifyReturnsBoundaryForDifferentOwners() {
+        void classifyReturnsBoundaryForDifferentKeys() {
             assertThat(EdgeClassifier.classify("hegemony", "tritachyon"))
                     .isEqualTo(EdgeClass.BOUNDARY);
         }
 
         @Test
-        void classifyReturnsOpenFrontierWhenTheNeighbourIsUnowned() {
-            // An owned cell facing unowned space (a dead or decivilised star) is the
-            // open frontier the faction can reach toward, not a plain boundary.
+        void classifyReturnsOpenFrontierWhenTheNeighbourIsUngrouped() {
+            // A grouped cell facing ungrouped space is the
+            // open frontier the grouped cell can reach toward, not a plain boundary.
             assertThat(EdgeClassifier.classify("hegemony", null))
                     .isEqualTo(EdgeClass.OPEN_FRONTIER);
         }
 
         @Test
-        void classifyReturnsOpenFrontierWhenThisSideIsUnowned() {
-            // Symmetric: the unowned cell facing an owned neighbour sees the same
+        void classifyReturnsOpenFrontierWhenThisSideIsUngrouped() {
+            // Symmetric: the ungrouped cell facing a grouped neighbour sees the same
             // frontier from its side, so it too can pull its edge toward the star.
             assertThat(EdgeClassifier.classify(null, "hegemony"))
                     .isEqualTo(EdgeClass.OPEN_FRONTIER);
         }
 
         @Test
-        void classifyReturnsBoundaryWhenBothSidesAreUnowned() {
-            // Two unowned cells do not fuse into a faction interior; an
-            // unowned-to-unowned edge stays a boundary.
+        void classifyReturnsBoundaryWhenBothSidesAreUngrouped() {
+            // Two ungrouped cells do not fuse into a fused interior; an
+            // ungrouped-to-ungrouped edge stays a boundary.
             assertThat(EdgeClassifier.classify(null, null)).isEqualTo(EdgeClass.BOUNDARY);
         }
     }
@@ -72,7 +72,7 @@ final class EdgeClassifierTest {
     class ClassifyAcross {
 
         @Test
-        void classifyAcrossReturnsInteriorSeamWhenTheNeighbourSharesTheOwner() {
+        void classifyAcrossReturnsInteriorSeamWhenTheNeighbourSharesTheKey() {
             var edge = edgeAcrossSystem("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
@@ -80,7 +80,7 @@ final class EdgeClassifierTest {
         }
 
         @Test
-        void classifyAcrossReturnsBoundaryWhenTheNeighbourHasADifferentOwner() {
+        void classifyAcrossReturnsBoundaryWhenTheNeighbourHasADifferentKey() {
             var edge = edgeAcrossSystem("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "G")))
@@ -88,9 +88,9 @@ final class EdgeClassifierTest {
         }
 
         @Test
-        void classifyAcrossReturnsOpenFrontierWhenTheNeighbourHasACellButNoOwner() {
-            // B has a cell (a system across the edge) but no entry in the owner map, so
-            // the owned cell faces an unowned star it can reach toward - an open frontier.
+        void classifyAcrossReturnsOpenFrontierWhenTheNeighbourHasACellButNoKey() {
+            // B has a cell (a system across the edge) but no entry in the grouping-key map, so
+            // the grouped cell faces an ungrouped star it can reach toward - an open frontier.
             var edge = edgeAcrossSystem("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of()))
@@ -98,9 +98,9 @@ final class EdgeClassifierTest {
         }
 
         @Test
-        void classifyAcrossReturnsBoundaryBetweenTwoFactionlessCells() {
-            // Two ungrouped cells (own null, neighbour has a cell but no owner) do not form
-            // a frontier - there is no owner reaching toward the star - so the edge stays a
+        void classifyAcrossReturnsBoundaryBetweenTwoUngroupedCells() {
+            // Two ungrouped cells (own null, neighbour has a cell but no key) do not form
+            // a frontier - there is no key reaching toward the star - so the edge stays a
             // plain boundary and the shaper leaves it at the normal inset.
             var edge = edgeAcrossSystem("B");
 
@@ -109,9 +109,9 @@ final class EdgeClassifierTest {
         }
 
         @Test
-        void classifyAcrossReturnsOpenFrontierFromAFactionlessCellFacingAnOwner() {
+        void classifyAcrossReturnsOpenFrontierFromAnUngroupedCellFacingAGroupedOne() {
             // The empty/deciv cell's own side: an ungrouped cell (ownGroupKey null) facing
-            // an owned neighbour sees the same frontier, so the shaper can pull its edge in
+            // a grouped neighbour sees the same frontier, so the shaper can pull its edge in
             // toward the star. Pins the null-own direction through classifyAcross itself.
             var edge = edgeAcrossSystem("B");
 
@@ -122,7 +122,7 @@ final class EdgeClassifierTest {
         @Test
         void classifyAcrossTreatsTheReachBoundAsABoundaryWithoutAKeyLookup() {
             // The reach bound has no star across it, so it stays a plain boundary - not an
-            // open frontier - and must not probe the owner map for a system it does not name,
+            // open frontier - and must not probe the grouping-key map for a system it does not name,
             // which an immutable Map.of would reject on a null key.
             var boundEdge = edgeFacing(EdgeTarget.REACH_BOUND);
 
@@ -133,8 +133,8 @@ final class EdgeClassifierTest {
         }
 
         @Test
-        void classifyAcrossReturnsInteriorSeamForSameTerritoryUnderAnOwner() {
-            // A cut interior to one owner's absorbed region: the far side is that owner's own
+        void classifyAcrossReturnsInteriorSeamForSameGroundUnderAKey() {
+            // A cut interior to one key's absorbed region: the far side is that key's own
             // ground, so it fuses whatever key sits either side, with no system to look up.
             var edge = edgeFacing(EdgeTarget.SAME_TERRITORY);
 
@@ -143,7 +143,7 @@ final class EdgeClassifierTest {
         }
 
         @Test
-        void classifyAcrossReturnsInteriorSeamForSameTerritoryWhenUngrouped() {
+        void classifyAcrossReturnsInteriorSeamForSameGroundWhenUngrouped() {
             // Same-territory fuses even an ungrouped cell's own cut - a null-keyed shard of one
             // dead star's leftover space - which "same key both sides" could not express for a
             // null key, and which must not read a null system out of the map.

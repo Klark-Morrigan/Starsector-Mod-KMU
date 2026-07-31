@@ -33,7 +33,7 @@ public final class CellTooltipRows {
 
     /**
      * Builds a top-tier row: flush left, its label bright and its value in the highlight colour, so a
-     * section heading, a bloc header, or the system name reads as opening a block rather than sitting
+     * section heading, a group header, or the system name reads as opening a block rather than sitting
      * inside one.
      *
      * @param crestSpritePath the leading crest's texture path, or null for a crestless row
@@ -54,7 +54,7 @@ public final class CellTooltipRows {
 
     /**
      * Builds a nested row: indented under the top-tier row above it and drawn in the plain text
-     * colour, so a section's entry or a bloc's member faction reads as belonging to that block.
+     * colour, so a section's entry or a group's member reads as belonging to that block.
      *
      * @param crestSpritePath the leading crest's texture path, or null for a crestless row
      * @param text            the row's label

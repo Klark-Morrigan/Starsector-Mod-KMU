@@ -19,8 +19,8 @@ import java.util.TreeMap;
  * <p>Everything is keyed by CELL rather than by system, and the grouping keys travel with
  * the cells rather than being read back off the fixture. Today the two are the same thing:
  * one cell per system, keyed exactly as the fixture says. They stop being the same thing
- * under the frontier's redistribution, where a cell may be an absorbed wedge keyed to an
- * owner that is not its own star, or a shard of a dead star's leftover space keyed to
+ * under the frontier's redistribution, where a cell may be an absorbed wedge keyed to a
+ * system that is not its own star, or a shard of a dead star's leftover space keyed to
  * neither - cells with no system at all, and keys that are an OUTPUT of the build rather
  * than an input to it. A consumer that reached back to the fixture for a key would then be
  * colouring the map by what went in instead of by what came out, and would draw a
@@ -35,16 +35,16 @@ import java.util.TreeMap;
  * @param groupKeyByCellId   the grouping key per cell; a cell absent from the map is
  *                           ungrouped, which is what makes it neutral ground
  * @param shapedCellByCellId each cell after the border channel is cut inward
- * @param ringsByBlocId      each bloc's traced cluster rings, keyed by grouping key
+ * @param ringsByGroupKey     each grouping key's traced cluster rings
  */
 record SectorGeometry(
         Map<String, List<CellEdge>> cellEdgesByCellId,
         Map<String, String> groupKeyByCellId,
         Map<String, ShapedCell> shapedCellByCellId,
-        Map<String, List<List<double[]>>> ringsByBlocId) {
+        Map<String, List<List<double[]>>> ringsByGroupKey) {
 
     /**
-     * Runs the full pipeline: partition the sites, shape each cell, trace each bloc.
+     * Runs the full pipeline: partition the sites, shape each cell, trace each grouping key.
      *
      * @param fixture    the sector to build
      * @param parameters the knobs to build it under
@@ -65,9 +65,9 @@ record SectorGeometry(
         var groupKeys = fixture.getGroupKeyBySystemId();
         var shaped = CellShaper.shapeCells(cellEdges, grouping, parameters.borderInset());
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
-        for (var bloc : groupCellIdsByBloc(groupKeys).entrySet()) {
-            rings.put(bloc.getKey(), SystemClusterBorders.traceBorderRings(
-                    bloc.getValue(),
+        for (var group : groupCellIdsByGroupKey(groupKeys).entrySet()) {
+            rings.put(group.getKey(), SystemClusterBorders.traceBorderRings(
+                    group.getValue(),
                     cellEdges,
                     grouping,
                     Set.of(),
@@ -79,13 +79,13 @@ record SectorGeometry(
     }
 
     /**
-     * The cells each bloc holds, sorted so a failure names the same bloc run to run and a
+     * The cells each grouping key holds, sorted so a failure names the same key run to run and a
      * drawing's layer order does not shift under a map iteration change.
      *
      * @param groupKeyByCellId the grouping key per cell
      * @return member cell ids per grouping key
      */
-    static Map<String, List<String>> groupCellIdsByBloc(Map<String, String> groupKeyByCellId) {
+    static Map<String, List<String>> groupCellIdsByGroupKey(Map<String, String> groupKeyByCellId) {
         var members = new TreeMap<String, List<String>>();
         for (var entry : groupKeyByCellId.entrySet()) {
             members.computeIfAbsent(entry.getValue(), key -> new ArrayList<>()).add(entry.getKey());

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Turns one bloc footprint's {@link FillSplit} into the triangles and hatch lines its fill
+ * Turns one region's {@link FillSplit} into the triangles and hatch lines its fill
  * paints, inside the single frontier the footprint already traced.
  *
  * <p>Built per territory around the trace context that whole fill shares - the cells, their
@@ -30,10 +30,11 @@ import java.util.Map;
  * pokes out past the line the border strokes.
  */
 public final class SplitFillBuilder {
-    // The suffixes that split a bloc's one grouping key into a key per fill state, so the border
+    // The suffixes that split a region's one grouping key into a key per fill state, so the border
     // tracer traces the solid, hatched, and unfilled members as separate regions rather than the
-    // one body their shared key makes them. Appended to the bloc's own key, which already carries a
-    // sentinel prefix no real bloc id can hold, so no derived key can collide with a rival's.
+    // one body their shared key makes them. Appended to the region's own key, which already carries
+    // a sentinel prefix no real grouping key can hold, so no derived key can collide with another
+    // region's.
     private static final String SOLID_SUB_REGION_SUFFIX = "#solid";
     private static final String HATCHED_SUB_REGION_SUFFIX = "#hatched";
     private static final String UNFILLED_SUB_REGION_SUFFIX = "#unfilled";
@@ -52,7 +53,7 @@ public final class SplitFillBuilder {
      *                          grouping key - the keys the sub-regions are derived from
      * @param borderTrace       the trace parameters the whole fill shares with its border
      * @param borderLoops       the smoothed frontier every drawn state is clipped to
-     * @param hatch             the sector-wide hatch geometry the contested region is cut with
+     * @param hatch             the sector-wide hatch geometry the hatched sub-region is cut with
      */
     public SplitFillBuilder(
             Map<String, List<CellEdge>> cellEdgesByCellId,
@@ -72,16 +73,15 @@ public final class SplitFillBuilder {
      * Builds one territory's fill, taking the per-state split only where it is needed.
      *
      * <p>A territory whose members do not all fill solid splits its fill per state inside its
-     * one frontier - solid where the bloc holds, hatched where it is present but dominated,
-     * empty where it is held-but-unfilled - so the states read apart without the border
-     * fracturing. A spotlit bloc always splits, since its fill is per-state even when it
-     * dominates everywhere it is present. Every other territory fills solid as one region
+     * one frontier - one area per {@link FillState} - so the states read apart without the
+     * border fracturing. A spotlit region always splits, since its fill is per-state even when
+     * every member is in the same state. Every other territory fills solid as one region
      * tessellated from the same smoothed loops the border strokes, so fill and border match
      * exactly and the split's cost is paid only by the territories that need it.
      *
      * @param isSpotlit  whether this is the filter's spotlighted footprint
      * @param split      the footprint's members by fill state
-     * @param blocId     the bloc's grouping key, which the sub-region keys are derived from
+     * @param regionKey  the region's grouping key, which the sub-region keys are derived from
      * @param fillColor  the resolved fill colour, or null for a "No color" fill that draws
      *                   no region at all
      * @return the fill's solid triangles and hatch segments
@@ -89,7 +89,7 @@ public final class SplitFillBuilder {
     public RegionFill buildFill(
             boolean isSpotlit,
             FillSplit split,
-            String blocId,
+            String regionKey,
             Color fillColor) {
 
         if (fillColor == null) {
@@ -102,15 +102,15 @@ public final class SplitFillBuilder {
                     PolygonTessellator.tessellateToTriangles(borderLoops),
                     GlVertexRuns.NO_VERTICES);
         }
-        return buildPerStateFill(split, blocId);
+        return buildPerStateFill(split, regionKey);
     }
 
     // Tessellates each drawn state as its own region: the solid members into the triangle soup,
-    // the contested members into their own soup the hatch generator then clips diagonal lines to.
-    // The unfilled state is deliberately never tessellated - it holds ground for the bloc's border
-    // and label but paints no fill of its own.
-    private RegionFill buildPerStateFill(FillSplit split, String blocId) {
-        var subRegionKeys = mapSubRegionKeyBySystemId(split, blocId);
+    // the hatched members into their own soup the hatch generator then clips diagonal lines to.
+    // The unfilled state is deliberately never tessellated - it holds ground for the region's
+    // border and label but paints no fill of its own.
+    private RegionFill buildPerStateFill(FillSplit split, String regionKey) {
+        var subRegionKeys = mapSubRegionKeyBySystemId(split, regionKey);
         var solidTriangles = tessellateSubRegion(FillState.SOLID, split, subRegionKeys);
         var hatchedTriangles = tessellateSubRegion(FillState.HATCHED, split, subRegionKeys);
         return new RegionFill(
@@ -128,11 +128,11 @@ public final class SplitFillBuilder {
     // when the whole footprint is traced, and the sub-regions' outer edge therefore lands where the
     // frontier draws it. Suffixing the footprint's own key leaves the derived keys as
     // collision-free as it already is.
-    private Map<String, String> mapSubRegionKeyBySystemId(FillSplit split, String blocId) {
+    private Map<String, String> mapSubRegionKeyBySystemId(FillSplit split, String regionKey) {
         var keys = new HashMap<>(cellGrouping.groupKeyBySystemId());
-        putSubRegionKeys(keys, split, FillState.SOLID, blocId + SOLID_SUB_REGION_SUFFIX);
-        putSubRegionKeys(keys, split, FillState.HATCHED, blocId + HATCHED_SUB_REGION_SUFFIX);
-        putSubRegionKeys(keys, split, FillState.UNFILLED, blocId + UNFILLED_SUB_REGION_SUFFIX);
+        putSubRegionKeys(keys, split, FillState.SOLID, regionKey + SOLID_SUB_REGION_SUFFIX);
+        putSubRegionKeys(keys, split, FillState.HATCHED, regionKey + HATCHED_SUB_REGION_SUFFIX);
+        putSubRegionKeys(keys, split, FillState.UNFILLED, regionKey + UNFILLED_SUB_REGION_SUFFIX);
         return keys;
     }
 
@@ -177,9 +177,9 @@ public final class SplitFillBuilder {
     }
 
     /**
-     * One region's fill as the two runs it paints: the solid triangle soup for the held cells
-     * and the hatch GL_LINES for the contested ones. Named for the region rather than for what
-     * holds it, since the pair is the same two runs whatever a layer groups its cells by.
+     * One region's fill as the two runs it paints: the solid triangle soup for the solid-state
+     * cells and the hatch GL_LINES for the hatched ones. Named for the region rather than for
+     * what holds it, since the pair is the same two runs whatever a layer groups its cells by.
      *
      * <p>The unfilled state carries no geometry - it paints nothing - so a region with no
      * hatched members leaves the hatch empty and one that fills solid throughout carries only

@@ -11,15 +11,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Pins {@link CellShaper}: a same-faction shared edge is left on the true cell
+ * Pins {@link CellShaper}: a same-key shared edge is left on the true cell
  * border (so two cells fuse into one cluster along it) while its ends are truncated
- * within the padded border; every other edge - a different faction, unowned space,
- * or a frontier - is pulled inward by the one uniform channel; an unowned cell has no
- * interior seams; and two neighbouring same-faction cells keep the very same shared
+ * within the padded border; every other edge - a different key, ungrouped space,
+ * or a frontier - is pulled inward by the one uniform channel; an ungrouped cell has no
+ * interior seams; and two neighbouring same-key cells keep the very same shared
  * line, so their fills meet.
  */
 final class CellShaperTest {
-    // Inward inset applied to national-border edges in the fixtures; small enough
+    // Inward inset applied to cluster-border edges in the fixtures; small enough
     // that a side-10 cell survives it with room to spare.
     private static final double INSET = 2.0;
 
@@ -27,11 +27,11 @@ final class CellShaperTest {
     class ShapeCells {
 
         @Test
-        void shapeCellsLeavesASameFactionSharedEdgeOnTheRawLineAsASeam() {
+        void shapeCellsLeavesASameKeySharedEdgeOnTheRawLineAsASeam() {
             // Cell "a" is the unit square; its right edge (x = 10) is shared with a
-            // same-faction "b", the other three are frontiers. Only the shared edge
+            // same-key "b", the other three are frontiers. Only the shared edge
             // stays a seam (not a boundary), on the raw x = 10 line, so a
-            // same-faction "b" filling up to x = 10 fuses with it.
+            // same-key "b" filling up to x = 10 fuses with it.
             var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b")),
                     Map.of("a", "hegemony", "b", "hegemony"), INSET).get("a");
@@ -58,7 +58,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsInsetsASharedEdgeBetweenDifferentFactions() {
+        void shapeCellsInsetsASharedEdgeBetweenDifferentKeys() {
             // With a rival across the right edge, nothing merges: every edge is a
             // boundary and the fill pulls in to x <= 8, leaving the border channel.
             var shaped = shape(
@@ -70,9 +70,9 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsMakesEveryEdgeOfAnUnownedCellABoundary() {
-            // "a" is absent from the owner map (unowned): it fuses with no one, so
-            // every edge - even the one shared with an owned "b" - is a boundary.
+        void shapeCellsMakesEveryEdgeOfAnUngroupedCellABoundary() {
+            // "a" is absent from the grouping-key map (ungrouped): it fuses with no one, so
+            // every edge - even the one shared with a grouped "b" - is a boundary.
             var shaped = shape(
                     Map.of("a", squareCellSharedOnRight("b")),
                     Map.of("b", "hegemony"), INSET).get("a");
@@ -82,7 +82,7 @@ final class CellShaperTest {
 
         @Test
         void shapeCellsMakesAFrontierEdgeABoundary() {
-            // A lone owned cell touches no neighbour, so every edge is a frontier
+            // A lone grouped cell touches no neighbour, so every edge is a frontier
             // into empty space - all boundaries, none merged.
             var shaped = shape(
                     Map.of("a", squareCellSharedOnRight(null)),
@@ -92,7 +92,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsKeepsTwoSameFactionNeighboursMeetingOnTheSharedLine() {
+        void shapeCellsKeepsTwoSameKeyNeighboursMeetingOnTheSharedLine() {
             // Left square "a" and right square "b" share the x = 10 line and are both
             // Hegemony. Each keeps that edge as a seam on x = 10, so their fills meet
             // there with no channel between them.
@@ -106,30 +106,30 @@ final class CellShaperTest {
 
         @Test
         void shapeCellsInsetsAnOpenFrontierEdgeByThePlainChannelFromEitherSide() {
-            // An open frontier - one side owned, the other not - takes the same uniform
-            // channel every other boundary does, from whichever side shapes it. Factionless
-            // "a" facing owned "b" stops at x = 98, and owned "a" facing factionless "b"
+            // An open frontier - one side grouped, the other not - takes the same uniform
+            // channel every other boundary does, from whichever side shapes it. Ungrouped
+            // "a" facing grouped "b" stops at x = 98, and grouped "a" facing ungrouped "b"
             // stops there too; neither side reaches past the channel toward the other's star.
             var emptySide = shape(
                     Map.of("a", bigSquareCellSharedOnRight("b")),
                     Map.of("b", "hegemony"), INSET).get("a");
-            var ownedSide = shape(
+            var groupedSide = shape(
                     Map.of("a", bigSquareCellSharedOnRight("b")),
                     Map.of("a", "hegemony"), INSET).get("a");
 
             assertThat(maxXOf(emptySide)).isCloseTo(98.0, within(1e-6));
-            assertThat(maxXOf(ownedSide)).isCloseTo(98.0, within(1e-6));
-            // Still a national border, not fused as a seam: an open frontier joins no
+            assertThat(maxXOf(groupedSide)).isCloseTo(98.0, within(1e-6));
+            // Still a cluster border, not fused as a seam: an open frontier joins no
             // cluster, so the edge stays a boundary inset off the raw line.
             assertThat(emptySide.edgeIsBoundary()).containsOnly(true);
         }
     }
 
     // Shapes the cells under the identity draws-as grouping, so a test names its edges and
-    // owners exactly as before while the shaper reads a cell's key through its own star.
+    // keys exactly as before while the shaper reads a cell's key through its own star.
     private static Map<String, ShapedCell> shape(
-            Map<String, List<CellEdge>> edges, Map<String, String> owners, double inset) {
-        return CellShaper.shapeCells(edges, grouping(edges, owners), inset);
+            Map<String, List<CellEdge>> edges, Map<String, String> groupKeys, double inset) {
+        return CellShaper.shapeCells(edges, grouping(edges, groupKeys), inset);
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
@@ -141,14 +141,14 @@ final class CellShaperTest {
     }
 
     // The grouping to shape under: each cell drawing as its own star (identity draws-as over
-    // the cell set), keyed by the given owners.
+    // the cell set), keyed by the given grouping keys.
     private static CellGrouping grouping(
-            Map<String, List<CellEdge>> edges, Map<String, String> owners) {
+            Map<String, List<CellEdge>> edges, Map<String, String> groupKeys) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
         for (var cellId : edges.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        return new CellGrouping(systemIdByCellId, owners);
+        return new CellGrouping(systemIdByCellId, groupKeys);
     }
 
     // The unit square (0,0)..(10,10) CCW, its right edge (x = 10) tagged with the

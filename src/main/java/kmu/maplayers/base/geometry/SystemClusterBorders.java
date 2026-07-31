@@ -13,13 +13,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Traces the inset border rings that outline one faction's system cluster(s).
+ * Traces the inset border rings that outline one grouping key's system cluster(s).
  *
  * <p>Where {@link CellShaper} shapes each cell on its
  * own, this looks at a whole cluster: it gathers the boundary edges of every
- * cell a faction draws - the edges against a different owner, unowned space, or
- * the map frontier, with same-faction seams dropped - and chains them into the
- * closed rings that outline the cluster. Disjoint pockets of the faction and
+ * cell one key draws - the edges against a different key, ungrouped space, or
+ * the map frontier, with same-grouping seams dropped - and chains them into the
+ * closed rings that outline the cluster. Disjoint pockets of the key and
  * enclaves carved out of it each come back as their own ring. Every ring is inset
  * inward by the same channel the fills use, so the border sits on the fill's outer
  * edge. The rings are handed back un-rounded: the inset of a fused cluster can
@@ -35,7 +35,7 @@ import java.util.Set;
  * no overlap. A caller tracing a whole cluster names none, and every boundary edge then
  * takes the uniform channel.
  *
- * <p>Pure geometry over the adjacency graph and the resolved owners, using the same
+ * <p>Pure geometry over the adjacency graph and the resolved grouping keys, using the same
  * {@link EdgeClassifier} rule the fills merge on, so a system's edge is a border in
  * exactly the cases its fill leaves a channel. Kept free of GL and of styling: it
  * hands back plain rings the render layer colors and strokes.
@@ -50,7 +50,7 @@ public final class SystemClusterBorders {
     }
 
     /**
-     * Traces the inset border rings for one group of same-faction systems - the
+     * Traces the inset border rings for one group of same-key systems - the
      * raw material the render layer then cleans, rounds, and strokes.
      *
      * <p>These rings are inset but not yet rounded: a miter/bevel inset of a fused
@@ -149,7 +149,7 @@ public final class SystemClusterBorders {
 
     // The inward miter inset one boundary segment receives: nothing (zero) across a
     // coincident neighbour, the border channel for every other boundary edge - an organised
-    // boundary, unowned space, or the map bound alike.
+    // boundary, ungrouped space, or the map bound alike.
     private static double computeEdgeInset(
             CellEdge edge,
             Set<String> coincidentNeighbourSystemIds,
@@ -157,7 +157,7 @@ public final class SystemClusterBorders {
         // A coincident neighbour's edge stays on the raw cell border, so the region traced
         // from the other side lands on the same line and the two abut with no channel
         // between them. Only an edge naming a system can be coincident: a reach bound has
-        // no neighbour to be carved away from, and a same-territory cut is no boundary at
+        // no neighbour to be carved away from, and a same-ground cut is no boundary at
         // all.
         if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
                 && coincidentNeighbourSystemIds.contains(acrossSystem.systemId())) {
@@ -199,7 +199,7 @@ public final class SystemClusterBorders {
         return rawArea > 0 && insetArea > rawArea;
     }
 
-    // One faction group's boundary segments paired with the miter inset each receives,
+    // One key group's boundary segments paired with the miter inset each receives,
     // kept parallel so the distance survives chaining onto the ring edge it forms (the
     // channel for an ordinary boundary, nothing across a coincident neighbour).
     private record BoundarySegments(List<Segment> segments, double[] edgeDistances) {

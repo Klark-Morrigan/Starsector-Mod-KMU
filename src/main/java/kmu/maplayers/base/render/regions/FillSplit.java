@@ -7,9 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A bloc footprint's members partitioned into the three states its fill paints apart: solid
- * where the bloc holds, hatched where it is present but dominated, and unfilled where it is
- * held for border and label but drawn empty.
+ * A region's members partitioned into the three {@link FillState}s its fill paints apart, so
+ * one frontier can enclose ground that does not all fill the same way.
  *
  * <p>Each state carries its members at both levels the fill needs them - the cells a region
  * is traced from, and the systems its keys and coincident set are addressed by. The two
@@ -28,16 +27,16 @@ public record FillSplit(
      * Splits a footprint's member cells into the three states, resolving each cell to the
      * system it draws as and classifying that system.
      *
-     * @param cellGrouping        resolves which system each member cell draws as
-     * @param memberCellIds       the footprint's cells
-     * @param contestedSystemIds  systems the bloc is present in but does not dominate
-     * @param unfilledSystemIds   systems the bloc holds but paints no fill for
+     * @param cellGrouping       resolves which system each member cell draws as
+     * @param memberCellIds      the footprint's cells
+     * @param hatchedSystemIds   the region's systems that draw hatched rather than solid
+     * @param unfilledSystemIds  the region's systems that draw no fill at all
      * @return the three states, each holding its own cells and systems
      */
     public static FillSplit splitMembersByFillState(
             CellGrouping cellGrouping,
             List<String> memberCellIds,
-            Set<String> contestedSystemIds,
+            Set<String> hatchedSystemIds,
             Set<String> unfilledSystemIds) {
 
         var split = createEmpty();
@@ -45,7 +44,7 @@ public record FillSplit(
             var systemId = cellGrouping.resolveDrawnSystemIdOf(cellId);
             var members = split.resolveMembersOf(classifyFillState(
                     systemId,
-                    contestedSystemIds,
+                    hatchedSystemIds,
                     unfilledSystemIds));
             members.cellIds().add(cellId);
             if (systemId != null) {
@@ -58,13 +57,14 @@ public record FillSplit(
     /**
      * The fill state one member's system draws in - the pure rule the split turns on.
      *
-     * <p>Unfilled takes precedence over hatched, since a system drawn empty is empty however
-     * dominance falls. A cell with no star of its own has no per-system fill state, so it
-     * fills solid with the bloc's held ground rather than probing either set with a null key.
+     * <p>Unfilled takes precedence over hatched, since a system drawn empty is empty whatever
+     * else the layer says about it. A cell with no star of its own has no per-system fill
+     * state, so it fills solid with the region's ground rather than probing either set with a
+     * null key.
      */
     public static FillState classifyFillState(
             String systemId,
-            Set<String> contestedSystemIds,
+            Set<String> hatchedSystemIds,
             Set<String> unfilledSystemIds) {
 
         if (systemId == null) {
@@ -73,7 +73,7 @@ public record FillSplit(
         if (unfilledSystemIds.contains(systemId)) {
             return FillState.UNFILLED;
         }
-        if (contestedSystemIds.contains(systemId)) {
+        if (hatchedSystemIds.contains(systemId)) {
             return FillState.HATCHED;
         }
         return FillState.SOLID;
@@ -132,12 +132,17 @@ public record FillSplit(
     }
 
     /**
-     * The three states a bloc's system can draw its fill in: solid where the bloc holds,
-     * hatched where it is present but dominated, unfilled where it is held but painted empty.
+     * The three ways a system inside one region can draw its fill, and the vocabulary the rest
+     * of the framework states a fill outcome in. Purely how the ground paints - which systems
+     * fall in which state is the layer's call, made before the split is handed over, so the
+     * geometry below never has to know what the layer means by the distinction.
      */
     public enum FillState {
+        /** Painted in the region's own colour. */
         SOLID,
+        /** Painted in the region's colour, cut with the sector-wide hatch pattern. */
         HATCHED,
+        /** Painted with no fill: the ground still carries the region's border and label. */
         UNFILLED
     }
 

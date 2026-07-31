@@ -8,11 +8,10 @@ import java.util.Map;
  *
  * <p>Pure rule over opaque grouping keys: an edge is an interior seam only when the
  * same non-null key holds both the system and its neighbour across the edge; an edge
- * with a grouping key on exactly one side (an owned system facing an unowned dead or
- * decivilised star) is an open frontier; any other pairing - two different keys, or two
- * ungrouped sides - is a plain boundary. A key is whatever a consumer clusters by (the
- * faction layer keys by dominant-faction id), so the geometry fuses cells without
- * knowing what the key means.
+ * with a grouping key on exactly one side (a grouped system facing ungrouped space)
+ * is an open frontier; any other pairing - two different keys, or two ungrouped sides -
+ * is a plain boundary. A key is whatever a consumer clusters by, so the geometry fuses
+ * cells without knowing what the key means.
  * The core {@link #classify} rule is kept free of the geometry source and of GL so it
  * can be exercised directly on hand-built key pairs, while {@link #classifyAcross} adapts
  * it to a raw {@link CellEdge} - resolving what the edge's {@link EdgeTarget} names before
@@ -29,8 +28,8 @@ public final class EdgeClassifier {
      * The core rule over two grouping keys:
      * <ul>
      *   <li>same non-null key on both sides - INTERIOR_SEAM (the cells fuse);</li>
-     *   <li>a non-null key on exactly one side - OPEN_FRONTIER (an owned system facing
-     *       an unowned dead or decivilised star it can reach toward);</li>
+     *   <li>a non-null key on exactly one side - OPEN_FRONTIER (a grouped system facing
+     *       ungrouped space it can reach toward);</li>
      *   <li>anything else - two differing non-null keys, or two ungrouped sides -
      *       BOUNDARY.</li>
      * </ul>
@@ -45,9 +44,9 @@ public final class EdgeClassifier {
         if (ownGroupKey != null && ownGroupKey.equals(neighbourGroupKey)) {
             return EdgeClass.INTERIOR_SEAM;
         }
-        // Exactly one side grouped: an owned cell facing an unowned neighbour (or the
-        // reverse). This is the frontier a consumer can push out toward the dead star,
-        // kept distinct from a boundary between two owners or between two empty cells.
+        // Exactly one side grouped: a keyed cell facing an unkeyed neighbour (or the
+        // reverse). This is the frontier a consumer can push outward, kept distinct from a
+        // boundary between two differing keys or between two ungrouped cells.
         if ((ownGroupKey == null) != (neighbourGroupKey == null)) {
             return EdgeClass.OPEN_FRONTIER;
         }
@@ -61,7 +60,7 @@ public final class EdgeClassifier {
      *
      * <p>Each target decides on its own terms: a system across the edge has its key looked up
      * and handed to {@link #classify}; the cell's reach bound is a plain boundary, since with
-     * no star across it there is nothing to reach toward; and more of the same territory is an
+     * no star across it there is nothing to reach toward; and more of the same ground is an
      * interior seam outright - the far side is this cell's own ground, so no key can differ.
      *
      * @param edge             the cell edge, tagged with what lies across it
@@ -69,8 +68,8 @@ public final class EdgeClassifier {
      *                         that cell is ungrouped
      * @param groupKeyBySystemId the grouping key per system, to look up the key of a system
      *                         across the edge
-     * @return INTERIOR_SEAM for a shared non-null key or for same-territory, OPEN_FRONTIER for
-     *         an owned cell facing an unowned star, else BOUNDARY; the reach bound is always
+     * @return INTERIOR_SEAM for a shared non-null key or for same-ground, OPEN_FRONTIER for
+     *         a grouped cell facing an ungrouped star, else BOUNDARY; the reach bound is always
      *         BOUNDARY
      */
     public static EdgeClass classifyAcross(

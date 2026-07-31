@@ -60,7 +60,7 @@ class SectorGeometryIntegrationTest {
             // The defining property of the partition, and the one that makes cells tile with
             // no overlap. Asserting it directly is cheaper and clearer than testing every
             // pair of cells for intersection, and it is what redistribution will have to
-            // consciously break when an owner absorbs a dead star's space.
+            // consciously break when a grouping absorbs a dead star's space.
             var fixture = fixtureOf(sector);
             var cellEdges = geometryOf(sector).cellEdgesByCellId();
             var sites = fixture.getSites();
@@ -140,8 +140,8 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void an_unowned_cell_borders_on_every_edge_and_fuses_on_none(String sector) {
-            // An unowned system shares its key with nobody - EdgeClassifier rules even a
+        void an_ungrouped_cell_borders_on_every_edge_and_fuses_on_none(String sector) {
+            // An ungrouped system shares its key with nobody - EdgeClassifier rules even a
             // neighbouring empty cell a plain boundary - so a dead star's cell is bordered
             // the whole way round. This is the base the frontier's redistribution alters, so
             // it is worth pinning before it moves.
@@ -169,9 +169,9 @@ class SectorGeometryIntegrationTest {
         void every_bloc_holding_a_cell_traces_at_least_one_ring(String sector) {
             var geometry = geometryOf(sector);
             var blocsWithoutRings = new ArrayList<String>();
-            for (var bloc : SectorGeometry.groupCellIdsByBloc(geometry.groupKeyByCellId())
+            for (var bloc : SectorGeometry.groupCellIdsByGroupKey(geometry.groupKeyByCellId())
                     .entrySet()) {
-                if (geometry.ringsByBlocId().get(bloc.getKey()).isEmpty()) {
+                if (geometry.ringsByGroupKey().get(bloc.getKey()).isEmpty()) {
                     blocsWithoutRings.add(bloc.getKey());
                 }
             }
@@ -184,7 +184,7 @@ class SectorGeometryIntegrationTest {
             // A ring the inset folded over is dropped by the trace's own collapse guard, so
             // anything handed back must be drawable; a degenerate survivor is the shape an
             // orphaned loop takes.
-            for (var rings : geometryOf(sector).ringsByBlocId().values()) {
+            for (var rings : geometryOf(sector).ringsByGroupKey().values()) {
                 for (var ring : rings) {
                     assertThat(ring.size()).isGreaterThanOrEqualTo(3);
                     assertThat(Math.abs(PolygonRegions.computeSignedArea(ring))).isGreaterThan(0.0);

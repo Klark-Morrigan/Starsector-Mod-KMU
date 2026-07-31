@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins {@link CellGrouping}: a cell is resolved to the system it draws as and that system to
- * its grouping key, in two lookups rather than one - so an absorbed wedge keyed to an owner
+ * its grouping key, in two lookups rather than one - so an absorbed wedge keyed to a system
  * that is not its own star, and a shard keyed to no star at all, both resolve correctly.
  *
  * <p>The redistribution pass makes these two kinds of cell real; here they are hand-built,
@@ -22,7 +22,7 @@ final class CellGroupingTest {
 
         @Test
         void resolveDrawnSystemIdOfReturnsTheStarACellDrawsAs() {
-            // An absorbed wedge draws as owner A's star, not as its own id - which is exactly
+            // An absorbed wedge draws as system A's star, not as its own id - which is exactly
             // what the two-map indirection exists to express.
             var grouping = new CellGrouping(Map.of("wedge", "A"), Map.of("A", "F"));
 
@@ -44,7 +44,7 @@ final class CellGroupingTest {
 
         @Test
         void resolveGroupKeyOfReturnsTheKeyOfTheStarACellDrawsAs() {
-            // The wedge takes A's key through the two lookups, so it paints as A's territory
+            // The wedge takes A's key through the two lookups, so it paints as A's ground
             // rather than as neutral ground.
             var grouping = new CellGrouping(Map.of("wedge", "A"), Map.of("A", "F"));
 
@@ -73,8 +73,8 @@ final class CellGroupingTest {
 
         @Test
         void groupCellIdsByKeyBucketsEachCellUnderTheKeyOfTheStarItDrawsAs() {
-            // Two cells drawing as the same owner - a star and its absorbed wedge - both land
-            // under that owner, as two distinct cells a border is later traced from.
+            // Two cells drawing as the same system - a star and its absorbed wedge - both land
+            // under that key, as two distinct cells a border is later traced from.
             var grouping = new CellGrouping(
                     Map.of("A", "A", "wedge", "A", "B", "B"),
                     Map.of("A", "F", "B", "G"));

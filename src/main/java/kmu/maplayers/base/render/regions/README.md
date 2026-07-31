@@ -10,10 +10,28 @@ Part of [the render surface](../README.md), in Klark Morrigan's Utilities; see t
 
 ## Index
 
+- [The vocabulary](#the-vocabulary)
 - [The trace: one path to a cluster's rings](#the-trace-one-path-to-a-clusters-rings)
 - [Smoothing and packing](#smoothing-and-packing)
 - [The split fill: one border, several fills](#the-split-fill-one-border-several-fills)
 - [What is not here](#what-is-not-here)
+
+## The vocabulary
+
+These are the nouns the framework states shape work in, and the words `base` uses in place of
+whatever a layer calls the same thing. A layer is free to say "bloc", "faction", or "hazard band"
+in its own code; it translates to these at the boundary, which is why nothing below has to know
+which it was.
+
+| Term | Means |
+| --- | --- |
+| **grouping key** | the opaque id a layer partitions its cells by; same-key cells fuse |
+| **region** | the ground one grouping key paints, enclosed by one traced border |
+| **fill state** | how ground inside a region paints: solid, hatched, or unfilled |
+| **coincident** | a neighbour whose shared edge insets by nothing, so two regions abut flush |
+
+`FillSplit.FillState` is the single definition of the three fill states; everything that hatches,
+tessellates, or styles ground refers to it rather than restating what a state means.
 
 ## The trace: one path to a cluster's rings
 
@@ -73,8 +91,8 @@ traces each state as its own region, while every system outside keeps its real k
 outer edge therefore lands exactly where the border draws it. Each state names the others' members
 as coincident, so the boundary they share insets by nothing and the fills abut on the raw cell
 edge. Filling per cell instead would truncate each member's kept edges against its own inset
-boundary, and two members meeting at a corner against a rival would pull their shared edge back by
-different amounts - opening an unfilled wedge on the more-receded side.
+boundary, and two members meeting at a corner against a neighbouring region would pull their shared
+edge back by different amounts - opening an unfilled wedge on the more-receded side.
 
 Both drawn states are then clipped to the smoothed loops, so neither keeps the mitered corner the
 rounding cut and pokes out past the line the border strokes. The unfilled state is never
@@ -82,7 +100,7 @@ tessellated at all: it holds ground for the border and the name and paints nothi
 
 ## What is not here
 
-*What* the keys mean - who holds a system, which of them are contested or drawn empty, what colour
+*What* the keys mean - what a region stands for, why a system hatches or draws empty, what colour
 any of it takes - belongs to whichever layer owns the regions; for the one layer that paints today
 that is [`politicalmap`](../../../politicalmap/README.md). *Who gets the frame at all* is the
 [render surface](../README.md) one level up. The *cells and clusters* the shaping runs over, and

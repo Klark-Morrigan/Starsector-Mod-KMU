@@ -1,12 +1,13 @@
 package kmu.maplayers.base.theme;
 
 /**
- * The sector-wide hatch pattern that fills the filter's contested territory - the
- * spotlighted bloc's present-but-dominated systems - so it reads as "mine, but contested"
- * against the solid space it holds outright. One pattern for the whole sector, so this is
- * a global-tier value (part of {@link GlobalStyle}), not something that varies per
- * territory: {@code spacing} is the perpendicular gap between lines in world units,
- * {@code angleRadians} their direction, and {@code width} the pixel stroke of each line.
+ * The sector-wide hatch pattern that ground in the
+ * {@link kmu.maplayers.base.render.regions.FillSplit.FillState#HATCHED} state is cut with, so
+ * it reads apart from the solid fill beside it while staying the same colour. One pattern for
+ * the whole sector, so this is a global-tier value (part of {@link GlobalStyle}) rather than
+ * something that varies per territory: {@code spacing} is the perpendicular gap between lines
+ * in world units, {@code angleRadians} their direction, and {@code width} the pixel stroke of
+ * each line.
  */
 public record HatchStyle(double spacing, double angleRadians, double width) {
 }
