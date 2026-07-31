@@ -30,6 +30,7 @@ import java.util.List;
  * that into both screens' keys on load and clears it, so no leftover key lingers.
  */
 public final class MapLayerRegistry {
+
     // Save-serialised identity of each screen's active pick; frozen once shipped, since renaming one
     // silently resets every existing save under it to the default.
     private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
@@ -43,9 +44,9 @@ public final class MapLayerRegistry {
     // selection and the overlay follows it; the intel host draws through the intel selection. Held here
     // so both keys and the legacy migration that seeds them sit in one place.
     private static final PersistedActiveLayerSelection MAP_SELECTION =
-            new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY);
+        new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY);
     private static final PersistedActiveLayerSelection INTEL_SELECTION =
-            new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY);
+        new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY);
 
     // The registered layers, in tab order, and the pick an untouched save resolves to. Empty
     // until a composition root registers them at startup, before any sector map can open.
@@ -155,9 +156,9 @@ public final class MapLayerRegistry {
      */
     public static void migrateLegacyActiveLayerKey() {
         PersistedActiveLayerSelection.migrateLegacyKeyInto(
-                LEGACY_ACTIVE_LAYER_KEY,
-                MAP_SELECTION,
-                INTEL_SELECTION);
+            LEGACY_ACTIVE_LAYER_KEY,
+            MAP_SELECTION,
+            INTEL_SELECTION);
     }
 
     /**
@@ -182,7 +183,7 @@ public final class MapLayerRegistry {
     // the pick that surface has always followed.
     private static ActiveLayerSelection resolveLiveSelection() {
         return intelScreen != null && intelScreen.isIntelTabOpen()
-                ? INTEL_SELECTION
-                : MAP_SELECTION;
+            ? INTEL_SELECTION
+            : MAP_SELECTION;
     }
 }

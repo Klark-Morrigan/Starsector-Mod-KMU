@@ -8,6 +8,7 @@ package kmu.maplayers.base.layer;
  * implementation decides which, and a consumer reads and writes through this seam without knowing.
  */
 public interface ActiveLayerSelection {
+
     /** @return the layer this selection currently holds as the active pick. */
     MapLayer getActiveLayer();
 

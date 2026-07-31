@@ -13,6 +13,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
  * yet or an id from an older build no longer registered.
  */
 public final class PersistedActiveLayerSelection implements ActiveLayerSelection {
+
     // The sector-memory key this pick reads and writes. Frozen by the caller once shipped: renaming it
     // silently resets every existing save under it to the default.
     private final String memoryKey;

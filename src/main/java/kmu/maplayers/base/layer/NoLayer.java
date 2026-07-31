@@ -16,6 +16,7 @@ import java.util.List;
  * so the empty map is understood as a choice, not a failure to draw.
  */
 public final class NoLayer implements MapLayer {
+
     /** The one shared instance; the registration and any state gate reference this pick. */
     public static final NoLayer INSTANCE = new NoLayer();
 
