@@ -93,7 +93,7 @@ public final class RenderStyleReader {
     // mid-hover repaints through the same rebuild every other style change does.
     public static HoverHighlightStyle readHoverHighlightStyle() {
         return new HoverHighlightStyle(
-                KmuLunaSettings.getPoliticalMapHoverHighlightColor(),
+                KmuLunaSettings.getPoliticalMapHoverHighlightColor().resolveElementPaint(),
                 new HoverGlowStyle(
                         KmuLunaSettings.getPoliticalMapHoverGlowOpacity(),
                         KmuLunaSettings.getPoliticalMapHoverGlowWidth(),
@@ -111,14 +111,14 @@ public final class RenderStyleReader {
     public static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
                 new ElementStyle(
-                        KmuLunaSettings.getFactionFillColor(),
+                        KmuLunaSettings.getFactionFillColor().resolveElementPaint(),
                         KmuLunaSettings.getFactionFillOpacity()),
                 new ElementStyle(
-                        KmuLunaSettings.getFactionOuterBorderColor(),
+                        KmuLunaSettings.getFactionOuterBorderColor().resolveElementPaint(),
                         KmuLunaSettings.getFactionOuterBorderOpacity()),
                 KmuLunaSettings.getFactionOuterBorderWidth(),
                 new ElementStyle(
-                        KmuLunaSettings.getFactionInnerBorderColor(),
+                        KmuLunaSettings.getFactionInnerBorderColor().resolveElementPaint(),
                         KmuLunaSettings.getFactionInnerBorderOpacity()),
                 KmuLunaSettings.getFactionInnerBorderWidth());
     }
@@ -126,14 +126,14 @@ public final class RenderStyleReader {
     public static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
                 new ElementStyle(
-                        KmuLunaSettings.getIndependentFillColor(),
+                        KmuLunaSettings.getIndependentFillColor().resolveElementPaint(),
                         KmuLunaSettings.getIndependentFillOpacity()),
                 new ElementStyle(
-                        KmuLunaSettings.getIndependentOuterBorderColor(),
+                        KmuLunaSettings.getIndependentOuterBorderColor().resolveElementPaint(),
                         KmuLunaSettings.getIndependentOuterBorderOpacity()),
                 KmuLunaSettings.getIndependentOuterBorderWidth(),
                 new ElementStyle(
-                        KmuLunaSettings.getIndependentInnerBorderColor(),
+                        KmuLunaSettings.getIndependentInnerBorderColor().resolveElementPaint(),
                         KmuLunaSettings.getIndependentInnerBorderOpacity()),
                 KmuLunaSettings.getIndependentInnerBorderWidth());
     }
@@ -145,7 +145,7 @@ public final class RenderStyleReader {
     public static CategoryStyle readDecivilisedStyle() {
         return neutralStyle(
                 new ElementStyle(
-                        FactionPaletteChoice.PRIMARY,
+                        FactionPaletteChoice.PRIMARY.resolveElementPaint(),
                         KmuLunaSettings.getDecivilisedFillOpacity()),
                 true,
                 KmuLunaSettings.getDecivilisedBorderOpacity(),
@@ -182,7 +182,7 @@ public final class RenderStyleReader {
 
         return new CategoryStyle(
                 fill,
-                new ElementStyle(outerColor, outlineOpacity),
+                new ElementStyle(outerColor.resolveElementPaint(), outlineOpacity),
                 outlineWidth,
                 ElementStyle.NOT_DRAWN,
                 0);

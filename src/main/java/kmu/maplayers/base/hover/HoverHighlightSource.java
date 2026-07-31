@@ -1,6 +1,6 @@
 package kmu.maplayers.base.hover;
 
-import kmu.settings.FactionPaletteChoice;
+import kmu.maplayers.base.theme.ElementPaint;
 
 import java.awt.Color;
 import java.util.List;
@@ -42,7 +42,7 @@ public interface HoverHighlightSource {
      * @return that shade, or null when the choice paints nothing, so the caller skips the
      *         whole pass
      */
-    Color resolveHighlightColourOf(String cellId, FactionPaletteChoice paletteChoice);
+    Color resolveHighlightColourOf(String cellId, ElementPaint paletteChoice);
 
     /**
      * The extent the layer painted for one cell - the shape the wash lifts.

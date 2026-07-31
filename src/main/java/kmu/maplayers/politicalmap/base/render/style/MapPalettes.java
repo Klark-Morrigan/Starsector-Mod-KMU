@@ -7,6 +7,7 @@ import kmlib.color.Colors;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.factions.StarsectorFactionColors;
 
+import kmu.maplayers.base.theme.ElementPaint;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantOwner;
 import kmu.settings.FactionPaletteChoice;
@@ -66,12 +67,20 @@ public final class MapPalettes {
      * Picks the palette shade the player pointed an element at: the secondary (dark)
      * shade for a SECONDARY choice, the primary (bright) shade for a PRIMARY choice, or
      * null for NONE ("No color") so the caller skips that element.
+     *
+     * <p>Takes the theme's opaque {@link ElementPaint} rather than this map's own enum, since
+     * that is the form every style carries a selection in. This is the one place the two meet,
+     * so the styles stay free of casts and a selection that is absent or belongs to another
+     * layer's option set resolves to no shade instead of reaching the switch at all.
      */
     public static Color pickPaletteColor(
-            FactionPaletteChoice choice,
+            ElementPaint choice,
             Color primaryColor,
             Color secondaryColor) {
-        return switch (choice) {
+        if (!(choice instanceof FactionPaletteChoice paletteChoice)) {
+            return null;
+        }
+        return switch (paletteChoice) {
             case PRIMARY -> primaryColor;
             case SECONDARY -> secondaryColor;
             case NONE -> null;
@@ -90,7 +99,7 @@ public final class MapPalettes {
      * its owner, and an element whose whole job is to name that owner should say so.
      */
     public static Color pickOwnerPaletteColor(
-            FactionPaletteChoice choice, 
+            ElementPaint choice,
             DominantOwner owner,
             Color neutralColor) {
         return owner == null

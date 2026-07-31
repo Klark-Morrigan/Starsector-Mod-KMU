@@ -1,6 +1,5 @@
 package kmu.maplayers.base.theme;
 
-import kmu.settings.FactionPaletteChoice;
 
 /**
  * Shared fixtures for the tests that need a theme they are not testing: the global tier and the
@@ -18,7 +17,7 @@ public final class ThemeFixtures {
 
     /** The cursor feedback switched off, for the suites that hover nothing. */
     public static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
-            FactionPaletteChoice.NONE,
+            null,
             new HoverGlowStyle(0, 0, 0, 0, 0),
             new HoverWashStyle(0, 0, 0));
 

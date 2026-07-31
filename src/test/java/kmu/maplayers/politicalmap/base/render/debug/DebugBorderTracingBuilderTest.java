@@ -84,7 +84,7 @@ final class DebugBorderTracingBuilderTest {
     private static final int CORNER_SEGMENTS = 4;
     private static final double CHAMFER_ANGLE_RADIANS = 0.5;
     private static final ElementStyle DRAWN_OUTLINE =
-            new ElementStyle(FactionPaletteChoice.PRIMARY, 1.0);
+            new ElementStyle(FactionPaletteChoice.PRIMARY.resolveElementPaint(), 1.0);
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
             HELD_SYSTEM, List.of(
                     edgeFacing(0, 0, 2000, 0, null),

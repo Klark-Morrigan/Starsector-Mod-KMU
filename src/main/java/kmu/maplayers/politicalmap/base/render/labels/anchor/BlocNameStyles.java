@@ -29,10 +29,10 @@ public record BlocNameStyles(ElementStyle factionNameStyle, ElementStyle indepen
     public static BlocNameStyles readFromLunaSettings() {
         return new BlocNameStyles(
                 new ElementStyle(
-                        KmuLunaSettings.getFactionOuterBorderColor(),
+                        KmuLunaSettings.getFactionOuterBorderColor().resolveElementPaint(),
                         KmuLunaSettings.getFactionNameOpacity()),
                 new ElementStyle(
-                        KmuLunaSettings.getIndependentOuterBorderColor(),
+                        KmuLunaSettings.getIndependentOuterBorderColor().resolveElementPaint(),
                         KmuLunaSettings.getIndependentNameOpacity()));
     }
 }

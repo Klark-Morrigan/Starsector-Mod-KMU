@@ -1,6 +1,5 @@
 package kmu.maplayers.base.theme;
 
-import kmu.settings.FactionPaletteChoice;
 
 /**
  * How the map answers the cursor: the {@link HoverGlowStyle} halo around the hovered
@@ -19,7 +18,7 @@ import kmu.settings.FactionPaletteChoice;
  * kind of ground was under the pointer would read as the map responding unevenly.
  */
 public record HoverHighlightStyle(
-        FactionPaletteChoice color,
+        ElementPaint color,
         HoverGlowStyle glow,
         HoverWashStyle wash) {
 }
