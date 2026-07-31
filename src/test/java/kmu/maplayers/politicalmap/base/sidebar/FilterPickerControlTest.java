@@ -4,11 +4,11 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
+import kmu.maplayers.base.sidebar.SortDirection;
 import kmu.maplayers.politicalmap.base.BlocListColumns;
 import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
-import kmu.maplayers.politicalmap.base.SortDirection;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.util.KmuStrings;

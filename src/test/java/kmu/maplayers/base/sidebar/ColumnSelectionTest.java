@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.refresh;
+package kmu.maplayers.base.sidebar;
 
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 

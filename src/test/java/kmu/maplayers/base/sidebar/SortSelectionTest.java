@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.refresh;
+package kmu.maplayers.base.sidebar;
 
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
@@ -16,10 +16,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the sort selection state: the reads report the stored mode and direction keys or none, a pick
- * persists each key, and the writes no-op cleanly before the sector exists. Unlike the filter
- * selection this fires no refresh, so there is nothing to verify beyond the memory write. The frozen
- * keys are pinned as literals so a rename that would silently reset every save's sort choice fails here
- * rather than shipping.
+ * persists each key, and the writes no-op cleanly before the sector exists. No refresh is fired, so
+ * there is nothing to verify beyond the memory write. The frozen keys are pinned as literals so a
+ * rename that would silently reset every save's sort choice fails here rather than shipping.
  */
 final class SortSelectionTest {
     // The save-serialised keys, pinned as literals: renaming either resets every existing save's sort

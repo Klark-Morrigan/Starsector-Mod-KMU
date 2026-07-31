@@ -4,10 +4,10 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 import kmlib.starsector.ui.controls.TriangleDirection;
 
+import kmu.maplayers.base.sidebar.SortDirection;
+import kmu.maplayers.base.sidebar.SortSelection;
 import kmu.maplayers.politicalmap.base.BlocSort;
 import kmu.maplayers.politicalmap.base.BlocSortMode;
-import kmu.maplayers.politicalmap.base.SortDirection;
-import kmu.maplayers.politicalmap.base.refresh.SortSelection;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;

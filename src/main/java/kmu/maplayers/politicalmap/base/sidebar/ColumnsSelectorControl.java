@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.sidebar.ColumnSelection;
 import kmu.maplayers.politicalmap.base.BlocListColumns;
-import kmu.maplayers.politicalmap.base.refresh.ColumnSelection;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;

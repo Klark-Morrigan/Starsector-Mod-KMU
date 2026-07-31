@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
+import kmu.maplayers.base.sidebar.SortDirection;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 
 import org.junit.jupiter.api.Nested;

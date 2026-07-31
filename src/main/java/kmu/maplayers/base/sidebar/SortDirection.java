@@ -1,14 +1,13 @@
-package kmu.maplayers.politicalmap.base;
+package kmu.maplayers.base.sidebar;
 
 /**
- * The direction the filter picker's active sort runs in - ascending or descending on the chosen
- * metric. It rides alongside the {@link BlocSortMode}: a mode fixes which key ranks the blocs, this
- * fixes which way that key runs. Split out from the mode because the two persist and change
- * independently - picking a new mode resets the direction to that mode's default, while re-picking
- * the lit mode flips only the direction.
+ * The direction a sidebar picker's active sort runs in - ascending or descending on the chosen metric.
+ * It rides alongside a sort mode: a mode fixes which key ranks the rows, this fixes which way that key
+ * runs. Split out from the mode because the two persist and change independently - picking a new mode
+ * resets the direction to that mode's default, while re-picking the lit mode flips only the direction.
  *
- * <p>Each direction owns the save-stable key it persists under; the sort selector maps it to the
- * up/down triangle it draws in a row's trailing slot, since the body font renders no up/down glyph.
+ * <p>Each direction owns the save-stable key it persists under; a sort selector maps it to the up/down
+ * triangle it draws in a row's trailing slot, since the body font renders no up/down glyph.
  * {@link #opposite()} is the flip a re-pick applies.
  */
 public enum SortDirection {

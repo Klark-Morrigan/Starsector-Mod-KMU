@@ -7,7 +7,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.maplayers.politicalmap.base.refresh.ColumnSelection;
+import kmu.maplayers.base.sidebar.ColumnSelection;
 import kmu.maplayers.politicalmap.base.refresh.FilterSelection;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
