@@ -34,9 +34,9 @@ public final class EdgeClassifier {
      *       BOUNDARY.</li>
      * </ul>
      *
-     * @param cellOwner       the owner of this side, or null if unowned
+     * @param cellOwner      the owner of this side, or null if unowned
      * @param neighbourOwner the owner across the edge, or null if unowned or
-     *                          a frontier into empty space
+     *                       a frontier into empty space
      * @return INTERIOR_SEAM for a shared non-null owner, OPEN_FRONTIER for an owner on exactly
      *         one side, else BOUNDARY
      */
@@ -63,11 +63,11 @@ public final class EdgeClassifier {
      * no star across it there is nothing to reach toward; and more of the same ground is an
      * interior seam outright - the far side is this cell's own ground, so no owner can differ.
      *
-     * @param edge             the cell edge, tagged with what lies across it
-     * @param cellOwner      the owner of the cell this edge belongs to, or null if
-     *                         that cell is unowned
+     * @param edge            the cell edge, tagged with what lies across it
+     * @param cellOwner       the owner of the cell this edge belongs to, or null if
+     *                        that cell is unowned
      * @param ownerBySystemId the owner per system, to look up the owner of a system
-     *                         across the edge
+     *                        across the edge
      * @return INTERIOR_SEAM for a shared non-null owner or for same-ground, OPEN_FRONTIER for
      *         a owned cell facing an unowned star, else BOUNDARY; the reach bound is always
      *         BOUNDARY

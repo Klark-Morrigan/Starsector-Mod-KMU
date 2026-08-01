@@ -32,6 +32,7 @@ import java.util.List;
  * off sentinel resolves to no view (dark while the tab stays open).
  */
 public final class PoliticalMapViewRegistry {
+
     // Save-serialised id of the active view, or the off sentinel; frozen once shipped, since
     // renaming it silently resets every existing save to the default.
     private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
@@ -51,7 +52,7 @@ public final class PoliticalMapViewRegistry {
     // absent key to null (the caller then falls to the default). The legacy-overlay self-heal below
     // still touches memory through a single handle, so it keeps its own access.
     private static final SectorMemoryString activeViewSelection =
-            new SectorMemoryString(ACTIVE_VIEW_KEY);
+        new SectorMemoryString(ACTIVE_VIEW_KEY);
 
     // The registered views, in radio-segment order, the pick an untouched save resolves to, and the
     // tab that hosts the view radio. Empty until a composition root registers them at startup,
@@ -72,8 +73,11 @@ public final class PoliticalMapViewRegistry {
      * @param defaultView the pick an untouched save (or a stale stored id) resolves to
      * @param hostTab     the tab whose active-ness gates the paint (the political-map tab)
      */
-    public static void registerViews(List<PoliticalMapView> views, PoliticalMapView defaultView,
+    public static void registerViews(
+            List<PoliticalMapView> views,
+            PoliticalMapView defaultView,
             MapLayer hostTab) {
+
         orderedViews = List.copyOf(views);
         PoliticalMapViewRegistry.defaultView = defaultView;
         PoliticalMapViewRegistry.hostTab = hostTab;
@@ -96,6 +100,7 @@ public final class PoliticalMapViewRegistry {
             return;
         }
         var wasOverlayOn = memory.getBoolean(LEGACY_FACTION_OVERLAY_KEY);
+        
         memory.set(ACTIVE_VIEW_KEY, wasOverlayOn ? defaultView.getId() : OFF_SELECTION);
         memory.unset(LEGACY_FACTION_OVERLAY_KEY);
     }

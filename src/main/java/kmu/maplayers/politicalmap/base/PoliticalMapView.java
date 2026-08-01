@@ -105,9 +105,9 @@ public interface PoliticalMapView {
      * @return true when the bloc takes the independent style
      */
     boolean shouldUseIndependentStyle(
-            String blocId,
-            HolderGrouping grouping,
-            BlocStyleAdjustment adjustment);
+        String blocId,
+        HolderGrouping grouping,
+        BlocStyleAdjustment adjustment);
 
     /**
      * How a bloc's fills, borders, and name are dimmed or recoloured before the pipeline
@@ -139,10 +139,10 @@ public interface PoliticalMapView {
      * @return the bloc's display name, or null when none resolves
      */
     String resolveName(
-            String blocId,
-            HolderGrouping grouping,
-            SectorAPI sector,
-            FactionNameFormatChoice nameFormat);
+        String blocId,
+        HolderGrouping grouping,
+        SectorAPI sector,
+        FactionNameFormatChoice nameFormat);
 
     /**
      * The blocs the filter picker offers under this view: factions with a visible weighted market
@@ -166,13 +166,13 @@ public interface PoliticalMapView {
      * arguments it would ignore. A view opts into the spotlight by overriding this, the same way it
      * opts into its own body controls.
      *
-     * @param sector                       the sector whose economy the visibility gate reads; null
-     *                                     yields an empty list
-     * @param rules                        the dominance-weighting rules for this read, so selectable
-     *                                     blocs are gated under the same rule the map paints under
+     * @param sector                           the sector whose economy the visibility gate reads; null
+     *                                         yields an empty list
+     * @param rules                            the dominance-weighting rules for this read, so selectable
+     *                                         blocs are gated under the same rule the map paints under
      * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
-     *                                     visibility (the "show all factions" dev reveal); false
-     *                                     applies the normal known-to-player filter
+     *                                         visibility (the "show all factions" dev reveal); false
+     *                                         applies the normal known-to-player filter
      * @return the selectable blocs, in the order the economy walk surfaces them; empty when no bloc
      *         holds a visible weighted market, and empty by default for a view with no spotlight
      */
@@ -193,9 +193,9 @@ public interface PoliticalMapView {
      */
     default List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector) {
         return resolveSelectableBlocs(
-                sector,
-                DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions());
+            sector,
+            DominanceRules.readFromLunaSettings(),
+            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions());
     }
 
     /**

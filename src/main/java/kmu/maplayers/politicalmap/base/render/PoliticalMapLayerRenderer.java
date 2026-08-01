@@ -129,7 +129,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         }
         if (hoverPublisher == null) {
             hoverPublisher = new PoliticalMapHoverPublisher(
-                    ModelviewMatrixReaders.selectForActiveRenderer());
+                ModelviewMatrixReaders.selectForActiveRenderer());
         }
         // The cursor read sits between the refresh and the draw: after, so it tests against the
         // shapes this frame actually paints, and before, so the highlight layers already have the

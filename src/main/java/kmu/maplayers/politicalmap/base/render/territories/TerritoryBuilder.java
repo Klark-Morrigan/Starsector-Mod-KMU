@@ -72,9 +72,12 @@ public final class TerritoryBuilder {
             // which spotlit systems are contested, since the whole spotlit footprint shares one
             // key and that set is the only record of the dominant/contested split.
             var politicsStart = System.nanoTime();
-            var resolution = profiler.measure("politicalMap.resolvePolitics",
-                    () -> view.resolveHolderProvider()
-                            .resolveHolder(sector, grouping, selectedBlocId));
+            var resolution = profiler.measure(
+                "politicalMap.resolvePolitics",
+                () -> view
+                        .resolveHolderProvider()
+                        .resolveHolder(sector, grouping, selectedBlocId));
+
             var ownerBySystemId = resolution.ownerBySystemId();
             var contestedSystemIds = resolution.contestedSystemIds();
 
@@ -82,16 +85,21 @@ public final class TerritoryBuilder {
             // empty inside its one border. Empty for the faction/alliance and filter paths today;
             // the split reads it so a source that populates it needs no further wiring.
             var unfilledSystemIds = resolution.unfilledSystemIds();
-            LOG.debug("Political map politics resolved; ownedSystems=" + ownerBySystemId.size()
-                    + " filtering=" + isFiltering + " contested=" + contestedSystemIds.size()
-                    + " unfilled=" + unfilledSystemIds.size()
-                    + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
+            LOG.debug("Political map politics resolved; ownedSystems="
+                + ownerBySystemId.size()
+                + " filtering=" + isFiltering
+                + " contested=" + contestedSystemIds.size()
+                + " unfilled=" + unfilledSystemIds.size()
+                + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
 
             var decivilisedStart = System.nanoTime();
-            var decivilisedSystemIds = profiler.measure("politicalMap.findDecivilised",
-                    () -> DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector));
-            LOG.debug("Political map decivilised scan; systems=" + decivilisedSystemIds.size()
-                    + " took=" + Timings.formatMillis(System.nanoTime() - decivilisedStart));
+            var decivilisedSystemIds = profiler.measure(
+                "politicalMap.findDecivilised",
+                () -> DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector));
+
+            LOG.debug("Political map decivilised scan; systems="
+                + decivilisedSystemIds.size()
+                + " took=" + Timings.formatMillis(System.nanoTime() - decivilisedStart));
 
             // The whole theme - the global tier plus one style per category - read once here
             // through the single reader seam, plus the shared neutral colour and the desaturation
@@ -104,14 +112,16 @@ public final class TerritoryBuilder {
             // live setting so it sits below genuine independent-held space - a spotlit bloc, even
             // Independent at full strength, therefore reads distinctly against it.
             var desaturationPalette = MapPalettes.resolveDesaturationPalette(
-                    sector, renderStyle.global().desaturationDarkening());
+                sector,
+                renderStyle.global().desaturationDarkening());
 
             // The styling every non-spotlighted bloc recedes to, resolved once from the filter recede
             // toggles - the "rest of the sector" set, shared across both views under a filter; the
             // identity adjustment off filter, so a normal pass touches no bloc.
             var recedeAdjustment = isFiltering
-                    ? RecedePreferences.FILTER.resolveRecedeAdjustment()
-                    : BlocStyleAdjustment.NONE;
+                ? RecedePreferences.FILTER.resolveRecedeAdjustment()
+                : BlocStyleAdjustment.NONE;
+
             var territories = new PoliticalMapTerritories(
                 ownerBySystemId,
                 decivilisedSystemIds,
@@ -125,27 +135,33 @@ public final class TerritoryBuilder {
             // key. Cells consumed by the inset (fewer than three vertices left) drop out.
             var shapeStart = System.nanoTime();
             var cellGrouping = resolveCellGrouping(territories, geometryCache);
-            var shapedCells = profiler.measure("politicalMap.shapeCells",
-                    () -> CellShaper.shapeCells(geometryCache.getCellEdgesByCellId(),
-                            cellGrouping, CellShaper.BORDER_INSET_DISTANCE));
+            var shapedCells = profiler.measure(
+                "politicalMap.shapeCells",
+                () -> CellShaper.shapeCells(
+                    geometryCache.getCellEdgesByCellId(),
+                    cellGrouping,
+                    CellShaper.BORDER_INSET_DISTANCE));
+
             for (var entry : shapedCells.entrySet()) {
+
                 var styled = StyledCellBuilder.buildStyledCellForSystem(
-                        territories,
-                        cellGrouping.resolveDrawnSystemIdOf(entry.getKey()),
-                        entry.getValue());
+                    territories,
+                    cellGrouping.resolveDrawnSystemIdOf(entry.getKey()),
+                    entry.getValue());
+
                 if (styled != null) {
                     territories.putStyledCell(
-                            entry.getKey(),
-                            styled,
-                            entry.getValue().fillPolygon());
+                        entry.getKey(),
+                        styled,
+                        entry.getValue().fillPolygon());
                 }
             }
             // The clusters the cursor read resolves a hovered cell's whole territory through.
             // Derived here off the same keys the shaping just fused the cells by, so a highlighted
             // territory is exactly the one the map merged into a single cluster.
             territories.reindexClusters(
-                    geometryCache.getCellEdgesByCellId(),
-                    geometryCache.getSystemIdByCellId());
+                geometryCache.getCellEdgesByCellId(),
+                geometryCache.getSystemIdByCellId());
 
             // Each owned faction's territory: one cluster per cluster (traced across all
             // its cells so a multi-system cluster reads as one frontier), tessellated for
@@ -153,14 +169,18 @@ public final class TerritoryBuilder {
             // the same raw cells and holders the seams used, and profiled on its own since
             // chaining, smoothing, and tessellating every faction's outline is comparable
             // in cost to shaping the cells.
-            profiler.measure("politicalMap.buildFactionTerritories",
-                    () -> FactionTerritoryBuilder.buildAllFactionTerritories(
-                            territories, geometryCache));
+            profiler.measure(
+                "politicalMap.buildFactionTerritories",
+                () -> FactionTerritoryBuilder.buildAllFactionTerritories(
+                    territories,
+                    geometryCache));
 
-            LOG.debug("Political map cells shaped; shaped=" + shapedCells.size()
-                    + " styledCells=" + territories.getStyledCellByCellId().size()
-                    + " factionTerritories=" + territories.getFactionTerritoryByFactionId().size()
-                    + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
+            LOG.debug("Political map cells shaped; shaped="
+                + shapedCells.size()
+                + " styledCells=" + territories.getStyledCellByCellId().size()
+                + " factionTerritories=" + territories.getFactionTerritoryByFactionId().size()
+                + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
+
             return territories;
         });
     }
@@ -172,8 +192,7 @@ public final class TerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
         return DominantHolder.mapCellGrouping(
-                geometryCache.getSystemIdByCellId(),
-                territories.getHolderBySystemId());
+            geometryCache.getSystemIdByCellId(),
+            territories.getHolderBySystemId());
     }
-
 }

@@ -65,8 +65,10 @@ public final class FactionTerritoryBuilder {
         var adjustment = styling.adjustment();
 
         // Every system of a bloc shares its palette, so any member resolves the same colours.
-        var holder = territories.getHolderBySystemId()
-                .get(cellGrouping.resolveDrawnSystemIdOf(memberCellIds.get(0)));
+        var holder = territories
+            .getHolderBySystemId()
+            .get(cellGrouping.resolveDrawnSystemIdOf(memberCellIds.get(0)));
+
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
             holder,
@@ -91,15 +93,16 @@ public final class FactionTerritoryBuilder {
         // offset under identical parameters and cannot drift apart.
         var borderTrace = ClusterBorderTrace.readFromLunaSettings();
         var insetRings = borderTrace.traceRings(
-                memberCellIds,
-                geometryCache.getCellEdgesByCellId(),
-                cellGrouping);
+            memberCellIds,
+            geometryCache.getCellEdgesByCellId(),
+            cellGrouping);
+
         if (insetRings.isEmpty()) {
             return null;
         }
         var borderLoops = resolveSmoothedBorderLoops(
-                insetRings,
-                territories.getGlobalStyle().borderSmoothing());
+            insetRings,
+            territories.getGlobalStyle().borderSmoothing());
 
         // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
         // one key, so it clusters into this single territory outlined by one frontier and then
@@ -119,6 +122,7 @@ public final class FactionTerritoryBuilder {
                     territories.getUnfilledSystemIds()),
                 blocId,
                 fillColour);
+
         return new FactionTerritory(
             fill.solidTriangles(),
             fill.hatchSegments(),
@@ -146,11 +150,13 @@ public final class FactionTerritoryBuilder {
 
         var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByOwner();
         for (var bloc : grouped.entrySet()) {
+
             var territory = buildFactionTerritory(
-                    territories,
-                    geometryCache,
-                    bloc.getKey(),
-                    bloc.getValue());
+                territories,
+                geometryCache,
+                bloc.getKey(),
+                bloc.getValue());
+
             if (territory != null) {
                 territories.getFactionTerritoryByFactionId().put(bloc.getKey(), territory);
             }
@@ -166,8 +172,8 @@ public final class FactionTerritoryBuilder {
             BorderSmoothingStyle borderSmoothing) {
 
         return BorderSmoothing.smoothBorderLoops(
-                PolygonTessellator.tessellateToBoundaryLoops(insetRings),
-                borderSmoothing);
+            PolygonTessellator.tessellateToBoundaryLoops(insetRings),
+            borderSmoothing);
     }
 
     // The border's stroked runs, one per closed loop. A "No color" border bakes none at all
@@ -193,7 +199,7 @@ public final class FactionTerritoryBuilder {
             CellGeometryCache geometryCache) {
 
         return DominantHolder.mapCellGrouping(
-                geometryCache.getSystemIdByCellId(),
-                territories.getHolderBySystemId());
+            geometryCache.getSystemIdByCellId(),
+            territories.getHolderBySystemId());
     }
 }

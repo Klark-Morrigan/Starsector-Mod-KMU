@@ -13,6 +13,7 @@ package kmu.maplayers.politicalmap.base;
  * under, so the stored choice resolves back without matching a display string that is free to change.
  */
 public enum FactionNameFormatChoice {
+
     FULL("full", true),
     SHORT("short", true),
     NONE("none", false);
@@ -33,8 +34,10 @@ public enum FactionNameFormatChoice {
      * @param fallback the choice to use when the key is null or unrecognised
      * @return the matching choice, or {@code fallback} when the key is null or unrecognised
      */
-    public static FactionNameFormatChoice fromKeyOrDefault(String key,
+    public static FactionNameFormatChoice fromKeyOrDefault(
+            String key,
             FactionNameFormatChoice fallback) {
+                
         for (var choice : values()) {
             if (choice.persistenceKey.equals(key)) {
                 return choice;

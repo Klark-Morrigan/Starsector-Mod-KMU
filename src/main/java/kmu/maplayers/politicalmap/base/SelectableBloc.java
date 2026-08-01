@@ -27,8 +27,11 @@ import kmu.maplayers.politicalmap.base.politics.BlocStats;
  * @param stats           the bloc's whole-sector metrics (domination, presence, score, market size)
  *                        the picker sorts and displays it by
  */
-public record SelectableBloc(String blocId, String displayName, String crestSpritePath,
-        BlocStats stats) {
+public record SelectableBloc(
+    String blocId,
+    String displayName,
+    String crestSpritePath,
+    BlocStats stats) {
 
     /**
      * A selectable bloc listed without whole-sector stats, for a context that only ever reads its id,

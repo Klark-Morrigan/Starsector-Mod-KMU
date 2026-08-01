@@ -52,11 +52,16 @@ public final class SelectableBlocCache {
      *               view's empty list
      * @return the memoised selectable blocs; the same list instance while nothing it depends on moves
      */
-    public static List<SelectableBloc> resolveSelectableBlocs(PoliticalMapView view,
+    public static List<SelectableBloc> resolveSelectableBlocs(
+            PoliticalMapView view,
             SectorAPI sector) {
+
         var revision = computeRevision(view);
-        if (sector != cachedSector.get() || !view.getId().equals(cachedViewId)
+
+        if (sector != cachedSector.get()
+                || !view.getId().equals(cachedViewId)
                 || revision != cachedRevision) {
+
             cachedSector = new WeakReference<>(sector);
             cachedViewId = view.getId();
             cachedRevision = revision;
@@ -70,6 +75,8 @@ public final class SelectableBlocCache {
     // (the alliance set, for the alliances view; a constant for the faction view). The filter
     // selection is absent by design - it changes which bloc is lit, never which blocs are listed.
     private static int computeRevision(PoliticalMapView view) {
-        return Objects.hash(KmuLunaSettings.getSettingsRevision(), view.getContentRevision());
+        return Objects.hash(
+            KmuLunaSettings.getSettingsRevision(),
+            view.getContentRevision());
     }
 }

@@ -28,7 +28,7 @@ public final class AllianceBodyControls {
      */
     public static List<ControlSpec> buildControls() {
         return RecedeControl.buildControls(
-                RecedePreferences.ALLIANCE_NON_ALLIED,
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION));
+            RecedePreferences.ALLIANCE_NON_ALLIED,
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION));
     }
 }

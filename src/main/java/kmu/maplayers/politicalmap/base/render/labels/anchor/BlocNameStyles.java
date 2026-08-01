@@ -18,7 +18,9 @@ import kmu.settings.KmuLunaSettings;
  * @param factionNameStyle     how a core faction's names are coloured and faded
  * @param independentNameStyle how independent space's names are coloured and faded
  */
-public record BlocNameStyles(ElementStyle factionNameStyle, ElementStyle independentNameStyle) {
+public record BlocNameStyles(
+    ElementStyle factionNameStyle,
+    ElementStyle independentNameStyle) {
 
     /**
      * Reads the live per-group name styling: each group's outer-border colour choice beside

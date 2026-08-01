@@ -30,6 +30,7 @@ import java.util.List;
  * hidden.
  */
 public final class PoliticalMapStaticDebugRenderer {
+    
     // Widths taper so each earlier stage's line haloes out from under the next: the base is
     // widest, the rounded thinnest and on top. The stage colours come from the shared
     // {@link DiagnosticPalette}: the base trace is superseded geometry (red), the despiked
@@ -44,13 +45,20 @@ public final class PoliticalMapStaticDebugRenderer {
 
     // Draws the whole debug overlay for one map frame, in the same below-UI pass and
     // isolated GL state the normal render uses. An empty overlay skips the push entirely.
-    public static void renderOnMap(PoliticalMapDebugTerritories debug, float factor,
+    public static void renderOnMap(
+            PoliticalMapDebugTerritories debug,
+            float factor,
             float alphaMult) {
+
         if (debug.isEmpty()) {
             return;
         }
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT
-                | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_LINE_BIT | GL11.GL_HINT_BIT);
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT
+            | GL11.GL_CURRENT_BIT
+            | GL11.GL_COLOR_BUFFER_BIT
+            | GL11.GL_LINE_BIT
+            | GL11.GL_HINT_BIT);
+
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);

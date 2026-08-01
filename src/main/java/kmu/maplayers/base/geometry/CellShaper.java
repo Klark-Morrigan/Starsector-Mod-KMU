@@ -77,12 +77,12 @@ public final class CellShaper {
      * refresh path that re-shapes just the cells around an ownership change rather
      * than the whole map. Same rule as {@link #shapeCells}, applied to one cell.
      *
-     * @param edges              the cell's raw edges, in winding order, each tagged
-     *                           with what lies across it
-     * @param cellOwner        the owner of this cell, or null if unowned
+     * @param edges           the cell's raw edges, in winding order, each tagged
+     *                        with what lies across it
+     * @param cellOwner       the owner of this cell, or null if unowned
      * @param ownerBySystemId the owner per system, to classify each edge
-     *                           as a same-owner seam or a border
-     * @param borderInset        inward inset applied to every border edge
+     *                        as a same-owner seam or a border
+     * @param borderInset     inward inset applied to every border edge
      * @return the shaped cell: its inset fill polygon and per-edge boundary flags
      */
     public static ShapedCell shapeCell(

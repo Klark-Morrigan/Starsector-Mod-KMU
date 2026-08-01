@@ -26,6 +26,7 @@ import java.util.List;
  * are rebuilt per call so a flipped toggle shows immediately.
  */
 public final class PoliticalMapBodyControls {
+
     // The name radio's segments, in the order the layout lays them out left to right: the two drawn
     // forms longest-first, then No. The lit segment opens the sentence its trailing caption closes -
     // "Full faction names", "No faction names" - which is why that caption is lowercase. The lit
@@ -44,18 +45,19 @@ public final class PoliticalMapBodyControls {
      */
     public static List<ControlSpec> buildSharedControls() {
         return List.of(
-                ControlSpec.Checkbox.lit(
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
-                        UninhabitedOutlinePreference.isOutlineDrawn(),
-                        cellIndex -> toggleUninhabitedSystems()),
-                ControlSpec.HorizontalRadio.of(
-                        List.of(
-                                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL),
-                                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
-                                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_NONE)),
-                        nameFormatRadioState(),
-                        PoliticalMapBodyControls::selectNameFormatSegment)
-                        .showsCaption(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES)));
+            ControlSpec.Checkbox.lit(
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
+                UninhabitedOutlinePreference.isOutlineDrawn(),
+                cellIndex -> toggleUninhabitedSystems()),
+            ControlSpec.HorizontalRadio
+                .of(
+                    List.of(
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL),
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
+                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_NONE)),
+                    nameFormatRadioState(),
+                    PoliticalMapBodyControls::selectNameFormatSegment)
+                .showsCaption(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES)));
     }
 
     /**
@@ -75,9 +77,9 @@ public final class PoliticalMapBodyControls {
         // No caption: the segment labels already name the views, so a trailing word would only repeat
         // what the row reads as.
         return ControlSpec.HorizontalRadio.of(
-                labels,
-                PoliticalMapViewRegistry.getSelectedViewIndex(),
-                PoliticalMapBodyControls::selectViewSegment);
+            labels,
+            PoliticalMapViewRegistry.getSelectedViewIndex(),
+            PoliticalMapBodyControls::selectViewSegment);
     }
 
     // Activates the view its clicked segment names. Any index outside the registered views is ignored,
@@ -102,7 +104,7 @@ public final class PoliticalMapBodyControls {
     // follows the checkbox on the next frame.
     private static void toggleUninhabitedSystems() {
         UninhabitedOutlinePreference.setOutlineDrawn(
-                !UninhabitedOutlinePreference.isOutlineDrawn());
+            !UninhabitedOutlinePreference.isOutlineDrawn());
     }
 
     // Writes the name choice for the clicked radio segment, matching the Full-Short-No segment order

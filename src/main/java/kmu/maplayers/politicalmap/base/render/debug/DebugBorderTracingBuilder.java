@@ -48,6 +48,7 @@ import java.util.Set;
  * colour" - so the overlay does not flood the map with every uninhabited system's cell.
  */
 public final class DebugBorderTracingBuilder {
+
     // Builds only; never instantiated.
     private DebugBorderTracingBuilder() {
     }
@@ -64,10 +65,11 @@ public final class DebugBorderTracingBuilder {
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its faction id.
         var cellGrouping = DominantHolder.mapCellGrouping(
-                geometryCache.getSystemIdByCellId(),
-                ownerBySystemId);
+            geometryCache.getSystemIdByCellId(),
+            ownerBySystemId);
 
         var decivilisedSystemIds = DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector);
+
         // The same trace and the same smoothing profile the production build reads, so a stage
         // captured here is the geometry the normal render would have drawn rather than one this
         // builder assembled from its own reads of the same knobs.
@@ -78,12 +80,14 @@ public final class DebugBorderTracingBuilder {
         var roundedLoops = new ArrayList<float[]>();
 
         for (var memberCellIds : cellGrouping.groupCellIdsByOwner().values()) {
+
             // Whole clusters, so no neighbour is coincident: every boundary edge takes the
             // uniform channel, exactly as the drawn national border does.
             var insetRings = borderTrace.traceRings(
-                    memberCellIds,
-                    geometryCache.getCellEdgesByCellId(),
-                    cellGrouping);
+                memberCellIds,
+                geometryCache.getCellEdgesByCellId(),
+                cellGrouping);
+
             if (insetRings.isEmpty()) {
                 continue;
             }
@@ -94,6 +98,7 @@ public final class DebugBorderTracingBuilder {
             var base = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
             addFlattenedLoops(baseLoops, base);
             var smoothed = base;
+
             if (borderSmoothing.shouldSandSpikes()) {
                 smoothed = BorderSmoothing.sandBorderSpikes(smoothed, borderSmoothing);
                 addFlattenedLoops(despikedLoops, smoothed);
@@ -104,17 +109,17 @@ public final class DebugBorderTracingBuilder {
             }
         }
         addFactionlessOutlines(
-                geometryCache,
-                cellGrouping,
-                decivilisedSystemIds,
-                borderSmoothing,
-                baseLoops,
-                roundedLoops);
+            geometryCache,
+            cellGrouping,
+            decivilisedSystemIds,
+            borderSmoothing,
+            baseLoops,
+            roundedLoops);
 
         return new PoliticalMapDebugTerritories(
-                baseLoops,
-                despikedLoops,
-                roundedLoops);
+            baseLoops,
+            despikedLoops,
+            roundedLoops);
     }
 
     // Appends each drawn factionless cell's outline as a base loop and, when rounding is
@@ -135,6 +140,7 @@ public final class DebugBorderTracingBuilder {
         // resolved by the shared rule indexes straight into it - the same lookup the production
         // draw makes, which is what keeps the overlay showing the cells the map would show.
         var renderStyle = RenderStyleReader.readRenderStyle();
+
         for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
             if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
                 continue;
@@ -143,24 +149,28 @@ public final class DebugBorderTracingBuilder {
             // it draws as; a cell with no system of its own is uninhabited ground.
             var drawnSystemId = cellGrouping.resolveDrawnSystemIdOf(entry.getKey());
             var style = renderStyle.categoryStyle(FactionlessStyleResolver.resolveCategoryOf(
-                    decivilisedSystemIds, drawnSystemId));
+                decivilisedSystemIds,
+                drawnSystemId));
+
             if (!style.outer().isDrawn()) {
                 continue;
             }
             var shaped = CellShaper.shapeCell(
-                    entry.getValue(),
-                    null,
-                    cellGrouping.ownerBySystemId(),
-                    CellShaper.BORDER_INSET_DISTANCE);
+                entry.getValue(),
+                null,
+                cellGrouping.ownerBySystemId(),
+                CellShaper.BORDER_INSET_DISTANCE);
+
             if (shaped.fillPolygon().isEmpty()) {
                 continue;
             }
             var base = List.of(shaped.fillPolygon());
             addFlattenedLoops(baseLoops, base);
+
             if (borderSmoothing.shouldRoundCorners()) {
                 addFlattenedLoops(
-                        roundedLoops,
-                        BorderSmoothing.roundBorderCorners(base, borderSmoothing));
+                    roundedLoops,
+                    BorderSmoothing.roundBorderCorners(base, borderSmoothing));
             }
         }
     }

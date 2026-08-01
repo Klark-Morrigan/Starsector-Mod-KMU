@@ -53,6 +53,7 @@ final class PoliticalMapHoverPublisher {
      * @param factor the per-vertex scale this render pass applies, needed to undo the map's zoom
      */
     public void publishHoverFrom(PoliticalMapCache cache, float factor) {
+
         var territories = cache.getTerritories();
         // No production draw lists means nothing was painted to hover over: the debug border-tracing
         // overlay replaced them, or the first build has yet to succeed.
@@ -73,16 +74,18 @@ final class PoliticalMapHoverPublisher {
             return;
         }
         var hoveredSystemId = CellHitTest.resolveSystemIdAt(
-                worldPoint.x,
-                worldPoint.y,
-                territories.getFillPolygonByCellId());
+            worldPoint.x,
+            worldPoint.y,
+            territories.getFillPolygonByCellId());
+
         if (hoveredSystemId == null) {
             parkHover();
             return;
         }
         MapHoverState.getInstance().publishHover(new MapHover(
-                hoveredSystemId,
-                territories.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
+            hoveredSystemId,
+            territories.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
+
         logHoverChange(hoveredSystemId);
     }
 
@@ -101,7 +104,10 @@ final class PoliticalMapHoverPublisher {
             return;
         }
         lastLoggedSystemId = hoveredSystemId;
-        LOG.debug("Political map hover resolved; system=" + hoveredSystemId + " clusterMembers="
-                + MapHoverState.getInstance().getHover().clusterMemberSystemIds());
+        
+        LOG.debug("Political map hover resolved; system="
+            + hoveredSystemId
+            + " clusterMembers="
+            + MapHoverState.getInstance().getHover().clusterMemberSystemIds());
     }
 }

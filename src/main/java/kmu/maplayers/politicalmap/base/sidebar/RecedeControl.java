@@ -34,15 +34,15 @@ public final class RecedeControl {
      */
     public static List<ControlSpec> buildControls(RecedePreferences preferences, String captionLabel) {
         return List.of(
-                new ControlSpec.Label(captionLabel),
-                ControlSpec.Checkbox.lit(
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED),
-                        preferences.isMuted(),
-                        cellIndex -> toggleMuted(preferences)),
-                ControlSpec.Checkbox.lit(
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED),
-                        preferences.isDesaturated(),
-                        cellIndex -> toggleDesaturated(preferences)));
+            new ControlSpec.Label(captionLabel),
+            ControlSpec.Checkbox.lit(
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED),
+                preferences.isMuted(),
+                cellIndex -> toggleMuted(preferences)),
+            ControlSpec.Checkbox.lit(
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED),
+                preferences.isDesaturated(),
+                cellIndex -> toggleDesaturated(preferences)));
     }
 
     // Flips the set's Mute toggle to the opposite of its current state, so the checkbox is a plain

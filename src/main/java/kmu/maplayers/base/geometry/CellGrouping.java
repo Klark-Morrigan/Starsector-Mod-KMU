@@ -24,9 +24,9 @@ import java.util.Map;
  *
  * <p>Pure lookups over opaque owners, so any layer can group by whatever it clusters on.
  *
- * @param systemIdByCellId   the system each cell draws as; a cell absent here has no system
- *                           of its own and so no owner, whatever ground it sits on
- * @param ownerBySystemId the owner per system; a system absent here is unowned
+ * @param systemIdByCellId the system each cell draws as; a cell absent here has no system
+ *                         of its own and so no owner, whatever ground it sits on
+ * @param ownerBySystemId  the owner per system; a system absent here is unowned
  */
 public record CellGrouping(
     Map<String, String> systemIdByCellId,

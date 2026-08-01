@@ -50,14 +50,14 @@ public final class MarketProximityTieBreak {
      * the lowest colour-faction id when two nearest markets orbit at the same depth. Reads no
      * geometry until first compared, so a system that never ties costs nothing.
      *
-     * @param sector                       the sector whose economy and orbits are read
-     * @param system                       the system the tie is decided within
+     * @param sector                           the sector whose economy and orbits are read
+     * @param system                           the system the tie is decided within
      * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count, matching the
-     *                                     dominance pass's market filter so the tie weighs the
-     *                                     same markets it did
-     * @param grouping                     the active grouping, so a market's bloc and the
-     *                                     colour-faction backstop resolve as the dominance pass
-     *                                     grouped them
+     *                                         dominance pass's market filter so the tie weighs the
+     *                                         same markets it did
+     * @param grouping                         the active grouping, so a market's bloc and the
+     *                                         colour-faction backstop resolve as the dominance pass
+     *                                         grouped them
      * @return a comparator ordering the closer-to-centre bloc first
      */
     public static Comparator<String> forSystem(

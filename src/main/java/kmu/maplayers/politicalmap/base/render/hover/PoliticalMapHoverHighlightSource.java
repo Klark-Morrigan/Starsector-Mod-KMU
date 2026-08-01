@@ -27,11 +27,12 @@ import java.util.List;
  *
  * @param territories the draw lists the frame painted
  */
-public record PoliticalMapHoverHighlightSource(PoliticalMapTerritories territories)
-        implements HoverHighlightSource {
+public record PoliticalMapHoverHighlightSource(
+    PoliticalMapTerritories territories) implements HoverHighlightSource {
 
     @Override
     public List<float[]> resolveCandidateFrontierLoopsOf(String cellId) {
+
         // Factionless ground (decivilised, or uninhabited while its outline is drawn) fuses into
         // no territory, so it has no frontier at all and offers no candidates - its cell still
         // washes, just without a halo.
@@ -40,7 +41,9 @@ public record PoliticalMapHoverHighlightSource(PoliticalMapTerritories territori
             return List.of();
         }
         var territory = territories.getFactionTerritoryByFactionId().get(holder.factionId());
-        return territory == null ? List.of() : territory.borderLoops();
+        return territory == null
+            ? List.of()
+            : territory.borderLoops();
     }
 
     @Override

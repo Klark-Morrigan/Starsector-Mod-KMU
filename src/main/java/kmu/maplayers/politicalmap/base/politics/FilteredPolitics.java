@@ -234,7 +234,8 @@ public final class FilteredPolitics {
         }
         return new DominantHolder(
             SPOTLIT_KEY,
-            paletteHolder.secondaryColor());
+            paletteHolder.primaryColour(),
+            paletteHolder.secondaryColour());
     }
 
     // Resolves one system's presence-aware holder: the selected bloc under the spotlit key where

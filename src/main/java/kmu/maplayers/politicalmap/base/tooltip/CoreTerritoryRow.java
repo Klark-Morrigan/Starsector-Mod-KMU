@@ -46,11 +46,11 @@ public final class CoreTerritoryRow {
         // the qualifier run, so the shade it reads in stays the vocabulary's decision rather than this
         // row's.
         return Optional.of(CellTooltipRows
-                .buildNestedRow(
-                        FactionCrests.resolveCrestPath(faction),
-                        TooltipFactionNames.resolveLongName(faction, coreFactionId),
-                        CellTooltipRows.NO_SCORE)
-                .continuesWith(CellTooltipRows.buildQualifierSpan(
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY))));
+            .buildNestedRow(
+                FactionCrests.resolveCrestPath(faction),
+                TooltipFactionNames.resolveLongName(faction, coreFactionId),
+                CellTooltipRows.NO_SCORE)
+            .continuesWith(CellTooltipRows.buildQualifierSpan(
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY))));
     }
 }

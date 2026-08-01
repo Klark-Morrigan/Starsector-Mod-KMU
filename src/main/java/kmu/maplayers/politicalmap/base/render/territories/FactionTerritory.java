@@ -38,10 +38,10 @@ import java.util.List;
  * reaches the raw cell corner out in the border channel.
  */
 public record FactionTerritory(
-        float[] fillTriangles,
-        float[] hatchSegments,
-        UiElementPaint fill,
-        List<float[]> borderLoops,
-        UiElementPaint border,
-        float borderWidth) {
+    float[] fillTriangles,
+    float[] hatchSegments,
+    UiElementPaint fill,
+    List<float[]> borderLoops,
+    UiElementPaint border,
+    float borderWidth) {
 }

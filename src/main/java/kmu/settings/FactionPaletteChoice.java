@@ -17,6 +17,7 @@ import kmlib.settings.LabeledChoice;
  * {@link LabeledChoice} for what a reworded label costs.
  */
 public enum FactionPaletteChoice implements LabeledChoice {
+    
     PRIMARY("Primary faction color"),
     SECONDARY("Secondary faction color"),
     NONE("No color");

@@ -13,6 +13,7 @@ public final class KmuTextFormats {
     public static Optional<String> joinWithParenthetical(
             Optional<String> main,
             Optional<String> parenthetical) {
+                
         if (!main.isPresent() && !parenthetical.isPresent()) {
             return Optional.empty();
         }

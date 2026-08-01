@@ -15,10 +15,15 @@ import java.util.List;
  * smoothing gates - so an empty stage means that pass was off and the renderer skips it.
  * Each run is a flat [x, y, x, y, ...] ring in world coordinates.
  */
-public record PoliticalMapDebugTerritories(List<float[]> baseLoops, List<float[]> despikedLoops,
-        List<float[]> roundedLoops) {
+public record PoliticalMapDebugTerritories(
+    List<float[]> baseLoops,
+    List<float[]> despikedLoops,
+    List<float[]> roundedLoops) {
+
     // True when no stage has any loop, so the renderer can skip the GL state push entirely.
     public boolean isEmpty() {
-        return baseLoops.isEmpty() && despikedLoops.isEmpty() && roundedLoops.isEmpty();
+        return baseLoops.isEmpty()
+            && despikedLoops.isEmpty()
+            && roundedLoops.isEmpty();
     }
 }

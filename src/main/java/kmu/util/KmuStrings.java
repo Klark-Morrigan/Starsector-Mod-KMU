@@ -61,7 +61,7 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED = "political_map_tooltip_section_contested";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL =
-            "political_map_tooltip_section_non_territorial";
+        "political_map_tooltip_section_non_territorial";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED = "political_map_tooltip_section_dominated";
 
     private KmuStrings() {

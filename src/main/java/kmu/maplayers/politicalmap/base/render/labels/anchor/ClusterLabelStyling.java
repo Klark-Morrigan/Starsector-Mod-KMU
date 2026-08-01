@@ -132,11 +132,11 @@ final class ClusterLabelStyling {
             BlocStyleAdjustment recedeAdjustment) {
 
         return memoisePerBlocId(blocId -> BlocStyleResolver.resolveBlocStyleDecision(
-                isFiltering,
-                blocId,
-                view,
-                grouping,
-                recedeAdjustment));
+            isFiltering,
+            blocId,
+            view,
+            grouping,
+            recedeAdjustment));
     }
 
     // The per-bloc name estimators one rebuild fits against: each bloc's display name
@@ -152,16 +152,17 @@ final class ClusterLabelStyling {
             String selectedBlocId) {
 
         var font = LabelFonts.loadMapLabelFont();
+
         // Read once per rebuild, like the font: every cluster of a bloc spells its name
         // the same way, so the full/short choice is resolved here rather than per bloc.
         var nameFormat = NameFormatPreference.getSelectedNameFormat();
         return memoisePerBlocId(blocId -> resolveNameEstimator(
-                sector,
-                view,
-                grouping,
-                font,
-                nameFormat,
-                resolveNameBlocId(isFiltering, blocId, selectedBlocId)));
+            sector,
+            view,
+            grouping,
+            font,
+            nameFormat,
+            resolveNameBlocId(isFiltering, blocId, selectedBlocId)));
     }
 
     // Caches a per-bloc resolution for the life of one rebuild. Every resolution here is
@@ -196,8 +197,8 @@ final class ClusterLabelStyling {
             String selectedBlocId) {
 
         return isFiltering && FilteredPolitics.isSpotlitBloc(blocId)
-                ? selectedBlocId
-                : blocId;
+            ? selectedBlocId
+            : blocId;
     }
 
     // One bloc's name estimator: font-measured when both the font and a non-blank name
@@ -224,7 +225,7 @@ final class ClusterLabelStyling {
         // LineWidthMeasurer port, so the name-measuring estimator stays independent of
         // the font itself.
         return new FontLabelLengthEstimator(
-                new LazyFontMeasurer(font),
-                name);
+            new LazyFontMeasurer(font),
+            name);
     }
 }

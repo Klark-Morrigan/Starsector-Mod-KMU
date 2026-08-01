@@ -50,26 +50,29 @@ public final class TerritoryRenderer {
             return;
         }
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT
-                | GL11.GL_CURRENT_BIT
-                | GL11.GL_COLOR_BUFFER_BIT
-                | GL11.GL_LINE_BIT
-                | GL11.GL_HINT_BIT);
+            | GL11.GL_CURRENT_BIT
+            | GL11.GL_COLOR_BUFFER_BIT
+            | GL11.GL_LINE_BIT
+            | GL11.GL_HINT_BIT);
+
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(
-                GL11.GL_SRC_ALPHA,
-                GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GL11.GL_SRC_ALPHA,
+            GL11.GL_ONE_MINUS_SRC_ALPHA);
 
         // Time only the per-frame GL emission; the surrounding state push/pop is
         // negligible. Broken into the two passes so the profiler shows which one costs,
         // but not logged - this runs every frame the map is open, so only the profiler's
         // accumulated view is affordable here, never a per-frame log line.
         var profiler = KmuProfiling.getProfiler();
-        profiler.measure("politicalMap.render", () -> {
-            profiler.measure(
+        profiler.measure(
+            "politicalMap.render",
+            () -> {
+                profiler.measure(
                     "politicalMap.render.fills",
                     () -> drawFills(territories, factor, alphaMult));
-            profiler.measure(
+                profiler.measure(
                     "politicalMap.render.borders",
                     () -> drawBorders(territories, factor, alphaMult));
         });
@@ -96,17 +99,17 @@ public final class TerritoryRenderer {
         GL11.glLineWidth((float) territories.getGlobalStyle().hatch().width());
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
             emitIfVisible(
-                    territory.fill(),
-                    alphaMult,
-                    () -> {
-                            GlRuns.drawScaled(
-                                    GL11.GL_TRIANGLES,
-                                    territory.fillTriangles(),
-                                    factor);
-                            GlRuns.drawScaled(
-                                    GL11.GL_LINES,
-                                    territory.hatchSegments(),
-                                    factor);
+                territory.fill(),
+                alphaMult,
+                () -> {
+                    GlRuns.drawScaled(
+                        GL11.GL_TRIANGLES,
+                        territory.fillTriangles(),
+                        factor);
+                    GlRuns.drawScaled(
+                        GL11.GL_LINES,
+                        territory.hatchSegments(),
+                        factor);
             });
         }
         // Then the lone cells' own fills - dead colonies washed in the neutral colour. They fill
@@ -115,15 +118,15 @@ public final class TerritoryRenderer {
         // grouping the fill pass rather than of layering. A fused cell is not reached at all: its
         // fill is its cluster's, drawn above, so this pass sees only the cells that have one.
         drawEachCellOfForm(
-                territories.getStyledCellByCellId().values(),
-                LoneCell.class,
-                lone -> emitIfVisible(
-                        lone.fillPaint(),
-                        alphaMult,
-                        () -> GlRuns.drawScaled(
-                                GL11.GL_TRIANGLES,
-                                lone.fillTriangles(),
-                                factor)));
+            territories.getStyledCellByCellId().values(),
+            LoneCell.class,
+            lone -> emitIfVisible(
+                lone.fillPaint(),
+                alphaMult,
+                () -> GlRuns.drawScaled(
+                    GL11.GL_TRIANGLES,
+                    lone.fillTriangles(),
+                    factor)));
     }
 
     // Draws one element of every cell of one form, skipping the cells of the other. Each pass over
@@ -171,40 +174,40 @@ public final class TerritoryRenderer {
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
         drawEachCellOfForm(
-                territories.getStyledCellByCellId().values(),
-                FusedCell.class,
-                fused -> emitIfVisible(
-                        fused.seamPaint(),
-                        alphaMult,
-                        () -> {
-                                GL11.glLineWidth(fused.seamWidth());
-                                GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), factor);
-                        }));
+            territories.getStyledCellByCellId().values(),
+            FusedCell.class,
+            fused -> emitIfVisible(
+                fused.seamPaint(),
+                alphaMult,
+                () -> {
+                    GL11.glLineWidth(fused.seamWidth());
+                    GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), factor);
+                }));
+
         drawEachCellOfForm(
-                territories.getStyledCellByCellId().values(),
-                LoneCell.class,
-                lone -> emitIfVisible(
-                        lone.outlinePaint(),
-                        alphaMult,
-                        () -> {
-                                GL11.glLineWidth(lone.outlineWidth());
-                                GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), factor);
-                        }));
+            territories.getStyledCellByCellId().values(),
+            LoneCell.class,
+            lone -> emitIfVisible(
+                lone.outlinePaint(),
+                alphaMult,
+                () -> {
+                    GL11.glLineWidth(lone.outlineWidth());
+                    GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), factor);
+                }));
 
         // The national border in its own style, over the interior seams so the frontier dominates
         // where they meet. Each border ring is a closed rounded loop, so it strokes as one
         // continuous GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
         for (var territory : territories.getFactionTerritoryByFactionId().values()) {
             emitIfVisible(
-                    territory.border(),
-                    alphaMult,
-                    () -> {
-                            GL11.glLineWidth(territory.borderWidth());
-                            for (var loop : territory.borderLoops()) {
-                                GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
-                            }
+                territory.border(),
+                alphaMult,
+                () -> {
+                    GL11.glLineWidth(territory.borderWidth());
+                    for (var loop : territory.borderLoops()) {
+                        GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
+                    }
             });
         }
     }
-
 }

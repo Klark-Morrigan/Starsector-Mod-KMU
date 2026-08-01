@@ -36,11 +36,11 @@ public final class CellHitTest {
      * decides, which keeps the verdict stable frame to frame rather than flickering
      * between the two.
      *
-     * @param worldX               the point's x coordinate in world (hyperspace) space
-     * @param worldY               the point's y coordinate in world (hyperspace) space
+     * @param worldX                the point's x coordinate in world (hyperspace) space
+     * @param worldY                the point's y coordinate in world (hyperspace) space
      * @param fillPolygonBySystemId each system's shaped fill polygon as {x, y} vertex
-     *                             pairs in winding order; a system with no drawable cell
-     *                             is absent or empty and can never be hit
+     *                              pairs in winding order; a system with no drawable cell
+     *                              is absent or empty and can never be hit
      * @return the containing system's id, or null when no cell contains the point
      */
     public static String resolveSystemIdAt(

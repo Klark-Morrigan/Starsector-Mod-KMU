@@ -48,8 +48,8 @@ public final class SystemStatusRow {
             return Optional.empty();
         }
         var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)
-                ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
-                : KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED;
+            ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
+            : KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED;
 
         // Flush under the system name the box is headed with, crestless and scoreless: the status
         // qualifies the whole system rather than being one entry of a list, so it reads as a standalone

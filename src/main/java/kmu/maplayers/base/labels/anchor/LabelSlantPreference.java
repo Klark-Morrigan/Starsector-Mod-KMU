@@ -51,8 +51,8 @@ public record LabelSlantPreference(double preferredAngle) {
      * swings far off the lean.
      *
      * @param direction the candidate line's unit direction {@code {x, y}} (undirected)
-     * @param strength   how much score a far-off line may lose, 0 (no penalty) to 1
-     * @param exponent   how sharply the penalty concentrates toward the perpendicular
+     * @param strength  how much score a far-off line may lose, 0 (no penalty) to 1
+     * @param exponent  how sharply the penalty concentrates toward the perpendicular
      * @return the multiplier in {@code [1 - strength, 1]}
      */
     public double computePenaltyMultiplier(double[] direction, double strength, double exponent) {

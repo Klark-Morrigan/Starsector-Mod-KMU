@@ -18,8 +18,8 @@ import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
  * @param score           the faction's domination weight in the hovered system
  */
 public record FactionStandingRow(
-        String factionId,
-        String fullName,
-        String crestSpritePath,
-        int score) {
+    String factionId,
+    String fullName,
+    String crestSpritePath,
+    int score) {
 }

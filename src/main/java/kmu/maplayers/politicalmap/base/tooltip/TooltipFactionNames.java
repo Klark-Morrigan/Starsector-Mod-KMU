@@ -23,7 +23,7 @@ final class TooltipFactionNames {
      */
     static String resolveLongName(FactionAPI faction, String factionId) {
         return faction == null
-                ? factionId
-                : faction.getDisplayNameLong();
+            ? factionId
+            : faction.getDisplayNameLong();
     }
 }

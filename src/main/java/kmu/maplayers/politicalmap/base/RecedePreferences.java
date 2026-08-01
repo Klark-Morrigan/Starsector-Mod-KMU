@@ -34,15 +34,15 @@ public final class RecedePreferences {
     // across both views while a filter is active since the receded ground is the same concept under
     // either. The pre-split save's un-prefixed shared choice carries into these keys once on load.
     public static final RecedePreferences FILTER = new RecedePreferences(
-            "$kmu_political_filter_recede_mute",
-            "$kmu_political_filter_recede_desaturate");
+        "$kmu_political_filter_recede_mute",
+        "$kmu_political_filter_recede_desaturate");
 
     // The alliances view's non-allied recede: every faction outside an alliance, receded so the
     // alliances read as the figure. Independent of the filter recede, so it owns its own keys and
     // starts fresh - no pre-split choice migrates into it.
     public static final RecedePreferences ALLIANCE_NON_ALLIED = new RecedePreferences(
-            "$kmu_political_alliance_recede_mute",
-            "$kmu_political_alliance_recede_desaturate");
+        "$kmu_political_alliance_recede_mute",
+        "$kmu_political_alliance_recede_desaturate");
 
     // The keys the recede shipped under while it was one shared set spanning every context. No
     // instance reads them now: migrateSharedKeysIntoFilterSet carries each stored choice into the
@@ -55,7 +55,7 @@ public final class RecedePreferences {
     // then carries on into the FILTER set, so even the oldest save reaches the current key on load.
     private static final String LEGACY_MUTE_KEY = "$kmu_political_alliance_mute_non_allied";
     private static final String LEGACY_DESATURATE_KEY =
-            "$kmu_political_alliance_desaturate_non_allied";
+        "$kmu_political_alliance_desaturate_non_allied";
 
     // This set's two frozen memory keys and the flags over them, defaulting off so an untouched save
     // reads un-receded. Instance fields, not statics, so each set backs a distinct ground; renaming a
@@ -133,8 +133,8 @@ public final class RecedePreferences {
         // keeps its shipped "alliance" spelling - a frozen LunaLib field id shared by every set, not a
         // claim about which set reads it.
         double opacityMultiplier = isMuted()
-                ? KmuLunaSettings.getPoliticalMapAllianceMutedOpacityModifier()
-                : 1.0;
+            ? KmuLunaSettings.getPoliticalMapAllianceMutedOpacityModifier()
+            : 1.0;
         return new BlocStyleAdjustment(opacityMultiplier, isDesaturated());
     }
 

@@ -10,6 +10,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
  * reads Nexerelin) so every stage keys off one snapshot.
  */
 public record ViewGrouping(
-        PoliticalMapView view,
-        HolderGrouping grouping) {
+    PoliticalMapView view,
+    HolderGrouping grouping) {
 }

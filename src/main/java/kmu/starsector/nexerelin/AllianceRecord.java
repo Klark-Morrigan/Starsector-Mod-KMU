@@ -18,9 +18,9 @@ import java.util.List;
  *                                whose palette the bloc paints in
  */
 public record AllianceRecord(
-        String allianceId,
-        String name,
-        List<String> membersSortedDescending) {
+    String allianceId,
+    String name,
+    List<String> membersSortedDescending) {
 
     /**
      * Defensively snapshots the member list into an immutable copy, so a record handed

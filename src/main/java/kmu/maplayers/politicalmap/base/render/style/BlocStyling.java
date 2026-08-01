@@ -17,7 +17,9 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
  * @param style      the category bundle this bloc paints from
  * @param adjustment the mute and desaturation applied on top of it
  */
-public record BlocStyling(CategoryStyle style, BlocStyleAdjustment adjustment) {
+public record BlocStyling(
+    CategoryStyle style,
+    BlocStyleAdjustment adjustment) {
 
     /**
      * Maps a resolved decision onto the pass's theme: the independent bundle when the decision
@@ -28,16 +30,17 @@ public record BlocStyling(CategoryStyle style, BlocStyleAdjustment adjustment) {
      * @return the bundle and adjustment this bloc draws under
      */
     public static BlocStyling resolveFrom(RenderStyle renderStyle, BlocStyleDecision decision) {
+
         var factionStyle = renderStyle.categoryStyle(PoliticalMapCategory.FACTION);
         if (!decision.usesIndependentStyle()) {
             return new BlocStyling(factionStyle, decision.adjustment());
         }
         return new BlocStyling(
-                applyDesaturatedFillOpacity(
-                        renderStyle.categoryStyle(PoliticalMapCategory.INDEPENDENT),
-                        factionStyle,
-                        decision.adjustment()),
-                decision.adjustment());
+            applyDesaturatedFillOpacity(
+                renderStyle.categoryStyle(PoliticalMapCategory.INDEPENDENT),
+                factionStyle,
+                decision.adjustment()),
+            decision.adjustment());
     }
 
     // Holds every desaturated bloc's ground at the one faction fill opacity, so a sector drawn

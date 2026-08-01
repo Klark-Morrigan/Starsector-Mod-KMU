@@ -60,13 +60,13 @@ public final class RenderStyleReader {
     // radians at the reader so the hatch math downstream stays in radians.
     public static GlobalStyle readGlobalStyle() {
         return new GlobalStyle(
-                new HatchStyle(
-                        KmuLunaSettings.getPoliticalMapHatchSpacing(),
-                        KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
-                        KmuLunaSettings.getPoliticalMapHatchWidth()),
-                readBorderSmoothingStyle(),
-                readHoverHighlightStyle(),
-                KmuLunaSettings.getPoliticalMapDesaturationDarkening());
+            new HatchStyle(
+                KmuLunaSettings.getPoliticalMapHatchSpacing(),
+                KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
+                KmuLunaSettings.getPoliticalMapHatchWidth()),
+            readBorderSmoothingStyle(),
+            readHoverHighlightStyle(),
+            KmuLunaSettings.getPoliticalMapDesaturationDarkening());
     }
 
     /**
@@ -78,13 +78,13 @@ public final class RenderStyleReader {
      */
     public static BorderSmoothingStyle readBorderSmoothingStyle() {
         return new BorderSmoothingStyle(
-                KmuLunaSettings.shouldSandBorderSpikes(),
-                KmuLunaSettings.shouldRoundBorderCorners(),
-                KmuLunaSettings.getPoliticalMapBorderSpikeHeight(),
-                KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians(),
-                KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
-                KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
-                KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians());
+            KmuLunaSettings.shouldSandBorderSpikes(),
+            KmuLunaSettings.shouldRoundBorderCorners(),
+            KmuLunaSettings.getPoliticalMapBorderSpikeHeight(),
+            KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians(),
+            KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
+            KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
+            KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians());
     }
 
     // Reads the cursor's feedback into one style: the shared palette choice both its elements
@@ -144,12 +144,12 @@ public final class RenderStyleReader {
     // outline is unconditionally drawn and each opacity is its element's own on/off.
     public static CategoryStyle readDecivilisedStyle() {
         return neutralStyle(
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
-                        KmuLunaSettings.getDecivilisedFillOpacity()),
-                true,
-                KmuLunaSettings.getDecivilisedBorderOpacity(),
-                KmuLunaSettings.getDecivilisedBorderWidth());
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
+                KmuLunaSettings.getDecivilisedFillOpacity()),
+            true, // Outline is drawn.
+            KmuLunaSettings.getDecivilisedBorderOpacity(),
+            KmuLunaSettings.getDecivilisedBorderWidth());
     }
 
     // Never-settled space stays outline-only: filling it would wash the whole sector, since
@@ -159,10 +159,10 @@ public final class RenderStyleReader {
     // strokes at stay settings-screen knobs.
     public static CategoryStyle readUninhabitedStyle() {
         return neutralStyle(
-                ElementStyle.NOT_DRAWN,
-                UninhabitedOutlinePreference.isOutlineDrawn(),
-                KmuLunaSettings.getUninhabitedBorderOpacity(),
-                KmuLunaSettings.getUninhabitedBorderWidth());
+            ElementStyle.NOT_DRAWN,
+            UninhabitedOutlinePreference.isOutlineDrawn(),
+            KmuLunaSettings.getUninhabitedBorderOpacity(),
+            KmuLunaSettings.getUninhabitedBorderWidth());
     }
 
     // Assembles a factionless category's style: the given fill, its outline as the outer
@@ -183,10 +183,10 @@ public final class RenderStyleReader {
         var outerPaint = isOutlineDrawn ? FactionPaletteShade.PRIMARY : null;
 
         return new CategoryStyle(
-                fill,
-                new ElementStyle(outerPaint, outlineOpacity),
-                outlineWidth,
-                ElementStyle.NOT_DRAWN,
-                0);
+            fill,
+            new ElementStyle(outerPaint, outlineOpacity),
+            outlineWidth,
+            ElementStyle.NOT_DRAWN,
+            0);
     }
 }

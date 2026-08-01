@@ -8,7 +8,10 @@ import com.fs.starfarer.api.campaign.listeners.CoreUITabListener;
 
 import java.util.Optional;
 
-public final class StarsectorMarketUiContextTracker extends BaseCampaignEventListener implements CoreUITabListener {
+public final class StarsectorMarketUiContextTracker
+    extends BaseCampaignEventListener
+    implements CoreUITabListener {
+        
     private transient MarketAPI trackedMarket;
 
     public StarsectorMarketUiContextTracker() {

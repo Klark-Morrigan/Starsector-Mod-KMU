@@ -139,16 +139,16 @@ public final class FactionsView implements PoliticalMapView {
             // The picker labels a faction by its short name regardless of the map's name-format
             // setting, so a long-form map label never widens the sidebar's option rows.
             var displayName = resolveName(
-                    blocId,
-                    grouping,
-                    sector,
-                    FactionNameFormatChoice.SHORT);
+                blocId,
+                grouping,
+                sector,
+                FactionNameFormatChoice.SHORT);
                     
             selectableBlocs.add(new SelectableBloc(
-                    blocId,
-                    displayName,
-                    crestSpritePath,
-                    entry.getValue()));
+                blocId,
+                displayName,
+                crestSpritePath,
+                entry.getValue()));
         }
         return selectableBlocs;
     }
@@ -161,7 +161,7 @@ public final class FactionsView implements PoliticalMapView {
             FactionAPI faction,
             FactionNameFormatChoice nameFormat) {
         return nameFormat == FactionNameFormatChoice.SHORT
-                ? faction.getDisplayName()
-                : faction.getDisplayNameLong();
+            ? faction.getDisplayName()
+            : faction.getDisplayNameLong();
     }
 }

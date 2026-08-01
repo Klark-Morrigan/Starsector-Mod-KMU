@@ -36,8 +36,10 @@ public final class StarsectorGravityWellResolver {
     }
 
     private SectorEntityToken resolveTerminalOrbitFocus(SectorEntityToken entity) {
+        
         var visited =
-                Collections.newSetFromMap(new IdentityHashMap<SectorEntityToken, Boolean>());
+            Collections.newSetFromMap(new IdentityHashMap<SectorEntityToken, Boolean>());
+            
         var current = entity;
         SectorEntityToken lastFocus = null;
 

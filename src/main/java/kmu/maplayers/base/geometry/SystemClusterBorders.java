@@ -59,26 +59,26 @@ public final class SystemClusterBorders {
      * only then rounds it - rounding before that resolve would see the arc clipped
      * off at the crossing and left a sharp corner.
      *
-     * @param groupCellIds    the cells sharing one owner whose fused
-     *                        cluster(s) to outline; cells absent from
-     *                        {@code edgesByCellId} are skipped
-     * @param edgesByCellId   each cell's raw edges, tagged with what lies across
-     *                        them - the adjacency graph
-     * @param grouping        which system each cell draws as and each system's owner,
-     *                        owner, to tell a border edge (a different or absent owner across it)
-     *                        from a fused seam
+     * @param groupCellIds                 the cells sharing one owner whose fused
+     *                                     cluster(s) to outline; cells absent from
+     *                                     {@code edgesByCellId} are skipped
+     * @param edgesByCellId                each cell's raw edges, tagged with what lies across
+     *                                     them - the adjacency graph
+     * @param grouping                     which system each cell draws as and each system's owner,
+     *                                     owner, to tell a border edge (a different or absent owner across it)
+     *                                     from a fused seam
      * @param coincidentNeighbourSystemIds the neighbours whose shared boundary edge insets
-     *                        by nothing and so stays on the raw cell border, letting two
-     *                        clusters traced against each other meet exactly; empty for a
-     *                        trace that gives every boundary edge the uniform channel
-     * @param borderInset     inward inset applied to each ring, matching the fills'
-     *                        channel so the border lands on the fill edge
-     * @param vertexWeldTolerance largest gap between two reports of a shared corner
-     *                        still welded into one when chaining the boundary
-     * @param miterSpikeLimit  a corner whose inset miter would spike past this
-     *                        multiple of {@code borderInset} is bevelled instead of
-     *                        pointed, so a sharp cluster corner never shoots an
-     *                        inward loop
+     *                                     by nothing and so stays on the raw cell border, letting two
+     *                                     clusters traced against each other meet exactly; empty for a
+     *                                     trace that gives every boundary edge the uniform channel
+     * @param borderInset                  inward inset applied to each ring, matching the fills'
+     *                                     channel so the border lands on the fill edge
+     * @param vertexWeldTolerance          largest gap between two reports of a shared corner
+     *                                     still welded into one when chaining the boundary
+     * @param miterSpikeLimit              a corner whose inset miter would spike past this
+     *                                     multiple of {@code borderInset} is bevelled instead of
+     *                                     pointed, so a sharp cluster corner never shoots an
+     *                                     inward loop
      * @return one inset (un-rounded) ring per cluster and per enclave, in world
      *         coordinates; empty when the group holds no borderable geometry
      */

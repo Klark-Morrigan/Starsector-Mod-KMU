@@ -50,6 +50,7 @@ public final class StandingRowResolver {
             SectorAPI sector,
             List<GroupStanding> standings,
             HolderGrouping grouping) {
+
         var rows = new ArrayList<StandingGroupRow>(standings.size());
         for (var standing : standings) {
             rows.add(resolveGroupRow(sector, standing, grouping));
@@ -64,19 +65,24 @@ public final class StandingRowResolver {
             SectorAPI sector,
             GroupStanding standing,
             HolderGrouping grouping) {
+
         var members = resolveMemberRows(sector, standing.members());
         var blocId = standing.blocId();
+
         // An alliance bloc nests its members under the header; a lone faction does not. Keyed on the
         // group's kind, not its size, so a one-member alliance still renders as a tree.
         var nestsMembers = grouping.isAlliance(blocId);
+
         String displayName;
         String crestSpritePath;
+
         if (nestsMembers) {
             // An alliance header carries the alliance's own name and its lead (colour) member's
             // crest - the same name and crest the alliances view paints the bloc's cluster by.
             displayName = grouping.resolveAllianceName(blocId);
             crestSpritePath = FactionCrests.resolveCrestPath(
                 sector.getFaction(grouping.resolveColourFactionId(blocId)));
+
         } else {
             // A lone-faction group has one member, so its header is exactly that member: reuse the
             // resolved row rather than reading the faction a second time.
@@ -85,12 +91,12 @@ public final class StandingRowResolver {
             crestSpritePath = headerMember.crestSpritePath();
         }
         return new StandingGroupRow(
-                blocId,
-                displayName,
-                crestSpritePath,
-                standing.aggregateScore(),
-                nestsMembers,
-                members);
+            blocId,
+            displayName,
+            crestSpritePath,
+            standing.aggregateScore(),
+            nestsMembers,
+            members);
     }
 
     // Resolves each ranked member standing into its rendered row, preserving the ranking order, so a
@@ -98,14 +104,17 @@ public final class StandingRowResolver {
     private static List<FactionStandingRow> resolveMemberRows(
             SectorAPI sector,
             List<FactionStanding> members) {
+                
         var rows = new ArrayList<FactionStandingRow>(members.size());
+
         for (var member : members) {
             var faction = sector.getFaction(member.factionId());
+
             rows.add(new FactionStandingRow(
-                    member.factionId(),
-                    TooltipFactionNames.resolveLongName(faction, member.factionId()),
-                    FactionCrests.resolveCrestPath(faction),
-                    member.score()));
+                member.factionId(),
+                TooltipFactionNames.resolveLongName(faction, member.factionId()),
+                FactionCrests.resolveCrestPath(faction),
+                member.score()));
         }
         return rows;
     }

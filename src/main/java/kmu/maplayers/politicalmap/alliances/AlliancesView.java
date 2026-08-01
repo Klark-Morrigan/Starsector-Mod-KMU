@@ -80,8 +80,8 @@ public final class AlliancesView implements PoliticalMapView {
         // input later is one more source here, not a wider contract; a change to either forces a
         // rebuild.
         return Fingerprints.compute(
-                () -> MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES),
-                () -> MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE));
+            () -> MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES),
+            () -> MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE));
     }
 
     @Override
@@ -96,6 +96,7 @@ public final class AlliancesView implements PoliticalMapView {
             String blocId,
             HolderGrouping grouping,
             BlocStyleAdjustment adjustment) {
+
         // Genuine independent space always takes the independent style, exactly as the faction view
         // classifies it. A non-allied faction takes it too once it desaturates: desaturation means
         // "read as independent ground", so the bloc adopts the independent borders and seams, paired
@@ -113,13 +114,14 @@ public final class AlliancesView implements PoliticalMapView {
         // filter recede desaturates painted grey but still in the faction bundle, and flipping this
         // view's toggle would then appear to change nothing but the border weight.
         return Factions.INDEPENDENT.equals(blocId)
-                || (!grouping.isAlliance(blocId) && adjustment.desaturate());
+            || (!grouping.isAlliance(blocId) && adjustment.desaturate());
     }
 
     @Override
     public BlocStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
             HolderGrouping grouping) {
+
         // An alliance keeps its full colour; only a non-alliance bloc recedes. The view owns just
         // that gate - how far a receded bloc dims or desaturates is its own non-allied recede set's
         // decision, so every non-allied faction takes the one adjustment that set resolves. Keeping
@@ -137,10 +139,12 @@ public final class AlliancesView implements PoliticalMapView {
             HolderGrouping grouping,
             SectorAPI sector,
             FactionNameFormatChoice nameFormat) {
+
         var allianceName = grouping.resolveAllianceName(blocId);
         if (allianceName != null) {
             return allianceName;
         }
+
         // A non-alliance bloc is a lone faction, named exactly as the faction view names it, so the
         // two views can never drift on how a plain faction's label reads.
         return FactionsView.INSTANCE.resolveName(blocId, grouping, sector, nameFormat);
@@ -158,6 +162,7 @@ public final class AlliancesView implements PoliticalMapView {
             SectorAPI sector,
             DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
+
         // Under this view only alliances are filter targets - a lone faction is not spotlightable
         // here, matching the view's role of grouping holders by alliance. The alliance grouping
         // folds each alliance's members into one bloc, so the shared stats read already ranks an
@@ -166,29 +171,33 @@ public final class AlliancesView implements PoliticalMapView {
         var grouping = resolveGrouping();
         var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
         var selectableBlocs = new ArrayList<SelectableBloc>();
+
         for (var entry : BlocStatsAggregator.aggregateBlocStats(sector, pass).entrySet()) {
             var blocId = entry.getKey();
             if (!grouping.isAlliance(blocId)) {
                 continue;
             }
+
             // An alliance paints in its lead member's palette, so its picker row carries that
             // member's crest and reads like a faction row rather than a blank one.
             // resolveColourFactionId names the colour (lead) faction; a member with no authored
             // crest leaves the row to draw its name alone, so a null path is a valid option.
             var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
             var crestSpritePath = FactionCrests.resolveCrestPath(colourFaction);
+
             // The name comes from the grouping via resolveName, so the format argument never
             // matters here.
             var displayName = resolveName(
-                    blocId,
-                    grouping,
-                    sector,
-                    FactionNameFormatChoice.SHORT);
+                blocId,
+                grouping,
+                sector,
+                FactionNameFormatChoice.SHORT);
+
             selectableBlocs.add(new SelectableBloc(
-                    blocId,
-                    displayName,
-                    crestSpritePath,
-                    entry.getValue()));
+                blocId,
+                displayName,
+                crestSpritePath,
+                entry.getValue()));
         }
         return selectableBlocs;
     }

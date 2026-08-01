@@ -35,12 +35,12 @@ import java.util.List;
  *                        single-element list in the faction view
  */
 public record StandingGroupRow(
-        String groupId,
-        String displayName,
-        String crestSpritePath,
-        int aggregateScore,
-        boolean nestsMembers,
-        List<FactionStandingRow> members) {
+    String groupId,
+    String displayName,
+    String crestSpritePath,
+    int aggregateScore,
+    boolean nestsMembers,
+    List<FactionStandingRow> members) {
 
     public StandingGroupRow {
         members = List.copyOf(members);

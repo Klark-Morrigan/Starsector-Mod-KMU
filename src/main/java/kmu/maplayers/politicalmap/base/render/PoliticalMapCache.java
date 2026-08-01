@@ -203,17 +203,9 @@ final class PoliticalMapCache {
             // Transition trace: a stale cell or one left behind after an access change can be tied
             // to the revision step - or the seed inputs or toggle flip - that drove it.
             LOG.debug("Political map geometry stale; rebuilding from revision "
-                + lastGeometryRevision
-                + " to "
-                + geometryRevision
-                + ", seedInputs "
-                + lastSeedInputs
-                + " to "
-                + seedInputs
-                + ", devToggles "
-                + lastDevToggles
-                + " to "
-                + devToggles);
+                + lastGeometryRevision + " to " + geometryRevision
+                + ", seedInputs " + lastSeedInputs + " to " + seedInputs
+                + ", devToggles " + lastDevToggles + " to " + devToggles);
 
             rebuildGeometry(seedInputs, devToggles);
             lastGeometryRevision = geometryRevision;
@@ -321,13 +313,9 @@ final class PoliticalMapCache {
             : "styledCells=" + territories.getStyledCellByCellId().size();
 
         LOG.debug("Political map territories rebuilt; contentRevision="
-            + contentRevision
-            + " "
-            + builtCounts
-            + " geometryRebuilt="
-            + rebuiltCells
-            + " took="
-            + Timings.formatMillis(System.nanoTime() - drawablesStart));
+            + contentRevision + " " + builtCounts
+            + " geometryRebuilt=" + rebuiltCells
+            + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
     }
 
     // Guards the render path after a failed first build: a rebuild that threw before completing can

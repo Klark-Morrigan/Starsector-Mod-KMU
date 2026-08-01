@@ -9,5 +9,7 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
  * so the label path - which needs only the boolean, not a resolved style - reads the very same
  * call as the fills.
  */
-public record BlocStyleDecision(boolean usesIndependentStyle, BlocStyleAdjustment adjustment) {
+public record BlocStyleDecision(
+    boolean usesIndependentStyle,
+    BlocStyleAdjustment adjustment) {
 }

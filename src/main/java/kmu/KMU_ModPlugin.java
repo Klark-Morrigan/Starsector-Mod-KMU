@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import java.util.List;
 
 public class KMU_ModPlugin extends BaseModPlugin {
+
     public static final String MOD_ID = "kmu";
     public static final String MOD_NAME = "Klark Morrigan's Utilities";
 
@@ -62,18 +63,22 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // name (CannotResolveClassException on load) until an alias mapped it back. They stay as
     // read-only bridges for as long as saves predating each rename might still exist.
     private static final List<String> FORMER_TERRAIN_PLUGIN_CLASSES = List.of(
-            // feature-022, before the map-layers carve.
-            "kmu.politicalmap.render.PoliticalMapTerrainPlugin",
-            // The same pre-carve package while the class still carried the Factions prefix. This is
-            // the name the earliest saves actually hold, the class having been Factions-prefixed
-            // before it was un-prefixed.
-            "kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin",
-            // After the map-layers carve, before the shared pipeline moved from the faction package
-            // to base.render.
-            "kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin",
-            // After that move, while the render surface still sat inside the political map - before
-            // the map-layer carve lifted it into the framework and dropped the feature from its name.
-            "kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin");
+
+        // feature-022, before the map-layers carve.
+        "kmu.politicalmap.render.PoliticalMapTerrainPlugin",
+
+        // The same pre-carve package while the class still carried the Factions prefix. This is
+        // the name the earliest saves actually hold, the class having been Factions-prefixed
+        // before it was un-prefixed.
+        "kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin",
+
+        // After the map-layers carve, before the shared pipeline moved from the faction package
+        // to base.render.
+        "kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin",
+
+        // After that move, while the render surface still sat inside the political map - before
+        // the map-layer carve lifted it into the framework and dropped the feature from its name.
+        "kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin");
 
     // Maps every former terrain-plugin class name to the current class so a save written under
     // any of them still loads, then aliases the live class to itself last so XStream writes new
@@ -286,19 +291,20 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // map's own staleness source. Transient: not saved, so it is re-added fresh
     // each load and never duplicates across reloads.
     static void installMapLayerSectorWatcher(SectorAPI sector) {
+
         if (sector == null) {
             return;
         }
-
         // Clear observed positions from any earlier save this app session: the shared
         // tracker outlives a single save, so a system id reused across saves would
         // otherwise be compared against the previous save's last-seen position until
         // the first poll re-seeds it.
         MovingSystems.getInstance().reset();
+
         // A fresh source per load, so the baselines it diffs against start empty rather
         // than carrying the previous save's last read into this one.
         sector.addTransientScript(
-                new MapLayerSectorWatcher(new PoliticalMapStalenessSource()));
+            new MapLayerSectorWatcher(new PoliticalMapStalenessSource()));
     }
 
     // Registers the sidebar's render and input listeners for both screens it draws on: the sector
@@ -375,7 +381,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // One-shot install diagnostic. DEBUG so it stays silent at the WARN
         // default; set KMU log verbosity to DEBUG in LunaLib to see it.
         LOG.debug("Sector map layer terrain installed; star systems="
-                + sector.getStarSystems().size());
+            + sector.getStarSystems().size());
     }
 
     // Retires map-layer terrain carrying a type id this mod no longer installs. The id is
@@ -389,7 +395,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
                     && !SECTOR_MAP_LAYER_TERRAIN_TYPE.equals(terrain.getType())) {
                 hyperspace.removeEntity(terrain);
                 LOG.debug("Retired sector map layer terrain under former type id "
-                        + terrain.getType());
+                    + terrain.getType());
             }
         }
     }
@@ -411,7 +417,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // and installs its own entity.
     private static boolean isSectorMapLayerTerrain(CampaignTerrainAPI terrain) {
         return terrain != null
-                && terrain.getPlugin() != null
-                && terrain.getPlugin().getClass() == SectorMapLayerTerrainPlugin.class;
+            && terrain.getPlugin() != null
+            && terrain.getPlugin().getClass() == SectorMapLayerTerrainPlugin.class;
     }
 }

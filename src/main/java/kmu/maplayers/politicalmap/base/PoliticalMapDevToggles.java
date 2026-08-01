@@ -37,15 +37,15 @@ import kmu.settings.KmuLunaSettings;
  *                                  visibility rule is bypassed
  */
 public record PoliticalMapDevToggles(
-        boolean isShowingAllFactions,
-        boolean isForcingAllSystemsOnMap) {
+    boolean isShowingAllFactions,
+    boolean isForcingAllSystemsOnMap) {
 
     /**
      * The no-reveal view: both toggles off, so the map draws exactly what the
      * normal gates admit. The default a caller with no dev toggle to apply passes.
      */
     public static final PoliticalMapDevToggles NONE =
-            new PoliticalMapDevToggles(false, false);
+        new PoliticalMapDevToggles(false, false);
 
     /**
      * Reads the player's current dev reveal toggles from LunaLib into one pass-wide
@@ -60,8 +60,8 @@ public record PoliticalMapDevToggles(
      */
     public static PoliticalMapDevToggles readFromLunaSettings() {
         return new PoliticalMapDevToggles(
-                KmuLunaSettings.getPoliticalMapShowAllFactions(),
-                KmuLunaSettings.shouldForceAllSystemsOnMap());
+            KmuLunaSettings.getPoliticalMapShowAllFactions(),
+            KmuLunaSettings.shouldForceAllSystemsOnMap());
     }
 
     /**
@@ -78,7 +78,7 @@ public record PoliticalMapDevToggles(
      */
     public MapVisibilityOverrides convertToVisibilityOverrides() {
         return new MapVisibilityOverrides(
-                isShowingAllFactions,
-                isForcingAllSystemsOnMap);
+            isShowingAllFactions,
+            isForcingAllSystemsOnMap);
     }
 }

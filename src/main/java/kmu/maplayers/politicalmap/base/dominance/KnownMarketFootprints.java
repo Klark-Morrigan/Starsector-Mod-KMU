@@ -81,21 +81,21 @@ public final class KnownMarketFootprints {
      * colony, so they hold nothing. Decivilised colonies are already absent
      * - vanilla drops them from the economy - so they need no extra guard here.
      *
-     * @param sector                       the sector whose economy is read; assumed
-     *                                     non-null with a non-null economy, which the
-     *                                     callers guard before delegating
-     * @param system                       the system whose markets are folded
-     * @param rules                        the dominance-weighting rules for this pass -
-     *                                     whether stability scales each rating and
-     *                                     whether an attached station lifts it. The
-     *                                     player's LunaLib toggles, read once per pass
-     *                                     by the caller so a whole pass resolves under
-     *                                     one rule
+     * @param sector                           the sector whose economy is read; assumed
+     *                                         non-null with a non-null economy, which the
+     *                                         callers guard before delegating
+     * @param system                           the system whose markets are folded
+     * @param rules                            the dominance-weighting rules for this pass -
+     *                                         whether stability scales each rating and
+     *                                         whether an attached station lifts it. The
+     *                                         player's LunaLib toggles, read once per pass
+     *                                         by the caller so a whole pass resolves under
+     *                                         one rule
      * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet
-     *                                     discovered still folds in (the "show all
-     *                                     factions" dev reveal); false applies the normal
-     *                                     known-to-player filter, true drops it so an
-     *                                     undiscovered colony counts too
+     *                                         discovered still folds in (the "show all
+     *                                         factions" dev reveal); false applies the normal
+     *                                         known-to-player filter, true drops it so an
+     *                                         undiscovered colony counts too
      * @return each faction's footprint in the system, keyed by faction id; empty
      *         when the system holds no folded market
      */
@@ -134,14 +134,14 @@ public final class KnownMarketFootprints {
      * one walk means the colony filter and the weight read are defined once, not duplicated per
      * caller.
      *
-     * @param sector                       the sector whose economy is read; assumed non-null with a
-     *                                     non-null economy, which the callers guard before delegating
-     * @param system                       the system whose markets are folded
-     * @param rules                        the dominance-weighting rules for this pass, read once per
-     *                                     pass by the caller so a whole pass resolves under one rule
+     * @param sector                           the sector whose economy is read; assumed non-null with a
+     *                                         non-null economy, which the callers guard before delegating
+     * @param system                           the system whose markets are folded
+     * @param rules                            the dominance-weighting rules for this pass, read once per
+     *                                         pass by the caller so a whole pass resolves under one rule
      * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered still
-     *                                     folds in (the "show all factions" dev reveal); false applies
-     *                                     the normal known-to-player filter
+     *                                         folds in (the "show all factions" dev reveal); false applies
+     *                                         the normal known-to-player filter
      * @return each faction's contribution in the system, keyed by faction id; empty when the system
      *         holds no folded market
      */

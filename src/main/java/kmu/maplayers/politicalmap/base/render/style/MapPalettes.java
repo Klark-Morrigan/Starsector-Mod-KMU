@@ -58,8 +58,8 @@ public final class MapPalettes {
             FactionPalette ownPalette,
             FactionPalette desaturationPalette) {
         return adjustment.desaturate()
-                ? desaturationPalette
-                : ownPalette;
+            ? desaturationPalette
+            : ownPalette;
     }
 
     /**
@@ -121,6 +121,7 @@ public final class MapPalettes {
     public static FactionPalette resolveDesaturationPalette(
             SectorAPI sector,
             double darkeningStrength) {
+
         var keepFactor = (float) (1.0 - darkeningStrength);
         var independent = StarsectorFactionColours.resolvePalette(sector, Factions.INDEPENDENT);
 

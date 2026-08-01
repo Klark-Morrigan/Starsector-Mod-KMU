@@ -17,6 +17,7 @@ import kmlib.settings.LabeledChoice;
  * once shipped - see {@link LabeledChoice} for what a reworded label costs.
  */
 public enum HiddenMarketScalingChoice implements LabeledChoice {
+
     NORMAL("Normal"),
     FIXED("Fixed");
 
@@ -34,5 +35,4 @@ public enum HiddenMarketScalingChoice implements LabeledChoice {
     public String getLabel() {
         return label;
     }
-
 }

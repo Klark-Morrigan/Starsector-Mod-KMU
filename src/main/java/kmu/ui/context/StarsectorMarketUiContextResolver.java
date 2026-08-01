@@ -52,9 +52,11 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
             if (market == null) {
                 return Optional.empty();
             }
+
             return Optional.of(KmuMarketUiContext.withoutPanel(
-                    market,
-                    KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET));
+                market,
+                KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET));
+
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to resolve currently open market.", exception);
             return Optional.empty();
@@ -74,8 +76,9 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
             }
 
             return contextFromEntity(
-                    dialog.getInteractionTarget(),
-                    KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+                dialog.getInteractionTarget(),
+                KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
+
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to resolve interaction dialog market.", exception);
             return Optional.empty();
@@ -90,8 +93,9 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
             }
 
             return contextFromEntity(
-                    playerFleet.getInteractionTarget(),
-                    KmuMarketUiContextSource.PLAYER_FLEET_INTERACTION_TARGET);
+                playerFleet.getInteractionTarget(),
+                KmuMarketUiContextSource.PLAYER_FLEET_INTERACTION_TARGET);
+
         } catch (RuntimeException exception) {
             errorReporter.report("Failed to resolve player fleet interaction target market.", exception);
             return Optional.empty();
@@ -119,8 +123,8 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
                 var market = tracker.getTrackedMarket();
                 if (market.isPresent()) {
                     return Optional.of(KmuMarketUiContext.withoutPanel(
-                            market.get(),
-                            KmuMarketUiContextSource.TRACKED_CORE_UI_MARKET));
+                        market.get(),
+                        KmuMarketUiContextSource.TRACKED_CORE_UI_MARKET));
                 }
             }
 
@@ -134,6 +138,7 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
     private Optional<KmuMarketUiContext> contextFromEntity(
             SectorEntityToken entity,
             KmuMarketUiContextSource source) {
+                
         if (entity == null) {
             return Optional.empty();
         }

@@ -72,11 +72,11 @@ public final class StyledCellBuilder {
         // map rather than probing it for a key it does not hold - keeping the null-star path clear
         // of whether the holder map happens to tolerate a null-key get.
         var holder = systemId == null
-                ? null
-                : territories.getHolderBySystemId().get(systemId);
+            ? null
+            : territories.getHolderBySystemId().get(systemId);
         return holder == null
-                ? buildFactionlessCell(territories, systemId, shaped)
-                : buildOwnedCell(territories, holder, shaped);
+            ? buildFactionlessCell(territories, systemId, shaped)
+            : buildOwnedCell(territories, holder, shaped);
     }
 
     // A fused cell: its seams, in the holder's effective palette. Its fill and border are the
@@ -94,13 +94,14 @@ public final class StyledCellBuilder {
         var style = styling.style();
         var adjustment = styling.adjustment();
         var palette = MapPalettes.resolveEffectivePalette(
-                adjustment,
-                holder,
-                territories.getDesaturationPalette());
+            adjustment,
+            holder,
+            territories.getDesaturationPalette());
+
         return new StyledCell.FusedCell(
-                VertexRuns.flattenEdgesOfClass(shaped, false),
-                resolvePaintOf(style.inner(), palette, adjustment),
-                (float) style.innerWidth());
+            VertexRuns.flattenEdgesOfClass(shaped, false),
+            resolvePaintOf(style.inner(), palette, adjustment),
+            (float) style.innerWidth());
     }
 
     // A lone cell: its own fill and outline, and no seam - factionless ground fuses with nothing,
@@ -118,8 +119,8 @@ public final class StyledCellBuilder {
         // One classification drives both the bundle and the recede, so a cell cannot take the
         // decivilised style yet miss the recede that style is meant to draw under.
         var category = FactionlessStyleResolver.resolveCategoryOf(
-                territories.getDecivilisedSystemIds(),
-                systemId);
+            territories.getDecivilisedSystemIds(),
+            systemId);
 
         var style = territories.getCategoryStyle(category);
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
@@ -130,8 +131,8 @@ public final class StyledCellBuilder {
         // cell, in which case it recolours off the pass's desaturation palette exactly as a
         // receded bloc does.
         var adjustment = FactionlessStyleResolver.resolveRecedeOf(
-                category,
-                territories.getRecedeAdjustment());
+            category,
+            territories.getRecedeAdjustment());
 
         var neutralColour = territories.getNeutralColour();
         var palette = MapPalettes.resolveEffectivePalette(
@@ -140,20 +141,20 @@ public final class StyledCellBuilder {
             territories.getDesaturationPalette());
 
         var outline = resolveOutlineOf(
-                shaped,
-                territories.getGlobalStyle().borderSmoothing());
+            shaped,
+            territories.getGlobalStyle().borderSmoothing());
                 
         // Tessellate the fill only when it will actually be painted: uninhabited ground is
         // outline-only and covers most of the sector, so triangulating every one of its cells
         // for a fill no pass emits would be the map's largest wasted rebuild cost.
         return new StyledCell.LoneCell(
-                style.fill().isDrawn()
-                        ? PolygonTessellator.tessellateToTriangles(List.of(outline))
-                        : GlVertexRuns.NO_VERTICES,
-                GlVertexRuns.flattenClosedLoopAsSegments(outline),
-                resolvePaintOf(style.fill(), palette, adjustment),
-                resolvePaintOf(style.outer(), palette, adjustment),
-                (float) style.outerWidth());
+            style.fill().isDrawn()
+                ? PolygonTessellator.tessellateToTriangles(List.of(outline))
+                : GlVertexRuns.NO_VERTICES,
+            GlVertexRuns.flattenClosedLoopAsSegments(outline),
+            resolvePaintOf(style.fill(), palette, adjustment),
+            resolvePaintOf(style.outer(), palette, adjustment),
+            (float) style.outerWidth());
     }
 
     // One element's paint as this cell resolves it: its colour picked from the cell's own two
@@ -186,7 +187,7 @@ public final class StyledCellBuilder {
         // Through the shared pass rather than the smoothing library directly, so this outline
         // and the cluster borders around it round to one profile and cannot drift apart.
         return BorderSmoothing.roundLoopCorners(
-                shaped.fillPolygon(),
-                borderSmoothing);
+            shaped.fillPolygon(),
+            borderSmoothing);
     }
 }

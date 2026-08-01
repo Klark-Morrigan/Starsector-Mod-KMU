@@ -29,13 +29,14 @@ final class NexAllianceSource implements AllianceSource {
             return List.of();
         }
         List<AllianceRecord> records = new ArrayList<>();
+
         for (Alliance alliance : AllianceManager.getAllianceList()) {
             // uuId is the stable bloc id; getMembersSorted() ranks members by descending
             // market size so element 0 is the dominant member the bloc colours off.
             records.add(new AllianceRecord(
-                    alliance.uuId,
-                    alliance.getName(),
-                    alliance.getMembersSorted()));
+                alliance.uuId,
+                alliance.getName(),
+                alliance.getMembersSorted()));
         }
         return records;
     }

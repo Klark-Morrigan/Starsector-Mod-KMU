@@ -37,8 +37,8 @@ public final class FactionlessStyleResolver {
             String systemId) {
 
         return systemId != null && decivilisedSystemIds.contains(systemId)
-                ? PoliticalMapCategory.DECIVILISED
-                : PoliticalMapCategory.UNINHABITED;
+            ? PoliticalMapCategory.DECIVILISED
+            : PoliticalMapCategory.UNINHABITED;
     }
 
     /**
@@ -61,7 +61,7 @@ public final class FactionlessStyleResolver {
             BlocStyleAdjustment passRecede) {
 
         return category == PoliticalMapCategory.DECIVILISED
-                ? passRecede
-                : BlocStyleAdjustment.NONE;
+            ? passRecede
+            : BlocStyleAdjustment.NONE;
     }
 }

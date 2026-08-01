@@ -20,11 +20,12 @@ import kmu.maplayers.base.refresh.MapLayerRefresh;
  * drawables at rebuild, so a pick has to invalidate them to show.
  */
 public final class NameFormatPreference {
+
     // Save-serialised key of the chosen format; frozen once shipped, since renaming it silently
     // resets every existing save's choice back to the default. Absent until the player first picks a
     // format, which the read resolves to the default.
     private static final SectorMemoryString selectedNameFormat =
-            new SectorMemoryString("$kmu_political_name_format");
+        new SectorMemoryString("$kmu_political_name_format");
 
     // Full names by default: the long form is the authored name a player recognises, and the short
     // form is the deliberate trade for fitting a tighter cluster at a larger font.
@@ -38,8 +39,9 @@ public final class NameFormatPreference {
      *         names before a save exists or when no choice was ever picked
      */
     public static FactionNameFormatChoice getSelectedNameFormat() {
-        return FactionNameFormatChoice.fromKeyOrDefault(selectedNameFormat.get(),
-                DEFAULT_NAME_FORMAT);
+        return FactionNameFormatChoice.fromKeyOrDefault(
+            selectedNameFormat.get(),
+            DEFAULT_NAME_FORMAT);
     }
 
     /**

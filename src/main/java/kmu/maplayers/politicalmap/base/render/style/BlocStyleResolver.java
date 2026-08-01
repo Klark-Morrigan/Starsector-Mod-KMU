@@ -45,17 +45,22 @@ public final class BlocStyleResolver {
             PoliticalMapView view,
             HolderGrouping grouping,
             BlocStyleAdjustment recedeAdjustment) {
+
         if (isFiltering) {
             var isSpotlit = FilteredPolitics.isSpotlitBloc(blocId);
-            var adjustment = resolveFilterAdjustment(isSpotlit,
-                    view.resolveBlocStyleAdjustment(blocId, grouping), recedeAdjustment);
+            var adjustment = resolveFilterAdjustment(
+                isSpotlit,
+                view.resolveBlocStyleAdjustment(blocId, grouping),
+                recedeAdjustment);
+
             return new BlocStyleDecision(
-                    !isSpotlit && view.shouldUseIndependentStyle(blocId, grouping, adjustment),
-                    adjustment);
+                !isSpotlit && view.shouldUseIndependentStyle(blocId, grouping, adjustment),
+                adjustment);
         }
         var adjustment = view.resolveBlocStyleAdjustment(blocId, grouping);
         return new BlocStyleDecision(
-                view.shouldUseIndependentStyle(blocId, grouping, adjustment), adjustment);
+            view.shouldUseIndependentStyle(blocId, grouping, adjustment),
+            adjustment);
     }
 
     /**
@@ -71,7 +76,7 @@ public final class BlocStyleResolver {
             BlocStyleAdjustment viewAdjustment,
             BlocStyleAdjustment recedeAdjustment) {
         return isSpotlit
-                ? BlocStyleAdjustment.NONE
-                : viewAdjustment.mergeRecede(recedeAdjustment);
+            ? BlocStyleAdjustment.NONE
+            : viewAdjustment.mergeRecede(recedeAdjustment);
     }
 }

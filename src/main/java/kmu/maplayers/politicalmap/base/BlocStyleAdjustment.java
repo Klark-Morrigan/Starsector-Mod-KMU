@@ -43,8 +43,8 @@ public record BlocStyleAdjustment(double opacityMultiplier, boolean desaturate) 
      */
     public BlocStyleAdjustment mergeRecede(BlocStyleAdjustment other) {
         return new BlocStyleAdjustment(
-                Math.min(opacityMultiplier, other.opacityMultiplier),
-                desaturate || other.desaturate);
+            Math.min(opacityMultiplier, other.opacityMultiplier),
+            desaturate || other.desaturate);
     }
 
     /**

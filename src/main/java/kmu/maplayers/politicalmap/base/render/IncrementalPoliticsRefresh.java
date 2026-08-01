@@ -138,10 +138,8 @@ final class IncrementalPoliticsRefresh {
 
             LOG.debug("Political map politics updated incrementally; stale="
                 + staleSystemIds.size()
-                + " reshapedCells="
-                + cellsToReshape.size()
-                + " rebuiltFactions="
-                + affectedFactionIds.size());
+                + " reshapedCells=" + cellsToReshape.size()
+                + " rebuiltFactions=" + affectedFactionIds.size());
         });
     }
 

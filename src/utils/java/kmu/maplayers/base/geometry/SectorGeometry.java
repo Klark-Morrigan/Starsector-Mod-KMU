@@ -32,10 +32,10 @@ import java.util.TreeMap;
  * LOOKS - only what shape it is.
  *
  * @param cellEdgesByCellId  each cell, as its adjacency-tagged edges
- * @param ownerByCellId   the owner per cell; a cell absent from the map is
+ * @param ownerByCellId      the owner per cell; a cell absent from the map is
  *                           unowned, which is what makes it neutral ground
  * @param shapedCellByCellId each cell after the border channel is cut inward
- * @param ringsByOwner     each owner's traced cluster rings
+ * @param ringsByOwner       each owner's traced cluster rings
  */
 record SectorGeometry(
         Map<String, List<CellEdge>> cellEdgesByCellId,

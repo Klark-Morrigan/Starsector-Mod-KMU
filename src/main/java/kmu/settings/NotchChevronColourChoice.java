@@ -16,6 +16,7 @@ import kmlib.settings.LabeledChoice;
  * {@link LabeledChoice} for what a reworded label costs.
  */
 public enum NotchChevronColourChoice implements LabeledChoice {
+
     GOLD("Gold"),
     PANEL_ACCENT("Panel accent");
 
@@ -33,5 +34,4 @@ public enum NotchChevronColourChoice implements LabeledChoice {
     public String getLabel() {
         return label;
     }
-
 }
