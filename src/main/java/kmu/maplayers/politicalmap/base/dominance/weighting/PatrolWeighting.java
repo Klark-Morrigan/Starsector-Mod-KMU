@@ -21,9 +21,9 @@ import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
  *                            applied only while the rule's stability weighting is on
  */
 public record PatrolWeighting(
-        boolean isWeighted,
-        double smallWeight,
-        double mediumWeight,
-        double largeWeight,
-        double lowStabilityPenalty) {
+    boolean isWeighted,
+    double smallWeight,
+    double mediumWeight,
+    double largeWeight,
+    double lowStabilityPenalty) {
 }

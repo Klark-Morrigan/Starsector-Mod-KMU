@@ -33,15 +33,15 @@ import java.util.function.BinaryOperator;
  *                             test of whether a bloc is an alliance
  */
 public record HolderGrouping(
-        Map<String, String> blocIdByFactionId,
-        Map<String, String> colorFactionIdByBlocId,
-        Map<String, String> allianceNameByBlocId) {
+    Map<String, String> blocIdByFactionId,
+    Map<String, String> colorFactionIdByBlocId,
+    Map<String, String> allianceNameByBlocId) {
 
     // The faction-mode grouping: every map empty, so each faction is its own bloc,
     // no bloc is an alliance, and each bloc's colour faction is itself. Shared as a
     // singleton because it is immutable and the default every no-grouping pass uses.
     private static final HolderGrouping IDENTITY =
-            new HolderGrouping(Map.of(), Map.of(), Map.of());
+        new HolderGrouping(Map.of(), Map.of(), Map.of());
 
     /**
      * Defensively copies each map into an immutable snapshot, so a grouping handed
@@ -96,13 +96,18 @@ public record HolderGrouping(
      * @return each bloc's merged value, keyed by bloc id in first-seen order
      */
     public <T> Map<String, T> regroupByBloc(
-            Map<String, T> valueByFactionId, T identity, BinaryOperator<T> merge) {
+            Map<String, T> valueByFactionId,
+            T identity,
+            BinaryOperator<T> merge) {
+
         var valueByBlocId = new LinkedHashMap<String, T>();
         for (var entry : valueByFactionId.entrySet()) {
             var blocId = resolveBlocId(entry.getKey());
             valueByBlocId.put(
-                    blocId,
-                    merge.apply(valueByBlocId.getOrDefault(blocId, identity), entry.getValue()));
+                blocId,
+                merge.apply(
+                    valueByBlocId.getOrDefault(blocId, identity),
+                    entry.getValue()));
         }
         return valueByBlocId;
     }

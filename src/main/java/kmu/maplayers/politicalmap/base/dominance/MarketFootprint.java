@@ -15,7 +15,10 @@ package kmu.maplayers.politicalmap.base.dominance;
  * economy and folds each owned market into its holder's footprint, while the rule
  * only ever sees these totals.
  */
-public record MarketFootprint(int totalWeight, int largestMarketWeight, int planetWeight) {
+public record MarketFootprint(
+    int totalWeight,
+    int largestMarketWeight,
+    int planetWeight) {
 
     // An holder with no counted markets; the identity for folding markets in.
     public static final MarketFootprint EMPTY = new MarketFootprint(0, 0, 0);
@@ -33,9 +36,9 @@ public record MarketFootprint(int totalWeight, int largestMarketWeight, int plan
      */
     public MarketFootprint addMarket(int marketWeight, boolean isPlanetMarket) {
         return new MarketFootprint(
-                totalWeight + marketWeight,
-                Math.max(largestMarketWeight, marketWeight),
-                isPlanetMarket ? planetWeight + marketWeight : planetWeight);
+            totalWeight + marketWeight,
+            Math.max(largestMarketWeight, marketWeight),
+            isPlanetMarket ? planetWeight + marketWeight : planetWeight);
     }
 
     /**
@@ -55,8 +58,8 @@ public record MarketFootprint(int totalWeight, int largestMarketWeight, int plan
      */
     public MarketFootprint merge(MarketFootprint other) {
         return new MarketFootprint(
-                totalWeight + other.totalWeight(),
-                Math.max(largestMarketWeight, other.largestMarketWeight()),
-                planetWeight + other.planetWeight());
+            totalWeight + other.totalWeight(),
+            Math.max(largestMarketWeight, other.largestMarketWeight()),
+            planetWeight + other.planetWeight());
     }
 }

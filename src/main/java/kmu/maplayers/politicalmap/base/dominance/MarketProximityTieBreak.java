@@ -65,6 +65,7 @@ public final class MarketProximityTieBreak {
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets,
             HolderGrouping grouping) {
+
         return new Comparator<>() {
             // Built on the first compare - i.e. the first tie in this system - then reused for
             // any further ties, so the geometry is read once and only when a tie needs it.
@@ -74,20 +75,24 @@ public final class MarketProximityTieBreak {
             public int compare(String leftBlocId, String rightBlocId) {
                 if (minDistanceByBlocId == null) {
                     minDistanceByBlocId = computeMinDistanceByBlocId(
-                            sector, system, shouldIncludeUndiscoveredMarkets, grouping);
+                        sector,
+                        system,
+                        shouldIncludeUndiscoveredMarkets,
+                        grouping);
                 }
                 // Primitive doubles so the comparison below is by value; a boxed Double would
                 // compare by reference and never reach the colour-faction backstop on a tie.
                 double leftDistance =
-                        minDistanceByBlocId.getOrDefault(leftBlocId, UNPLACEABLE_DISTANCE);
+                    minDistanceByBlocId.getOrDefault(leftBlocId, UNPLACEABLE_DISTANCE);
                 double rightDistance =
-                        minDistanceByBlocId.getOrDefault(rightBlocId, UNPLACEABLE_DISTANCE);
+                    minDistanceByBlocId.getOrDefault(rightBlocId, UNPLACEABLE_DISTANCE);
+
                 if (leftDistance != rightDistance) {
                     return Double.compare(leftDistance, rightDistance);
                 }
                 return grouping
-                        .resolveColorFactionId(leftBlocId)
-                        .compareTo(grouping.resolveColorFactionId(rightBlocId));
+                    .resolveColorFactionId(leftBlocId)
+                    .compareTo(grouping.resolveColorFactionId(rightBlocId));
             }
         };
     }
@@ -102,15 +107,18 @@ public final class MarketProximityTieBreak {
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets,
             HolderGrouping grouping) {
+
         var centremostStar = StarSystems.getCentremostStar(system);
         var minDistanceByBlocId = new LinkedHashMap<String, Double>();
+
         for (var market : sector.getEconomy().getMarkets(system)) {
             if (!Markets.isCountedAsColony(market, shouldIncludeUndiscoveredMarkets)) {
                 continue;
             }
             var blocId = grouping.resolveBlocId(market.getFaction().getId());
             var distance =
-                    StarSystems.getOrbitalDistanceTo(market.getPrimaryEntity(), centremostStar);
+                StarSystems.getOrbitalDistanceTo(market.getPrimaryEntity(), centremostStar);
+                
             minDistanceByBlocId.merge(blocId, distance, Math::min);
         }
         return minDistanceByBlocId;

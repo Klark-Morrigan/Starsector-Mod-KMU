@@ -36,9 +36,9 @@ import java.util.Objects;
  *                                         plain faction view
  */
 public record DominancePass(
-        DominanceRules rules,
-        boolean shouldIncludeUndiscoveredMarkets,
-        HolderGrouping grouping) {
+    DominanceRules rules,
+    boolean shouldIncludeUndiscoveredMarkets,
+    HolderGrouping grouping) {
 
     public DominancePass {
         Objects.requireNonNull(rules, "rules");
@@ -55,9 +55,9 @@ public record DominancePass(
      */
     public static DominancePass readFromLunaSettings(HolderGrouping grouping) {
         return new DominancePass(
-                DominanceRules.readFromLunaSettings(),
-                PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions(),
-                grouping);
+            DominanceRules.readFromLunaSettings(),
+            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions(),
+            grouping);
     }
 
     /**
@@ -84,9 +84,13 @@ public record DominancePass(
      *         owned market
      */
     public Map<String, MarketFootprint> readFootprintsByFaction(
-            SectorAPI sector, StarSystemAPI system) {
+            SectorAPI sector,
+            StarSystemAPI system) {
         return KnownMarketFootprints.readByFaction(
-                sector, system, rules, shouldIncludeUndiscoveredMarkets);
+            sector,
+            system,
+            rules,
+            shouldIncludeUndiscoveredMarkets);
     }
 
     /**
@@ -102,9 +106,9 @@ public record DominancePass(
      */
     public Map<String, MarketFootprint> readBlocFootprints(SectorAPI sector, StarSystemAPI system) {
         return grouping.regroupByBloc(
-                readFootprintsByFaction(sector, system),
-                MarketFootprint.EMPTY,
-                MarketFootprint::merge);
+            readFootprintsByFaction(sector, system),
+            MarketFootprint.EMPTY,
+            MarketFootprint::merge);
     }
 
     /**
@@ -119,6 +123,9 @@ public record DominancePass(
      */
     public Comparator<String> tieBreakFor(SectorAPI sector, StarSystemAPI system) {
         return MarketProximityTieBreak.forSystem(
-                sector, system, shouldIncludeUndiscoveredMarkets, grouping);
+            sector,
+            system,
+            shouldIncludeUndiscoveredMarkets,
+            grouping);
     }
 }

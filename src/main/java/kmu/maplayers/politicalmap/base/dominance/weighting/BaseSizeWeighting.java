@@ -28,8 +28,8 @@ import kmu.settings.HiddenMarketScalingChoice;
  *                                applied only while the rule's stability weighting is on
  */
 public record BaseSizeWeighting(
-        double colonySizeWeight,
-        HiddenMarketScalingChoice hiddenMarketScaling,
-        double hiddenMarketFixedWeight,
-        double lowStabilityPenalty) {
+    double colonySizeWeight,
+    HiddenMarketScalingChoice hiddenMarketScaling,
+    double hiddenMarketFixedWeight,
+    double lowStabilityPenalty) {
 }

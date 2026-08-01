@@ -33,14 +33,18 @@ public final class SystemStandings {
     // Groups rank descending by their summed score, a tie falling to the lowest bloc id so the order
     // is total and never depends on the economy walk order the footprints arrive in.
     private static final Comparator<GroupStanding> GROUP_ORDER =
-            Comparator.comparingInt(GroupStanding::aggregateScore).reversed()
-                    .thenComparing(GroupStanding::blocId);
+        Comparator
+            .comparingInt(GroupStanding::aggregateScore)
+            .reversed()
+            .thenComparing(GroupStanding::blocId);
 
     // A group's members rank descending by their own score, a tie falling to the lowest faction id
     // on the same total-order rule as the groups above them.
     private static final Comparator<FactionStanding> MEMBER_ORDER =
-            Comparator.comparingInt(FactionStanding::score).reversed()
-                    .thenComparing(FactionStanding::factionId);
+        Comparator
+            .comparingInt(FactionStanding::score)
+            .reversed()
+            .thenComparing(FactionStanding::factionId);
 
     private SystemStandings() {
     }
@@ -59,9 +63,12 @@ public final class SystemStandings {
      *         within; empty when the system holds no known owned market
      */
     public static List<GroupStanding> rankByDominationScore(
-            SectorAPI sector, StarSystemAPI system, DominancePass pass) {
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominancePass pass) {
         return rankByDominationScore(
-                pass.readFootprintsByFaction(sector, system), pass.grouping());
+            pass.readFootprintsByFaction(sector, system),
+            pass.grouping());
     }
 
     /**
@@ -78,9 +85,12 @@ public final class SystemStandings {
      *         empty when the footprint map is empty
      */
     public static List<GroupStanding> rankByDominationScore(
-            Map<String, MarketFootprint> footprintByFactionId, HolderGrouping grouping) {
+            Map<String, MarketFootprint> footprintByFactionId,
+            HolderGrouping grouping) {
+
         var membersByBlocId = collectMembersByBloc(footprintByFactionId, grouping);
         var groups = new ArrayList<GroupStanding>(membersByBlocId.size());
+
         for (var entry : membersByBlocId.entrySet()) {
             groups.add(rankGroup(entry.getKey(), entry.getValue()));
         }
@@ -92,13 +102,16 @@ public final class SystemStandings {
     // one bucket while every other faction is its own. First-seen bloc order is kept here only for a
     // stable build; the caller sorts the groups into ranked order regardless.
     private static Map<String, List<FactionStanding>> collectMembersByBloc(
-            Map<String, MarketFootprint> footprintByFactionId, HolderGrouping grouping) {
+            Map<String, MarketFootprint> footprintByFactionId,
+            HolderGrouping grouping) {
+
         var membersByBlocId = new LinkedHashMap<String, List<FactionStanding>>();
         for (var entry : footprintByFactionId.entrySet()) {
             var blocId = grouping.resolveBlocId(entry.getKey());
+            
             membersByBlocId
-                    .computeIfAbsent(blocId, id -> new ArrayList<>())
-                    .add(new FactionStanding(entry.getKey(), entry.getValue().totalWeight()));
+                .computeIfAbsent(blocId, id -> new ArrayList<>())
+                .add(new FactionStanding(entry.getKey(), entry.getValue().totalWeight()));
         }
         return membersByBlocId;
     }

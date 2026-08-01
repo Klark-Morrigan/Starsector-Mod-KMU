@@ -23,7 +23,10 @@ import java.util.List;
  * @param members        the member factions holding markets in the hovered system, ranked
  *                       descending by their own score; a single-element list in the faction view
  */
-public record GroupStanding(String blocId, int aggregateScore, List<FactionStanding> members) {
+public record GroupStanding(
+    String blocId,
+    int aggregateScore,
+    List<FactionStanding> members) {
 
     public GroupStanding {
         members = List.copyOf(members);

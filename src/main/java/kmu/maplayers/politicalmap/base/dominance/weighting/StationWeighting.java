@@ -25,8 +25,8 @@ import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
  *                            applied only while the rule's stability weighting is on
  */
 public record StationWeighting(
-        boolean isWeighted,
-        double weight,
-        double hiddenMarketRate,
-        double lowStabilityPenalty) {
+    boolean isWeighted,
+    double weight,
+    double hiddenMarketRate,
+    double lowStabilityPenalty) {
 }

@@ -12,11 +12,13 @@ package kmu.maplayers.politicalmap.base.dominance;
  * @param footprint  the faction's dominance footprint in the system
  * @param marketSize the faction's summed raw colony size in the system
  */
-public record FactionMarketContribution(MarketFootprint footprint, int marketSize) {
+public record FactionMarketContribution(
+    MarketFootprint footprint,
+    int marketSize) {
 
     /** A faction with no counted markets; the identity a market fold begins from. */
     public static final FactionMarketContribution EMPTY =
-            new FactionMarketContribution(MarketFootprint.EMPTY, 0);
+        new FactionMarketContribution(MarketFootprint.EMPTY, 0);
 
     /**
      * Folds another contribution into this one, combining two already-reduced contributions as a
@@ -28,8 +30,8 @@ public record FactionMarketContribution(MarketFootprint footprint, int marketSiz
      */
     public FactionMarketContribution merge(FactionMarketContribution other) {
         return new FactionMarketContribution(
-                footprint.merge(other.footprint()),
-                marketSize + other.marketSize());
+            footprint.merge(other.footprint()),
+            marketSize + other.marketSize());
     }
 
     /**
@@ -44,7 +46,7 @@ public record FactionMarketContribution(MarketFootprint footprint, int marketSiz
      */
     FactionMarketContribution addMarket(int marketWeight, boolean isPlanetMarket, int marketSize) {
         return new FactionMarketContribution(
-                footprint.addMarket(marketWeight, isPlanetMarket),
-                this.marketSize + marketSize);
+            footprint.addMarket(marketWeight, isPlanetMarket),
+            this.marketSize + marketSize);
     }
 }

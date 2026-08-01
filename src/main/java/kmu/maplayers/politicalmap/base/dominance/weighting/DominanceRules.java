@@ -33,10 +33,10 @@ import kmu.settings.KmuLunaSettings;
  *                            low-stability penalty
  */
 public record DominanceRules(
-        boolean isStabilityWeighted,
-        BaseSizeWeighting baseSize,
-        StationWeighting station,
-        PatrolWeighting patrols) {
+    boolean isStabilityWeighted,
+    BaseSizeWeighting baseSize,
+    StationWeighting station,
+    PatrolWeighting patrols) {
 
     /**
      * Reads the player's current dominance-weighting settings from LunaLib into one
@@ -51,22 +51,22 @@ public record DominanceRules(
      */
     public static DominanceRules readFromLunaSettings() {
         return new DominanceRules(
-                KmuLunaSettings.shouldWeighDominanceByStability(),
-                new BaseSizeWeighting(
-                        KmuLunaSettings.getColonySizeWeight(),
-                        KmuLunaSettings.getHiddenMarketScaling(),
-                        KmuLunaSettings.getHiddenMarketFixedWeight(),
-                        KmuLunaSettings.getNormalLowStabilityPenalty()),
-                new StationWeighting(
-                        KmuLunaSettings.shouldWeighDominanceByStation(),
-                        KmuLunaSettings.getStationWeight(),
-                        KmuLunaSettings.getStationHiddenMarketRate(),
-                        KmuLunaSettings.getStationLowStabilityPenalty()),
-                new PatrolWeighting(
-                        KmuLunaSettings.shouldWeighDominanceByPatrols(),
-                        KmuLunaSettings.getPatrolSmallWeight(),
-                        KmuLunaSettings.getPatrolMediumWeight(),
-                        KmuLunaSettings.getPatrolLargeWeight(),
-                        KmuLunaSettings.getPatrolLowStabilityPenalty()));
+            KmuLunaSettings.shouldWeighDominanceByStability(),
+            new BaseSizeWeighting(
+                KmuLunaSettings.getColonySizeWeight(),
+                KmuLunaSettings.getHiddenMarketScaling(),
+                KmuLunaSettings.getHiddenMarketFixedWeight(),
+                KmuLunaSettings.getNormalLowStabilityPenalty()),
+            new StationWeighting(
+                KmuLunaSettings.shouldWeighDominanceByStation(),
+                KmuLunaSettings.getStationWeight(),
+                KmuLunaSettings.getStationHiddenMarketRate(),
+                KmuLunaSettings.getStationLowStabilityPenalty()),
+            new PatrolWeighting(
+                KmuLunaSettings.shouldWeighDominanceByPatrols(),
+                KmuLunaSettings.getPatrolSmallWeight(),
+                KmuLunaSettings.getPatrolMediumWeight(),
+                KmuLunaSettings.getPatrolLargeWeight(),
+                KmuLunaSettings.getPatrolLowStabilityPenalty()));
     }
 }

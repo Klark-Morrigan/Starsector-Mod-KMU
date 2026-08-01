@@ -14,5 +14,7 @@ package kmu.maplayers.politicalmap.base.dominance;
  * @param factionId the faction holding markets in the hovered system
  * @param score     the faction's summed domination weight in that system
  */
-public record FactionStanding(String factionId, int score) {
+public record FactionStanding(
+    String factionId,
+    int score) {
 }

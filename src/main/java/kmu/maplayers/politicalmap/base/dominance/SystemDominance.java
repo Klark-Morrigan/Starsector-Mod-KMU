@@ -70,12 +70,16 @@ public final class SystemDominance {
      *         (an uninhabited system has no holder)
      */
     public static String resolveDominantFactionId(
-            Map<String, MarketFootprint> footprintByFactionId, Comparator<String> tieBreak) {
+            Map<String, MarketFootprint> footprintByFactionId,
+            Comparator<String> tieBreak) {
+
         String dominantId = null;
         MarketFootprint dominant = null;
+
         for (var entry : footprintByFactionId.entrySet()) {
             var factionId = entry.getKey();
             var footprint = entry.getValue();
+
             if (dominantId == null
                     || isMoreDominant(footprint, factionId, dominant, dominantId, tieBreak)) {
                 dominantId = factionId;
@@ -95,6 +99,7 @@ public final class SystemDominance {
             MarketFootprint leader,
             String leaderId,
             Comparator<String> tieBreak) {
+                
         if (candidate.totalWeight() != leader.totalWeight()) {
             return candidate.totalWeight() > leader.totalWeight();
         }
