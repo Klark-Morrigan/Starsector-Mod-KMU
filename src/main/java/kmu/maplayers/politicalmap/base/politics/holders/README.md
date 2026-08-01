@@ -1,4 +1,4 @@
-# Ownership resolution (`base.politics.ownership`)
+# Ownership resolution (`base.politics.holders`)
 
 Who paints each star system, and how each owned system's fill is drawn.
 

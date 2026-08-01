@@ -70,7 +70,7 @@ Notes on each:
 The Factions and Alliances views do not only paint held ground. A system a faction *claims* but
 does not *hold* joins that faction's territory drawn empty: inside the border and under the
 faction's name, but with no fill. The Claims view instead paints those same claims solid. Why a
-claim resolves this way is [ownership resolution](base/politics/ownership/README.md); how the empty
+claim resolves this way is [ownership resolution](base/politics/holders/README.md); how the empty
 fill is drawn is [territory fills and borders](base/render/territories/README.md).
 
 ## How a view drives the pipeline
@@ -92,11 +92,11 @@ flowchart TD
 
 What changes between views is only the two inputs, the grouping and the ownership source; from the
 seam on, every view shapes, fills, and labels identically. The sources themselves and the three
-fill states are [ownership resolution](base/politics/ownership/README.md).
+fill states are [ownership resolution](base/politics/holders/README.md).
 
 ## Where each part lives
 
-- **[Ownership resolution](base/politics/ownership/README.md)** - the per-view ownership seam, the
+- **[Ownership resolution](base/politics/holders/README.md)** - the per-view ownership seam, the
   three sources, the three fill states, and the claim mechanic.
 - **[Territory fills and borders](base/render/territories/README.md)** - how cells become each
   bloc's coloured cluster, border, seams, and split fill.

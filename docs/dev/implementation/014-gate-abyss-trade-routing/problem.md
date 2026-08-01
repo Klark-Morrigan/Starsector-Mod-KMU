@@ -175,7 +175,7 @@ Recommendation:
   do identical work for no player-visible benefit. See
   [research: Economy Tick Seam](research.md#economy-tick-seam).
 - Tooltip text is resolved through the
-  [feature 002 localization provider](../002-localization-provider/problem.md).
+  feature 002 localization provider, which has no doc folder in this repo.
 - Disabling the feature (config flag) removes all injected stat
   modifiers and stops spawning synthetic fleets on the next economy
   tick. No save-data migration required.

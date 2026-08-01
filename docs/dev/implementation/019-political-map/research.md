@@ -367,7 +367,7 @@ visual vocabulary kept clean for that later use.
 
 #### Decivilised entities are factionless
 
-[DecivTracker.decivilize](../../../../starsector-core/starfarer.api.zip)
+`DecivTracker.decivilize`, in the game install's `starfarer.api.zip`,
 sets the market faction to `"neutral"`, sets all connected entities'
 factions to `"neutral"`, and removes the market from the economy.
 Abandoned stations created during deciv inherit the same neutral faction.

@@ -101,7 +101,7 @@ A bloc's footprint is traced as one border whatever its members' fills; the fill
 system inside it, across three states. **Solid** is the default - a bloc that only dominates fills
 its whole cluster from that one border and pays nothing for the split, the common case. The two
 exceptions each carve a sub-cluster out of the solid, hatched and unfilled, and both are decided
-upstream in `politics.ownership`; this section is how the draw honours them.
+upstream in `politics.holders`; this section is how the draw honours them.
 
 The machinery is the framework's - `FillSplit` partitions the members and `SplitFillBuilder`
 tessellates each state as its own cluster inside the one border; see
@@ -127,7 +127,7 @@ one border for outline and label but paints no fill at all, so the split simply 
 shape as the hatch sub-cluster (one border, a sub-cluster drawn differently) but the sub-cluster is
 empty rather than hatched, so a held/claimed boundary reads as the seam where the fill stops inside
 a continuous frontier. Which systems are unfilled is resolved in
-[`politics.ownership`](../../politics/ownership/README.md); this package only honours the set.
+[`politics.holders`](../../politics/holders/README.md); this package only honours the set.
 
 ## Rendering
 
