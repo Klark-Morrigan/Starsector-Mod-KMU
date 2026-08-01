@@ -21,7 +21,7 @@ Part of Klark Morrigan's Utilities; see the
 
 ## At a glance
 
-Each view picks one source. The source returns one `OwnershipResolution`. The resolution says who
+Each view picks one source. The source returns one `HolderResolution`. The resolution says who
 owns each system, and which systems draw as a fill exception:
 
 ```mermaid
@@ -31,7 +31,7 @@ flowchart LR
         A["Held + claims<br/>(ClaimAugmented)"]
         C["Claims only<br/>(Claims)"]
     end
-    D --> R[OwnershipResolution]
+    D --> R[HolderResolution]
     A --> R
     C --> R
     R --> S[Solid]
@@ -46,7 +46,7 @@ Alliances, and Claims (the code calls these *views*). Each mode works out owners
 the code that actually draws the map should not have to care which mode is running. The seam is what
 keeps the two apart.
 
-Each view hands the drawing code one object: an `OwnershipProvider`. Think of it as the answer to a
+Each view hands the drawing code one object: a `HolderProvider`. Think of it as the answer to a
 single question - *who owns each star system?* To let it answer, the drawing code passes three
 inputs:
 
@@ -54,7 +54,7 @@ inputs:
 - the grouping (whether factions stand alone or merge into alliances),
 - which faction or alliance, if any, the filter is currently highlighting.
 
-The provider hands back one bundle: an `OwnershipResolution`. It lists the owner of every owned
+The provider hands back one bundle: an `HolderResolution`. It lists the owner of every owned
 system, and marks the few systems that are drawn as exceptions (the fill states below). A system's
 owner and its fill are worked out together, so they travel in the same bundle instead of being
 fetched twice.
@@ -78,17 +78,17 @@ path, so a view that never contests or unfills pays nothing for the split.
 
 ## The three sources
 
-- **`DefaultOwnershipProvider`** - held territory from the live economy. Off filter, each system
+- **`DefaultHolderProvider`** - held territory from the live economy. Off filter, each system
   goes to its single dominant owner, with no exceptions. Under a spotlight it switches to the
   presence-aware resolver: the chosen bloc stays drawn wherever it owns a market - solid where it
   wins, hatched where a rival wins. This is the source the pipeline was carved out of.
-- **`ClaimAugmentedOwnershipProvider`** - the faction and alliance default. It takes held territory
+- **`ClaimAugmentedHolderProvider`** - the faction and alliance default. It takes held territory
   from the source above, then folds in each claimed-but-unheld system as an *unfilled* extension of
   its claimant. The claim carries the same bloc key as that faction's held systems, so the geometry
   fuses held and claimed ground into one bordered territory. A system already held keeps its solid
   fill: the held signal wins. Under a spotlight, a claim shares the fate of its bloc - the spotlit
   bloc's claims stay at full strength, every other bloc's claims fade with its held ground.
-- **`ClaimsOwnershipProvider`** - the Claims view's source. Every claimed system is painted *solid*
+- **`ClaimsHolderProvider`** - the Claims view's source. Every claimed system is painted *solid*
   in its claimant's colours, with nothing held-derived. It reads no filter, so the resolution has no
   exceptions and takes the solid fast path.
 
@@ -111,7 +111,7 @@ inhabited systems.
 - The *render split* that turns the three states into triangles, hatch, and skipped fills is
   [`render.territories`](../../render/territories/README.md). This package decides the states; it
   does not draw them.
-- The *grouping* that folds a faction into its alliance bloc is `base.dominance.OwnershipGrouping`,
+- The *grouping* that folds a faction into its alliance bloc is `base.dominance.HolderGrouping`,
   supplied by the view.
 - The *held resolve* and *filter resolve* the default source delegates to are `SectorPolitics` and
   `FilteredPolitics`, in `base.politics` (no separate README; see the source).
