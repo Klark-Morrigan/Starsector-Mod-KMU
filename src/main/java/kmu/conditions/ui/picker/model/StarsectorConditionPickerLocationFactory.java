@@ -123,9 +123,9 @@ final class StarsectorConditionPickerLocationFactory {
             return null;
         }
 
-        var color = faction.getBaseUIColor();
-        if (color == null) {
-            color = faction.getColor();
+        var colour = faction.getBaseUIColor();
+        if (colour == null) {
+            colour = faction.getColor();
         }
 
         var crestSprite = FactionCrests.resolveCrestPath(faction);
@@ -134,10 +134,10 @@ final class StarsectorConditionPickerLocationFactory {
 
         return new KmuPickerFaction(
             name,
-            color,
+            colour,
             crestSprite,
             relationship.getDescription(),
-            relationship.getColor());
+            relationship.getColour());
     }
 
     private String starSystemName(MarketAPI market) {

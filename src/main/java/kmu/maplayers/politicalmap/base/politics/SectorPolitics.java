@@ -222,7 +222,7 @@ public final class SectorPolitics {
             HolderGrouping grouping,
             String blocId) {
                 
-        var faction = sector.getFaction(grouping.resolveColorFactionId(blocId));
+        var faction = sector.getFaction(grouping.resolveColourFactionId(blocId));
         if (faction == null) {
             return null;
         }

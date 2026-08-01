@@ -73,7 +73,7 @@ final class StyledCellBuilderTest {
                 new DominantHolder("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
         // An owned cell's fill and national border are per cluster (in FactionTerritory),
         // so fill and outer are "No color" here and only inner - the interior seam -
-        // resolves a real color, the one slot these tests can observe.
+        // resolves a real colour, the one slot these tests can observe.
         private static final CategoryStyle STYLE = new CategoryStyle(
                 new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0),
                 new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 3.0,
@@ -85,7 +85,7 @@ final class StyledCellBuilderTest {
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, false))),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(OWNER_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().colour()).isEqualTo(OWNER_SECONDARY);
             assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(0.5f);
         }
 
@@ -95,7 +95,7 @@ final class StyledCellBuilderTest {
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(1.0, true))),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(DESATURATED_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().colour()).isEqualTo(DESATURATED_SECONDARY);
             assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(1.0f);
         }
 
@@ -105,7 +105,7 @@ final class StyledCellBuilderTest {
                     drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, true))),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(DESATURATED_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().colour()).isEqualTo(DESATURATED_SECONDARY);
             assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(0.5f);
         }
 
@@ -115,7 +115,7 @@ final class StyledCellBuilderTest {
                     drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(OWNER_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().colour()).isEqualTo(OWNER_SECONDARY);
             assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(1.0f);
         }
 
@@ -143,7 +143,7 @@ final class StyledCellBuilderTest {
                     filteringDrawablesWith(new BlocStyleAdjustment(0.5, true)),
                     SYSTEM_ID, ownedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().color()).isEqualTo(DESATURATED_SECONDARY);
+            assertThat(requireFusedCell(styled).seamPaint().colour()).isEqualTo(DESATURATED_SECONDARY);
             assertThat(requireFusedCell(styled).seamPaint().alpha()).isEqualTo(0.5f);
         }
 
@@ -155,15 +155,15 @@ final class StyledCellBuilderTest {
             // map without being taken for decivilised: the decivilised category is "No color"
             // here, so had the null id been routed there the cell would have dropped to null.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                    factionlessDrawablesWith(noColorStyle(), drawnOutlineStyle()),
+                    factionlessDrawablesWith(noColourStyle(), drawnOutlineStyle()),
                     null, ownedCell());
 
             assertThat(styled).isNotNull();
-            assertThat(requireLoneCell(styled).outlinePaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).outlinePaint().colour()).isEqualTo(FACTIONLESS_NEUTRAL);
         }
 
         @Test
-        void buildStyledCellForSystemFillsADecivilisedCellInTheNeutralColor() {
+        void buildStyledCellForSystemFillsADecivilisedCellInTheNeutralColour() {
             // Dead colonies carry a fill of their own - factionless ground fills per cell, since
             // it never fuses into a cluster with a tessellated cluster to fill from - so both the
             // paint and the baked triangles have to come back off the cell itself.
@@ -171,7 +171,7 @@ final class StyledCellBuilderTest {
                     factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).fillPaint().colour()).isEqualTo(FACTIONLESS_NEUTRAL);
             assertThat(requireLoneCell(styled).fillTriangles()).isNotEmpty();
         }
 
@@ -187,9 +187,9 @@ final class StyledCellBuilderTest {
                             filledOutlineStyle(), new BlocStyleAdjustment(0.5, true)),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().color()).isEqualTo(DESATURATED_PRIMARY);
+            assertThat(requireLoneCell(styled).fillPaint().colour()).isEqualTo(DESATURATED_PRIMARY);
             assertThat(requireLoneCell(styled).fillPaint().alpha()).isEqualTo(0.5f);
-            assertThat(requireLoneCell(styled).outlinePaint().color()).isEqualTo(DESATURATED_PRIMARY);
+            assertThat(requireLoneCell(styled).outlinePaint().colour()).isEqualTo(DESATURATED_PRIMARY);
             assertThat(requireLoneCell(styled).outlinePaint().alpha()).isEqualTo(0.5f);
         }
 
@@ -203,7 +203,7 @@ final class StyledCellBuilderTest {
                             filledOutlineStyle(), new BlocStyleAdjustment(0.5, false)),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).fillPaint().colour()).isEqualTo(FACTIONLESS_NEUTRAL);
             assertThat(requireLoneCell(styled).fillPaint().alpha()).isEqualTo(0.5f);
         }
 
@@ -217,7 +217,7 @@ final class StyledCellBuilderTest {
                             filledOutlineStyle(), new BlocStyleAdjustment(0.5, true)),
                     "never-settled-system", ownedCell());
 
-            assertThat(requireLoneCell(styled).outlinePaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).outlinePaint().colour()).isEqualTo(FACTIONLESS_NEUTRAL);
             assertThat(requireLoneCell(styled).outlinePaint().alpha()).isEqualTo(1.0f);
         }
 
@@ -229,7 +229,7 @@ final class StyledCellBuilderTest {
                     factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().color()).isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).fillPaint().colour()).isEqualTo(FACTIONLESS_NEUTRAL);
             assertThat(requireLoneCell(styled).fillPaint().alpha()).isEqualTo(1.0f);
         }
 
@@ -261,7 +261,7 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemDropsAFactionlessCellThatDrawsNothing() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                    factionlessDrawablesWith(noColorStyle(), drawnOutlineStyle()),
+                    factionlessDrawablesWith(noColourStyle(), drawnOutlineStyle()),
                     DECIVILISED_SYSTEM_ID, ownedCell());
 
             assertThat(styled).isNull();
@@ -346,7 +346,7 @@ final class StyledCellBuilderTest {
 
         // A category that draws nothing - every slot "No color" - so a cell built under it drops
         // to null rather than a drawable record.
-        private static CategoryStyle noColorStyle() {
+        private static CategoryStyle noColourStyle() {
             return new CategoryStyle(
                     new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0),
                     new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE), 1.0), 3.0,

@@ -59,7 +59,7 @@ final class SplitFillBuilderTest {
     class BuildFill {
 
         @Test
-        void buildFillDrawsNothingForANoColorFill() {
+        void buildFillDrawsNothingForANoColourFill() {
             // A cluster the player has switched the fill off for pays no tessellation at all,
             // rather than baking triangles the draw pass would then skip.
             var fill = builder().buildFill(false, solidOnlySplit(), REGION_KEY, null);

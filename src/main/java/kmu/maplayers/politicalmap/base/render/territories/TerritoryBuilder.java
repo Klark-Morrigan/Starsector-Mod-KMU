@@ -4,7 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.Timings;
-import kmlib.starsector.factions.StarsectorFactionColors;
+import kmlib.starsector.factions.StarsectorFactionColours;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.diagnostics.KmuProfiling;
@@ -41,7 +41,7 @@ public final class TerritoryBuilder {
 
     // Shapes the cached raw cells into merged clusters and partitions them into the
     // cluster-filled (owned) and per-cell (decivilised/uninhabited) draw lists, baking in each
-    // cell's colors, opacities, and widths resolved from the current settings, then
+    // cell's colours, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category, not
     // per cell. The active view supplies the holder grouping the pass resolves under
     // and the style classifier each cell reads; both are retained on the territories so an
@@ -94,11 +94,11 @@ public final class TerritoryBuilder {
                     + " took=" + Timings.formatMillis(System.nanoTime() - decivilisedStart));
 
             // The whole theme - the global tier plus one style per category - read once here
-            // through the single reader seam, plus the shared neutral color and the desaturation
+            // through the single reader seam, plus the shared neutral colour and the desaturation
             // palette the profile resolves to. Held on the territories so the incremental refresh
             // re-shapes cells against the same snapshot this pass used.
             var renderStyle = RenderStyleReader.readRenderStyle();
-            var neutralColor = StarsectorFactionColors.resolveNeutralColor(sector);
+            var neutralColour = StarsectorFactionColours.resolveNeutralColour(sector);
 
             // The receded background desaturates to a uniform Independent-based grey, darkened by the
             // live setting so it sits below genuine independent-held space - a spotlit bloc, even
@@ -113,12 +113,12 @@ public final class TerritoryBuilder {
                     ? RecedePreferences.FILTER.resolveRecedeAdjustment()
                     : BlocStyleAdjustment.NONE;
             var territories = new PoliticalMapTerritories(
-                    ownerBySystemId,
-                    decivilisedSystemIds,
-                    unfilledSystemIds,
-                    new MapStyling(renderStyle, neutralColor, desaturationPalette),
-                    new ViewGrouping(view, grouping),
-                    new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
+                ownerBySystemId,
+                decivilisedSystemIds,
+                unfilledSystemIds,
+                new MapStyling(renderStyle, neutralColour, desaturationPalette),
+                new ViewGrouping(view, grouping),
+                new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
 
             // Shape the raw cells into merged clusters once, holding-aware. The agnostic
             // geometry clusters by holder, so hand it each system's faction id as the

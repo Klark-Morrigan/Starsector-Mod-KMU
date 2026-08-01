@@ -37,8 +37,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class KmuConditionPickerModelFactoryTest {
-    private static final Color FACTION_COLOR = new Color(90, 150, 240);
-    private static final Color RELATIONSHIP_COLOR = new Color(240, 80, 80);
+    private static final Color FACTION_COLOUR = new Color(90, 150, 240);
+    private static final Color RELATIONSHIP_COLOUR = new Color(240, 80, 80);
 
     @Nested
     class Create {
@@ -149,9 +149,9 @@ class KmuConditionPickerModelFactoryTest {
             assertThat(location.getPlanetType()).contains("terran world");
             assertThat(location.getFaction()).isPresent();
             assertThat(location.getFaction().get().getName()).isEqualTo("Hegemony");
-            assertThat(location.getFaction().get().getColor()).contains(FACTION_COLOR);
+            assertThat(location.getFaction().get().getColour()).contains(FACTION_COLOUR);
             assertThat(location.getFaction().get().getRelationshipDescription()).contains("Vengeful (-100 / 100)");
-            assertThat(location.getFaction().get().getRelationshipColor()).contains(RELATIONSHIP_COLOR);
+            assertThat(location.getFaction().get().getRelationshipColour()).contains(RELATIONSHIP_COLOUR);
             assertThat(location.getGravityWellTypeName()).contains("yellow star");
             assertThat(location.getGravityWellName()).contains("Corvus");
         }
@@ -511,7 +511,7 @@ class KmuConditionPickerModelFactoryTest {
                 case "getDisplayName":
                     return name;
                 case "getBaseUIColor":
-                    return FACTION_COLOR;
+                    return FACTION_COLOUR;
                 case "getRelToPlayer":
                     return createRelationship();
                 default:
@@ -528,7 +528,7 @@ class KmuConditionPickerModelFactoryTest {
                 case "getRepInt":
                     return -100;
                 case "getRelColor":
-                    return RELATIONSHIP_COLOR;
+                    return RELATIONSHIP_COLOUR;
                 default:
                     return handleObjectMethodOrThrow(proxy, method, args);
             }

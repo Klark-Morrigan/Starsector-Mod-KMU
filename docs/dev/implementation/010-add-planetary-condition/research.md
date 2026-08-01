@@ -64,7 +64,7 @@ reflection.
 Useful public API:
 
 - `lunalib.lunaSettings.LunaSettings`
-  - `getBoolean`, `getInt`, `getFloat`, `getDouble`, `getString`, `getColor`
+  - `getBoolean`, `getInt`, `getFloat`, `getDouble`, `getString`, `getColour`
   - settings listeners
 - `lunalib.lunaRefit.LunaRefitManager`
   - `addRefitButton`, `hasButtonOfClass`, `getFirstButtonOfClass`

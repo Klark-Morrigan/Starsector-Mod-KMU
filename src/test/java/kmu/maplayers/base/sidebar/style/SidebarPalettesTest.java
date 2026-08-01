@@ -2,7 +2,7 @@ package kmu.maplayers.base.sidebar.style;
 
 import com.fs.starfarer.api.util.Misc;
 
-import kmu.settings.NotchChevronColorChoice;
+import kmu.settings.NotchChevronColourChoice;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -29,43 +29,43 @@ final class SidebarPalettesTest {
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
-    void mockStarsectorThemeColors() {
+    void mockStarsectorThemeColours() {
         StarsectorSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getHighlightColor).thenReturn(GOLD);
     }
 
     @AfterEach
-    void closeStarsectorThemeColors() {
+    void closeStarsectorThemeColours() {
         miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
 
     @Nested
-    class ResolveNotchColors {
+    class ResolveNotchColours {
 
         @Test
-        void resolveNotchColorsTakesTheVanillaHighlightForTheGoldChoice() {
-            var colors = SidebarPalettes.resolveNotchColors(
-                    NotchChevronColorChoice.GOLD, ACCENT, BRIGHT_ACCENT);
-            assertThat(colors.chevron()).isEqualTo(GOLD);
+        void resolveNotchColoursTakesTheVanillaHighlightForTheGoldChoice() {
+            var colours = SidebarPalettes.resolveNotchColours(
+                    NotchChevronColourChoice.GOLD, ACCENT, BRIGHT_ACCENT);
+            assertThat(colours.chevron()).isEqualTo(GOLD);
         }
 
         @Test
-        void resolveNotchColorsHoldsTheGoldAcrossRestAndHover() {
+        void resolveNotchColoursHoldsTheGoldAcrossRestAndHover() {
             // Gold has no brighter sibling to step to, so the notch's own accent wash answers the
             // pointer and the glyph keeps its colour.
-            var colors = SidebarPalettes.resolveNotchColors(
-                    NotchChevronColorChoice.GOLD, ACCENT, BRIGHT_ACCENT);
-            assertThat(colors.chevronHovered()).isEqualTo(colors.chevron());
+            var colours = SidebarPalettes.resolveNotchColours(
+                    NotchChevronColourChoice.GOLD, ACCENT, BRIGHT_ACCENT);
+            assertThat(colours.chevronHovered()).isEqualTo(colours.chevron());
         }
 
         @Test
-        void resolveNotchColorsTakesThePanelAccentsForThePanelAccentChoice() {
-            var colors = SidebarPalettes.resolveNotchColors(
-                    NotchChevronColorChoice.PANEL_ACCENT, ACCENT, BRIGHT_ACCENT);
-            assertThat(colors.chevron()).isEqualTo(ACCENT);
-            assertThat(colors.chevronHovered()).isEqualTo(BRIGHT_ACCENT);
+        void resolveNotchColoursTakesThePanelAccentsForThePanelAccentChoice() {
+            var colours = SidebarPalettes.resolveNotchColours(
+                    NotchChevronColourChoice.PANEL_ACCENT, ACCENT, BRIGHT_ACCENT);
+            assertThat(colours.chevron()).isEqualTo(ACCENT);
+            assertThat(colours.chevronHovered()).isEqualTo(BRIGHT_ACCENT);
         }
     }
 }

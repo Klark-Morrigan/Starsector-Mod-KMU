@@ -40,10 +40,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>The political-map fields, matching data/config/LunaSettings.csv, style each
  * category of system on the sector map. Owned categories - core factions and
  * independent space - each get a fill, an outer (national) border, and an inner
- * (province seam) border, every one with a palette-color choice, an opacity, and
+ * (province seam) border, every one with a palette-colour choice, an opacity, and
  * (for the borders) a line width. Factionless categories - decivilised and
  * uninhabited systems - have no faction palette to choose from, so they carry no
- * color field at all and always paint in the shared neutral color: decivilised
+ * colour field at all and always paint in the shared neutral colour: decivilised
  * systems get an outline opacity and width plus a fill opacity, and uninhabited
  * systems just the outline pair. Each opacity doubles as that element's on/off,
  * since zero opacity is the only way to hide a shade with no alternative.
@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * All are tuned under the LunaLib "Map - Politics - Visuals" tab.
  *
  * <p>The national-border geometry is exposed separately under the "Dev" tab: it
- * shapes the frontier rather than recoloring it, so it is a tuning surface for
+ * shapes the frontier rather than recolouring it, so it is a tuning surface for
  * experimentation, not a styling choice. The tab splits it into the three operations
  * that produce a border, in pipeline order - border tracing (weld tolerance, miter
  * limit), spike sanding, and corner rounding - each its own section. The two smoothing
@@ -450,7 +450,7 @@ public final class KmuLunaSettings {
         "kmu_politicalMapShowUnbiasedAxes";
 
     // Diagnostics (Dev tab): replaces the normal render with a border-tracing overlay that
-    // layers the smoothing pipeline's stages (base, despiked, rounded) in distinct colors,
+    // layers the smoothing pipeline's stages (base, despiked, rounded) in distinct colours,
     // honouring the two smoothing gates. Off by default.
     private static final String DEBUG_BORDER_TRACING_FIELD =
         "kmu_politicalMapDebugBorderTracing";
@@ -495,31 +495,31 @@ public final class KmuLunaSettings {
     // The highlight gold by default: the collapse handle hangs off the frame over the map, so its
     // chevron reads clearest pitched against the panel's accents rather than painted in them.
     // Mirrors the CSV row's defaultValue.
-    private static final NotchChevronColorChoice DEFAULT_SIDEBAR_CHEVRON_COLOR =
-        NotchChevronColorChoice.GOLD;
-    private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOR =
+    private static final NotchChevronColourChoice DEFAULT_SIDEBAR_CHEVRON_COLOUR =
+        NotchChevronColourChoice.GOLD;
+    private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_OUTER_BORDER_OPACITY = 1.0;
     private static final double DEFAULT_FACTION_OUTER_BORDER_WIDTH = 3.0;
-    private static final FactionPaletteChoice DEFAULT_FACTION_INNER_BORDER_COLOR =
+    private static final FactionPaletteChoice DEFAULT_FACTION_INNER_BORDER_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_INNER_BORDER_OPACITY = 0.1;
     private static final double DEFAULT_FACTION_INNER_BORDER_WIDTH = 5.0;
-    private static final FactionPaletteChoice DEFAULT_FACTION_FILL_COLOR =
+    private static final FactionPaletteChoice DEFAULT_FACTION_FILL_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_FILL_OPACITY = 0.4;
     
     // Fully opaque by default: faction names draw at full colour strength unless faded.
     private static final double DEFAULT_FACTION_NAME_OPACITY = 1.0;
-    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_OUTER_BORDER_COLOR =
+    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_OUTER_BORDER_OPACITY = 0.5;
     private static final double DEFAULT_INDEPENDENT_OUTER_BORDER_WIDTH = 3.0;
-    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_INNER_BORDER_COLOR =
+    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY = 0.1;
     private static final double DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH = 5.0;
-    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_FILL_COLOR =
+    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_FILL_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.2;
 
@@ -636,7 +636,7 @@ public final class KmuLunaSettings {
     // quarter-depth breath, and a cell wash of a little over a third alpha under a crisp
     // near-opaque trace. Tuned to sit over the fills without swamping them - the fills
     // themselves paint at 0.4 - and expected to move once playtested.
-    private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOR =
+    private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
     private static final double DEFAULT_HOVER_GLOW_WIDTH = 14.0;
@@ -720,11 +720,11 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return which faction palette color the outer (national) border draws in,
-     *         or NONE to hide it; the primary (bright) color by default
+     * @return which faction palette colour the outer (national) border draws in,
+     *         or NONE to hide it; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getFactionOuterBorderColor() {
-        return readChoice(FACTION_OUTER_BORDER_COLOR_FIELD, DEFAULT_FACTION_OUTER_BORDER_COLOR);
+    public static FactionPaletteChoice getFactionOuterBorderColour() {
+        return readChoice(FACTION_OUTER_BORDER_COLOR_FIELD, DEFAULT_FACTION_OUTER_BORDER_COLOUR);
     }
 
     /**
@@ -742,11 +742,11 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return which faction palette color the inner (province seam) borders draw
-     *         in, or NONE to hide them; the secondary (dark) color by default
+     * @return which faction palette colour the inner (province seam) borders draw
+     *         in, or NONE to hide them; the secondary (dark) colour by default
      */
-    public static FactionPaletteChoice getFactionInnerBorderColor() {
-        return readChoice(FACTION_INNER_BORDER_COLOR_FIELD, DEFAULT_FACTION_INNER_BORDER_COLOR);
+    public static FactionPaletteChoice getFactionInnerBorderColour() {
+        return readChoice(FACTION_INNER_BORDER_COLOR_FIELD, DEFAULT_FACTION_INNER_BORDER_COLOUR);
     }
 
     /**
@@ -765,11 +765,11 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return which faction palette color the territory fill draws in, or NONE to
-     *         leave it unfilled; the primary (bright) color by default
+     * @return which faction palette colour the territory fill draws in, or NONE to
+     *         leave it unfilled; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getFactionFillColor() {
-        return readChoice(FACTION_FILL_COLOR_FIELD, DEFAULT_FACTION_FILL_COLOR);
+    public static FactionPaletteChoice getFactionFillColour() {
+        return readChoice(FACTION_FILL_COLOR_FIELD, DEFAULT_FACTION_FILL_COLOUR);
     }
 
     /**
@@ -790,13 +790,13 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return which independent palette color the outer (national) border draws
-     *         in, or NONE to hide it; the primary (bright) color by default
+     * @return which independent palette colour the outer (national) border draws
+     *         in, or NONE to hide it; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getIndependentOuterBorderColor() {
+    public static FactionPaletteChoice getIndependentOuterBorderColour() {
         return readChoice(
             INDEPENDENT_OUTER_BORDER_COLOR_FIELD,
-            DEFAULT_INDEPENDENT_OUTER_BORDER_COLOR);
+            DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR);
     }
 
     /**
@@ -820,13 +820,13 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return which independent palette color the inner (province seam) borders
-     *         draw in, or NONE to hide them; the secondary (dark) color by default
+     * @return which independent palette colour the inner (province seam) borders
+     *         draw in, or NONE to hide them; the secondary (dark) colour by default
      */
-    public static FactionPaletteChoice getIndependentInnerBorderColor() {
+    public static FactionPaletteChoice getIndependentInnerBorderColour() {
         return readChoice(
             INDEPENDENT_INNER_BORDER_COLOR_FIELD,
-            DEFAULT_INDEPENDENT_INNER_BORDER_COLOR);
+            DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR);
     }
 
     /**
@@ -850,11 +850,11 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return which independent palette color the territory fill draws in, or NONE
-     *         to leave it unfilled; the primary (bright) color by default
+     * @return which independent palette colour the territory fill draws in, or NONE
+     *         to leave it unfilled; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getIndependentFillColor() {
-        return readChoice(INDEPENDENT_FILL_COLOR_FIELD, DEFAULT_INDEPENDENT_FILL_COLOR);
+    public static FactionPaletteChoice getIndependentFillColour() {
+        return readChoice(INDEPENDENT_FILL_COLOR_FIELD, DEFAULT_INDEPENDENT_FILL_COLOUR);
     }
 
     /**
@@ -1190,12 +1190,12 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return which palette color of the ground under the cursor the hover halo and cell wash
-     *         both draw in; the primary (bright) color by default. Turning the highlight off is
-     *         the enable toggle's job, not a color choice
+     * @return which palette colour of the ground under the cursor the hover halo and cell wash
+     *         both draw in; the primary (bright) colour by default. Turning the highlight off is
+     *         the enable toggle's job, not a colour choice
      */
-    public static FactionPaletteChoice getPoliticalMapHoverHighlightColor() {
-        return readChoice(HOVER_HIGHLIGHT_COLOR_FIELD, DEFAULT_HOVER_HIGHLIGHT_COLOR);
+    public static FactionPaletteChoice getPoliticalMapHoverHighlightColour() {
+        return readChoice(HOVER_HIGHLIGHT_COLOR_FIELD, DEFAULT_HOVER_HIGHLIGHT_COLOUR);
     }
 
     /**
@@ -1530,10 +1530,10 @@ public final class KmuLunaSettings {
      *         highlight gold, or the panel's own player-faction accents (brightening under the
      *         pointer); the gold by default
      */
-    public static NotchChevronColorChoice getMapSidebarChevronColor() {
+    public static NotchChevronColourChoice getMapSidebarChevronColour() {
         return readChoice(
             SIDEBAR_CHEVRON_COLOR_FIELD,
-            DEFAULT_SIDEBAR_CHEVRON_COLOR);
+            DEFAULT_SIDEBAR_CHEVRON_COLOUR);
     }
 
     /**
@@ -1610,7 +1610,7 @@ public final class KmuLunaSettings {
     /**
      * @return whether to replace the normal political-map render with the border-tracing
      *         diagnostic that layers the smoothing pipeline's stages (base, despiked,
-     *         rounded) in distinct colors; off by default. Respects the two smoothing
+     *         rounded) in distinct colours; off by default. Respects the two smoothing
      *         gates, so a stage draws only when its pass ran
      */
     public static boolean shouldTraceBordersForDebug() {

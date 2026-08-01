@@ -41,7 +41,7 @@ class KmuConditionPickerContainerTest {
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
-    void mockStarsectorThemeColors() {
+    void mockStarsectorThemeColours() {
         StarsectorSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
@@ -53,7 +53,7 @@ class KmuConditionPickerContainerTest {
     }
 
     @AfterEach
-    void closeStarsectorThemeColors() {
+    void closeStarsectorThemeColours() {
         miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }

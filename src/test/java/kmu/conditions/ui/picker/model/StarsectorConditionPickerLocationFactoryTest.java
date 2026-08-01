@@ -26,8 +26,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class StarsectorConditionPickerLocationFactoryTest {
-    private static final Color FACTION_COLOR = new Color(90, 150, 240);
-    private static final Color RELATIONSHIP_COLOR = new Color(200, 50, 50);
+    private static final Color FACTION_COLOUR = new Color(90, 150, 240);
+    private static final Color RELATIONSHIP_COLOUR = new Color(200, 50, 50);
 
     private final StarsectorConditionPickerLocationFactory factory =
             new StarsectorConditionPickerLocationFactory(new StarsectorGravityWellResolver());
@@ -151,7 +151,7 @@ class StarsectorConditionPickerLocationFactoryTest {
         var factionMock = mock(FactionAPI.class);
         when(factionMock.getDisplayNameLong()).thenReturn(name);
         when(factionMock.getDisplayName()).thenReturn(name);
-        when(factionMock.getBaseUIColor()).thenReturn(FACTION_COLOR);
+        when(factionMock.getBaseUIColor()).thenReturn(FACTION_COLOUR);
         when(factionMock.getRelToPlayer()).thenReturn(relationship);
         return factionMock;
     }
@@ -160,7 +160,7 @@ class StarsectorConditionPickerLocationFactoryTest {
         var relationshipMock = mock(RelationshipAPI.class);
         when(relationshipMock.getLevel()).thenReturn(RepLevel.VENGEFUL);
         when(relationshipMock.getRepInt()).thenReturn(-100);
-        when(relationshipMock.getRelColor()).thenReturn(RELATIONSHIP_COLOR);
+        when(relationshipMock.getRelColor()).thenReturn(RELATIONSHIP_COLOUR);
         return relationshipMock;
     }
 

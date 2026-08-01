@@ -29,21 +29,21 @@ final class BlocNameStylesTest {
         @Test
         void readFromLunaSettingsThreadsEachGroupsColourChoiceAndOpacityIntoItsOwnSlot() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getFactionOuterBorderColor)
+                settingsMock.when(KmuLunaSettings::getFactionOuterBorderColour)
                         .thenReturn(FactionPaletteChoice.PRIMARY);
                 settingsMock.when(KmuLunaSettings::getFactionNameOpacity)
                         .thenReturn(FACTION_NAME_OPACITY);
-                settingsMock.when(KmuLunaSettings::getIndependentOuterBorderColor)
+                settingsMock.when(KmuLunaSettings::getIndependentOuterBorderColour)
                         .thenReturn(FactionPaletteChoice.SECONDARY);
                 settingsMock.when(KmuLunaSettings::getIndependentNameOpacity)
                         .thenReturn(INDEPENDENT_NAME_OPACITY);
 
                 var nameStyles = BlocNameStyles.readFromLunaSettings();
 
-                assertThat(nameStyles.factionNameStyle().color())
+                assertThat(nameStyles.factionNameStyle().colour())
                         .isEqualTo(FactionPaletteShade.PRIMARY);
                 assertThat(nameStyles.factionNameStyle().opacity()).isEqualTo(FACTION_NAME_OPACITY);
-                assertThat(nameStyles.independentNameStyle().color())
+                assertThat(nameStyles.independentNameStyle().colour())
                         .isEqualTo(FactionPaletteShade.SECONDARY);
                 assertThat(nameStyles.independentNameStyle().opacity())
                         .isEqualTo(INDEPENDENT_NAME_OPACITY);

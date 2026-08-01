@@ -82,8 +82,8 @@ public final class SplitFillBuilder {
      *
      * @param isSpotlit  whether this is the filter's spotlighted footprint
      * @param split      the footprint's members by fill state
-     * @param owner  the cluster's owner, which the sub-cluster keys are derived from
-     * @param fillColor  the resolved fill colour, or null for a "No color" fill that draws
+     * @param owner      the cluster's owner, which the sub-cluster keys are derived from
+     * @param fillColour the resolved fill colour, or null for a "No color" fill that draws
      *                   no cluster at all
      * @return the fill's solid triangles and hatch segments
      */
@@ -91,9 +91,9 @@ public final class SplitFillBuilder {
             boolean isSpotlit,
             FillSplit split,
             String owner,
-            Color fillColor) {
+            Color fillColour) {
 
-        if (fillColor == null) {
+        if (fillColour == null) {
             return new ClusterFill(
                 GlVertexRuns.NO_VERTICES,
                 GlVertexRuns.NO_VERTICES);

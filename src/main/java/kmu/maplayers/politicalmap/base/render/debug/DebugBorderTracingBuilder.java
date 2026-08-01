@@ -44,8 +44,8 @@ import java.util.Set;
  * pipeline. Drawn factionless cells (decivilised, or uninhabited when the player turns
  * them on) contribute only base and rounded: a lone convex inset cell has no needle
  * protrusions, so it skips sanding. Factionless cells respect the same visibility the
- * normal render applies - one draws only when its category's outline color is not "No
- * color" - so the overlay does not flood the map with every uninhabited system's cell.
+ * normal render applies - one draws only when its category's outline colour is not "No
+ * colour" - so the overlay does not flood the map with every uninhabited system's cell.
  */
 public final class DebugBorderTracingBuilder {
     // Builds only; never instantiated.

@@ -3,7 +3,7 @@
 Research date: 2026-05-17
 
 Scope: feasibility and API surface for a sector-map overlay that paints faction
-territory in faction colors. Two views are in scope:
+territory in faction colours. Two views are in scope:
 
 1. A full-sector layer with every faction shown, with the option to highlight
    one selected faction.
@@ -115,7 +115,7 @@ construction follows Nexerelin's `Nex_FactionDirectory` (in
     `"Political map"` so it gets its own filter chip in the intel sidebar.
   - `getMapLocation(SectorMapAPI)` — return `null` (no marker on the intel
     inset map; the intel itself *is* the map).
-  - `getFactionForUIColors()` — for the highlight color; can be the currently
+  - `getFactionForUIColors()` — for the highlight colour; can be the currently
     selected faction or `null` (white).
 - Add the intel once per save in `ModPlugin.onGameLoad(boolean)` via
   `Sector.getIntelManager().addIntel(plugin, true)` (true = no popup).
@@ -152,10 +152,10 @@ What each lib actually provides for this feature:
   - `opengl/DrawUtils.drawCircle(cx, cy, r, segments, filled)` — exactly the
     primitive needed for the per-system disc. Removes the need to hand-roll
     the trig + `glBegin(GL_TRIANGLE_FAN)` loop.
-  - `opengl/ColorUtils.glColor(Color, alphaMult, overrideOriginalAlpha)` —
+  - `opengl/ColorUtils.glColour(Color, alphaMult, overrideOriginalAlpha)` —
     sets `glColor4ub` from an AWT `Color`. When the third arg is `true` the
     final alpha is `alphaMult * 255` directly; when `false` it multiplies the
-    source color's alpha by `alphaMult`. Removes the byte-cast boilerplate
+    source colour's alpha by `alphaMult`. Removes the byte-cast boilerplate
     seen in `ExampleCustomUIPanel`.
   - `MathUtils` — distance/point-along helpers; **no convex-hull or Voronoi
     primitive**. If we go with per-constellation hulls in a later version,
@@ -220,7 +220,7 @@ The result of this step is `Map<SystemId, SystemPolitics>` where
   one entry per faction with any presence (live or decivilised)
 - where `FactionPresence` records the faction id and its top tier
   (see [Presence tiers](#presence-tiers-under-candidate-a))
-- Faction color: `FactionAPI.getBaseUIColor()` (full saturation),
+- Faction colour: `FactionAPI.getBaseUIColor()` (full saturation),
   `getDarkUIColor()` (panel chrome). The "highlight" view uses base for the
   selected faction and a heavily desaturated/multiplied tint for the rest.
 - Optional grouping: `LocationAPI.getConstellation()` ([LocationAPI.java:130])
@@ -241,9 +241,9 @@ Color each cell by its system's dominant faction.
 Why this is the leading candidate:
 
 - Contiguity emerges for free. Two same-faction adjacent systems share a
-  midline that has no color change across it - the eye reads one region.
+  midline that has no colour change across it - the eye reads one region.
   Different factions across a midline get a crisp HOI4-style border.
-- Static geometry, dynamic colors. System positions never move, so the
+- Static geometry, dynamic colours. System positions never move, so the
   diagram is built once at game load (or first map open) and cached for the
   life of the save. Market ownership changes only invalidate the
   `cellId -> factionId` lookup; polygons stay put. This matches the cache
@@ -277,7 +277,7 @@ Design constraints to nail down:
    this n.
 4. **Render.** Each cell is a convex polygon. `GL_TRIANGLE_FAN` from the
    seed (or centroid) gives a filled cell; optional `GL_LINE_LOOP` outline
-   in the dark UI color reads as a border. Each per-system anchor draws
+   in the dark UI colour reads as a border. Each per-system anchor draws
    its own cell.
 
 Trade-off to be aware of: Voronoi cells *imply* the faction claims all
@@ -298,14 +298,14 @@ Per system, draw in this order (back to front):
 1. **Province fill.** The Voronoi cell, filled in the dominant faction's
    `FactionAPI.getBaseUIColor()` at a low alpha (start ~0.20-0.25). Low
    alpha keeps the layer perceptual background and limits the muddying
-   that compounds when neighbouring cells of different colors meet at a
+   that compounds when neighbouring cells of different colours meet at a
    midline. Per-tier alpha modifier - see
    [Presence tiers](#presence-tiers-under-candidate-a).
 2. **Dog-bone connectors.** For each ordered pair of inhabited systems
    that share a constellation (or are within an adjacency-distance
    threshold - constellation is simpler and probably enough), and each
    faction that has *any* presence in **both** systems, draw a capsule
-   between the system positions in that faction's color. Connectors are
+   between the system positions in that faction's colour. Connectors are
    per-faction, not per-system: Hegemony presence in A and B yields one
    Hegemony capsule even if Tri-T also has presence in both (which yields
    a second Tri-T capsule, drawn in their order in the blip stack so the
@@ -320,7 +320,7 @@ Per system, draw in this order (back to front):
      previous` or `R_base * (1 - 0.2 * index)`, exact curve tuned in
      playtest). Stack stops growing once radius drops below a floor.
    - Result: a one-faction system reads as a single disc; a two-faction
-     system reads as a bullseye with the minor faction's color visible
+     system reads as a bullseye with the minor faction's colour visible
      as a smaller centered disc on top of the dominant disc.
    - Blip alpha is high (start ~0.85+) so the layer reads as a definite
      marker, not a tint.
@@ -331,7 +331,7 @@ Render-state notes:
   blending would brighten overlaps unrealistically.
 - Overlap is unavoidable across cells (where two factions' connectors
   cross) and within the blip stack. Keep fill/connector alpha low to
-  minimise color drift in those overlaps; the user has explicitly
+  minimise colour drift in those overlaps; the user has explicitly
   accepted some drift in exchange for the layering.
 - Render order across systems: cells first (all systems), then all
   connectors, then all blip stacks. This requires the anchor-plugin
@@ -383,7 +383,7 @@ listener, no entity-memory key, no save-compat surface.
 
 ### Candidate B: Per-system disc
 
-Each system draws a filled disc in its faction color. Radius chosen so
+Each system draws a filled disc in its faction colour. Radius chosen so
 clustered systems' discs overlap into a blob, isolated systems read as
 spots.
 
@@ -406,14 +406,14 @@ disc-capsule-disc, alpha-blending into one contiguous blob.
   any hull algorithm, fully world-space.
 - Cons: still needs the radius parameter and the adjacency threshold;
   three-way faction junctions can produce overlapping capsules of
-  different colors that blend poorly; the visual is less precise than
+  different colours that blend poorly; the visual is less precise than
   Voronoi when factions interleave within a constellation.
 
 ### Selection
 
 Lead with **Candidate A (Voronoi)** in the plan. The geometry pipeline
 (`computeCells()` at load -> `Map<SystemId, ConvexPolygon>`) and the
-per-frame color lookup (`Map<SystemId, FactionId>` from the dominance
+per-frame colour lookup (`Map<SystemId, FactionId>` from the dominance
 cache) are independent; if Voronoi proves too aggressive in playtest, the
 render layer can swap to Candidate B/C without touching the data
 pipeline.
@@ -434,7 +434,7 @@ pipeline.
     - **Fingerprint poll (correctness backstop).** An `EveryFrameScript`
       hashes `systemId -> dominantFactionId` over
       `Sector.getEconomy().getMarketsCopy()` once every **1.0s** of in-game
-      time. If the hash changes, rebuild the per-system color/center cache.
+      time. If the hash changes, rebuild the per-system colour/center cache.
       Cheap (a few hundred string hashes + XOR fold) and catches everything,
       including events we have no listener for.
     - **Listener prods (snappy response).** Wire
@@ -619,9 +619,9 @@ from that event onward and rely on the next snapshot.
 ## Risks and gotchas
 
 - `render()` is called per-entity per-layer per-frame. Keep it allocation-free
-  — pre-compute the per-system color/center on
+  — pre-compute the per-system colour/center on
   `MarketsChangedListener` callbacks, not in `render`.
-- Always reset GL state you touch (`glColor`, blend mode, texture enable).
+- Always reset GL state you touch (`glColour`, blend mode, texture enable).
   The terrain layers especially are sensitive — vanilla terrains expect
   texture disabled before they restore state.
 - Per-entity `getRenderRange()` controls culling. For a small disc this can
@@ -663,7 +663,7 @@ Resolved (recorded in this doc):
 
 - Shape strategy: Voronoi cells (Candidate A) leading, with the layered
   visual model. Disc / dog-bone preserved as fallback candidates.
-- Mixed-faction systems: dominance picks cell color; full presence stack
+- Mixed-faction systems: dominance picks cell colour; full presence stack
   on the blips; per-faction dog-bone connectors based on presence not
   dominance. See [Visual model](#visual-model-under-candidate-a).
 - Dominance metric: sum of `MarketAPI.getSize()` over markets, with

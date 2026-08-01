@@ -36,14 +36,14 @@ public final class KmuTooltipSection {
 
         tooltip.addSectionHeading(
             title,
-            style.titleColor(),
-            style.backgroundColor(),
+            style.titleColour(),
+            style.backgroundColour(),
             Alignment.MID,
             HEADING_PAD);
             
         for (var line : lines) {
             if (hasText(line)) {
-                tooltip.addPara(line, style.bodyColor(), LINE_PAD);
+                tooltip.addPara(line, style.bodyColour(), LINE_PAD);
             }
         }
     }

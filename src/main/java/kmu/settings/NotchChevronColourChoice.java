@@ -4,7 +4,7 @@ import kmlib.settings.LabeledChoice;
 
 /**
  * Which colour the overlay sidebar's collapse-handle chevron draws in - the player's choice behind
- * the "Collapse notch chevron color" Radio.
+ * the "Collapse notch chevron colour" Radio.
  *
  * <p>The handle is the one control that sits outside the panel frame, over the map, so how loudly its
  * direction cue reads is a taste call: {@link #GOLD} pitches it against the frame in the vanilla
@@ -15,13 +15,13 @@ import kmlib.settings.LabeledChoice;
  * data/config/LunaSettings.csv exactly, and both are frozen once shipped - see
  * {@link LabeledChoice} for what a reworded label costs.
  */
-public enum NotchChevronColorChoice implements LabeledChoice {
+public enum NotchChevronColourChoice implements LabeledChoice {
     GOLD("Gold"),
     PANEL_ACCENT("Panel accent");
 
     private final String label;
 
-    NotchChevronColorChoice(String label) {
+    NotchChevronColourChoice(String label) {
         this.label = label;
     }
 

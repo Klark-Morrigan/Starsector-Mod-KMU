@@ -35,7 +35,7 @@ exists in the economy (every market has an owner and a size) but is
 never aggregated into a spatial, at-a-glance picture.
 
 Feature 022 paints a HOI4/Civ-style political layer over the existing
-sector map: faction-colored regions, per-system presence markers, and
+sector map: faction-coloured regions, per-system presence markers, and
 connectors between same-faction systems, all derived from live market
 ownership. The layer is toggled on and off by the player from a small
 custom sidebar drawn over the sector map.
@@ -50,7 +50,7 @@ a mod-drawn control rendered over the map in UI coordinates.
 
 - Render a **world-space political overlay** on the hyperspace sector
   view, using the full visual model designed in feature 019: Voronoi
-  cells filled in the dominant faction's color, per-system blip stacks
+  cells filled in the dominant faction's colour, per-system blip stacks
   showing every faction present, and dog-bone connectors between
   same-faction systems. See
   [research: Visual model](../019-political-map/research.md#visual-model-under-candidate-a),
@@ -60,11 +60,11 @@ a mod-drawn control rendered over the map in UI coordinates.
   and presence tiers in
   [research: Data sources for territory](../019-political-map/research.md#data-sources-for-territory).
   Decivilised planets and abandoned stations are factionless, so they
-  hold no *territory* - they never seed a faction-colored region, join
+  hold no *territory* - they never seed a faction-coloured region, join
   the dominance computation, or trigger connectors.
 - Show **known decivilised systems** as neutral, unaffiliated cells: a
   system holding a revealed decivilised planet is *inhabited*, so it seeds
-  a cell and always draws a neutral outline, but takes no faction color and
+  a cell and always draws a neutral outline, but takes no faction colour and
   never counts toward dominance (see
   [Decivilized markers (neutral)](#decivilized-markers-neutral)). The cell
   appears exactly when vanilla would show the planet's decivilised status to
@@ -84,7 +84,7 @@ a mod-drawn control rendered over the map in UI coordinates.
   tab-state check.
 - The overlay reflects the *current* political picture: when market
   ownership changes (Nexerelin transfer, raid takeover, player
-  colonisation, decivilisation), the colors update without a reload,
+  colonisation, decivilisation), the colours update without a reload,
   on the refresh cadence from
   [research: State, persistence, lifecycle](../019-political-map/research.md#state-persistence-lifecycle).
 - With no inhabited systems (impossible in practice, but the degenerate
@@ -123,7 +123,7 @@ a mod-drawn control rendered over the map in UI coordinates.
 ## Out of Scope
 
 - **Faction highlight / per-faction selection.** The sidebar is on/off
-  only. The overlay always shows all factions in dominance colors.
+  only. The overlay always shows all factions in dominance colours.
   Feature 019's highlight view (select a faction, isolate or desaturate
   the rest) is deferred to a later feature, as is any faction list in
   the sidebar.
@@ -138,14 +138,14 @@ a mod-drawn control rendered over the map in UI coordinates.
 - **System-view (`W`) overlay.** The layer is hyperspace-anchored, so it
   renders only on the Sector view. No per-system political drawing.
 - **Decivilised *territory*.** Decivilised planets never form a
-  faction-colored region, count toward dominance, or draw connectors -
+  faction-coloured region, count toward dominance, or draw connectors -
   they are unowned. Their system *is* shown as a neutral cell when surveyed
   (see [Decivilized markers (neutral)](#decivilized-markers-neutral));
   it is only their participation as *territory* that is out of scope.
 - **Recovering a decivilised planet's former owner.** Vanilla wipes the
   owning faction on deciv ([research](../019-political-map/research.md#decivilised-entities-are-factionless));
   022 does not reconstruct it. Markers are neutral, full stop - no
-  "formerly Hegemony" coloring.
+  "formerly Hegemony" colouring.
 - **Stripe / diagonal-pattern rendering.** Reserved for a future
   warfare/invasion overlay; the political layer keeps a clean visual
   vocabulary.
@@ -238,7 +238,7 @@ into a fixed chain:
 
 Markets whose entity the player has discovered, that are owned and not
 condition-only, feed the footprint - the same visibility filter the cell
-color uses (see [Surfaces and ownership](#surfaces-and-ownership));
+colour uses (see [Surfaces and ownership](#surfaces-and-ownership));
 decivilised and abandoned entities are factionless and never participate.
 
 A **hidden** market (vanilla hidden markets like the Galatia Academy) is
@@ -373,9 +373,9 @@ axes: a dead colony is presence, not territory.
 
 - **Inhabited but unaffiliated.** A system holding a revealed decivilised
   planet seeds its own Voronoi cell and always draws a neutral outline - no
-  fill, no faction color - regardless of the `kmu_politicalMapShowUninhabited`
+  fill, no faction colour - regardless of the `kmu_politicalMapShowUninhabited`
   setting, which governs only genuinely empty space. It is excluded from the
-  dominance rule and takes no owner color, so it reads as a known-but-unowned
+  dominance rule and takes no owner colour, so it reads as a known-but-unowned
   region rather than territory.
 - **Admission regardless of access.** Inhabitation alone puts a system on the
   map: `MapVisibility.shouldAppearOnMap` is `StarSystems.isReachable`
@@ -417,7 +417,7 @@ axes: a dead colony is presence, not territory.
   is exactly the second-guessing this gate avoids. Survey levels run
   `NONE -> SEEN -> PRELIMINARY -> FULL` for reference, but the gate keys off
   condition visibility, not a fixed tier.
-- **Color.** The neutral faction's UI color
+- **Color.** The neutral faction's UI colour
   (`getFaction("neutral").getBaseUIColor()`), so the cell reads as
   unaffiliated and stays consistent with how unowned space is drawn.
 - **Cadence.** The decivilised set changes on the same months-to-never
@@ -480,7 +480,7 @@ location culling is the source of truth.
   read is "the control belongs to the Sector view". Greying-with-tooltip
   is the fallback if playtest shows the sidebar vanishing is confusing.
 - Every frame the sidebar draws, it must fully restore any GL state it
-  touches (color, blend, texture-enable) so vanilla map chrome and
+  touches (colour, blend, texture-enable) so vanilla map chrome and
   tooltips render unaffected.
 
 ### Lifecycle
@@ -537,9 +537,9 @@ location culling is the source of truth.
 - Unit: presence-tier classification returns the highest matching tier
   for planet-only, station-only, and settlement-only systems
   ([research: Presence tiers](../019-political-map/research.md#presence-tiers-under-candidate-a)).
-- Unit: a faction's live markets seed faction-colored cells and dominance,
+- Unit: a faction's live markets seed faction-coloured cells and dominance,
   while decivilised / abandoned entities contribute no faction presence and
-  take no color - a revealed decivilised planet still seeds a neutral cell.
+  take no colour - a revealed decivilised planet still seeds a neutral cell.
 - Unit: a planet counts as a revealed decivilised planet only when both
   gate parts hold - `hasBeenEncountered` (`getSurveyLevel() != NONE`) and
   `isRevealed` (`!requiresSurveying() || isSurveyed()`). Each part failing
@@ -550,7 +550,7 @@ location culling is the source of truth.
   against treating every rock as a dead colony).
 - Unit: a system whose only presence is a surveyed decivilised planet
   seeds a Voronoi cell and always draws a neutral outline, but never counts
-  toward dominance and takes no faction color.
+  toward dominance and takes no faction colour.
 - Unit (wiring): the per-frame script is registered as an
   `EveryFrameScript`; the cache invalidates when the dominance
   fingerprint changes and stays put when it does not.
@@ -599,7 +599,7 @@ Still open:
   hit-test on empty map margin and edge-triggered detection; covered by
   the edge-trigger and hit-test tests.
 - **GL state leakage.** Both render surfaces draw raw GL each frame over
-  vanilla UI. Failing to restore color / blend / texture-enable corrupts
+  vanilla UI. Failing to restore colour / blend / texture-enable corrupts
   the map chrome or tooltips. Every draw path must reset the state it
   touches; this is a hard requirement, not a nicety.
 - **Per-frame cost.** The sidebar's visibility check and click poll run

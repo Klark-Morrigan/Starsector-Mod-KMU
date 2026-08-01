@@ -34,7 +34,7 @@ import java.util.Set;
  * seam/outline records and each faction's fill and national border. They start empty and
  * the build fills them, so they are created here rather than passed in. The rest are
  * retained inputs, grouped into three cohesive snapshots: {@link MapStyling} (the theme,
- * the neutral color, and the desaturation palette - how each category draws and what a
+ * the neutral colour, and the desaturation palette - how each category draws and what a
  * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
  * grouping - how holding is grouped and which blocs recede to the independent style),
  * and {@link FilterSnapshot} (the spotlight state). The holder-by-system, decivilised-system,
@@ -208,8 +208,8 @@ public final class PoliticalMapTerritories {
         return unfilledSystemIds;
     }
 
-    public Color getNeutralColor() {
-        return styling.neutralColor();
+    public Color getNeutralColour() {
+        return styling.neutralColour();
     }
 
     public FactionPalette getDesaturationPalette() {

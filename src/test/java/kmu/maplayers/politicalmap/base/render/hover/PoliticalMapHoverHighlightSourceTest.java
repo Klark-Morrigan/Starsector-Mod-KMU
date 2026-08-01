@@ -114,7 +114,7 @@ final class PoliticalMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveHighlightColourOfReturnsNothingForANoColorChoice() {
+        void resolveHighlightColourOfReturnsNothingForANoColourChoice() {
             // The theme points the highlight at no shade at all, which the render pass reads as
             // "skip the whole thing".
             var source = sourceOf(territoriesWith(

@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * <p>The two owned categories - core factions and independent space - carry a full
  * fill/outer/inner style. The two factionless categories - decivilised and uninhabited -
- * have no faction palette, so both paint in the shared neutral color and neither carries a
+ * have no faction palette, so both paint in the shared neutral colour and neither carries a
  * colour choice: decivilised ground draws a fill and an outline, uninhabited ground an
  * outline alone, and both set their inner seam to "No color" since factionless cells never
  * fuse into clusters. Whether the uninhabited outline draws at all is the player's sidebar
@@ -93,49 +93,49 @@ public final class RenderStyleReader {
     // mid-hover repaints through the same rebuild every other style change does.
     public static HoverHighlightStyle readHoverHighlightStyle() {
         return new HoverHighlightStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getPoliticalMapHoverHighlightColor()),
-                new HoverGlowStyle(
-                        KmuLunaSettings.getPoliticalMapHoverGlowOpacity(),
-                        KmuLunaSettings.getPoliticalMapHoverGlowWidth(),
-                        KmuLunaSettings.getPoliticalMapHoverGlowLayers(),
-                        KmuLunaSettings.getPoliticalMapHoverGlowPulseStrength(),
-                        KmuLunaSettings.getPoliticalMapHoverGlowPulsePeriod()),
-                new HoverWashStyle(
-                        KmuLunaSettings.getPoliticalMapHoverWashOpacity(),
-                        KmuLunaSettings.getPoliticalMapHoverWashOutlineOpacity(),
-                        KmuLunaSettings.getPoliticalMapHoverWashOutlineWidth()));
+            FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getPoliticalMapHoverHighlightColour()),
+            new HoverGlowStyle(
+                KmuLunaSettings.getPoliticalMapHoverGlowOpacity(),
+                KmuLunaSettings.getPoliticalMapHoverGlowWidth(),
+                KmuLunaSettings.getPoliticalMapHoverGlowLayers(),
+                KmuLunaSettings.getPoliticalMapHoverGlowPulseStrength(),
+                KmuLunaSettings.getPoliticalMapHoverGlowPulsePeriod()),
+            new HoverWashStyle(
+                KmuLunaSettings.getPoliticalMapHoverWashOpacity(),
+                KmuLunaSettings.getPoliticalMapHoverWashOutlineOpacity(),
+                KmuLunaSettings.getPoliticalMapHoverWashOutlineWidth()));
     }
 
     // Reads each owned category's eight style settings into one bundle, so the build
     // loop applies them per cluster without eight lookups each.
     public static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionFillColor()),
-                        KmuLunaSettings.getFactionFillOpacity()),
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionOuterBorderColor()),
-                        KmuLunaSettings.getFactionOuterBorderOpacity()),
-                KmuLunaSettings.getFactionOuterBorderWidth(),
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionInnerBorderColor()),
-                        KmuLunaSettings.getFactionInnerBorderOpacity()),
-                KmuLunaSettings.getFactionInnerBorderWidth());
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionFillColour()),
+                KmuLunaSettings.getFactionFillOpacity()),
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionOuterBorderColour()),
+                KmuLunaSettings.getFactionOuterBorderOpacity()),
+            KmuLunaSettings.getFactionOuterBorderWidth(),
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionInnerBorderColour()),
+                KmuLunaSettings.getFactionInnerBorderOpacity()),
+            KmuLunaSettings.getFactionInnerBorderWidth());
     }
 
     public static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentFillColor()),
-                        KmuLunaSettings.getIndependentFillOpacity()),
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentOuterBorderColor()),
-                        KmuLunaSettings.getIndependentOuterBorderOpacity()),
-                KmuLunaSettings.getIndependentOuterBorderWidth(),
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentInnerBorderColor()),
-                        KmuLunaSettings.getIndependentInnerBorderOpacity()),
-                KmuLunaSettings.getIndependentInnerBorderWidth());
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentFillColour()),
+                KmuLunaSettings.getIndependentFillOpacity()),
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentOuterBorderColour()),
+                KmuLunaSettings.getIndependentOuterBorderOpacity()),
+            KmuLunaSettings.getIndependentOuterBorderWidth(),
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentInnerBorderColour()),
+                KmuLunaSettings.getIndependentInnerBorderOpacity()),
+            KmuLunaSettings.getIndependentInnerBorderWidth());
     }
 
     // Dead colonies keep both a neutral fill and a neutral outline: the ground was settled
@@ -166,9 +166,9 @@ public final class RenderStyleReader {
     }
 
     // Assembles a factionless category's style: the given fill, its outline as the outer
-    // border (in the neutral color via a PRIMARY shade, or no shade at all to hide it), and no
+    // border (in the neutral colour via a PRIMARY shade, or no shade at all to hide it), and no
     // inner seam - factionless cells do not fuse into clusters, so they have no interior seams
-    // to stroke. Both palette slots hold the neutral color at draw time, so PRIMARY and
+    // to stroke. Both palette slots hold the neutral colour at draw time, so PRIMARY and
     // SECONDARY would paint identically; PRIMARY is the drawn arm throughout.
     //
     // The hidden arm is no shade rather than a no-colour one: this style is assembled here

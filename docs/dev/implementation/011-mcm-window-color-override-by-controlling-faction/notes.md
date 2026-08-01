@@ -49,7 +49,7 @@ that we cannot pass colours into through any public method.
 Audit of `KmuConditionPickerDialogDelegate.createCustomDialog`:
 
 - `headerBody` - one or two paragraphs (location, summary). Tinted via
-  `addPara(color, ...)` and `HighlightedParagraph`.
+  `addPara(colour, ...)` and `HighlightedParagraph`.
 - `gridBody` - the icon grid (`KmuConditionIconGrid` /
   `KmuConditionPickerContainer`). A panel with a faint background
   tint and per-row icons / labels.

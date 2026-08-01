@@ -6,7 +6,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.render.gl.NotchState;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
@@ -195,8 +195,8 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // the insignia body face, and the collapse handle's chevron shades for the colour the player picked.
     private static WidgetStyle buildStyle() {
 
-        var accent = StarsectorUiColor.VANILLA_PLAYER_BASE.resolve();
-        var brightAccent = StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve();
+        var accent = StarsectorUiColour.VANILLA_PLAYER_BASE.resolve();
+        var brightAccent = StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve();
 
         return new WidgetStyle(
             // The body backdrop is black; the opacity setting fades it, so the body reads as a
@@ -206,13 +206,13 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // TabStyle below, a separate field, so the body's colour never couples to the header's.
             // The header also opts out of this opacity fade and paints opaque (see
             // TabPanelRenderer.HEADER_OPACITY), so the tabs read solid over the faded body.
-            StarsectorUiColor.BLACK.resolve(), // Panel fill.
+            StarsectorUiColour.BLACK.resolve(), // Panel fill.
             accent,
             brightAccent,
             BODY_FONT,
             LiveSidebarPlacement.buildMapTabStyle(),
-            SidebarPalettes.resolveNotchColors(
-                KmuLunaSettings.getMapSidebarChevronColor(),
+            SidebarPalettes.resolveNotchColours(
+                KmuLunaSettings.getMapSidebarChevronColour(),
                 accent,
                 brightAccent));
     }

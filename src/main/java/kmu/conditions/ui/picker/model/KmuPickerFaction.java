@@ -18,30 +18,30 @@ import static kmu.util.KmuValues.convertToOptionalText;
  */
 public final class KmuPickerFaction {
     private final String name;
-    private final Color color;
+    private final Color colour;
     private final String crestSprite;
     private final String relationshipDescription;
-    private final Color relationshipColor;
+    private final Color relationshipColour;
 
     public KmuPickerFaction(
             String name,
-            Color color,
+            Color colour,
             String crestSprite,
             String relationshipDescription,
-            Color relationshipColor) {
+            Color relationshipColour) {
         this.name = Objects.requireNonNull(name, "name");
-        this.color = color;
+        this.colour = colour;
         this.crestSprite = crestSprite;
         this.relationshipDescription = relationshipDescription;
-        this.relationshipColor = relationshipColor;
+        this.relationshipColour = relationshipColour;
     }
 
     public String getName() {
         return name;
     }
 
-    public Optional<Color> getColor() {
-        return Optional.ofNullable(color);
+    public Optional<Color> getColour() {
+        return Optional.ofNullable(colour);
     }
 
     public Optional<String> getCrestSprite() {
@@ -52,7 +52,7 @@ public final class KmuPickerFaction {
         return convertToOptionalText(relationshipDescription);
     }
 
-    public Optional<Color> getRelationshipColor() {
-        return Optional.ofNullable(relationshipColor);
+    public Optional<Color> getRelationshipColour() {
+        return Optional.ofNullable(relationshipColour);
     }
 }

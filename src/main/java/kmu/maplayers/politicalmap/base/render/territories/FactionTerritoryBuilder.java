@@ -68,18 +68,21 @@ public final class FactionTerritoryBuilder {
         var holder = territories.getHolderBySystemId()
                 .get(cellGrouping.resolveDrawnSystemIdOf(memberCellIds.get(0)));
         var palette = MapPalettes.resolveEffectivePalette(
-                adjustment,
-                holder,
-                territories.getDesaturationPalette());
-        var fillColor = MapPalettes.pickPaletteColor(
-                style.fill().color(),
-                palette.primaryColor(),
-                palette.secondaryColor());
-        var borderColor = MapPalettes.pickPaletteColor(
-                style.outer().color(),
-                palette.primaryColor(),
-                palette.secondaryColor());
-        if (fillColor == null && borderColor == null) {
+            adjustment,
+            holder,
+            territories.getDesaturationPalette());
+
+        var fillColour = MapPalettes.pickPaletteColour(
+            style.fill().colour(),
+            palette.primaryColour(),
+            palette.secondaryColour());
+
+        var borderColour = MapPalettes.pickPaletteColour(
+            style.outer().colour(),
+            palette.primaryColour(),
+            palette.secondaryColour());
+
+        if (fillColour == null && borderColour == null) {
             return null;
         }
 
@@ -107,26 +110,26 @@ public final class FactionTerritoryBuilder {
                 borderTrace,
                 borderLoops,
                 territories.getGlobalStyle().hatch())
-                .buildFill(
-                        FilteredPolitics.isSpotlitBloc(blocId),
-                        FillSplit.splitMembersByFillState(
-                                cellGrouping,
-                                memberCellIds,
-                                territories.getContestedSystemIds(),
-                                territories.getUnfilledSystemIds()),
-                        blocId,
-                        fillColor);
+            .buildFill(
+                FilteredPolitics.isSpotlitBloc(blocId),
+                FillSplit.splitMembersByFillState(
+                    cellGrouping,
+                    memberCellIds,
+                    territories.getContestedSystemIds(),
+                    territories.getUnfilledSystemIds()),
+                blocId,
+                fillColour);
         return new FactionTerritory(
-                fill.solidTriangles(),
-                fill.hatchSegments(),
-                new UiElementPaint(
-                        fillColor,
-                        adjustment.muteOpacity(style.fill().opacity())),
-                flattenBorderLoops(borderLoops, borderColor),
-                new UiElementPaint(
-                        borderColor,
-                        adjustment.muteOpacity(style.outer().opacity())),
-                (float) style.outerWidth());
+            fill.solidTriangles(),
+            fill.hatchSegments(),
+            new UiElementPaint(
+                fillColour,
+                adjustment.muteOpacity(style.fill().opacity())),
+            flattenBorderLoops(borderLoops, borderColour),
+            new UiElementPaint(
+                borderColour,
+                adjustment.muteOpacity(style.outer().opacity())),
+            (float) style.outerWidth());
     }
 
     /**
@@ -171,10 +174,10 @@ public final class FactionTerritoryBuilder {
     // rather than runs the draw pass would skip.
     private static List<float[]> flattenBorderLoops(
             List<List<double[]>> borderLoops,
-            Color borderColor) {
+            Color borderColour) {
 
         var borderRuns = new ArrayList<float[]>();
-        if (borderColor == null) {
+        if (borderColour == null) {
             return borderRuns;
         }
         for (var loop : PolygonTessellator.tessellateToBoundaryLoops(borderLoops)) {

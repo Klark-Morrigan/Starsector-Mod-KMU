@@ -32,7 +32,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
-    void mockStarsectorThemeColors() {
+    void mockStarsectorThemeColours() {
         StarsectorSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
@@ -44,7 +44,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
     }
 
     @AfterEach
-    void closeStarsectorThemeColors() {
+    void closeStarsectorThemeColours() {
         miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
@@ -66,10 +66,10 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         }
 
         @Test
-        void conditionsHeaderHasGrayBaseColor() {
+        void conditionsHeaderHasGrayBaseColour() {
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
 
-            assertThat(paragraphs.get(0).getBaseColor()).isEqualTo(GRAY);
+            assertThat(paragraphs.get(0).getBaseColour()).isEqualTo(GRAY);
         }
 
         @Test
@@ -102,7 +102,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
 
         @Test
         void exposesCountHighlightsOnCountsLine() {
-            // "3 present" has no highlight slot because its color matches the label base
+            // "3 present" has no highlight slot because its colour matches the label base
             // (white). The " - " before "1 available" and the ", " before "4 total." are
             // each highlighted in grey so the trailing tail renders fully grey.
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
@@ -114,12 +114,12 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         }
 
         @Test
-        void exposesHighlightColorsOnCountsLine() {
-            // Colors align one-to-one with highlights above. The four trailing segments
+        void exposesHighlightColoursOnCountsLine() {
+            // Colours align one-to-one with highlights above. The four trailing segments
             // (" - ", "1 available", ", ", "4 total.") are all grey.
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
 
-            assertThat(paragraphs.get(1).getHighlightColors())
+            assertThat(paragraphs.get(1).getHighlightColours())
                     .containsExactly(GREEN, RED, BLUE, GRAY, GRAY, GRAY, GRAY);
         }
 
@@ -139,11 +139,11 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
                             entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false))));
 
             var highlights = paragraphs.get(1).getHighlightTexts();
-            var colors = paragraphs.get(1).getHighlightColors();
+            var colours = paragraphs.get(1).getHighlightColours();
 
             var suppIdx = Arrays.asList(highlights).indexOf("1 suppressed");
             assertThat(suppIdx).isNotEqualTo(-1);
-            assertThat(colors[suppIdx]).isEqualTo(RED);
+            assertThat(colours[suppIdx]).isEqualTo(RED);
         }
     }
 

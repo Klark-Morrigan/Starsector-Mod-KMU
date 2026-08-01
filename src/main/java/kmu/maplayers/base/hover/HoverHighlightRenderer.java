@@ -1,6 +1,6 @@
 package kmu.maplayers.base.hover;
 
-import kmlib.opengl.GlColor;
+import kmlib.opengl.GlColour;
 import kmlib.opengl.GlRuns;
 import kmlib.profiling.Timings;
 
@@ -47,12 +47,12 @@ public final class HoverHighlightRenderer {
             float factor,
             float alphaMult) {
 
-        var color = resolveHighlightColour(source, hover, style);
+        var colour = resolveHighlightColour(source, hover, style);
         // Nothing to paint when the cursor is over no cell (which is also how a disabled highlight
         // reads, its hover parked upstream) or the map has fully faded at the ends of its zoom
         // fade - both would emit every run for nothing, so both skip the GL state push rather than
         // being left to blend away.
-        if (color == null || alphaMult <= 0f) {
+        if (colour == null || alphaMult <= 0f) {
             return;
         }
         var highlight = geometry.resolveHighlightFor(source, hover);
@@ -71,8 +71,8 @@ public final class HoverHighlightRenderer {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        drawGlow(highlight, style.glow(), color, factor, alphaMult);
-        drawWash(highlight, style.wash(), color, factor, alphaMult);
+        drawGlow(highlight, style.glow(), colour, factor, alphaMult);
+        drawWash(highlight, style.wash(), colour, factor, alphaMult);
 
         // Restores the map's own blend function and line state; every pass after this one
         // (the anchors, the cluster names) expects to draw over the map, not into it.
@@ -93,7 +93,7 @@ public final class HoverHighlightRenderer {
         }
         return source.resolveHighlightColourOf(
             hover.hoveredSystemId(),
-            style.color());
+            style.colour());
     }
 
     // Strokes the hovered frontier once per layer, so the additive layers pile into a halo;
@@ -101,7 +101,7 @@ public final class HoverHighlightRenderer {
     private static void drawGlow(
             HoverHighlight highlight,
             HoverGlowStyle style,
-            Color color,
+            Color colour,
             float factor,
             float alphaMult) {
 
@@ -116,8 +116,8 @@ public final class HoverHighlightRenderer {
 
         for (var layer = 0; layer < style.layers(); layer++) {
             GL11.glLineWidth((float) style.computeLayerWidth(layer));
-            GlColor.set(
-                color,
+            GlColour.set(
+                colour,
                 (float) (alphaMult * style.computeLayerAlpha(layer, timeSeconds)));
 
             for (var loop : highlight.glowLoops()) {
@@ -136,12 +136,12 @@ public final class HoverHighlightRenderer {
     private static void drawWash(
             HoverHighlight highlight,
             HoverWashStyle style,
-            Color color,
+            Color colour,
             float factor,
             float alphaMult) {
 
         if (style.fillOpacity() > 0) {
-            GlColor.set(color, (float) (alphaMult * style.fillOpacity()));
+            GlColour.set(colour, (float) (alphaMult * style.fillOpacity()));
             GlRuns.drawScaled(
                 GL11.GL_TRIANGLES,
                 highlight.washTriangles(),
@@ -149,8 +149,8 @@ public final class HoverHighlightRenderer {
         }
         if (style.outlineOpacity() > 0) {
             GL11.glLineWidth((float) style.outlineWidth());
-            GlColor.set(
-                color,
+            GlColour.set(
+                colour,
                 (float) (alphaMult * style.outlineOpacity()));
 
             for (var loop : highlight.washOutline()) {

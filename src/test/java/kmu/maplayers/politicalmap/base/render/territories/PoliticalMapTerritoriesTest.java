@@ -69,7 +69,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getHolderBySystemId()).isEmpty();
             assertThat(territories.getDecivilisedSystemIds()).isEmpty();
             assertThat(territories.getUnfilledSystemIds()).isEmpty();
-            assertThat(territories.getNeutralColor()).isEqualTo(Color.GRAY);
+            assertThat(territories.getNeutralColour()).isEqualTo(Color.GRAY);
             assertThat(territories.getDesaturationPalette())
                     .isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
             // The empty fallback is never a filtered build, so it selects no bloc and recedes
@@ -158,7 +158,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getHolderBySystemId()).isSameAs(holders);
             assertThat(territories.getDecivilisedSystemIds()).isSameAs(decivilised);
             assertThat(territories.getUnfilledSystemIds()).isSameAs(unfilled);
-            assertThat(territories.getNeutralColor()).isSameAs(neutral);
+            assertThat(territories.getNeutralColour()).isSameAs(neutral);
             assertThat(territories.getDesaturationPalette()).isSameAs(desaturationPalette);
             assertThat(territories.getRenderStyle()).isSameAs(renderStyle);
             assertThat(territories.getGlobalStyle()).isSameAs(globalStyle);

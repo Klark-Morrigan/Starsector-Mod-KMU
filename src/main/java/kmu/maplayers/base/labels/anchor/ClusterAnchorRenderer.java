@@ -3,7 +3,7 @@ package kmu.maplayers.base.labels.anchor;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
-import kmlib.opengl.GlColor;
+import kmlib.opengl.GlColour;
 import kmlib.opengl.GlLines;
 import kmlib.opengl.GlQuads;
 
@@ -30,7 +30,7 @@ public final class ClusterAnchorRenderer {
 
     // The anchor dot's diameter in screen pixels (GL_POINTS sizes in pixels, so it
     // stays a constant dot at any zoom) and its axis lines' width. Sized to read over
-    // the fills and borders without swamping the systems they mark. The lines' colors
+    // the fills and borders without swamping the systems they mark. The lines' colours
     // come from the shared {@link DiagnosticPalette}, so the anchor overlay and the
     // border-tracing overlay grade their layers identically.
     private static final float ANCHOR_DOT_SIZE = 10f;
@@ -48,9 +48,9 @@ public final class ClusterAnchorRenderer {
     // and the centrelines - read this one list, so the order a verdict layers in and the
     // shade it grades to cannot drift apart between the two.
     private static final List<AnchorVerdictLayer> VERDICT_LAYERS = List.of(
-        new AnchorVerdictLayer(ClusterAnchor::rejectedAxis, DiagnosticPalette.DISCARDED_COLOR),
-        new AnchorVerdictLayer(ClusterAnchor::unbiasedAxis, DiagnosticPalette.INTERMEDIATE_COLOR),
-        new AnchorVerdictLayer(ClusterAnchor::acceptedAxis, DiagnosticPalette.ACCEPTED_COLOR));
+        new AnchorVerdictLayer(ClusterAnchor::rejectedAxis, DiagnosticPalette.DISCARDED_COLOUR),
+        new AnchorVerdictLayer(ClusterAnchor::unbiasedAxis, DiagnosticPalette.INTERMEDIATE_COLOUR),
+        new AnchorVerdictLayer(ClusterAnchor::acceptedAxis, DiagnosticPalette.ACCEPTED_COLOUR));
 
     // Emits only; never instantiated.
     private ClusterAnchorRenderer() {
@@ -58,7 +58,7 @@ public final class ClusterAnchorRenderer {
 
     // Draws the whole anchor overlay for one map frame. The lines layer bottom to top by
     // verdict - rejected candidates in red, unbiased comparisons in yellow, accepted
-    // label lines in green - one color pass across all anchors per layer, so where lines
+    // label lines in green - one colour pass across all anchors per layer, so where lines
     // overlap the accepted verdict always reads on top; the dots, in each cluster's own
     // resolved shade, go over everything to keep the anchor marker visible even under a
     // pile of lines. Empty (nothing emitted) unless the dev toggle built the anchors, so
@@ -116,7 +116,7 @@ public final class ClusterAnchorRenderer {
 
         GL11.glPointSize(ANCHOR_DOT_SIZE);
         for (var anchor : anchors) {
-            GlColor.set(anchor.color(), lineAlpha);
+            GlColour.set(anchor.colour(), lineAlpha);
             GL11.glBegin(GL11.GL_POINTS);
             GL11.glVertex2f(anchor.anchorX() * factor, anchor.anchorY() * factor);
             GL11.glEnd();
@@ -143,9 +143,9 @@ public final class ClusterAnchorRenderer {
             if (band == null) {
                 continue;
             }
-            GlColor.set(layer.layerColor(), bandAlpha);
+            GlColour.set(layer.layerColour(), bandAlpha);
             GlQuads.fillQuad(band);
-            GlColor.set(layer.layerColor(), lineAlpha);
+            GlColour.set(layer.layerColour(), lineAlpha);
             GlLines.strokeLoop(band);
 
             drawLineRules(
@@ -165,7 +165,7 @@ public final class ClusterAnchorRenderer {
             float factor,
             float alphaMult) {
 
-        GlColor.set(layer.layerColor(), alphaMult);
+        GlColour.set(layer.layerColour(), alphaMult);
         for (var anchor : anchors) {
             var segment = layer.axisAccessor().apply(anchor);
             if (segment == null) {
@@ -269,6 +269,6 @@ public final class ClusterAnchorRenderer {
      */
     private record AnchorVerdictLayer(
         Function<ClusterAnchor, Segment> axisAccessor,
-        Color layerColor) {
+        Color layerColour) {
     }
 }

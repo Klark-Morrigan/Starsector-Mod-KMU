@@ -117,7 +117,7 @@ public final class ClusterAnchorPlacement {
             List<List<double[]>> rings,
             Map<String, double[]> siteBySystemId,
             PrincipalAxis axis,
-            Color color,
+            Color colour,
             LabelAnchorSpecification spec,
             LabelLengthEstimator nameEstimator) {
 
@@ -130,7 +130,7 @@ public final class ClusterAnchorPlacement {
             return new ClusterAnchor(
                 centroidX,
                 centroidY,
-                color,
+                colour,
                 List.of(),
                 0f,
                 null,
@@ -212,7 +212,7 @@ public final class ClusterAnchorPlacement {
             return new ClusterAnchor(
                 midX,
                 midY,
-                color,
+                colour,
                 nameEstimator.wrapIntoLines(bestAccepted.lineCount()),
                 (float) bestAccepted.fontHeight(),
                 accepted,
@@ -229,7 +229,7 @@ public final class ClusterAnchorPlacement {
         return new ClusterAnchor(
             centroidX,
             centroidY,
-            color,
+            colour,
             List.of(),
             0f,
             null,

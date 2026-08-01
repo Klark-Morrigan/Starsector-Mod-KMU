@@ -3,7 +3,7 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
@@ -87,7 +87,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static TooltipRow.CentredRow buildHeaderRow(StarSystemAPI system) {
         return TooltipRow.createCentredRow(new TextSpan(
             system.getName(),
-            StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
+            StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()));
     }
 
     // The tooltip's fixed look: the typography every row draws in, the shared opacity, and the frame
@@ -103,7 +103,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             new TooltipStyle(bodyStyle, bodyStyle),
             OPACITY,
             BORDER_WIDTH,
-            StarsectorUiColor.BLACK.resolve(),
-            StarsectorUiColor.VANILLA_PLAYER_BASE.resolve());
+            StarsectorUiColour.BLACK.resolve(),
+            StarsectorUiColour.VANILLA_PLAYER_BASE.resolve());
     }
 }

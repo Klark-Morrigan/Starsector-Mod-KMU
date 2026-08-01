@@ -18,7 +18,7 @@ import java.awt.Color;
  * individually and the stack honours the line-spacing knob, which a single
  * {@link DrawableString} (fixed one-font-size line advance, left-aligned block) cannot do.
  *
- * <p>{@code baseColor} is that owner's bright shade at full opacity, kept alongside the
+ * <p>{@code baseColour} is that owner's bright shade at full opacity, kept alongside the
  * string because the renderer refades it to the map's alpha each frame: the string bakes
  * only one colour, so the un-faded original has to live here to be re-derived. Setting the
  * string's colour costs no buffer rebuild (there is no per-substring colour data), so the
@@ -33,7 +33,7 @@ import java.awt.Color;
  */
 public record Label(
     DrawableString text,
-    Color baseColor,
+    Color baseColour,
     float hangX,
     float hangY,
     float slantDegrees) {

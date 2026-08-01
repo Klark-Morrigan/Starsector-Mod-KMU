@@ -1,6 +1,6 @@
 package kmu.conditions.ui.picker.tooltip;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,12 +14,12 @@ class KmuTooltipSectionStyleTest {
 
         @Test
         void mutedStyleUsesFrozenPlayerBlueBannerAndGrayBodyText() {
-            assertThat(KmuTooltipSectionStyle.MUTED.titleRawColor())
-                    .isEqualTo(StarsectorUiColor.LIGHT_BLUE);
-            assertThat(KmuTooltipSectionStyle.MUTED.backgroundRawColor())
-                    .isEqualTo(StarsectorUiColor.DARK_BLUE);
-            assertThat(KmuTooltipSectionStyle.MUTED.bodyRawColor())
-                    .isEqualTo(StarsectorUiColor.VANILLA_GRAY);
+            assertThat(KmuTooltipSectionStyle.MUTED.titleRawColour())
+                    .isEqualTo(StarsectorUiColour.LIGHT_BLUE);
+            assertThat(KmuTooltipSectionStyle.MUTED.backgroundRawColour())
+                    .isEqualTo(StarsectorUiColour.DARK_BLUE);
+            assertThat(KmuTooltipSectionStyle.MUTED.bodyRawColour())
+                    .isEqualTo(StarsectorUiColour.VANILLA_GRAY);
         }
     }
 
@@ -28,12 +28,12 @@ class KmuTooltipSectionStyleTest {
 
         @Test
         void warningStyleUsesWarningBannerAndNormalBodyText() {
-            assertThat(KmuTooltipSectionStyle.WARNING.titleRawColor())
-                    .isEqualTo(StarsectorUiColor.ORANGE);
-            assertThat(KmuTooltipSectionStyle.WARNING.backgroundRawColor())
-                    .isEqualTo(StarsectorUiColor.DARK_RED);
-            assertThat(KmuTooltipSectionStyle.WARNING.bodyRawColor())
-                    .isEqualTo(StarsectorUiColor.VANILLA_TEXT);
+            assertThat(KmuTooltipSectionStyle.WARNING.titleRawColour())
+                    .isEqualTo(StarsectorUiColour.ORANGE);
+            assertThat(KmuTooltipSectionStyle.WARNING.backgroundRawColour())
+                    .isEqualTo(StarsectorUiColour.DARK_RED);
+            assertThat(KmuTooltipSectionStyle.WARNING.bodyRawColour())
+                    .isEqualTo(StarsectorUiColour.VANILLA_TEXT);
         }
     }
 }

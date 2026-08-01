@@ -38,7 +38,7 @@ class KmuConditionPickerInfoRowTest {
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
-    void mockStarsectorThemeColors() {
+    void mockStarsectorThemeColours() {
         StarsectorSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
@@ -49,7 +49,7 @@ class KmuConditionPickerInfoRowTest {
     }
 
     @AfterEach
-    void closeStarsectorThemeColors() {
+    void closeStarsectorThemeColours() {
         miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
@@ -86,9 +86,9 @@ class KmuConditionPickerInfoRowTest {
     class Render {
 
         @Test
-        void rendersAllTextsWithWhiteBaseColor() {
-            var paraColors = new ArrayList<Color>();
-            var row = rowPanel(paraColors);
+        void rendersAllTextsWithWhiteBaseColour() {
+            var paraColours = new ArrayList<Color>();
+            var row = rowPanel(paraColours);
 
             var locationParagraphs = Arrays.asList(
                     new HighlightedParagraph("Location:"),
@@ -99,14 +99,14 @@ class KmuConditionPickerInfoRowTest {
 
             KmuConditionPickerInfoRow.render(row, locationParagraphs, summaryParagraphs, Optional.empty(), 400f);
 
-            // 2 location + 2 summary lines, all TEXT base color
-            assertThat(paraColors).hasSize(4).containsOnly(TEXT);
+            // 2 location + 2 summary lines, all TEXT base colour
+            assertThat(paraColours).hasSize(4).containsOnly(TEXT);
         }
 
         @Test
         void rendersOnlySummaryWhenLocationListIsEmpty() {
-            var paraColors = new ArrayList<Color>();
-            var row = rowPanel(paraColors);
+            var paraColours = new ArrayList<Color>();
+            var row = rowPanel(paraColours);
 
             var summaryParagraphs = Arrays.asList(
                     new HighlightedParagraph("Conditions:"),
@@ -115,21 +115,21 @@ class KmuConditionPickerInfoRowTest {
             KmuConditionPickerInfoRow.render(
                     row, Collections.emptyList(), summaryParagraphs, Optional.empty(), 400f);
 
-            assertThat(paraColors).hasSize(2).containsOnly(TEXT);
+            assertThat(paraColours).hasSize(2).containsOnly(TEXT);
         }
     }
 
     /**
-     * Builds a row panel whose every UI element captures addPara base colors
-     * into {@code paraColors}.
+     * Builds a row panel whose every UI element captures addPara base colours
+     * into {@code paraColours}.
      */
-    private static CustomPanelAPI rowPanel(List<Color> paraColors) {
+    private static CustomPanelAPI rowPanel(List<Color> paraColours) {
         var position = proxy(PositionAPI.class,
                 (p, method, args) -> defaultValue(method.getReturnType()));
         var element = proxy(TooltipMakerAPI.class, (p, method, args) -> {
             if ("addPara".equals(method.getName()) && args != null && args.length >= 2
                     && args[1] instanceof Color) {
-                paraColors.add((Color) args[1]);
+                paraColours.add((Color) args[1]);
                 return createLabel();
             }
             return defaultValue(method.getReturnType());

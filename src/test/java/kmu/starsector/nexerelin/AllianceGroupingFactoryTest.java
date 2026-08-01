@@ -30,10 +30,10 @@ class AllianceGroupingFactoryTest {
         }
 
         @Test
-        void colorsTheBlocOffTheSortedFirstMember() {
+        void coloursTheBlocOffTheSortedFirstMember() {
             HolderGrouping grouping = AllianceGroupingFactory.buildFrom(
                     List.of(alliedPowers()));
-            assertThat(grouping.resolveColorFactionId("alliance-1")).isEqualTo("hegemony");
+            assertThat(grouping.resolveColourFactionId("alliance-1")).isEqualTo("hegemony");
         }
 
         @Test
@@ -66,7 +66,7 @@ class AllianceGroupingFactoryTest {
             // No member folds into it and no colour faction is picked, so the bloc id is
             // not an alliance and colours as itself - the record left no trace.
             assertThat(grouping.isAlliance("empty-alliance")).isFalse();
-            assertThat(grouping.resolveColorFactionId("empty-alliance"))
+            assertThat(grouping.resolveColourFactionId("empty-alliance"))
                     .isEqualTo("empty-alliance");
         }
 

@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
-import kmlib.opengl.GlColor;
+import kmlib.opengl.GlColour;
 import kmlib.opengl.GlRuns;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
@@ -77,7 +77,7 @@ public final class TerritoryRenderer {
         GL11.glPopAttrib();
     }
 
-    // Fills each owned faction's cluster(s) with the faction's resolved fill color at
+    // Fills each owned faction's cluster(s) with the faction's resolved fill colour at
     // its opacity, then each factionless cell that carries a fill of its own. Both are
     // pre-tessellated triangle soups, so a concave cluster (or one with an enclave) fills
     // correctly and exactly matches the stroked border. A hidden fill (UiElementPaint.isHidden) is
@@ -151,7 +151,7 @@ public final class TerritoryRenderer {
         if (paint.isHidden()) {
             return;
         }
-        GlColor.set(paint.color(), alphaMult * paint.alpha());
+        GlColour.set(paint.colour(), alphaMult * paint.alpha());
         emitRuns.run();
     }
 

@@ -19,7 +19,7 @@ import kmlib.starsector.ui.widgets.tabs.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
 import kmlib.starsector.ui.widgets.tabs.TabStyle;
-import kmlib.starsector.ui.widgets.tabs.VanillaTabColors;
+import kmlib.starsector.ui.widgets.tabs.VanillaTabColours;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
@@ -241,7 +241,7 @@ public final class LiveSidebarPlacement {
     private static TabStyle buildTabStyle(float headerBandHeight) {
         return new TabStyle(
             headerBandHeight,
-            VanillaTabColors.mapTabs(),
+            VanillaTabColours.mapTabs(),
             HotkeyStyle.createUnderlined(),
             new TextFace(TAB_FONT, ControlStripLayout.TAB_FONT_SIZE));
     }

@@ -243,7 +243,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
     // Registers the listener that marks a system's political-map ownership stale
     // when one of its colonies decivilises, so a dying colony sheds its faction
-    // color and repaints neutral live rather than only on reload. Idempotent: a
+    // colour and repaints neutral live rather than only on reload. Idempotent: a
     // reloaded save already carries it.
     static void installPoliticalMapDecivListener(SectorAPI sector) {
         if (sector == null) {

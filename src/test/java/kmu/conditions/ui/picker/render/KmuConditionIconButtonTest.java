@@ -3,7 +3,7 @@ package kmu.conditions.ui.picker.render;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
@@ -39,7 +39,7 @@ class KmuConditionIconButtonTest {
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
-    void mockStarsectorThemeColors() {
+    void mockStarsectorThemeColours() {
         StarsectorSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getDarkPlayerColor).thenReturn(DEFAULT_BACKDROP);
@@ -49,7 +49,7 @@ class KmuConditionIconButtonTest {
     }
 
     @AfterEach
-    void closeStarsectorThemeColors() {
+    void closeStarsectorThemeColours() {
         miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
@@ -70,27 +70,27 @@ class KmuConditionIconButtonTest {
     class ForEntry {
 
         @Test
-        void stylesAbsentEntriesWithDefaultButtonColorsAndGreyedOutIcon() {
+        void stylesAbsentEntriesWithDefaultButtonColoursAndGreyedOutIcon() {
             var entry = entry(KmuConditionPickerEntryState.ABSENT);
 
             assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
-            assertButtonStyleRoles(entry, StarsectorUiColor.DARK_BLUE, StarsectorUiColor.LIGHT_BLUE);
+            assertButtonStyleRoles(entry, StarsectorUiColour.DARK_BLUE, StarsectorUiColour.LIGHT_BLUE);
             assertThat(entry.isPresent()).isFalse();
             assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
         }
 
         @Test
-        void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenButtonColors() {
+        void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenButtonColours() {
             var entry = entry(KmuConditionPickerEntryState.PRESENT);
 
             assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
-            assertButtonStyleRoles(entry, StarsectorUiColor.DARK_GREEN, StarsectorUiColor.BRIGHT_GREEN);
+            assertButtonStyleRoles(entry, StarsectorUiColour.DARK_GREEN, StarsectorUiColour.BRIGHT_GREEN);
             assertThat(entry.isPresent()).isTrue();
             assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isTrue();
         }
 
         @Test
-        void stylesHiddenPresentEntriesWithDefaultButtonColorsAndFullIcon() {
+        void stylesHiddenPresentEntriesWithDefaultButtonColoursAndFullIcon() {
             var entry = hiddenEntry();
 
             assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
@@ -99,11 +99,11 @@ class KmuConditionIconButtonTest {
         }
 
         @Test
-        void stylesSuppressedPresentEntriesWithWarningButtonColorsAndFullIcon() {
+        void stylesSuppressedPresentEntriesWithWarningButtonColoursAndFullIcon() {
             var entry = suppressedEntry();
 
             assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
-            assertButtonStyleRoles(entry, StarsectorUiColor.MUTED_RED, StarsectorUiColor.BRIGHT_RED);
+            assertButtonStyleRoles(entry, StarsectorUiColour.MUTED_RED, StarsectorUiColour.BRIGHT_RED);
             assertThat(entry.isPresent()).isTrue();
             assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
         }
@@ -301,25 +301,25 @@ class KmuConditionIconButtonTest {
 
     private static void assertButtonStyle(
             KmuConditionPickerEntry entry,
-            Color backdropColor,
-            Color borderColor,
+            Color backdropColour,
+            Color borderColour,
             float backdropAlpha,
             float borderAlpha) {
         var style = KmuConditionIconButtonStyle.forEntry(entry);
-        assertThat(style.getBackdropColor()).isEqualTo(backdropColor);
-        assertThat(style.getBorderColor()).isEqualTo(borderColor);
+        assertThat(style.getBackdropColour()).isEqualTo(backdropColour);
+        assertThat(style.getBorderColour()).isEqualTo(borderColour);
         assertThat(style.getBackdropAlpha()).isEqualTo(backdropAlpha);
         assertThat(style.getBorderAlpha()).isEqualTo(borderAlpha);
     }
 
     private static void assertButtonStyleRoles(
             KmuConditionPickerEntry entry,
-            StarsectorUiColor backdropColor,
-            StarsectorUiColor borderColor) {
+            StarsectorUiColour backdropColour,
+            StarsectorUiColour borderColour) {
         var style = KmuConditionIconButtonStyle.forEntry(entry);
 
-        assertThat(style.getBackdropRawColor()).isEqualTo(backdropColor);
-        assertThat(style.getBorderRawColor()).isEqualTo(borderColor);
+        assertThat(style.getBackdropRawColour()).isEqualTo(backdropColour);
+        assertThat(style.getBorderRawColour()).isEqualTo(borderColour);
     }
 
     private static final class RecordingTooltip implements InvocationHandler {

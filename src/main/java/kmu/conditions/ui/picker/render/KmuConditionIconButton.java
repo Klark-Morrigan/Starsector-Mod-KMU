@@ -8,7 +8,7 @@ import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.graphics.StarsectorSprites;
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.layout.VanillaPositions;
 import kmlib.starsector.ui.render.gl.UiBoxes;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
@@ -115,18 +115,18 @@ public final class KmuConditionIconButton {
 
             var footprint = VanillaPositions.toRectangle(position);
             var style = KmuConditionIconButtonStyle.forEntry(entry);
-            var backdropColor = style.getBackdropColor();
-            var borderColor = style.getBorderColor();
+            var backdropColour = style.getBackdropColour();
+            var borderColour = style.getBorderColour();
             var backdropAlpha = style.getBackdropAlpha();
             var borderAlpha = style.getBorderAlpha();
 
             UiFill.renderQuad(
                 footprint,
-                new UiElementPaint(backdropColor, backdropAlpha * alphaMult));
+                new UiElementPaint(backdropColour, backdropAlpha * alphaMult));
             UiBoxes.renderBorder(
                 footprint,
                 new BoxBorder(1f),
-                new UiElementPaint(borderColor, borderAlpha * alphaMult));
+                new UiElementPaint(borderColour, borderAlpha * alphaMult));
         }
 
         @Override
@@ -163,7 +163,7 @@ public final class KmuConditionIconButton {
                 return;
             }
 
-            var previousColor = sprite.getColor();
+            var previousColour = sprite.getColor();
             var previousAlpha = sprite.getAlphaMult();
             var previousWidth = sprite.getWidth();
             var previousHeight = sprite.getHeight();
@@ -175,15 +175,15 @@ public final class KmuConditionIconButton {
                 layout.getIconHeight());
 
             sprite.setColor(greyOut
-                ? StarsectorUiColor.DIM_GRAY.resolve()
-                : StarsectorUiColor.VANILLA_TEXT.resolve());
+                ? StarsectorUiColour.DIM_GRAY.resolve()
+                : StarsectorUiColour.VANILLA_TEXT.resolve());
 
             sprite.setAlphaMult(alpha * alphaMult);
             sprite.render(
                 position.getX() + layout.getIconOffsetX(),
                 position.getY() + layout.getIconOffsetY());
 
-            sprite.setColor(previousColor);
+            sprite.setColor(previousColour);
             sprite.setAlphaMult(previousAlpha);
             sprite.setSize(previousWidth, previousHeight);
         }

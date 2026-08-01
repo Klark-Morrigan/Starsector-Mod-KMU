@@ -363,7 +363,7 @@ greenfield policy at the bottom.
   is a method override, not a parallel campaign driver.
 - `FleetTypes.TRADE*` constants - tagging fleets correctly gives
   free pirate interdiction, patrol escort, cargo-drop on defeat,
-  and intel coloring.
+  and intel colouring.
 - `CargoAPI` / `SubmarketAPI` - load/unload at markets; vanilla
   storage and black-market submarkets work unchanged.
 - `Misc.getShippingDisruption(MarketAPI)` + `ShippingDisruption`

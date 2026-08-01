@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.color.Colors;
+import kmlib.colour.Colours;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
@@ -66,7 +66,7 @@ final class ClusterLabelStyling {
     // split then picks the group's name opacity, further scaled by the adjustment's opacity
     // multiplier, and fades the resolved colour by the product (the debug dot, sharing this
     // colour, dims and recolours with the name).
-    static Color resolveLabelColor(
+    static Color resolveLabelColour(
             DominantHolder holder,
             BlocNameStyles nameStyles,
             BlocStyleDecision styleDecision,
@@ -75,29 +75,31 @@ final class ClusterLabelStyling {
         // One group pick drives both the name's colour choice and its opacity, so the two
         // can never be read from different groups.
         var nameStyle = styleDecision.usesIndependentStyle()
-                ? nameStyles.independentNameStyle()
-                : nameStyles.factionNameStyle();
-        var choice = nameStyle.color();
+            ? nameStyles.independentNameStyle()
+            : nameStyles.factionNameStyle();
+        var choice = nameStyle.colour();
 
         // The name resolves against the same two shades the border does, off the one
         // "desaturate swaps the palette" decision MapPalettes owns - so the name can
         // never drift from the fill and border it labels.
         var palette = MapPalettes.resolveEffectivePalette(
-                styleDecision.adjustment(),
-                holder,
-                desaturationPalette);
-        var color = MapPalettes.pickPaletteColor(
-                choice,
-                palette.primaryColor(),
-                palette.secondaryColor());
-        var resolved = color != null
-                ? color
-                : palette.primaryColor();
+            styleDecision.adjustment(),
+            holder,
+            desaturationPalette);
+
+        var colour = MapPalettes.pickPaletteColour(
+            choice,
+            palette.primaryColour(),
+            palette.secondaryColour());
+
+        var resolved = colour != null
+            ? colour
+            : palette.primaryColour();
 
         // The name mutes through the same one rule the fill and border do, so a receded name
         // dims in lockstep with the space it labels.
         var mutedOpacity = styleDecision.adjustment().muteOpacity(nameStyle.opacity());
-        return Colors.scaleAlpha(resolved, mutedOpacity);
+        return Colours.scaleAlpha(resolved, mutedOpacity);
     }
 
     // The per-bloc label colours one rebuild draws in, as the plain colour-by-key function the
@@ -105,18 +107,18 @@ final class ClusterLabelStyling {
     // system of a bloc carries the same two palette shades, so the first one found speaks for
     // the whole bloc) under that bloc's shared style decision, and cached per bloc id since
     // every cluster of a bloc draws its name the same.
-    static Function<String, Color> newLabelColorResolver(
+    static Function<String, Color> newLabelColourResolver(
             Map<String, DominantHolder> ownerBySystemId,
             BlocNameStyles nameStyles,
             Function<String, BlocStyleDecision> styleDecisionByBlocId,
             FactionPalette desaturationPalette) {
 
         var ownerByBlocId = mapHolderByBlocId(ownerBySystemId);
-        return memoisePerBlocId(blocId -> resolveLabelColor(
-                ownerByBlocId.get(blocId),
-                nameStyles,
-                styleDecisionByBlocId.apply(blocId),
-                desaturationPalette));
+        return memoisePerBlocId(blocId -> resolveLabelColour(
+            ownerByBlocId.get(blocId),
+            nameStyles,
+            styleDecisionByBlocId.apply(blocId),
+            desaturationPalette));
     }
 
     // The per-bloc style decisions one rebuild applies: each bloc's independent-style and

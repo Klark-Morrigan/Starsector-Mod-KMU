@@ -3,15 +3,15 @@ package kmu.settings;
 import kmlib.settings.LabeledChoice;
 
 /**
- * Which of a faction's two palette colors a political-map element draws in, or
- * whether it draws at all - the player's choice behind the "Faction ... color"
- * and "Independent ... color" Radio settings.
+ * Which of a faction's two palette colours a political-map element draws in, or
+ * whether it draws at all - the player's choice behind the "Faction ... colour"
+ * and "Independent ... colour" Radio settings.
  *
  * <p>A faction supplies two authored UI shades; the political map lets the player
  * point each element (fill, outer border, inner seam) at either, or turn it off
  * with {@link #NONE}. This names the options, and the settings reader maps LunaLib's
- * stored Radio label back to one, so the render layer picks {@code owner.primaryColor()},
- * {@code owner.secondaryColor()}, or no draw without matching raw strings. The
+ * stored Radio label back to one, so the render layer picks {@code owner.primaryColour()},
+ * {@code owner.secondaryColour()}, or no draw without matching raw strings. The
  * labels here must match the {@code secondaryValue} options in
  * data/config/LunaSettings.csv exactly, and both are frozen once shipped - see
  * {@link LabeledChoice} for what a reworded label costs.

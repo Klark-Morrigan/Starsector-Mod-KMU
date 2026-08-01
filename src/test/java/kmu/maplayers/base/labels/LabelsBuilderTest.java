@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.within;
  */
 final class LabelsBuilderTest {
 
-    private static final Color OWNER_COLOR = Color.RED;
+    private static final Color OWNER_COLOUR = Color.RED;
 
     // The stack geometry the multi-line tests compute by hand.
     private static final float FONT_HEIGHT = 100f;
@@ -38,7 +38,7 @@ final class LabelsBuilderTest {
     class PlanLabels {
 
         @Test
-        void planLabelsPlansOneLineWithItsTextColorAndFontHeight() {
+        void planLabelsPlansOneLineWithItsTextColourAndFontHeight() {
             var anchors = List.of(acceptedAnchor(
                 List.of("Persean League"),
                 100f,
@@ -49,7 +49,7 @@ final class LabelsBuilderTest {
 
             assertThat(plans).singleElement().satisfies(plan -> {
                 assertThat(plan.text()).isEqualTo("Persean League");
-                assertThat(plan.color()).isEqualTo(OWNER_COLOR);
+                assertThat(plan.colour()).isEqualTo(OWNER_COLOUR);
                 assertThat(plan.fontHeight()).isEqualTo(FONT_HEIGHT);
             });
         }
@@ -235,7 +235,7 @@ final class LabelsBuilderTest {
         return new ClusterAnchor(
             anchorX,
             anchorY,
-            OWNER_COLOR,
+            OWNER_COLOUR,
             nameLines,
             FONT_HEIGHT,
             acceptedAxis,
@@ -249,7 +249,7 @@ final class LabelsBuilderTest {
     private static ClusterAnchor collapsedAnchor(float anchorX, float anchorY) {
         return new ClusterAnchor(
             anchorX, anchorY,
-            OWNER_COLOR,
+            OWNER_COLOUR,
             List.of(),
             0f,
             null,

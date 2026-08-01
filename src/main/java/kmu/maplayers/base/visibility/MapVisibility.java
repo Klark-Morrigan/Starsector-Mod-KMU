@@ -22,7 +22,7 @@ import kmlib.starsector.systems.StarSystems;
  *
  * <p>Affiliation is a separate axis owned elsewhere: a decivilised-only system
  * is inhabited (it seeds a cell and always draws) yet unaffiliated (no faction
- * color, no dominance) - see the ownership pipeline and
+ * colour, no dominance) - see the ownership pipeline and
  * {@link DecivilisedMarkets}. Reading inhabitation here lets the geometry
  * seeding and the refresh fingerprint share one rule.
  */

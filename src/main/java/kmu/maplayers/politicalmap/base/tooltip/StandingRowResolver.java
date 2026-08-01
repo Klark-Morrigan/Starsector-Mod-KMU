@@ -76,7 +76,7 @@ public final class StandingRowResolver {
             // crest - the same name and crest the alliances view paints the bloc's cluster by.
             displayName = grouping.resolveAllianceName(blocId);
             crestSpritePath = FactionCrests.resolveCrestPath(
-                    sector.getFaction(grouping.resolveColorFactionId(blocId)));
+                sector.getFaction(grouping.resolveColourFactionId(blocId)));
         } else {
             // A lone-faction group has one member, so its header is exactly that member: reuse the
             // resolved row rather than reading the faction a second time.

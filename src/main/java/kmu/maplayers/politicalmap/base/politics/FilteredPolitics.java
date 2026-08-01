@@ -234,7 +234,6 @@ public final class FilteredPolitics {
         }
         return new DominantHolder(
             SPOTLIT_KEY,
-            paletteHolder.primaryColor(),
             paletteHolder.secondaryColor());
     }
 

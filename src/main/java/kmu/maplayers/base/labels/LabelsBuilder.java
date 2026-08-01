@@ -78,13 +78,13 @@ public final class LabelsBuilder {
 
                 var text = resolvedFont.createText(
                     plan.text(),
-                    plan.color(),
+                    plan.colour(),
                     plan.fontHeight());
 
                 text.setAnchor(LazyFont.TextAnchor.CENTER);
                 labels.add(new Label(
                     text,
-                    plan.color(),
+                    plan.colour(),
                     plan.hangX(),
                     plan.hangY(),
                     plan.slantDegrees()));
@@ -109,7 +109,7 @@ public final class LabelsBuilder {
      */
     public record LabelPlan(
         String text,
-        Color color,
+        Color colour,
         float hangX,
         float hangY,
         float slantDegrees,
@@ -168,7 +168,7 @@ public final class LabelsBuilder {
             var offset = ((lines.size() - 1) / 2f - lineIndex) * lineStep;
             plans.add(new LabelPlan(
                 lines.get(lineIndex),
-                anchor.color(),
+                anchor.colour(),
                 anchor.anchorX() + upX * offset,
                 anchor.anchorY() + upY * offset,
                 slantDegrees,

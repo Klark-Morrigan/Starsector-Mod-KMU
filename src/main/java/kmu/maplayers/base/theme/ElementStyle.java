@@ -10,7 +10,7 @@ package kmu.maplayers.base.theme;
  * and each reader has to keep in step. Widths stay outside it: only the two borders have one.
  */
 public record ElementStyle(
-    ElementPaint color,
+    ElementPaint colour,
     double opacity) {
 
     /** An element the player turned off, so no draw pass paints it. */
@@ -31,6 +31,6 @@ public record ElementStyle(
      * reader must apply.
      */
     public boolean isDrawn() {
-        return color != null && opacity > 0;
+        return colour != null && opacity > 0;
     }
 }

@@ -185,7 +185,7 @@ anything paints, so they move values without raising it.
 fill faded by the opacity setting, the player faction's base and bright accents, the insignia body
 face, and `LiveSidebarPlacement.buildMapTabStyle()` for the tabs.
 
-That one `TabStyle` carries a strip end to end - band height, `VanillaTabColors` scheme,
+That one `TabStyle` carries a strip end to end - band height, `VanillaTabColours` scheme,
 `HotkeyStyle`, and the orbitron face - so the value the layout snapped tabs against is the value the
 renderer paints them from and a snapped tab width cannot part from the text drawn into it. The two
 screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the
@@ -197,7 +197,7 @@ sits below draw a line under the bracketed key, so a bare key reads as a mismatc
 above. The line is a quad the style places under the key's drawn box, not part of the measured
 display string, so adding it moves no tab.
 
-`style/SidebarPalettes` maps the player's `NotchChevronColorChoice` to the chevron's resting and
+`style/SidebarPalettes` maps the player's `NotchChevronColourChoice` to the chevron's resting and
 hovered shades. It is kept out of the renderer so the "which colour does this choice mean" rules
 stay a pure lookup a test can pin, with no live GL or screen needed.
 

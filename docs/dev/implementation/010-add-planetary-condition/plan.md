@@ -180,8 +180,8 @@ Implementation:
 - show total, present, hidden, and suppressed condition counts in the picker
   summary;
 - highlight market/system/constellation names and total/present/hidden counts
-  with the standard Starsector highlight color;
-- highlight the suppressed count with the negative/red highlight color;
+  with the standard Starsector highlight colour;
+- highlight the suppressed count with the negative/red highlight colour;
 - list every planetary condition spec returned by the condition service;
 - present the picker as a grid of condition icons, not as text rows;
 - preserve each condition image's aspect ratio and render every condition icon
@@ -209,7 +209,7 @@ Implementation:
 - show visible, unsuppressed present conditions with a positive green button
   backdrop and border, while keeping the condition icon legible and not greyed
   out;
-- do not apply a special color treatment to hidden conditions; explain hidden
+- do not apply a special colour treatment to hidden conditions; explain hidden
   state in the tooltip instead;
 - if a condition is suppressed, prefer the suppressed visual treatment over
   other visual states because it is the stronger behavioral warning;
@@ -382,7 +382,7 @@ Tests:
   construction completion notification and confirm the shared context resolver
   permits the picker when the market supports planetary conditions;
 - add a condition;
-- confirm condition color/state updates in the chooser;
+- confirm condition colour/state updates in the chooser;
 - save and reload;
 - confirm the condition persists.
 
@@ -548,7 +548,7 @@ Tests:
 - click the button and confirm it opens the same chooser as
   `kmu_mcm_open`;
 - add a condition;
-- confirm condition color/state updates in the chooser;
+- confirm condition colour/state updates in the chooser;
 - confirm incompatible conditions remain present after reapply;
 - repeat on a non-player-owned colony;
 - save and reload;

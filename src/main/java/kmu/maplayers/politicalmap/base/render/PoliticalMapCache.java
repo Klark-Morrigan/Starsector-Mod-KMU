@@ -43,7 +43,7 @@ import java.util.Objects;
  * only when KMU's LunaLib settings change (detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsRevision()}) or when the geometry itself was rebuilt; between
  * those, a colony resize marks just its own system stale and drives an incremental re-shape. So
- * switching a color or dragging an opacity slider takes effect live, and the per-frame path is
+ * switching a colour or dragging an opacity slider takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
  *
  * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder is

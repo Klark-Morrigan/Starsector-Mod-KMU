@@ -91,8 +91,8 @@ public final class MarketProximityTieBreak {
                     return Double.compare(leftDistance, rightDistance);
                 }
                 return grouping
-                    .resolveColorFactionId(leftBlocId)
-                    .compareTo(grouping.resolveColorFactionId(rightBlocId));
+                    .resolveColourFactionId(leftBlocId)
+                    .compareTo(grouping.resolveColourFactionId(rightBlocId));
             }
         };
     }

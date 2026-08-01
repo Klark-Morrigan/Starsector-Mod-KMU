@@ -31,7 +31,7 @@ class KmuTooltipSectionTest {
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
-    void mockStarsectorThemeColors() {
+    void mockStarsectorThemeColours() {
         StarsectorSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getBasePlayerColor).thenReturn(BLUE);
@@ -41,7 +41,7 @@ class KmuTooltipSectionTest {
     }
 
     @AfterEach
-    void closeStarsectorThemeColors() {
+    void closeStarsectorThemeColours() {
         miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
@@ -190,20 +190,20 @@ class KmuTooltipSectionTest {
 
     private static final class HeadingCall {
         private final String title;
-        private final Color titleColor;
-        private final Color backgroundColor;
+        private final Color titleColour;
+        private final Color backgroundColour;
         private final Alignment alignment;
         private final float pad;
 
         private HeadingCall(
                 String title,
-                Color titleColor,
-                Color backgroundColor,
+                Color titleColour,
+                Color backgroundColour,
                 Alignment alignment,
                 float pad) {
             this.title = title;
-            this.titleColor = titleColor;
-            this.backgroundColor = backgroundColor;
+            this.titleColour = titleColour;
+            this.backgroundColour = backgroundColour;
             this.alignment = alignment;
             this.pad = pad;
         }
@@ -219,22 +219,22 @@ class KmuTooltipSectionTest {
             var that = (HeadingCall) other;
             return Float.compare(that.pad, pad) == 0
                     && java.util.Objects.equals(title, that.title)
-                    && java.util.Objects.equals(titleColor, that.titleColor)
-                    && java.util.Objects.equals(backgroundColor, that.backgroundColor)
+                    && java.util.Objects.equals(titleColour, that.titleColour)
+                    && java.util.Objects.equals(backgroundColour, that.backgroundColour)
                     && alignment == that.alignment;
         }
 
         @Override
         public int hashCode() {
-            return java.util.Objects.hash(title, titleColor, backgroundColor, alignment, pad);
+            return java.util.Objects.hash(title, titleColour, backgroundColour, alignment, pad);
         }
 
         @Override
         public String toString() {
             return "HeadingCall{"
                     + "title='" + title + '\''
-                    + ", titleColor=" + titleColor
-                    + ", backgroundColor=" + backgroundColor
+                    + ", titleColour=" + titleColour
+                    + ", backgroundColour=" + backgroundColour
                     + ", alignment=" + alignment
                     + ", pad=" + pad
                     + '}';
@@ -244,12 +244,12 @@ class KmuTooltipSectionTest {
     private static final class ParagraphCall {
         private final String text;
         private final float pad;
-        private final Color color;
+        private final Color colour;
 
-        private ParagraphCall(String text, float pad, Color color) {
+        private ParagraphCall(String text, float pad, Color colour) {
             this.text = text;
             this.pad = pad;
-            this.color = color;
+            this.colour = colour;
         }
 
         @Override
@@ -263,12 +263,12 @@ class KmuTooltipSectionTest {
             var that = (ParagraphCall) other;
             return Float.compare(that.pad, pad) == 0
                     && java.util.Objects.equals(text, that.text)
-                    && java.util.Objects.equals(color, that.color);
+                    && java.util.Objects.equals(colour, that.colour);
         }
 
         @Override
         public int hashCode() {
-            return java.util.Objects.hash(text, pad, color);
+            return java.util.Objects.hash(text, pad, colour);
         }
 
         @Override
@@ -276,7 +276,7 @@ class KmuTooltipSectionTest {
             return "ParagraphCall{"
                     + "text='" + text + '\''
                     + ", pad=" + pad
-                    + ", color=" + color
+                    + ", colour=" + colour
                     + '}';
         }
     }

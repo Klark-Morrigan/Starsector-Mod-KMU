@@ -1,6 +1,6 @@
 package kmu.conditions.ui.picker.render;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 
@@ -9,33 +9,33 @@ import java.util.Objects;
 
 enum KmuConditionIconButtonStyle {
     DEFAULT(
-        StarsectorUiColor.DARK_BLUE,
-        StarsectorUiColor.LIGHT_BLUE,
+        StarsectorUiColour.DARK_BLUE,
+        StarsectorUiColour.LIGHT_BLUE,
         0.28f,
         0.18f),
     VISIBLE_PRESENT(
-        StarsectorUiColor.DARK_GREEN,
-        StarsectorUiColor.BRIGHT_GREEN,
+        StarsectorUiColour.DARK_GREEN,
+        StarsectorUiColour.BRIGHT_GREEN,
         0.28f,
         0.42f),
     SUPPRESSED(
-        StarsectorUiColor.MUTED_RED,
-        StarsectorUiColor.BRIGHT_RED,
+        StarsectorUiColour.MUTED_RED,
+        StarsectorUiColour.BRIGHT_RED,
         0.34f,
         0.50f);
 
-    private final StarsectorUiColor backdropColor;
-    private final StarsectorUiColor borderColor;
+    private final StarsectorUiColour backdropColour;
+    private final StarsectorUiColour borderColour;
     private final float backdropAlpha;
     private final float borderAlpha;
 
     KmuConditionIconButtonStyle(
-            StarsectorUiColor backdropColor,
-            StarsectorUiColor borderColor,
+            StarsectorUiColour backdropColour,
+            StarsectorUiColour borderColour,
             float backdropAlpha,
             float borderAlpha) {
-        this.backdropColor = backdropColor;
-        this.borderColor = borderColor;
+        this.backdropColour = backdropColour;
+        this.borderColour = borderColour;
         this.backdropAlpha = backdropAlpha;
         this.borderAlpha = borderAlpha;
     }
@@ -51,12 +51,12 @@ enum KmuConditionIconButtonStyle {
         return DEFAULT;
     }
 
-    Color getBackdropColor() {
-        return backdropColor.resolve();
+    Color getBackdropColour() {
+        return backdropColour.resolve();
     }
 
-    Color getBorderColor() {
-        return borderColor.resolve();
+    Color getBorderColour() {
+        return borderColour.resolve();
     }
 
     float getBackdropAlpha() {
@@ -67,11 +67,11 @@ enum KmuConditionIconButtonStyle {
         return borderAlpha;
     }
 
-    StarsectorUiColor getBackdropRawColor() {
-        return backdropColor;
+    StarsectorUiColour getBackdropRawColour() {
+        return backdropColour;
     }
 
-    StarsectorUiColor getBorderRawColor() {
-        return borderColor;
+    StarsectorUiColour getBorderRawColour() {
+        return borderColour;
     }
 }

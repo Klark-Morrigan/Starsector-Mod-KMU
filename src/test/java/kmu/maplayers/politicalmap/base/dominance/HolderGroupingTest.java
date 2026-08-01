@@ -27,8 +27,8 @@ class HolderGroupingTest {
         }
 
         @Test
-        void colorsEveryBlocAsItself() {
-            assertThat(HolderGrouping.identity().resolveColorFactionId("hegemony"))
+        void coloursEveryBlocAsItself() {
+            assertThat(HolderGrouping.identity().resolveColourFactionId("hegemony"))
                     .isEqualTo("hegemony");
         }
 
@@ -54,17 +54,17 @@ class HolderGroupingTest {
     }
 
     @Nested
-    class ResolveColorFactionId {
+    class ResolveColourFactionId {
 
         @Test
         void namesTheAlliancesDominantMember() {
-            assertThat(allianceGrouping().resolveColorFactionId("alliance-1"))
+            assertThat(allianceGrouping().resolveColourFactionId("alliance-1"))
                     .isEqualTo("hegemony");
         }
 
         @Test
-        void colorsAFactionBlocAsItself() {
-            assertThat(allianceGrouping().resolveColorFactionId("tritachyon"))
+        void coloursAFactionBlocAsItself() {
+            assertThat(allianceGrouping().resolveColourFactionId("tritachyon"))
                     .isEqualTo("tritachyon");
         }
     }

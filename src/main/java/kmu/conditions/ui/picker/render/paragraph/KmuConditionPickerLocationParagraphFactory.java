@@ -1,6 +1,6 @@
 package kmu.conditions.ui.picker.render.paragraph;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 
@@ -40,18 +40,18 @@ public final class KmuConditionPickerLocationParagraphFactory {
         Objects.requireNonNull(model, "model");
 
         var location = model.getLocation();
-        var highlightColor = StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve();
-        var defaultTextColor = StarsectorUiColor.VANILLA_TEXT.resolve();
+        var highlightColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
+        var defaultTextColour = StarsectorUiColour.VANILLA_TEXT.resolve();
 
-        var planetLine = buildPlanetLine(location, highlightColor, defaultTextColor);
-        var systemLine = buildSystemLine(location, highlightColor);
-        var constellationLine = buildConstellationLine(location, highlightColor);
+        var planetLine = buildPlanetLine(location, highlightColour, defaultTextColour);
+        var systemLine = buildSystemLine(location, highlightColour);
+        var constellationLine = buildConstellationLine(location, highlightColour);
 
         var result = new ArrayList<HighlightedParagraph>();
         result.add(buildHeaderLine());
 
         if (!planetLine.isPresent() && !systemLine.isPresent() && !constellationLine.isPresent()) {
-            result.add(buildUnknownLine(highlightColor));
+            result.add(buildUnknownLine(highlightColour));
             return result;
         }
 
@@ -65,20 +65,20 @@ public final class KmuConditionPickerLocationParagraphFactory {
     private static HighlightedParagraph buildHeaderLine() {
         return new HighlightedParagraph(
             KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION),
-            StarsectorUiColor.VANILLA_GRAY.resolve());
+            StarsectorUiColour.VANILLA_GRAY.resolve());
     }
 
-    private static HighlightedParagraph buildUnknownLine(Color highlightColor) {
+    private static HighlightedParagraph buildUnknownLine(Color highlightColour) {
         var unknown = KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION_UNKNOWN);
         return new HighlightedParagraph(
             unknown,
-            new Highlight(unknown, highlightColor));
+            new Highlight(unknown, highlightColour));
     }
 
     private static Optional<HighlightedParagraph> buildPlanetLine(
             KmuConditionPickerLocation location,
-            Color highlightColor,
-            Color defaultTextColor) {
+            Color highlightColour,
+            Color defaultTextColour) {
 
         var segments = new ArrayList<String>();
         var highlights = new ArrayList<Highlight>();
@@ -90,7 +90,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
             highlights.add(new Highlight(
                 location.getPlanetName().get(),
-                highlightColor));
+                highlightColour));
         }
 
         location.getFaction().ifPresent(faction -> {
@@ -99,12 +99,12 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
             highlights.add(new Highlight(
                 faction.getName(),
-                faction.getColor().orElse(defaultTextColor)));
+                faction.getColour().orElse(defaultTextColour)));
 
             faction.getRelationshipDescription().ifPresent(rel ->
                 highlights.add(new Highlight(
                     rel,
-                    faction.getRelationshipColor().orElse(defaultTextColor))));
+                    faction.getRelationshipColour().orElse(defaultTextColour))));
         });
 
         if (segments.isEmpty()) {
@@ -117,7 +117,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
     private static Optional<HighlightedParagraph> buildSystemLine(
             KmuConditionPickerLocation location,
-            Color highlightColor) {
+            Color highlightColour) {
 
         if (!location.getStarSystemName().isPresent()) {
             return Optional.empty();
@@ -131,11 +131,11 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
         highlights.add(new Highlight(
             location.getStarSystemName().get(),
-            highlightColor));
+            highlightColour));
 
         gravityWellName.ifPresent(name -> highlights.add(new Highlight(
             name,
-            highlightColor)));
+            highlightColour)));
 
         return text.map(t -> new HighlightedParagraph(
             t,
@@ -144,10 +144,10 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
     private static Optional<HighlightedParagraph> buildConstellationLine(
             KmuConditionPickerLocation location,
-            Color highlightColor) {
+            Color highlightColour) {
 
         return location.getConstellationName().map(name ->
-            new HighlightedParagraph(name, new Highlight(name, highlightColor)));
+            new HighlightedParagraph(name, new Highlight(name, highlightColour)));
     }
 
     private static Optional<String> buildOwnershipSegment(KmuPickerFaction faction) {

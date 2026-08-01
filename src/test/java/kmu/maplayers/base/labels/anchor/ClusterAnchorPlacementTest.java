@@ -48,11 +48,11 @@ final class ClusterAnchorPlacementTest {
 
     // The shade the injected resolver hands every cluster, so a test can tell the carried
     // colour apart from any default.
-    private static final Color LABEL_COLOR = Color.RED;
+    private static final Color LABEL_COLOUR = Color.RED;
 
     // The colour seam the geometry tests run under: one shade for every owner, since
     // none of them assert on colour.
-    private static final Function<String, Color> FIXED_LABEL_COLORS = owner -> LABEL_COLOR;
+    private static final Function<String, Color> FIXED_LABEL_COLOURS = owner -> LABEL_COLOUR;
 
     // The grouping the anchor search traces under: each cell drawing as its own star (identity
     // draws-as over the group-key map's cells, all grouped cluster members here), keyed by the
@@ -456,12 +456,12 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCarriesTheInjectedColorForTheClustersGroupingKey() {
+        void computeClusterAnchorsCarriesTheInjectedColourForTheClustersGroupingKey() {
             // The shade a name and its dot draw in is resolved outside the search and looked
             // up by the same key the name is: the search only carries it onto the anchor, so
             // it never has to know what makes one cluster's colour differ from another's.
             var askedGroupKeys = new ArrayList<String>();
-            Function<String, Color> recordingColors = owner -> {
+            Function<String, Color> recordingColours = owner -> {
                 askedGroupKeys.add(owner);
                 return Color.MAGENTA;
             };
@@ -469,10 +469,10 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0), 
-                    new ClusterLabelResolvers(recordingColors, slenderNameEstimators()));
+                    new ClusterLabelResolvers(recordingColours, slenderNameEstimators()));
 
             assertThat(askedGroupKeys).containsExactly(GROUP_KEY);
-            assertThat(anchors.get(0).color()).isEqualTo(Color.MAGENTA);
+            assertThat(anchors.get(0).colour()).isEqualTo(Color.MAGENTA);
         }
 
         @Test
@@ -620,7 +620,7 @@ final class ClusterAnchorPlacementTest {
         private static ClusterLabelResolvers createLabelResolvers(
                 Function<String, LabelLengthEstimator> nameEstimators) {
 
-            return new ClusterLabelResolvers(FIXED_LABEL_COLORS, nameEstimators);
+            return new ClusterLabelResolvers(FIXED_LABEL_COLOURS, nameEstimators);
         }
 
         // A tuning with the fixture's border-trace pair baked in, sized for the slender

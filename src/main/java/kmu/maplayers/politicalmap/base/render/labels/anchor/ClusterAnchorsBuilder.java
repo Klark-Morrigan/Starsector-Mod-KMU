@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
+import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -91,7 +92,7 @@ public final class ClusterAnchorsBuilder {
 
         // The desaturation palette is handed in already resolved - off the production build's
         // drawables, or by the debug path from the same profile seam - so a desaturated bloc's
-        // name matches its recolored fill and border exactly without re-reading the profile here.
+        // name matches its recoloured fill and border exactly without re-reading the profile here.
         // The style decision every label follows is the same one the fills read
         // (BlocStyleResolver.resolveBlocStyleDecision), cached per bloc since the colour
         // resolver reads both halves of it - the independent-style test and the adjustment:
@@ -112,17 +113,18 @@ public final class ClusterAnchorsBuilder {
             geometryCache.getSiteBySystemId(),
             cellGrouping,
             LabelAnchorSpecification.readFromLunaSettings(),
-            ClusterLabelStyling.newLabelColorResolver(
-                ownerBySystemId,
-                BlocNameStyles.readFromLunaSettings(),
-                styleDecisionByBlocId,
-                styling.desaturationPalette()),
-            ClusterLabelStyling.newNameEstimatorResolver(
-                sector,
-                viewGrouping.view(),
-                viewGrouping.grouping(),
-                filter.isFiltering(),
-                filter.selectedBlocId())));
+            new ClusterLabelResolvers(
+                ClusterLabelStyling.newLabelColourResolver(
+                    ownerBySystemId,
+                    BlocNameStyles.readFromLunaSettings(),
+                    styleDecisionByBlocId,
+                    styling.desaturationPalette()),
+                ClusterLabelStyling.newNameEstimatorResolver(
+                    sector,
+                    viewGrouping.view(),
+                    viewGrouping.grouping(),
+                    filter.isFiltering(),
+                    filter.selectedBlocId()))));
     }
 
     // The rebuild for a path with no holder map at hand - the debug border-tracing view,

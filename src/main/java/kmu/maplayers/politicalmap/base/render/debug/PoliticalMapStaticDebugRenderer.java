@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.debug;
 
-import kmlib.opengl.GlColor;
+import kmlib.opengl.GlColour;
 import kmlib.opengl.GlRuns;
 
 import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
@@ -31,7 +31,7 @@ import java.util.List;
  */
 public final class PoliticalMapStaticDebugRenderer {
     // Widths taper so each earlier stage's line haloes out from under the next: the base is
-    // widest, the rounded thinnest and on top. The stage colors come from the shared
+    // widest, the rounded thinnest and on top. The stage colours come from the shared
     // {@link DiagnosticPalette}: the base trace is superseded geometry (red), the despiked
     // border a mid-pipeline view (yellow), and the rounded border what ships (green).
     private static final float BASE_WIDTH = 5f;
@@ -57,29 +57,52 @@ public final class PoliticalMapStaticDebugRenderer {
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-        // Bottom to top: base under despiked under rounded, so the final rounded outline
-        // reads on top and the earlier stages halo out from under it.
-        drawStage(debug.baseLoops(), DiagnosticPalette.DISCARDED_COLOR, BASE_WIDTH,
-                factor, alphaMult);
-        drawStage(debug.despikedLoops(), DiagnosticPalette.INTERMEDIATE_COLOR, DESPIKED_WIDTH,
-                factor, alphaMult);
-        drawStage(debug.roundedLoops(), DiagnosticPalette.ACCEPTED_COLOR, ROUNDED_WIDTH,
-                factor, alphaMult);
+        // Drawn in list order, so the last stage lands on top and the earlier ones halo out
+        // from under it; the view transform is the same for every stage.
+        for (var stage : listStagesBottomToTop(debug)) {
+            drawStage(stage, factor, alphaMult);
+        }
 
         GL11.glPopAttrib();
     }
 
-    // Strokes one stage's loops in its color and width; each loop is a closed ring, so it
+    // Strokes one stage's loops in its colour and width; each loop is a closed ring, so it
     // draws as a GL_LINE_LOOP. An empty stage - its pass was gated off - draws nothing.
-    private static void drawStage(List<float[]> loops, Color color, float width, float factor,
-            float alphaMult) {
-        if (loops.isEmpty()) {
+    private static void drawStage(DebugStage stage, float factor, float alphaMult) {
+        if (stage.loopRuns().isEmpty()) {
             return;
         }
-        GL11.glLineWidth(width);
-        GlColor.set(color, alphaMult);
-        for (var loop : loops) {
-            GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
+        GL11.glLineWidth(stage.lineWidth());
+        GlColour.set(stage.strokeColour(), alphaMult);
+
+        for (var loopRun : stage.loopRuns()) {
+            GlRuns.drawScaled(GL11.GL_LINE_LOOP, loopRun, factor);
         }
+    }
+
+    // The stack order as data - base under despiked under rounded - so the layering, the
+    // colour ramp and the width taper are read off one list instead of three call sites.
+    private static List<DebugStage> listStagesBottomToTop(PoliticalMapDebugTerritories debug) {
+        return List.of(
+            new DebugStage(
+                debug.baseLoops(),
+                DiagnosticPalette.DISCARDED_COLOUR,
+                BASE_WIDTH),
+            new DebugStage(
+                debug.despikedLoops(),
+                DiagnosticPalette.INTERMEDIATE_COLOUR,
+                DESPIKED_WIDTH),
+            new DebugStage(
+                debug.roundedLoops(),
+                DiagnosticPalette.ACCEPTED_COLOUR,
+                ROUNDED_WIDTH));
+    }
+
+    // One smoothing stage's stroke: the loops to draw plus how this stage is distinguished
+    // from the ones under and over it.
+    private record DebugStage(
+        List<float[]> loopRuns,
+        Color strokeColour,
+        float lineWidth) {
     }
 }

@@ -9,7 +9,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
 /**
  * Marks a decivilised colony's system politics-stale, so a colony that dies mid
- * play drops its faction color and repaints neutral at once rather than only on
+ * play drops its faction colour and repaints neutral at once rather than only on
  * reload.
  *
  * <p>Decivilisation strips the owning faction - the engine turns the market

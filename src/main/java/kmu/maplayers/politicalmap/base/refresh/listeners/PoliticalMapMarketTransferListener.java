@@ -19,7 +19,7 @@ import exerelin.utilities.InvasionListener;
 /**
  * Marks a conquered colony's system politics-stale when Nexerelin transfers its
  * holding, so a colony that changes hands in a Nex invasion or war repaints its
- * new faction color live rather than only on reload.
+ * new faction colour live rather than only on reload.
  *
  * <p>A market changing holder is the central political-map event - it is how war
  * redraws borders - but vanilla fires no holding-transfer listener, so the

@@ -14,7 +14,7 @@ import java.util.List;
  * solid part as a GL_TRIANGLES soup ([x, y, x, y, ...], empty when the fill is "No color");
  * {@code borderLoops} is the whole cluster's boundary as GL_LINE_LOOP runs (empty when the border
  * is "No color") - one loop per disjoint cluster and per enclave, with any narrow-neck
- * self-crossing resolved away. Each {@link UiElementPaint} carries that element's color and
+ * self-crossing resolved away. Each {@link UiElementPaint} carries that element's colour and
  * opacity and reports whether it is hidden, so the draw pass skips what shows nothing.
  *
  * <p>A bloc whose systems do not all fill solid splits its one bordered footprint into up to

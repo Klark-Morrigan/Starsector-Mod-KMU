@@ -254,9 +254,9 @@ final class ClusterAnchorsBuilderTest {
             // The clusters come back in first-seen cell order, so the fused pair leads and the
             // rival follows - each carrying the shade its own holder resolved to rather than one
             // shared pick, which is the whole point of resolving colour per bloc.
-            assertThat(anchors.get(0).color())
+            assertThat(anchors.get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
-            assertThat(anchors.get(1).color())
+            assertThat(anchors.get(1).colour())
                 .isEqualTo(TRITACHYON_PRIMARY);
         }
 
@@ -278,7 +278,7 @@ final class ClusterAnchorsBuilderTest {
                         new BlocStyleAdjustment(FULL_OPACITY, true),
                         Set.of())));
 
-            assertThat(anchors.get(0).color())
+            assertThat(anchors.get(0).colour())
                 .isEqualTo(Color.GREEN);
         }
 
@@ -357,7 +357,7 @@ final class ClusterAnchorsBuilderTest {
 
             assertThat(anchors)
                 .hasSize(2);
-            assertThat(anchors.get(0).color())
+            assertThat(anchors.get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
         }
 

@@ -36,8 +36,8 @@ dim entries are not. Clicking any entry adds that trait to the planet.
 - Support opening the screen from the faction colonies/outposts ledger.
 - Allow editing any colony the screen can inspect, regardless of ownership.
 - List every loaded market condition whose spec is planetary.
-- Show present conditions with normal UI coloring.
-- Show absent conditions with darkened UI coloring.
+- Show present conditions with normal UI colouring.
+- Show absent conditions with darkened UI colouring.
 - Attach condition tooltips to the entries.
 - Add the clicked condition to the market without removing conflicts,
   incompatible conditions, or same-group conditions.

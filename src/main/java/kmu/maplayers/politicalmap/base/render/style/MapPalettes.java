@@ -3,9 +3,9 @@ package kmu.maplayers.politicalmap.base.render.style;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.color.Colors;
+import kmlib.colour.Colours;
 import kmlib.starsector.factions.FactionPalette;
-import kmlib.starsector.factions.StarsectorFactionColors;
+import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.theme.ElementPaint;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
@@ -38,9 +38,9 @@ public final class MapPalettes {
             DominantHolder holder,
             FactionPalette desaturationPalette) {
         return resolveEffectivePalette(
-                adjustment,
-                new FactionPalette(holder.primaryColor(), holder.secondaryColor()),
-                desaturationPalette);
+            adjustment,
+            new FactionPalette(holder.primaryColour(), holder.secondaryColour()),
+            desaturationPalette);
     }
 
     /**
@@ -72,16 +72,17 @@ public final class MapPalettes {
      * styles stay free of casts and a selection that is absent - the no-colour state - or belongs
      * to another layer's option set resolves to no shade instead of reaching the switch at all.
      */
-    public static Color pickPaletteColor(
+    public static Color pickPaletteColour(
             ElementPaint choice,
-            Color primaryColor,
-            Color secondaryColor) {
+            Color primaryColour,
+            Color secondaryColour) {
+
         if (!(choice instanceof FactionPaletteShade shade)) {
             return null;
         }
         return switch (shade) {
-            case PRIMARY -> primaryColor;
-            case SECONDARY -> secondaryColor;
+            case PRIMARY -> primaryColour;
+            case SECONDARY -> secondaryColour;
         };
     }
 
@@ -96,13 +97,13 @@ public final class MapPalettes {
      * now". The two diverge under a recede: ground the map has sunk to grey still belongs to
      * its holder, and an element whose whole job is to name that holder should say so.
      */
-    public static Color pickHolderPaletteColor(
+    public static Color pickHolderPaletteColour(
             ElementPaint choice,
             DominantHolder holder,
-            Color neutralColor) {
+            Color neutralColour) {
         return holder == null
-                ? pickPaletteColor(choice, neutralColor, neutralColor)
-                : pickPaletteColor(choice, holder.primaryColor(), holder.secondaryColor());
+            ? pickPaletteColour(choice, neutralColour, neutralColour)
+            : pickPaletteColour(choice, holder.primaryColour(), holder.secondaryColour());
     }
 
     /**
@@ -121,9 +122,10 @@ public final class MapPalettes {
             SectorAPI sector,
             double darkeningStrength) {
         var keepFactor = (float) (1.0 - darkeningStrength);
-        var independent = StarsectorFactionColors.resolvePalette(sector, Factions.INDEPENDENT);
+        var independent = StarsectorFactionColours.resolvePalette(sector, Factions.INDEPENDENT);
+
         return new FactionPalette(
-                Colors.darken(independent.primaryColor(), keepFactor),
-                Colors.darken(independent.secondaryColor(), keepFactor));
+            Colours.darken(independent.primaryColour(), keepFactor),
+            Colours.darken(independent.secondaryColour(), keepFactor));
     }
 }

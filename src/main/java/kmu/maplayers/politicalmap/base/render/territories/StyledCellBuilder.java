@@ -133,11 +133,11 @@ public final class StyledCellBuilder {
                 category,
                 territories.getRecedeAdjustment());
 
-        var neutralColor = territories.getNeutralColor();
+        var neutralColour = territories.getNeutralColour();
         var palette = MapPalettes.resolveEffectivePalette(
-                adjustment,
-                new FactionPalette(neutralColor, neutralColor),
-                territories.getDesaturationPalette());
+            adjustment,
+            new FactionPalette(neutralColour, neutralColour),
+            territories.getDesaturationPalette());
 
         var outline = resolveOutlineOf(
                 shaped,
@@ -165,11 +165,11 @@ public final class StyledCellBuilder {
             BlocStyleAdjustment adjustment) {
 
         return new UiElementPaint(
-                MapPalettes.pickPaletteColor(
-                        element.color(),
-                        palette.primaryColor(),
-                        palette.secondaryColor()),
-                adjustment.muteOpacity(element.opacity()));
+            MapPalettes.pickPaletteColour(
+                element.colour(),
+                palette.primaryColour(),
+                palette.secondaryColour()),
+            adjustment.muteOpacity(element.opacity()));
     }
 
     // The ring a factionless cell strokes and fills from: its inset outline, corner-rounded when

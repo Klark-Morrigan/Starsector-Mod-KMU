@@ -1,6 +1,6 @@
 package kmu.maplayers.base.labels;
 
-import kmlib.color.Colors;
+import kmlib.colour.Colours;
 
 import kmu.diagnostics.KmuProfiling;
 
@@ -57,7 +57,7 @@ public final class LabelRenderer {
         for (var label : labels) {
             // Refade the label to the frame's alpha so it dims in step with the cluster
             // it sits on; scaleAlpha keeps a copy, so the cached base colour is untouched.
-            label.text().setBaseColor(Colors.scaleAlpha(label.baseColor(), alphaMult));
+            label.text().setBaseColor(Colours.scaleAlpha(label.baseColour(), alphaMult));
             label.text().drawAtAngle(label.hangX(), label.hangY(), label.slantDegrees());
         }
         GL11.glPopMatrix();

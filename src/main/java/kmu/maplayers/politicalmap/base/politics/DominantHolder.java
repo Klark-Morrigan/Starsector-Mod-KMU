@@ -8,25 +8,25 @@ import java.util.Map;
 
 /**
  * The faction holding a star system on the political map, paired with the two
- * palette colors its cell can draw in.
+ * palette colours its cell can draw in.
  *
  * <p>The render-ready output of the holder pipeline: {@link SectorPolitics}
  * resolves the dominant faction and its palette into this value, so the render
  * layer consumes a plain holder and never reaches into the economy or touches
- * {@code FactionAPI}. The two colors are the faction's own authored UI shades -
- * {@link #primaryColor()} its bright color, {@link #secondaryColor()} its dark
- * color - and the player points each map element (fill, outer border, inner seam)
- * at one of them through the "Faction ... color" settings. Naming them by palette
+ * {@code FactionAPI}. The two colours are the faction's own authored UI shades -
+ * {@link #primaryColour()} its bright colour, {@link #secondaryColour()} its dark
+ * colour - and the player points each map element (fill, outer border, inner seam)
+ * at one of them through the "Faction ... colour" settings. Naming them by palette
  * slot rather than by element keeps the record neutral about which element uses
  * which, since that pairing is the player's choice. Retaining the id beside the
- * colors keeps the holder available for per-holder styling (dimming independent-held
+ * colours keeps the holder available for per-holder styling (dimming independent-held
  * space, for one) and later per-holder behaviour, decided off the same dominance the
  * fill was.
  */
 public record DominantHolder(
     String factionId,
-    Color primaryColor,
-    Color secondaryColor) {
+    Color primaryColour,
+    Color secondaryColour) {
 
     /**
      * Maps each owned system to its dominant-faction id - the per-system holder the

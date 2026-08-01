@@ -131,7 +131,7 @@ For the KMU report this is the gold-standard seam: enumerate
 everything KMU needs per-factor:
 
 - `getId()`
-- `getNameForThreatList(boolean first)` and `getNameColorForThreatList()`
+- `getNameForThreatList(boolean first)` and `getNameColourForThreatList()`
 - `getEffectMagnitude(StarSystemAPI)` -> per-system intensity
 - `getMaxNumFleets(StarSystemAPI)`, `getSpawnFrequency(StarSystemAPI)`
 - `getEventFrequency(HostileActivityEventIntel, BaseEventIntel.EventStageData)`
@@ -313,7 +313,7 @@ cleanly.
 - `extends BaseHostileActivityFactor`. Adds itself to the listener manager
   in its constructor (`:24`).
 - `getNameForThreatList(...)` returns `"Dustkeeper Contingency"` (`:39-:41`).
-- `getDescColor(...)` and `getNameColor(...)` pull the faction colour from
+- `getDescColour(...)` and `getNameColour(...)` pull the faction colour from
   `Global.getSector().getFaction("sotf_dustkeepers")`
   (`:46-:48`, `:64-:69`). KMU should mimic this rather than hard-coding
   a colour.

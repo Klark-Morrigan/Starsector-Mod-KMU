@@ -58,8 +58,8 @@ class FilteredPoliticsIntegrationTest {
 
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId())).isTrue();
             assertThat(filtered.contestedSystemIds()).doesNotContain("owned-system");
-            assertThat(holder.primaryColor()).isEqualTo(HEGEMONY_BRIGHT);
-            assertThat(holder.secondaryColor()).isEqualTo(dark(HEGEMONY_BRIGHT));
+            assertThat(holder.primaryColour()).isEqualTo(HEGEMONY_BRIGHT);
+            assertThat(holder.secondaryColour()).isEqualTo(dark(HEGEMONY_BRIGHT));
         }
 
         @Test
@@ -77,8 +77,8 @@ class FilteredPoliticsIntegrationTest {
 
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId())).isTrue();
             assertThat(filtered.contestedSystemIds()).contains("owned-system");
-            assertThat(holder.primaryColor()).isEqualTo(TRITACHYON_BRIGHT);
-            assertThat(holder.secondaryColor()).isEqualTo(dark(TRITACHYON_BRIGHT));
+            assertThat(holder.primaryColour()).isEqualTo(TRITACHYON_BRIGHT);
+            assertThat(holder.secondaryColour()).isEqualTo(dark(TRITACHYON_BRIGHT));
         }
 
         @Test
@@ -98,7 +98,7 @@ class FilteredPoliticsIntegrationTest {
             assertThat(holder.factionId()).isEqualTo("tritachyon");
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId())).isFalse();
             assertThat(filtered.contestedSystemIds()).doesNotContain("tritachyon-system");
-            assertThat(holder.primaryColor()).isEqualTo(TRITACHYON_BRIGHT);
+            assertThat(holder.primaryColour()).isEqualTo(TRITACHYON_BRIGHT);
         }
 
         @Test
@@ -159,7 +159,7 @@ class FilteredPoliticsIntegrationTest {
                     .ownerBySystemId().get("contested-system");
 
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId())).isTrue();
-            assertThat(holder.primaryColor()).isEqualTo(HEGEMONY_BRIGHT);
+            assertThat(holder.primaryColour()).isEqualTo(HEGEMONY_BRIGHT);
         }
 
         @Test

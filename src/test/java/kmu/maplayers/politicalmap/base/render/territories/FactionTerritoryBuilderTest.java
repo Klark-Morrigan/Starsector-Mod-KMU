@@ -163,9 +163,9 @@ final class FactionTerritoryBuilderTest {
                 HEGEMONY,
                 List.of(ISLAND_SYSTEM));
 
-            assertThat(territory.fill().color()).isEqualTo(OWNER_PRIMARY);
+            assertThat(territory.fill().colour()).isEqualTo(OWNER_PRIMARY);
             assertThat(territory.fill().alpha()).isEqualTo((float) FILL_OPACITY);
-            assertThat(territory.border().color()).isEqualTo(OWNER_SECONDARY);
+            assertThat(territory.border().colour()).isEqualTo(OWNER_SECONDARY);
             assertThat(territory.border().alpha()).isEqualTo((float) BORDER_OPACITY);
             assertThat(territory.borderWidth()).isEqualTo((float) BORDER_WIDTH);
         }

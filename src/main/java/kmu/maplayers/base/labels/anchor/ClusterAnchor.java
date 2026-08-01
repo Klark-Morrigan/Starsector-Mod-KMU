@@ -9,7 +9,7 @@ import java.util.List;
  * One system cluster's resolved label placement: where the owner's name sits, which way
  * it runs, and the wrapped lines and font size that fill it. It is both the production
  * input the cluster-name renderer draws from - {@code nameLines}, {@code fontHeight},
- * {@code (anchorX, anchorY)}, {@code color}, and {@code acceptedAxis}'s slant - and the
+ * {@code (anchorX, anchorY)}, {@code colour}, and {@code acceptedAxis}'s slant - and the
  * debug marker the "show cluster anchors" overlay draws as a dot plus up to three
  * lines. The placement search runs whenever either the names or the anchor overlay is
  * on, so the two consumers share one computation; each then draws only under its own
@@ -42,7 +42,7 @@ import java.util.List;
  * already the shallowest) the accepted line already stands in for it, so no separate
  * line is built.
  *
- * <p>{@code color} is the shade the cluster's own border resolves to - the name
+ * <p>{@code colour} is the shade the cluster's own border resolves to - the name
  * inherits the outer border's colour rather than a fixed bright pick - and it marks the
  * anchor dot too; a hidden border falls back to the owner's bright shade so the name is
  * still legible. The three debug lines instead use the renderer's fixed diagnostic
@@ -68,7 +68,7 @@ import java.util.List;
 public record ClusterAnchor(
     float anchorX,
     float anchorY,
-    Color color,
+    Color colour,
     List<String> nameLines,
     float fontHeight,
     Segment acceptedAxis,

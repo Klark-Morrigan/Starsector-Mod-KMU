@@ -38,7 +38,7 @@ import java.util.Set;
  * <p>Pure geometry over the adjacency graph and the resolved owners, using the same
  * {@link EdgeClassifier} rule the fills merge on, so a system's edge is a border in
  * exactly the cases its fill leaves a channel. Kept free of GL and of styling: it
- * hands back plain rings the render layer colors and strokes.
+ * hands back plain rings the render layer colours and strokes.
  */
 public final class SystemClusterBorders {
     // A degenerate inset (a cluster narrower than twice the channel) folds the ring

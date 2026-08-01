@@ -4,7 +4,7 @@ import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
@@ -70,7 +70,7 @@ public final class KmuConditionPickerContainer {
         if (model.isEmpty()) {
             gridBody.addPara(
                 KmuStrings.get(KmuStrings.CONDITION_MANAGER_EMPTY),
-                StarsectorUiColor.VANILLA_GRAY.resolve(),
+                StarsectorUiColour.VANILLA_GRAY.resolve(),
                 ITEM_TOP_PAD);
             return new KmuConditionPickerRenderResult(summaryLabel, summaryComponents, null);
         }

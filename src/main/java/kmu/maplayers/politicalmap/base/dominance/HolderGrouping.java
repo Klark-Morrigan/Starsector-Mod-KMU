@@ -23,18 +23,18 @@ import java.util.function.BinaryOperator;
  * identity grouping is three empty maps and every lookup falls through to the
  * faction being its own bloc.
  *
- * @param blocIdByFactionId    an allied faction id to its alliance's bloc id; a
- *                             faction absent from the map is its own bloc
- * @param colorFactionIdByBlocId an alliance bloc id to the member faction whose
- *                             palette the bloc paints in; a faction bloc is absent,
- *                             its colour faction being itself
- * @param allianceNameByBlocId an alliance bloc id to the alliance's display name; a
- *                             faction bloc is absent, so a present entry is also the
- *                             test of whether a bloc is an alliance
+ * @param blocIdByFactionId       an allied faction id to its alliance's bloc id; a
+ *                                faction absent from the map is its own bloc
+ * @param colourFactionIdByBlocId an alliance bloc id to the member faction whose
+ *                                palette the bloc paints in; a faction bloc is absent,
+ *                                its colour faction being itself
+ * @param allianceNameByBlocId    an alliance bloc id to the alliance's display name; a
+ *                                faction bloc is absent, so a present entry is also the
+ *                                test of whether a bloc is an alliance
  */
 public record HolderGrouping(
     Map<String, String> blocIdByFactionId,
-    Map<String, String> colorFactionIdByBlocId,
+    Map<String, String> colourFactionIdByBlocId,
     Map<String, String> allianceNameByBlocId) {
 
     // The faction-mode grouping: every map empty, so each faction is its own bloc,
@@ -50,7 +50,7 @@ public record HolderGrouping(
      */
     public HolderGrouping {
         blocIdByFactionId = Map.copyOf(blocIdByFactionId);
-        colorFactionIdByBlocId = Map.copyOf(colorFactionIdByBlocId);
+        colourFactionIdByBlocId = Map.copyOf(colourFactionIdByBlocId);
         allianceNameByBlocId = Map.copyOf(allianceNameByBlocId);
     }
 
@@ -121,8 +121,8 @@ public record HolderGrouping(
      * @param blocId the bloc to colour
      * @return the faction id supplying the bloc's palette
      */
-    public String resolveColorFactionId(String blocId) {
-        return colorFactionIdByBlocId.getOrDefault(blocId, blocId);
+    public String resolveColourFactionId(String blocId) {
+        return colourFactionIdByBlocId.getOrDefault(blocId, blocId);
     }
 
     /**

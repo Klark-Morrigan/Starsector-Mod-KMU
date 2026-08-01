@@ -2,7 +2,7 @@ package kmu.conditions.ui.picker.action;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 
 import java.util.Objects;
 
@@ -21,13 +21,13 @@ public final class StarsectorConditionPickerFeedbackSink implements KmuCondition
                 return;
             }
 
-            var color = feedback.isFailure()
-                ? StarsectorUiColor.VANILLA_HIGHLIGHT_RED
-                : StarsectorUiColor.VANILLA_HIGHLIGHT_GREEN;
+            var colour = feedback.isFailure()
+                ? StarsectorUiColour.VANILLA_HIGHLIGHT_RED
+                : StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN;
 
             campaignUI.addMessage(
                 feedback.getMessage(),
-                color.resolve());
+                colour.resolve());
         } catch (RuntimeException exception) {
             // Feedback must not break the editor action.
         }

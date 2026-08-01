@@ -32,7 +32,7 @@ public final class AllianceGroupingFactory {
      */
     public static HolderGrouping buildFrom(List<AllianceRecord> alliances) {
         Map<String, String> blocIdByFactionId = new HashMap<>();
-        Map<String, String> colorFactionIdByBlocId = new HashMap<>();
+        Map<String, String> colourFactionIdByBlocId = new HashMap<>();
         Map<String, String> allianceNameByBlocId = new HashMap<>();
         for (AllianceRecord alliance : alliances) {
             List<String> members = alliance.membersSortedDescending();
@@ -45,10 +45,12 @@ public final class AllianceGroupingFactory {
             for (String member : members) {
                 blocIdByFactionId.put(member, blocId);
             }
-            colorFactionIdByBlocId.put(blocId, members.get(0));
+            colourFactionIdByBlocId.put(blocId, members.get(0));
             allianceNameByBlocId.put(blocId, alliance.name());
         }
         return new HolderGrouping(
-                blocIdByFactionId, colorFactionIdByBlocId, allianceNameByBlocId);
+            blocIdByFactionId,
+            colourFactionIdByBlocId,
+            allianceNameByBlocId);
     }
 }

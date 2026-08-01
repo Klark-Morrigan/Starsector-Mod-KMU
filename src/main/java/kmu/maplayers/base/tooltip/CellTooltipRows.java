@@ -1,6 +1,6 @@
 package kmu.maplayers.base.tooltip;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.TooltipRow;
 
@@ -47,9 +47,9 @@ public final class CellTooltipRows {
             String value) {
 
         return TooltipRow
-            .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_PLAYER_BRIGHT.resolve()))
+            .createRow(new TextSpan(text, StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve()))
             .carriesCrest(crestSpritePath)
-            .carriesValue(new TextSpan(value, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve()));
+            .carriesValue(new TextSpan(value, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()));
     }
 
     /**
@@ -66,7 +66,7 @@ public final class CellTooltipRows {
             String text,
             String value) {
 
-        var textColour = StarsectorUiColor.VANILLA_TEXT.resolve();
+        var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
         return TooltipRow
             .createRow(new TextSpan(text, textColour))
             .carriesCrest(crestSpritePath)
@@ -84,7 +84,7 @@ public final class CellTooltipRows {
      * @return the run, ready to continue a line
      */
     public static TextSpan buildQualifierSpan(String text) {
-        return new TextSpan(text, StarsectorUiColor.VANILLA_HIGHLIGHT_GOLD.resolve());
+        return new TextSpan(text, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 
     /**
@@ -98,7 +98,7 @@ public final class CellTooltipRows {
      */
     public static TooltipRow.TableRow buildStandaloneRow(String text) {
         return TooltipRow
-            .createRow(new TextSpan(text, StarsectorUiColor.VANILLA_TEXT.resolve()))
+            .createRow(new TextSpan(text, StarsectorUiColour.VANILLA_TEXT.resolve()))
             .clearsCrestColumn();
     }
 }

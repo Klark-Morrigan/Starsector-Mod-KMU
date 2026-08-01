@@ -1,6 +1,6 @@
 package kmu.conditions.ui.picker.render.paragraph;
 
-import kmlib.starsector.ui.color.StarsectorUiColor;
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 
@@ -15,7 +15,7 @@ import java.util.Objects;
 /**
  * Produces the conditions summary paragraphs as two stacked lines:
  * <ol>
- *   <li>"Conditions:" header - no highlights, TEXT_WHITE base color</li>
+ *   <li>"Conditions:" header - no highlights, TEXT_WHITE base colour</li>
  *   <li>Count line - highlights for visible (green), suppressed (red),
  *       present (white), hidden (blue); available and total each in grey</li>
  * </ol>
@@ -37,22 +37,22 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         boolean hasSegment = false;
     }
 
-    /** Pairs a separator with the token text, its highlight color, and whether the separator is also highlighted. */
+    /** Pairs a separator with the token text, its highlight colour, and whether the separator is also highlighted. */
     private static final class TokenSpec {
         final String separator;
         final String token;
-        final Color color;
+        final Color colour;
         final boolean highlightSeparator;
 
-        TokenSpec(String separator, String token, Color color, boolean highlightSeparator) {
+        TokenSpec(String separator, String token, Color colour, boolean highlightSeparator) {
             this.separator = separator;
             this.token = token;
-            this.color = color;
+            this.colour = colour;
             this.highlightSeparator = highlightSeparator;
         }
 
-        TokenSpec(String separator, String token, Color color) {
-            this(separator, token, color, false);
+        TokenSpec(String separator, String token, Color colour) {
+            this(separator, token, colour, false);
         }
     }
 
@@ -66,10 +66,10 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         var available = model.getAvailableCount();
         var total = model.getEntryCount();
 
-        var green = StarsectorUiColor.VANILLA_HIGHLIGHT_GREEN.resolve();
-        var red = StarsectorUiColor.VANILLA_HIGHLIGHT_RED.resolve();
-        var lightBlue = StarsectorUiColor.LIGHT_BLUE.resolve();
-        var grey = StarsectorUiColor.VANILLA_GRAY.resolve();
+        var green = StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
+        var red = StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve();
+        var lightBlue = StarsectorUiColour.LIGHT_BLUE.resolve();
+        var grey = StarsectorUiColour.VANILLA_GRAY.resolve();
 
         var visibleToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_VISIBLE, visible);
         var suppressedToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed);
@@ -85,7 +85,7 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         if (suppressed > 0)
             appendToken(ctx, new TokenSpec(" - ", suppressedToken, red));
         if (present > 0)
-            // present is white - same as the label base color, so no highlight slot needed.
+            // present is white - same as the label base colour, so no highlight slot needed.
             appendSegment(ctx, new TokenSpec(", ", presentToken, null));
         if (hidden > 0)
             appendToken(ctx, new TokenSpec(", ", hiddenToken, lightBlue));
@@ -95,7 +95,7 @@ public final class KmuConditionPickerSummaryParagraphFactory {
 
         var headerParagraph = new HighlightedParagraph(
             KmuStrings.get(KmuStrings.CONDITION_MANAGER_SUMMARY),
-            StarsectorUiColor.VANILLA_GRAY.resolve());
+            StarsectorUiColour.VANILLA_GRAY.resolve());
             
         var countsParagraph = new HighlightedParagraph(
             ctx.sb.toString(),
@@ -112,14 +112,14 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         if (ctx.hasSegment) {
             ctx.sb.append(spec.separator);
             if (spec.highlightSeparator)
-                ctx.highlights.add(new Highlight(spec.separator, spec.color));
+                ctx.highlights.add(new Highlight(spec.separator, spec.colour));
         }
         ctx.sb.append(spec.token);
-        ctx.highlights.add(new Highlight(spec.token, spec.color));
+        ctx.highlights.add(new Highlight(spec.token, spec.colour));
         ctx.hasSegment = true;
     }
 
-    /** Appends a token with no highlight - used when the token color matches the base. */
+    /** Appends a token with no highlight - used when the token colour matches the base. */
     private static void appendSegment(AppendContext ctx, TokenSpec spec) {
         if (ctx.hasSegment) ctx.sb.append(spec.separator);
         ctx.sb.append(spec.token);

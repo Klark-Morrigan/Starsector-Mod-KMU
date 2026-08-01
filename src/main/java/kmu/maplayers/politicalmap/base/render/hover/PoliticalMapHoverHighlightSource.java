@@ -45,10 +45,10 @@ public record PoliticalMapHoverHighlightSource(PoliticalMapTerritories territori
 
     @Override
     public Color resolveHighlightColourOf(String cellId, ElementPaint paletteChoice) {
-        return MapPalettes.pickHolderPaletteColor(
-                paletteChoice,
-                territories.getHolderBySystemId().get(cellId),
-                territories.getNeutralColor());
+        return MapPalettes.pickHolderPaletteColour(
+            paletteChoice,
+            territories.getHolderBySystemId().get(cellId),
+            territories.getNeutralColour());
     }
 
     @Override

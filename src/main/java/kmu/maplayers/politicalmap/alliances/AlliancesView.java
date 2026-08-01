@@ -173,10 +173,10 @@ public final class AlliancesView implements PoliticalMapView {
             }
             // An alliance paints in its lead member's palette, so its picker row carries that
             // member's crest and reads like a faction row rather than a blank one.
-            // resolveColorFactionId names the colour (lead) faction; a member with no authored
+            // resolveColourFactionId names the colour (lead) faction; a member with no authored
             // crest leaves the row to draw its name alone, so a null path is a valid option.
-            var colorFaction = sector.getFaction(grouping.resolveColorFactionId(blocId));
-            var crestSpritePath = FactionCrests.resolveCrestPath(colorFaction);
+            var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
+            var crestSpritePath = FactionCrests.resolveCrestPath(colourFaction);
             // The name comes from the grouping via resolveName, so the format argument never
             // matters here.
             var displayName = resolveName(

@@ -29,11 +29,11 @@ public record BlocNameStyles(ElementStyle factionNameStyle, ElementStyle indepen
      */
     public static BlocNameStyles readFromLunaSettings() {
         return new BlocNameStyles(
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionOuterBorderColor()),
-                        KmuLunaSettings.getFactionNameOpacity()),
-                new ElementStyle(
-                        FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentOuterBorderColor()),
-                        KmuLunaSettings.getIndependentNameOpacity()));
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionOuterBorderColour()),
+                KmuLunaSettings.getFactionNameOpacity()),
+            new ElementStyle(
+                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentOuterBorderColour()),
+                KmuLunaSettings.getIndependentNameOpacity()));
     }
 }

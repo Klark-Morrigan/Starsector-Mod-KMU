@@ -31,7 +31,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
     private MockedStatic<Misc> miscMock;
 
     @BeforeEach
-    void mockStarsectorThemeColors() {
+    void mockStarsectorThemeColours() {
         StarsectorSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
@@ -42,7 +42,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
     }
 
     @AfterEach
-    void closeStarsectorThemeColors() {
+    void closeStarsectorThemeColours() {
         miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
@@ -59,7 +59,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
             assertThat(paragraphs.get(0).getText()).isEqualTo("Location:");
             assertThat(paragraphs.get(1).getText()).isEqualTo("Unknown");
             assertThat(paragraphs.get(1).getHighlightTexts()).containsExactly("Unknown");
-            assertThat(paragraphs.get(1).getHighlightColors()).containsExactly(GOLD);
+            assertThat(paragraphs.get(1).getHighlightColours()).containsExactly(GOLD);
         }
 
         @Test
@@ -72,11 +72,11 @@ class KmuConditionPickerLocationParagraphFactoryTest {
         }
 
         @Test
-        void locationHeaderHasGrayBaseColor() {
+        void locationHeaderHasGrayBaseColour() {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                     model(createLocation()));
 
-            assertThat(paragraphs.get(0).getBaseColor()).isEqualTo(GRAY);
+            assertThat(paragraphs.get(0).getBaseColour()).isEqualTo(GRAY);
         }
 
         @Test
@@ -207,39 +207,39 @@ class KmuConditionPickerLocationParagraphFactoryTest {
         }
 
         @Test
-        void exposesPlanetLineHighlightColors() {
+        void exposesPlanetLineHighlightColours() {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                     model(createLocation()));
 
-            assertThat(paragraphs.get(1).getHighlightColors())
+            assertThat(paragraphs.get(1).getHighlightColours())
                     .containsExactly(GOLD, FACTION, RELATIONSHIP);
         }
 
         @Test
-        void exposesSystemLineHighlightColors() {
+        void exposesSystemLineHighlightColours() {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                     model(createLocation()));
 
-            assertThat(paragraphs.get(2).getHighlightColors()).containsExactly(GOLD);
+            assertThat(paragraphs.get(2).getHighlightColours()).containsExactly(GOLD);
         }
 
         @Test
-        void exposesConstellationLineHighlightColors() {
+        void exposesConstellationLineHighlightColours() {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                     model(createLocation()));
 
-            assertThat(paragraphs.get(3).getHighlightColors()).containsExactly(GOLD);
+            assertThat(paragraphs.get(3).getHighlightColours()).containsExactly(GOLD);
         }
 
         @Test
-        void defaultsMissingFactionAndRelationshipColorsToTextWhite() {
+        void defaultsMissingFactionAndRelationshipColoursToTextWhite() {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                     model(new KmuConditionPickerLocation(
                             null, null,
                             new KmuPickerFaction("Hegemony", null, null, "Vengeful (-100 / 100)", null),
                             null, null, null, null)));
 
-            assertThat(paragraphs.get(1).getHighlightColors()).containsExactly(TEXT, TEXT);
+            assertThat(paragraphs.get(1).getHighlightColours()).containsExactly(TEXT, TEXT);
         }
     }
 

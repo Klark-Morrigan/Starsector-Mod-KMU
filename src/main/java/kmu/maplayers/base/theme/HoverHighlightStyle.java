@@ -3,7 +3,7 @@ package kmu.maplayers.base.theme;
 /**
  * How the map answers the cursor: the {@link HoverGlowStyle} halo around the hovered
  * cluster and the {@link HoverWashStyle} lift on the hovered cell, both drawn in one
- * {@code color}.
+ * {@code colour}.
  *
  * <p>One colour for both, and one taken from the hovered ground's own palette rather than a
  * fixed highlight colour, because the pair is a single answer at two scales - "this system,
@@ -17,7 +17,7 @@ package kmu.maplayers.base.theme;
  * kind of ground was under the pointer would read as the map responding unevenly.
  */
 public record HoverHighlightStyle(
-    ElementPaint color,
+    ElementPaint colour,
     HoverGlowStyle glow,
     HoverWashStyle wash) {
 }

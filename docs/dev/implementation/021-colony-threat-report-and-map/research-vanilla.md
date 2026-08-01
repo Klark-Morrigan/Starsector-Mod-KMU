@@ -232,7 +232,7 @@ captures the load-bearing bits.
 - Numeric -> human bucket: `getDanger(float)`
   (`:531-:548`) returning `WarSimScript.LocationDanger` (`NONE, MINIMAL,
   LOW, MEDIUM, HIGH, EXTREME`). Stringified by `getDangerString(...)`
-  (`:550-:576`) and coloured by `getDangerColor(...)` (`:578-:587`).
+  (`:550-:576`) and coloured by `getDangerColour(...)` (`:578-:587`).
 - Factor surfaces: `getActivityOfClass(Class)` (`:473-:479`),
   `getActivityCause(Class activity, Class cause)` (`:448-:458`),
   `getFactors()` (inherited - `BaseEventIntel.java:588-:590`).

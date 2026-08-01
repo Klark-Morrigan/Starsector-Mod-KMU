@@ -84,7 +84,7 @@ final class BlocStylingTest {
                     theme(),
                     new BlocStyleDecision(true, new BlocStyleAdjustment(1.0, true)));
 
-            assertThat(styling.style().fill().color()).isEqualTo(FactionPaletteShade.SECONDARY);
+            assertThat(styling.style().fill().colour()).isEqualTo(FactionPaletteShade.SECONDARY);
         }
 
         @Test

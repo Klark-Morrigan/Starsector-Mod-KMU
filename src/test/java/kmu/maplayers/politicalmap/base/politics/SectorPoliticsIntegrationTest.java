@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  * reading a stubbed economy through {@link KnownMarketFootprints} and the real
  * {@link SystemDominance}, then resolving the winner's palette. Exercises them
  * together because the value of the adapter is the wiring (footprint read,
- * dominance rule, color lookup), which mocking either collaborator would hide.
+ * dominance rule, colour lookup), which mocking either collaborator would hide.
  */
 class SectorPoliticsIntegrationTest {
     // The stability-only weighting rule the palette-resolving suites share; the parameterless
@@ -56,7 +56,7 @@ class SectorPoliticsIntegrationTest {
     class ResolveDominantHolderBySystemId {
 
         @Test
-        void resolveDominantHolderNamesHolderAndColorByDominantFaction() {
+        void resolveDominantHolderNamesHolderAndColourByDominantFaction() {
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = faction("tritachyon", TRITACHYON_BRIGHT);
             var sector = sectorWith("owned-system", List.of(hegemony, tritachyon),
@@ -64,8 +64,8 @@ class SectorPoliticsIntegrationTest {
 
             var holders = SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS);
 
-            // The holder carries the id the renderer styles by, the bright UI color
-            // the cell is filled and outlined in, and the dark UI color its
+            // The holder carries the id the renderer styles by, the bright UI colour
+            // the cell is filled and outlined in, and the dark UI colour its
             // interior seams are stroked in.
             assertThat(holders).containsEntry("owned-system",
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT)));

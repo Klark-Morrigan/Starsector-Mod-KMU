@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * The debug border-tracing overlay's draw lists: each smoothing stage's border loops as
- * flattened GL_LINE_LOOP runs, kept apart so the renderer can color and layer them. Built
+ * flattened GL_LINE_LOOP runs, kept apart so the renderer can colour and layer them. Built
  * in place of the normal
  * {@link kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories} while the
  * debug toggle is on.

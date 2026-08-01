@@ -42,16 +42,16 @@ final class RenderStyleReaderTest {
         @Test
         void readFactionStyleThreadsEachFactionSettingIntoItsMatchingSlot() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getFactionFillColor)
+                settingsMock.when(KmuLunaSettings::getFactionFillColour)
                         .thenReturn(FactionPaletteChoice.PRIMARY);
                 settingsMock.when(KmuLunaSettings::getFactionFillOpacity).thenReturn(FILL_OPACITY);
-                settingsMock.when(KmuLunaSettings::getFactionOuterBorderColor)
+                settingsMock.when(KmuLunaSettings::getFactionOuterBorderColour)
                         .thenReturn(FactionPaletteChoice.SECONDARY);
                 settingsMock.when(KmuLunaSettings::getFactionOuterBorderOpacity)
                         .thenReturn(OUTER_OPACITY);
                 settingsMock.when(KmuLunaSettings::getFactionOuterBorderWidth)
                         .thenReturn(OUTER_WIDTH);
-                settingsMock.when(KmuLunaSettings::getFactionInnerBorderColor)
+                settingsMock.when(KmuLunaSettings::getFactionInnerBorderColour)
                         .thenReturn(FactionPaletteChoice.NONE);
                 settingsMock.when(KmuLunaSettings::getFactionInnerBorderOpacity)
                         .thenReturn(INNER_OPACITY);
@@ -76,17 +76,17 @@ final class RenderStyleReaderTest {
         @Test
         void readIndependentStyleThreadsEachIndependentSettingIntoItsMatchingSlot() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getIndependentFillColor)
+                settingsMock.when(KmuLunaSettings::getIndependentFillColour)
                         .thenReturn(FactionPaletteChoice.SECONDARY);
                 settingsMock.when(KmuLunaSettings::getIndependentFillOpacity)
                         .thenReturn(FILL_OPACITY);
-                settingsMock.when(KmuLunaSettings::getIndependentOuterBorderColor)
+                settingsMock.when(KmuLunaSettings::getIndependentOuterBorderColour)
                         .thenReturn(FactionPaletteChoice.PRIMARY);
                 settingsMock.when(KmuLunaSettings::getIndependentOuterBorderOpacity)
                         .thenReturn(OUTER_OPACITY);
                 settingsMock.when(KmuLunaSettings::getIndependentOuterBorderWidth)
                         .thenReturn(OUTER_WIDTH);
-                settingsMock.when(KmuLunaSettings::getIndependentInnerBorderColor)
+                settingsMock.when(KmuLunaSettings::getIndependentInnerBorderColour)
                         .thenReturn(FactionPaletteChoice.NONE);
                 settingsMock.when(KmuLunaSettings::getIndependentInnerBorderOpacity)
                         .thenReturn(INNER_OPACITY);
@@ -109,7 +109,7 @@ final class RenderStyleReaderTest {
     class ReadDecivilisedStyle {
 
         @Test
-        void readDecivilisedStyleDrawsTheFillAndOutlineInTheNeutralColor() {
+        void readDecivilisedStyleDrawsTheFillAndOutlineInTheNeutralColour() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
                 settingsMock.when(KmuLunaSettings::getDecivilisedFillOpacity)
                         .thenReturn(NEUTRAL_FILL_OPACITY);
@@ -155,7 +155,7 @@ final class RenderStyleReaderTest {
     class ReadUninhabitedStyle {
 
         @Test
-        void readUninhabitedStyleDrawsTheOutlineInTheNeutralColorWhenTheSidebarToggleIsOn() {
+        void readUninhabitedStyleDrawsTheOutlineInTheNeutralColourWhenTheSidebarToggleIsOn() {
             // The on/off comes from the sidebar preference rather than a settings field, so this
             // category reads two sources; both are stubbed so neither can satisfy the assertion
             // alone.
@@ -196,7 +196,7 @@ final class RenderStyleReaderTest {
                 // sole difference from the drawn case is the slot. Off reaches the theme as an
                 // absent selection rather than as a named "No color", since the tier reads
                 // absence as "paints nothing" without knowing this map's option set.
-                assertThat(style.outer().color()).isNull();
+                assertThat(style.outer().colour()).isNull();
                 assertThat(style.outer().opacity()).isEqualTo(NEUTRAL_OPACITY);
                 assertThat(style.outerWidth()).isEqualTo(NEUTRAL_WIDTH);
             }
@@ -312,7 +312,7 @@ final class RenderStyleReaderTest {
         @Test
         void readHoverHighlightStyleThreadsEachHoverSettingIntoItsMatchingSlot() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverHighlightColor)
+                settingsMock.when(KmuLunaSettings::getPoliticalMapHoverHighlightColour)
                         .thenReturn(FactionPaletteChoice.SECONDARY);
                 settingsMock.when(KmuLunaSettings::getPoliticalMapHoverGlowOpacity)
                         .thenReturn(GLOW_OPACITY);
@@ -333,7 +333,7 @@ final class RenderStyleReaderTest {
 
                 var hover = RenderStyleReader.readHoverHighlightStyle();
 
-                assertThat(hover.color()).isEqualTo(FactionPaletteShade.SECONDARY);
+                assertThat(hover.colour()).isEqualTo(FactionPaletteShade.SECONDARY);
                 assertThat(hover.glow().opacity()).isEqualTo(GLOW_OPACITY);
                 assertThat(hover.glow().width()).isEqualTo(GLOW_WIDTH);
                 assertThat(hover.glow().layers()).isEqualTo(GLOW_LAYERS);

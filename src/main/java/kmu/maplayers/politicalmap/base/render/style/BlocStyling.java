@@ -57,12 +57,12 @@ public record BlocStyling(CategoryStyle style, BlocStyleAdjustment adjustment) {
             return independentStyle;
         }
         return new CategoryStyle(
-                new ElementStyle(
-                        independentStyle.fill().color(),
-                        factionStyle.fill().opacity()),
-                independentStyle.outer(),
-                independentStyle.outerWidth(),
-                independentStyle.inner(),
-                independentStyle.innerWidth());
+            new ElementStyle(
+                independentStyle.fill().colour(),
+                factionStyle.fill().opacity()),
+            independentStyle.outer(),
+            independentStyle.outerWidth(),
+            independentStyle.inner(),
+            independentStyle.innerWidth());
     }
 }
