@@ -62,8 +62,14 @@ public final class KnownMarketFootprints {
      *         when the system holds no known owned market
      */
     public static Map<String, MarketFootprint> readByFaction(
-            SectorAPI sector, StarSystemAPI system, DominanceRules rules) {
-        return readByFaction(sector, system, rules, false);
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominanceRules rules) {
+        return readByFaction(
+            sector,
+            system,
+            rules,
+            false); // Undiscovered markets are not included.
     }
 
     /**
@@ -98,13 +104,22 @@ public final class KnownMarketFootprints {
             StarSystemAPI system,
             DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
+
         // The dominance-only projection of the fuller contribution read: a footprint-only caller
         // (the dominance resolve, the watcher's diff) drops the raw market size the picker's stats
         // need, so both share the one market walk and colony filter rather than defining a second.
         var footprintByFactionId = new LinkedHashMap<String, MarketFootprint>();
+
         for (var entry : readContributionsByFaction(
-                sector, system, rules, shouldIncludeUndiscoveredMarkets).entrySet()) {
-            footprintByFactionId.put(entry.getKey(), entry.getValue().footprint());
+                    sector,
+                    system,
+                    rules,
+                    shouldIncludeUndiscoveredMarkets)
+                .entrySet()) {
+
+            footprintByFactionId.put(
+                entry.getKey(),
+                entry.getValue().footprint());
         }
         return footprintByFactionId;
     }
@@ -135,19 +150,27 @@ public final class KnownMarketFootprints {
             StarSystemAPI system,
             DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
+
         var contributionByFactionId = new LinkedHashMap<String, FactionMarketContribution>();
         for (var market : sector.getEconomy().getMarkets(system)) {
             if (!Markets.isCountedAsColony(market, shouldIncludeUndiscoveredMarkets)) {
                 continue;
             }
             var factionId = market.getFaction().getId();
+
             // getPlanetEntity() is non-null for a market on a planet and null
             // for one on a station; the rule prefers planets at an exact tie.
             var isPlanetMarket = market.getPlanetEntity() != null;
             var contribution = contributionByFactionId.getOrDefault(
-                    factionId, FactionMarketContribution.EMPTY);
-            contributionByFactionId.put(factionId, contribution.addMarket(
-                    computeDominanceWeight(market, rules), isPlanetMarket, market.getSize()));
+                factionId,
+                FactionMarketContribution.EMPTY);
+
+            contributionByFactionId.put(
+                factionId,
+                contribution.addMarket(
+                    computeDominanceWeight(market, rules),
+                    isPlanetMarket,
+                    market.getSize()));
         }
         return contributionByFactionId;
     }
@@ -168,25 +191,33 @@ public final class KnownMarketFootprints {
     // presence and paints its system when unopposed. The lifted sum rounds once onto
     // the grid so a fractional weight lands cleanly and the rule stays exact.
     private static int computeDominanceWeight(MarketAPI market, DominanceRules rules) {
+
         var weightedBaseSize = computeBaseSize(market, rules) * rules.baseSize().colonySizeWeight();
         var stationBonus = computeStationBonus(market, rules);
         var patrolStrength = computePatrolStrength(market, rules);
+
         // A market whose three factors are all zero is worth zero at any stability, so
         // skip the stability read entirely - it still folds into the footprint at zero
         // weight, marking presence like any weightless colony.
         if (weightedBaseSize <= 0.0 && stationBonus <= 0.0 && patrolStrength <= 0.0) {
             return 0;
         }
-        var stabilityFraction = Markets.getStabilityFraction(market);
-        var total = weightedBaseSize
-                        * effectiveFactor(rules, rules.baseSize().lowStabilityPenalty(),
-                                stabilityFraction)
-                + stationBonus
-                        * effectiveFactor(rules, rules.station().lowStabilityPenalty(),
-                                stabilityFraction)
-                + patrolStrength
-                        * effectiveFactor(rules, rules.patrols().lowStabilityPenalty(),
-                                stabilityFraction);
+        // Binding the pass rules and this market's stability once leaves each factor
+        // stating only what differs between them: its raw worth and its own penalty.
+        var stabilityScaling = createStabilityScaling(
+            rules,
+            Markets.getStabilityFraction(market));
+
+        var total = stabilityScaling.scaleFactor(
+                weightedBaseSize,
+                rules.baseSize().lowStabilityPenalty())
+            + stabilityScaling.scaleFactor(
+                stationBonus,
+                rules.station().lowStabilityPenalty())
+            + stabilityScaling.scaleFactor(
+                patrolStrength,
+                rules.patrols().lowStabilityPenalty());
+
         return (int) Math.round(total * DOMINANCE_WEIGHT_SCALE);
     }
 
@@ -202,6 +233,18 @@ public final class KnownMarketFootprints {
         return market.getSize();
     }
 
+    // The scaling every weight factor of one market shares, with the pass rules and
+    // that market's stability fraction already bound. Reading stability is per-market
+    // while the penalty is per-factor, so binding the shared half here leaves each
+    // factor to supply only its own two values.
+    private static StabilityScaling createStabilityScaling(
+            DominanceRules rules,
+            double stabilityFraction) {
+                
+        return (rawFactor, lowStabilityPenalty) ->
+            rawFactor * effectiveFactor(rules, lowStabilityPenalty, stabilityFraction);
+    }
+
     // The fraction of a factor's worth that survives stability: a flat 1 while the
     // master stability weighting is off, else 1 - penalty * (1 - stabilityFraction), so
     // a penalty of 1 collapses the factor to nothing at 0 stability and a penalty of 0
@@ -210,6 +253,7 @@ public final class KnownMarketFootprints {
             DominanceRules rules,
             double lowStabilityPenalty,
             double stabilityFraction) {
+
         if (!rules.isStabilityWeighted()) {
             return UNWEIGHTED_STABILITY_FRACTION;
         }
@@ -224,13 +268,14 @@ public final class KnownMarketFootprints {
     // A zero weight is checked before the connected-entity station scan, so disabling
     // the factor by weight - not just by the toggle - skips that scan too.
     private static double computeStationBonus(MarketAPI market, DominanceRules rules) {
-        if (!rules.station().isWeighted() || rules.station().weight() <= 0.0
+        if (!rules.station().isWeighted()
+                || rules.station().weight() <= 0.0
                 || !Markets.hasAttachedStation(market)) {
             return 0.0;
         }
         return market.isHidden()
-                ? rules.station().weight() * rules.station().hiddenMarketRate()
-                : rules.station().weight();
+            ? rules.station().weight() * rules.station().hiddenMarketRate()
+            : rules.station().weight();
     }
 
     // The patrol size bonus a market earns before stability scaling: its small, medium,
@@ -247,7 +292,23 @@ public final class KnownMarketFootprints {
         }
         var patrols = Markets.readPatrolCounts(market);
         return patrols.small() * rules.patrols().smallWeight()
-                + patrols.medium() * rules.patrols().mediumWeight()
-                + patrols.large() * rules.patrols().largeWeight();
+            + patrols.medium() * rules.patrols().mediumWeight()
+            + patrols.large() * rules.patrols().largeWeight();
+    }
+
+    /**
+     * Cuts one already-computed weight factor of a single market for that market's
+     * stability, under rules and a stability fraction bound when the scaling was made.
+     */
+    @FunctionalInterface
+    private interface StabilityScaling {
+
+        /**
+         * @param rawFactor           the factor's worth in size points before stability
+         * @param lowStabilityPenalty how much of that worth zero stability removes, from
+         *                            0 (stability is irrelevant to this factor) to 1
+         * @return the share of {@code rawFactor} the market actually holds
+         */
+        double scaleFactor(double rawFactor, double lowStabilityPenalty);
     }
 }
