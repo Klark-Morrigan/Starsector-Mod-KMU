@@ -24,11 +24,10 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
-import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -127,10 +126,10 @@ final class ClusterAnchorsBuilderTest {
     // reads back as the palette shade its bloc resolved to.
     private static final BlocNameStyles NAME_STYLES = new BlocNameStyles(
         new ElementStyle(
-            FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
+            FactionPaletteSlot.PRIMARY,
             FULL_OPACITY),
         new ElementStyle(
-            FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
+            FactionPaletteSlot.PRIMARY,
             FULL_OPACITY));
 
     private static final Map<String, List<CellEdge>> EDGES = orderedEdges();

@@ -17,10 +17,9 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -91,7 +90,7 @@ final class DebugBorderTracingBuilderTest {
 
     private static final ElementStyle DRAWN_OUTLINE =
         new ElementStyle(
-            FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
+            FactionPaletteSlot.PRIMARY,
             1.0);
 
     private static final Map<String, List<CellEdge>> EDGES = Map.of(

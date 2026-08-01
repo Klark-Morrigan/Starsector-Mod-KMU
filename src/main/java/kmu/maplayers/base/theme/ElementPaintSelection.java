@@ -13,6 +13,11 @@ package kmu.maplayers.base.theme;
  * interrogating it - so there is no method a selection has to supply, and no way for the tier to
  * start depending on what the choices mean. Turning a selection into an actual shade happens
  * where the palette is known, against the concrete type the layer put in.
+ *
+ * <p>Named for the selection rather than for the paint because it is the unresolved pick, the
+ * opposite of kmlib's {@code UiElementPaint} - a concrete colour and opacity a draw pass emits.
+ * The two sit one import apart, so the head noun is what tells a reader which side of the
+ * resolution they are holding.
  */
-public interface ElementPaint {
+public interface ElementPaintSelection {
 }

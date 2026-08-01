@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.colour.Colours;
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
@@ -22,8 +23,9 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the shared palette resolution both the fills and the cluster-name labels read: the
  * palette-colour pick that maps a player's colour choice to a palette shade, the holder-shade
- * pick that falls back to neutral for unowned ground, the effective-palette swap a receding
- * piece of ground takes, and the desaturation-palette resolver it recolours through.
+ * pick that falls back to neutral for unowned ground, the neutral pair ownerless ground draws
+ * in, the effective-palette swap a receding piece of ground takes, and the desaturation-palette
+ * resolver it recolours through.
  */
 final class MapPalettesTest {
 
@@ -31,27 +33,64 @@ final class MapPalettesTest {
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
 
+    private static final FactionPalette PALETTE = new FactionPalette(PRIMARY, SECONDARY);
+
+    // A selection from no layer's option set, standing in for a second map layer's own options.
+    // Not an enum, since the interface admits any implementation and a record proves the pick
+    // is rejected on type rather than on being an unrecognised constant.
+    private record ForeignPaintSelectionFake(String id) implements ElementPaintSelection {
+    }
+
     @Nested
     class PickPaletteColour {
 
         @Test
         void pickPaletteColourReturnsThePrimaryShadeForAPrimaryChoice() {
             assertThat(MapPalettes.pickPaletteColour(
-                    FactionPaletteShade.PRIMARY, PRIMARY, SECONDARY)).isEqualTo(PRIMARY);
+                    FactionPaletteSlot.PRIMARY,
+                    PALETTE))
+                .isEqualTo(PRIMARY);
         }
 
         @Test
         void pickPaletteColourReturnsTheSecondaryShadeForASecondaryChoice() {
             assertThat(MapPalettes.pickPaletteColour(
-                    FactionPaletteShade.SECONDARY, PRIMARY, SECONDARY)).isEqualTo(SECONDARY);
+                    FactionPaletteSlot.SECONDARY,
+                    PALETTE))
+                .isEqualTo(SECONDARY);
         }
 
         @Test
-        void pickPaletteColourReturnsNullForNoColour() {
-            // NONE is the player's "No color" choice; a null colour signals the render
-            // layer to skip that element.
+        void pickPaletteColourReturnsNullForAnAbsentSelection() {
+            // No selection at all is how a style says "paints nothing" - what the player's
+            // "No color" choice resolves to - so the render layer skips that element.
+            assertThat(MapPalettes.pickPaletteColour(null, PALETTE))
+                .isNull();
+        }
+
+        @Test
+        void pickPaletteColourReturnsNullForAnotherLayersSelection() {
+            // The selection interface is open, so a second map layer's own pick can reach
+            // here. It resolves to no shade rather than to a wrong one or a class cast:
+            // these two shades are the political map's, and nothing else indexes them.
             assertThat(MapPalettes.pickPaletteColour(
-                    null, PRIMARY, SECONDARY)).isNull();
+                    new ForeignPaintSelectionFake("hazard-severe"),
+                    PALETTE))
+                .isNull();
+        }
+    }
+
+    @Nested
+    class ResolveNeutralPalette {
+
+        @Test
+        void resolveNeutralPaletteFillsBothSlotsWithTheOneColour() {
+            // Ownerless ground has no palette to pick a slot from, so both slots answer the
+            // same colour and whichever slot an element names paints neutral.
+            var neutral = MapPalettes.resolveNeutralPalette(Color.GRAY);
+
+            assertThat(neutral.primaryColour()).isEqualTo(Color.GRAY);
+            assertThat(neutral.secondaryColour()).isEqualTo(Color.GRAY);
         }
     }
 
@@ -62,14 +101,20 @@ final class MapPalettesTest {
         // the holder's own.
         private static final Color NEUTRAL = Color.GRAY;
         private static final DominantHolder OWNER =
-                new DominantHolder("hegemony", PRIMARY, SECONDARY);
+            new DominantHolder("hegemony", PRIMARY, SECONDARY);
 
         @Test
         void pickHolderPaletteColourReturnsTheHoldersShadeForTheChoice() {
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    FactionPaletteShade.PRIMARY, OWNER, NEUTRAL)).isEqualTo(PRIMARY);
+                    FactionPaletteSlot.PRIMARY,
+                    OWNER,
+                    NEUTRAL))
+                .isEqualTo(PRIMARY);
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    FactionPaletteShade.SECONDARY, OWNER, NEUTRAL)).isEqualTo(SECONDARY);
+                    FactionPaletteSlot.SECONDARY,
+                    OWNER,
+                    NEUTRAL))
+                .isEqualTo(SECONDARY);
         }
 
         @Test
@@ -77,17 +122,29 @@ final class MapPalettesTest {
             // A factionless system has no palette, so both shades resolve neutral - the same
             // substitution its own cell outline draws under.
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    FactionPaletteShade.PRIMARY, null, NEUTRAL)).isEqualTo(NEUTRAL);
+                    FactionPaletteSlot.PRIMARY,
+                    null,
+                    NEUTRAL))
+                .isEqualTo(NEUTRAL);
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    FactionPaletteShade.SECONDARY, null, NEUTRAL)).isEqualTo(NEUTRAL);
+                    FactionPaletteSlot.SECONDARY,
+                    null,
+                    NEUTRAL))
+                .isEqualTo(NEUTRAL);
         }
 
         @Test
         void pickHolderPaletteColourReturnsNullForNoColourWhoeverHoldsTheGround() {
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    null, OWNER, NEUTRAL)).isNull();
+                    null,
+                    OWNER,
+                    NEUTRAL))
+                .isNull();
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    null, null, NEUTRAL)).isNull();
+                    null,
+                    null,
+                    NEUTRAL))
+                .isNull();
         }
     }
 
@@ -97,17 +154,20 @@ final class MapPalettesTest {
         // The pass's shared desaturation shades, distinct from every other colour here so a swap
         // to them is unmistakable.
         private static final FactionPalette DESATURATION =
-                new FactionPalette(Color.GREEN, Color.YELLOW);
+            new FactionPalette(Color.GREEN, Color.YELLOW);
         private static final DominantHolder OWNER =
-                new DominantHolder("hegemony", PRIMARY, SECONDARY);
+            new DominantHolder("hegemony", PRIMARY, SECONDARY);
+
         // The one pair a factionless cell holds: neutral in both slots, since it names no faction.
         private static final FactionPalette NEUTRAL_PAIR =
-                new FactionPalette(Color.GRAY, Color.GRAY);
+            new FactionPalette(Color.GRAY, Color.GRAY);
 
         @Test
         void resolveEffectivePaletteKeepsTheHoldersOwnShadesWhenTheAdjustmentDoesNotDesaturate() {
             var palette = MapPalettes.resolveEffectivePalette(
-                    new BlocStyleAdjustment(0.5, false), OWNER, DESATURATION);
+                new BlocStyleAdjustment(0.5, false),
+                OWNER,
+                DESATURATION);
 
             assertThat(palette.primaryColour()).isEqualTo(PRIMARY);
             assertThat(palette.secondaryColour()).isEqualTo(SECONDARY);
@@ -118,7 +178,9 @@ final class MapPalettesTest {
             // Muting is orthogonal: the multiplier scales opacity elsewhere and never touches
             // which two shades are painted.
             var palette = MapPalettes.resolveEffectivePalette(
-                    new BlocStyleAdjustment(1.0, true), OWNER, DESATURATION);
+                new BlocStyleAdjustment(1.0, true),
+                OWNER,
+                DESATURATION);
 
             assertThat(palette).isEqualTo(DESATURATION);
         }
@@ -128,7 +190,9 @@ final class MapPalettesTest {
             // Ground with no holder recolours by the same rule: a receding decivilised cell leaves
             // its neutral pair for the desaturation palette rather than staying neutral.
             var palette = MapPalettes.resolveEffectivePalette(
-                    new BlocStyleAdjustment(1.0, true), NEUTRAL_PAIR, DESATURATION);
+                new BlocStyleAdjustment(1.0, true),
+                NEUTRAL_PAIR,
+                DESATURATION);
 
             assertThat(palette).isEqualTo(DESATURATION);
         }
@@ -136,7 +200,9 @@ final class MapPalettesTest {
         @Test
         void resolveEffectivePaletteKeepsUnownedNeutralShadesForTheNoneAdjustment() {
             var palette = MapPalettes.resolveEffectivePalette(
-                    BlocStyleAdjustment.NONE, NEUTRAL_PAIR, DESATURATION);
+                BlocStyleAdjustment.NONE,
+                NEUTRAL_PAIR,
+                DESATURATION);
 
             assertThat(palette).isEqualTo(NEUTRAL_PAIR);
         }
@@ -153,31 +219,46 @@ final class MapPalettesTest {
         @Test
         void resolveDesaturationPaletteDarkensTheIndependentFactionsOwnShades() {
             var independentMock = mock(FactionAPI.class);
-            when(independentMock.getBrightUIColor()).thenReturn(Color.GREEN);
-            when(independentMock.getDarkUIColor()).thenReturn(Color.YELLOW);
+
+            when(independentMock.getBrightUIColor())
+                .thenReturn(Color.GREEN);
+            when(independentMock.getDarkUIColor())
+                .thenReturn(Color.YELLOW);
+
             var sectorMock = mock(SectorAPI.class);
-            when(sectorMock.getFaction(Factions.INDEPENDENT)).thenReturn(independentMock);
+
+            when(sectorMock.getFaction(Factions.INDEPENDENT))
+                .thenReturn(independentMock);
 
             var palette = MapPalettes.resolveDesaturationPalette(sectorMock, DARKENING_STRENGTH);
 
             // The Independent pair, sunk toward black by the strength so the receded ground reads
             // behind genuine independent-held space rather than as it.
-            assertThat(palette).isEqualTo(new FactionPalette(
-                    Colours.darken(Color.GREEN, KEEP_FACTOR), Colours.darken(Color.YELLOW, KEEP_FACTOR)));
+            assertThat(palette)
+                .isEqualTo(new FactionPalette(
+                    Colours.darken(Color.GREEN, KEEP_FACTOR),
+                    Colours.darken(Color.YELLOW, KEEP_FACTOR)));
         }
 
         @Test
         void resolveDesaturationPaletteLeavesTheIndependentShadesUntouchedAtZeroStrength() {
             var independentMock = mock(FactionAPI.class);
-            when(independentMock.getBrightUIColor()).thenReturn(Color.GREEN);
-            when(independentMock.getDarkUIColor()).thenReturn(Color.YELLOW);
+            
+            when(independentMock.getBrightUIColor())
+                .thenReturn(Color.GREEN);
+            when(independentMock.getDarkUIColor())
+                .thenReturn(Color.YELLOW);
+
             var sectorMock = mock(SectorAPI.class);
-            when(sectorMock.getFaction(Factions.INDEPENDENT)).thenReturn(independentMock);
+
+            when(sectorMock.getFaction(Factions.INDEPENDENT))
+                .thenReturn(independentMock);
 
             // A strength of 0 keeps full brightness, so the target is the raw Independent pair.
             var palette = MapPalettes.resolveDesaturationPalette(sectorMock, 0.0);
 
-            assertThat(palette).isEqualTo(new FactionPalette(Color.GREEN, Color.YELLOW));
+            assertThat(palette)
+                .isEqualTo(new FactionPalette(Color.GREEN, Color.YELLOW));
         }
     }
 }

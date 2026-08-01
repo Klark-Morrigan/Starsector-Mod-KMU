@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.settings.KmuLunaSettings;
 
 /**
@@ -32,10 +32,10 @@ public record BlocNameStyles(
     public static BlocNameStyles readFromLunaSettings() {
         return new BlocNameStyles(
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionOuterBorderColour()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getFactionOuterBorderColour()),
                 KmuLunaSettings.getFactionNameOpacity()),
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentOuterBorderColour()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getIndependentOuterBorderColour()),
                 KmuLunaSettings.getIndependentNameOpacity()));
     }
 }

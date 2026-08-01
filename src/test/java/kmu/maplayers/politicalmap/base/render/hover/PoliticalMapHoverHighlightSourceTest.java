@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritory;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
@@ -25,11 +25,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * one trace rather than one per frame.
  */
 final class PoliticalMapHoverHighlightSourceTest {
+
     private static final String FACTION_ID = "hegemony";
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
     private static final DominantHolder OWNER =
-            new DominantHolder(FACTION_ID, PRIMARY, SECONDARY);
+        new DominantHolder(FACTION_ID, PRIMARY, SECONDARY);
 
     @Nested
     class ResolveCandidateFrontierLoopsOf {
@@ -38,14 +39,16 @@ final class PoliticalMapHoverHighlightSourceTest {
         void resolveCandidateFrontierLoopsOfReturnsTheHoldersOwnBorderLoops() {
             // Every loop the holder traced is a candidate; which of them encloses this cell is
             // the highlight's own geometric question, not one answered here.
-            var loops = List.of(squareRun(0, 0, 100), squareRun(500, 0, 100));
+            var loops = List.of(
+                squareRun(0, 0, 100),
+                squareRun(500, 0, 100));
             var source = sourceOf(territoriesWith(
-                    Map.of("A", OWNER),
-                    Map.of("A", square(10, 10, 80)),
-                    territoryWithLoops(loops)));
+                Map.of("A", OWNER),
+                Map.of("A", square(10, 10, 80)),
+                territoryWithLoops(loops)));
 
             assertThat(source.resolveCandidateFrontierLoopsOf("A"))
-                    .containsExactlyElementsOf(loops);
+                .containsExactlyElementsOf(loops);
         }
 
         @Test
@@ -53,11 +56,12 @@ final class PoliticalMapHoverHighlightSourceTest {
             // A decivilised or uninhabited cell fuses into no territory, so it has no frontier
             // to offer at all.
             var source = sourceOf(territoriesWith(
-                    Map.of(),
-                    Map.of("A", square(10, 10, 80)),
-                    null));
+                Map.of(),
+                Map.of("A", square(10, 10, 80)),
+                null));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf("A")).isEmpty();
+            assertThat(source.resolveCandidateFrontierLoopsOf("A"))
+                .isEmpty();
         }
 
         @Test
@@ -65,11 +69,12 @@ final class PoliticalMapHoverHighlightSourceTest {
             // The holder's border is "No color", so its territory carries no loops - owned ground
             // that still has nothing to halo.
             var source = sourceOf(territoriesWith(
-                    Map.of("A", OWNER),
-                    Map.of("A", square(10, 10, 80)),
-                    territoryWithLoops(List.of())));
+                Map.of("A", OWNER),
+                Map.of("A", square(10, 10, 80)),
+                territoryWithLoops(List.of())));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf("A")).isEmpty();
+            assertThat(source.resolveCandidateFrontierLoopsOf("A"))
+                .isEmpty();
         }
 
         @Test
@@ -77,12 +82,12 @@ final class PoliticalMapHoverHighlightSourceTest {
             // The highlight memoises on this instance, so handing back a fresh copy per call
             // would re-trace the loops every frame the cursor rests on one cell.
             var source = sourceOf(territoriesWith(
-                    Map.of("A", OWNER),
-                    Map.of("A", square(10, 10, 80)),
-                    territoryWithLoops(List.of(squareRun(0, 0, 100)))));
+                Map.of("A", OWNER),
+                Map.of("A", square(10, 10, 80)),
+                territoryWithLoops(List.of(squareRun(0, 0, 100)))));
 
             assertThat(source.resolveCandidateFrontierLoopsOf("A"))
-                    .isSameAs(source.resolveCandidateFrontierLoopsOf("A"));
+                .isSameAs(source.resolveCandidateFrontierLoopsOf("A"));
         }
     }
 
@@ -92,12 +97,12 @@ final class PoliticalMapHoverHighlightSourceTest {
         @Test
         void resolveHighlightColourOfPaintsOwnedGroundInItsHoldersShade() {
             var source = sourceOf(territoriesWith(
-                    Map.of("A", OWNER),
-                    Map.of("A", square(10, 10, 80)),
-                    territoryWithLoops(List.of())));
+                Map.of("A", OWNER),
+                Map.of("A", square(10, 10, 80)),
+                territoryWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf("A", FactionPaletteShade.SECONDARY))
-                    .isEqualTo(SECONDARY);
+            assertThat(source.resolveHighlightColourOf("A", FactionPaletteSlot.SECONDARY))
+                .isEqualTo(SECONDARY);
         }
 
         @Test
@@ -105,12 +110,12 @@ final class PoliticalMapHoverHighlightSourceTest {
             // Unowned ground has no palette of its own, so the highlight says so in the same
             // neutral the cell's own outline draws in.
             var source = sourceOf(territoriesWith(
-                    Map.of(),
-                    Map.of("A", square(10, 10, 80)),
-                    null));
+                Map.of(),
+                Map.of("A", square(10, 10, 80)),
+                null));
 
-            assertThat(source.resolveHighlightColourOf("A", FactionPaletteShade.PRIMARY))
-                    .isEqualTo(PoliticalMapTerritoryFixtures.NEUTRAL_COLOUR);
+            assertThat(source.resolveHighlightColourOf("A", FactionPaletteSlot.PRIMARY))
+                .isEqualTo(PoliticalMapTerritoryFixtures.NEUTRAL_COLOUR);
         }
 
         @Test
@@ -118,11 +123,12 @@ final class PoliticalMapHoverHighlightSourceTest {
             // The theme points the highlight at no shade at all, which the render pass reads as
             // "skip the whole thing".
             var source = sourceOf(territoriesWith(
-                    Map.of("A", OWNER),
-                    Map.of("A", square(10, 10, 80)),
-                    territoryWithLoops(List.of())));
+                Map.of("A", OWNER),
+                Map.of("A", square(10, 10, 80)),
+                territoryWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf("A", null)).isNull();
+            assertThat(source.resolveHighlightColourOf("A", null))
+                .isNull();
         }
     }
 
@@ -133,11 +139,12 @@ final class PoliticalMapHoverHighlightSourceTest {
         void resolvePaintedExtentOfReturnsTheShapeTheBuildRecordedForTheCell() {
             var paintedExtent = square(10, 10, 80);
             var source = sourceOf(territoriesWith(
-                    Map.of("A", OWNER),
-                    Map.of("A", paintedExtent),
-                    territoryWithLoops(List.of())));
+                Map.of("A", OWNER),
+                Map.of("A", paintedExtent),
+                territoryWithLoops(List.of())));
 
-            assertThat(source.resolvePaintedExtentOf("A")).isSameAs(paintedExtent);
+            assertThat(source.resolvePaintedExtentOf("A"))
+                .isSameAs(paintedExtent);
         }
 
         @Test
@@ -145,11 +152,12 @@ final class PoliticalMapHoverHighlightSourceTest {
             // A cell that puts no ink on the map is absent from the extents rather than present
             // with an empty shape; the caller must read the two the same way.
             var source = sourceOf(territoriesWith(
-                    Map.of("A", OWNER),
-                    Map.of(),
-                    territoryWithLoops(List.of())));
+                Map.of("A", OWNER),
+                Map.of(),
+                territoryWithLoops(List.of())));
 
-            assertThat(source.resolvePaintedExtentOf("A")).isEmpty();
+            assertThat(source.resolvePaintedExtentOf("A"))
+                .isEmpty();
         }
     }
 
@@ -165,13 +173,15 @@ final class PoliticalMapHoverHighlightSourceTest {
             Map<String, DominantHolder> ownerBySystemId,
             Map<String, List<double[]>> fillPolygonBySystemId,
             FactionTerritory territory) {
+
         var territories = PoliticalMapTerritoryFixtures
-                .createTerritoriesOwnedBy(ownerBySystemId);
+            .createTerritoriesOwnedBy(ownerBySystemId);
+
         for (var cell : fillPolygonBySystemId.entrySet()) {
             territories.putStyledCell(
-                    cell.getKey(),
-                    PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                    cell.getValue());
+                cell.getKey(),
+                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
+                cell.getValue());
         }
         if (territory != null) {
             territories.getFactionTerritoryByFactionId().put(FACTION_ID, territory);
@@ -188,10 +198,10 @@ final class PoliticalMapHoverHighlightSourceTest {
     // source hands it back untouched, so only its identity matters.
     private static List<double[]> square(double minX, double minY, double side) {
         return List.of(
-                new double[] {minX, minY},
-                new double[] {minX + side, minY},
-                new double[] {minX + side, minY + side},
-                new double[] {minX, minY + side});
+            new double[] {minX, minY},
+            new double[] {minX + side, minY},
+            new double[] {minX + side, minY + side},
+            new double[] {minX, minY + side});
     }
 
     // The same square as the baked [x, y, x, y, ...] run a border loop is kept in.

@@ -134,10 +134,9 @@ public final class StyledCellBuilder {
             category,
             territories.getRecedeAdjustment());
 
-        var neutralColour = territories.getNeutralColour();
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
-            new FactionPalette(neutralColour, neutralColour),
+            MapPalettes.resolveNeutralPalette(territories.getNeutralColour()),
             territories.getDesaturationPalette());
 
         var outline = resolveOutlineOf(
@@ -168,8 +167,7 @@ public final class StyledCellBuilder {
         return new UiElementPaint(
             MapPalettes.pickPaletteColour(
                 element.colour(),
-                palette.primaryColour(),
-                palette.secondaryColour()),
+                palette),
             adjustment.muteOpacity(element.opacity()));
     }
 

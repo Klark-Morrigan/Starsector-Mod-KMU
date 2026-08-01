@@ -76,13 +76,11 @@ public final class FactionTerritoryBuilder {
 
         var fillColour = MapPalettes.pickPaletteColour(
             style.fill().colour(),
-            palette.primaryColour(),
-            palette.secondaryColour());
+            palette);
 
         var borderColour = MapPalettes.pickPaletteColour(
             style.outer().colour(),
-            palette.primaryColour(),
-            palette.secondaryColour());
+            palette);
 
         if (fillColour == null && borderColour == null) {
             return null;

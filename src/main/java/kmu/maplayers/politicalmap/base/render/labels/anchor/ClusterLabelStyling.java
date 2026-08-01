@@ -89,8 +89,7 @@ final class ClusterLabelStyling {
 
         var colour = MapPalettes.pickPaletteColour(
             choice,
-            palette.primaryColour(),
-            palette.secondaryColour());
+            palette);
 
         var resolved = colour != null
             ? colour

@@ -1,6 +1,6 @@
 package kmu.maplayers.base.hover;
 
-import kmu.maplayers.base.theme.ElementPaint;
+import kmu.maplayers.base.theme.ElementPaintSelection;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -262,7 +262,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Override
-        public Color resolveHighlightColourOf(String cellId, ElementPaint paletteChoice) {
+        public Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection) {
             return Color.RED;
         }
 

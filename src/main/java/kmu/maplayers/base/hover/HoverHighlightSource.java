@@ -1,6 +1,6 @@
 package kmu.maplayers.base.hover;
 
-import kmu.maplayers.base.theme.ElementPaint;
+import kmu.maplayers.base.theme.ElementPaintSelection;
 
 import java.awt.Color;
 import java.util.List;
@@ -36,13 +36,13 @@ public interface HoverHighlightSource {
      * The shade the highlight burns in - the colour of the ground under the cursor, so the
      * halo and the wash say whose space this is.
      *
-     * @param cellId        the hovered cell
-     * @param paletteChoice which of the ground's palette shades the theme points the
-     *                      highlight at
-     * @return that shade, or null when the choice paints nothing, so the caller skips the
+     * @param cellId         the hovered cell
+     * @param paintSelection which of the ground's palette shades the theme points the
+     *                       highlight at
+     * @return that shade, or null when the selection paints nothing, so the caller skips the
      *         whole pass
      */
-    Color resolveHighlightColourOf(String cellId, ElementPaint paletteChoice);
+    Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection);
 
     /**
      * The extent the layer painted for one cell - the shape the wash lifts.

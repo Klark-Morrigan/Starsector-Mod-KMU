@@ -2,13 +2,13 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
-import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,12 +35,12 @@ final class ClusterLabelStylingTest {
 
     // The bloc whose shades a resolved name should carry.
     private static final DominantHolder FACTION_F =
-            new DominantHolder("F", PRIMARY, SECONDARY);
+        new DominantHolder("F", PRIMARY, SECONDARY);
 
     // A garish pair no test with an identity adjustment ever reads, so a name that
     // desaturated when it should not stands out.
     private static final FactionPalette UNUSED_PALETTE =
-            new FactionPalette(Color.MAGENTA, Color.MAGENTA);
+        new FactionPalette(Color.MAGENTA, Color.MAGENTA);
 
     // Full opacity leaves scaleAlpha an identity, so the colour tests read the resolved shade
     // unfaded; the fade tests dim one group at a time.
@@ -51,7 +51,7 @@ final class ClusterLabelStylingTest {
     // branch it exercises.
     private static final BlocStyleDecision FACTION_STYLED = factionStyled(BlocStyleAdjustment.NONE);
     private static final BlocStyleDecision INDEPENDENT_STYLED =
-            new BlocStyleDecision(true, BlocStyleAdjustment.NONE);
+        new BlocStyleDecision(true, BlocStyleAdjustment.NONE);
 
     // A faction-styled bloc under a given recede, for the tests that vary the adjustment
     // rather than the classification.
@@ -59,23 +59,29 @@ final class ClusterLabelStylingTest {
         return new BlocStyleDecision(false, adjustment);
     }
 
-    // Both groups pointed at the same choice and opacity, so a test that varies neither reads
+    // Both groups pointed at the same slot and opacity, so a test that varies neither reads
     // one shade whichever branch the classification took.
-    private static BlocNameStyles nameStyles(FactionPaletteChoice factionOuterColour) {
-        return nameStyles(factionOuterColour, FactionPaletteChoice.PRIMARY,
-                FULL_OPACITY, FULL_OPACITY);
+    private static BlocNameStyles nameStyles(ElementPaintSelection factionOuterSelection) {
+        return nameStyles(
+            factionOuterSelection,
+            FactionPaletteSlot.PRIMARY,
+            FULL_OPACITY,
+            FULL_OPACITY);
     }
 
     // The two groups' styling spelled out in full, so a test can point the faction and
-    // independent branches at different shades or opacities and prove which one was read.
+    // independent branches at different slots or opacities and prove which one was read.
+    // Takes the selections a style actually holds rather than the settings-side choices they
+    // are stored as, so these tests pin the label rule and not the crossing between the two -
+    // which FactionPaletteSlotTest owns. A null selection is a hidden element.
     private static BlocNameStyles nameStyles(
-            FactionPaletteChoice factionOuterColour,
-            FactionPaletteChoice independentOuterColour,
+            ElementPaintSelection factionOuterSelection,
+            ElementPaintSelection independentOuterSelection,
             double factionNameOpacity,
             double independentNameOpacity) {
         return new BlocNameStyles(
-                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(factionOuterColour), factionNameOpacity),
-                new ElementStyle(FactionPaletteShade.resolveElementPaintOf(independentOuterColour), independentNameOpacity));
+            new ElementStyle(factionOuterSelection, factionNameOpacity),
+            new ElementStyle(independentOuterSelection, independentNameOpacity));
     }
 
     @Nested
@@ -85,8 +91,11 @@ final class ClusterLabelStylingTest {
         void resolveLabelColourTakesThePrimaryShadeWhenTheOuterBorderIsPrimary() {
             // The default outer-border choice is the bright primary shade, so the name
             // (and its debug dot) inherits it - RED here.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY), FACTION_STYLED, UNUSED_PALETTE);
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(FactionPaletteSlot.PRIMARY),
+                FACTION_STYLED,
+                UNUSED_PALETTE);
 
             assertThat(colour).isEqualTo(PRIMARY);
         }
@@ -95,8 +104,11 @@ final class ClusterLabelStylingTest {
         void resolveLabelColourInheritsTheSecondaryShadeWhenTheOuterBorderIsSecondary() {
             // Point the outer border at the secondary (dark) shade and the name follows
             // it - BLUE - so the label reads as the border's own colour, not a fixed pick.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.SECONDARY), FACTION_STYLED, UNUSED_PALETTE);
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(FactionPaletteSlot.SECONDARY),
+                FACTION_STYLED,
+                UNUSED_PALETTE);
 
             assertThat(colour).isEqualTo(SECONDARY);
         }
@@ -105,8 +117,11 @@ final class ClusterLabelStylingTest {
         void resolveLabelColourFallsBackToThePrimaryShadeWhenTheOuterBorderIsHidden() {
             // A hidden outer border ("No color") resolves to no colour, but a name still
             // needs one, so it falls back to the bright primary shade rather than vanishing.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.NONE), FACTION_STYLED, UNUSED_PALETTE);
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(null),
+                FACTION_STYLED,
+                UNUSED_PALETTE);
 
             assertThat(colour).isEqualTo(PRIMARY);
         }
@@ -118,10 +133,15 @@ final class ClusterLabelStylingTest {
             // inherits the independent choice (SECONDARY -> BLUE) even though the faction
             // choice differs (PRIMARY) - the seam the alliances view drives, where lone
             // factions and neutrals take the independent style.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.SECONDARY,
-                            FULL_OPACITY, FULL_OPACITY),
-                    INDEPENDENT_STYLED, UNUSED_PALETTE);
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(
+                    FactionPaletteSlot.PRIMARY,
+                    FactionPaletteSlot.SECONDARY,
+                    FULL_OPACITY,
+                    FULL_OPACITY),
+                INDEPENDENT_STYLED,
+                UNUSED_PALETTE);
 
             assertThat(colour).isEqualTo(SECONDARY);
         }
@@ -130,14 +150,20 @@ final class ClusterLabelStylingTest {
         void resolveLabelColourFadesAFactionNameByTheFactionNameOpacity() {
             // A faction-styled bloc takes the faction group's name opacity: half fades the
             // resolved PRIMARY shade's alpha to half, leaving its RGB (and the dot's) intact.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
-                            HALF_OPACITY, FULL_OPACITY),
-                    FACTION_STYLED, UNUSED_PALETTE);
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(
+                    FactionPaletteSlot.PRIMARY,
+                    FactionPaletteSlot.PRIMARY,
+                    HALF_OPACITY,
+                    FULL_OPACITY),
+                FACTION_STYLED,
+                UNUSED_PALETTE);
 
             assertThat(colour.getAlpha())
-                    .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
-            assertThat(colour.getRed()).isEqualTo(PRIMARY.getRed());
+                .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
+            assertThat(colour.getRed())
+                .isEqualTo(PRIMARY.getRed());
         }
 
         @Test
@@ -145,10 +171,15 @@ final class ClusterLabelStylingTest {
             // The independent group's opacity fades only independent names: a faction-styled
             // bloc is unaffected even when independent opacity is dimmed, so the two groups
             // fade independently.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
-                            FULL_OPACITY, HALF_OPACITY),
-                    FACTION_STYLED, UNUSED_PALETTE);
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(
+                    FactionPaletteSlot.PRIMARY,
+                    FactionPaletteSlot.PRIMARY,
+                    FULL_OPACITY,
+                    HALF_OPACITY),
+                FACTION_STYLED,
+                UNUSED_PALETTE);
 
             assertThat(colour).isEqualTo(PRIMARY);
         }
@@ -158,14 +189,20 @@ final class ClusterLabelStylingTest {
             // An independent-styled bloc takes the independent group's opacity: half fades
             // its resolved shade's alpha to half, while the faction opacity (full here) has
             // no say over it.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.PRIMARY,
-                            FULL_OPACITY, HALF_OPACITY),
-                    INDEPENDENT_STYLED, UNUSED_PALETTE);
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(
+                    FactionPaletteSlot.PRIMARY,
+                    FactionPaletteSlot.PRIMARY,
+                    FULL_OPACITY,
+                    HALF_OPACITY),
+                INDEPENDENT_STYLED,
+                UNUSED_PALETTE);
 
             assertThat(colour.getAlpha())
-                    .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
-            assertThat(colour.getRed()).isEqualTo(PRIMARY.getRed());
+                .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
+            assertThat(colour.getRed())
+                .isEqualTo(PRIMARY.getRed());
         }
 
         @Test
@@ -173,23 +210,27 @@ final class ClusterLabelStylingTest {
             // A bloc's adjustment dims its label on top of the (full) name opacity: half
             // fades the resolved shade's alpha to half and leaves its RGB intact - the same
             // fold applied wherever the style classification is read.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY),
-                    factionStyled(new BlocStyleAdjustment(HALF_OPACITY, false)), UNUSED_PALETTE);
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(FactionPaletteSlot.PRIMARY),
+                factionStyled(new BlocStyleAdjustment(HALF_OPACITY, false)),
+                UNUSED_PALETTE);
 
             assertThat(colour.getAlpha())
-                    .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
-            assertThat(colour.getRed()).isEqualTo(PRIMARY.getRed());
+                .isEqualTo(Math.round(PRIMARY.getAlpha() * (float) HALF_OPACITY));
+            assertThat(colour.getRed())
+                .isEqualTo(PRIMARY.getRed());
         }
 
         @Test
         void resolveLabelColourDesaturatesToThePassPaletteForADesaturatedBloc() {
             // A desaturated bloc's label follows the pass's shared desaturation palette
             // instead of the holder's own shades, at full alpha since mute is off here.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY),
-                    factionStyled(new BlocStyleAdjustment(FULL_OPACITY, true)),
-                    new FactionPalette(Color.GREEN, Color.YELLOW));
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(FactionPaletteSlot.PRIMARY),
+                factionStyled(new BlocStyleAdjustment(FULL_OPACITY, true)),
+                new FactionPalette(Color.GREEN, Color.YELLOW));
 
             assertThat(colour).isEqualTo(Color.GREEN);
         }
@@ -199,9 +240,11 @@ final class ClusterLabelStylingTest {
             // A bloc the resolver maps to NONE - an alliance, in the real view - draws
             // unmuted and undesaturated no matter what the pass's palette holds, since the
             // adjustment (not the palette alone) gates whether either applies.
-            var colour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY), FACTION_STYLED,
-                    new FactionPalette(Color.GREEN, Color.YELLOW));
+            var colour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(FactionPaletteSlot.PRIMARY),
+                FACTION_STYLED,
+                new FactionPalette(Color.GREEN, Color.YELLOW));
 
             assertThat(colour).isEqualTo(PRIMARY);
         }
@@ -216,18 +259,26 @@ final class ClusterLabelStylingTest {
             var recede = new BlocStyleAdjustment(HALF_OPACITY, true);
             var desaturationPalette = new FactionPalette(Color.GREEN, Color.YELLOW);
 
-            var labelColour = ClusterLabelStyling.resolveLabelColour(FACTION_F,
-                    nameStyles(FactionPaletteChoice.PRIMARY), factionStyled(recede),
-                    desaturationPalette);
+            var labelColour = ClusterLabelStyling.resolveLabelColour(
+                FACTION_F,
+                nameStyles(FactionPaletteSlot.PRIMARY),
+                factionStyled(recede),
+                desaturationPalette);
 
             // The shade MapPalettes resolves the same bloc's fill to under the same recede.
             var fillShade = MapPalettes
-                    .resolveEffectivePalette(recede, FACTION_F, desaturationPalette).primaryColour();
-            assertThat(labelColour.getRed()).isEqualTo(fillShade.getRed());
-            assertThat(labelColour.getGreen()).isEqualTo(fillShade.getGreen());
-            assertThat(labelColour.getBlue()).isEqualTo(fillShade.getBlue());
+                .resolveEffectivePalette(recede, FACTION_F, desaturationPalette).primaryColour();
+
+            assertThat(labelColour.getRed())
+                .isEqualTo(fillShade.getRed());
+            assertThat(labelColour.getGreen())
+                .isEqualTo(fillShade.getGreen());
+            assertThat(labelColour.getBlue())
+                .isEqualTo(fillShade.getBlue());
+
             // And genuinely receded, not the bloc's own bright shade.
-            assertThat(labelColour.getGreen()).isNotEqualTo(PRIMARY.getGreen());
+            assertThat(labelColour.getGreen())
+                .isNotEqualTo(PRIMARY.getGreen());
         }
     }
 
@@ -236,18 +287,19 @@ final class ClusterLabelStylingTest {
 
         // A second bloc, so a lookup that answered the wrong bloc's shade is visible.
         private static final Color OTHER_PRIMARY = Color.CYAN;
+
         private static final DominantHolder FACTION_G =
-                new DominantHolder("G", OTHER_PRIMARY, Color.DARK_GRAY);
+            new DominantHolder("G", OTHER_PRIMARY, Color.DARK_GRAY);
 
         @Test
         void newLabelColourResolverAnswersTheShadeOfTheBlocItIsAskedFor() {
             // Every system of a bloc carries that bloc's own two shades, so the resolver must
             // key off the bloc id the search hands it rather than any one system.
             var resolver = ClusterLabelStyling.newLabelColourResolver(
-                    Map.of("alpha", FACTION_F, "beta", FACTION_G),
-                    nameStyles(FactionPaletteChoice.PRIMARY),
-                    blocId -> new BlocStyleDecision(false, BlocStyleAdjustment.NONE),
-                    UNUSED_PALETTE);
+                Map.of("alpha", FACTION_F, "beta", FACTION_G),
+                nameStyles(FactionPaletteSlot.PRIMARY),
+                blocId -> new BlocStyleDecision(false, BlocStyleAdjustment.NONE),
+                UNUSED_PALETTE);
 
             assertThat(resolver.apply("F")).isEqualTo(PRIMARY);
             assertThat(resolver.apply("G")).isEqualTo(OTHER_PRIMARY);
@@ -259,11 +311,14 @@ final class ClusterLabelStylingTest {
             // to follow and how the bloc recedes - so a bloc classified independent takes the
             // independent choice while its neighbour keeps the faction one.
             var resolver = ClusterLabelStyling.newLabelColourResolver(
-                    Map.of("alpha", FACTION_F, "beta", FACTION_G),
-                    nameStyles(FactionPaletteChoice.PRIMARY, FactionPaletteChoice.SECONDARY,
-                            FULL_OPACITY, FULL_OPACITY),
-                    blocId -> new BlocStyleDecision("F".equals(blocId), BlocStyleAdjustment.NONE),
-                    UNUSED_PALETTE);
+                Map.of("alpha", FACTION_F, "beta", FACTION_G),
+                nameStyles(
+                    FactionPaletteSlot.PRIMARY,
+                    FactionPaletteSlot.SECONDARY,
+                    FULL_OPACITY,
+                    FULL_OPACITY),
+                blocId -> new BlocStyleDecision("F".equals(blocId), BlocStyleAdjustment.NONE),
+                UNUSED_PALETTE);
 
             assertThat(resolver.apply("F")).isEqualTo(SECONDARY);
             assertThat(resolver.apply("G")).isEqualTo(OTHER_PRIMARY);
@@ -275,13 +330,13 @@ final class ClusterLabelStylingTest {
             // the decision is made once and reused rather than re-resolved per cluster.
             var askedBlocIds = new ArrayList<String>();
             var resolver = ClusterLabelStyling.newLabelColourResolver(
-                    Map.of("alpha", FACTION_F),
-                    nameStyles(FactionPaletteChoice.PRIMARY),
-                    blocId -> {
-                        askedBlocIds.add(blocId);
-                        return new BlocStyleDecision(false, BlocStyleAdjustment.NONE);
-                    },
-                    UNUSED_PALETTE);
+                Map.of("alpha", FACTION_F),
+                nameStyles(FactionPaletteSlot.PRIMARY),
+                blocId -> {
+                    askedBlocIds.add(blocId);
+                    return new BlocStyleDecision(false, BlocStyleAdjustment.NONE);
+                },
+                UNUSED_PALETTE);
 
             resolver.apply("F");
             resolver.apply("F");

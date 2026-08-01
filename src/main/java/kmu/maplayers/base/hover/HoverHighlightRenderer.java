@@ -81,8 +81,8 @@ public final class HoverHighlightRenderer {
 
     // The colour the whole highlight paints in: the shade of the ground under the cursor, which
     // only the layer that owns the ground can name. Null when the cursor is over nothing (a
-    // parked hover, including when the highlight is disabled) or the choice paints nothing, so
-    // the caller skips the pass.
+    // parked hover, including when the highlight is disabled) or the selection paints nothing,
+    // so the caller skips the pass.
     private static Color resolveHighlightColour(
             HoverHighlightSource source,
             MapHover hover,

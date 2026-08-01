@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmlib.starsector.factions.FactionPalette;
+
 import kmu.maplayers.base.geometry.CellGrouping;
 
 import java.awt.Color;
@@ -66,5 +68,16 @@ public record DominantHolder(
             Map<String, String> systemIdByCellId,
             Map<String, DominantHolder> ownerBySystemId) {
         return new CellGrouping(systemIdByCellId, mapFactionIdBySystemId(ownerBySystemId));
+    }
+
+    /**
+     * This holder's two shades as the pair every palette rule is stated over, so a caller that
+     * needs the pair asks for it rather than re-pairing the two accessors at each site. The
+     * slots keep their meaning exactly - bright into primary, dark into secondary.
+     *
+     * @return the holder's own palette
+     */
+    public FactionPalette resolvePalette() {
+        return new FactionPalette(primaryColour, secondaryColour);
     }
 }

@@ -11,8 +11,7 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
-import kmu.settings.FactionPaletteChoice;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -351,14 +350,14 @@ final class FactionTerritoryBuilderTest {
     private static CategoryStyle drawnStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
+                FactionPaletteSlot.PRIMARY,
                 FILL_OPACITY),
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.SECONDARY),
+                FactionPaletteSlot.SECONDARY,
                 BORDER_OPACITY),
                 BORDER_WIDTH,
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE),
+                null,
                 1.0),
                 1.0);
     }
@@ -367,13 +366,13 @@ final class FactionTerritoryBuilderTest {
     private static CategoryStyle fillOnlyStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
+                FactionPaletteSlot.PRIMARY,
                 FILL_OPACITY),
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE),
+                null,
                 BORDER_OPACITY), BORDER_WIDTH,
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE),
+                null,
                 1.0), 1.0);
     }
 
@@ -381,14 +380,14 @@ final class FactionTerritoryBuilderTest {
     private static CategoryStyle noColourStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE),
+                null,
                 FILL_OPACITY),
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE),
+                null,
                 BORDER_OPACITY),
                 BORDER_WIDTH,
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.NONE),
+                null,
                 1.0),
                 1.0);
     }

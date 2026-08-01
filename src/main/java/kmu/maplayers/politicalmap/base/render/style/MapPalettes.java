@@ -7,7 +7,7 @@ import kmlib.colour.Colours;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.factions.StarsectorFactionColours;
 
-import kmu.maplayers.base.theme.ElementPaint;
+import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
@@ -39,7 +39,7 @@ public final class MapPalettes {
             FactionPalette desaturationPalette) {
         return resolveEffectivePalette(
             adjustment,
-            new FactionPalette(holder.primaryColour(), holder.secondaryColour()),
+            holder.resolvePalette(),
             desaturationPalette);
     }
 
@@ -63,26 +63,40 @@ public final class MapPalettes {
     }
 
     /**
-     * Picks the palette shade the player pointed an element at: the secondary (dark)
-     * shade for a SECONDARY choice, the primary (bright) shade for a PRIMARY choice, or
-     * null for NONE ("No color") so the caller skips that element.
+     * The palette a piece of ownerless ground draws in: the shared neutral colour in both
+     * slots, so whichever slot an element names it paints neutral. Stated once here because
+     * "factionless ground has no palette of its own" is one rule, and a caller spelling the
+     * colour twice is stating it again rather than reading it.
+     */
+    public static FactionPalette resolveNeutralPalette(Color neutralColour) {
+        return new FactionPalette(neutralColour, neutralColour);
+    }
+
+    /**
+     * Picks the palette shade the player pointed an element at: the secondary (dark) shade for a
+     * SECONDARY selection, the primary (bright) shade for a PRIMARY one, or null for no selection
+     * at all so the caller skips that element. This is where a slot becomes a colour.
      *
-     * <p>Takes the theme's opaque {@link ElementPaint} rather than a shade outright, since that is
-     * the form every style carries a selection in. This is the one place the two meet, so the
-     * styles stay free of casts and a selection that is absent - the no-colour state - or belongs
-     * to another layer's option set resolves to no shade instead of reaching the switch at all.
+     * <p>Takes the theme's opaque {@link ElementPaintSelection} rather than a shade outright,
+     * since that is the form every style carries a selection in. This is the one place the two
+     * meet, so the styles stay free of casts and a selection that is absent - the no-colour
+     * state - or belongs to another layer's option set resolves to no shade instead of reaching
+     * the switch at all.
+     *
+     * <p>Takes the pair as a palette rather than as two colours because the slots are only ever
+     * meaningful together: a caller holds the pair already, and splitting it at the call site
+     * puts two same-typed arguments in an order nothing but their names distinguishes.
      */
     public static Color pickPaletteColour(
-            ElementPaint choice,
-            Color primaryColour,
-            Color secondaryColour) {
+            ElementPaintSelection paintSelection,
+            FactionPalette palette) {
 
-        if (!(choice instanceof FactionPaletteShade shade)) {
+        if (!(paintSelection instanceof FactionPaletteSlot slot)) {
             return null;
         }
-        return switch (shade) {
-            case PRIMARY -> primaryColour;
-            case SECONDARY -> secondaryColour;
+        return switch (slot) {
+            case PRIMARY -> palette.primaryColour();
+            case SECONDARY -> palette.secondaryColour();
         };
     }
 
@@ -98,12 +112,14 @@ public final class MapPalettes {
      * its holder, and an element whose whole job is to name that holder should say so.
      */
     public static Color pickHolderPaletteColour(
-            ElementPaint choice,
+            ElementPaintSelection paintSelection,
             DominantHolder holder,
             Color neutralColour) {
-        return holder == null
-            ? pickPaletteColour(choice, neutralColour, neutralColour)
-            : pickPaletteColour(choice, holder.primaryColour(), holder.secondaryColour());
+        return pickPaletteColour(
+            paintSelection,
+            holder == null
+                ? resolveNeutralPalette(neutralColour)
+                : holder.resolvePalette());
     }
 
     /**

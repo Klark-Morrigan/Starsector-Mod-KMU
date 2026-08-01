@@ -93,7 +93,7 @@ public final class RenderStyleReader {
     // mid-hover repaints through the same rebuild every other style change does.
     public static HoverHighlightStyle readHoverHighlightStyle() {
         return new HoverHighlightStyle(
-            FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getPoliticalMapHoverHighlightColour()),
+            FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getPoliticalMapHoverHighlightColour()),
             new HoverGlowStyle(
                 KmuLunaSettings.getPoliticalMapHoverGlowOpacity(),
                 KmuLunaSettings.getPoliticalMapHoverGlowWidth(),
@@ -111,14 +111,14 @@ public final class RenderStyleReader {
     public static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionFillColour()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getFactionFillColour()),
                 KmuLunaSettings.getFactionFillOpacity()),
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionOuterBorderColour()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getFactionOuterBorderColour()),
                 KmuLunaSettings.getFactionOuterBorderOpacity()),
             KmuLunaSettings.getFactionOuterBorderWidth(),
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getFactionInnerBorderColour()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getFactionInnerBorderColour()),
                 KmuLunaSettings.getFactionInnerBorderOpacity()),
             KmuLunaSettings.getFactionInnerBorderWidth());
     }
@@ -126,14 +126,14 @@ public final class RenderStyleReader {
     public static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentFillColour()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getIndependentFillColour()),
                 KmuLunaSettings.getIndependentFillOpacity()),
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentOuterBorderColour()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getIndependentOuterBorderColour()),
                 KmuLunaSettings.getIndependentOuterBorderOpacity()),
             KmuLunaSettings.getIndependentOuterBorderWidth(),
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(KmuLunaSettings.getIndependentInnerBorderColour()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getIndependentInnerBorderColour()),
                 KmuLunaSettings.getIndependentInnerBorderOpacity()),
             KmuLunaSettings.getIndependentInnerBorderWidth());
     }
@@ -145,7 +145,7 @@ public final class RenderStyleReader {
     public static CategoryStyle readDecivilisedStyle() {
         return neutralStyle(
             new ElementStyle(
-                FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY),
+                FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.PRIMARY),
                 KmuLunaSettings.getDecivilisedFillOpacity()),
             true, // Outline is drawn.
             KmuLunaSettings.getDecivilisedBorderOpacity(),
@@ -166,12 +166,12 @@ public final class RenderStyleReader {
     }
 
     // Assembles a factionless category's style: the given fill, its outline as the outer
-    // border (in the neutral colour via a PRIMARY shade, or no shade at all to hide it), and no
-    // inner seam - factionless cells do not fuse into clusters, so they have no interior seams
-    // to stroke. Both palette slots hold the neutral colour at draw time, so PRIMARY and
-    // SECONDARY would paint identically; PRIMARY is the drawn arm throughout.
+    // border (pointed at the PRIMARY slot, or at nothing at all to hide it), and no inner seam -
+    // factionless cells do not fuse into clusters, so they have no interior seams to stroke.
+    // Both palette slots hold the neutral colour at draw time, so PRIMARY and SECONDARY would
+    // paint identically; PRIMARY is the drawn arm throughout.
     //
-    // The hidden arm is no shade rather than a no-colour one: this style is assembled here
+    // The hidden arm is no selection rather than a no-colour one: this style is assembled here
     // rather than read from a player choice, so it can state the off case the way a style holds
     // it directly instead of routing a settings value through the crossing.
     private static CategoryStyle neutralStyle(
@@ -180,7 +180,7 @@ public final class RenderStyleReader {
             double outlineOpacity,
             double outlineWidth) {
 
-        var outerPaint = isOutlineDrawn ? FactionPaletteShade.PRIMARY : null;
+        var outerPaint = isOutlineDrawn ? FactionPaletteSlot.PRIMARY : null;
 
         return new CategoryStyle(
             fill,

@@ -1,16 +1,16 @@
 package kmu.maplayers.base.theme;
 
 /**
- * One painted element's colour and opacity as the player authored them: an {@link ElementPaint}
- * selection (resolved against a cluster's own shades only at draw time, since one style serves
- * many clusters) paired with the opacity it paints at.
+ * One painted element's colour and opacity as the player authored them: an
+ * {@link ElementPaintSelection} (resolved against a cluster's own shades only at draw time,
+ * since one style serves many clusters) paired with the opacity it paints at.
  *
  * <p>The unit every drawn element shares - a fill, a border, a seam, a cluster name - so the
  * pair travels as one value rather than as two parallel components each style has to spell out
  * and each reader has to keep in step. Widths stay outside it: only the two borders have one.
  */
 public record ElementStyle(
-    ElementPaint colour,
+    ElementPaintSelection colour,
     double opacity) {
 
     /** An element the player turned off, so no draw pass paints it. */

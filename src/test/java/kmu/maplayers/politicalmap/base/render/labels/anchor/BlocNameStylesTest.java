@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
 
@@ -29,24 +29,30 @@ final class BlocNameStylesTest {
         @Test
         void readFromLunaSettingsThreadsEachGroupsColourChoiceAndOpacityIntoItsOwnSlot() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-                settingsMock.when(KmuLunaSettings::getFactionOuterBorderColour)
-                        .thenReturn(FactionPaletteChoice.PRIMARY);
-                settingsMock.when(KmuLunaSettings::getFactionNameOpacity)
-                        .thenReturn(FACTION_NAME_OPACITY);
-                settingsMock.when(KmuLunaSettings::getIndependentOuterBorderColour)
-                        .thenReturn(FactionPaletteChoice.SECONDARY);
-                settingsMock.when(KmuLunaSettings::getIndependentNameOpacity)
-                        .thenReturn(INDEPENDENT_NAME_OPACITY);
+
+                settingsMock
+                    .when(KmuLunaSettings::getFactionOuterBorderColour)
+                    .thenReturn(FactionPaletteChoice.PRIMARY);
+                settingsMock
+                    .when(KmuLunaSettings::getFactionNameOpacity)
+                    .thenReturn(FACTION_NAME_OPACITY);
+                settingsMock
+                    .when(KmuLunaSettings::getIndependentOuterBorderColour)
+                    .thenReturn(FactionPaletteChoice.SECONDARY);
+                settingsMock
+                    .when(KmuLunaSettings::getIndependentNameOpacity)
+                    .thenReturn(INDEPENDENT_NAME_OPACITY);
 
                 var nameStyles = BlocNameStyles.readFromLunaSettings();
 
                 assertThat(nameStyles.factionNameStyle().colour())
-                        .isEqualTo(FactionPaletteShade.PRIMARY);
-                assertThat(nameStyles.factionNameStyle().opacity()).isEqualTo(FACTION_NAME_OPACITY);
+                    .isEqualTo(FactionPaletteSlot.PRIMARY);
+                assertThat(nameStyles.factionNameStyle().opacity())
+                    .isEqualTo(FACTION_NAME_OPACITY);
                 assertThat(nameStyles.independentNameStyle().colour())
-                        .isEqualTo(FactionPaletteShade.SECONDARY);
+                    .isEqualTo(FactionPaletteSlot.SECONDARY);
                 assertThat(nameStyles.independentNameStyle().opacity())
-                        .isEqualTo(INDEPENDENT_NAME_OPACITY);
+                    .isEqualTo(INDEPENDENT_NAME_OPACITY);
             }
         }
     }

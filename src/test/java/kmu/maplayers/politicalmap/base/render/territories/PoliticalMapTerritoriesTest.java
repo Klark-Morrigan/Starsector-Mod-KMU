@@ -17,9 +17,8 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteShade;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
-import kmu.settings.FactionPaletteChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -387,7 +386,7 @@ final class PoliticalMapTerritoriesTest {
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
     // interchangeable style bundles are distinct instances.
     private static CategoryStyle styleMarked(double marker) {
-        var element = new ElementStyle(FactionPaletteShade.resolveElementPaintOf(FactionPaletteChoice.PRIMARY), marker);
+        var element = new ElementStyle(FactionPaletteSlot.PRIMARY, marker);
         return new CategoryStyle(element, element, marker, element, marker);
     }
 }

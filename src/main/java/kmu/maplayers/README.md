@@ -49,7 +49,8 @@ the thing it hands over".
 | **cluster border** | national border, frontier | the inset ring around a cluster. `base` never calls it national - nothing about a border is political |
 | **interior seam** | province line | the fused edge between two same-owner cells, drawn faint or not at all |
 | **fill state** | held / contested / drawn-empty | how ground inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
-| **`ElementPaint`** | `FactionPaletteShade` | the player's colour pick, held opaquely by the theme. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaint` - its "No color" would otherwise read as drawable |
+| **`ElementPaintSelection`** | `FactionPaletteSlot` | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every bloc. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
+| **shade** | **shade** | the concrete `Color` a selection resolves to once a bloc's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
 
 Two words that are **not** synonyms, despite looking alike:
 

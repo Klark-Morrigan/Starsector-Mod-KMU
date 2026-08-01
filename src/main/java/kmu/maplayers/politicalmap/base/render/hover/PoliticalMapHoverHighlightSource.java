@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
 import kmu.maplayers.base.hover.HoverHighlightSource;
-import kmu.maplayers.base.theme.ElementPaint;
+import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 
@@ -47,9 +47,9 @@ public record PoliticalMapHoverHighlightSource(
     }
 
     @Override
-    public Color resolveHighlightColourOf(String cellId, ElementPaint paletteChoice) {
+    public Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection) {
         return MapPalettes.pickHolderPaletteColour(
-            paletteChoice,
+            paintSelection,
             territories.getHolderBySystemId().get(cellId),
             territories.getNeutralColour());
     }

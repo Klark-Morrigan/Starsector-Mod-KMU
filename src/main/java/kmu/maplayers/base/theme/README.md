@@ -1,8 +1,10 @@
 # The theme records (`base.theme`)
 
 The player's authored choices, as value types: what the player picked, held in the shape the rest
-of the map reads it in. Everything here is a record (plus the one key interface they are keyed by),
-and what little behaviour they carry answers only from their own components -
+of the map reads it in. Everything here is a record apart from two interfaces, and both are places
+a layer's own vocabulary plugs in rather than types this package populates: `MapStyleCategory`,
+the key the per-category bundles are held under, and `ElementPaintSelection`, the colour pick an
+element carries. What little behaviour the records carry answers only from their own components -
 `ElementStyle.isDrawn`, `RenderStyle.categoryStyle`, and the per-layer width and alpha
 `HoverGlowStyle` derives from its stack and pulse. None of it reads a setting, resolves a colour,
 or touches geometry.
@@ -47,19 +49,21 @@ call site.
 ## The element unit
 
 `ElementStyle` is the unit every drawn element shares - a fill, a border, a seam, a cluster name:
-a palette choice paired with the opacity it paints at. The pair travels as one value rather than
-as two parallel components each bundle has to spell out and each reader has to keep in step.
+an `ElementPaintSelection` paired with the opacity it paints at. The pair travels as one value
+rather than as two parallel components each bundle has to spell out and each reader has to keep in
+step.
 
 Widths stay outside it, on `CategoryStyle` - only the two borders have one.
 
-The palette choice is resolved against a cluster's actual shades late, at draw time, because one
-bundle serves many clusters. That resolution is not here; see below.
+The selection is the player's *unresolved* pick, which is the whole of what the noun buys: it is
+resolved against a cluster's actual shades late, at draw time, because one bundle serves many
+clusters. That resolution is not here; see below.
 
 ## What is not here
 
 Nothing here reads a setting, resolves a colour, or names a category. *The categories themselves*
 are `PoliticalMapCategory`, *populating* these records from LunaLib is `RenderStyleReader`, and
-*turning a choice into a concrete shade* is `MapPalettes`, all three in the political map's own
+*turning a selection into a concrete shade* is `MapPalettes`, all three in the political map's own
 [`render.style`](../../politicalmap/base/render/style/README.md). All three stay there because all
 three name factions: the four categories are a division of the ground by who holds it, the
 reader's knobs and its per-save uninhabited-outline preference are the political map's, and the
