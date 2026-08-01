@@ -18,7 +18,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Fits the label placements: one {@link ClusterAnchor} per contiguous same-owner cluster, its
@@ -36,8 +35,8 @@ import java.util.function.Function;
  * carries no real direction.
  *
  * <p>Pure geometry over opaque owner ids: what a key means, what its name reads and what
- * shade it draws in all arrive injected as plain functions of the key, so the search reads no
- * settings, ownership, or filter state, names nothing on the map, and is exercised on
+ * shade it draws in all arrive injected as {@link ClusterLabelResolvers}, so the search reads
+ * no settings, ownership, or filter state, names nothing on the map, and is exercised on
  * hand-built clusters.
  */
 public final class ClusterAnchorPlacement {
@@ -58,16 +57,13 @@ public final class ClusterAnchorPlacement {
      * plain functions of the key, so the search never asks what a key means; the candidate
      * lines use a fixed diagnostic palette instead, painted by the renderer.
      *
-     * @param clusters                 each contiguous cluster's member system ids
-     * @param edgesByCellId            each cell's raw edges - the geometry lines are clipped
-     *                                 against
-     * @param siteBySystemId           each system's world position, for the axis fit and the
-     *                                 icon keep-outs
-     * @param grouping                 which system each cell draws as and each system's
-     *                                 owner
-     * @param spec                     the search's whole tuning surface
-     * @param labelColorByGroupKey     the shade a group's name and dot draw in
-     * @param nameEstimatorByGroupKey  the name measurement a group's boxes are sized against
+     * @param clusters        each contiguous cluster's member system ids
+     * @param edgesByCellId   each cell's raw edges - the geometry lines are clipped against
+     * @param siteBySystemId  each system's world position, for the axis fit and the icon
+     *                        keep-outs
+     * @param grouping        which system each cell draws as and each system's owner
+     * @param spec            the search's whole tuning surface
+     * @param labelResolvers  the shade and the name measurement, both by owner
      * @return one anchor per cluster with a site to fit, in cluster order
      */
     public static List<ClusterAnchor> computeClusterAnchors(
@@ -76,8 +72,7 @@ public final class ClusterAnchorPlacement {
             Map<String, double[]> siteBySystemId,
             CellGrouping grouping,
             LabelAnchorSpecification spec,
-            Function<String, Color> labelColorByGroupKey,
-            Function<String, LabelLengthEstimator> nameEstimatorByGroupKey) {
+            ClusterLabelResolvers labelResolvers) {
 
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         for (var memberSystemIds : clusters) {
@@ -97,9 +92,9 @@ public final class ClusterAnchorPlacement {
                     rings,
                     siteBySystemId,
                     axis,
-                    labelColorByGroupKey.apply(owner),
+                    labelResolvers.resolveLabelColourOf(owner),
                     spec,
-                    nameEstimatorByGroupKey.apply(owner)));
+                    labelResolvers.resolveNameEstimatorOf(owner)));
         }
         return anchors;
     }

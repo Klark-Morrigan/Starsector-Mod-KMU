@@ -18,7 +18,7 @@ import java.util.Map;
  * Turns one cluster's {@link FillSplit} into the triangles and hatch lines its fill
  * paints, inside the single frontier the footprint already traced.
  *
- * <p>Built per territory around the trace context that whole fill shares - the cells, their
+ * <p>Built per cluster around the trace context that whole fill shares - the cells, their
  * grouping, the border trace, the smoothed border loops, and the hatch geometry - so the
  * several tessellation steps read one consistent snapshot instead of threading the lot
  * through each hop.
@@ -71,14 +71,14 @@ public final class SplitFillBuilder {
     }
 
     /**
-     * Builds one territory's fill, taking the per-state split only where it is needed.
+     * Builds one cluster's fill, taking the per-state split only where it is needed.
      *
-     * <p>A territory whose members do not all fill solid splits its fill per state inside its
+     * <p>A cluster whose members do not all fill solid splits its fill per state inside its
      * one frontier - one area per {@link FillState} - so the states read apart without the
      * border fracturing. A spotlit cluster always splits, since its fill is per-state even when
-     * every member is in the same state. Every other territory fills solid as one cluster
+     * every member is in the same state. Every other cluster fills solid as a single area
      * tessellated from the same smoothed loops the border strokes, so fill and border match
-     * exactly and the split's cost is paid only by the territories that need it.
+     * exactly and the split's cost is paid only by the clusters that need it.
      *
      * @param isSpotlit  whether this is the filter's spotlighted footprint
      * @param split      the footprint's members by fill state

@@ -5,7 +5,7 @@ package kmu.maplayers.base.theme;
  * {@link kmu.maplayers.base.render.clusters.FillSplit.FillState#HATCHED} state is cut with, so
  * it reads apart from the solid fill beside it while staying the same colour. One pattern for
  * the whole sector, so this is a global-tier value (part of {@link GlobalStyle}) rather than
- * something that varies per territory: {@code spacing} is the perpendicular gap between lines
+ * something that varies per cluster: {@code spacing} is the perpendicular gap between lines
  * in world units, {@code angleRadians} their direction, and {@code width} the pixel stroke of
  * each line.
  */

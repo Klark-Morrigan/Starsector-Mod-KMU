@@ -166,16 +166,16 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_bloc_holding_a_cell_traces_at_least_one_ring(String sector) {
+        void every_owner_holding_a_cell_traces_at_least_one_ring(String sector) {
             var geometry = geometryOf(sector);
-            var blocsWithoutRings = new ArrayList<String>();
-            for (var bloc : SectorGeometry.groupCellIdsByOwner(geometry.ownerByCellId())
+            var ownersWithoutRings = new ArrayList<String>();
+            for (var owner : SectorGeometry.groupCellIdsByOwner(geometry.ownerByCellId())
                     .entrySet()) {
-                if (geometry.ringsByOwner().get(bloc.getKey()).isEmpty()) {
-                    blocsWithoutRings.add(bloc.getKey());
+                if (geometry.ringsByOwner().get(owner.getKey()).isEmpty()) {
+                    ownersWithoutRings.add(owner.getKey());
                 }
             }
-            assertThat(blocsWithoutRings).isEmpty();
+            assertThat(ownersWithoutRings).isEmpty();
         }
 
         @ParameterizedTest(name = "{0}")

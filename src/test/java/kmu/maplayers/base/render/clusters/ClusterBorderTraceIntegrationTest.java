@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Integration coverage for the border-ring trace path the full territory build and the
+ * Integration coverage for the border-ring trace path the full cluster build and the
  * incremental refresh both go through - {@link ClusterBorderTrace} over
  * {@link SystemClusterBorders}, the classifier, and the kmlib chainer and per-edge miter.
  * Pins acceptance case 6: a faction traced in the full pass and re-traced by the
@@ -81,7 +81,7 @@ class ClusterBorderTraceIntegrationTest {
         @Test
         void the_record_forwards_its_parameters_to_the_cluster_trace() {
             // The record's trace must equal a direct cluster trace given the same parameters - the
-            // wiring that keeps the anchor fit and the territory build (both go through the record)
+            // wiring that keeps the anchor fit and the cluster build (both go through the record)
             // clipping against the very rings the fills stroke.
             var trace = new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
@@ -98,7 +98,7 @@ class ClusterBorderTraceIntegrationTest {
             var trace = new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             // Each rival stops a channel inside its own cell edge against B, so B's whole cell
-            // plus both channels - x = 1850 to x = 4150 - stays outside either territory. Neither
+            // plus both channels - x = 1850 to x = 4150 - stays outside either cluster. Neither
             // reaches toward B's star at x = 3000.
             var fRings = trace.traceRings(List.of("A"), EDGES, GROUPING);
             var gRings = trace.traceRings(List.of("C"), EDGES, GROUPING);

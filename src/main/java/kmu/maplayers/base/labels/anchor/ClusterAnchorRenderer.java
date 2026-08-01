@@ -20,7 +20,7 @@ import java.util.function.Function;
  * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's anchor
  * dot plus its accepted, rejected, and unbiased label lines.
  *
- * <p>Its own renderer, apart from whatever draws the territories themselves, because the
+ * <p>Its own renderer, apart from whatever draws the clusters themselves, because the
  * anchors are an independent overlay: they are drawn after whichever base view is live -
  * a layer's normal render or its debug overlay - so turning a debug view on never hides
  * them. Pure GL emission over an already-built anchor list, in the same below-UI map pass

@@ -21,7 +21,7 @@ import java.util.EnumSet;
  * <p>Terrain is the surface because the sector map renders terrain through {@code renderOnMap} -
  * the same hook the vanilla nebulae draw with. A custom campaign entity has no map-render hook, so
  * its {@code render} never reaches the map. The below-UI {@code renderOnMap} pass (rather than
- * {@code renderOnMapAbove}) keeps the territory beneath system and constellation names, matching
+ * {@code renderOnMapAbove}) keeps the clusters beneath system and constellation names, matching
  * its role as a quiet background layer.
  *
  * <p>This plugin is serialised into the save with its terrain entity, so it deliberately holds no

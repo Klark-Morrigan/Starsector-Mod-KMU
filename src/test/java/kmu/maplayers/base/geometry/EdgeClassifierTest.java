@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * unowned sides are a plain boundary - and the {@link EdgeClassifier#classifyAcross}
  * convenience that resolves what an edge's {@link EdgeTarget} names before applying that
  * rule: a system's key read from the map, the reach bound a plain boundary, and
- * same-territory an interior seam whatever the cell's own key.
+ * same-owner an interior seam whatever the cell's own key.
  */
 final class EdgeClassifierTest {
 
@@ -24,7 +24,7 @@ final class EdgeClassifierTest {
         return new CellEdge(0, 0, 0, 0, new EdgeTarget.AcrossSystem(systemId));
     }
 
-    // One cell edge facing the given systemless target - the reach bound or same-territory.
+    // One cell edge facing the given systemless target - the reach bound or same-owner.
     private static CellEdge edgeFacing(EdgeTarget target) {
         return new CellEdge(0, 0, 0, 0, target);
     }
@@ -144,7 +144,7 @@ final class EdgeClassifierTest {
 
         @Test
         void classifyAcrossReturnsInteriorSeamForSameGroundWhenUnowned() {
-            // Same-territory fuses even an unowned cell's own cut - a null-keyed shard of one
+            // Same-owner fuses even an unowned cell's own cut - a null-keyed shard of one
             // dead star's leftover space - which "the same owner both sides" could not express for a
             // null key, and which must not read a null system out of the map.
             var edge = edgeFacing(EdgeTarget.SAME_OWNER);

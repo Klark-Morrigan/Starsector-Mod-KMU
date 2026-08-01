@@ -31,8 +31,8 @@ Part of [the map-layer framework](../../README.md); see the
 
 A `RenderStyle` is the whole theme, in two tiers:
 
-- `GlobalStyle` - sector-wide, identical for every territory: the contested-fill `HatchStyle`, the
-  national-border `BorderSmoothingStyle` (both smoothing gates and the shape each pass works to),
+- `GlobalStyle` - sector-wide, identical for every cluster: the hatched-fill `HatchStyle`, the
+  cluster-border `BorderSmoothingStyle` (both smoothing gates and the shape each pass works to),
   the `HoverHighlightStyle` (itself a `HoverGlowStyle` for the frontier halo and a `HoverWashStyle`
   for the hovered cell), and the desaturation profile.
 - `Map<MapStyleCategory, CategoryStyle>` - one bundle per category. Keying on a type rather than

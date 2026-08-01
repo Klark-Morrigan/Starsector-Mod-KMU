@@ -81,7 +81,7 @@ public record FillSplit(
     }
 
     /**
-     * @return whether any member draws as something other than solid, so a territory that is
+     * @return whether any member draws as something other than solid, so a cluster that is
      *         not spotlit still takes the per-state split when it holds hatched or unfilled
      *         ground
      */

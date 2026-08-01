@@ -8,7 +8,7 @@ import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
  * across the cluster.
  *
  * @param borderTrace      the cluster-border trace the anchor clips against - shared with
- *                         the territory build, so the anchor sees the same rings the player
+ *                         the cluster build, so the anchor sees the same rings the player
  *                         does by construction
  * @param endInsetDistance how far each end of the clear interval pulls inward, in world
  *                         units - the border-inset multiple already resolved to a distance

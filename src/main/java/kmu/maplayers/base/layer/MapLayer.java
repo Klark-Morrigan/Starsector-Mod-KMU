@@ -8,13 +8,13 @@ import java.util.List;
 
 /**
  * One selectable view of the sector map: a tab in the on-map layer bar and, for the views
- * that paint, one styling of the sector's territory. The bar composes whatever layers are
+ * that paint, one styling of the sector's clusters. The bar composes whatever layers are
  * registered with {@link MapLayerRegistry} into a row of tabs and switches between them,
  * exactly one active at a time - the same model as the map's own Sector/System tabs.
  *
- * <p>The framework exists so a new view (Nexerelin alliances is the next planned one) is a
- * matter of adding an implementation and registering it: the bar draws its tab, the input
- * listener hit-tests it, and its hotkey switches to it, all with no change to the UI code.
+ * <p>The framework exists so a new view is a matter of adding an implementation and
+ * registering it: the bar draws its tab, the input listener hit-tests it, and its hotkey
+ * switches to it, all with no change to the UI code.
  * A layer here is a descriptor - id, tab label, body controls, hotkey - not a renderer; drawing is
  * a separate role a layer may fill, supplied through {@link #getMapRenderer()} and driven by the
  * terrain surface that owns the map's render pass.

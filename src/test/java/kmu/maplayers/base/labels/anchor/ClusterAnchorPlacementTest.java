@@ -148,7 +148,7 @@ final class ClusterAnchorPlacementTest {
                 grouping(Map.of("A", GROUP_KEY));
 
         @Test
-        void computeClusterAnchorsClipsTheAcceptedLineInsideTheNationalBorder() {
+        void computeClusterAnchorsClipsTheAcceptedLineInsideTheClusterBorder() {
             // No icon keep-out and no end margin, so the winning horizontal line is the
             // full interior span: it reaches the inset border rings (x 150..1850) - past
             // the sites, but never out of the border.
@@ -156,8 +156,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -179,8 +178,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     spec(0.0, 150.0, 3, 3, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -204,8 +202,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     spec(100.0, 0.0, 3, 1, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -225,8 +222,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), THIN_COLUMN_EDGES,
                     THIN_COLUMN_SITES, THIN_COLUMN_GROUPING,
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -248,8 +244,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_GROUPING,
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -269,8 +264,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_GROUPING,
                     spec(0.0, 0.0, 3, 3, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -290,8 +284,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -313,8 +306,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B", "C", "D", "E")), BOOT_EDGES,
                     BOOT_SITES, BOOT_GROUPING,
                     spec(0.0, 0.0, 3, 5, 0.5, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var accepted = anchors.get(0).acceptedAxis();
             assertThat(accepted).isNotNull();
@@ -335,8 +327,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of("A", new double[] {1000, 500}),
                     SINGLE_SYSTEM_GROUPING,
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             assertThat(anchors).hasSize(1);
             var accepted = anchors.get(0).acceptedAxis();
@@ -359,8 +350,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     spec(1000.0, 0.0, 3, 3, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();
@@ -381,8 +371,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     spec(1000.0, 0.0, 3, 1, 0.0, 2.0, true, false),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();
@@ -405,8 +394,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
                     SQUARE_GRID_VERTICAL_SITES, SQUARE_GRID_GROUPING,
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0, false, true),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var anchor = anchors.get(0);
             var accepted = anchor.acceptedAxis();
@@ -428,8 +416,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), THIN_COLUMN_EDGES,
                     THIN_COLUMN_SITES, THIN_COLUMN_GROUPING,
                     spec(0.0, 0.0, 3, 3, 0.5, 2.0, false, true),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             assertThat(anchors.get(0).unbiasedAxis()).isNull();
         }
@@ -442,8 +429,7 @@ final class ClusterAnchorPlacementTest {
                     List.of(List.of("A", "B")), Map.of(),
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     spec(0.0, 0.0, 3, 3, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             var anchor = anchors.get(0);
             assertThat(anchor.anchorX()).isCloseTo(1000f, within(1e-4f));
@@ -464,7 +450,7 @@ final class ClusterAnchorPlacementTest {
             ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
-                    spec(0.0, 0.0, 3, 1, 0.0, 2.0), FIXED_LABEL_COLORS, recordingResolver);
+                    spec(0.0, 0.0, 3, 1, 0.0, 2.0), createLabelResolvers(recordingResolver));
 
             assertThat(askedGroupKeys).containsExactly(GROUP_KEY);
         }
@@ -482,8 +468,8 @@ final class ClusterAnchorPlacementTest {
             var anchors = ClusterAnchorPlacement.computeClusterAnchors(
                     List.of(List.of("A", "B")), HORIZONTAL_PAIR_EDGES,
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
-                    spec(0.0, 0.0, 3, 1, 0.0, 2.0), recordingColors,
-                    slenderNameEstimators());
+                    spec(0.0, 0.0, 3, 1, 0.0, 2.0), 
+                    new ClusterLabelResolvers(recordingColors, slenderNameEstimators()));
 
             assertThat(askedGroupKeys).containsExactly(GROUP_KEY);
             assertThat(anchors.get(0).color()).isEqualTo(Color.MAGENTA);
@@ -498,8 +484,7 @@ final class ClusterAnchorPlacementTest {
                     Map.of(),
                     SINGLE_SYSTEM_GROUPING,
                     spec(0.0, 0.0, 3, 1, 0.0, 2.0),
-                    FIXED_LABEL_COLORS,
-                    slenderNameEstimators());
+                    createLabelResolvers(slenderNameEstimators()));
 
             assertThat(anchors).isEmpty();
         }
@@ -517,8 +502,7 @@ final class ClusterAnchorPlacementTest {
                     HORIZONTAL_PAIR_SITES, HORIZONTAL_PAIR_GROUPING,
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 2000.0, 1, 1.0),
-                    FIXED_LABEL_COLORS,
-                    aspectNameEstimators(1.0));
+                    createLabelResolvers(aspectNameEstimators(1.0)));
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNotNull();
@@ -543,8 +527,7 @@ final class ClusterAnchorPlacementTest {
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_GROUPING,
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 3, 1.15),
-                    FIXED_LABEL_COLORS,
-                    aspectNameEstimators(6.0));
+                    createLabelResolvers(aspectNameEstimators(6.0)));
 
             assertThat(anchors.get(0).lineCount()).isEqualTo(2);
             assertThat(anchors.get(0).thickness()).isGreaterThan(0f);
@@ -563,8 +546,7 @@ final class ClusterAnchorPlacementTest {
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_GROUPING,
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 3, 1.15),
-                    FIXED_LABEL_COLORS,
-                    factionId -> nameEstimatorFake);
+                    createLabelResolvers(owner -> nameEstimatorFake));
 
             var anchor = anchors.get(0);
             assertThat(anchor.nameLines()).containsExactly("Line 1", "Line 2");
@@ -582,8 +564,7 @@ final class ClusterAnchorPlacementTest {
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_GROUPING,
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             100.0, 1700.0, 1, 1.15),
-                    FIXED_LABEL_COLORS,
-                    aspectNameEstimators(6.0));
+                    createLabelResolvers(aspectNameEstimators(6.0)));
 
             assertThat(anchors.get(0).lineCount()).isEqualTo(1);
         }
@@ -598,8 +579,7 @@ final class ClusterAnchorPlacementTest {
                     SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_GROUPING,
                     bandSpec(0.0, 0.0, 3, 3, 0.0, 2.0, false, false,
                             3000.0, 4000.0, 1, 1.0),
-                    FIXED_LABEL_COLORS,
-                    aspectNameEstimators(6.0));
+                    createLabelResolvers(aspectNameEstimators(6.0)));
 
             var anchor = anchors.get(0);
             assertThat(anchor.acceptedAxis()).isNull();
@@ -632,6 +612,15 @@ final class ClusterAnchorPlacementTest {
         // The slender stand-in resolver behind the line-fit tests.
         private static Function<String, LabelLengthEstimator> slenderNameEstimators() {
             return aspectNameEstimators(SLENDER_ASPECT);
+        }
+
+        // Binds the fixed shade every fit case shares, so a case names only the name
+        // measurement it actually varies. The one case that records which key the shade is
+        // asked for builds the value directly instead, since that half is its point.
+        private static ClusterLabelResolvers createLabelResolvers(
+                Function<String, LabelLengthEstimator> nameEstimators) {
+
+            return new ClusterLabelResolvers(FIXED_LABEL_COLORS, nameEstimators);
         }
 
         // A tuning with the fixture's border-trace pair baked in, sized for the slender

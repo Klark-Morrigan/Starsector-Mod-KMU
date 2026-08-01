@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the one cell-aware GL packing the renderer depends on: selecting a shaped cell's
- * edges of a single class (national border or interior seam) and flattening them into the
+ * edges of a single class (cluster border or interior seam) and flattening them into the
  * GL_LINES run the renderer strokes. The generic {@code {x, y}} to flat-array conversion
  * lives in {@link GlVertexRuns}; what is pinned here is the boundary/seam split and the
  * closing edge's wrap back to the first vertex.

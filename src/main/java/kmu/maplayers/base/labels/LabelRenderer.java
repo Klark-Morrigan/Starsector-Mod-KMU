@@ -16,7 +16,7 @@ import java.util.List;
  * all alike.
  *
  * <p>Drawn in the same below-UI {@code renderOnMap} pass as the fills and the debug anchor
- * overlay, and last of the three, so a name reads on top of its territory and over the
+ * overlay, and last of the three, so a name reads on top of its cluster and over the
  * debug band that (when the anchor toggle is on) shows the box it will occupy - yet still
  * beneath the vanilla star and constellation names, which the map draws after every
  * terrain {@code renderOnMap}. ({@code renderOnMapAbove} would put the names over the star
@@ -24,7 +24,7 @@ import java.util.List;
  *
  * <p>The names live in world space: the pass scales the GL matrix by the map factor once,
  * then hands each label its raw world coordinates, so a name grows and shrinks with the
- * territory it labels rather than staying a fixed pixel size. LazyLib's
+ * cluster it labels rather than staying a fixed pixel size. LazyLib's
  * {@code DrawableString.drawAtAngle} saves and restores its own GL state per draw, so this
  * renderer adds only the shared world-scale matrix around the batch.
  */
@@ -48,14 +48,14 @@ public final class LabelRenderer {
     }
 
     // Scales the modelview by the map factor once, then draws each label at its raw world
-    // coordinates so the glyphs scale with the territory. Each label's colour is refaded to
+    // coordinates so the glyphs scale with the cluster. Each label's colour is refaded to
     // the map's alpha first (no buffer rebuild, since there is no per-substring colour), so
     // the names fade with the fills at the edges of the map's zoom range.
     private static void drawLabels(List<Label> labels, float factor, float alphaMult) {
         GL11.glPushMatrix();
         GL11.glScalef(factor, factor, 1f);
         for (var label : labels) {
-            // Refade the label to the frame's alpha so it dims in step with the territory
+            // Refade the label to the frame's alpha so it dims in step with the cluster
             // it sits on; scaleAlpha keeps a copy, so the cached base colour is untouched.
             label.text().setBaseColor(Colors.scaleAlpha(label.baseColor(), alphaMult));
             label.text().drawAtAngle(label.hangX(), label.hangY(), label.slantDegrees());

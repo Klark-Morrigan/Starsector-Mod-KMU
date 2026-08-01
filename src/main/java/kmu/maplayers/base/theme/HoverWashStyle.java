@@ -2,7 +2,7 @@ package kmu.maplayers.base.theme;
 
 /**
  * The lift over the single cell the cursor is inside - the one star system a hover is
- * ultimately about, named exactly rather than by the territory around it.
+ * ultimately about, named exactly rather than by the cluster around it.
  *
  * <p>Two elements because a cell has to read both ways: {@code fillOpacity} brightens its
  * whole painted extent, which is what carries at a glance, while the outline at

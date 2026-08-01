@@ -99,7 +99,7 @@ final class FillSplitTest {
 
         @Test
         void hasNonSolidMembersIsFalseWhenEveryMemberFillsSolid() {
-            // The fast path a territory takes to fill as one cluster: nothing to split apart.
+            // The fast path a cluster takes to fill as one area: nothing to split apart.
             var split = FillSplit.splitMembersByFillState(
                     groupingOf(Map.of("cell-solid", SOLID_SYSTEM)),
                     List.of("cell-solid"),
