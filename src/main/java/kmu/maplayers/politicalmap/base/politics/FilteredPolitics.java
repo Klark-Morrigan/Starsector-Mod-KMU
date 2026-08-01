@@ -62,8 +62,9 @@ public final class FilteredPolitics {
      * @param ownerBySystemId    the presence-aware holder per owned system
      * @param contestedSystemIds the spotlit systems the bloc is present in but does not dominate
      */
-    public record FilteredHolder(Map<String, DominantHolder> ownerBySystemId,
-            Set<String> contestedSystemIds) {
+    public record FilteredHolder(
+        Map<String, DominantHolder> ownerBySystemId,
+        Set<String> contestedSystemIds) {
     }
 
     /**
@@ -72,6 +73,7 @@ public final class FilteredPolitics {
      * free of economy and faction types, so the rule can be exercised on hand-built footprints.
      */
     public enum SelectedBlocPresence {
+
         /** The selected bloc holds the system outright: drawn solid, at full strength. */
         DOMINATES,
         /** The selected bloc owns a market but a rival wins: drawn contested (hatched). */
@@ -99,9 +101,12 @@ public final class FilteredPolitics {
      * @return where the selected bloc stands in this system
      */
     public static SelectedBlocPresence classifySelectedBlocPresence(
-            Map<String, MarketFootprint> footprintByBlocId, String selectedBlocId) {
+            Map<String, MarketFootprint> footprintByBlocId,
+            String selectedBlocId) {
         return classifySelectedBlocPresence(
-                footprintByBlocId, selectedBlocId, Comparator.naturalOrder());
+            footprintByBlocId,
+            selectedBlocId,
+            Comparator.naturalOrder());
     }
 
     /**
@@ -121,13 +126,14 @@ public final class FilteredPolitics {
             Map<String, MarketFootprint> footprintByBlocId,
             String selectedBlocId,
             Comparator<String> tieBreak) {
+
         if (!footprintByBlocId.containsKey(selectedBlocId)) {
             return SelectedBlocPresence.ABSENT;
         }
         var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId, tieBreak);
         return selectedBlocId.equals(dominantBlocId)
-                ? SelectedBlocPresence.DOMINATES
-                : SelectedBlocPresence.PRESENT_BUT_DOMINATED;
+            ? SelectedBlocPresence.DOMINATES
+            : SelectedBlocPresence.PRESENT_BUT_DOMINATED;
     }
 
     /**
@@ -154,9 +160,13 @@ public final class FilteredPolitics {
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */
     public static FilteredHolder resolveFilteredHolder(
-            SectorAPI sector, HolderGrouping grouping, String selectedBlocId) {
+            SectorAPI sector,
+            HolderGrouping grouping,
+            String selectedBlocId) {
         return resolveFilteredHolder(
-                sector, DominancePass.readFromLunaSettings(grouping), selectedBlocId);
+            sector,
+            DominancePass.readFromLunaSettings(grouping),
+            selectedBlocId);
     }
 
     /**
@@ -177,9 +187,13 @@ public final class FilteredPolitics {
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */
     public static FilteredHolder resolveFilteredHolder(
-            SectorAPI sector, DominancePass pass, String selectedBlocId) {
+            SectorAPI sector,
+            DominancePass pass,
+            String selectedBlocId) {
+
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         var contestedSystemIds = new LinkedHashSet<String>();
+
         if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
             return new FilteredHolder(ownerBySystemId, contestedSystemIds);
         }
@@ -213,12 +227,15 @@ public final class FilteredPolitics {
             SectorAPI sector,
             HolderGrouping grouping,
             String selectedBlocId) {
+
         var paletteHolder = SectorPolitics.resolveBlocHolder(sector, grouping, selectedBlocId);
         if (paletteHolder == null) {
             return null;
         }
-        return new DominantHolder(SPOTLIT_KEY,
-                paletteHolder.primaryColor(), paletteHolder.secondaryColor());
+        return new DominantHolder(
+            SPOTLIT_KEY,
+            paletteHolder.primaryColor(),
+            paletteHolder.secondaryColor());
     }
 
     // Resolves one system's presence-aware holder: the selected bloc under the spotlit key where
@@ -232,17 +249,21 @@ public final class FilteredPolitics {
             DominancePass pass,
             String selectedBlocId,
             Set<String> contestedSystemIds) {
+
         var footprintByBlocId = pass.readBlocFootprints(sector, system);
+
         // The proximity tie-break the normal pass uses, so both the "does the selected bloc
         // dominate" call and the receded real-holder fallback settle a tie the same way the base
         // layers do; lazy, so it reads no geometry unless this system actually ties.
         var tieBreak = pass.tieBreakFor(sector, system);
         var grouping = pass.grouping();
         var presence = classifySelectedBlocPresence(footprintByBlocId, selectedBlocId, tieBreak);
+
         if (presence == SelectedBlocPresence.ABSENT) {
             return resolveRealHolder(sector, grouping, footprintByBlocId, tieBreak);
         }
         var spotlit = resolveSpotlitHolder(sector, grouping, selectedBlocId);
+
         // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
         // case where it vanished mid-session, so the system still draws (as its real receded
         // holder) rather than dropping off the map - and a system that fell back is not spotlit,
@@ -265,6 +286,7 @@ public final class FilteredPolitics {
             HolderGrouping grouping,
             Map<String, MarketFootprint> footprintByBlocId,
             Comparator<String> tieBreak) {
+                
         var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId, tieBreak);
         if (dominantBlocId == null) {
             return null;

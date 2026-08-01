@@ -52,7 +52,9 @@ public final class SectorPolitics {
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantHolder> resolveDominantHolderBySystemId(SectorAPI sector) {
-        return resolveDominantHolderBySystemId(sector, HolderGrouping.identity());
+        return resolveDominantHolderBySystemId(
+            sector,
+            HolderGrouping.identity());
     }
 
     /**
@@ -71,9 +73,11 @@ public final class SectorPolitics {
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantHolder> resolveDominantHolderBySystemId(
-            SectorAPI sector, HolderGrouping grouping) {
+            SectorAPI sector,
+            HolderGrouping grouping) {
         return resolveDominantHolderBySystemId(
-                sector, DominancePass.readFromLunaSettings(grouping));
+            sector,
+            DominancePass.readFromLunaSettings(grouping));
     }
 
     /**
@@ -86,7 +90,9 @@ public final class SectorPolitics {
      *         markets is absent from the map (uninhabited)
      */
     public static Map<String, DominantHolder> resolveDominantHolderBySystemId(
-            SectorAPI sector, DominancePass pass) {
+            SectorAPI sector,
+            DominancePass pass) {
+
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         if (sector == null) {
             return ownerBySystemId;
@@ -119,7 +125,10 @@ public final class SectorPolitics {
      *         (uninhabited)
      */
     public static DominantHolder resolveDominantHolder(SectorAPI sector, StarSystemAPI system) {
-        return resolveDominantHolder(sector, system, HolderGrouping.identity());
+        return resolveDominantHolder(
+            sector,
+            system,
+            HolderGrouping.identity());
     }
 
     /**
@@ -140,8 +149,13 @@ public final class SectorPolitics {
      *         (uninhabited)
      */
     public static DominantHolder resolveDominantHolder(
-            SectorAPI sector, StarSystemAPI system, HolderGrouping grouping) {
-        return resolveDominantHolder(sector, system, DominancePass.readFromLunaSettings(grouping));
+            SectorAPI sector,
+            StarSystemAPI system,
+            HolderGrouping grouping) {
+        return resolveDominantHolder(
+            sector,
+            system,
+            DominancePass.readFromLunaSettings(grouping));
     }
 
     /**
@@ -160,17 +174,25 @@ public final class SectorPolitics {
      *         (uninhabited)
      */
     public static DominantHolder resolveDominantHolder(
-            SectorAPI sector, StarSystemAPI system, DominancePass pass) {
+            SectorAPI sector,
+            StarSystemAPI system,
+            DominancePass pass) {
+
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
         }
         var footprintByBlocId = pass.readBlocFootprints(sector, system);
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
-                footprintByBlocId, pass.tieBreakFor(sector, system));
+            footprintByBlocId,
+            pass.tieBreakFor(sector, system));
+
         if (dominantBlocId == null) {
             return null;
         }
-        return resolveBlocHolder(sector, pass.grouping(), dominantBlocId);
+        return resolveBlocHolder(
+            sector,
+            pass.grouping(),
+            dominantBlocId);
     }
 
     /**
@@ -196,7 +218,10 @@ public final class SectorPolitics {
      * @return the render-ready holder, or null when the colour faction does not resolve
      */
     static DominantHolder resolveBlocHolder(
-            SectorAPI sector, HolderGrouping grouping, String blocId) {
+            SectorAPI sector,
+            HolderGrouping grouping,
+            String blocId) {
+                
         var faction = sector.getFaction(grouping.resolveColorFactionId(blocId));
         if (faction == null) {
             return null;

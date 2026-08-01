@@ -30,7 +30,7 @@ import java.util.Set;
  *                        frontier; empty when the whole resolution fills solid
  */
 public record HolderResolution(
-        Map<String, DominantHolder> ownerBySystemId,
-        Set<String> contestedSystemIds,
-        Set<String> unfilledSystemIds) {
+    Map<String, DominantHolder> ownerBySystemId,
+    Set<String> contestedSystemIds,
+    Set<String> unfilledSystemIds) {
 }

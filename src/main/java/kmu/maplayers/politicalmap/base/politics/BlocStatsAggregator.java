@@ -71,27 +71,31 @@ public final class BlocStatsAggregator {
         // several systems, or an alliance's members, accumulates rather than overwrites), then the
         // dominance rule reads the footprint half of each bloc's folded contribution.
         var contributionByBlocId = pass.grouping().regroupByBloc(
-                KnownMarketFootprints.readContributionsByFaction(
-                        sector, system, pass.rules(), pass.shouldIncludeUndiscoveredMarkets()),
-                FactionMarketContribution.EMPTY,
-                FactionMarketContribution::merge);
+            KnownMarketFootprints.readContributionsByFaction(
+                sector,
+                system,
+                pass.rules(),
+                pass.shouldIncludeUndiscoveredMarkets()),
+            FactionMarketContribution.EMPTY,
+            FactionMarketContribution::merge);
 
         // The one winner among the system's present blocs; null only when no bloc is present here,
         // in which case the loop below has nothing to fold and the system contributes no stats.
         // Ties resolve by market proximity, the same as the render pass, so a picker's domination
         // count matches the territory that actually paints.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
-                extractFootprints(contributionByBlocId),
-                pass.tieBreakFor(sector, system));
+            extractFootprints(contributionByBlocId),
+            pass.tieBreakFor(sector, system));
+
         for (var entry : contributionByBlocId.entrySet()) {
             var blocId = entry.getKey();
             var stats = statsByBlocId.getOrDefault(blocId, BlocStats.EMPTY);
             statsByBlocId.put(
-                    blocId,
-                    stats.addSystem(
-                            blocId.equals(dominantBlocId),
-                            entry.getValue().footprint().totalWeight(),
-                            entry.getValue().marketSize()));
+                blocId,
+                stats.addSystem(
+                    blocId.equals(dominantBlocId),
+                    entry.getValue().footprint().totalWeight(),
+                    entry.getValue().marketSize()));
         }
     }
 
@@ -99,6 +103,7 @@ public final class BlocStatsAggregator {
     // footprints alone - reads them without the raw market size the stats pass also carries.
     private static Map<String, MarketFootprint> extractFootprints(
             Map<String, FactionMarketContribution> contributionByBlocId) {
+                
         var footprintByBlocId = new LinkedHashMap<String, MarketFootprint>();
         for (var entry : contributionByBlocId.entrySet()) {
             footprintByBlocId.put(entry.getKey(), entry.getValue().footprint());

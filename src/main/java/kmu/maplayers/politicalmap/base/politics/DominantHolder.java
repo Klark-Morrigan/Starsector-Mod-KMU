@@ -23,7 +23,10 @@ import java.util.Map;
  * space, for one) and later per-holder behaviour, decided off the same dominance the
  * fill was.
  */
-public record DominantHolder(String factionId, Color primaryColor, Color secondaryColor) {
+public record DominantHolder(
+    String factionId,
+    Color primaryColor,
+    Color secondaryColor) {
 
     /**
      * Maps each owned system to its dominant-faction id - the per-system holder the
@@ -37,6 +40,7 @@ public record DominantHolder(String factionId, Color primaryColor, Color seconda
      */
     public static Map<String, String> mapFactionIdBySystemId(
             Map<String, DominantHolder> ownerBySystemId) {
+                
         var keyBySystemId = new LinkedHashMap<String, String>();
         for (var entry : ownerBySystemId.entrySet()) {
             keyBySystemId.put(entry.getKey(), entry.getValue().factionId());

@@ -49,7 +49,10 @@ public final class SectorClaims {
      *         no resolvable claim is absent from the map
      */
     public static Map<String, DominantHolder> resolveClaimingHolderBySystemId(
-            SectorAPI sector, HolderGrouping grouping, ClaimReader claimReader) {
+            SectorAPI sector,
+            HolderGrouping grouping,
+            ClaimReader claimReader) {
+
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         if (sector == null) {
             return ownerBySystemId;
@@ -60,7 +63,10 @@ public final class SectorClaims {
                 continue;
             }
             var holder = SectorPolitics.resolveBlocHolder(
-                    sector, grouping, grouping.resolveBlocId(claimantId));
+                sector,
+                grouping,
+                grouping.resolveBlocId(claimantId));
+                
             if (holder != null) {
                 ownerBySystemId.put(system.getId(), holder);
             }

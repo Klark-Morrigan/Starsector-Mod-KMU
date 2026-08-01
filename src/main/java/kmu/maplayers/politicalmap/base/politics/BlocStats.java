@@ -26,7 +26,11 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
  * @param score      the bloc's combined dominance weight summed across every system it is present in
  * @param marketSize the bloc's summed raw colony size across every market it owns
  */
-public record BlocStats(int domination, int presence, int score, int marketSize) {
+public record BlocStats(
+    int domination,
+    int presence,
+    int score,
+    int marketSize) {
 
     /** A bloc present in no system; the identity a per-system accumulation folds into. */
     public static final BlocStats EMPTY = new BlocStats(0, 0, 0, 0);
@@ -44,9 +48,9 @@ public record BlocStats(int domination, int presence, int score, int marketSize)
      */
     public BlocStats addSystem(boolean isDominant, int systemScore, int systemMarketSize) {
         return new BlocStats(
-                domination + (isDominant ? 1 : 0),
-                presence + 1,
-                score + systemScore,
-                marketSize + systemMarketSize);
+            domination + (isDominant ? 1 : 0),
+            presence + 1,
+            score + systemScore,
+            marketSize + systemMarketSize);
     }
 }

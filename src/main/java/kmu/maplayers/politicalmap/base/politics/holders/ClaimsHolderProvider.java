@@ -30,7 +30,7 @@ public final class ClaimsHolderProvider implements HolderProvider {
      * it.
      */
     public static final ClaimsHolderProvider INSTANCE =
-            new ClaimsHolderProvider(new VanillaClaimReader());
+        new ClaimsHolderProvider(new VanillaClaimReader());
 
     private final ClaimReader claimReader;
 
@@ -40,7 +40,10 @@ public final class ClaimsHolderProvider implements HolderProvider {
 
     @Override
     public HolderResolution resolveHolder(
-            SectorAPI sector, HolderGrouping grouping, String selectedBlocId) {
+            SectorAPI sector,
+            HolderGrouping grouping,
+            String selectedBlocId) {
+                
         // A claim covers the whole territory here, so every claimed system paints solid: no
         // contested and no unfilled systems, which the fill split reads as its whole-cluster-solid
         // fast path. The selected bloc is ignored, since this view offers no spotlight.

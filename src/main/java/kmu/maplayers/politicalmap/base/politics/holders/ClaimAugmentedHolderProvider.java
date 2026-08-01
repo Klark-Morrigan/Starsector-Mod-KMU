@@ -42,31 +42,44 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
      * pass reuses it, and it is the default {@code PoliticalMapView} resolves holding through.
      */
     public static final ClaimAugmentedHolderProvider INSTANCE =
-            new ClaimAugmentedHolderProvider(
-                    DefaultHolderProvider.INSTANCE, new VanillaClaimReader());
+        new ClaimAugmentedHolderProvider(
+            DefaultHolderProvider.INSTANCE,
+            new VanillaClaimReader());
 
     private final HolderProvider heldHolderProvider;
     private final ClaimReader claimReader;
 
     ClaimAugmentedHolderProvider(
-            HolderProvider heldHolderProvider, ClaimReader claimReader) {
+            HolderProvider heldHolderProvider,
+            ClaimReader claimReader) {
         this.heldHolderProvider = heldHolderProvider;
         this.claimReader = claimReader;
     }
 
     @Override
     public HolderResolution resolveHolder(
-            SectorAPI sector, HolderGrouping grouping, String selectedBlocId) {
+            SectorAPI sector,
+            HolderGrouping grouping,
+            String selectedBlocId) {
+
         var held = heldHolderProvider.resolveHolder(sector, grouping, selectedBlocId);
-        var claimingHolderBySystemId =
-                SectorClaims.resolveClaimingHolderBySystemId(sector, grouping, claimReader);
+        var claimingHolderBySystemId = SectorClaims.resolveClaimingHolderBySystemId(
+            sector,
+            grouping,
+            claimReader);
+
         // The spotlighted bloc's own claims fuse into its spotlight territory rather than their
         // plain bloc colour, so its spotlight holder is resolved once here and shared across every
         // system it claims - null off filter, or when there is no sector to read a palette from.
         var spotlitClaimHolder = selectedBlocId == null || sector == null
-                ? null
-                : FilteredPolitics.resolveSpotlitHolder(sector, grouping, selectedBlocId);
-        return foldClaimsIntoHeld(held, claimingHolderBySystemId, selectedBlocId, spotlitClaimHolder);
+            ? null
+            : FilteredPolitics.resolveSpotlitHolder(sector, grouping, selectedBlocId);
+
+        return foldClaimsIntoHeld(
+            held,
+            claimingHolderBySystemId,
+            selectedBlocId,
+            spotlitClaimHolder);
     }
 
     // Adds each claimed system the held resolve left unowned to the holder map - so held and claimed
@@ -79,8 +92,10 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
             Map<String, DominantHolder> claimingHolderBySystemId,
             String selectedBlocId,
             DominantHolder spotlitClaimHolder) {
+
         var ownerBySystemId = new LinkedHashMap<>(held.ownerBySystemId());
         var unfilledSystemIds = new LinkedHashSet<>(held.unfilledSystemIds());
+
         for (var claim : claimingHolderBySystemId.entrySet()) {
             if (ownerBySystemId.containsKey(claim.getKey())) {
                 continue;
@@ -93,7 +108,9 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
             unfilledSystemIds.add(claim.getKey());
         }
         return new HolderResolution(
-                ownerBySystemId, held.contestedSystemIds(), unfilledSystemIds);
+            ownerBySystemId,
+            held.contestedSystemIds(),
+            unfilledSystemIds);
     }
 
     // The holder a claimed system draws under. Off filter, or for any bloc other than the
@@ -106,6 +123,7 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
             DominantHolder claimHolder,
             String selectedBlocId,
             DominantHolder spotlitClaimHolder) {
+                
         if (selectedBlocId == null || !selectedBlocId.equals(claimHolder.factionId())) {
             return claimHolder;
         }

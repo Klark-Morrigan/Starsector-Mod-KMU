@@ -27,20 +27,29 @@ public final class DefaultHolderProvider implements HolderProvider {
 
     @Override
     public HolderResolution resolveHolder(
-            SectorAPI sector, HolderGrouping grouping, String selectedBlocId) {
+            SectorAPI sector,
+            HolderGrouping grouping,
+            String selectedBlocId) {
+
         // A spotlighted bloc switches to the presence-aware resolver, which keeps the selected
         // bloc drawn everywhere it owns a market - solid where it wins, contested where a rival
         // does - instead of collapsing every system to its lone winner. Off filter each system
         // resolves to its single dominant holder and nothing is contested.
         if (selectedBlocId != null) {
-            var filtered =
-                    FilteredPolitics.resolveFilteredHolder(sector, grouping, selectedBlocId);
+
+            var filtered = FilteredPolitics.resolveFilteredHolder(
+                sector,
+                grouping,
+                selectedBlocId);
+
             return new HolderResolution(
-                    filtered.ownerBySystemId(), filtered.contestedSystemIds(), Set.of());
+                filtered.ownerBySystemId(),
+                filtered.contestedSystemIds(),
+                Set.of());
         }
         return new HolderResolution(
-                SectorPolitics.resolveDominantHolderBySystemId(sector, grouping),
-                Set.of(),
-                Set.of());
+            SectorPolitics.resolveDominantHolderBySystemId(sector, grouping),
+            Set.of(),
+            Set.of());
     }
 }

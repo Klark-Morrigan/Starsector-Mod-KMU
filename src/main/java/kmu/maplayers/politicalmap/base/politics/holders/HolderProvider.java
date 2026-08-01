@@ -28,5 +28,7 @@ public interface HolderProvider {
      * @return the holding per system and the systems drawn hatched
      */
     HolderResolution resolveHolder(
-            SectorAPI sector, HolderGrouping grouping, String selectedBlocId);
+        SectorAPI sector,
+        HolderGrouping grouping,
+        String selectedBlocId);
 }
