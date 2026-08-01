@@ -40,8 +40,8 @@ import java.util.Map;
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
  */
 public record PoliticalMapSectorSnapshot(
-        int visibilityFingerprint,
-        Map<String, String> ownerBySystemId) {
+    int visibilityFingerprint,
+    Map<String, String> ownerBySystemId) {
 
     /**
      * Walks the sector once under dev reveal toggles the caller has already read,
@@ -64,9 +64,9 @@ public record PoliticalMapSectorSnapshot(
             SectorAPI sector,
             PoliticalMapDevToggles devToggles) {
         return scan(
-                sector,
-                DominanceRules.readFromLunaSettings(),
-                devToggles);
+            sector,
+            DominanceRules.readFromLunaSettings(),
+            devToggles);
     }
 
     /**
@@ -97,6 +97,7 @@ public record PoliticalMapSectorSnapshot(
         // Scanned once for the whole walk so the per-system access check stays an
         // O(1) lookup rather than rescanning hyperspace each time.
         var visibleStars = VisibleStars.scan(sector);
+
         // The reveals as the membership rule sees them, resolved once for the whole walk:
         // the rule takes visibility overrides, not this layer's dev toggles.
         var visibilityOverrides = devToggles.convertToVisibilityOverrides();
@@ -105,17 +106,18 @@ public record PoliticalMapSectorSnapshot(
         var ownerBySystemId = new LinkedHashMap<String, String>();
 
         for (var system : sector.getStarSystems()) {
+
             // One economy read per system, shared by both concerns: its emptiness
             // is the inhabitation flag membership needs, and its footprints are
             // what the dominance rule ranks. A null economy (early load) reads as
             // no markets rather than faulting.
             Map<String, MarketFootprint> footprintByFactionId = hasEconomy
-                    ? KnownMarketFootprints.readByFaction(
-                            sector,
-                            system,
-                            rules,
-                            devToggles.isShowingAllFactions())
-                    : Map.of();
+                ? KnownMarketFootprints.readByFaction(
+                    sector,
+                    system,
+                    rules,
+                    devToggles.isShowingAllFactions())
+                : Map.of();
 
             var hasRevealedDecivilised = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
             var isInhabited = !footprintByFactionId.isEmpty() || hasRevealedDecivilised;
@@ -129,14 +131,15 @@ public record PoliticalMapSectorSnapshot(
             }
             var systemId = system.getId();
             visibility += MapVisibility.computeVisibilityContribution(
-                    systemId,
-                    hasRevealedDecivilised);
+                systemId,
+                hasRevealedDecivilised);
                     
             // A decivilised-only system is drawn yet unowned, so it counts toward
             // visibility but is left out of the holder map - a system gaining or
             // losing an holder then reads as a diff against that absence.
             var dominantFactionId =
-                    SystemDominance.resolveDominantFactionId(footprintByFactionId);
+                SystemDominance.resolveDominantFactionId(footprintByFactionId);
+                
             if (dominantFactionId != null) {
                 ownerBySystemId.put(systemId, dominantFactionId);
             }

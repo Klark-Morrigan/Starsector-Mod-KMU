@@ -51,8 +51,13 @@ public final class MarketPoliticsRefresh {
         if (system == null) {
             return;
         }
-        LOG.debug("Political map politics stale on " + event + "; market=" + market.getId()
-                + " system=" + system.getId() + (context.isEmpty() ? "" : " " + context));
+        
+        LOG.debug("Political map politics stale on "
+            + event
+            + "; market=" + market.getId()
+            + " system=" + system.getId()
+            + (context.isEmpty() ? "" : " " + context));
+
         MapLayerRefresh.markSystemGroupingStale(system.getId());
     }
 }

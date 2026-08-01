@@ -26,6 +26,7 @@ public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {
 
     @Override
     public void reportEntityDiscovered(SectorEntityToken entity) {
+
         // Most discoveries carry no market (a jump point, inert salvage); those
         // touch politics not at all, so the marketless case is filtered here before
         // the shared refresh. The discovered entity rides along in the log so a
@@ -33,7 +34,9 @@ public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {
         if (entity == null) {
             return;
         }
-        MarketPoliticsRefresh.markSystemStaleForMarket(entity.getMarket(), "discovered market",
-                "entity=" + entity.getId());
+        MarketPoliticsRefresh.markSystemStaleForMarket(
+            entity.getMarket(),
+            "discovered market", // Event.
+            "entity=" + entity.getId()); // Context.
     }
 }

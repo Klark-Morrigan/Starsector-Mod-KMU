@@ -45,42 +45,62 @@ public class PoliticalMapMarketTransferListener implements InvasionListener {
     // Named to match Nexerelin's interface, which misspells "transferred" with a
     // single r; the override must reproduce that exact signature.
     @Override
-    public void reportMarketTransfered(MarketAPI market, FactionAPI newHolder, FactionAPI oldHolder,
-            boolean playerInvolved, boolean isCapture, List<String> factionsToNotify,
+    public void reportMarketTransfered(
+            MarketAPI market,
+            FactionAPI newHolder,
+            FactionAPI oldHolder,
+            boolean playerInvolved,
+            boolean isCapture,
+            List<String> factionsToNotify,
             float repChangeStrength) {
+
         // The from/to factions and capture flag ride along in the log so a cell
         // that does (or does not) repaint on conquest can be traced to this
         // transfer; the shared refresh filters an unseated market.
-        MarketPoliticsRefresh.markSystemStaleForMarket(market, "market transferred",
-                "from=" + factionId(oldHolder) + " to=" + factionId(newHolder)
-                        + " capture=" + isCapture);
+        MarketPoliticsRefresh.markSystemStaleForMarket(
+            market,
+            "market transferred", // Event.
+            "from=" + resolveFactionId(oldHolder)
+                + " to=" + resolveFactionId(newHolder)
+                + " capture=" + isCapture); // Context.
     }
 
     // The loot handed over on a successful invasion does not change the colony's
     // holder; the transfer itself is reported separately, so this is a no-op here.
     @Override
-    public void reportInvadeLoot(InteractionDialogAPI dialog, MarketAPI market,
-            Nex_MarketCMD.TempDataInvasion actionData, CargoAPI cargo) {
+    public void reportInvadeLoot(
+        InteractionDialogAPI dialog,
+        MarketAPI market,
+        Nex_MarketCMD.TempDataInvasion actionData,
+        CargoAPI cargo) {
     }
 
     // Per-round attacker/defender strength during an invasion; holding has not
     // changed yet, so nothing to refresh.
     @Override
-    public void reportInvasionRound(InvasionRound.InvasionRoundResult result, CampaignFleetAPI fleet,
-            MarketAPI defender, float attackerStrength, float defenderStrength) {
+    public void reportInvasionRound(
+        InvasionRound.InvasionRoundResult result,
+        CampaignFleetAPI fleet,
+        MarketAPI defender,
+        float attackerStrength,
+        float defenderStrength) {
     }
 
     // An invasion finishing does not by itself transfer the market - a failed
     // invasion changes no holder, and a successful one is reported through
     // reportMarketTransferred - so the refresh keys off the transfer, not this.
     @Override
-    public void reportInvasionFinished(CampaignFleetAPI fleet, FactionAPI attackerFaction,
-            MarketAPI market, float numRounds, boolean success) {
+    public void reportInvasionFinished(
+        CampaignFleetAPI fleet,
+        FactionAPI attackerFaction,
+        MarketAPI market,
+        float numRounds,
+        boolean success) {
     }
 
     // Null-safe faction id for the trace line; a transfer to or from an unowned
     // state is logged as "null" rather than crashing the callback.
-    private static String factionId(FactionAPI faction) {
+    private static String resolveFactionId(FactionAPI faction) {
         return faction == null ? "null" : faction.getId();
     }
 }

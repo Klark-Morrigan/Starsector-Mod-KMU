@@ -79,15 +79,17 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         // stales the geometry; a system that keeps moving is already excluded, so it
         // reports no change and never churns the map.
         var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(
-                sector,
-                devToggles.convertToVisibilityOverrides());
+            sector,
+            devToggles.convertToVisibilityOverrides());
 
         // One call per axis, each handed the same first-poll flag and each owning its own
         // baseline, so no axis can be read without seeing how it treats a baseline poll.
         var isFirstPoll = !hasPolled;
+
         markGeometryChange(snapshot, hasMovingSetChanged, isFirstPoll);
         markHolderChanges(snapshot.ownerBySystemId(), isFirstPoll);
         markAllianceSetChange(isFirstPoll);
+
         hasPolled = true;
     }
 
@@ -102,11 +104,17 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
             boolean isFirstPoll) {
 
         var hasVisibilityChanged = isFirstPoll
-                || snapshot.visibilityFingerprint() != lastVisibilityFingerprint;
+            || snapshot.visibilityFingerprint() != lastVisibilityFingerprint;
+
         if (hasVisibilityChanged) {
+
             LOG.debug("Political map visibility fingerprint changed; old="
-                    + (isFirstPoll ? 0 : lastVisibilityFingerprint) + " new="
-                    + snapshot.visibilityFingerprint() + " firstPoll=" + isFirstPoll);
+                + (isFirstPoll ? 0 : lastVisibilityFingerprint)
+                + " new="
+                + snapshot.visibilityFingerprint()
+                + " firstPoll="
+                + isFirstPoll);
+
             lastVisibilityFingerprint = snapshot.visibilityFingerprint();
         }
         if (isFirstPoll || !(hasVisibilityChanged || hasMovingSetChanged)) {
@@ -123,7 +131,8 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     // its holder (dropped since). Each mark funnels into the same set the listeners raise,
     // so an overlapping change reshapes once and is traced by markSystemGroupingStale's own
     // log line. The baseline advances even on the first poll, which has no prior to diff.
-    private void markHolderChanges(Map<String, String> currentHolderBySystemId,
+    private void markHolderChanges(
+            Map<String, String> currentHolderBySystemId,
             boolean isFirstPoll) {
 
         if (!isFirstPoll) {
@@ -147,10 +156,15 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     // a Nex-free install polls a steady token and never bumps. The first poll only seeds the
     // baseline, matching the other axes.
     private void markAllianceSetChange(boolean isFirstPoll) {
+
         var allianceFingerprint = NexerelinAlliances.computeAllianceFingerprint();
         if (!isFirstPoll && allianceFingerprint != lastAllianceFingerprint) {
+            
             LOG.debug("Political map alliance fingerprint changed; old="
-                    + lastAllianceFingerprint + " new=" + allianceFingerprint);
+                + lastAllianceFingerprint
+                + " new="
+                + allianceFingerprint);
+
             MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
         }
         lastAllianceFingerprint = allianceFingerprint;

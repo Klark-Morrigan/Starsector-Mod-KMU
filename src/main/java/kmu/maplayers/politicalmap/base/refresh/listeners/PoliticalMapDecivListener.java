@@ -48,11 +48,14 @@ public class PoliticalMapDecivListener implements ColonyDecivListener {
 
     @Override
     public void reportColonyDecivilized(MarketAPI market, boolean fullyDestroyed) {
+        
         // The completed event sees the neutral, economy-removed market, and the
         // system still resolves post-removal since the primary entity (the planet)
         // is preserved. The full-destroy flag rides along in the log so a cell that
         // does (or does not) repaint neutral on death can be traced to this event.
-        MarketPoliticsRefresh.markSystemStaleForMarket(market, "decivilised colony",
-                "fullyDestroyed=" + fullyDestroyed);
+        MarketPoliticsRefresh.markSystemStaleForMarket(
+            market,
+            "decivilised colony", // Event.
+            "fullyDestroyed=" + fullyDestroyed); // Context.
     }
 }

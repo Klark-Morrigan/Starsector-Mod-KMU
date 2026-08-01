@@ -35,6 +35,7 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
 
     @Override
     public void reportPlayerColonizedPlanet(PlanetAPI planet) {
+
         // The event carries the planet, not its market; the new colony's market
         // is already attached by the time this fires, so the shared refresh reads
         // it off the planet. A null market is filtered downstream. The planet id
@@ -42,8 +43,10 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         // founding can be traced to it.
         MarketAPI market = planet == null ? null : planet.getMarket();
         String planetId = planet == null ? "null" : planet.getId();
-        MarketPoliticsRefresh.markSystemStaleForMarket(market, "colony founded",
-                "planet=" + planetId);
+        MarketPoliticsRefresh.markSystemStaleForMarket(
+            market,
+            "colony founded", // Event.
+            "planet=" + planetId); // Context.
     }
 
     @Override
@@ -51,6 +54,9 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         // Abandonment pulls the market from the economy but leaves its planet, so
         // the system still resolves post-removal and the re-derivation reads the
         // now colonyless economy, dropping the faction fill.
-        MarketPoliticsRefresh.markSystemStaleForMarket(market, "colony abandoned", "");
+        MarketPoliticsRefresh.markSystemStaleForMarket(
+            market,
+            "colony abandoned", // Event.
+            ""); // Context.
     }
 }
