@@ -1,6 +1,9 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;
+import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
@@ -49,35 +52,29 @@ public final class TerritoryRenderer {
         if (territories.isEmpty() || alphaMult <= 0f) {
             return;
         }
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT
-            | GL11.GL_CURRENT_BIT
-            | GL11.GL_COLOR_BUFFER_BIT
-            | GL11.GL_LINE_BIT
-            | GL11.GL_HINT_BIT);
-
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(
-            GL11.GL_SRC_ALPHA,
-            GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-        // Time only the per-frame GL emission; the surrounding state push/pop is
-        // negligible. Broken into the two passes so the profiler shows which one costs,
-        // but not logged - this runs every frame the map is open, so only the profiler's
-        // accumulated view is affordable here, never a per-frame log line.
-        var profiler = KmuProfiling.getProfiler();
-        profiler.measure(
-            "politicalMap.render",
+        // Aliased: the fills and their borders are large filled shapes whose edges the map's own
+        // scaling already softens, and smoothing every border run costs a blend per covered pixel
+        // across the whole sector.
+        GlPasses.runBlendedPass(
+            GlBlendMode.ALPHA,
+            GlLineQuality.ALIASED,
             () -> {
+                // Time only the per-frame GL emission; the surrounding state push/pop is
+                // negligible. Broken into the two passes so the profiler shows which one costs,
+                // but not logged - this runs every frame the map is open, so only the profiler's
+                // accumulated view is affordable here, never a per-frame log line.
+                var profiler = KmuProfiling.getProfiler();
                 profiler.measure(
-                    "politicalMap.render.fills",
-                    () -> drawFills(territories, factor, alphaMult));
-                profiler.measure(
-                    "politicalMap.render.borders",
-                    () -> drawBorders(territories, factor, alphaMult));
-        });
-
-        GL11.glPopAttrib();
+                    "politicalMap.render",
+                    () -> {
+                        profiler.measure(
+                            "politicalMap.render.fills",
+                            () -> drawFills(territories, factor, alphaMult));
+                        profiler.measure(
+                            "politicalMap.render.borders",
+                            () -> drawBorders(territories, factor, alphaMult));
+                    });
+            });
     }
 
     // Fills each owned faction's cluster(s) with the faction's resolved fill colour at

@@ -1,6 +1,9 @@
 package kmu.maplayers.base.render.clusters.debug;
 
+import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;
+import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 
 import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
@@ -48,44 +51,25 @@ public final class ClusterBorderStageRenderer {
         if (stageOverlay.isEmpty()) {
             return;
         }
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT
-            | GL11.GL_CURRENT_BIT
-            | GL11.GL_COLOR_BUFFER_BIT
-            | GL11.GL_LINE_BIT
-            | GL11.GL_HINT_BIT);
-
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glEnable(GL11.GL_LINE_SMOOTH);
-        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
-
-        // Drawn in list order, so the last stage lands on top and the earlier ones halo out
-        // from under it; the view transform is the same for every stage.
-        for (var stageStroke : listStageStrokesBottomToTop(stageOverlay)) {
-            drawStageStroke(stageStroke, factor, alphaMult);
-        }
-
-        GL11.glPopAttrib();
-    }
-
-    // Strokes one stage's loops in its colour and width; each loop is a closed ring, so it
-    // draws as a GL_LINE_LOOP. An empty stage - its pass was gated off - draws nothing.
-    private static void drawStageStroke(StageStroke stageStroke, float factor, float alphaMult) {
-        if (stageStroke.loopRuns().isEmpty()) {
-            return;
-        }
-        GL11.glLineWidth(stageStroke.lineWidth());
-        GlColour.set(stageStroke.strokeColour(), alphaMult);
-
-        for (var loopRun : stageStroke.loopRuns()) {
-            GlRuns.drawScaled(GL11.GL_LINE_LOOP, loopRun, factor);
-        }
+        // Smoothed, because the stages are compared against each other by eye: three hard-edged
+        // rings a pixel or two apart alias into one another at map zoom.
+        GlPasses.runBlendedPass(
+            GlBlendMode.ALPHA,
+            GlLineQuality.SMOOTHED,
+            () -> {
+                // Drawn in list order, so the last stage lands on top and the earlier ones halo
+                // out from under it; the view transform is the same for every stage.
+                for (var stageStroke : listStageStrokesBottomToTop(stageOverlay)) {
+                    drawStageStroke(stageStroke, factor, alphaMult);
+                }
+            });
     }
 
     // The stack order as data - base under despiked under rounded - so the layering, the
-    // colour ramp and the width taper are read off one list instead of three call sites.
-    private static List<StageStroke> listStageStrokesBottomToTop(
+    // colour ramp and the width taper are read off one list instead of three call sites. The
+    // whole of what distinguishes the three stages resolves here, with no GL in reach, which
+    // is why it is the list and not the emission that carries the ordering decision.
+    static List<StageStroke> listStageStrokesBottomToTop(
             ClusterBorderStageOverlay stageOverlay) {
 
         return List.of(
@@ -103,9 +87,23 @@ public final class ClusterBorderStageRenderer {
                 ROUNDED_WIDTH));
     }
 
+    // Strokes one stage's loops in its colour and width; each loop is a closed ring, so it
+    // draws as a GL_LINE_LOOP. An empty stage - its pass was gated off - draws nothing.
+    private static void drawStageStroke(StageStroke stageStroke, float factor, float alphaMult) {
+        if (stageStroke.loopRuns().isEmpty()) {
+            return;
+        }
+        GL11.glLineWidth(stageStroke.lineWidth());
+        GlColour.set(stageStroke.strokeColour(), alphaMult);
+
+        for (var loopRun : stageStroke.loopRuns()) {
+            GlRuns.drawScaled(GL11.GL_LINE_LOOP, loopRun, factor);
+        }
+    }
+
     // One smoothing stage's stroke: the loops to draw plus how this stage is distinguished
     // from the ones under and over it.
-    private record StageStroke(
+    record StageStroke(
         List<float[]> loopRuns,
         Color strokeColour,
         float lineWidth) {

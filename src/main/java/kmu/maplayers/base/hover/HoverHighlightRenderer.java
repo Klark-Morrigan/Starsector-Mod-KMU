@@ -1,6 +1,9 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;
+import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 import kmlib.profiling.Timings;
 
@@ -59,24 +62,18 @@ public final class HoverHighlightRenderer {
         if (highlight.isEmpty()) {
             return;
         }
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT
-            | GL11.GL_CURRENT_BIT
-            | GL11.GL_COLOR_BUFFER_BIT
-            | GL11.GL_LINE_BIT
-            | GL11.GL_HINT_BIT);
-
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-        GL11.glEnable(GL11.GL_LINE_SMOOTH);
-        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
-
-        drawGlow(highlight, style.glow(), colour, factor, alphaMult);
-        drawWash(highlight, style.wash(), colour, factor, alphaMult);
-
-        // Restores the map's own blend function and line state; every pass after this one
-        // (the anchors, the cluster names) expects to draw over the map, not into it.
-        GL11.glPopAttrib();
+        // Additive and smoothed: the halo is layers of one loop stacked on each other, which only
+        // additive blending accumulates into a bloom, and only smoothing keeps the outer layers
+        // from reading as concentric hard rings. The pass restores the map's own blend function
+        // on the way out - every pass after this one (the anchors, the cluster names) expects to
+        // draw over the map, not into it.
+        GlPasses.runBlendedPass(
+            GlBlendMode.ADDITIVE,
+            GlLineQuality.SMOOTHED,
+            () -> {
+                drawGlow(highlight, style.glow(), colour, factor, alphaMult);
+                drawWash(highlight, style.wash(), colour, factor, alphaMult);
+            });
     }
 
     // The colour the whole highlight paints in: the shade of the ground under the cursor, which

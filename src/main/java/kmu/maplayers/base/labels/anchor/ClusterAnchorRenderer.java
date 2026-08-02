@@ -3,8 +3,11 @@ package kmu.maplayers.base.labels.anchor;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
+import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;
+import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlLines;
+import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlQuads;
 
 import kmu.diagnostics.KmuProfiling;
@@ -62,30 +65,24 @@ public final class ClusterAnchorRenderer {
     // overlap the accepted verdict always reads on top; the dots, in each cluster's own
     // resolved shade, go over everything to keep the anchor marker visible even under a
     // pile of lines. Empty (nothing emitted) unless the dev toggle built the anchors, so
-    // the normal map pays only an empty-list check; a state push/pop isolates the blend,
-    // line, and point settings from the rest of the map render.
+    // the normal map pays only an empty-list check; the pass's own saved state isolates its
+    // blend, line, and point settings from the rest of the map render.
     public static void renderOnMap(List<ClusterAnchor> anchors, float factor, float alphaMult) {
         // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would
         // emit everything at zero effective alpha - all cost, nothing on screen.
         if (anchors.isEmpty() || alphaMult <= 0f) {
             return;
         }
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT
-            | GL11.GL_CURRENT_BIT
-            | GL11.GL_COLOR_BUFFER_BIT
-            | GL11.GL_LINE_BIT
-            | GL11.GL_POINT_BIT);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-        // Profiled (not logged) like the base passes: this runs every frame the map is
-        // open, so only the profiler's accumulated view is affordable here.
-        KmuProfiling.getProfiler().measure(
-            "mapLayer.render.anchors",
-            () -> drawClusterAnchors(anchors, factor, alphaMult));
-
-        GL11.glPopAttrib();
+        // Aliased: this is a diagnostic read for where a line lands, and smoothing spreads a
+        // one-pixel rule across two - the opposite of what a measurement overlay wants.
+        GlPasses.runBlendedPass(
+            GlBlendMode.ALPHA,
+            GlLineQuality.ALIASED,
+            // Profiled (not logged) like the base passes: this runs every frame the map is
+            // open, so only the profiler's accumulated view is affordable here.
+            () -> KmuProfiling.getProfiler().measure(
+                "mapLayer.render.anchors",
+                () -> drawClusterAnchors(anchors, factor, alphaMult)));
     }
 
     // The band quads, the centrelines, and the dots, layered bottom to top so a verdict

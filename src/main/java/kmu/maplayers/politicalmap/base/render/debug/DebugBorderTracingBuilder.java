@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.render.debug;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
@@ -11,6 +10,7 @@ import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
+import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -18,7 +18,6 @@ import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -76,9 +75,7 @@ public final class DebugBorderTracingBuilder {
         // builder assembled from its own reads of the same knobs.
         var borderTrace = ClusterBorderTrace.readFromLunaSettings();
         var borderSmoothing = RenderStyleReader.readBorderSmoothingStyle();
-        var baseLoops = new ArrayList<float[]>();
-        var despikedLoops = new ArrayList<float[]>();
-        var roundedLoops = new ArrayList<float[]>();
+        var stageCollector = new ClusterBorderStageCollector();
 
         for (var memberCellIds : cellGrouping.groupCellIdsByOwner().values()) {
 
@@ -97,16 +94,16 @@ public final class DebugBorderTracingBuilder {
             // sand and round only when gated on, so what is captured is exactly what would
             // have been drawn.
             var base = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
-            addFlattenedLoops(baseLoops, base);
+            stageCollector.captureBaseStage(base);
             var smoothed = base;
 
             if (borderSmoothing.shouldSandSpikes()) {
                 smoothed = BorderSmoothing.sandBorderSpikes(smoothed, borderSmoothing);
-                addFlattenedLoops(despikedLoops, smoothed);
+                stageCollector.captureDespikedStage(smoothed);
             }
             if (borderSmoothing.shouldRoundCorners()) {
                 smoothed = BorderSmoothing.roundBorderCorners(smoothed, borderSmoothing);
-                addFlattenedLoops(roundedLoops, smoothed);
+                stageCollector.captureRoundedStage(smoothed);
             }
         }
         addFactionlessOutlines(
@@ -114,13 +111,9 @@ public final class DebugBorderTracingBuilder {
             cellGrouping,
             decivilisedSystemIds,
             borderSmoothing,
-            baseLoops,
-            roundedLoops);
+            stageCollector);
 
-        return new ClusterBorderStageOverlay(
-            baseLoops,
-            despikedLoops,
-            roundedLoops);
+        return stageCollector.buildOverlay();
     }
 
     // Appends each drawn factionless cell's outline as a base loop and, when rounding is
@@ -134,8 +127,7 @@ public final class DebugBorderTracingBuilder {
             CellGrouping cellGrouping,
             Set<String> decivilisedSystemIds,
             BorderSmoothingStyle borderSmoothing,
-            List<float[]> baseLoops,
-            List<float[]> roundedLoops) {
+            ClusterBorderStageCollector stageCollector) {
 
         // The whole theme rather than the two factionless bundles separately, so a category
         // resolved by the shared rule indexes straight into it - the same lookup the production
@@ -166,20 +158,12 @@ public final class DebugBorderTracingBuilder {
                 continue;
             }
             var base = List.of(shaped.fillPolygon());
-            addFlattenedLoops(baseLoops, base);
+            stageCollector.captureBaseStage(base);
 
             if (borderSmoothing.shouldRoundCorners()) {
-                addFlattenedLoops(
-                    roundedLoops,
+                stageCollector.captureRoundedStage(
                     BorderSmoothing.roundBorderCorners(base, borderSmoothing));
             }
-        }
-    }
-
-    // Flattens each loop of a stage into a GL run and appends it to that stage's list.
-    private static void addFlattenedLoops(List<float[]> runs, List<List<double[]>> loops) {
-        for (var loop : loops) {
-            runs.add(GlVertexRuns.flattenVertices(loop));
         }
     }
 }
