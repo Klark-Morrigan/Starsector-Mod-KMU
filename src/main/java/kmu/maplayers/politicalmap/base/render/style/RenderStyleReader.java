@@ -1,9 +1,13 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.HatchJoining;
+
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.HoverGlowStyle;
@@ -38,6 +42,17 @@ import java.util.Map;
  */
 public final class RenderStyleReader {
 
+    // The hatch's two structural axes, fixed here rather than read back from a knob: the player
+    // tunes the pattern (spacing, angle, width), not how the clipped line family is cut into
+    // primitives or how those primitives rasterise. Named constants rather than literals inline in
+    // the assembly below, so each decision is stated once, where the rest of the hatch is read.
+    private static final HatchJoining HATCH_JOINING = HatchJoining.PER_TRIANGLE;
+
+    // Aliased: the hatch is a dense field of short strokes, so smoothing it would cost a blend per
+    // covered pixel across the whole contested territory while making every line read softer and
+    // slightly wider - the opposite of the crisp texture the hatch is there to give.
+    private static final GlLineQuality HATCH_LINE_QUALITY = GlLineQuality.ALIASED;
+
     // Reads only settings; never instantiated.
     private RenderStyleReader() {
     }
@@ -59,13 +74,18 @@ public final class RenderStyleReader {
     // Folds the sector-wide knobs into the global tier: the contested-fill hatch, the
     // national-border smoothing, the hover highlight, and how far a receded bloc's
     // Independent-based grey darkens. The hatch angle is authored in degrees and converted to
-    // radians at the reader so the hatch math downstream stays in radians.
+    // radians at the reader so the hatch math downstream stays in radians. The player's hatch
+    // width is a property of the stroke rather than of the pattern, so it is read into the stroke
+    // the renderer dispatches on rather than sitting loose beside the layout.
     public static GlobalStyle readGlobalStyle() {
         return new GlobalStyle(
             new HatchStyle(
                 KmuLunaSettings.getPoliticalMapHatchSpacing(),
                 KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
-                KmuLunaSettings.getPoliticalMapHatchWidth()),
+                HATCH_JOINING,
+                new GlLineHatchStroke(
+                    HATCH_LINE_QUALITY,
+                    KmuLunaSettings.getPoliticalMapHatchWidth())),
             readBorderSmoothingStyle(),
             readHoverHighlightStyle(),
             KmuLunaSettings.getPoliticalMapDesaturationDarkening());

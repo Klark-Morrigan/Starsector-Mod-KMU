@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.theme.HatchStyle;
+import kmu.maplayers.base.theme.ThemeFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ final class SplitFillBuilderTest {
     private static final String REGION_KEY = "cluster";
     private static final String HELD_SYSTEM = "A";
     private static final String HATCHED_SYSTEM = "B";
-    private static final HatchStyle HATCH = new HatchStyle(200, Math.PI / 4, 1);
+    private static final HatchStyle HATCH = ThemeFixtures.createHatchStyle(200, Math.PI / 4, 1);
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
 

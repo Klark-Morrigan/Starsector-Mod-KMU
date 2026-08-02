@@ -1,10 +1,12 @@
 # The theme records (`base.theme`)
 
 The player's authored choices, as value types: what the player picked, held in the shape the rest
-of the map reads it in. Everything here is a record apart from two interfaces, and both are places
-a layer's own vocabulary plugs in rather than types this package populates: `MapStyleCategory`,
-the key the per-category bundles are held under, and `ElementPaintSelection`, the colour pick an
-element carries. What little behaviour the records carry answers only from their own components -
+of the map reads it in. Everything here is a record apart from three interfaces. Two are places a
+layer's own vocabulary plugs in rather than types this package populates: `MapStyleCategory`, the
+key the per-category bundles are held under, and `ElementPaintSelection`, the colour pick an
+element carries. The third, `HatchStroke`, is sealed over this package's own records - see
+[the two tiers](#the-two-tiers). What little behaviour the records carry answers only from their
+own components -
 `ElementStyle.isDrawn`, `RenderStyle.categoryStyle`, and the per-layer width and alpha
 `HoverGlowStyle` derives from its stack and pulse. None of it reads a setting, resolves a colour,
 or touches geometry.
@@ -48,6 +50,14 @@ A new sector-wide knob belongs on the matching `GlobalStyle` sub-record, never f
 call site - and where that sub-record is itself split by pass, on the half the pass that reads the
 knob is handed. Splitting `BorderSmoothingStyle` that way is what lets each smoothing pass take
 only its own half, so a sanding number cannot reach the rounding pass and back again.
+
+`HatchStyle` splits along the same line, by *when* each part is decided rather than by which pass
+reads it: `spacing`, `angleRadians` and `joining` shape the clipped line geometry and are baked
+into the drawables, while `stroke` is read per frame at the emit. The stroke is the one sealed
+interface here - `GlLineHatchStroke` today - because how a hatch reaches the screen decides which
+numbers it needs at all, and a flat record carrying every substrate's fields would leave
+combinations nothing can draw representable. The renderer dispatches on which arrived and reads
+only what that one carries.
 
 ## The element unit
 

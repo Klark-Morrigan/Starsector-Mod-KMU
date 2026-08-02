@@ -1,7 +1,11 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.HatchJoining;
+
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
@@ -319,8 +323,13 @@ final class RenderStyleReaderTest {
                     .isEqualTo(HATCH_SPACING);
                 assertThat(global.hatch().angleRadians())
                     .isEqualTo(HATCH_ANGLE);
-                assertThat(global.hatch().width())
-                    .isEqualTo(HATCH_WIDTH);
+
+                // The two axes with no knob behind them are fixed by the reader, so they are
+                // held to the shipped values here - the one place they are decided.
+                assertThat(global.hatch().joining())
+                    .isEqualTo(HatchJoining.PER_TRIANGLE);
+                assertThat(global.hatch().stroke())
+                    .isEqualTo(new GlLineHatchStroke(GlLineQuality.ALIASED, HATCH_WIDTH));
 
                 var cornerRounding = global.borderSmoothing().cornerRounding();
 

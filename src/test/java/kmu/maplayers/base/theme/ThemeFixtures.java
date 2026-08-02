@@ -1,5 +1,8 @@
 package kmu.maplayers.base.theme;
 
+import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.HatchJoining;
+
 /**
  * Shared fixtures for the tests that need a theme they are not testing: the global tier and the
  * hover highlight in the shape that reads nothing back.
@@ -50,11 +53,35 @@ public final class ThemeFixtures {
      */
     public static GlobalStyle createGlobalStyleRoundingBy(CornerRoundingStyle cornerRounding) {
         return new GlobalStyle(
-            new HatchStyle(0, 0, 0),
+            createHatchStyle(0, 0, 0),
             new BorderSmoothingStyle(
                 new SpikeSandingStyle(false, 0, 0),
                 cornerRounding),
             NO_HOVER_HIGHLIGHT,
             DESATURATION_DARKENING);
+    }
+
+    /**
+     * A hatch laid out to the given pattern and stroked the way the shipped theme strokes it, for
+     * a suite whose subject is the hatched geometry rather than how it reaches the screen.
+     *
+     * <p>The two axes a caller does not name are the ones a geometry case has no opinion on, and
+     * pinning them here is what keeps a suite from having to state a stroke it never draws.
+     *
+     * @param spacing      the perpendicular gap between lines, in world units
+     * @param angleRadians the direction the lines run in
+     * @param widthPixels  the pixel width the lines stroke at
+     * @return a live hatch style
+     */
+    public static HatchStyle createHatchStyle(
+            double spacing,
+            double angleRadians,
+            double widthPixels) {
+
+        return new HatchStyle(
+            spacing,
+            angleRadians,
+            HatchJoining.PER_TRIANGLE,
+            new GlLineHatchStroke(GlLineQuality.ALIASED, widthPixels));
     }
 }

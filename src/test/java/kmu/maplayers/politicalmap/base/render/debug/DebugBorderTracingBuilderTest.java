@@ -12,7 +12,6 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
@@ -376,7 +375,7 @@ final class DebugBorderTracingBuilderTest {
         // tier is the shared inert one.
         var renderStyle = new RenderStyle(
             new GlobalStyle(
-                new HatchStyle(0, 0, 0),
+                ThemeFixtures.createHatchStyle(0, 0, 0),
                 smoothing,
                 ThemeFixtures.NO_HOVER_HIGHLIGHT,
                 0.3),
