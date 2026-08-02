@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.base.hover;
 
 import com.fs.starfarer.api.Global;
 
@@ -6,27 +6,30 @@ import kmlib.starsector.ui.map.CampaignMapTransform;
 import kmlib.starsector.ui.map.ModelviewMatrixReader;
 
 import kmu.maplayers.base.geometry.CellHitTest;
-import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.hover.MapHoverState;
 
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Mouse;
 
 /**
- * Works out what the cursor is over on the political map and publishes it for the frame.
+ * Works out what the cursor is over on the map and publishes it for the frame.
  *
  * <p>Runs inside the map's render pass because that is the only place it can: undoing the map's
  * pan, centring, and zoom to turn a cursor pixel back into a world point needs the widget's GL
- * matrices, which are only bound while that pass runs. The plugin therefore drives this from its
+ * matrices, which are only bound while that pass runs. A layer therefore drives this from its
  * {@code renderOnMap} rather than from an input listener.
  *
  * <p>Reading the cursor rather than consuming input events is the whole point: the map keeps
  * hovering stars and drawing their tooltips exactly as it did, because nothing here takes an event
  * away from it. The overlay is a passive second reader of a cursor the game is still free to
  * interpret its own way.
+ *
+ * <p>Framework rather than one layer's, because the matrix inversion is the hard part of hovering
+ * and it is the same inversion whatever a layer paints: {@link MapHoverState} already declares the
+ * value, the shared holder, and the consumers, so the only piece a second layer would otherwise
+ * have to rediscover is this one.
  */
-final class PoliticalMapHoverPublisher {
-    private static final Logger LOG = Global.getLogger(PoliticalMapHoverPublisher.class);
+public final class MapHoverPublisher {
+    private static final Logger LOG = Global.getLogger(MapHoverPublisher.class);
 
     // Where the map's modelview is read back from. Held rather than resolved per frame because the
     // renderer underneath cannot change while the game runs, so the binding is a fixed collaborator
@@ -41,23 +44,27 @@ final class PoliticalMapHoverPublisher {
      * @param modelviewMatrixReader the binding the running renderer needs, from
      *                              {@code ModelviewMatrixReaders#selectForActiveRenderer}
      */
-    public PoliticalMapHoverPublisher(ModelviewMatrixReader modelviewMatrixReader) {
+    public MapHoverPublisher(ModelviewMatrixReader modelviewMatrixReader) {
         this.modelviewMatrixReader = modelviewMatrixReader;
     }
 
     /**
-     * Resolves the cursor to a cell and its territory and publishes the result, or parks the hover
-     * when the cursor is over no cell.
+     * Resolves the cursor to a cell and the cluster around it and publishes the result, or parks
+     * the hover when the cursor is over no cell.
      *
-     * @param cache  the frame's draw lists, supplying the painted cell shapes to test against
-     * @param factor the per-vertex scale this render pass applies, needed to undo the map's zoom
+     * <p>Parking is what every guard below reaches for, rather than leaving the previous frame's
+     * answer standing: a stale hover washes a cell the cursor has left and answers the tooltip
+     * with the wrong system, which reads as a bug in the highlight rather than in the read.
+     *
+     * @param targets the frame's drawn cells, or null when the layer painted nothing to hover
+     *                over - a build that has yet to succeed, or a diagnostic overlay standing in
+     *                for the production draw lists. Nullable so the park stays here, in the one
+     *                place that owns what "no hover" means, rather than in each layer's caller
+     * @param factor  the per-vertex scale this render pass applies, needed to undo the map's zoom
      */
-    public void publishHoverFrom(PoliticalMapCache cache, float factor) {
+    public void publishHoverFrom(MapHoverTargets targets, float factor) {
 
-        var territories = cache.getTerritories();
-        // No production draw lists means nothing was painted to hover over: the debug border-tracing
-        // overlay replaced them, or the first build has yet to succeed.
-        if (territories == null || !Mouse.isInsideWindow()) {
+        if (targets == null || !Mouse.isInsideWindow()) {
             parkHover();
             return;
         }
@@ -76,7 +83,7 @@ final class PoliticalMapHoverPublisher {
         var hoveredSystemId = CellHitTest.resolveSystemIdAt(
             worldPoint.x,
             worldPoint.y,
-            territories.getFillPolygonByCellId());
+            targets.getFillPolygonByCellId());
 
         if (hoveredSystemId == null) {
             parkHover();
@@ -84,7 +91,7 @@ final class PoliticalMapHoverPublisher {
         }
         MapHoverState.getInstance().publishHover(new MapHover(
             hoveredSystemId,
-            territories.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
+            targets.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
 
         logHoverChange(hoveredSystemId);
     }
@@ -97,15 +104,15 @@ final class PoliticalMapHoverPublisher {
     }
 
     // Traces each move onto a new cell: which system the cursor resolved to and how large a
-    // territory that pulls in - the two answers this pass exists to produce, and the ones a wrong
+    // cluster that pulls in - the two answers this pass exists to produce, and the ones a wrong
     // highlight is diagnosed against. Set KMU log verbosity to DEBUG in LunaLib to see it.
     private void logHoverChange(String hoveredSystemId) {
         if (hoveredSystemId.equals(lastLoggedSystemId) || !LOG.isDebugEnabled()) {
             return;
         }
         lastLoggedSystemId = hoveredSystemId;
-        
-        LOG.debug("Political map hover resolved; system="
+
+        LOG.debug("Map hover resolved; system="
             + hoveredSystemId
             + " clusterMembers="
             + MapHoverState.getInstance().getHover().clusterMemberSystemIds());

@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
+import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
@@ -28,7 +29,7 @@ import java.util.Optional;
  * <p>Named for the layer, not for the overlay: this sequences a frame, while
  * {@link PoliticalMapOverlayRenderer} one level down composes the overlay's own sub-layers. It
  * sequences three collaborators per frame - it asks its {@link PoliticalMapCache} to bring the
- * cached draw lists up to date, has its {@link PoliticalMapHoverPublisher} resolve what the cursor
+ * cached draw lists up to date, has its {@link MapHoverPublisher} resolve what the cursor
  * is over, and hands the draw lists to the overlay renderer. All the real work - keeping the draw
  * lists fresh with the least work per frame, reading the cursor, and composing the overlay layers -
  * lives in those three.
@@ -49,7 +50,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // The cursor read, created on the first frame the hover toggle is on. Deferred because the
     // matrix binding it holds is chosen from the renderer in force, which can only be read from a
     // running game - and because a player who leaves the hover off never needs one at all.
-    private PoliticalMapHoverPublisher hoverPublisher;
+    private MapHoverPublisher hoverPublisher;
 
     private PoliticalMapLayerRenderer() {
     }
@@ -128,14 +129,14 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             return;
         }
         if (hoverPublisher == null) {
-            hoverPublisher = new PoliticalMapHoverPublisher(
-                ModelviewMatrixReaders.selectForActiveRenderer());
+            hoverPublisher = new MapHoverPublisher(ModelviewMatrixReaders.selectForActiveRenderer());
         }
         // The cursor read sits between the refresh and the draw: after, so it tests against the
         // shapes this frame actually paints, and before, so the highlight layers already have the
         // frame's answer when they draw. It is the one point in the frame with both the live GL
-        // matrices it needs and the current draw lists.
-        hoverPublisher.publishHoverFrom(cache, factor);
+        // matrices it needs and the current draw lists. The draw lists are handed over as the
+        // hover targets they satisfy - null when nothing was painted, which the publisher parks on.
+        hoverPublisher.publishHoverFrom(cache.getTerritories(), factor);
     }
 
     // Whether the cursor sits over the map sidebar. Reads the same placement the sidebar draws and

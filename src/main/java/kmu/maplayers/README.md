@@ -126,7 +126,12 @@ about what the overlay means.
   `MapHover` (the hovered cell and the cluster around it), `MapHoverState` (the
   shared holder the map render pass publishes to and the later UI passes read, since only that pass
   can invert a cursor pixel to a world point), and `HoverHighlight` (the loops and triangles one
-  hover lights up). `HoverHighlightGeometry` resolves that geometry and `HoverHighlightRenderer`
+  hover lights up). `MapHoverPublisher` is the pass that fills the holder - it undoes the map's pan,
+  centring and zoom to turn a cursor pixel back into a world point, hit-tests that point, and widens
+  the hit to its cluster. It works over `MapHoverTargets` - one frame's drawn cell shapes and the
+  clusters they fuse into - so the matrix inversion, the hard part of hovering and the same one
+  whatever a layer paints, is written once. `HoverHighlightGeometry` resolves the highlight geometry
+  and `HoverHighlightRenderer`
   burns the halo and the wash, both over a `HoverHighlightSource` - the three questions only the
   layer that owns the clusters can answer: the extent it painted under the cursor, the loops the
   cell might sit inside, and the shade its ground draws in. `MapHoverGates` is the settings side:

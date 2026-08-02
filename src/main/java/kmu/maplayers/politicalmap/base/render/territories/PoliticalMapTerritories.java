@@ -5,6 +5,7 @@ import kmlib.starsector.factions.FactionPalette;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.SystemClusterIndex;
 import kmu.maplayers.base.geometry.SystemClusters;
+import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
@@ -48,8 +49,14 @@ import java.util.Set;
  * holder change touched. The styling, decivilised and unfilled sets, view grouping, and
  * filter snapshot are set once at build and only read after, so an incremental pass re-shapes
  * against the exact inputs the full build baked in.
+ *
+ * <p>It satisfies {@link MapHoverTargets} directly rather than through an adapter, because the
+ * two reads the cursor needs are already exactly the two it exposes - the shapes it painted and
+ * the clusters it fused. Where an answer has to be worked out from these rather than handed over
+ * verbatim, the adapter is the right shape and the layer supplies one; see
+ * {@code PoliticalMapHoverHighlightSource}.
  */
-public final class PoliticalMapTerritories {
+public final class PoliticalMapTerritories implements MapHoverTargets {
 
     // Render output, mutated in place by the incremental refresh. Created empty here since a
     // fresh build fills them and no caller ever supplies them pre-populated.
@@ -159,6 +166,7 @@ public final class PoliticalMapTerritories {
      * @return each drawn cell's painted extent as {x, y} vertex pairs in world coordinates, the
      *         geometry a cursor position is resolved against
      */
+    @Override
     public Map<String, List<double[]>> getFillPolygonByCellId() {
         return fillPolygonByCellId;
     }
@@ -167,6 +175,7 @@ public final class PoliticalMapTerritories {
      * @return which contiguous territory each system belongs to, so a hovered cell resolves to the
      *         whole cluster around it - the same clusters that carry one name apiece
      */
+    @Override
     public SystemClusterIndex getClusterIndex() {
         return clusterIndex;
     }

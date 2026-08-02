@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render;
+package kmu.maplayers.base.hover;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.SettingsAPI;
@@ -6,9 +6,6 @@ import com.fs.starfarer.api.SettingsAPI;
 import kmlib.testfixtures.starsector.ui.map.ModelviewMatrixReaderFake;
 
 import kmu.maplayers.base.geometry.SystemClusterIndex;
-import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.hover.MapHoverState;
-import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,17 +27,21 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what the cursor read publishes for a frame: the cell under the cursor with the territory
+ * Pins what the cursor read publishes for a frame: the cell under the cursor with the cluster
  * around it, or a parked hover whenever any input the read depends on is missing. Parking is the
  * whole point of the guards - a wrong hover would wash the wrong cell and answer the tooltip with
  * the wrong system, so every reason the read cannot be trusted has to mean "no hover" and never
  * "a guess".
  *
+ * <p>The targets are a bare {@link MapHoverTargets} rather than any layer's draw lists, which is
+ * what proves the read is the framework's: a test reaching for a particular layer's build would
+ * re-couple exactly what keeps this publisher usable by a second one.
+ *
  * <p>The map transform is built out of hand-chosen matrices rather than a live pass, so the cursor
  * pixels below map to world points that can be read off by eye: the cell polygon spans a known
  * square and the cursor is placed inside or outside it deliberately.
  */
-final class PoliticalMapHoverPublisherTest {
+final class MapHoverPublisherTest {
 
     // A screen the two axes disagree on, so an axis swap anywhere in the read cannot pass by
     // coincidence. The viewport matches it 1:1 - the pixel-scaled case is CampaignMapTransform's
@@ -66,10 +67,10 @@ final class PoliticalMapHoverPublisherTest {
     // coordinates, wide enough that the cursor below lands well inside it rather than on an edge,
     // where two abutting cells could both claim the point.
     private static final List<double[]> CELL_POLYGON = List.of(
-            new double[] {100d, 50d},
-            new double[] {300d, 50d},
-            new double[] {300d, 250d},
-            new double[] {100d, 250d});
+        new double[] {100d, 50d},
+        new double[] {300d, 50d},
+        new double[] {300d, 250d},
+        new double[] {100d, 250d});
 
     // Unprojects to world (200, 150) - the cell's centre - once the pan comes off and the zoom
     // divides out: ((410 - 10) / 2, (320 - 20) / 2).
@@ -96,27 +97,28 @@ final class PoliticalMapHoverPublisherTest {
         return matrix;
     }
 
-    private static PoliticalMapHoverPublisher buildPublisherReading(float[] modelviewMatrix) {
-        return new PoliticalMapHoverPublisher(new ModelviewMatrixReaderFake(modelviewMatrix));
+    private static MapHoverPublisher buildPublisherReading(float[] modelviewMatrix) {
+        return new MapHoverPublisher(new ModelviewMatrixReaderFake(modelviewMatrix));
     }
 
     // A publisher whose transform reads back exactly as the map's pass left it, so a test that is
     // not about the transform gets one that resolves.
-    private static PoliticalMapHoverPublisher buildPublisherOnALiveMap() {
+    private static MapHoverPublisher buildPublisherOnALiveMap() {
         return buildPublisherReading(buildTranslationMatrix(PAN_X, PAN_Y));
     }
 
-    // The frame's draw lists with one drawn cell, clustered with a neighbour so a published hover
-    // proves it carries the whole territory and not just the cell it resolved.
-    private static PoliticalMapCache buildCacheWithOneCell() {
-        var territoriesMock = mock(PoliticalMapTerritories.class);
-        when(territoriesMock.getFillPolygonByCellId())
-                .thenReturn(Map.of(HOVERED_SYSTEM_ID, CELL_POLYGON));
-        when(territoriesMock.getClusterIndex()).thenReturn(SystemClusterIndex.indexClusters(
+    // The frame's targets with one drawn cell, clustered with a neighbour so a published hover
+    // proves it carries the whole cluster and not just the cell it resolved.
+    private static MapHoverTargets buildTargetsWithOneCell() {
+        var targetsMock = mock(MapHoverTargets.class);
+
+        when(targetsMock.getFillPolygonByCellId())
+            .thenReturn(Map.of(HOVERED_SYSTEM_ID, CELL_POLYGON));
+        when(targetsMock.getClusterIndex())
+            .thenReturn(SystemClusterIndex.indexClusters(
                 List.of(List.of(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID))));
-        var cacheMock = mock(PoliticalMapCache.class);
-        when(cacheMock.getTerritories()).thenReturn(territoriesMock);
-        return cacheMock;
+
+        return targetsMock;
     }
 
     @Nested
@@ -129,11 +131,16 @@ final class PoliticalMapHoverPublisherTest {
         @BeforeEach
         void setUp() {
             var settingsMock = mock(SettingsAPI.class);
-            when(settingsMock.getScreenWidth()).thenReturn(SCREEN_WIDTH);
-            when(settingsMock.getScreenHeight()).thenReturn(SCREEN_HEIGHT);
+            
+            when(settingsMock.getScreenWidth())
+                .thenReturn(SCREEN_WIDTH);
+            when(settingsMock.getScreenHeight())
+                .thenReturn(SCREEN_HEIGHT);
+
             // The real static seam rather than a mocked Global: the publisher resolves its logger
             // through the same class, and stubbing all of Global would hand it a null one.
             Global.setSettings(settingsMock);
+
             // glGetInteger reports through the buffer it is handed and leaves its position alone,
             // so the stub writes absolutely, the way the capture reads it back.
             glMock = mockStatic(GL11.class);
@@ -145,10 +152,18 @@ final class PoliticalMapHoverPublisherTest {
                         }
                         return null;
                     });
+
             mouseMock = mockStatic(Mouse.class);
-            mouseMock.when(Mouse::isInsideWindow).thenReturn(true);
-            mouseMock.when(Mouse::getX).thenReturn(CURSOR_X_ON_CELL);
-            mouseMock.when(Mouse::getY).thenReturn(CURSOR_Y_ON_CELL);
+            mouseMock
+                .when(Mouse::isInsideWindow)
+                .thenReturn(true);
+            mouseMock
+                .when(Mouse::getX)
+                .thenReturn(CURSOR_X_ON_CELL);
+            mouseMock
+                .when(Mouse::getY)
+                .thenReturn(CURSOR_Y_ON_CELL);
+
             // A standing hover from an earlier frame, so a parking assertion distinguishes "parked"
             // from "left alone": both publish nothing new, only the first clears.
             hoverState = MapHoverState.getInstance();
@@ -167,65 +182,81 @@ final class PoliticalMapHoverPublisherTest {
 
         @Test
         void publishHoverFromPublishesTheHoveredCellWithItsCluster() {
-            buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
+            buildPublisherOnALiveMap()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
 
             // Every input the read threads shows up in this one hover: the cursor resolves to the
             // cell only if the viewport, the pan and the zoom all reached the transform, and the
             // neighbour rides along only if the cluster was looked up off the resolved cell.
-            assertThat(hoverState.getHover().hoveredSystemId()).isEqualTo(HOVERED_SYSTEM_ID);
+            assertThat(hoverState.getHover().hoveredSystemId())
+                .isEqualTo(HOVERED_SYSTEM_ID);
             assertThat(hoverState.getHover().clusterMemberSystemIds())
-                    .containsExactly(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID);
+                .containsExactly(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID);
         }
 
         @Test
         void publishHoverFromParksTheHoverWhenTheCursorIsOverNoCell() {
-            mouseMock.when(Mouse::getX).thenReturn(CURSOR_X_OFF_CELL);
-            mouseMock.when(Mouse::getY).thenReturn(CURSOR_Y_OFF_CELL);
 
-            buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
+            mouseMock
+                .when(Mouse::getX)
+                .thenReturn(CURSOR_X_OFF_CELL);
+            mouseMock
+                .when(Mouse::getY)
+                .thenReturn(CURSOR_Y_OFF_CELL);
 
-            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
+            buildPublisherOnALiveMap()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(hoverState.getHover())
+                .isSameAs(MapHover.NONE);
         }
 
         @Test
         void publishHoverFromParksTheHoverWhenNothingWasPainted() {
-            // No production draw lists: the debug overlay replaced them, or the first build has yet
-            // to succeed. There are no cell shapes to test the cursor against at all.
-            var cacheMock = mock(PoliticalMapCache.class);
-            when(cacheMock.getTerritories()).thenReturn(null);
+            // No targets at all: a diagnostic overlay stood in for the production draw lists, or
+            // the first build has yet to succeed. There are no cell shapes to test against.
+            buildPublisherOnALiveMap()
+                .publishHoverFrom(null, MAP_ZOOM);
 
-            buildPublisherOnALiveMap().publishHoverFrom(cacheMock, MAP_ZOOM);
-
-            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
+            assertThat(hoverState.getHover())
+                .isSameAs(MapHover.NONE);
         }
 
         @Test
         void publishHoverFromParksTheHoverWhenTheCursorLeftTheWindow() {
             // The cursor still reports its last position inside the window, so a publisher that
             // skipped this check would happily keep the cell it was last over lit up.
-            mouseMock.when(Mouse::isInsideWindow).thenReturn(false);
+            mouseMock
+                .when(Mouse::isInsideWindow)
+                .thenReturn(false);
 
-            buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
+            buildPublisherOnALiveMap()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
 
-            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
+            assertThat(hoverState.getHover())
+                .isSameAs(MapHover.NONE);
         }
 
         @Test
         void publishHoverFromParksTheHoverWhenTheTransformIsUnusable() {
             // A reader that serves no matrix is the reading a degraded binding gives; the transform
             // is unusable and no cell may be resolved from it.
-            buildPublisherReading(null).publishHoverFrom(buildCacheWithOneCell(), MAP_ZOOM);
+            buildPublisherReading(null)
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
 
-            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
+            assertThat(hoverState.getHover())
+                .isSameAs(MapHover.NONE);
         }
 
         @Test
         void publishHoverFromParksTheHoverWhenTheCursorCannotBeUnprojected() {
             // A zoom of zero leaves the snapshot with no world point to report, so the cell the
             // cursor sits over must not be published on the strength of a point that never came.
-            buildPublisherOnALiveMap().publishHoverFrom(buildCacheWithOneCell(), UNUSABLE_ZOOM);
+            buildPublisherOnALiveMap()
+                .publishHoverFrom(buildTargetsWithOneCell(), UNUSABLE_ZOOM);
 
-            assertThat(hoverState.getHover()).isSameAs(MapHover.NONE);
+            assertThat(hoverState.getHover())
+                .isSameAs(MapHover.NONE);
         }
     }
 }
