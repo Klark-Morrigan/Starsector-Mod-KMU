@@ -6,6 +6,8 @@ import com.fs.starfarer.api.campaign.CampaignTerrainAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.ui.map.VanillaMapTooltip;
+
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -31,9 +33,6 @@ import org.apache.log4j.Logger;
 import java.util.List;
 
 public class KMU_ModPlugin extends BaseModPlugin {
-
-    public static final String MOD_ID = "kmu";
-    public static final String MOD_NAME = "Klark Morrigan's Utilities";
 
     private static final Logger LOG = Global.getLogger(KMU_ModPlugin.class);
 
@@ -350,7 +349,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         listenerManager.removeListenerOfClass(MapLayerCellTooltip.class);
-        listenerManager.addListener(new MapLayerCellTooltip(), true);
+        // The vanilla-tooltip probe is supplied rather than built by the dispatcher, so a test can
+        // stand a stub in its place and pin the step-aside.
+        listenerManager.addListener(new MapLayerCellTooltip(new VanillaMapTooltip()), true);
     }
 
     static void installSectorMapLayerTerrain(SectorAPI sector) {

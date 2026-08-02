@@ -1,14 +1,19 @@
 package kmu.maplayers.base.tooltip;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.combat.ViewportAPI;
 
+import kmlib.starsector.ui.map.CampaignMapView;
+import kmlib.starsector.ui.map.VanillaMapTooltip;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.render.MapLayerRenderer;
+import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -52,6 +58,34 @@ final class MapLayerCellTooltipTest {
     @AfterEach
     void restoreARegisteredLayer() {
         MapLayerRosters.restoreNonEmptyRoster();
+    }
+
+    @Nested
+    class RenderInUICoordsAboveUIAndTooltips {
+
+        @Test
+        void standsAsideWhileTheVanillaMapIsDrawingItsOwnTooltip() {
+            // The cursor is over a star, so the map is already naming it. Both boxes would otherwise
+            // stack over one icon. Every gate above this one is open, so a dispatcher that skipped
+            // the step-aside would reach the injected tooltip and draw.
+            var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
+            when(vanillaMapTooltipMock.isShowing()).thenReturn(true);
+            MapHoverState.getInstance().publishHover(new MapHover("system", List.of("system")));
+
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
+                    MockedStatic<CampaignMapView> mapViewMock = mockStatic(CampaignMapView.class)) {
+
+                settingsMock.when(KmuLunaSettings::getMapHoveringEnabled).thenReturn(true);
+                settingsMock.when(KmuLunaSettings::getMapHoverTooltipEnabled).thenReturn(true);
+                mapViewMock.when(CampaignMapView::isSectorMapWithStarscapeOff).thenReturn(true);
+
+                new MapLayerCellTooltip(vanillaMapTooltipMock)
+                    .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
+
+                verifyNoInteractions(tooltipMock);
+            }
+            MapHoverState.getInstance().clearHover();
+        }
     }
 
     @Nested

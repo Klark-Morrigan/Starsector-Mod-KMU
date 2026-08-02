@@ -1,6 +1,9 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import com.fs.starfarer.api.Global;
+
 import kmlib.starsector.ui.input.UiCursor;
+import kmlib.starsector.ui.map.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
 import kmu.maplayers.base.hover.MapHoverPublisher;
@@ -10,6 +13,8 @@ import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
+
+import org.apache.log4j.Logger;
 
 import java.util.Optional;
 
@@ -39,6 +44,8 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     /** The one shared instance; the political-map layer hands it to the map surface as its renderer. */
     public static final PoliticalMapLayerRenderer INSTANCE = new PoliticalMapLayerRenderer();
 
+    private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
+
     // The freshness cache and the overlay compositor this renderer delegates to. Plain final fields:
     // a layer renderer is reached through a registered layer, so it lives for the session and never
     // enters a save, and neither collaborator needs the transient marking or lazy rebuild a
@@ -46,6 +53,11 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // load rather than replaced; see discardStateFromPreviousSave.
     private final PoliticalMapCache cache = new PoliticalMapCache();
     private final PoliticalMapOverlayRenderer overlayRenderer = new PoliticalMapOverlayRenderer();
+
+    // The last widget-trace line logged, so a resting cursor reports once rather than every frame.
+    // Held here rather than in the trace because the trace only describes; deciding how often this
+    // layer repeats itself is this layer's business.
+    private String lastLoggedWidgetTrace;
 
     // The cursor read, created on the first frame the hover toggle is on. Deferred because the
     // matrix binding it holds is chosen from the renderer in force, which can only be read from a
@@ -117,6 +129,8 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // With both off the hover is parked so nothing downstream keeps a stale cell lit, and the
     // publisher (and the renderer binding it holds) is never created.
     private void publishHoverIfAnyFeedbackNeedsIt(float factor) {
+        traceVanillaWidgetsUnderCursor();
+
         if (!PoliticalMapHoverGates.isCursorReadNeeded()) {
             MapHoverState.getInstance().clearHover();
             return;
@@ -137,6 +151,26 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         // matrices it needs and the current draw lists. The draw lists are handed over as the
         // hover targets they satisfy - null when nothing was painted, which the publisher parks on.
         hoverPublisher.publishHoverFrom(cache.getTerritories(), factor);
+    }
+
+    // Diagnostic only, and silent unless KMU's log verbosity is DEBUG: names the vanilla widgets the
+    // cursor is inside. The hover published below comes from the map's own geometry and knows
+    // nothing of the chrome laid over it, so a cursor on the map's tab strip still resolves the cell
+    // underneath and lights it. Fixing that needs to know which of the tab's widgets is the map and
+    // which are chrome, which is a fact about the live tree rather than something derivable.
+    //
+    // Logged here rather than in the library that reads it: the line is about this layer's problem
+    // and belongs under this mod's own verbosity, which a logger named after a library class would
+    // sit outside of. Reported only when the answer changes, so a resting cursor costs one line.
+    private void traceVanillaWidgetsUnderCursor() {
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
+        var widgetsUnderCursor = MapTabWidgetTrace.describeWidgetsUnderCursor();
+        if (widgetsUnderCursor != null && !widgetsUnderCursor.equals(lastLoggedWidgetTrace)) {
+            lastLoggedWidgetTrace = widgetsUnderCursor;
+            LOG.debug("Map-tab widget trace: " + widgetsUnderCursor);
+        }
     }
 
     // Whether the cursor sits over the map sidebar. Reads the same placement the sidebar draws and

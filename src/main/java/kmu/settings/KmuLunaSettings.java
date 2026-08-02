@@ -5,6 +5,8 @@ import kmlib.settings.LabeledChoice;
 import kmlib.settings.LabeledChoices;
 import kmlib.settings.LunaSettingsReader;
 
+import kmu.KmuMod;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -105,7 +107,7 @@ public final class KmuLunaSettings {
     // the "kmu" package, so that one logger name is the lever for the whole
     // mod's verbosity. The two coincide as strings but mean different things -
     // a settings id and a logger namespace.
-    private static final String MOD_ID = "kmu";
+    private static final String MOD_ID = KmuMod.MOD_ID;
     private static final String LOGGER_ROOT = "kmu";
     private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
 

@@ -37,6 +37,19 @@ import java.util.Optional;
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
+    // The live read this dispatcher steps aside for. Supplied rather than built here: it is the one
+    // collaborator whose answer changes what this draws, so a caller that can hand over a stub is
+    // what makes the step-aside checkable at all.
+    private final VanillaMapTooltip vanillaMapTooltip;
+
+    /**
+     * @param vanillaMapTooltip the probe answering whether the map is drawing its own tooltip, which
+     *                          this box stands aside for
+     */
+    public MapLayerCellTooltip(VanillaMapTooltip vanillaMapTooltip) {
+        this.vanillaMapTooltip = vanillaMapTooltip;
+    }
+
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
         // Below the whole campaign UI - under the map screen. Nothing belongs here.
@@ -68,7 +81,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         // Step aside when the vanilla map screen is drawing its own tooltip (the player is over a
         // star icon), so only one box shows there. Read live from the map's UI tree; a read that
         // fails on some game build draws ours anyway rather than hiding it.
-        if (VanillaMapTooltip.isShowing()) {
+        if (vanillaMapTooltip.isShowing()) {
             return;
         }
         // The active layer decides which tooltip to draw by injecting one; a layer with none leaves

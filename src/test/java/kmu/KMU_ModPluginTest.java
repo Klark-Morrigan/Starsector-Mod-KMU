@@ -60,12 +60,6 @@ class KMU_ModPluginTest {
     class ModIdentity {
 
         @Test
-        void exposesStableModIdentityConstants() {
-            assertThat(KMU_ModPlugin.MOD_ID).isEqualTo("kmu");
-            assertThat(KMU_ModPlugin.MOD_NAME).isEqualTo("Klark Morrigan's Utilities");
-        }
-
-        @Test
         void extendsStarsectorBaseModPlugin() {
             assertThat(new KMU_ModPlugin()).isInstanceOf(BaseModPlugin.class);
         }
