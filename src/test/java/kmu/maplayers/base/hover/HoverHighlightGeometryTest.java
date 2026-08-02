@@ -34,12 +34,16 @@ final class HoverHighlightGeometryTest {
         @Test
         void a_hovered_cell_resolves_the_loop_that_encloses_it() {
             var loop = squareRun(0, 0, 100);
-            var sourceFake = sourceOf(square(10, 10, 80), List.of(loop));
+
+            var sourceFake = sourceOf(
+                square(10, 10, 80),
+                List.of(loop));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
-            assertThat(highlight.glowLoops()).containsExactly(loop);
+            assertThat(highlight.glowLoops())
+                .containsExactly(loop);
         }
 
         @Test
@@ -48,14 +52,16 @@ final class HoverHighlightGeometryTest {
             // rather than taken as "the cluster's border".
             var hoveredLoop = squareRun(0, 0, 100);
             var distantLoop = squareRun(500, 0, 100);
+
             var sourceFake = sourceOf(
-                    square(10, 10, 80),
-                    List.of(distantLoop, hoveredLoop));
+                square(10, 10, 80),
+                List.of(distantLoop, hoveredLoop));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
-            assertThat(highlight.glowLoops()).containsExactly(hoveredLoop);
+            assertThat(highlight.glowLoops())
+                .containsExactly(hoveredLoop);
         }
 
         @Test
@@ -65,27 +71,31 @@ final class HoverHighlightGeometryTest {
             // is the cluster the cell actually belongs to.
             var outerCluster = squareRun(0, 0, 1000);
             var enclaveInsideRival = squareRun(400, 400, 100);
+
             var sourceFake = sourceOf(
-                    square(410, 410, 80),
-                    List.of(outerCluster, enclaveInsideRival));
+                square(410, 410, 80),
+                List.of(outerCluster, enclaveInsideRival));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
-            assertThat(highlight.glowLoops()).containsExactly(enclaveInsideRival);
+            assertThat(highlight.glowLoops())
+                .containsExactly(enclaveInsideRival);
         }
 
         @Test
         void a_cell_fully_inside_its_frontier_washes_its_whole_extent() {
             // The clip must be a no-op for an interior cell: it washes its full 80x80 area (6400),
             // not a clamped-down piece, so only cells that reach the frontier are ever trimmed.
-            var sourceFake = sourceOf(square(10, 10, 80), List.of(squareRun(0, 0, 100)));
+            var sourceFake = sourceOf(
+                square(10, 10, 80),
+                List.of(squareRun(0, 0, 100)));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
             assertThat(totalTriangleArea(highlight.washTriangles()))
-                    .isCloseTo(6400.0, within(1e-2));
+                .isCloseTo(6400.0, within(1e-2));
         }
 
         @Test
@@ -93,24 +103,29 @@ final class HoverHighlightGeometryTest {
             // The shaped cell reaches past the frontier that encloses its centre - the corner the
             // border's rounding cut, which the raw cell keeps. The wash must clamp to the loop, so
             // the overlap [50,100]x[50,100] (area 2500) washes, not the whole 80x80 cell (6400).
-            var sourceFake = sourceOf(square(50, 50, 80), List.of(squareRun(0, 0, 100)));
+            var sourceFake = sourceOf(
+                square(50, 50, 80),
+                List.of(squareRun(0, 0, 100)));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
             assertThat(totalTriangleArea(highlight.washTriangles()))
-                    .isCloseTo(2500.0, within(1e-2));
-            assertThat(highlight.washOutline()).hasSize(1);
+                .isCloseTo(2500.0, within(1e-2));
+            assertThat(highlight.washOutline())
+                .hasSize(1);
         }
 
         @Test
         void a_cell_with_no_candidate_loops_washes_with_no_halo() {
             // Ground that fuses into no cluster, or whose cluster traced no border at all: there is
             // no frontier to bloom - but the cell itself is still what the cursor is on.
-            var sourceFake = sourceOf(square(10, 10, 80), List.of());
+            var sourceFake = sourceOf(
+                square(10, 10, 80),
+                List.of());
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
             assertThat(highlight.glowLoops()).isEmpty();
             assertThat(highlight.washOutline()).isNotEmpty();
@@ -121,10 +136,12 @@ final class HoverHighlightGeometryTest {
         void a_cell_no_candidate_encloses_washes_with_no_halo() {
             // Candidates exist but the cell sits outside every one of them, which reads the same
             // as having none: the cell washes and nothing haloes.
-            var sourceFake = sourceOf(square(10, 10, 80), List.of(squareRun(500, 500, 100)));
+            var sourceFake = sourceOf(
+                square(10, 10, 80),
+                List.of(squareRun(500, 500, 100)));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
             assertThat(highlight.glowLoops()).isEmpty();
             assertThat(highlight.washOutline()).isNotEmpty();
@@ -132,20 +149,24 @@ final class HoverHighlightGeometryTest {
 
         @Test
         void nothing_hovered_lights_nothing_up() {
-            var sourceFake = sourceOf(square(10, 10, 80), List.of(squareRun(0, 0, 100)));
+            var sourceFake = sourceOf(
+                square(10, 10, 80),
+                List.of(squareRun(0, 0, 100)));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, MapHover.NONE);
+                .resolveHighlightFor(sourceFake, MapHover.NONE);
 
             assertThat(highlight.isEmpty()).isTrue();
         }
 
         @Test
         void a_hovered_cell_with_no_drawable_shape_lights_nothing_up() {
-            var sourceFake = sourceOf(List.of(), List.of(squareRun(0, 0, 100)));
+            var sourceFake = sourceOf(
+                List.of(),
+                List.of(squareRun(0, 0, 100)));
 
             var highlight = new HoverHighlightGeometry()
-                    .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
             assertThat(highlight.isEmpty()).isTrue();
         }
@@ -154,7 +175,10 @@ final class HoverHighlightGeometryTest {
         void a_resting_cursor_reuses_the_answer_it_already_resolved() {
             // The whole point of the memo: this runs every frame, and re-tracing the same loops
             // sixty times a second for an answer that cannot have changed is pure waste.
-            var sourceFake = sourceOf(square(10, 10, 80), List.of(squareRun(0, 0, 100)));
+            var sourceFake = sourceOf(
+                square(10, 10, 80),
+                List.of(squareRun(0, 0, 100)));
+
             var geometry = new HoverHighlightGeometry();
 
             var first = geometry.resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
@@ -172,10 +196,12 @@ final class HoverHighlightGeometryTest {
             var frontierLoops = List.of(squareRun(0, 0, 100));
             var geometry = new HoverHighlightGeometry();
             var first = geometry.resolveHighlightFor(
-                    sourceOf(paintedExtent, frontierLoops), hoverOf(CELL_ID));
+                sourceOf(paintedExtent, frontierLoops),
+                hoverOf(CELL_ID));
 
             var second = geometry.resolveHighlightFor(
-                    sourceOf(paintedExtent, frontierLoops), hoverOf(CELL_ID));
+                sourceOf(paintedExtent, frontierLoops),
+                hoverOf(CELL_ID));
 
             assertThat(second).isSameAs(first);
         }
@@ -184,18 +210,24 @@ final class HoverHighlightGeometryTest {
         void a_rebuilt_cell_resolves_again_rather_than_tracing_a_shape_that_is_gone() {
             var geometry = new HoverHighlightGeometry();
             var first = geometry.resolveHighlightFor(
-                    sourceOf(square(10, 10, 80), List.of(squareRun(0, 0, 100))),
-                    hoverOf(CELL_ID));
+                sourceOf(
+                    square(10, 10, 80),
+                    List.of(squareRun(0, 0, 100))),
+                hoverOf(CELL_ID));
 
             // An incremental re-shape replaces the cell's extent and its cluster's loops; the
             // retained answer describes geometry the map no longer paints.
             var reshapedLoop = squareRun(0, 0, 60);
             var second = geometry.resolveHighlightFor(
-                    sourceOf(square(5, 5, 50), List.of(reshapedLoop)),
-                    hoverOf(CELL_ID));
+                sourceOf(
+                    square(5, 5, 50),
+                    List.of(reshapedLoop)),
+                hoverOf(CELL_ID));
 
-            assertThat(second).isNotSameAs(first);
-            assertThat(second.glowLoops()).containsExactly(reshapedLoop);
+            assertThat(second)
+                .isNotSameAs(first);
+            assertThat(second.glowLoops())
+                .containsExactly(reshapedLoop);
         }
     }
 
@@ -208,8 +240,8 @@ final class HoverHighlightGeometryTest {
             List<double[]> paintedExtent,
             List<float[]> frontierLoops) {
         return new HoverHighlightSourceFake(
-                Map.of(CELL_ID, paintedExtent),
-                Map.of(CELL_ID, frontierLoops));
+            Map.of(CELL_ID, paintedExtent),
+            Map.of(CELL_ID, frontierLoops));
     }
 
     // An axis-aligned square, counter-clockwise, spanning [minX, minX + side] x
@@ -217,10 +249,10 @@ final class HoverHighlightGeometryTest {
     // as an area that does or does not enclose a point.
     private static List<double[]> square(double minX, double minY, double side) {
         return List.of(
-                new double[] {minX, minY},
-                new double[] {minX + side, minY},
-                new double[] {minX + side, minY + side},
-                new double[] {minX, minY + side});
+            new double[] {minX, minY},
+            new double[] {minX + side, minY},
+            new double[] {minX + side, minY + side},
+            new double[] {minX, minY + side});
     }
 
     // Sums the unsigned area of every triangle in a flat [x, y, x, y, ...] soup, six floats per
@@ -249,12 +281,18 @@ final class HoverHighlightGeometryTest {
             minX, minY + side};
     }
 
-    // A layer's answers as two plain lookups, handing back the very instances it was built with
-    // so the memo's identity comparison is exercised exactly as a real layer's would be. The
+    // A layer's answers as two plain maps, handing back the very instances it was built with so
+    // the memo's identity comparison is exercised exactly as a real layer's would be. The cell
+    // extents come off the inherited read over the shapes map, the way a real layer's do. The
     // highlight colour is a constant: the geometry never reads it.
     private record HoverHighlightSourceFake(
-            Map<String, List<double[]>> paintedExtentByCellId,
-            Map<String, List<float[]>> frontierLoopsByCellId) implements HoverHighlightSource {
+        Map<String, List<double[]>> fillPolygonByCellId,
+        Map<String, List<float[]>> frontierLoopsByCellId) implements HoverHighlightSource {
+
+        @Override
+        public Map<String, List<double[]>> getFillPolygonByCellId() {
+            return fillPolygonByCellId;
+        }
 
         @Override
         public List<float[]> resolveCandidateFrontierLoopsOf(String cellId) {
@@ -264,11 +302,6 @@ final class HoverHighlightGeometryTest {
         @Override
         public Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection) {
             return Color.RED;
-        }
-
-        @Override
-        public List<double[]> resolvePaintedExtentOf(String cellId) {
-            return paintedExtentByCellId.getOrDefault(cellId, List.of());
         }
     }
 }

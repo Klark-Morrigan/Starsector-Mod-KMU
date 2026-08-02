@@ -118,9 +118,9 @@ The rest of `base` carries the supporting parts: `politics` (grouping and the he
 as a change the engine fired no event for, answered into the framework's poll - and
 `PoliticalMapRefreshSignal`, the coarse changes only this layer can raise on the shared board,
 alliance membership being the one),
-`render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers to the three
-questions the framework's highlight asks about the cell under the cursor: the extent this frame
-painted there, the owner's border loops it might sit inside, and the shade its ground draws in;
+`render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers about the cell under
+the cursor: the owner's border loops it might sit inside and the shade its ground draws in, over
+the frame's painted shapes it hands the framework unchanged;
 and `PoliticalMapHoverGates` - whether this layer answers the cursor at all, its own two switches
 ANDed with the framework's, plus whether either kind of feedback still needs the cursor read),
 `tooltip` (`SystemDominationTooltip` - what this layer says about the hovered system, the ranked

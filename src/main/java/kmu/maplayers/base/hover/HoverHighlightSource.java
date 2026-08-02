@@ -6,21 +6,22 @@ import java.awt.Color;
 import java.util.List;
 
 /**
- * The three things about a hovered cell only the layer that owns the map's clusters can
- * answer: the extent it painted there, the border loops the cell might sit inside, and the
- * shade the ground under it draws in.
+ * The two things about a hovered cell only the layer that owns the map's clusters can answer:
+ * the border loops the cell might sit inside, and the shade the ground under it draws in. The
+ * cell's own painted extent is the third thing the highlight needs, and it arrives from
+ * {@link PaintedCellShapes} rather than from here - the same shapes the cursor was hit-tested
+ * against, so the halo cannot trace an outline the hover never resolved.
  *
- * <p>Each is a question about *this* frame's draw lists, so the answers are the geometry the
+ * <p>Both are questions about *this* frame's draw lists, so the answers are the geometry the
  * layer actually put on screen rather than a re-derivation of it - which is what keeps a
  * highlight from ever tracing a shape the map is not painting. The highlight pass owns the
  * halo and the wash on top of them, and owns nothing about who holds the ground.
  *
- * <p>Loops and extents are compared by identity downstream, so an implementation must return
- * the same instance for as long as the geometry behind it is unchanged, and a fresh one once
- * a rebuild or an incremental re-shape has replaced it. Handing back a defensive copy per
- * call would defeat the memoisation and re-trace every frame.
+ * <p>Loops are compared by identity downstream on the same terms the inherited shapes are, so
+ * an implementation must return the same instance for as long as the geometry behind it is
+ * unchanged, and a fresh one once a rebuild or an incremental re-shape has replaced it.
  */
-public interface HoverHighlightSource {
+public interface HoverHighlightSource extends PaintedCellShapes {
 
     /**
      * The border loops the cell could sit inside - the layer's own traced clusters, from which
@@ -43,13 +44,4 @@ public interface HoverHighlightSource {
      *         whole pass
      */
     Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection);
-
-    /**
-     * The extent the layer painted for one cell - the shape the wash lifts.
-     *
-     * @param cellId the hovered cell
-     * @return its painted extent as {x, y} vertex pairs in world coordinates, empty when the
-     *         cell draws nothing at all
-     */
-    List<double[]> resolvePaintedExtentOf(String cellId);
 }

@@ -132,9 +132,10 @@ about what the overlay means.
   is the hard part of hovering and is the same one whatever a layer paints, so it is written here
   once rather than per layer. `HoverHighlightGeometry` resolves the highlight geometry and
   `HoverHighlightRenderer` burns the halo and the wash, both over a `HoverHighlightSource` - the
-  three questions only the layer that owns the clusters can answer: the extent it painted under the
-  cursor, the loops the cell might sit inside, and the shade its ground draws in.
-  `MapHoverGates` is the settings side:
+  two questions only the layer that owns the clusters can answer: the loops the hovered cell might
+  sit inside, and the shade its ground draws in. Both seams extend `PaintedCellShapes`, the frame's
+  cell shapes themselves, so the halo can only trace an outline the cursor was actually hit-tested
+  against - one supplier, not two that must agree. `MapHoverGates` is the settings side:
   hovering is switched at three tiers - a master over the whole map, a pair under it for the
   effects and the box separately, and a pair of the layer's own - and this answers for the two that
   reach every layer, which a layer ANDs its own into. So one layer's box can go dark while another's

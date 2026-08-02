@@ -7,15 +7,18 @@ import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritorie
 
 import java.awt.Color;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The political map's answers about the cell under the cursor: read straight off the draw
  * lists this frame painted, so a highlight can only ever trace ground the map is showing.
  *
- * <p>The three answers all turn on who holds the hovered system. Its painted extent is the
- * shape the build recorded for that cell; the loops it might sit inside are its holder's traced
- * borders, which carry one ring per disjoint cluster and per enclave; and the shade is the
- * holder's own palette, or the shared neutral colour where nothing owns the ground.
+ * <p>Both derived answers turn on who holds the hovered system. The loops it might sit inside
+ * are its holder's traced borders, which carry one ring per disjoint cluster and per enclave;
+ * and the shade is the holder's own palette, or the shared neutral colour where nothing owns
+ * the ground. The cell's painted extent is not derived at all - the frame's shapes pass
+ * straight through, which is how the halo and the cursor read agree by construction rather
+ * than by two lookups happening to land alike.
  *
  * <p>The border loops are the holder's rather than the hovered cluster's because the build bakes
  * them per bloc - which of them encloses this particular cell is a geometric question, and one
@@ -29,6 +32,13 @@ import java.util.List;
  */
 public record PoliticalMapHoverHighlightSource(
     PoliticalMapTerritories territories) implements HoverHighlightSource {
+
+    @Override
+    public Map<String, List<double[]>> getFillPolygonByCellId() {
+        // Handed over as the build holds them, not copied: the highlight memoises on these
+        // instances, and they are the same ones the cursor was hit-tested against.
+        return territories.getFillPolygonByCellId();
+    }
 
     @Override
     public List<float[]> resolveCandidateFrontierLoopsOf(String cellId) {
@@ -52,13 +62,5 @@ public record PoliticalMapHoverHighlightSource(
             paintSelection,
             territories.getHolderBySystemId().get(cellId),
             territories.getNeutralColour());
-    }
-
-    @Override
-    public List<double[]> resolvePaintedExtentOf(String cellId) {
-        // A cell the build dropped entirely draws nothing, so it is absent from the extents
-        // rather than present with an empty shape; both mean the same thing to the caller.
-        var paintedExtent = territories.getFillPolygonByCellId().get(cellId);
-        return paintedExtent == null ? List.of() : paintedExtent;
     }
 }

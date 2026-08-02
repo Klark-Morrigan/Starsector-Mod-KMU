@@ -16,9 +16,9 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins how the political map answers the framework's three questions about a hovered cell:
- * whose loops are the candidates, what shade the ground burns in, and what extent was painted
- * there - each read off the frame's own draw lists.
+ * Pins how the political map answers what the framework asks about a hovered cell: whose loops
+ * are the candidates and what shade the ground burns in, both derived from who holds the system,
+ * plus the frame's painted shapes handed straight over.
  *
  * <p>Also pins the identity contract the highlight's memoisation depends on: the same instances
  * come back for as long as the build behind them stands, so a cursor resting on one cell costs
@@ -133,31 +133,22 @@ final class PoliticalMapHoverHighlightSourceTest {
     }
 
     @Nested
-    class ResolvePaintedExtentOf {
+    class GetFillPolygonByCellId {
 
         @Test
-        void resolvePaintedExtentOfReturnsTheShapeTheBuildRecordedForTheCell() {
+        void getFillPolygonByCellIdHandsOverTheFramesOwnShapes() {
+            // Passed through rather than rebuilt, which is what makes the halo trace the shape
+            // the cursor was hit-tested against - the cursor read takes these same shapes off
+            // the same territories. Reading one cell out of them is the framework's own,
+            // pinned by PaintedCellShapesTest.
             var paintedExtent = square(10, 10, 80);
-            var source = sourceOf(territoriesWith(
+            var territories = territoriesWith(
                 Map.of("A", OWNER),
                 Map.of("A", paintedExtent),
-                territoryWithLoops(List.of())));
+                territoryWithLoops(List.of()));
 
-            assertThat(source.resolvePaintedExtentOf("A"))
-                .isSameAs(paintedExtent);
-        }
-
-        @Test
-        void resolvePaintedExtentOfReturnsNothingForACellTheBuildDropped() {
-            // A cell that puts no ink on the map is absent from the extents rather than present
-            // with an empty shape; the caller must read the two the same way.
-            var source = sourceOf(territoriesWith(
-                Map.of("A", OWNER),
-                Map.of(),
-                territoryWithLoops(List.of())));
-
-            assertThat(source.resolvePaintedExtentOf("A"))
-                .isEmpty();
+            assertThat(sourceOf(territories).getFillPolygonByCellId())
+                .isSameAs(territories.getFillPolygonByCellId());
         }
     }
 

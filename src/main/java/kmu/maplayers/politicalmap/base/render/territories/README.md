@@ -97,8 +97,10 @@ own - one faction's fill triangles, contested-hatch segments, and border loops; 
 
 It also records each drawn cell's shaped fill polygon alongside its `StyledCell`, written and
 dropped by the same two calls, and that pairing is what lets it answer `base.hover`'s
-`MapHoverTargets` directly: the shapes a cursor is tested against are the shapes this frame
-painted, never a re-derivation that could drift from them.
+`PaintedCellShapes` - and through it `MapHoverTargets` - directly: the shapes a cursor is tested
+against are the shapes this frame painted, never a re-derivation that could drift from them. The
+highlight reads the same shapes through `render/hover`'s adapter, so the cursor and the halo cannot
+disagree about what was drawn.
 
 ## The split fill: solid, hatched, unfilled
 
