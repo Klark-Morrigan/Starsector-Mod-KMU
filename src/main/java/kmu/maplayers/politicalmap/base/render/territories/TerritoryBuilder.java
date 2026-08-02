@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColours;
 import kmlib.starsector.markets.DecivilisedMarkets;
@@ -179,10 +180,22 @@ public final class TerritoryBuilder {
                 + shapedCells.size()
                 + " styledCells=" + territories.getStyledCellByCellId().size()
                 + " factionTerritories=" + territories.getFactionTerritoryByFactionId().size()
+                + " hatchSegments=" + countHatchSegments(territories)
                 + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
 
             return territories;
         });
+    }
+
+    // How many hatch strokes this pass baked, as a count of GL_LINES segments rather than of the
+    // floats that pack them. Summed across every territory because which one carries the run
+    // depends on the filter, and all but the spotlit bloc hatch nothing.
+    private static int countHatchSegments(PoliticalMapTerritories territories) {
+        var hatchSegments = 0;
+        for (var territory : territories.getFactionTerritoryByFactionId().values()) {
+            hatchSegments += territory.hatchSegments().length / GlVertexRuns.FLOATS_PER_SEGMENT;
+        }
+        return hatchSegments;
     }
 
     // The drawn cells' grouping this pass shapes and traces against: which system each cell draws
