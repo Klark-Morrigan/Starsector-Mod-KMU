@@ -1,6 +1,9 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmlib.profiling.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.SystemClusters;
@@ -17,6 +20,8 @@ import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
 import kmu.settings.KmuLunaSettings;
+
+import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -45,6 +50,7 @@ import java.util.List;
  * snapshot came from and a label can never be styled from two passes at once.
  */
 public final class ClusterAnchorsBuilder {
+    private static final Logger LOG = Global.getLogger(ClusterAnchorsBuilder.class);
 
     // Drives only; never instantiated.
     private ClusterAnchorsBuilder() {
@@ -76,6 +82,10 @@ public final class ClusterAnchorsBuilder {
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             return;
         }
+        // Timed from here, past the gate: the skipped path does no work worth reporting, and the
+        // fit is the rebuild's dominant cost, so it needs a duration of its own beside the
+        // politics scan's and the cell shaping's rather than only inside the whole-rebuild total.
+        var fitStart = System.nanoTime();
 
         // The agnostic clustering and border trace group the drawn cells, resolving each to
         // the system it draws as and that system to its bloc id; the holder map is still
@@ -107,12 +117,13 @@ public final class ClusterAnchorsBuilder {
             viewGrouping.grouping(),
             filter.recedeAdjustment());
 
+        var spec = LabelAnchorSpecification.readFromLunaSettings();
         anchors.addAll(ClusterAnchorPlacement.computeClusterAnchors(
             clusters,
             geometryCache.getCellEdgesByCellId(),
             geometryCache.getSiteBySystemId(),
             cellGrouping,
-            LabelAnchorSpecification.readFromLunaSettings(),
+            spec,
             new ClusterLabelResolvers(
                 ClusterLabelStyling.newLabelColourResolver(
                     ownerBySystemId,
@@ -125,6 +136,18 @@ public final class ClusterAnchorsBuilder {
                     viewGrouping.grouping(),
                     filter.isFiltering(),
                     filter.selectedBlocId()))));
+
+        // The search's cost is the product of its inputs, so the two sweep knobs and the keep-out
+        // count are reported beside the duration - a slow fit is read off which multiplicand grew,
+        // not off the total alone. The fan's fixed extra directions are not folded in here: how
+        // many candidates a direction count implies is the placement search's own business.
+        LOG.debug("Political map cluster anchors fitted; clusters="
+            + clusters.size()
+            + " anchors=" + anchors.size()
+            + " directions=" + spec.search().directionCount()
+            + " offsets=" + spec.search().offsetCount()
+            + " keepOuts=" + geometryCache.getSiteBySystemId().size()
+            + " took=" + Timings.formatMillis(System.nanoTime() - fitStart));
     }
 
     // The rebuild for a path with no holder map at hand - the debug border-tracing view,
