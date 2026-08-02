@@ -6,7 +6,7 @@ import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
-import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapStaticDebugRenderer;
+import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer;
@@ -49,8 +49,8 @@ final class PoliticalMapOverlayRenderer {
         // Swap production and debug base render on which view the cache built: the debug overlay
         // replaces the normal render, and the cache built exactly one of the two.
         if (cache.isDebug()) {
-            PoliticalMapStaticDebugRenderer.renderOnMap(
-                cache.getDebugTerritories(),
+            ClusterBorderStageRenderer.renderOnMap(
+                cache.getBorderStageOverlay(),
                 factor,
                 alphaMult);
         } else {
@@ -103,7 +103,7 @@ final class PoliticalMapOverlayRenderer {
         // Report whichever view is live: the normal draw lists, or the debug overlay when it has
         // replaced them (territories is null in debug mode).
         var builtCounts = cache.isDebug()
-            ? "debugBaseLoops=" + cache.getDebugTerritories().baseLoops().size()
+            ? "debugBaseLoops=" + cache.getBorderStageOverlay().baseLoops().size()
             : "styledCells=" + cache.getTerritories().getStyledCellByCellId().size();
 
         LOG.debug("Political map render renderOnMap fired: "

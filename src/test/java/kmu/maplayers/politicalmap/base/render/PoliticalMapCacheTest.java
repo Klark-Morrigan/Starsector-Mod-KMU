@@ -54,7 +54,7 @@ final class PoliticalMapCacheTest {
             cache.discardCachedState();
 
             assertThat(cache.getTerritories()).isNull();
-            assertThat(cache.getDebugTerritories()).isNull();
+            assertThat(cache.getBorderStageOverlay()).isNull();
             assertThat(cache.getClusterAnchors()).isEmpty();
             assertThat(cache.getFactionLabels()).isEmpty();
         }

@@ -13,11 +13,11 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
-import kmu.maplayers.politicalmap.base.render.debug.PoliticalMapDebugTerritories;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
@@ -62,14 +62,14 @@ final class PoliticalMapCache {
     private final CellGeometryCache geometryCache = new CellGeometryCache();
 
     // The built draw lists plus the holding and style inputs an incremental re-shape needs.
-    // Null until the first build this session; exactly one of this and debugTerritories is
+    // Null until the first build this session; exactly one of this and borderStageOverlay is
     // non-null after a build.
     private PoliticalMapTerritories territories;
 
     // The debug border-tracing overlay, built instead of the territories above while the "debug
     // border tracing" dev toggle is on. The toggle is a KMU setting, so flipping it bumps the
     // content revision and forces the rebuild that swaps which view is built.
-    private PoliticalMapDebugTerritories debugTerritories;
+    private ClusterBorderStageOverlay borderStageOverlay;
 
     // The cluster-label placements, held here rather than by either view above so they draw over
     // whichever is live - turning border tracing on must not hide them. Empty unless the names or
@@ -110,14 +110,14 @@ final class PoliticalMapCache {
     }
 
     /** @return the built debug border-tracing overlay, or null in the normal (non-debug) view */
-    public PoliticalMapDebugTerritories getDebugTerritories() {
-        return debugTerritories;
+    public ClusterBorderStageOverlay getBorderStageOverlay() {
+        return borderStageOverlay;
     }
 
     // Whether the debug border-tracing overlay is the built view this frame - the one branch the
     // renderer needs to pick which base view to paint.
     public boolean isDebug() {
-        return debugTerritories != null;
+        return borderStageOverlay != null;
     }
 
     /** @return the cluster-label placements, drawn over whichever base view is live */
@@ -143,7 +143,7 @@ final class PoliticalMapCache {
         factionLabels.clear();
         clusterAnchors.clear();
         territories = null;
-        debugTerritories = null;
+        borderStageOverlay = null;
         geometryCache.clearCachedCells();
         lastGeometryRevision = -1;
         lastContentRevision = -1;
@@ -224,7 +224,7 @@ final class PoliticalMapCache {
         // build even if the content revision happens to match its -1 seed.
         var contentRevision = computeContentRevision(view);
         if (rebuiltCells
-                || (territories == null && debugTerritories == null)
+                || (territories == null && borderStageOverlay == null)
                 || contentRevision != lastContentRevision) {
             var drawablesStart = System.nanoTime();
 
@@ -236,7 +236,7 @@ final class PoliticalMapCache {
             // map when there is one, resolving its own from the sector when the debug build left
             // none behind.
             if (KmuLunaSettings.shouldTraceBordersForDebug()) {
-                debugTerritories = DebugBorderTracingBuilder.buildDebugDrawables(
+                borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
                     geometryCache,
                     Global.getSector());
                 territories = null;
@@ -250,7 +250,7 @@ final class PoliticalMapCache {
                     geometryCache,
                     Global.getSector(),
                     view);
-                debugTerritories = null;
+                borderStageOverlay = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchors(
                     clusterAnchors,
                     geometryCache,
@@ -308,8 +308,8 @@ final class PoliticalMapCache {
         if (!LOG.isDebugEnabled()) {
             return;
         }
-        var builtCounts = debugTerritories != null
-            ? "debugBaseLoops=" + debugTerritories.baseLoops().size()
+        var builtCounts = borderStageOverlay != null
+            ? "debugBaseLoops=" + borderStageOverlay.baseLoops().size()
             : "styledCells=" + territories.getStyledCellByCellId().size();
 
         LOG.debug("Political map territories rebuilt; contentRevision="

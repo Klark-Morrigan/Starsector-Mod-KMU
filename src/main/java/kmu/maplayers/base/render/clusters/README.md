@@ -54,6 +54,13 @@ without a gap opening between them.
   cannot drift apart. Each pass also always does what its name says: `smoothBorderLoops` applies
   the profile's own gates in the order the passes must run, while a caller capturing every stage
   gates them itself, and both smooth identically.
+- `debug/` - the diagnostic view of those two passes, for the caller that gates them itself.
+  `ClusterBorderStageOverlay` holds each stage's loops apart - traced, despiked, rounded - and
+  `ClusterBorderStageRenderer` strokes them base under despiked under rounded, in the three grades
+  of the [`DiagnosticPalette`](../../labels/README.md) and at tapering widths, so an earlier stage
+  haloes out from under the one drawn over it. A stage is filled only when its gate was on, so an
+  empty one reads as "that pass did not run" rather than "it ran and changed nothing". What ground
+  is traced into it stays the layer's call: nothing here builds an overlay, it only draws one.
 - `VertexRuns` - flattens one shaped cell's edges of a single class (cluster border, or interior
   seam) into a GL_LINES run. The generic packing is `kmlib.opengl.GlVertexRuns`; what lives here is
   the one conversion that has to know a `ShapedCell`.

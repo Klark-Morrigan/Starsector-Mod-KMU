@@ -11,6 +11,7 @@ import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
+import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -56,7 +57,7 @@ public final class DebugBorderTracingBuilder {
     // Resolves holding from the sector and traces every owned cluster (plus the drawn
     // factionless cells) into the three stage lists. Independent of the production
     // drawables, so the plugin builds this instead of them in debug mode, not alongside.
-    public static PoliticalMapDebugTerritories buildDebugDrawables(
+    public static ClusterBorderStageOverlay buildDebugDrawables(
             CellGeometryCache geometryCache,
             SectorAPI sector) {
 
@@ -116,7 +117,7 @@ public final class DebugBorderTracingBuilder {
             baseLoops,
             roundedLoops);
 
-        return new PoliticalMapDebugTerritories(
+        return new ClusterBorderStageOverlay(
             baseLoops,
             despikedLoops,
             roundedLoops);
