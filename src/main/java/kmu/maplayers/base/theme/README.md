@@ -34,9 +34,10 @@ Part of [the map-layer framework](../../README.md); see the
 A `RenderStyle` is the whole theme, in two tiers:
 
 - `GlobalStyle` - sector-wide, identical for every cluster: the hatched-fill `HatchStyle`, the
-  cluster-border `BorderSmoothingStyle` (both smoothing gates and the shape each pass works to),
-  the `HoverHighlightStyle` (itself a `HoverGlowStyle` for the frontier halo and a `HoverWashStyle`
-  for the hovered cell), and the desaturation profile.
+  cluster-border `BorderSmoothingStyle` (a `SpikeSandingStyle` and a `CornerRoundingStyle`, each
+  carrying its own pass's gate and the shape that pass works to), the `HoverHighlightStyle`
+  (itself a `HoverGlowStyle` for the frontier halo and a `HoverWashStyle` for the hovered cell),
+  and the desaturation profile.
 - `Map<MapStyleCategory, CategoryStyle>` - one bundle per category. Keying on a type rather than
   holding one hardcoded field per category is what lets the theme carry the bundles as one map the
   builders index, and lets the set of categories be the painting layer's rather than the
@@ -44,7 +45,9 @@ A `RenderStyle` is the whole theme, in two tiers:
   key to be one layer's enum.
 
 A new sector-wide knob belongs on the matching `GlobalStyle` sub-record, never fetched ad hoc at a
-call site.
+call site - and where that sub-record is itself split by pass, on the half the pass that reads the
+knob is handed. Splitting `BorderSmoothingStyle` that way is what lets each smoothing pass take
+only its own half, so a sanding number cannot reach the rounding pass and back again.
 
 ## The element unit
 

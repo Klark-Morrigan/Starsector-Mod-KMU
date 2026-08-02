@@ -10,9 +10,9 @@ import java.util.List;
  *
  * <p>{@code baseLoops} is the traced border before smoothing (the resolved inset envelope);
  * {@code despikedLoops} the same after spike sanding, and {@code roundedLoops} after corner
- * rounding. Each smoothed stage is populated only when its pass ran - the two gates
- * {@link kmu.maplayers.base.theme.BorderSmoothingStyle} carries - so an empty stage means that
- * pass was off, not that it ran and left the geometry alone. Each run is a flat
+ * rounding. Each smoothed stage is populated only when its pass ran - the gate each half of
+ * {@link kmu.maplayers.base.theme.BorderSmoothingStyle} carries for its own pass - so an empty
+ * stage means that pass was off, not that it ran and left the geometry alone. Each run is a flat
  * [x, y, x, y, ...] ring in world coordinates.
  */
 public record ClusterBorderStageOverlay(

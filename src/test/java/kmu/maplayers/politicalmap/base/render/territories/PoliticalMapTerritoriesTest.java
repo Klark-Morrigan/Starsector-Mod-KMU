@@ -9,11 +9,13 @@ import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -269,13 +271,8 @@ final class PoliticalMapTerritoriesTest {
             // value rather than by both tiers happening to hold the same inert numbers.
             var globalStyle = new GlobalStyle(new HatchStyle(5, 5, 5),
                 new BorderSmoothingStyle(
-                    true, // Should sand spikes.
-                    true, // Should round corners.
-                    5, // Spike height.
-                    5, // Spike angle radians.
-                    5, // Corner radius.
-                    5, // Corner segments.
-                    5), // ChamferAngleRadians.
+                    new SpikeSandingStyle(true, 5, 5),
+                    new CornerRoundingStyle(true, 5, 5, 5)),
                 ThemeFixtures.NO_HOVER_HIGHLIGHT,
                 0.3);
 

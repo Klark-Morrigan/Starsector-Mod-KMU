@@ -12,7 +12,7 @@ import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
-import kmu.maplayers.base.theme.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
@@ -97,20 +97,28 @@ public final class DebugBorderTracingBuilder {
             stageCollector.captureBaseStage(base);
             var smoothed = base;
 
-            if (borderSmoothing.shouldSandSpikes()) {
-                smoothed = BorderSmoothing.sandBorderSpikes(smoothed, borderSmoothing);
+            if (borderSmoothing.spikeSanding().shouldSandSpikes()) {
+                smoothed = BorderSmoothing.sandBorderSpikes(
+                    smoothed,
+                    borderSmoothing.spikeSanding());
+
                 stageCollector.captureDespikedStage(smoothed);
             }
-            if (borderSmoothing.shouldRoundCorners()) {
-                smoothed = BorderSmoothing.roundBorderCorners(smoothed, borderSmoothing);
+            if (borderSmoothing.cornerRounding().shouldRoundCorners()) {
+                smoothed = BorderSmoothing.roundBorderCorners(
+                    smoothed,
+                    borderSmoothing.cornerRounding());
+
                 stageCollector.captureRoundedStage(smoothed);
             }
         }
+        // Only the rounding half: the factionless pass has no sanding stage to capture, so the
+        // sanding numbers never reach it.
         addFactionlessOutlines(
             geometryCache,
             cellGrouping,
             decivilisedSystemIds,
-            borderSmoothing,
+            borderSmoothing.cornerRounding(),
             stageCollector);
 
         return stageCollector.buildOverlay();
@@ -126,7 +134,7 @@ public final class DebugBorderTracingBuilder {
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
             Set<String> decivilisedSystemIds,
-            BorderSmoothingStyle borderSmoothing,
+            CornerRoundingStyle cornerRounding,
             ClusterBorderStageCollector stageCollector) {
 
         // The whole theme rather than the two factionless bundles separately, so a category
@@ -160,9 +168,9 @@ public final class DebugBorderTracingBuilder {
             var base = List.of(shaped.fillPolygon());
             stageCollector.captureBaseStage(base);
 
-            if (borderSmoothing.shouldRoundCorners()) {
+            if (cornerRounding.shouldRoundCorners()) {
                 stageCollector.captureRoundedStage(
-                    BorderSmoothing.roundBorderCorners(base, borderSmoothing));
+                    BorderSmoothing.roundBorderCorners(base, cornerRounding));
             }
         }
     }

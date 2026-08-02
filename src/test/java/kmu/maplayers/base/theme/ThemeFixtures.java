@@ -17,8 +17,8 @@ public final class ThemeFixtures {
     /** The cursor feedback switched off, for the suites that hover nothing. */
     public static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
             null,
-            new HoverGlowStyle(0, 0, 0, 0, 0),
-            new HoverWashStyle(0, 0, 0));
+        new HoverGlowStyle(0, 0, 0, 0, 0),
+        new HoverWashStyle(0, 0, 0));
 
     // The one value the inert tier does not zero. A desaturating build reads it to darken the
     // shared grey, so zeroing it would leave the desaturation path exercised against a no-op.
@@ -36,10 +36,25 @@ public final class ThemeFixtures {
      *         drawables built off it
      */
     public static GlobalStyle createInertGlobalStyle() {
+        return createGlobalStyleRoundingBy(new CornerRoundingStyle(false, 0, 0, 0));
+    }
+
+    /**
+     * The same inert tier with one live corner-rounding profile in it, for a suite whose subject
+     * is what the rounding pass does to a shape. Sanding stays off: a caller reaching for this
+     * wants the rounded geometry, and a sanding pass in front of it could splice out the very
+     * corners the case is about.
+     *
+     * @param cornerRounding the rounding profile the tier carries, its gate included
+     * @return a live global tier, inert but for its rounding
+     */
+    public static GlobalStyle createGlobalStyleRoundingBy(CornerRoundingStyle cornerRounding) {
         return new GlobalStyle(
-                new HatchStyle(0, 0, 0),
-                new BorderSmoothingStyle(false, false, 0, 0, 0, 0, 0),
-                NO_HOVER_HIGHLIGHT,
-                DESATURATION_DARKENING);
+            new HatchStyle(0, 0, 0),
+            new BorderSmoothingStyle(
+                new SpikeSandingStyle(false, 0, 0),
+                cornerRounding),
+            NO_HOVER_HIGHLIGHT,
+            DESATURATION_DARKENING);
     }
 }

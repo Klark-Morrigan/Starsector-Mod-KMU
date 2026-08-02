@@ -49,12 +49,14 @@ without a gap opening between them.
 ## Smoothing and packing
 
 - `BorderSmoothing` - the two passes over traced loops: sanding the needle spikes and inward cusps
-  too thin for rounding to fix, then rounding the corners into arcs. Each takes the
-  [`BorderSmoothingStyle`](../../theme/README.md) as data rather than reading the live settings
-  where it runs, so a lone cell's outline and the cluster border beside it round to one profile and
-  cannot drift apart. Each pass also always does what its name says: `smoothBorderLoops` applies
-  the profile's own gates in the order the passes must run, while a caller capturing every stage
-  gates them itself, and both smooth identically.
+  too thin for rounding to fix, then rounding the corners into arcs. Each takes its own half of
+  the [`BorderSmoothingStyle`](../../theme/README.md) - the `SpikeSandingStyle` or the
+  `CornerRoundingStyle` - as data rather than reading the live settings where it runs, so a lone
+  cell's outline and the cluster border beside it round to one profile and cannot drift apart, and
+  neither pass has the other's numbers in scope to be handed by mistake. Each pass also always
+  does what its name says: `smoothBorderLoops` applies each half's own gate in the order the
+  passes must run, while a caller capturing every stage gates them itself, and both smooth
+  identically.
 - `debug/` - the diagnostic view of those two passes, for the caller that gates them itself.
   `ClusterBorderStageOverlay` holds each stage's loops apart - traced, despiked, rounded -
   `ClusterBorderStageCollector` gathers them as the producer runs the passes, and

@@ -253,9 +253,12 @@ final class RenderStyleReaderTest {
                 // sole difference from the drawn case is the slot. Off reaches the theme as an
                 // absent selection rather than as a named "No color", since the tier reads
                 // absence as "paints nothing" without knowing this map's option set.
-                assertThat(style.outer().colour()).isNull();
-                assertThat(style.outer().opacity()).isEqualTo(NEUTRAL_OPACITY);
-                assertThat(style.outerWidth()).isEqualTo(NEUTRAL_WIDTH);
+                assertThat(style.outer().colour())
+                    .isNull();
+                assertThat(style.outer().opacity())
+                    .isEqualTo(NEUTRAL_OPACITY);
+                assertThat(style.outerWidth())
+                    .isEqualTo(NEUTRAL_WIDTH);
             }
         }
     }
@@ -312,16 +315,31 @@ final class RenderStyleReaderTest {
 
                 var global = RenderStyleReader.readGlobalStyle();
 
-                assertThat(global.hatch().spacing()).isEqualTo(HATCH_SPACING);
-                assertThat(global.hatch().angleRadians()).isEqualTo(HATCH_ANGLE);
-                assertThat(global.hatch().width()).isEqualTo(HATCH_WIDTH);
-                assertThat(global.borderSmoothing().shouldSandSpikes()).isTrue();
-                assertThat(global.borderSmoothing().shouldRoundCorners()).isFalse();
-                assertThat(global.borderSmoothing().cornerRadius()).isEqualTo(CORNER_RADIUS);
-                assertThat(global.borderSmoothing().cornerSegments()).isEqualTo(CORNER_SEGMENTS);
-                assertThat(global.borderSmoothing().chamferAngleRadians()).isEqualTo(CHAMFER_ANGLE);
-                assertThat(global.desaturationDarkening()).isEqualTo(DESATURATION_DARKENING);
-                assertThat(global.hoverHighlight().glow().opacity()).isEqualTo(HOVER_GLOW_OPACITY);
+                assertThat(global.hatch().spacing())
+                    .isEqualTo(HATCH_SPACING);
+                assertThat(global.hatch().angleRadians())
+                    .isEqualTo(HATCH_ANGLE);
+                assertThat(global.hatch().width())
+                    .isEqualTo(HATCH_WIDTH);
+
+                var cornerRounding = global.borderSmoothing().cornerRounding();
+
+                assertThat(global.borderSmoothing().spikeSanding().shouldSandSpikes())
+                    .isTrue();
+
+                assertThat(cornerRounding.shouldRoundCorners())
+                    .isFalse();
+                assertThat(cornerRounding.cornerRadius())
+                    .isEqualTo(CORNER_RADIUS);
+                assertThat(cornerRounding.cornerSegments())
+                    .isEqualTo(CORNER_SEGMENTS);
+                assertThat(cornerRounding.chamferAngleRadians())
+                    .isEqualTo(CHAMFER_ANGLE);
+
+                assertThat(global.desaturationDarkening())
+                    .isEqualTo(DESATURATION_DARKENING);
+                assertThat(global.hoverHighlight().glow().opacity())
+                    .isEqualTo(HOVER_GLOW_OPACITY);
             }
         }
     }
@@ -336,15 +354,17 @@ final class RenderStyleReaderTest {
         private static final double CHAMFER_ANGLE = 0.4;
 
         @Test
-        void readBorderSmoothingStyleCarriesBothPassesShapeAndNotOnlyTheGates() {
+        void readBorderSmoothingStyleLandsEachKnobInTheSubRecordOfThePassThatReadsIt() {
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
 
+                // The two gates differ, so a gate threaded into the other pass's sub-record reads
+                // as a swap rather than as two switches that happen to agree.
                 settingsMock
                     .when(KmuLunaSettings::shouldSandBorderSpikes)
                     .thenReturn(true);
                 settingsMock
                     .when(KmuLunaSettings::shouldRoundBorderCorners)
-                    .thenReturn(true);
+                    .thenReturn(false);
                 settingsMock
                     .when(KmuLunaSettings::getPoliticalMapBorderSpikeHeight)
                     .thenReturn(SPIKE_HEIGHT);
@@ -363,15 +383,25 @@ final class RenderStyleReaderTest {
 
                 var smoothing = RenderStyleReader.readBorderSmoothingStyle();
 
-                // The sanding shape belongs on the profile alongside the rounding shape: it is
-                // what lets the passes work from one value rather than each reading its own half.
-                assertThat(smoothing.shouldSandSpikes()).isTrue();
-                assertThat(smoothing.shouldRoundCorners()).isTrue();
-                assertThat(smoothing.spikeHeight()).isEqualTo(SPIKE_HEIGHT);
-                assertThat(smoothing.spikeAngleRadians()).isEqualTo(SPIKE_ANGLE);
-                assertThat(smoothing.cornerRadius()).isEqualTo(CORNER_RADIUS);
-                assertThat(smoothing.cornerSegments()).isEqualTo(CORNER_SEGMENTS);
-                assertThat(smoothing.chamferAngleRadians()).isEqualTo(CHAMFER_ANGLE);
+                // Both passes' shape belongs on one profile - that is what lets them work from a
+                // single value - but each knob belongs to the half of it the pass that reads the
+                // knob is handed. The split is where a field could now be threaded into the wrong
+                // sub-record and still compile, so both halves are named here.
+                assertThat(smoothing.spikeSanding().shouldSandSpikes())
+                    .isTrue();
+                assertThat(smoothing.spikeSanding().spikeHeight())
+                    .isEqualTo(SPIKE_HEIGHT);
+                assertThat(smoothing.spikeSanding().spikeAngleRadians())
+                    .isEqualTo(SPIKE_ANGLE);
+
+                assertThat(smoothing.cornerRounding().shouldRoundCorners())
+                    .isFalse();
+                assertThat(smoothing.cornerRounding().cornerRadius())
+                    .isEqualTo(CORNER_RADIUS);
+                assertThat(smoothing.cornerRounding().cornerSegments())
+                    .isEqualTo(CORNER_SEGMENTS);
+                assertThat(smoothing.cornerRounding().chamferAngleRadians())
+                    .isEqualTo(CHAMFER_ANGLE);
             }
         }
     }
@@ -424,15 +454,26 @@ final class RenderStyleReaderTest {
 
                 var hover = RenderStyleReader.readHoverHighlightStyle();
 
-                assertThat(hover.colour()).isEqualTo(FactionPaletteSlot.SECONDARY);
-                assertThat(hover.glow().opacity()).isEqualTo(GLOW_OPACITY);
-                assertThat(hover.glow().width()).isEqualTo(GLOW_WIDTH);
-                assertThat(hover.glow().layers()).isEqualTo(GLOW_LAYERS);
-                assertThat(hover.glow().pulseStrength()).isEqualTo(GLOW_PULSE_STRENGTH);
-                assertThat(hover.glow().pulsePeriodSeconds()).isEqualTo(GLOW_PULSE_PERIOD);
-                assertThat(hover.wash().fillOpacity()).isEqualTo(WASH_OPACITY);
-                assertThat(hover.wash().outlineOpacity()).isEqualTo(WASH_OUTLINE_OPACITY);
-                assertThat(hover.wash().outlineWidth()).isEqualTo(WASH_OUTLINE_WIDTH);
+                assertThat(hover.colour())
+                    .isEqualTo(FactionPaletteSlot.SECONDARY);
+
+                assertThat(hover.glow().opacity())
+                    .isEqualTo(GLOW_OPACITY);
+                assertThat(hover.glow().width())
+                    .isEqualTo(GLOW_WIDTH);
+                assertThat(hover.glow().layers())
+                    .isEqualTo(GLOW_LAYERS);
+                assertThat(hover.glow().pulseStrength())
+                    .isEqualTo(GLOW_PULSE_STRENGTH);
+                assertThat(hover.glow().pulsePeriodSeconds())
+                    .isEqualTo(GLOW_PULSE_PERIOD);
+
+                assertThat(hover.wash().fillOpacity())
+                    .isEqualTo(WASH_OPACITY);
+                assertThat(hover.wash().outlineOpacity())
+                    .isEqualTo(WASH_OUTLINE_OPACITY);
+                assertThat(hover.wash().outlineWidth())
+                    .isEqualTo(WASH_OUTLINE_WIDTH);
             }
         }
     }

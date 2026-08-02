@@ -1,6 +1,8 @@
 package kmu.maplayers.base.render.clusters;
 
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
+import kmu.maplayers.base.theme.SpikeSandingStyle;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,9 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins what the smoothing passes contribute over the geometry library they call: that a pass
- * works to the profile it is handed and to nothing ambient, that the composed pass honours the
- * profile's gates and runs sanding before rounding, and that one loop rounded on its own comes
- * out exactly as it does inside a set of loops.
+ * works to the half of the profile it is handed and to nothing ambient, that the composed pass
+ * honours each half's gate and runs sanding before rounding, and that one loop rounded on its own
+ * comes out exactly as it does inside a set of loops.
  *
  * <p>The last of those is the invariant that keeps a factionless cell's outline flush with the
  * cluster border beside it. It can only hold while both reach the rounding through one profile,
@@ -24,26 +26,27 @@ import static org.assertj.core.api.Assertions.assertThat;
  * argument needs no ambient state to be exercised.
  */
 class BorderSmoothingTest {
+
     // A ring with four sharp right-angle corners and no slivers: rounding has something to do
     // to it and sanding has nothing, so the two passes are told apart by their effect.
     private static final List<double[]> SQUARE = List.of(
-            new double[] {0, 0},
-            new double[] {100, 0},
-            new double[] {100, 100},
-            new double[] {0, 100});
+        new double[] {0, 0},
+        new double[] {100, 0},
+        new double[] {100, 100},
+        new double[] {0, 100});
 
     // The same ring with a needle at the top edge: the apex sits 2 units above its neighbours'
     // chord and turns through about 53 degrees, so it clears both of sanding's bars while the
     // corners either side of it are too obtuse to be candidates.
     private static final double NEEDLE_APEX_Y = 102;
     private static final List<double[]> NEEDLED = List.of(
-            new double[] {0, 0},
-            new double[] {100, 0},
-            new double[] {100, 100},
-            new double[] {51, 100},
-            new double[] {50, NEEDLE_APEX_Y},
-            new double[] {49, 100},
-            new double[] {0, 100});
+        new double[] {0, 0},
+        new double[] {100, 0},
+        new double[] {100, 100},
+        new double[] {51, 100},
+        new double[] {50, NEEDLE_APEX_Y},
+        new double[] {49, 100},
+        new double[] {0, 100});
 
     // Sanding thresholds that admit the needle: it protrudes 2 units and turns through ~0.93
     // radians, so a 5-unit height bar and a 1.2-radian angle bar both clear it.
@@ -60,25 +63,35 @@ class BorderSmoothingTest {
     // one fixed set of numbers.
     private static final double WIDER_CORNER_RADIUS = 25.0;
 
+    // The shape each pass works to, gate on. A pass called directly always runs, so the gate in
+    // the half it is handed is inert here - it is the composed pass that reads a gate, and it
+    // reads it off the profile below.
+    private static final SpikeSandingStyle SANDING_SHAPE =
+        new SpikeSandingStyle(true, SPIKE_HEIGHT, SPIKE_ANGLE_RADIANS);
+    private static final CornerRoundingStyle ROUNDING_SHAPE =
+        new CornerRoundingStyle(true, CORNER_RADIUS, CORNER_SEGMENTS, NO_CHAMFER);
+
     private static final BorderSmoothingStyle BOTH_GATES_OFF = styleWithGates(false, false);
     private static final BorderSmoothingStyle SANDING_ONLY = styleWithGates(true, false);
     private static final BorderSmoothingStyle ROUNDING_ONLY = styleWithGates(false, true);
     private static final BorderSmoothingStyle BOTH_GATES_ON = styleWithGates(true, true);
 
-    // The profile with both gates as asked and one shared shape, so a test naming a gate is not
-    // also silently choosing a radius.
+    // The profile with each half's gate as asked and one shared shape, so a test naming a gate is
+    // not also silently choosing a radius.
     private static BorderSmoothingStyle styleWithGates(
             boolean shouldSandSpikes,
             boolean shouldRoundCorners) {
 
         return new BorderSmoothingStyle(
+            new SpikeSandingStyle(
                 shouldSandSpikes,
-                shouldRoundCorners,
                 SPIKE_HEIGHT,
-                SPIKE_ANGLE_RADIANS,
+                SPIKE_ANGLE_RADIANS),
+            new CornerRoundingStyle(
+                shouldRoundCorners,
                 CORNER_RADIUS,
                 CORNER_SEGMENTS,
-                NO_CHAMFER);
+                NO_CHAMFER));
     }
 
     // Loops as plain coordinate lists, so two results compare by value: a loop is a list of
@@ -103,47 +116,52 @@ class BorderSmoothingTest {
         @Test
         void smoothBorderLoopsReturnsTheLoopsUntouchedWhenBothGatesAreOff() {
             var loops = List.of(NEEDLED);
-
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, BOTH_GATES_OFF);
 
             // The same list, not an equal one: with nothing to do the pass must not cost a copy,
             // and a caller may compare by identity to skip re-uploading unchanged geometry.
-            assertThat(smoothed).isSameAs(loops);
+            assertThat(smoothed)
+                .isSameAs(loops);
         }
 
         @Test
         void smoothBorderLoopsRunsOnlyTheSandingPassWhenOnlyThatGateIsOn() {
             var loops = List.of(NEEDLED);
-
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, SANDING_ONLY);
 
+            // Against the pass fed the profile's own sanding half, so what is pinned is that the
+            // composed pass hands each pass that half rather than numbers of its own.
             assertThat(flattenLoops(smoothed))
-                    .isEqualTo(flattenLoops(BorderSmoothing.sandBorderSpikes(loops, SANDING_ONLY)));
+                .isEqualTo(flattenLoops(BorderSmoothing.sandBorderSpikes(
+                    loops,
+                    SANDING_ONLY.spikeSanding())));
         }
 
         @Test
         void smoothBorderLoopsRunsOnlyTheRoundingPassWhenOnlyThatGateIsOn() {
             var loops = List.of(SQUARE);
-
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, ROUNDING_ONLY);
 
-            assertThat(flattenLoops(smoothed)).isEqualTo(
-                    flattenLoops(BorderSmoothing.roundBorderCorners(loops, ROUNDING_ONLY)));
+            assertThat(flattenLoops(smoothed))
+                .isEqualTo(flattenLoops(BorderSmoothing.roundBorderCorners(
+                    loops,
+                    ROUNDING_ONLY.cornerRounding())));
         }
 
         @Test
         void smoothBorderLoopsSandsBeforeItRoundsWhenBothGatesAreOn() {
             var loops = List.of(NEEDLED);
-
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, BOTH_GATES_ON);
 
             // Compared against the passes composed in the required order rather than against
             // fixed coordinates: what is pinned is the order, which rounding first would break
             // by arcing a needle the sanding pass would then no longer recognise.
             var sandedThenRounded = BorderSmoothing.roundBorderCorners(
-                    BorderSmoothing.sandBorderSpikes(loops, BOTH_GATES_ON),
-                    BOTH_GATES_ON);
-            assertThat(flattenLoops(smoothed)).isEqualTo(flattenLoops(sandedThenRounded));
+                BorderSmoothing.sandBorderSpikes(loops, BOTH_GATES_ON.spikeSanding()),
+                BOTH_GATES_ON.cornerRounding());
+
+            assertThat(flattenLoops(smoothed))
+                .isEqualTo(flattenLoops(sandedThenRounded));
         }
     }
 
@@ -152,7 +170,7 @@ class BorderSmoothingTest {
 
         @Test
         void sandBorderSpikesSplicesOutTheNeedleApex() {
-            var sanded = BorderSmoothing.sandBorderSpikes(List.of(NEEDLED), SANDING_ONLY);
+            var sanded = BorderSmoothing.sandBorderSpikes(List.of(NEEDLED), SANDING_SHAPE);
 
             assertThat(sanded.get(0)).noneMatch(vertex -> vertex[1] > 100);
             assertThat(sanded.get(0)).hasSize(NEEDLED.size() - 1);
@@ -161,8 +179,8 @@ class BorderSmoothingTest {
         @Test
         void sandBorderSpikesSandsEveryLoopRatherThanOnlyTheFirst() {
             var sanded = BorderSmoothing.sandBorderSpikes(
-                    List.of(NEEDLED, NEEDLED),
-                    SANDING_ONLY);
+                List.of(NEEDLED, NEEDLED),
+                SANDING_SHAPE);
 
             assertThat(sanded).hasSize(2);
             assertThat(sanded).allSatisfy(loop -> assertThat(loop).hasSize(NEEDLED.size() - 1));
@@ -174,7 +192,7 @@ class BorderSmoothingTest {
 
         @Test
         void roundBorderCornersReplacesEachSharpCornerWithAnArc() {
-            var rounded = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_ONLY);
+            var rounded = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
 
             // Every corner becomes several vertices, so the ring grows; and no original corner
             // point survives, since each is stepped back from on both sides.
@@ -185,29 +203,27 @@ class BorderSmoothingTest {
         @Test
         void roundBorderCornersRoundsEveryLoopRatherThanOnlyTheFirst() {
             var rounded = BorderSmoothing.roundBorderCorners(
-                    List.of(SQUARE, SQUARE),
-                    ROUNDING_ONLY);
+                List.of(SQUARE, SQUARE),
+                ROUNDING_SHAPE);
 
             assertThat(rounded).hasSize(2);
             assertThat(rounded).allSatisfy(
-                    loop -> assertThat(loop).hasSizeGreaterThan(SQUARE.size()));
+                loop -> assertThat(loop).hasSizeGreaterThan(SQUARE.size()));
         }
 
         @Test
         void roundBorderCornersWorksToTheProfileItIsGivenRatherThanOneFixedShape() {
-            var narrow = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_ONLY);
+            var narrow = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
             var wide = BorderSmoothing.roundBorderCorners(
-                    List.of(SQUARE),
-                    new BorderSmoothingStyle(
-                            false,
-                            true,
-                            SPIKE_HEIGHT,
-                            SPIKE_ANGLE_RADIANS,
-                            WIDER_CORNER_RADIUS,
-                            CORNER_SEGMENTS,
-                            NO_CHAMFER));
+                List.of(SQUARE),
+                new CornerRoundingStyle(
+                    true,
+                    WIDER_CORNER_RADIUS,
+                    CORNER_SEGMENTS,
+                    NO_CHAMFER));
 
-            assertThat(flattenLoops(wide)).isNotEqualTo(flattenLoops(narrow));
+            assertThat(flattenLoops(wide))
+                .isNotEqualTo(flattenLoops(narrow));
         }
     }
 
@@ -216,12 +232,13 @@ class BorderSmoothingTest {
 
         @Test
         void roundLoopCornersMatchesWhatTheSameLoopGetsInsideASetOfLoops() {
-            var alone = BorderSmoothing.roundLoopCorners(SQUARE, ROUNDING_ONLY);
-            var withinLoops = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_ONLY);
+            var alone = BorderSmoothing.roundLoopCorners(SQUARE, ROUNDING_SHAPE);
+            var withinLoops = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
 
             // The invariant behind a lone cell's outline sitting flush against the cluster border
             // next to it: both rounds are the same rounding, reached through one profile.
-            assertThat(flattenLoops(List.of(alone))).isEqualTo(flattenLoops(withinLoops));
+            assertThat(flattenLoops(List.of(alone)))
+                .isEqualTo(flattenLoops(withinLoops));
         }
     }
 }

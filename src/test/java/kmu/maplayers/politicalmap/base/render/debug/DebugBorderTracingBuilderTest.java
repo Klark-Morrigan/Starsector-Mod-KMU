@@ -9,11 +9,13 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -348,13 +350,12 @@ final class DebugBorderTracingBuilderTest {
             boolean shouldSandSpikes,
             boolean shouldRoundCorners) {
         return new BorderSmoothingStyle(
-            shouldSandSpikes,
-            shouldRoundCorners,
-            SPIKE_HEIGHT,
-            SPIKE_ANGLE_RADIANS,
-            CORNER_RADIUS,
-            CORNER_SEGMENTS,
-            CHAMFER_ANGLE_RADIANS);
+            new SpikeSandingStyle(shouldSandSpikes, SPIKE_HEIGHT, SPIKE_ANGLE_RADIANS),
+            new CornerRoundingStyle(
+                shouldRoundCorners,
+                CORNER_RADIUS,
+                CORNER_SEGMENTS,
+                CHAMFER_ANGLE_RADIANS));
     }
 
     // The theme as the builder reads it: the smoothing profile it stages the passes by, and the

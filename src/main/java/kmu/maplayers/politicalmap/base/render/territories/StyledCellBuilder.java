@@ -10,7 +10,7 @@ import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.VertexRuns;
-import kmu.maplayers.base.theme.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -140,10 +140,12 @@ public final class StyledCellBuilder {
             MapPalettes.resolveNeutralPalette(territories.getNeutralColour()),
             territories.getDesaturationPalette());
 
+        // Only the rounding half of the profile: a lone cell has no spikes to sand, so the
+        // sanding numbers are not this builder's to hold.
         var outline = resolveOutlineOf(
             shaped,
-            territories.getGlobalStyle().borderSmoothing());
-                
+            territories.getGlobalStyle().borderSmoothing().cornerRounding());
+
         // Tessellate the fill only when it will actually be painted: uninhabited ground is
         // outline-only and covers most of the sector, so triangulating every one of its cells
         // for a fill no pass emits would be the map's largest wasted rebuild cost.
@@ -178,15 +180,15 @@ public final class StyledCellBuilder {
     // chaining or envelope resolve - only the corner rounding.
     private static List<double[]> resolveOutlineOf(
             ShapedCell shaped,
-            BorderSmoothingStyle borderSmoothing) {
+            CornerRoundingStyle cornerRounding) {
 
-        if (!borderSmoothing.shouldRoundCorners()) {
+        if (!cornerRounding.shouldRoundCorners()) {
             return shaped.fillPolygon();
         }
         // Through the shared pass rather than the smoothing library directly, so this outline
         // and the cluster borders around it round to one profile and cannot drift apart.
         return BorderSmoothing.roundLoopCorners(
             shaped.fillPolygon(),
-            borderSmoothing);
+            cornerRounding);
     }
 }

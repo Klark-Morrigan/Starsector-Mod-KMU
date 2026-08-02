@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HatchStyle;
@@ -10,6 +11,7 @@ import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.base.theme.HoverWashStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuLunaSettings;
@@ -70,21 +72,24 @@ public final class RenderStyleReader {
     }
 
     /**
-     * Reads the border smoothing profile: the two Dev-tab gates plus the shape each pass works
-     * to. Read as one value so every pass over any loops - a cluster border, a lone cell's
-     * outline, the debug capture of each stage - works to the same numbers.
+     * Reads the border smoothing profile: each pass's Dev-tab gate alongside the shape that same
+     * pass works to, so a knob lands in the sub-record of the pass that reads it. Read as one
+     * value so every pass over any loops - a cluster border, a lone cell's outline, the debug
+     * capture of each stage - works to the same numbers.
      *
      * @return the sector-wide smoothing profile as the player has it set
      */
     public static BorderSmoothingStyle readBorderSmoothingStyle() {
         return new BorderSmoothingStyle(
-            KmuLunaSettings.shouldSandBorderSpikes(),
-            KmuLunaSettings.shouldRoundBorderCorners(),
-            KmuLunaSettings.getPoliticalMapBorderSpikeHeight(),
-            KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians(),
-            KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
-            KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
-            KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians());
+            new SpikeSandingStyle(
+                KmuLunaSettings.shouldSandBorderSpikes(),
+                KmuLunaSettings.getPoliticalMapBorderSpikeHeight(),
+                KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians()),
+            new CornerRoundingStyle(
+                KmuLunaSettings.shouldRoundBorderCorners(),
+                KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
+                KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
+                KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians()));
     }
 
     // Reads the cursor's feedback into one style: the shared palette choice both its elements

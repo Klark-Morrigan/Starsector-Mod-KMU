@@ -5,7 +5,9 @@ import kmlib.starsector.factions.FactionPalette;
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
@@ -76,6 +78,14 @@ final class StyledCellBuilderTest {
         // The neutral shade a factionless cell resolves both its palette slots to, distinct from
         // every holder/desaturation colour so an observed outline names the factionless path.
         private static final Color FACTIONLESS_NEUTRAL = Color.PINK;
+
+        // A corner shape that rounds the shared 10-unit cell without being clamped: the step-back
+        // is capped at half the shorter adjacent edge, so a radius under 5 arcs at its full size.
+        // The chamfer threshold is off (non-positive), so every corner arcs rather than being cut.
+        private static final double CORNER_RADIUS = 3.0;
+        private static final int CORNER_SEGMENTS = 4;
+        private static final double NO_CHAMFER = 0.0;
+
         private static final DominantHolder OWNER =
             new DominantHolder("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
 
@@ -323,6 +333,39 @@ final class StyledCellBuilderTest {
         }
 
         @Test
+        void buildStyledCellForSystemRoundsALoneCellsOutlineWhenTheSectorWideGateIsOn() {
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                roundingFactionlessDrawablesWith(filledOutlineStyle()),
+                DECIVILISED_SYSTEM_ID,
+                ownedCell());
+
+            // The cell's own sharp corner is gone: rounding steps back from it along both edges,
+            // so the vertex the raw Voronoi cell had at the origin is not in the stroked outline.
+            assertThat(containsPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
+                .isFalse();
+
+            // And the fill is triangulated from that same rounded ring rather than the raw one -
+            // built at all is the observable half, since a fill cut from the sharp cell would
+            // spill past the line the outline strokes.
+            assertThat(requireLoneCell(styled).fillTriangles())
+                .isNotEmpty();
+        }
+
+        @Test
+        void buildStyledCellForSystemLeavesALoneCellsOutlineSharpWhenTheGateIsOff() {
+            // The other half of the gate, and the reason the case above is not just "the outline
+            // has vertices": with rounding off the raw Voronoi cell is what the map draws, corner
+            // at the origin included.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
+                DECIVILISED_SYSTEM_ID,
+                ownedCell());
+
+            assertThat(containsPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
+                .isTrue();
+        }
+
+        @Test
         void buildStyledCellForSystemDropsAFactionlessCellThatDrawsNothing() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 factionlessDrawablesWith(noColourStyle(), drawnOutlineStyle()),
@@ -345,8 +388,10 @@ final class StyledCellBuilderTest {
                 CategoryStyle decivilisedStyle,
                 CategoryStyle uninhabitedStyle) {
             return factionlessDrawablesWith(
-                decivilisedStyle,
-                uninhabitedStyle,
+                factionlessTheme(
+                    decivilisedStyle,
+                    uninhabitedStyle,
+                    ThemeFixtures.createInertGlobalStyle()),
                 null,
                 BlocStyleAdjustment.NONE);
         }
@@ -358,22 +403,42 @@ final class StyledCellBuilderTest {
                 CategoryStyle factionlessStyle,
                 BlocStyleAdjustment recede) {
             return factionlessDrawablesWith(
-                factionlessStyle,
-                factionlessStyle,
+                factionlessTheme(
+                    factionlessStyle,
+                    factionlessStyle,
+                    ThemeFixtures.createInertGlobalStyle()),
                 "selected-bloc",
                 recede);
         }
 
-        // The shared factionless backdrop: the two factionless styles plus the pass's spotlight
-        // state, since a factionless cell's recede is the filter's. Carries an immutable holder map
-        // AND an immutable decivilised set, both null-hostile: a clean result for a null system
-        // proves that path reads neither - it resolves no holder and is not taken for decivilised
-        // without ever probing a map with the null key.
-        private static PoliticalMapTerritories factionlessDrawablesWith(
+        // The unfiltered factionless backdrop with the sector-wide corner rounding switched on,
+        // for the cases about the shape of a lone cell's outline rather than its colour. One
+        // style for both factionless categories, since the rounding is global-tier and cannot
+        // differ between them.
+        private static PoliticalMapTerritories roundingFactionlessDrawablesWith(
+                CategoryStyle factionlessStyle) {
+
+            return factionlessDrawablesWith(
+                factionlessTheme(
+                    factionlessStyle,
+                    factionlessStyle,
+                    ThemeFixtures.createGlobalStyleRoundingBy(new CornerRoundingStyle(
+                        true,
+                        CORNER_RADIUS,
+                        CORNER_SEGMENTS,
+                        NO_CHAMFER))),
+                null,
+                BlocStyleAdjustment.NONE);
+        }
+
+        // The theme a factionless case reads: the two factionless bundles it is about over the
+        // given sector-wide tier, with the owned pair held at the shared style. Taken apart from
+        // the backdrop below because the two vary independently - a case is about a category
+        // bundle or about a global-tier knob, never both.
+        private static RenderStyle factionlessTheme(
                 CategoryStyle decivilisedStyle,
                 CategoryStyle uninhabitedStyle,
-                String selectedBlocId,
-                BlocStyleAdjustment recede) {
+                GlobalStyle globalStyle) {
 
             Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
 
@@ -382,12 +447,25 @@ final class StyledCellBuilderTest {
             categories.put(PoliticalMapCategory.DECIVILISED, decivilisedStyle);
             categories.put(PoliticalMapCategory.UNINHABITED, uninhabitedStyle);
 
+            return new RenderStyle(globalStyle, categories);
+        }
+
+        // The shared factionless backdrop: the theme plus the pass's spotlight state, since a
+        // factionless cell's recede is the filter's. Carries an immutable holder map AND an
+        // immutable decivilised set, both null-hostile: a clean result for a null system proves
+        // that path reads neither - it resolves no holder and is not taken for decivilised
+        // without ever probing a map with the null key.
+        private static PoliticalMapTerritories factionlessDrawablesWith(
+                RenderStyle theme,
+                String selectedBlocId,
+                BlocStyleAdjustment recede) {
+
             return new PoliticalMapTerritories(
                 Map.of(),
                 Set.of(DECIVILISED_SYSTEM_ID),
                 Set.of(),
                 new MapStyling(
-                    new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories),
+                    theme,
                     FACTIONLESS_NEUTRAL,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
                 new ViewGrouping(
@@ -501,6 +579,18 @@ final class StyledCellBuilderTest {
     private static StyledCell.FusedCell requireFusedCell(StyledCell styled) {
         assertThat(styled).isInstanceOf(StyledCell.FusedCell.class);
         return (StyledCell.FusedCell) styled;
+    }
+
+    // Whether a flattened GL_LINES run has an endpoint at the given point. The run is a flat
+    // [x, y, x, y, ...] of segment endpoints, so a vertex the ring passes through appears in it
+    // twice - once ending one segment and once starting the next - and either occurrence answers.
+    private static boolean containsPoint(float[] segments, float x, float y) {
+        for (var i = 0; i < segments.length; i += 2) {
+            if (segments[i] == x && segments[i + 1] == y) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Narrows a built cell to the lone form - a cell that is its own cluster, carrying its fill and
