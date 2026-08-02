@@ -118,7 +118,7 @@ public final class ClusterAnchorsBuilder {
             filter.recedeAdjustment());
 
         var spec = LabelAnchorSpecification.readFromLunaSettings();
-        anchors.addAll(ClusterAnchorPlacement.computeClusterAnchors(
+        var fit = ClusterAnchorPlacement.computeClusterAnchors(
             clusters,
             geometryCache.getCellEdgesByCellId(),
             geometryCache.getSiteBySystemId(),
@@ -135,17 +135,26 @@ public final class ClusterAnchorsBuilder {
                     viewGrouping.view(),
                     viewGrouping.grouping(),
                     filter.isFiltering(),
-                    filter.selectedBlocId()))));
+                    filter.selectedBlocId())));
+        anchors.addAll(fit.anchors());
 
-        // The search's cost is the product of its inputs, so the two sweep knobs and the keep-out
-        // count are reported beside the duration - a slow fit is read off which multiplicand grew,
-        // not off the total alone. The fan's fixed extra directions are not folded in here: how
-        // many candidates a direction count implies is the placement search's own business.
+        // The search's cost is the product of its inputs, so the sweep knobs and the keep-out
+        // count are reported beside the duration - a slow fit is read off which multiplicand
+        // grew, not off the total alone. Three levels are reported because each understates the
+        // next: the direction count reads as swept but is a tuning knob the fan adds fixed
+        // extras to, so it prints as swept-over-configured; the candidates are that fan crossed
+        // with the offsets over every cluster; and the band fits are what those candidates
+        // actually spent, many apiece, which is the level the duration tracks. Measured rather
+        // than recomputed from the knobs here, so a sweep that bailed out early reads as cheap.
         LOG.debug("Political map cluster anchors fitted; clusters="
             + clusters.size()
             + " anchors=" + anchors.size()
-            + " directions=" + spec.search().directionCount()
+            + " directions="
+            + ClusterAnchorPlacement.countCandidateDirections(spec.search().directionCount())
+            + "/" + spec.search().directionCount()
             + " offsets=" + spec.search().offsetCount()
+            + " candidates=" + fit.candidateCount()
+            + " bandFits=" + fit.bandFitCount()
             + " keepOuts=" + geometryCache.getSiteBySystemId().size()
             + " took=" + Timings.formatMillis(System.nanoTime() - fitStart));
     }

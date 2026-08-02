@@ -41,8 +41,26 @@ import java.util.Map;
  */
 public final class ClusterAnchorPlacement {
 
+    // The two directions every fan carries beyond its configured width: the cluster's own
+    // principal axis and the preferred slant. Fixed, so a fan's configured width and the
+    // count actually swept differ by exactly this.
+    private static final int FIXED_EXTRA_DIRECTIONS = 2;
+
     // Searches only; never instantiated.
     private ClusterAnchorPlacement() {
+    }
+
+    /**
+     * How many candidate directions a configured fan width resolves to, once the fixed
+     * extras are folded in. Exposed because the configured width alone reads as the swept
+     * count and is not it - the gap is this search's own business, so reporting the two
+     * apart takes the resolution from here rather than restating the arithmetic elsewhere.
+     *
+     * @param directionCount the configured fan width
+     * @return the directions a cluster's sweep actually visits
+     */
+    public static int countCandidateDirections(int directionCount) {
+        return directionCount + FIXED_EXTRA_DIRECTIONS;
     }
 
     /**
@@ -64,9 +82,10 @@ public final class ClusterAnchorPlacement {
      * @param grouping        which system each cell draws as and each system's owner
      * @param spec            the search's whole tuning surface
      * @param labelResolvers  the shade and the name measurement, both by owner
-     * @return one anchor per cluster with a site to fit, in cluster order
+     * @return one anchor per cluster with a site to fit, in cluster order, with what the
+     *         sweep cost to produce them
      */
-    public static List<ClusterAnchor> computeClusterAnchors(
+    public static ClusterAnchorFit computeClusterAnchors(
             List<List<String>> clusters,
             Map<String, List<CellEdge>> edgesByCellId,
             Map<String, double[]> siteBySystemId,
@@ -75,6 +94,9 @@ public final class ClusterAnchorPlacement {
             ClusterLabelResolvers labelResolvers) {
 
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
+        var candidateCount = 0;
+        var bandFitCount = 0;
+
         for (var memberSystemIds : clusters) {
             var sites = collectClusterSites(memberSystemIds, siteBySystemId);
             if (sites.isEmpty()) {
@@ -87,16 +109,22 @@ public final class ClusterAnchorPlacement {
                 edgesByCellId,
                 grouping);
 
-            anchors.add(
-                searchClusterAnchor(
-                    rings,
-                    siteBySystemId,
-                    axis,
-                    labelResolvers.resolveLabelColourOf(owner),
-                    spec,
-                    labelResolvers.resolveNameEstimatorOf(owner)));
+            var search = searchClusterAnchor(
+                rings,
+                siteBySystemId,
+                axis,
+                labelResolvers.resolveLabelColourOf(owner),
+                spec,
+                labelResolvers.resolveNameEstimatorOf(owner));
+
+            // Accumulated over the clusters actually swept, so a cluster the search bailed
+            // out of early contributes the nothing it cost rather than its share of a
+            // product taken over every cluster.
+            anchors.add(search.anchor());
+            candidateCount += search.candidateCount();
+            bandFitCount += search.bandFitCount();
         }
-        return anchors;
+        return new ClusterAnchorFit(anchors, candidateCount, bandFitCount);
     }
 
     // Searches one cluster's candidate lines and assembles its anchor as a fitted label
@@ -113,7 +141,7 @@ public final class ClusterAnchorPlacement {
     // centroid dot, optionally carrying the best near-miss span for the red diagnostic.
     // With the unbiased toggle on, the box that wins on raw font height (no slope
     // penalty) rides along as the yellow diagnostic whenever the penalty moved the pick.
-    private static ClusterAnchor searchClusterAnchor(
+    private static ClusterSearch searchClusterAnchor(
             List<List<double[]>> rings,
             Map<String, double[]> siteBySystemId,
             PrincipalAxis axis,
@@ -127,16 +155,19 @@ public final class ClusterAnchorPlacement {
         if (rings.isEmpty()) {
             // No traceable border leaves nothing to prove a candidate interior - the
             // one dead end the search cannot work around, so only the dot can show.
-            return new ClusterAnchor(
-                centroidX,
-                centroidY,
-                colour,
-                List.of(),
-                0f,
-                null,
-                null,
-                null,
-                0f,
+            return new ClusterSearch(
+                new ClusterAnchor(
+                    centroidX,
+                    centroidY,
+                    colour,
+                    List.of(),
+                    0f,
+                    null,
+                    null,
+                    null,
+                    0f,
+                    0),
+                0,
                 0);
         }
 
@@ -145,6 +176,7 @@ public final class ClusterAnchorPlacement {
         var slant = LabelSlantPreference.resolveFrom(axis, spec.scoring().maxSlantDegrees());
         var directions = buildCandidateDirections(axis, slant, spec.search().directionCount());
         var bestScore = 0.0;
+        var candidateCount = 0;
 
         LabelBoxFitter.BoxFit bestAccepted = null;
         LabelBoxFitter.BoxFit longestAccepted = null;
@@ -154,6 +186,7 @@ public final class ClusterAnchorPlacement {
             var extent = Points.projectCombinedExtentOnto(rings, -direction[1], direction[0]);
             for (var offsetIndex = 1; offsetIndex <= spec.search().offsetCount(); offsetIndex++) {
 
+                candidateCount++;
                 var through = offsetThroughPoint(
                     axis,
                     direction,
@@ -209,34 +242,40 @@ public final class ClusterAnchorPlacement {
                 ? longestAccepted.segment()
                 : null;
 
-            return new ClusterAnchor(
-                midX,
-                midY,
-                colour,
-                nameEstimator.wrapIntoLines(bestAccepted.lineCount()),
-                (float) bestAccepted.fontHeight(),
-                accepted,
-                null, // Rejected axis.
-                unbiased,
-                (float) bestAccepted.thickness(),
-                bestAccepted.lineCount());
+            return new ClusterSearch(
+                new ClusterAnchor(
+                    midX,
+                    midY,
+                    colour,
+                    nameEstimator.wrapIntoLines(bestAccepted.lineCount()),
+                    (float) bestAccepted.fontHeight(),
+                    accepted,
+                    null, // Rejected axis.
+                    unbiased,
+                    (float) bestAccepted.thickness(),
+                    bestAccepted.lineCount()),
+                candidateCount,
+                fitter.getBandFitCount());
         }
 
         // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
         // near-miss span rides along only when the rejected toggle asked for it.
         var rejected = bestRejected != null ? bestRejected.segment() : null;
 
-        return new ClusterAnchor(
-            centroidX,
-            centroidY,
-            colour,
-            List.of(),
-            0f,
-            null,
-            rejected,
-            null,
-            0f,
-            0);
+        return new ClusterSearch(
+            new ClusterAnchor(
+                centroidX,
+                centroidY,
+                colour,
+                List.of(),
+                0f,
+                null,
+                rejected,
+                null,
+                0f,
+                0),
+            candidateCount,
+            fitter.getBandFitCount());
     }
 
     // Builds the box fitter from the tuning and the cluster's name estimator: the
@@ -381,6 +420,33 @@ public final class ClusterAnchorPlacement {
             }
         }
         return vertices;
+    }
+
+    /**
+     * A whole sweep's anchors together with what producing them cost. The two counts ride
+     * back with the anchors because only the sweep knows them: the candidates it generated
+     * (which the tuning alone understates, the fan carrying fixed extras) and the band fits
+     * those candidates spent (which the candidate count understates again, each candidate
+     * costing many). Carried as measurements rather than as a product recomputed from the
+     * tuning, so a cluster the sweep bailed out of early is counted as the nothing it cost.
+     *
+     * @param anchors        one anchor per cluster with a site to fit, in cluster order
+     * @param candidateCount the candidate chords the sweep generated across every cluster
+     * @param bandFitCount   the band fits those candidates spent across every cluster
+     */
+    public record ClusterAnchorFit(
+        List<ClusterAnchor> anchors,
+        int candidateCount,
+        int bandFitCount) {
+    }
+
+    // One cluster's search result: its anchor and what that cluster alone cost, so the
+    // caller can sum the cost over the clusters it swept without the search reaching out
+    // to a counter it does not own.
+    private record ClusterSearch(
+        ClusterAnchor anchor,
+        int candidateCount,
+        int bandFitCount) {
     }
 
     // Gathers the {x, y} sites of a cluster's members, skipping any whose site is missing
