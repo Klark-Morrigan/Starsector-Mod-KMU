@@ -73,9 +73,20 @@ without a gap opening between them.
   Each form holds what that cell has and nothing else, so a pass that fills never reaches a
   fused cell and one that strokes seams never reaches a lone one. A layer's own builder decides
   which form a cell takes.
-- `StyledCluster` - its cluster-level sibling: everything drawn once for a whole fused footprint
-  rather than per cell - the solid fill triangles, the hatch run, the border rings, and the paint
-  and width each strokes at. What a fused cell keeps is only its seam; the rest is here.
+- `StyledCluster` - its cluster-level sibling: everything drawn once for one connected body
+  rather than per cell - its solid fill triangles, its hatch run, its outer loop, and the enclave
+  loops cut out of it. What a fused cell keeps is only its seam; the rest is here.
+- `StyledClusterGroup` - everything one owner paints: the bodies it holds, plus the fill paint,
+  border paint, and border width all of them share. Owners are not connected, so geometry is per
+  body and paint is per owner, and the two types say so. Spelled as one record with the paint
+  repeated per body, two bodies of one owner could carry different colours - a state no build can
+  produce and every reader would have to distrust anyway. It also gives the emission one colour
+  bind per owner however scattered that owner is.
+
+  Recovering the bodies from a traced ring soup is `PolygonRegions.groupRingsIntoRegions` in
+  KMLib, which sorts outer rings from enclaves by winding and attaches each enclave to the ring
+  containing it. Nothing here re-traces to find them: the trace already emits one ring per body
+  and per enclave, and the resolve that follows smoothing leaves them wound to that convention.
 
 ## The split fill: one border, several fills
 
@@ -88,9 +99,11 @@ system draws in, decidable from plain id sets. Which systems land in the two non
 layer's call, handed in; nothing here decides it.
 
 `SplitFillBuilder` turns the partition into triangles and hatch lines, and owns the choice of
-whether a cluster splits at all or fills solid as one cluster - the common case, which pays nothing
-for the machinery. Built per cluster around the context the whole fill shares (the cells, their
-grouping, the trace, the smoothed loops, the hatch geometry).
+whether a fill splits at all or fills solid - the common case, which pays nothing for the
+machinery. Built per owner around the context the whole fill shares (the cells, their grouping,
+the trace, the hatch geometry), and asked for every body at once: the split's rings are the
+owner's rather than any one body's, so they are traced once and clipped per body. A call per body
+would re-trace the whole holding each time.
 
 Each drawn state fills from its own traced rings, not from its members' individual cells. The
 cluster's one owner is suffixed per state, so the tracer - which fuses same-owner cells -
@@ -113,9 +126,9 @@ knows nothing of settings, caches, or how any run was shaped, and the ids it wal
 it.
 
 What it paints arrives through `ClusterDrawLists`, which is four reads and no more - is there
-anything to paint, the sector-wide style tier, the cell records, the cluster records. A layer's own
-built state satisfies it directly wherever its draw lists already are those two maps, so nothing is
-copied or adapted per frame.
+anything to paint, the sector-wide style tier, the cell records, and the cluster groups keyed by
+owner. A layer's own built state satisfies it directly wherever its draw lists already are those
+two maps, so nothing is copied or adapted per frame.
 
 The seam exists because the emission is the framework's and the built state is not. Typed on one
 layer's model, the only cluster painter there is would have to live in that layer's package, and a

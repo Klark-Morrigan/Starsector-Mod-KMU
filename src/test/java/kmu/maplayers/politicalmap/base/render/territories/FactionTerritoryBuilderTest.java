@@ -129,49 +129,71 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildFactionTerritoryTracesTwoTouchingSystemsAsOneFrontier() {
-            var territory = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 territoriesStyledBy(drawnStyle()),
                 cellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
                 HEGEMONY,
                 List.of(HELD_SYSTEM, NEIGHBOUR_SYSTEM));
 
             // The shared edge is a same-bloc seam, so it is never a border: the pair reads as one
-            // territory rather than two squares stroked along the line between them.
-            assertThat(territory.borderLoops()).hasSize(1);
-            assertThat(territory.fillTriangles()).isNotEmpty();
+            // body rather than two squares stroked along the line between them. Held as one
+            // cluster carrying one loop rather than as one loop: a welded pair and a pair that
+            // stayed apart differ in the cluster count, and only in the loop count by accident.
+            assertThat(clusterGroup.clusters())
+                .hasSize(1);
+            assertThat(clusterGroup.clusters().get(0).outerLoop())
+                .isNotEmpty();
+            assertThat(clusterGroup.clusters().get(0).enclaveLoops())
+                .isEmpty();
+            assertThat(clusterGroup.clusters().get(0).fillTriangles())
+                .isNotEmpty();
         }
 
         @Test
-        void buildFactionTerritoryTracesDisjointHoldingsAsARingApiece() {
-            var territory = FactionTerritoryBuilder.buildFactionTerritory(
+        void buildFactionTerritoryTracesDisjointHoldingsAsAClusterApiece() {
+            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 territoriesStyledBy(drawnStyle()),
                 cellsFor(ISLAND_SYSTEM, EXCLAVE_SYSTEM),
                 HEGEMONY,
                 List.of(ISLAND_SYSTEM, EXCLAVE_SYSTEM));
 
             // Rebuilding a bloc from its current members re-splits it: an exclave keeps its own
-            // frontier instead of being welded to the homeland by the trace.
-            assertThat(territory.borderLoops()).hasSize(2);
+            // frontier instead of being welded to the homeland by the trace. Two clusters, each
+            // with its own outer loop and nothing cut out of it - not one cluster carrying two
+            // loops, which is what an enclave inside a single body would look like.
+            assertThat(clusterGroup.clusters())
+                .hasSize(2);
+            assertThat(clusterGroup.clusters())
+                .allSatisfy(cluster -> {
+                    assertThat(cluster.outerLoop()).isNotEmpty();
+                    assertThat(cluster.enclaveLoops()).isEmpty();
+            });
         }
 
         @Test
         void buildFactionTerritoryPaintsEachSlotFromItsOwnPaletteChoiceAndOpacity() {
-            var territory = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 territoriesStyledBy(drawnStyle()),
                 cellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
                 List.of(ISLAND_SYSTEM));
 
-            assertThat(territory.fill().colour()).isEqualTo(OWNER_PRIMARY);
-            assertThat(territory.fill().alpha()).isEqualTo((float) FILL_OPACITY);
-            assertThat(territory.border().colour()).isEqualTo(OWNER_SECONDARY);
-            assertThat(territory.border().alpha()).isEqualTo((float) BORDER_OPACITY);
-            assertThat(territory.borderWidth()).isEqualTo((float) BORDER_WIDTH);
+            // Read off the group, since a bloc's paints are its own wherever its bodies sit.
+            assertThat(clusterGroup.fill().colour())
+                .isEqualTo(OWNER_PRIMARY);
+            assertThat(clusterGroup.fill().alpha())
+                .isEqualTo((float) FILL_OPACITY);
+            assertThat(clusterGroup.border().colour())
+                .isEqualTo(OWNER_SECONDARY);
+            assertThat(clusterGroup.border().alpha())
+                .isEqualTo((float) BORDER_OPACITY);
+            assertThat(clusterGroup.borderWidth())
+                .isEqualTo((float) BORDER_WIDTH);
         }
 
         @Test
         void buildFactionTerritoryBakesNoBorderRunsForANoColourBorder() {
-            var territory = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 territoriesStyledBy(fillOnlyStyle()),
                 cellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
@@ -179,13 +201,20 @@ final class FactionTerritoryBuilderTest {
 
             // A border switched off bakes no runs at all rather than runs the draw pass skips -
             // while the fill, which is still on, comes back as the frontier's own tessellation.
-            assertThat(territory.borderLoops()).isEmpty();
-            assertThat(territory.fillTriangles()).isNotEmpty();
+            // The cluster itself survives either way: it is the body, not the stroke.
+            assertThat(clusterGroup.clusters())
+                .hasSize(1);
+            assertThat(clusterGroup.clusters().get(0).outerLoop())
+                .isEmpty();
+            assertThat(clusterGroup.clusters().get(0).enclaveLoops())
+                .isEmpty();
+            assertThat(clusterGroup.clusters().get(0).fillTriangles())
+                .isNotEmpty();
         }
 
         @Test
         void buildFactionTerritoryBakesNothingWhenNeitherFillNorBorderDrawsAColour() {
-            var territory = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 territoriesStyledBy(noColourStyle()),
                 cellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
@@ -193,7 +222,7 @@ final class FactionTerritoryBuilderTest {
 
             // Short-circuited before the trace: a bloc that paints nothing must not pay for the
             // ring walk that only its paints would have used.
-            assertThat(territory).isNull();
+            assertThat(clusterGroup).isNull();
         }
 
         @Test
@@ -204,15 +233,15 @@ final class FactionTerritoryBuilderTest {
                 HELD_SYSTEM,
                 HELD_SYSTEM));
 
-            var territory = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 territoriesStyledBy(drawnStyle()),
                 geometryCacheMock,
                 HEGEMONY,
                 List.of(HELD_SYSTEM));
 
-            // A member whose cell carries no edges traces no ring, and a territory with no
-            // frontier has nothing to clip its fill against, so the whole record is dropped.
-            assertThat(territory).isNull();
+            // A member whose cell carries no edges traces no ring, and a bloc with no frontier
+            // has nothing to clip its fill against, so the whole record is dropped.
+            assertThat(clusterGroup).isNull();
         }
     }
 
@@ -235,10 +264,10 @@ final class FactionTerritoryBuilderTest {
 
             // One entry per bloc rather than per system: the two Hegemony systems fuse into the
             // single territory their shared key groups them into.
-            assertThat(territories.getStyledClusterById())
+            assertThat(territories.getStyledClusterGroupByOwnerId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
 
-            assertThat(territories.getStyledClusterById().get(HEGEMONY).borderLoops())
+            assertThat(territories.getStyledClusterGroupByOwnerId().get(HEGEMONY).clusters())
                 .hasSize(1);
         }
 
@@ -266,7 +295,8 @@ final class FactionTerritoryBuilderTest {
             FactionTerritoryBuilder.buildAllFactionTerritories(territories, geometryCacheMock);
 
             // Absent rather than mapped to null: every reader of this map paints what it finds.
-            assertThat(territories.getStyledClusterById()).containsOnlyKeys(HEGEMONY);
+            assertThat(territories.getStyledClusterGroupByOwnerId())
+                .containsOnlyKeys(HEGEMONY);
         }
     }
 
@@ -290,15 +320,21 @@ final class FactionTerritoryBuilderTest {
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
     // partition a bloc's border is traced from.
     private static CellGeometryCache cellsFor(String... systemIds) {
+
         var geometryCacheMock = mock(CellGeometryCache.class);
         var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
         var systemIdByCellId = new LinkedHashMap<String, String>();
+
         for (var systemId : systemIds) {
             edgesByCellId.put(systemId, EDGES.get(systemId));
             systemIdByCellId.put(systemId, systemId);
         }
-        when(geometryCacheMock.getCellEdgesByCellId()).thenReturn(edgesByCellId);
-        when(geometryCacheMock.getSystemIdByCellId()).thenReturn(systemIdByCellId);
+        
+        when(geometryCacheMock.getCellEdgesByCellId())
+            .thenReturn(edgesByCellId);
+        when(geometryCacheMock.getSystemIdByCellId())
+            .thenReturn(systemIdByCellId);
+
         return geometryCacheMock;
     }
 

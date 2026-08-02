@@ -96,15 +96,17 @@ final class ClusterRendererTest {
         }
 
         @Override
-        public Map<String, StyledCluster> getStyledClusterById() {
+        public Map<String, StyledClusterGroup> getStyledClusterGroupByOwnerId() {
             hasReadDrawLists = true;
             return Map.of(
-                "cluster",
-                new StyledCluster(
-                    new float[0],
-                    new float[0],
+                "owner",
+                new StyledClusterGroup(
+                    List.of(new StyledCluster(
+                        new float[0],
+                        new float[0],
+                        new float[0],
+                        List.of())),
                     HIDDEN_PAINT,
-                    List.of(),
                     HIDDEN_PAINT,
                     0f));
         }

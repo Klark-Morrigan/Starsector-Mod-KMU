@@ -1,5 +1,6 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.Hatching;
 import kmlib.opengl.PolygonTessellator;
@@ -10,24 +11,26 @@ import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.theme.HatchStyle;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Turns one cluster's {@link FillSplit} into the triangles and hatch lines its fill
- * paints, inside the single frontier the footprint already traced.
+ * Turns one owner's {@link FillSplit} into the triangles and hatch lines each of its clusters
+ * fills, inside the boundary that cluster already traced.
  *
- * <p>Built per cluster around the trace context that whole fill shares - the cells, their
- * grouping, the border trace, the smoothed border loops, and the hatch geometry - so the
- * several tessellation steps read one consistent snapshot instead of threading the lot
- * through each hop.
+ * <p>Built per owner around the trace context the whole fill shares - the cells, their
+ * grouping, the border trace, and the hatch geometry - so the several tessellation steps read
+ * one consistent snapshot instead of threading the lot through each hop.
  *
  * <p>Each drawn state fills from its own traced rings rather than from its members'
  * individual cells, so no per-cell inset truncation can leave an unfilled wedge where two
- * members meet at a corner against a rival. Both drawn fills are then clipped to the smoothed
- * frontier loops, so neither keeps the mitered corner the border's rounding cut and
- * pokes out past the line the border strokes.
+ * members meet at a corner against a rival. Those rings are traced once for the owner and then
+ * clipped to each cluster's smoothed loops in turn: the clip is what confines a state to the
+ * body it is in, so a holding in two places needs one trace and one clip apiece rather than a
+ * trace apiece. Clipping is also what stops a fill keeping the mitered corner the boundary's
+ * rounding cut and poking out past the line that boundary strokes.
  */
 public final class SplitFillBuilder {
 
@@ -43,7 +46,6 @@ public final class SplitFillBuilder {
     private final Map<String, List<CellEdge>> cellEdgesByCellId;
     private final CellGrouping cellGrouping;
     private final ClusterBorderTrace borderTrace;
-    private final List<List<double[]>> borderLoops;
     private final HatchStyle hatch;
 
     /**
@@ -53,75 +55,120 @@ public final class SplitFillBuilder {
      * @param cellGrouping      which system each cell draws as, paired with each system's
      *                          owner - the keys the sub-clusters are derived from
      * @param borderTrace       the trace parameters the whole fill shares with its border
-     * @param borderLoops       the smoothed frontier every drawn state is clipped to
      * @param hatch             the sector-wide hatch geometry the hatched sub-cluster is cut with
      */
     public SplitFillBuilder(
             Map<String, List<CellEdge>> cellEdgesByCellId,
             CellGrouping cellGrouping,
             ClusterBorderTrace borderTrace,
-            List<List<double[]>> borderLoops,
             HatchStyle hatch) {
 
         this.cellEdgesByCellId = cellEdgesByCellId;
         this.cellGrouping = cellGrouping;
         this.borderTrace = borderTrace;
-        this.borderLoops = borderLoops;
         this.hatch = hatch;
     }
 
     /**
-     * Builds one cluster's fill, taking the per-state split only where it is needed.
+     * Builds one fill per cluster the owner holds, taking the per-state split only where it is
+     * needed.
      *
-     * <p>A cluster whose members do not all fill solid splits its fill per state inside its
-     * one frontier - one area per {@link FillState} - so the states read apart without the
-     * border fracturing. A spotlit cluster always splits, since its fill is per-state even when
-     * every member is in the same state. Every other cluster fills solid as a single area
-     * tessellated from the same smoothed loops the border strokes, so fill and border match
-     * exactly and the split's cost is paid only by the clusters that need it.
+     * <p>An owner whose members do not all fill solid splits each cluster's fill per state
+     * inside that cluster's own boundary - one area per {@link FillState} - so the states read
+     * apart without the boundary fracturing. A spotlit owner always splits, since its fill is
+     * per-state even when every member is in the same state. Every other owner fills each
+     * cluster solid from the same smoothed loops its boundary strokes, so fill and boundary
+     * match exactly and the split's cost is paid only by the owners that need it.
      *
-     * @param isSpotlit  whether this is the filter's spotlighted footprint
-     * @param split      the footprint's members by fill state
-     * @param owner      the cluster's owner, which the sub-cluster keys are derived from
-     * @param fillColour the resolved fill colour, or null for a "No color" fill that draws
-     *                   no cluster at all
-     * @return the fill's solid triangles and hatch segments
+     * <p>Taken as every cluster at once rather than one call per cluster because the split's
+     * rings are the owner's, not any one cluster's: they are traced once here and clipped per
+     * cluster, where a call per cluster would re-trace the whole holding each time.
+     *
+     * @param isSpotlit      whether this is the filter's spotlighted owner
+     * @param split          the owner's members by fill state
+     * @param owner          the owner, which the sub-cluster keys are derived from
+     * @param fillColour     the resolved fill colour, or null for a "No color" fill that draws
+     *                       no cluster at all
+     * @param clusterRegions each cluster's smoothed loops, outer ring plus enclaves
+     * @return one fill per given cluster, in the same order
      */
-    public ClusterFill buildFill(
+    public List<ClusterFill> buildFills(
             boolean isSpotlit,
             FillSplit split,
             String owner,
-            Color fillColour) {
+            Color fillColour,
+            List<RingRegion> clusterRegions) {
 
         if (fillColour == null) {
-            return new ClusterFill(
-                GlVertexRuns.NO_VERTICES,
-                GlVertexRuns.NO_VERTICES);
+            return repeatEmptyFill(clusterRegions.size());
         }
         if (!isSpotlit && !split.hasNonSolidMembers()) {
-            return new ClusterFill(
-                PolygonTessellator.tessellateToTriangles(borderLoops),
-                GlVertexRuns.NO_VERTICES);
+            var fills = new ArrayList<ClusterFill>(clusterRegions.size());
+            for (var region : clusterRegions) {
+                fills.add(new ClusterFill(
+                    PolygonTessellator.tessellateToTriangles(region.toRings()),
+                    GlVertexRuns.NO_VERTICES));
+            }
+            return fills;
         }
-        return buildPerStateFill(split, owner);
+        return buildPerStateFills(split, owner, clusterRegions);
     }
 
     // Tessellates each drawn state as its own cluster: the solid members into the triangle soup,
     // the hatched members into their own soup the hatch generator then clips diagonal lines to.
     // The unfilled state is deliberately never tessellated - it holds ground for the cluster's
-    // border and label but paints no fill of its own.
-    private ClusterFill buildPerStateFill(FillSplit split, String owner) {
+    // boundary and label but paints no fill of its own.
+    //
+    // Both states' rings are traced once for the whole owner and then clipped per cluster, so a
+    // state that spans two bodies contributes to each of them without being traced twice and
+    // without either body's fill reaching into the other.
+    private List<ClusterFill> buildPerStateFills(
+            FillSplit split,
+            String owner,
+            List<RingRegion> clusterRegions) {
 
         var subClusterOwners = mapSubClusterOwnerBySystemId(split, owner);
-        var solidTriangles = tessellateSubCluster(FillState.SOLID, split, subClusterOwners);
-        var hatchedTriangles = tessellateSubCluster(FillState.HATCHED, split, subClusterOwners);
+        var solidRings = traceSubClusterRings(FillState.SOLID, split, subClusterOwners);
+        var hatchedRings = traceSubClusterRings(FillState.HATCHED, split, subClusterOwners);
 
-        return new ClusterFill(
-            solidTriangles,
-            Hatching.computeHatchSegments(
-                hatchedTriangles,
-                hatch.angleRadians(),
-                hatch.spacing()));
+        var fills = new ArrayList<ClusterFill>(clusterRegions.size());
+        for (var region : clusterRegions) {
+            var clusterRings = region.toRings();
+            fills.add(new ClusterFill(
+                clipToCluster(solidRings, clusterRings),
+                Hatching.computeHatchSegments(
+                    clipToCluster(hatchedRings, clusterRings),
+                    hatch.angleRadians(),
+                    hatch.spacing())));
+        }
+        return fills;
+    }
+
+    // One empty fill per cluster, for an owner that paints no fill at all: the clusters still
+    // exist (their boundaries stroke, their ground holds a label), so the list has to line up
+    // with them rather than come back empty.
+    private static List<ClusterFill> repeatEmptyFill(int clusterCount) {
+        var fills = new ArrayList<ClusterFill>(clusterCount);
+        for (var i = 0; i < clusterCount; i++) {
+            fills.add(new ClusterFill(
+                GlVertexRuns.NO_VERTICES,
+                GlVertexRuns.NO_VERTICES));
+        }
+        return fills;
+    }
+
+    // The part of one state's traced rings falling inside one cluster, as a triangle soup. The
+    // clip does double duty: it confines the state to this body, and it clamps the state's outer
+    // edge onto the exact line the boundary strokes, since the traced rings still carry the
+    // mitered corners the smoothing rounded off.
+    private static float[] clipToCluster(
+            List<List<double[]>> stateRings,
+            List<List<double[]>> clusterRings) {
+
+        if (stateRings.isEmpty()) {
+            return GlVertexRuns.NO_VERTICES;
+        }
+        return PolygonTessellator.tessellateIntersectionToTriangles(stateRings, clusterRings);
     }
 
     // Keys the footprint's three fill states apart, so the border tracer - which fuses cells sharing
@@ -153,34 +200,26 @@ public final class SplitFillBuilder {
         }
     }
 
-    // Tessellates one of the footprint's states into a GL_TRIANGLES soup from the rings tracing
-    // its cells as a single cluster, so a state fills as one continuous area with no per-cell
-    // seam or truncation inside it. The other states' systems are the coincident neighbours, whose
-    // shared edge insets by nothing so the states abut with no channel between them. The traced
-    // rings are clipped to the smoothed frontier loops rather than tessellated as traced:
-    // their shared inter-state seam is interior to both operands and survives the clip untouched, so
-    // the states still meet exactly along it, while their outer edge is clamped onto the exact
-    // line the frontier strokes. Empty when the state holds no members or the trace yields
-    // no drawable ring.
-    private float[] tessellateSubCluster(
+    // Traces one of the owner's states as its own cluster across the whole holding, so the state
+    // fills as one continuous area with no per-cell seam or truncation inside it. The other
+    // states' systems are the coincident neighbours, whose shared edge insets by nothing so the
+    // states abut with no channel between them - which is why the states still meet exactly along
+    // their shared seam after each is clipped to a cluster: that seam is interior to both
+    // operands and the clip leaves it untouched. Empty when the state holds no members.
+    private List<List<double[]>> traceSubClusterRings(
             FillState state,
             FillSplit split,
             Map<String, String> subClusterOwnerBySystemId) {
 
         var members = split.resolveMembersOf(state);
         if (members.cellIds().isEmpty()) {
-            return GlVertexRuns.NO_VERTICES;
+            return List.of();
         }
-        var rings = borderTrace.traceRings(
+        return borderTrace.traceRings(
             members.cellIds(),
             cellEdgesByCellId,
             new CellGrouping(cellGrouping.systemIdByCellId(), subClusterOwnerBySystemId),
             split.resolveCoincidentSystemIdsOf(state));
-
-        if (rings.isEmpty()) {
-            return GlVertexRuns.NO_VERTICES;
-        }
-        return PolygonTessellator.tessellateIntersectionToTriangles(rings, borderLoops);
     }
 
     /**

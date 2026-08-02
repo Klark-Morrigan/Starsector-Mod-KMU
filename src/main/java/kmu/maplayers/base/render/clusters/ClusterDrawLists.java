@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Everything a cluster paint pass reads of a layer's built state: whether there is anything to
  * paint at all, the sector-wide style tier bound once for the frame, and the two draw lists
- * themselves - one record per cell and one per fused footprint.
+ * themselves - one record per cell, and one per owner covering every cluster that owner holds.
  *
  * <p>Declared as its own type rather than the pass taking a layer's built state directly, because
  * the emission is the framework's and the built state is not. Typed on one layer's model, the
@@ -30,7 +30,7 @@ public interface ClusterDrawLists {
 
     /**
      * @return the sector-wide style tier - the knobs that resolve once for the whole frame rather
-     *         than per cell or per footprint
+     *         than per cell or per cluster
      */
     GlobalStyle getGlobalStyle();
 
@@ -41,8 +41,8 @@ public interface ClusterDrawLists {
     Map<String, StyledCell> getStyledCellByCellId();
 
     /**
-     * @return each fused footprint's draw record, keyed by the opaque id its cells fused under -
-     *         the fill, hatch, and border rings drawn once for the whole body
+     * @return each owner's clusters and the paint they share, keyed by the opaque owner id its
+     *         cells fused under - one entry however many disjoint bodies that owner holds
      */
-    Map<String, StyledCluster> getStyledClusterById();
+    Map<String, StyledClusterGroup> getStyledClusterGroupByOwnerId();
 }

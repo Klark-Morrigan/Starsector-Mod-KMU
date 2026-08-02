@@ -8,7 +8,7 @@ import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.StyledCell;
-import kmu.maplayers.base.render.clusters.StyledCluster;
+import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.RenderStyle;
@@ -21,6 +21,7 @@ import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,9 +34,10 @@ import java.util.Set;
  * incremental re-shape needs to rebuild a handful of cells against the same holding
  * and styles the full rebuild used.
  *
- * <p>The styled-cell and styled-cluster maps are the render output - the per-cell
- * seam/outline records and each faction's fill and national border. They start empty and
- * the build fills them, so they are created here rather than passed in. The rest are
+ * <p>The styled-cell and styled-cluster-group maps are the render output - the per-cell
+ * seam/outline records, and each faction's bodies with the fill and national border they
+ * share. They start empty and the build fills them, so they are created here rather than
+ * passed in. The rest are
  * retained inputs, grouped into three cohesive snapshots: {@link MapStyling} (the theme,
  * the neutral colour, and the desaturation palette - how each category draws and what a
  * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
@@ -46,7 +48,7 @@ import java.util.Set;
  * build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
- * not values: the styled-cell, styled-cluster, and holder-by-system maps are mutated
+ * not values: the styled-cell, styled-cluster-group, and holder-by-system maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions an
  * holder change touched. The styling, decivilised and unfilled sets, view grouping, and
  * filter snapshot are set once at build and only read after, so an incremental pass re-shapes
@@ -63,14 +65,17 @@ import java.util.Set;
  * verbatim, the adapter is the right shape and the layer supplies one; see
  * {@code PoliticalMapHoverHighlightSource}.
  */
-public final class PoliticalMapTerritories implements ClusterDrawLists, MapHoverTargets {
+public final class PoliticalMapTerritories implements
+    ClusterDrawLists,
+    MapHoverTargets {
 
     // Render output, mutated in place by the incremental refresh. Created empty here since a
-    // fresh build fills them and no caller ever supplies them pre-populated. Each bloc's
-    // footprint is keyed by its holder - a faction id under the factions view, or one of the
-    // filter's synthetic spotlight keys - which the emission never interprets.
+    // fresh build fills them and no caller ever supplies them pre-populated. A bloc's bodies are
+    // keyed by its holder - a faction id under the factions view, or one of the filter's
+    // synthetic spotlight keys - which the emission never interprets.
     private final Map<String, StyledCell> styledCellByCellId = new LinkedHashMap<>();
-    private final Map<String, StyledCluster> styledClusterById = new LinkedHashMap<>();
+    private final Map<String, StyledClusterGroup> styledClusterGroupByOwnerId =
+        new LinkedHashMap<>();
 
     // Each drawn cell's shaped fill polygon, the shape the cursor is tested against. Written only
     // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
@@ -98,6 +103,13 @@ public final class PoliticalMapTerritories implements ClusterDrawLists, MapHover
     // holder map changes. Seeded empty so a build that never indexes (and the empty placeholder)
     // still answers a lookup rather than tripping over a null.
     private SystemClusterIndex clusterIndex = SystemClusterIndex.indexClusters(List.of());
+
+    // The last bloc whose loops were flattened for a cursor read, and what came out. One entry
+    // because the cursor is over one cell at a time; see listCandidateBorderLoopsOf for why the
+    // result has to be retained at all rather than rebuilt per ask.
+    private String candidateLoopsBlocId;
+    private StyledClusterGroup candidateLoopsClusterGroup;
+    private List<float[]> candidateLoops = List.of();
 
     public PoliticalMapTerritories(
             Map<String, DominantHolder> ownerBySystemId,
@@ -209,12 +221,48 @@ public final class PoliticalMapTerritories implements ClusterDrawLists, MapHover
             DominantHolder.mapCellGrouping(systemIdByCellId, ownerBySystemId)));
     }
 
-    // Each bloc's fill, hatch, and national border, keyed by its holder. Named for the framework
-    // record it hands over rather than for the political word for it: the same map answers the
-    // emission's cluster read and this layer's own lookups, so it carries one name.
+    // Each bloc's bodies with the fill, hatch, and national border they share, keyed by its
+    // holder. Named for the framework record it hands over rather than for the political word
+    // for it: the same map answers the emission's cluster read and this layer's own lookups, so
+    // it carries one name.
     @Override
-    public Map<String, StyledCluster> getStyledClusterById() {
-        return styledClusterById;
+    public Map<String, StyledClusterGroup> getStyledClusterGroupByOwnerId() {
+        return styledClusterGroupByOwnerId;
+    }
+
+    /**
+     * Every loop one bloc strokes, across all of its bodies, as the flat candidate list a cursor
+     * read is answered from.
+     *
+     * <p>Retained rather than rebuilt per ask, and that is the whole reason this is a method here
+     * instead of a loop at the call site: the highlight memoises its resolved halo against the
+     * identity of the list it was handed, so a fresh list each frame would miss that memo and
+     * re-clip and re-tessellate the wash sixty times a second while the cursor sits still. One
+     * entry is enough, because the cursor is over one cell at a time.
+     *
+     * <p>The retained answer is keyed on the bloc's own cluster group by identity: a rebuild or
+     * an incremental refresh replaces that group wholesale rather than editing it, so a group
+     * that still matches is geometry that has not moved.
+     *
+     * @param blocId the bloc to answer for
+     * @return its loops, outer ring and enclaves alike, in cluster order; empty when the bloc
+     *         drew none or is not on the map
+     */
+    public List<float[]> listCandidateBorderLoopsOf(String blocId) {
+        var clusterGroup = styledClusterGroupByOwnerId.get(blocId);
+        if (clusterGroup == null) {
+            return List.of();
+        }
+        if (!blocId.equals(candidateLoopsBlocId) || clusterGroup != candidateLoopsClusterGroup) {
+            var loops = new ArrayList<float[]>();
+            for (var cluster : clusterGroup.clusters()) {
+                loops.addAll(cluster.listLoops());
+            }
+            candidateLoopsBlocId = blocId;
+            candidateLoopsClusterGroup = clusterGroup;
+            candidateLoops = loops;
+        }
+        return candidateLoops;
     }
 
     public Map<String, DominantHolder> getHolderBySystemId() {
@@ -330,6 +378,6 @@ public final class PoliticalMapTerritories implements ClusterDrawLists, MapHover
     // entirely.
     @Override
     public boolean isEmpty() {
-        return styledCellByCellId.isEmpty() && styledClusterById.isEmpty();
+        return styledCellByCellId.isEmpty() && styledClusterGroupByOwnerId.isEmpty();
     }
 }

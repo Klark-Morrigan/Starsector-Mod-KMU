@@ -271,9 +271,9 @@ final class IncrementalPoliticsRefresh {
                 memberCellIds);
                 
         if (territory == null) {
-            territories.getStyledClusterById().remove(factionId);
+            territories.getStyledClusterGroupByOwnerId().remove(factionId);
         } else {
-            territories.getStyledClusterById().put(factionId, territory);
+            territories.getStyledClusterGroupByOwnerId().put(factionId, territory);
         }
     }
 }

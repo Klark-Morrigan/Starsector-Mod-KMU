@@ -33,18 +33,19 @@ identical to a full rebuild.
   cell (decivilised, or uninhabited) does not fuse, so it becomes a `LoneCell` carrying its own fill
   and outline, and resolves both palette slots to the shared neutral colour. Of the two, only
   decivilised ground takes the pass's recede - see [what recedes](#what-recedes) below.
-- `FactionTerritoryBuilder` bakes one bloc into a `StyledCluster`: its national border, traced
-  across every system it holds, and its fill - which it hands to the framework's
-  `SplitFillBuilder`, see [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and
-  border come from the same loops, so they cannot drift apart.
+- `FactionTerritoryBuilder` bakes one bloc into a `StyledClusterGroup`: every body it holds, each
+  with its national border traced across the systems in it, and each body's fill - which it hands
+  to the framework's `SplitFillBuilder`, see
+  [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and border come from the
+  same loops, so they cannot drift apart.
 
 The shaping the two builders drive is the framework's, in
 [`base.render.clusters`](../../../../base/render/clusters/README.md): `BorderSmoothing` sands spikes
 and rounds corners of the traced borders, `VertexRuns` flattens shaped cells into GL vertex runs,
-and `StyledCell` and `StyledCluster` are the two packets they bake into. Element colours,
-opacities, and widths come from cascading the `base.theme` records with each bloc's recede
-adjustment, asked for through `PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc
-resolves from one read.
+and `StyledCell`, `StyledCluster` and `StyledClusterGroup` are the packets they bake into.
+Element colours, opacities, and widths come from cascading the `base.theme` records with each
+bloc's recede adjustment, asked for through `PoliticalMapTerritories.resolveBlocStyling` so every
+part of a bloc resolves from one read.
 
 ## What recedes
 
@@ -81,7 +82,7 @@ in the neutral style on the far side of that channel.
 Those factionless fills are per cell rather than per cluster: factionless ground never fuses into
 a cluster, so it has no traced cluster to fill from and each cell tessellates its own outline
 instead. Which is why a `LoneCell` carries fill triangles at all, where an owned cell has no fill of
-its own to carry and takes it from its `StyledCluster`.
+its own to carry and takes it from the `StyledCluster` it fused into.
 
 The two player settings under Territory reach on the **Dev**
 tab - *Uncontrolled systems give way to faction territory* and *Frontier keep-out* -
@@ -91,17 +92,27 @@ changing them does not move a border.
 ## The draw packets
 
 `PoliticalMapTerritories` is the built state a rebuild produces and an incremental refresh edits in
-place: the two draw lists (`StyledCluster` per bloc, `StyledCell` per cell) plus the retained
+place: the two draw lists (`StyledClusterGroup` per bloc, `StyledCell` per cell) plus the retained
 ownership, theme, and filter inputs a re-shape needs. Both packets are the framework's, described
-in [`base.render.clusters`](../../../../base/render/clusters/README.md) - one bloc's fill
-triangles, contested-hatch segments and border loops, and one cell's seam or its own fill and
-outline.
+in [`base.render.clusters`](../../../../base/render/clusters/README.md) - a bloc's bodies with the
+paints they share, each body carrying its own fill triangles, contested-hatch segments, outer loop
+and enclaves; and one cell's seam, or its own fill and outline.
+
+A bloc in two places is two bodies under one group, not one record holding both. That is what lets
+a fill stop at the frontier of the body it is in: each body's fill is clipped to its own loops,
+where a single soup over the whole bloc could only be clipped to all of them at once.
 
 Holding the framework's packets is what lets it satisfy `ClusterDrawLists` outright, so the
 framework's emission paints this layer without either side naming the other: the two maps it hands
 over are the two it already keeps, and the bloc keys stay opaque across the seam. What is
 political is entirely upstream of it - which is why `FactionTerritoryBuilder` keeps its name while
 producing a record that says nothing about factions.
+
+It also answers the cursor's candidate-loop read, flattening a bloc's bodies into the one list the
+highlight hit-tests against - and retaining it, because the highlight memoises its resolved halo on
+that list's identity and a fresh list per frame would re-clip the wash sixty times a second. The
+retained answer is keyed on the bloc's cluster group by identity, so a refresh that replaces the
+group recomputes once and a refresh that does not costs nothing.
 
 It also records each drawn cell's shaped fill polygon alongside its `StyledCell`, written and
 dropped by the same two calls, and that pairing is what lets it answer `base.hover`'s
@@ -125,9 +136,10 @@ from its own traced rings rather than from its members' cells. What is political
 land in the two non-solid sets, and what that reads as on the map.
 
 **Hatched.** When the filter spotlights one bloc, its whole footprint - the systems it dominates
-plus the ones it merely contests - clusters into a single `StyledCluster` under one national
-frontier, and the fill splits: solid where the bloc dominates, a pre-clipped diagonal hatch where it
-is only present ("mine, but contested").
+plus the ones it merely contests - clusters under one bloc, and each body's fill splits inside its
+own frontier: solid where the bloc dominates, a pre-clipped diagonal hatch where it is only present
+("mine, but contested"). The states are traced once for the bloc and clipped per body, so a bloc
+contested in two places pays one trace and reads correctly in both.
 
 The footprint's interior divisions carry no geometry of their own: the whole footprint shares one
 owner, so a solid/hatch transition is an interior seam like any other and its two cells

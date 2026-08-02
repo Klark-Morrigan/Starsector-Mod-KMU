@@ -17,9 +17,9 @@ import java.util.Collection;
 import java.util.function.Consumer;
 
 /**
- * Paints pre-built cluster draw lists on the sector (M) map: every fill first - the fused
- * footprints' and then the lone cells' - and over them the interior seams, the lone cells'
- * outlines, and the cluster borders. The debug cluster anchors are not drawn here: they are an
+ * Paints pre-built cluster draw lists on the sector (M) map: every fill first - the clusters'
+ * and then the lone cells' - and over them the interior seams, the lone cells' outlines, and the
+ * cluster boundaries. The debug cluster anchors are not drawn here: they are an
  * independent overlay ({@link kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer}) the
  * terrain plugin layers over whichever base view is live.
  *
@@ -74,42 +74,48 @@ public final class ClusterRenderer {
             });
     }
 
-    // Fills each fused footprint with its resolved fill colour at its opacity, then each lone
-    // cell that carries a fill of its own. Both are pre-tessellated triangle soups, so a concave
-    // footprint (or one with an enclave) fills correctly and exactly matches the stroked border.
-    // A hidden fill (UiElementPaint.isHidden) is skipped, its geometry kept to shape its
-    // neighbours but never emitted. A footprint whose ground does not all fill solid splits into
-    // both runs at once - solid triangles where it fills and pre-clipped diagonal hatch lines
-    // where the layer marked it hatched, in the same colour and opacity - so a partly-filled body
-    // still reads as one inside a single border; every other footprint carries an empty hatch run
-    // and paints only its triangles.
+    // Fills every cluster an owner holds with that owner's resolved fill colour at its opacity,
+    // then each lone cell that carries a fill of its own. Both are pre-tessellated triangle
+    // soups, so a concave cluster (or one with an enclave) fills correctly and exactly matches
+    // the stroked boundary. A hidden fill (UiElementPaint.isHidden) is skipped, its geometry kept
+    // to shape its neighbours but never emitted. A cluster whose ground does not all fill solid
+    // carries both runs at once - solid triangles where it fills and pre-clipped diagonal hatch
+    // lines where the layer marked it hatched, in the same colour and opacity - so a partly-filled
+    // body still reads as one inside its boundary; a cluster that fills solid carries an empty
+    // hatch run and paints only its triangles.
     private static void drawFills(ClusterDrawLists drawLists, float factor, float alphaMult) {
 
         // The hatch fills its sub-cluster in the fill colour but strokes as GL_LINES, so its own
         // pixel width tunes the hatched texture apart from the solid fill. The width is
-        // sector-wide, so set it once here off the theme's global tier rather than per footprint;
-        // the triangle soups below are width-agnostic, and typically only one footprint carries a
+        // sector-wide, so set it once here off the theme's global tier rather than per owner;
+        // the triangle soups below are width-agnostic, and typically only one owner carries a
         // non-empty hatch run.
         GL11.glLineWidth((float) drawLists.getGlobalStyle().hatch().width());
-        for (var cluster : drawLists.getStyledClusterById().values()) {
+        
+        // The colour binds once per owner and every body that owner holds emits under it, which
+        // is what the paint-per-owner, geometry-per-cluster split buys: a holding scattered over
+        // the sector costs one bind, not one per body.
+        for (var group : drawLists.getStyledClusterGroupByOwnerId().values()) {
             emitIfVisible(
-                cluster.fill(),
+                group.fill(),
                 alphaMult,
                 () -> {
-                    GlRuns.drawScaled(
-                        GL11.GL_TRIANGLES,
-                        cluster.fillTriangles(),
-                        factor);
-                    GlRuns.drawScaled(
-                        GL11.GL_LINES,
-                        cluster.hatchSegments(),
-                        factor);
+                    for (var cluster : group.clusters()) {
+                        GlRuns.drawScaled(
+                            GL11.GL_TRIANGLES,
+                            cluster.fillTriangles(),
+                            factor);
+                        GlRuns.drawScaled(
+                            GL11.GL_LINES,
+                            cluster.hatchSegments(),
+                            factor);
+                    }
             });
         }
-        // Then the lone cells' own fills. They fill per cell rather than per footprint because
-        // unowned ground never fuses into one, and they cover no footprint, so drawing them after
-        // the footprint fills is a matter of grouping the fill pass rather than of layering. A
-        // fused cell is not reached at all: its fill is its footprint's, drawn above, so this pass
+        // Then the lone cells' own fills. They fill per cell rather than per cluster because
+        // unowned ground never fuses into one, and they cover no cluster, so drawing them after
+        // the cluster fills is a matter of grouping the fill pass rather than of layering. A
+        // fused cell is not reached at all: its fill is its cluster's, drawn above, so this pass
         // sees only the cells that have one.
         drawEachCellOfForm(
             drawLists.getStyledCellByCellId().values(),
@@ -153,12 +159,12 @@ public final class ClusterRenderer {
     }
 
     // Strokes the interior seams first, then the lone cells' outlines, then the smoothed cluster
-    // borders over them, so a footprint's border dominates the seams inside it where they meet.
-    // Colour, opacity, and line width are all per element, and a hidden element
+    // boundaries over them, so a cluster's boundary dominates the seams inside it where they
+    // meet. Colour, opacity, and line width are all per element, and a hidden element
     // (UiElementPaint.isHidden) is skipped - its geometry stays baked to shape its neighbours, but
     // nothing invisible is emitted. Which cells each stroke reaches is the cell's own form rather
     // than a test here: a fused cell carries only seams and a lone cell only an outline, and a
-    // footprint's border is its border ring in the cluster draw list.
+    // cluster's boundary is its own loops in the cluster draw list.
     private static void drawBorders(
             ClusterDrawLists drawLists,
             float factor,
@@ -189,17 +195,24 @@ public final class ClusterRenderer {
                     GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), factor);
                 }));
 
-        // The cluster border in its own style, over the interior seams so it dominates where they
-        // meet. Each border ring is a closed rounded loop, so it strokes as one continuous
-        // GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
-        for (var cluster : drawLists.getStyledClusterById().values()) {
+        // The cluster boundaries in the owner's own style, over the interior seams so a boundary
+        // dominates where they meet. Each loop is closed and already rounded, so it strokes as
+        // one continuous GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges
+        // use. Colour and width bind once per owner, as the fills do.
+        for (var group : drawLists.getStyledClusterGroupByOwnerId().values()) {
             emitIfVisible(
-                cluster.border(),
+                group.border(),
                 alphaMult,
                 () -> {
-                    GL11.glLineWidth(cluster.borderWidth());
-                    for (var loop : cluster.borderLoops()) {
-                        GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
+                    GL11.glLineWidth(group.borderWidth());
+                    for (var cluster : group.clusters()) {
+                        // The two are walked apart rather than through the cluster's own loop
+                        // list, which would allocate one per cluster per frame; the stroke
+                        // itself does not distinguish them.
+                        GlRuns.drawScaled(GL11.GL_LINE_LOOP, cluster.outerLoop(), factor);
+                        for (var enclaveLoop : cluster.enclaveLoops()) {
+                            GlRuns.drawScaled(GL11.GL_LINE_LOOP, enclaveLoop, factor);
+                        }
                     }
             });
         }

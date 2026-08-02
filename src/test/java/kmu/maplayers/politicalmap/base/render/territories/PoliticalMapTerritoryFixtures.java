@@ -5,6 +5,7 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
+import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
@@ -16,6 +17,7 @@ import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -108,18 +110,31 @@ public final class PoliticalMapTerritoryFixtures {
     }
 
     /**
-     * A territory carrying only its traced loops, which is all a cursor read looks at; its fills
-     * and paints are inert.
+     * A bloc's bodies carrying only their traced loops, which is all a cursor read looks at; the
+     * fills and paints are inert.
      *
-     * @param borderLoops the loops to carry, empty for a territory that baked no border
-     * @return a placeholder styled cluster standing in for one bloc's territory
+     * <p>Takes one loop list per body rather than one flat list, since which body a loop belongs
+     * to is what a caller telling an exclave from an enclave has to be able to say. Within a
+     * body the first loop is its outer ring and the rest are cut out of it.
+     *
+     * @param loopsPerCluster each body's loops, outer ring first; empty for a bloc that baked no
+     *                        border at all
+     * @return a placeholder cluster group standing in for one bloc's territory
      */
-    public static StyledCluster createTerritoryWithLoops(List<float[]> borderLoops) {
-        return new StyledCluster(
-            new float[0],
-            new float[0],
+    public static StyledClusterGroup createTerritoryWithLoops(
+            List<List<float[]>> loopsPerCluster) {
+
+        var clusters = new ArrayList<StyledCluster>(loopsPerCluster.size());
+        for (var loops : loopsPerCluster) {
+            clusters.add(new StyledCluster(
+                new float[0],
+                new float[0],
+                loops.isEmpty() ? new float[0] : loops.get(0),
+                loops.isEmpty() ? List.of() : loops.subList(1, loops.size())));
+        }
+        return new StyledClusterGroup(
+            clusters,
             createHiddenPaint(),
-            borderLoops,
             createHiddenPaint(),
             0f); // Border width.
     }

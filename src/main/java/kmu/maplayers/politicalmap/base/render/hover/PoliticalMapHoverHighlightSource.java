@@ -50,10 +50,11 @@ public record PoliticalMapHoverHighlightSource(
         if (holder == null) {
             return List.of();
         }
-        var territory = territories.getStyledClusterById().get(holder.factionId());
-        return territory == null
-            ? List.of()
-            : territory.borderLoops();
+        // Every loop the holder strokes anywhere, across all of its bodies. Handing over only the
+        // body this cell sits in would mean deciding here which body that is - the containment
+        // question the highlight already answers to pick its loop, and answering it twice by two
+        // rules is how a halo comes to trace a frontier the cursor is not inside.
+        return territories.listCandidateBorderLoopsOf(holder.factionId());
     }
 
     @Override

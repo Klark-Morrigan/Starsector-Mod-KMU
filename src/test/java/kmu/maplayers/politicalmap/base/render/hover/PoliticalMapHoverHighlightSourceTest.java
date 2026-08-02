@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
-import kmu.maplayers.base.render.clusters.StyledCluster;
+import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
@@ -163,7 +163,7 @@ final class PoliticalMapHoverHighlightSourceTest {
     private static PoliticalMapTerritories territoriesWith(
             Map<String, DominantHolder> ownerBySystemId,
             Map<String, List<double[]>> fillPolygonBySystemId,
-            StyledCluster territory) {
+            StyledClusterGroup clusterGroup) {
 
         var territories = PoliticalMapTerritoryFixtures
             .createTerritoriesOwnedBy(ownerBySystemId);
@@ -174,15 +174,17 @@ final class PoliticalMapHoverHighlightSourceTest {
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 cell.getValue());
         }
-        if (territory != null) {
-            territories.getStyledClusterById().put(FACTION_ID, territory);
+        if (clusterGroup != null) {
+            territories.getStyledClusterGroupByOwnerId().put(FACTION_ID, clusterGroup);
         }
         return territories;
     }
 
     // A territory whose loops are all the source reads; its fills and paints never come up here.
-    private static StyledCluster territoryWithLoops(List<float[]> borderLoops) {
-        return PoliticalMapTerritoryFixtures.createTerritoryWithLoops(borderLoops);
+    private static StyledClusterGroup territoryWithLoops(List<float[]> borderLoops) {
+        // One body carrying every loop: the source flattens across bodies either way, so the
+        // shape of the holding is not what any case here turns on.
+        return PoliticalMapTerritoryFixtures.createTerritoryWithLoops(List.of(borderLoops));
     }
 
     // An axis-aligned square, counter-clockwise, standing in for a cell's painted extent; the

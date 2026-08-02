@@ -6,7 +6,7 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.StyledCell;
-import kmu.maplayers.base.render.clusters.StyledCluster;
+import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -70,7 +70,7 @@ final class PoliticalMapTerritoriesTest {
 
             assertThat(territories.getStyledCellByCellId())
                 .isEmpty();
-            assertThat(territories.getStyledClusterById())
+            assertThat(territories.getStyledClusterGroupByOwnerId())
                 .isEmpty();
             assertThat(territories.getHolderBySystemId())
                 .isEmpty();
@@ -117,8 +117,8 @@ final class PoliticalMapTerritoriesTest {
         }
 
         @Test
-        void isEmptyIsFalseWhenAFactionTerritoryIsPresent() {
-            var territories = drawablesWith(Map.of(), Map.of("faction", anyStyledCluster()));
+        void isEmptyIsFalseWhenAClusterGroupIsPresent() {
+            var territories = drawablesWith(Map.of(), Map.of("faction", anyStyledClusterGroup()));
 
             assertThat(territories.isEmpty())
                 .isFalse();
@@ -132,7 +132,7 @@ final class PoliticalMapTerritoriesTest {
         void satisfiesClusterDrawListsWithTheDrawListsAndTierTheBuildItselfHolds() {
 
             var styledCell = anyStyledCell();
-            var styledCluster = anyStyledCluster();
+            var styledClusterGroup = anyStyledClusterGroup();
 
             // A real theme rather than the shared fixture's inert one, since the global tier is
             // one of the four reads and the seam has to hand over the build's own.
@@ -151,7 +151,7 @@ final class PoliticalMapTerritoriesTest {
                 FilterSnapshot.unfiltered());
 
             territories.getStyledCellByCellId().put("system", styledCell);
-            territories.getStyledClusterById().put("faction", styledCluster);
+            territories.getStyledClusterGroupByOwnerId().put("faction", styledClusterGroup);
 
             // Read through the seam rather than off the class, which is what the framework
             // emission sees. Satisfying the interface with anything other than the build's own two
@@ -163,10 +163,75 @@ final class PoliticalMapTerritoriesTest {
                 .isFalse();
             assertThat(drawLists.getStyledCellByCellId())
                 .containsExactlyEntriesOf(Map.of("system", styledCell));
-            assertThat(drawLists.getStyledClusterById())
-                .containsExactlyEntriesOf(Map.of("faction", styledCluster));
+            assertThat(drawLists.getStyledClusterGroupByOwnerId())
+                .containsExactlyEntriesOf(Map.of("faction", styledClusterGroup));
             assertThat(drawLists.getGlobalStyle())
                 .isSameAs(renderStyle.global());
+        }
+    }
+
+    @Nested
+    class ListCandidateBorderLoopsOf {
+
+        @Test
+        void listCandidateBorderLoopsOfGathersEveryLoopOfEveryBodyOuterRingsAndEnclavesAlike() {
+            var homeOuter = new float[] {0, 0};
+            var homeEnclave = new float[] {1, 1};
+            var exclaveOuter = new float[] {2, 2};
+            var territories = drawablesWith(Map.of(), Map.of(
+                "hegemony",
+                PoliticalMapTerritoryFixtures.createTerritoryWithLoops(List.of(
+                    List.of(homeOuter, homeEnclave),
+                    List.of(exclaveOuter)))));
+
+            // Flattened across bodies and in cluster order: the cursor read cannot say which body
+            // it is in, so every loop the bloc strokes anywhere is a candidate.
+            assertThat(territories.listCandidateBorderLoopsOf("hegemony"))
+                .containsExactly(homeOuter, homeEnclave, exclaveOuter);
+        }
+
+        @Test
+        void listCandidateBorderLoopsOfReturnsNothingForABlocThatIsNotOnTheMap() {
+            var territories = drawablesWith(Map.of(), Map.of());
+
+            assertThat(territories.listCandidateBorderLoopsOf("hegemony"))
+                .isEmpty();
+        }
+
+        @Test
+        void listCandidateBorderLoopsOfKeepsTheSameListWhileTheBlocsBodiesStand() {
+            var territories = drawablesWith(Map.of(), Map.of(
+                "hegemony",
+                PoliticalMapTerritoryFixtures.createTerritoryWithLoops(
+                    List.of(List.of(new float[] {0, 0})))));
+
+            // Identity, not equality. The highlight memoises its resolved halo against the
+            // instance it was handed, so a fresh list per ask would silently defeat that memo and
+            // re-clip the wash every frame the cursor rests on one cell - a change no assertion
+            // about the loops themselves would notice.
+            assertThat(territories.listCandidateBorderLoopsOf("hegemony"))
+                .isSameAs(territories.listCandidateBorderLoopsOf("hegemony"));
+        }
+
+        @Test
+        void listCandidateBorderLoopsOfRecomputesWhenARefreshReplacesTheBlocsBodies() {
+            var rebuiltLoop = new float[] {9, 9};
+            var territories = drawablesWith(Map.of(), Map.of(
+                "hegemony",
+                PoliticalMapTerritoryFixtures.createTerritoryWithLoops(
+                    List.of(List.of(new float[] {0, 0})))));
+                    
+            territories.listCandidateBorderLoopsOf("hegemony");
+
+            // The other half of retaining an answer: an incremental refresh replaces a bloc's
+            // group wholesale when a neighbour flips, and a retained list that outlived it would
+            // halo a frontier the map is no longer drawing.
+            territories.getStyledClusterGroupByOwnerId().put("hegemony",
+                PoliticalMapTerritoryFixtures.createTerritoryWithLoops(
+                    List.of(List.of(rebuiltLoop))));
+
+            assertThat(territories.listCandidateBorderLoopsOf("hegemony"))
+                .containsExactly(rebuiltLoop);
         }
     }
 
@@ -240,7 +305,7 @@ final class PoliticalMapTerritoriesTest {
             // they start empty and stay mutable for the incremental refresh to edit in place.
             assertThat(territories.getStyledCellByCellId())
                 .isEmpty();
-            assertThat(territories.getStyledClusterById())
+            assertThat(territories.getStyledClusterGroupByOwnerId())
                 .isEmpty();
 
             assertThat(territories.getHolderBySystemId())
@@ -491,14 +556,14 @@ final class PoliticalMapTerritoriesTest {
     // shared fixture's inert placeholders, since isEmpty reads only the draw lists.
     private static PoliticalMapTerritories drawablesWith(
             Map<String, StyledCell> styledCells,
-            Map<String, StyledCluster> territories) {
+            Map<String, StyledClusterGroup> territories) {
 
         var drawables = PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(Map.of());
 
         // The draw lists are not constructor inputs; fill the internally-created maps so
         // this fixture's only varying state is what isEmpty reads.
         drawables.getStyledCellByCellId().putAll(styledCells);
-        drawables.getStyledClusterById().putAll(territories);
+        drawables.getStyledClusterGroupByOwnerId().putAll(territories);
         
         return drawables;
     }
@@ -507,7 +572,7 @@ final class PoliticalMapTerritoriesTest {
         return PoliticalMapTerritoryFixtures.createPlaceholderStyledCell();
     }
 
-    private static StyledCluster anyStyledCluster() {
+    private static StyledClusterGroup anyStyledClusterGroup() {
         return PoliticalMapTerritoryFixtures.createTerritoryWithLoops(List.of());
     }
 

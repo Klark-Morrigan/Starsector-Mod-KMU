@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import kmlib.math.geometry.PolygonRegions;
+import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
@@ -10,7 +12,9 @@ import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.FillSplit;
 import kmu.maplayers.base.render.clusters.SplitFillBuilder;
+import kmu.maplayers.base.render.clusters.SplitFillBuilder.ClusterFill;
 import kmu.maplayers.base.render.clusters.StyledCluster;
+import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
@@ -21,9 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Bakes one bloc's cells into the {@link StyledCluster} the renderer paints: its fill and
- * its national border, traced across every system it holds so a multi-system cluster reads as
- * one continuous frontier.
+ * Bakes one bloc's cells into the {@link StyledClusterGroup} the renderer paints: every body
+ * the bloc holds as its own {@link StyledCluster}, traced across the systems in it so a
+ * multi-system body reads as one continuous frontier, under the one set of paints the bloc
+ * draws in wherever it is.
  *
  * <p>What it produces is a framework draw record, but what it decides is political throughout -
  * whose palette the fill resolves against, which systems the filter has left contested, which
@@ -31,9 +36,10 @@ import java.util.List;
  * seam, handing over a record that says nothing about factions.
  *
  * <p>Fill and border come from the same loops - triangulated for the one, flattened for the
- * other - so they can never drift apart, whichever smoothing passes ran. Disjoint clusters and
- * enclaves each come back as their own ring, so rebuilding a bloc from its current members
- * alone re-splits or re-merges its clusters when the incremental refresh gains or loses one.
+ * other - so they can never drift apart, whichever smoothing passes ran. Disjoint bodies and
+ * enclaves each come back as their own ring and are sorted into bodies from their winding and
+ * containment, so rebuilding a bloc from its current members alone re-splits or re-merges its
+ * bodies when the incremental refresh gains or loses one.
  *
  * <p>Membership is the cells a bloc draws, not the systems it holds: those differ wherever a
  * bloc's ground includes a cell no star of its own sits in, and it is the cells that carry the
@@ -53,10 +59,10 @@ public final class FactionTerritoryBuilder {
      * @param blocId        the bloc's holder - a faction id under the faction view, or
      *                      one of the filter's synthetic spotlight keys
      * @param memberCellIds the cells this bloc draws
-     * @return the bloc's fill and border, or null when it paints neither, or when its cells
-     *         yield no borderable geometry
+     * @return the bloc's bodies with the paints they share, or null when it paints neither fill
+     *         nor border, or when its cells yield no borderable geometry
      */
-    public static StyledCluster buildFactionTerritory(
+    public static StyledClusterGroup buildFactionTerritory(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             String blocId,
@@ -108,16 +114,23 @@ public final class FactionTerritoryBuilder {
             insetRings,
             territories.getGlobalStyle().borderSmoothing());
 
+        // The bloc's loops sorted back into the bodies they bound: a bloc holding ground in two
+        // places traces two outer rings plus whatever enclaves each encloses, and which enclave
+        // belongs to which body is what decides where its fill stops.
+        var clusterRegions = PolygonRegions.groupRingsIntoRegions(borderLoops);
+        if (clusterRegions.isEmpty()) {
+            return null;
+        }
+
         // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
-        // one key, so it clusters into this single territory outlined by one frontier and then
-        // splits its fill inside it. Whether that split happens is the fill builder's own call.
-        var fill = new SplitFillBuilder(
+        // one key, so it clusters under one bloc and then splits its fill inside each of its
+        // bodies. Whether that split happens is the fill builder's own call.
+        var fills = new SplitFillBuilder(
                 geometryCache.getCellEdgesByCellId(),
                 cellGrouping,
                 borderTrace,
-                borderLoops,
                 territories.getGlobalStyle().hatch())
-            .buildFill(
+            .buildFills(
                 FilteredPolitics.isSpotlitBloc(blocId),
                 FillSplit.splitMembersByFillState(
                     cellGrouping,
@@ -125,15 +138,14 @@ public final class FactionTerritoryBuilder {
                     territories.getContestedSystemIds(),
                     territories.getUnfilledSystemIds()),
                 blocId,
-                fillColour);
+                fillColour,
+                clusterRegions);
 
-        return new StyledCluster(
-            fill.solidTriangles(),
-            fill.hatchSegments(),
+        return new StyledClusterGroup(
+            buildClusters(clusterRegions, fills, borderColour),
             new UiElementPaint(
                 fillColour,
                 adjustment.muteOpacity(style.fill().opacity())),
-            flattenBorderLoops(borderLoops, borderColour),
             new UiElementPaint(
                 borderColour,
                 adjustment.muteOpacity(style.outer().opacity())),
@@ -162,7 +174,7 @@ public final class FactionTerritoryBuilder {
                 bloc.getValue());
 
             if (territory != null) {
-                territories.getStyledClusterById().put(bloc.getKey(), territory);
+                territories.getStyledClusterGroupByOwnerId().put(bloc.getKey(), territory);
             }
         }
     }
@@ -175,25 +187,50 @@ public final class FactionTerritoryBuilder {
             List<List<double[]>> insetRings,
             BorderSmoothingStyle borderSmoothing) {
 
-        return BorderSmoothing.smoothBorderLoops(
-            PolygonTessellator.tessellateToBoundaryLoops(insetRings),
-            borderSmoothing);
+        // Resolved a second time after smoothing, because rounding a corner can push one arc
+        // through another and open a crossing the first resolve could not have seen. That also
+        // leaves every loop in the winding convention the grouping reads - outer
+        // counter-clockwise, enclave clockwise - which a smoothed-but-unresolved loop is not
+        // guaranteed to be.
+        return PolygonTessellator.tessellateToBoundaryLoops(
+            BorderSmoothing.smoothBorderLoops(
+                PolygonTessellator.tessellateToBoundaryLoops(insetRings),
+                borderSmoothing));
     }
 
-    // The border's stroked runs, one per closed loop. A "No color" border bakes none at all
-    // rather than runs the draw pass would skip.
-    private static List<float[]> flattenBorderLoops(
-            List<List<double[]>> borderLoops,
+    // Pairs each traced body with the fill built for it and flattens its loops into the GL runs
+    // the stroke walks. A "No color" border bakes no loops at all rather than runs the draw pass
+    // would skip; the body still carries its fill, which is what an unstroked bloc draws.
+    private static List<StyledCluster> buildClusters(
+            List<RingRegion> clusterRegions,
+            List<ClusterFill> fills,
             Color borderColour) {
 
-        var borderRuns = new ArrayList<float[]>();
-        if (borderColour == null) {
-            return borderRuns;
+        var isBorderDrawn = borderColour != null;
+        var clusters = new ArrayList<StyledCluster>(clusterRegions.size());
+        for (var i = 0; i < clusterRegions.size(); i++) {
+            var region = clusterRegions.get(i);
+            var fill = fills.get(i);
+            clusters.add(new StyledCluster(
+                fill.solidTriangles(),
+                fill.hatchSegments(),
+                isBorderDrawn
+                    ? GlVertexRuns.flattenVertices(region.outerRing())
+                    : GlVertexRuns.NO_VERTICES,
+                isBorderDrawn
+                    ? flattenLoops(region.holeRings())
+                    : List.of()));
         }
-        for (var loop : PolygonTessellator.tessellateToBoundaryLoops(borderLoops)) {
-            borderRuns.add(GlVertexRuns.flattenVertices(loop));
+        return clusters;
+    }
+
+    // One stroked run per closed loop, in the order the loops arrived.
+    private static List<float[]> flattenLoops(List<List<double[]>> loops) {
+        var runs = new ArrayList<float[]>(loops.size());
+        for (var loop : loops) {
+            runs.add(GlVertexRuns.flattenVertices(loop));
         }
-        return borderRuns;
+        return runs;
     }
 
     // The drawn cells' grouping this bloc is traced against: which system each cell draws as,
