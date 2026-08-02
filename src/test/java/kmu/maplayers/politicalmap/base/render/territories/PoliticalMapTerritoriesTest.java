@@ -12,7 +12,6 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
@@ -269,7 +268,7 @@ final class PoliticalMapTerritoriesTest {
 
             // Every sector-wide value non-zero, so a getter reading the wrong tier is caught by
             // value rather than by both tiers happening to hold the same inert numbers.
-            var globalStyle = new GlobalStyle(new HatchStyle(5, 5, 5),
+            var globalStyle = new GlobalStyle(ThemeFixtures.createHatchStyle(5, 5, 5),
                 new BorderSmoothingStyle(
                     new SpikeSandingStyle(true, 5, 5),
                     new CornerRoundingStyle(true, 5, 5, 5)),

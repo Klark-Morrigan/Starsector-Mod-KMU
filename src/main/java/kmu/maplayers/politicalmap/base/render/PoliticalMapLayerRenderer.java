@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.ui.input.UiCursor;
+import kmlib.starsector.ui.map.MapSurfaceBounds;
 import kmlib.starsector.ui.map.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 
@@ -142,6 +143,14 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             MapHoverState.getInstance().clearHover();
             return;
         }
+        // The map screen's own chrome is drawn over the map for the same reason, and the hover is
+        // equally blind to it: it resolves a cell from map geometry, which has no notion of the tab
+        // strip and control bar composited on top. Tested second because it costs a read into the
+        // live widget tree, while the sidebar test above is arithmetic over a box KMU already holds.
+        if (isCursorOverVanillaMapChrome()) {
+            MapHoverState.getInstance().clearHover();
+            return;
+        }
         if (hoverPublisher == null) {
             hoverPublisher = new MapHoverPublisher(ModelviewMatrixReaders.selectForActiveRenderer());
         }
@@ -171,6 +180,21 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             lastLoggedWidgetTrace = widgetsUnderCursor;
             LOG.debug("Map-tab widget trace: " + widgetsUnderCursor);
         }
+    }
+
+    // Whether the cursor sits over the map screen's own chrome - the tab strip above the map and the
+    // control bar below it - rather than over the map. Asked as the complement: the chrome is
+    // several small widgets whose identities are a fact about one game build, while the map surface
+    // is one widget, so "outside the surface but on this screen" is the durable way to put it.
+    //
+    // Fails open. An unreadable widget tree, or a build this rule no longer fits, reads as "the
+    // cursor is on the map" - which merely restores the un-suppressed behaviour rather than
+    // silencing every hover the layer has. A read taken to refine a feature must not be able to
+    // switch it off. The absence is not silent: the surface read warns once when it cannot answer.
+    private static boolean isCursorOverVanillaMapChrome() {
+        var surfaceBox = MapSurfaceBounds.resolveSurfaceBox();
+        return surfaceBox != null
+            && !surfaceBox.containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
     }
 
     // Whether the cursor sits over the map sidebar. Reads the same placement the sidebar draws and
