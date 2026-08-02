@@ -126,15 +126,15 @@ about what the overlay means.
   `MapHover` (the hovered cell and the cluster around it), `MapHoverState` (the
   shared holder the map render pass publishes to and the later UI passes read, since only that pass
   can invert a cursor pixel to a world point), and `HoverHighlight` (the loops and triangles one
-  hover lights up). `MapHoverPublisher` is the pass that fills the holder - it undoes the map's pan,
-  centring and zoom to turn a cursor pixel back into a world point, hit-tests that point, and widens
-  the hit to its cluster. It works over `MapHoverTargets` - one frame's drawn cell shapes and the
-  clusters they fuse into - so the matrix inversion, the hard part of hovering and the same one
-  whatever a layer paints, is written once. `HoverHighlightGeometry` resolves the highlight geometry
-  and `HoverHighlightRenderer`
-  burns the halo and the wash, both over a `HoverHighlightSource` - the three questions only the
-  layer that owns the clusters can answer: the extent it painted under the cursor, the loops the
-  cell might sit inside, and the shade its ground draws in. `MapHoverGates` is the settings side:
+  hover lights up). `MapHoverPublisher` is that pass: it undoes the map's pan, centring and zoom,
+  hit-tests the resulting world point, and widens the hit to its cluster - all over
+  `MapHoverTargets`, one frame's drawn cell shapes and the clusters they fuse into. The inversion
+  is the hard part of hovering and is the same one whatever a layer paints, so it is written here
+  once rather than per layer. `HoverHighlightGeometry` resolves the highlight geometry and
+  `HoverHighlightRenderer` burns the halo and the wash, both over a `HoverHighlightSource` - the
+  three questions only the layer that owns the clusters can answer: the extent it painted under the
+  cursor, the loops the cell might sit inside, and the shade its ground draws in.
+  `MapHoverGates` is the settings side:
   hovering is switched at three tiers - a master over the whole map, a pair under it for the
   effects and the box separately, and a pair of the layer's own - and this answers for the two that
   reach every layer, which a layer ANDs its own into. So one layer's box can go dark while another's

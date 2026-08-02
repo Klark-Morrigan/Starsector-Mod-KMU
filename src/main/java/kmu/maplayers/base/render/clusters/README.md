@@ -109,6 +109,6 @@ that is [`politicalmap`](../../../politicalmap/README.md). *Who gets the frame a
 [render surface](../README.md) one level up. The *cells and clusters* the shaping runs over, and
 the channel it insets by, are [`base.geometry`](../../geometry/README.md); the *theme records* the
 widths and opacities cascade from are [`base.theme`](../../theme/README.md); the *cursor's* half of
-the render pass - the halo and the wash, and the seam a layer answers them through - is
-`base.hover`. The low-level GL run emission is a generic helper in KMLib
+the render pass - resolving a cursor pixel to a cell, and the halo and wash drawn on that answer -
+is `base.hover`. The low-level GL run emission is a generic helper in KMLib
 (`kmlib.opengl.GlRuns`).

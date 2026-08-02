@@ -95,6 +95,11 @@ own - one faction's fill triangles, contested-hatch segments, and border loops; 
 `StyledCell` beside it is the framework's packet, described in
 [`base.render.clusters`](../../../../base/render/clusters/README.md).
 
+It also records each drawn cell's shaped fill polygon alongside its `StyledCell`, written and
+dropped by the same two calls, and that pairing is what lets it answer `base.hover`'s
+`MapHoverTargets` directly: the shapes a cursor is tested against are the shapes this frame
+painted, never a re-derivation that could drift from them.
+
 ## The split fill: solid, hatched, unfilled
 
 A bloc's footprint is traced as one border whatever its members' fills; the fill is what varies per

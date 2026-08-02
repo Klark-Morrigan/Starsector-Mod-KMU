@@ -50,8 +50,9 @@ alias or an existing save fails to load.
   several fills inside one border.
 - **`base.layer`** - which layers exist, which one each screen has picked, and how that pick is
   persisted. The surface only asks the registry for the active one.
-- **`base.hover`** - the cursor's half of the render pass: the halo and the wash, and the seam a
-  layer answers them through.
+- **`base.hover`** - the cursor's half of the render pass: the read that resolves a cursor pixel to
+  a cell and the cluster around it, the halo and the wash drawn on that answer, and the two seams a
+  layer supplies them through.
 - **`base.tooltip`** - what the box floating beside that cursor says, drawn in a later UI pass than
   this one and dispatched through the same active-layer read.
 - What any layer actually paints, and what its owners mean, belongs to that layer; for the
