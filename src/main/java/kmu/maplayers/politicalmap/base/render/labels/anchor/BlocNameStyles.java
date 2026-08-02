@@ -24,8 +24,9 @@ public record BlocNameStyles(
 
     /**
      * Reads the live per-group name styling: each group's outer-border colour choice beside
-     * its name opacity, from the visuals "Faction names" section. Read once per rebuild, since
-     * every cluster of a group resolves its shade against the same pair.
+     * its name opacity, from the politics-visuals "Faction systems" and "Independent systems"
+     * sections. Read once per rebuild, since every cluster of a group resolves its shade
+     * against the same pair.
      *
      * @return the two groups' name styling as the settings currently hold it
      */

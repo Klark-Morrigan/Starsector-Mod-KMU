@@ -34,7 +34,7 @@ public record LabelAnchorSpecification(
     // from the Dev "Label anchors" section (the end-inset multiple resolved against the
     // fixed border channel here, so the search works in plain distances), the diagnostic
     // toggles that let the search skip the extra candidates while no one is looking, and the
-    // name-fit knobs from the visuals "Faction names" section. The border trace comes from
+    // name-fit knobs from the visuals "Map labels" section. The border trace comes from
     // the same source the drawn border renders with, so the anchor clips against the rings
     // the player sees.
     public static LabelAnchorSpecification readFromLunaSettings() {

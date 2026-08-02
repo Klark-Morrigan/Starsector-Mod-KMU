@@ -57,12 +57,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  * mistyped tab name opens a new tab holding that row alone rather than raising anything. The tab walk
  * holds every row's placement against the set the screen is laid out into, which is why the layout is
  * spelled out here rather than left implicit in the file.
+ *
+ * <p>A section caption is the one row whose displayed text is free to change - it is drawn and forgotten
+ * rather than stored - but it is carried in two columns and LunaLib draws only one of them, so the walk
+ * over captions holds the pair together. Editing the column that reads like the caption while the other
+ * one draws is a change that lands nowhere: the build stays green, the screen is unchanged, and nothing
+ * says why.
  */
 final class LunaSettingsCsvIntegrationTest {
     private static final Path SETTINGS_CSV = Path.of("data", "config", "LunaSettings.csv");
     
     // The CSV's own column order, as its header row declares it.
     private static final int FIELD_ID_COLUMN = 0;
+    private static final int FIELD_NAME_COLUMN = 4;
     private static final int FIELD_TYPE_COLUMN = 6;
     private static final int DEFAULT_VALUE_COLUMN = 7;
     private static final int OPTIONS_COLUMN = 8;
@@ -243,6 +250,21 @@ final class LunaSettingsCsvIntegrationTest {
         }
     }
 
+    @Nested
+    class HeaderCaptions {
+
+        @Test
+        void everyHeaderRowDrawsTheCaptionItNames() {
+            assertThat(findHeaderRowsWhoseCaptionColumnsDisagree())
+                .as(
+                    "section captions in %s whose name and drawn columns differ: LunaLib draws a"
+                        + " Header from its default-value column, so the other one is inert and an"
+                        + " edit to it changes nothing on screen",
+                    SETTINGS_CSV)
+                .isEmpty();
+        }
+    }
+
     // The Radio fields whose stored label a LabeledChoice enum maps back to a choice. Listed here
     // rather than read from KmuLunaSettings because the field ids are private there - a typo in this
     // table fails loudly (no such row) rather than quietly skipping a field.
@@ -306,6 +328,20 @@ final class LunaSettingsCsvIntegrationTest {
             }
         }
         return strandedFieldIds;
+    }
+
+    // The section captions whose two caption cells hold different text. A Header is drawn through
+    // addSectionHeading(defaultValue), so the name column beside it is inert for this row type
+    // alone - every other row type shows its name column and stores its default. Both are authored
+    // to the same text so that the row reads the same however it is skimmed, and this is what says
+    // so: without it, an edit to the inert column is a caption change that silently does not happen.
+    private static List<String> findHeaderRowsWhoseCaptionColumnsDisagree() {
+        return readFieldRows()
+            .stream()
+            .filter(row -> HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
+            .filter(row -> !row.get(FIELD_NAME_COLUMN).equals(row.get(DEFAULT_VALUE_COLUMN)))
+            .map(row -> row.get(FIELD_ID_COLUMN))
+            .toList();
     }
 
     // Every row the file declares for a KMU field, section captions included, in file order. The

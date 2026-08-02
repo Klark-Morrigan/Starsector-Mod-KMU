@@ -371,7 +371,7 @@ public final class KmuLunaSettings {
         "kmu_politicalMapHatchWidth";
 
     // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor search -
-    // the straight line a faction name will sit on, chosen by scoring many candidate
+    // the straight line a cluster's name will sit on, chosen by scoring many candidate
     // lines swept across the cluster (a fan of directions times a family of parallel
     // offsets), each fit inside the national border and clear of the system icons. Live
     // knobs rather than constants so the search can be tuned on the open map; all feed
@@ -433,7 +433,7 @@ public final class KmuLunaSettings {
         "kmu_politicalMapForceAllSystemsOnMap";
 
     // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and the
-    // accepted label line in green) so the clustering and axis fit behind the faction
+    // accepted label line in green) so the clustering and axis fit behind the map
     // labels can be eyeballed on the map. Off by default.
     private static final String SHOW_CLUSTER_ANCHORS_FIELD =
         "kmu_politicalMapShowClusterAnchors";
@@ -1380,7 +1380,7 @@ public final class KmuLunaSettings {
 
     /**
      * @return how far short of the national border each end of a label anchor stops,
-     *         in multiples of the border inset channel - the gap a faction name
+     *         in multiples of the border inset channel - the gap a cluster's name
      *         needs so it does not touch the border; a clear line shorter than twice
      *         this collapses to the dot
      */
@@ -1399,9 +1399,9 @@ public final class KmuLunaSettings {
     }
 
     /**
-     * @return the smallest per-line font height (world units) a faction name may render
-     *         at - the readability floor. A placement that cannot hold even one line
-     *         this tall anywhere collapses to the dot and shows no name
+     * @return the smallest per-line font height (world units) a cluster's name may
+     *         render at - the readability floor. A placement that cannot hold even one
+     *         line this tall anywhere collapses to the dot and shows no name
      */
     public static double getMapNameMinFontSize() {
         return readDouble(NAME_MIN_FONT_SIZE_FIELD, DEFAULT_NAME_MIN_FONT_SIZE);
@@ -1576,8 +1576,8 @@ public final class KmuLunaSettings {
     /**
      * @return whether the political map draws the per-cluster label anchors - a dot at
      *         each contiguous cluster's centre and, in green, the accepted label line
-     *         its fit produced; off by default, a diagnostic for the coming faction
-     *         labels. Master switch for the anchor overlay: the rejected- and
+     *         its fit produced; off by default, a diagnostic for the map labels
+     *         themselves. Master switch for the anchor overlay: the rejected- and
      *         unbiased-axis toggles below only add lines while this is on
      */
     public static boolean getPoliticalMapShowClusterAnchors() {
