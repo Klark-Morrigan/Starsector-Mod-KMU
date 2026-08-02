@@ -45,7 +45,8 @@ the thing it hands over".
 | --- | --- | --- |
 | **owner** | **holder** (`DominantHolder`, `HolderProvider`) | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` - a faction id under the factions view, an alliance id under alliances, a claimant under claims |
 | **unowned** | factionless, uninhabited, decivilised | a cell no owner is attributed to. It never fuses, and draws its own lone outline |
-| **cluster** | **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters |
+| **cluster** (`StyledCluster`) | one body of a **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one |
+| **cluster group** (`StyledClusterGroup`) | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
 | **cluster border** | national border, frontier | the inset ring around a cluster. `base` never calls it national - nothing about a border is political |
 | **interior seam** | province line | the fused edge between two same-owner cells, drawn faint or not at all |
 | **fill state** | held / contested / drawn-empty | how ground inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
@@ -56,7 +57,10 @@ Two words that are **not** synonyms, despite looking alike:
 
 - A **cluster** is one connected component. A political **territory** may be several - a faction's
   homeland and its far-flung colony are two clusters under one territory, which is why each gets
-  its own label rather than one name stranded between them.
+  its own label rather than one name stranded between them. The two draw records keep that
+  distinction rather than leaving it to the reader: geometry hangs off `StyledCluster`, one per
+  body, and paint off the `StyledClusterGroup` around them, so a record covering several bodies
+  cannot be mistaken for one body's.
 - An **owner** is a render input; a **holder** is a computed political fact (dominant faction by
   market weight, or claimant, or alliance). They coincide only because the political map feeds one
   into the other.

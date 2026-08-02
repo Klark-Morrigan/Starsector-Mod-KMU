@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +38,12 @@ import static org.mockito.Mockito.when;
  * a separate ring per disjoint cluster, and the two paints its fill and border draw under - plus
  * the two cases that bake nothing at all rather than a record the draw pass would skip.
  *
- * <p>The ring count is the claim worth guarding. A bloc is traced from its member cells in one
- * pass, so two systems that touch must come back as a single continuous border rather than two
- * squares drawn over each other - and two that do not touch must stay two, since that is what
- * makes an enclave read as an enclave.
+ * <p>How the rings fall into bodies is the claim worth guarding. A bloc is traced from its member
+ * cells in one pass, so two systems that touch must come back as one body under a single
+ * continuous border rather than two squares drawn over each other; two that do not touch must
+ * stay two bodies; and a rival a bloc has surrounded must come back as an enclave of the one body
+ * around it. Each of those goes wrong silently - every ring still strokes, in the right colour,
+ * with only the filled ground wrong.
  *
  * <p>The geometry underneath is pinned elsewhere and only wired here: the ring trace by
  * {@link kmu.maplayers.base.render.clusters.ClusterBorderTraceIntegrationTest}, the fill's carve by
@@ -61,6 +64,14 @@ final class FactionTerritoryBuilderTest {
     private static final String ISLAND_SYSTEM = "island";
     private static final String EXCLAVE_SYSTEM = "exclave";
     private static final String RIVAL_SYSTEM = "rival";
+
+    // The 3x3 block of cells the enclave case is traced over: eight cells of one bloc ringing a
+    // rival in the middle. Kept apart from the cells above because it is the only case whose
+    // shape is a topology rather than a handful of squares, and generating it is what keeps that
+    // topology readable.
+    private static final int GRID_SPAN = 3;
+    private static final int GRID_CELL_SIDE = 2000;
+    private static final int GRID_CENTRE = 1;
 
     // The holder's two shades, kept distinct so an observed paint names which slot it came from.
     private static final Color OWNER_PRIMARY = Color.RED;
@@ -168,6 +179,29 @@ final class FactionTerritoryBuilderTest {
                     assertThat(cluster.outerLoop()).isNotEmpty();
                     assertThat(cluster.enclaveLoops()).isEmpty();
             });
+        }
+
+        @Test
+        void buildFactionTerritoryTracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
+            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+                territoriesStyledBy(drawnStyle(), gridHolders()),
+                gridCells(),
+                HEGEMONY,
+                listGridRingCellIds());
+
+            // A ring of cells is connected, so it is one body - and the rival it encloses is a
+            // hole in that body rather than ground outside it. The three ways this goes wrong all
+            // still draw: two clusters (the ring read as split), one cluster with no enclave (the
+            // hole lost, so the fill covers the rival), or the enclave promoted to a body of its
+            // own (the rival painted in the bloc's own colour).
+            assertThat(clusterGroup.clusters())
+                .hasSize(1);
+            assertThat(clusterGroup.clusters().get(0).enclaveLoops())
+                .hasSize(1);
+            assertThat(clusterGroup.clusters().get(0).outerLoop())
+                .isNotEmpty();
+            assertThat(clusterGroup.clusters().get(0).fillTriangles())
+                .isNotEmpty();
         }
 
         @Test
@@ -319,6 +353,84 @@ final class FactionTerritoryBuilderTest {
 
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
     // partition a bloc's border is traced from.
+    // The 3x3 block as a geometry cache, every cell drawing as its own system.
+    private static CellGeometryCache gridCells() {
+        var geometryCacheMock = mock(CellGeometryCache.class);
+        var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
+        var systemIdByCellId = new LinkedHashMap<String, String>();
+
+        for (var column = 0; column < GRID_SPAN; column++) {
+            for (var row = 0; row < GRID_SPAN; row++) {
+                edgesByCellId.put(gridCellId(column, row), listGridCellEdges(column, row));
+                systemIdByCellId.put(gridCellId(column, row), gridCellId(column, row));
+            }
+        }
+        when(geometryCacheMock.getCellEdgesByCellId())
+            .thenReturn(edgesByCellId);
+        when(geometryCacheMock.getSystemIdByCellId())
+            .thenReturn(systemIdByCellId);
+
+        return geometryCacheMock;
+    }
+
+    // The ring to the Hegemony and the middle to its rival - the holding that makes the middle an
+    // enclave rather than a gap in the trace.
+    private static Map<String, DominantHolder> gridHolders() {
+        var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
+        for (var column = 0; column < GRID_SPAN; column++) {
+            for (var row = 0; row < GRID_SPAN; row++) {
+                ownerBySystemId.put(
+                    gridCellId(column, row),
+                    isGridCentre(column, row) ? TRITACHYON_OWNER : HEGEMONY_OWNER);
+            }
+        }
+        return ownerBySystemId;
+    }
+
+    // The eight cells the Hegemony draws - every one but the enclosed middle.
+    private static List<String> listGridRingCellIds() {
+        var cellIds = new ArrayList<String>();
+        for (var column = 0; column < GRID_SPAN; column++) {
+            for (var row = 0; row < GRID_SPAN; row++) {
+                if (!isGridCentre(column, row)) {
+                    cellIds.add(gridCellId(column, row));
+                }
+            }
+        }
+        return cellIds;
+    }
+
+    // One grid cell's four edges, counter-clockwise from its bottom-left corner, each naming the
+    // neighbour across it - or the reach bound, past the block's rim.
+    private static List<CellEdge> listGridCellEdges(int column, int row) {
+        var minX = column * GRID_CELL_SIDE;
+        var minY = row * GRID_CELL_SIDE;
+        var maxX = minX + GRID_CELL_SIDE;
+        var maxY = minY + GRID_CELL_SIDE;
+
+        return List.of(
+            edgeFacing(minX, minY, maxX, minY, findGridNeighbourId(column, row - 1)),
+            edgeFacing(maxX, minY, maxX, maxY, findGridNeighbourId(column + 1, row)),
+            edgeFacing(maxX, maxY, minX, maxY, findGridNeighbourId(column, row + 1)),
+            edgeFacing(minX, maxY, minX, minY, findGridNeighbourId(column - 1, row)));
+    }
+
+    // The cell across one edge, or null where the edge is on the block's rim and faces nothing.
+    private static String findGridNeighbourId(int column, int row) {
+        var isOffTheGrid = column < 0 || column >= GRID_SPAN || row < 0 || row >= GRID_SPAN;
+        return isOffTheGrid
+            ? null
+            : gridCellId(column, row);
+    }
+
+    private static String gridCellId(int column, int row) {
+        return "grid-" + column + "-" + row;
+    }
+
+    private static boolean isGridCentre(int column, int row) {
+        return column == GRID_CENTRE && row == GRID_CENTRE;
+    }
+
     private static CellGeometryCache cellsFor(String... systemIds) {
 
         var geometryCacheMock = mock(CellGeometryCache.class);

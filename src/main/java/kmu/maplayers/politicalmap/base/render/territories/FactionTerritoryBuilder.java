@@ -12,9 +12,9 @@ import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.FillSplit;
 import kmu.maplayers.base.render.clusters.SplitFillBuilder;
-import kmu.maplayers.base.render.clusters.SplitFillBuilder.ClusterFill;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.base.render.clusters.TracedFill;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
@@ -125,12 +125,12 @@ public final class FactionTerritoryBuilder {
         // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
         // one key, so it clusters under one bloc and then splits its fill inside each of its
         // bodies. Whether that split happens is the fill builder's own call.
-        var fills = new SplitFillBuilder(
+        var tracedFill = new SplitFillBuilder(
                 geometryCache.getCellEdgesByCellId(),
                 cellGrouping,
                 borderTrace,
                 territories.getGlobalStyle().hatch())
-            .buildFills(
+            .traceFill(
                 FilteredPolitics.isSpotlitBloc(blocId),
                 FillSplit.splitMembersByFillState(
                     cellGrouping,
@@ -138,11 +138,10 @@ public final class FactionTerritoryBuilder {
                     territories.getContestedSystemIds(),
                     territories.getUnfilledSystemIds()),
                 blocId,
-                fillColour,
-                clusterRegions);
+                fillColour);
 
         return new StyledClusterGroup(
-            buildClusters(clusterRegions, fills, borderColour),
+            buildClusters(clusterRegions, tracedFill, borderColour),
             new UiElementPaint(
                 fillColour,
                 adjustment.muteOpacity(style.fill().opacity())),
@@ -198,27 +197,27 @@ public final class FactionTerritoryBuilder {
                 borderSmoothing));
     }
 
-    // Pairs each traced body with the fill built for it and flattens its loops into the GL runs
-    // the stroke walks. A "No color" border bakes no loops at all rather than runs the draw pass
-    // would skip; the body still carries its fill, which is what an unstroked bloc draws.
+    // Cuts each body's fill and flattens its loops into the GL runs the stroke walks. The fill is
+    // asked for where the body is named, so a body cannot be paired with another body's geometry.
+    // A "No color" border bakes no loops at all rather than runs the draw pass would skip; the
+    // body still carries its fill, which is what an unstroked bloc draws.
     private static List<StyledCluster> buildClusters(
             List<RingRegion> clusterRegions,
-            List<ClusterFill> fills,
+            TracedFill tracedFill,
             Color borderColour) {
 
         var isBorderDrawn = borderColour != null;
         var clusters = new ArrayList<StyledCluster>(clusterRegions.size());
-        for (var i = 0; i < clusterRegions.size(); i++) {
-            var region = clusterRegions.get(i);
-            var fill = fills.get(i);
+        for (var clusterRegion : clusterRegions) {
+            var fill = tracedFill.buildFillFor(clusterRegion);
             clusters.add(new StyledCluster(
                 fill.solidTriangles(),
                 fill.hatchSegments(),
                 isBorderDrawn
-                    ? GlVertexRuns.flattenVertices(region.outerRing())
+                    ? GlVertexRuns.flattenVertices(clusterRegion.outerRing())
                     : GlVertexRuns.NO_VERTICES,
                 isBorderDrawn
-                    ? flattenLoops(region.holeRings())
+                    ? flattenLoops(clusterRegion.holeRings())
                     : List.of()));
         }
         return clusters;

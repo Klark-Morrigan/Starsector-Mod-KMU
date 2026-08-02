@@ -179,7 +179,7 @@ public final class TerritoryBuilder {
             LOG.debug("Political map cells shaped; shaped="
                 + shapedCells.size()
                 + " styledCells=" + territories.getStyledCellByCellId().size()
-                + " factionTerritories=" + territories.getStyledClusterGroupByOwnerId().size()
+                + " blocs=" + territories.getStyledClusterGroupByOwnerId().size()
                 + " hatchSegments=" + countHatchSegments(territories)
                 + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
 

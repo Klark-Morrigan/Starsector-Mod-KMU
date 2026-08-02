@@ -98,12 +98,17 @@ deciding and drawing.
 system draws in, decidable from plain id sets. Which systems land in the two non-solid sets is the
 layer's call, handed in; nothing here decides it.
 
-`SplitFillBuilder` turns the partition into triangles and hatch lines, and owns the choice of
-whether a fill splits at all or fills solid - the common case, which pays nothing for the
-machinery. Built per owner around the context the whole fill shares (the cells, their grouping,
-the trace, the hatch geometry), and asked for every body at once: the split's rings are the
-owner's rather than any one body's, so they are traced once and clipped per body. A call per body
-would re-trace the whole holding each time.
+`SplitFillBuilder` owns the choice of whether a fill splits at all or fills solid - the common
+case, which pays nothing for the machinery. Built per owner around the context the whole fill
+shares (the cells, their grouping, the trace, the hatch geometry), and answered per owner rather
+than per body, since the split's rings are the owner's and are traced once.
+
+`TracedFill` is what it hands back, and where the cutting lives: sealed over the three ways an
+owner fills - nothing, whole bodies, or per fill state - so only the third carries rings, and
+`buildFillFor(RingRegion)` cuts one body's share of them on demand. Splitting it this way is what
+keeps a body's fill tied to the body it was cut for; handing back a list of fills to be walked
+alongside a list of bodies would leave them paired by position, and a body painted with its
+neighbour's fill draws perfectly happily.
 
 Each drawn state fills from its own traced rings, not from its members' individual cells. The
 cluster's one owner is suffixed per state, so the tracer - which fuses same-owner cells -

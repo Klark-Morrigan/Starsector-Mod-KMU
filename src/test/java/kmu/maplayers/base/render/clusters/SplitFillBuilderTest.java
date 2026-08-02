@@ -27,9 +27,9 @@ import static org.assertj.core.api.Assertions.within;
  * must come out of the same smoothed loops the border strokes rather than out of a trace of
  * its own, or the fill and the border stop in different places.
  *
- * <p>And that each of an owner's bodies gets a fill confined to itself. One call covers every
- * body because the split's rings are the owner's rather than any one body's; the per-body clip
- * is what keeps a fill inside the body it belongs to, and it is the only thing that does.
+ * <p>And that each of an owner's bodies gets a fill confined to itself. The rings are traced
+ * once for the owner and cut per body, so the per-body clip is the only thing keeping one body's
+ * fill out of another - which is why each case here names the body it cuts against.
  *
  * <p>The fixtures are two hand-built square cells side by side, sized well clear of the border
  * channel, so the areas below are checkable by hand.
@@ -74,130 +74,113 @@ final class SplitFillBuilderTest {
         new RingRegion(square(10000, 0, 500), List.of());
 
     @Nested
-    class BuildFills {
+    class TraceFill {
 
         @Test
-        void buildFillsDrawNothingForANoColourFill() {
+        void traceFillDrawsNothingForANoColourFill() {
             // An owner the player has switched the fill off for pays no tessellation at all,
-            // rather than baking triangles the draw pass would then skip - but still gets one
-            // entry per body, since the bodies themselves still stroke and still hold a label.
-            var fills = builder().buildFills(
+            // rather than baking triangles the draw pass would then skip - and every body it
+            // holds cuts to nothing, since the bodies themselves still stroke and hold a label.
+            var tracedFill = builder().traceFill(
                 false, // Is not spotlit.
                 solidOnlySplit(),
                 REGION_KEY,
-                null, // No fill color.
-                List.of(HOME_BODY, DISTANT_BODY));
+                null); // No fill colour.
 
-            assertThat(fills)
-                .hasSize(2);
-            assertThat(fills)
-                .allSatisfy(fill -> {
-                    assertThat(fill.solidTriangles()).isEmpty();
-                    assertThat(fill.hatchSegments()).isEmpty();
-            });
-        }
-
-        @Test
-        void buildFillsTessellateTheFrontierWhenEveryMemberFillsSolid() {
-            // The fast path: no trace of its own, just the smoothed loops the border strokes, so
-            // the fill lands exactly where the border does.
-            var fills = builder().buildFills(
-                false, // Is not spotlit.
-                solidOnlySplit(),
-                REGION_KEY,
-                Color.RED,
-                List.of(HOME_BODY));
-
-            assertThat(totalTriangleArea(fills.get(0).solidTriangles()))
-                .isCloseTo(1e6, within(1.0));
-            assertThat(fills.get(0).hatchSegments())
+            assertThat(tracedFill.buildFillFor(HOME_BODY).solidTriangles())
+                .isEmpty();
+            assertThat(tracedFill.buildFillFor(HOME_BODY).hatchSegments())
+                .isEmpty();
+            assertThat(tracedFill.buildFillFor(DISTANT_BODY).solidTriangles())
                 .isEmpty();
         }
 
         @Test
-        void buildFillsGiveEachBodyItsOwnAreaRatherThanTheOwnersCombinedOne() {
-            // Two bodies of one owner, each filled from its own loops. Tessellated together, both
-            // entries would carry the union - which is the error the flat record could not have
-            // caught, since it held one soup over everything either way.
-            var fills = builder().buildFills(
-                false,
+        void traceFillTessellatesTheFrontierWhenEveryMemberFillsSolid() {
+            // The fast path: no trace of its own, just the smoothed loops the border strokes, so
+            // the fill lands exactly where the border does.
+            var fill = builder()
+                .traceFill(false, solidOnlySplit(), REGION_KEY, Color.RED)
+                .buildFillFor(HOME_BODY);
+
+            assertThat(totalTriangleArea(fill.solidTriangles()))
+                .isCloseTo(1e6, within(1.0));
+            assertThat(fill.hatchSegments())
+                .isEmpty();
+        }
+
+        @Test
+        void traceFillGivesEachBodyItsOwnAreaRatherThanTheOwnersCombinedOne() {
+            // Two bodies of one owner cut from the same traced fill, each from its own loops.
+            // Cut against both at once, either would carry the union - the error the flat record
+            // could not have caught, since it held one soup over everything either way.
+            var tracedFill = builder().traceFill(
+                false, // Is not spotlit.
                 solidOnlySplit(),
                 REGION_KEY,
-                Color.RED,
-                List.of(HOME_BODY, DISTANT_BODY));
+                Color.RED);
 
-            assertThat(totalTriangleArea(fills.get(0).solidTriangles()))
+            assertThat(totalTriangleArea(tracedFill.buildFillFor(HOME_BODY).solidTriangles()))
                 .isCloseTo(1e6, within(1.0));
-            assertThat(totalTriangleArea(fills.get(1).solidTriangles()))
+            assertThat(totalTriangleArea(tracedFill.buildFillFor(DISTANT_BODY).solidTriangles()))
                 .isCloseTo(25e4, within(1.0));
         }
 
         @Test
-        void buildFillsCarvePerStateWhenTheOwnerHoldsHatchedGround() {
+        void traceFillCarvesPerStateWhenTheOwnerHoldsHatchedGround() {
             // Non-solid members force the carve even off the spotlight, so solid and hatched
             // ground read apart inside the one frontier.
-            var fills = builder().buildFills(
-                false, // Is not spotlit.
-                hatchedSplit(),
-                REGION_KEY,
-                Color.RED,
-                List.of(HOME_BODY));
+            var fill = builder()
+                .traceFill(false, hatchedSplit(), REGION_KEY, Color.RED)
+                .buildFillFor(HOME_BODY);
 
-            assertThat(fills.get(0).solidTriangles())
+            assertThat(fill.solidTriangles())
                 .isNotEmpty();
         }
 
         @Test
-        void buildFillsConfineACarvedStateToTheBodyItsGroundSitsIn() {
+        void traceFillConfinesACarvedStateToTheBodyItsGroundSitsIn() {
             // The states are traced once across the whole owner, so nothing but the per-body clip
-            // keeps the distant body from being painted with ground it does not contain. Its
-            // fill has to come back empty: its own loops enclose none of the members.
-            var fills = builder().buildFills(
+            // keeps the distant body from being painted with ground it does not contain. Its fill
+            // has to come back empty: its own loops enclose none of the members.
+            var tracedFill = builder().traceFill(
                 false, // Is not spotlit.
                 hatchedSplit(),
                 REGION_KEY,
-                Color.RED,
-                List.of(HOME_BODY, DISTANT_BODY));
+                Color.RED);
 
-            assertThat(fills.get(0).solidTriangles()).isNotEmpty();
-            assertThat(fills.get(1).solidTriangles()).isEmpty();
-            assertThat(fills.get(1).hatchSegments()).isEmpty();
+            assertThat(tracedFill.buildFillFor(HOME_BODY).solidTriangles())
+                .isNotEmpty();
+            assertThat(tracedFill.buildFillFor(DISTANT_BODY).solidTriangles())
+                .isEmpty();
+            assertThat(tracedFill.buildFillFor(DISTANT_BODY).hatchSegments())
+                .isEmpty();
         }
 
         @Test
-        void buildFillsCarvePerStateForASpotlitOwnerThatFillsSolidThroughout() {
+        void traceFillCarvesPerStateForASpotlitOwnerThatFillsSolidThroughout() {
             // The spotlight always splits: its fill is per state even where it dominates
             // everywhere, so a spotlit owner does not fall into the solid fast path.
-            var solid = builder().buildFills(
-                false, // Is not spotlit.
-                solidOnlySplit(),
-                REGION_KEY,
-                Color.RED,
-                List.of(HOME_BODY));
-                
-            var spotlit = builder().buildFills(
-                true, // Is spotlit.
-                solidOnlySplit(),
-                REGION_KEY,
-                Color.RED,
-                List.of(HOME_BODY));
+            var solid = builder()
+                .traceFill(false, solidOnlySplit(), REGION_KEY, Color.RED)
+                .buildFillFor(HOME_BODY);
+            var spotlit = builder()
+                .traceFill(true, solidOnlySplit(), REGION_KEY, Color.RED)
+                .buildFillFor(HOME_BODY);
 
             // The carve traces its own rings and clips them to the frontier, so it cannot come
             // back as the frontier's own untouched tessellation the fast path produces.
-            assertThat(spotlit.get(0).solidTriangles())
-                .isNotEqualTo(solid.get(0).solidTriangles());
+            assertThat(spotlit.solidTriangles())
+                .isNotEqualTo(solid.solidTriangles());
         }
 
         @Test
-        void buildFillsLeaveTheHatchEmptyWhenNoMemberIsHatched() {
-            var fills = builder().buildFills(
-                true, // Is spotlit.
-                solidOnlySplit(),
-                REGION_KEY,
-                Color.RED,
-                List.of(HOME_BODY));
+        void traceFillLeavesTheHatchEmptyWhenNoMemberIsHatched() {
+            var fill = builder()
+                .traceFill(true, solidOnlySplit(), REGION_KEY, Color.RED)
+                .buildFillFor(HOME_BODY);
 
-            assertThat(fills.get(0).hatchSegments())
+            assertThat(fill.hatchSegments())
                 .isEmpty();
         }
     }
