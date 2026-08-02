@@ -50,7 +50,7 @@ public record PoliticalMapHoverHighlightSource(
         if (holder == null) {
             return List.of();
         }
-        var territory = territories.getFactionTerritoryByFactionId().get(holder.factionId());
+        var territory = territories.getStyledClusterById().get(holder.factionId());
         return territory == null
             ? List.of()
             : territory.borderLoops();

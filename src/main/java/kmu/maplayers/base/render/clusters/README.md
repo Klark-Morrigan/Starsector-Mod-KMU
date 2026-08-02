@@ -14,6 +14,7 @@ Part of [the render surface](../README.md), in Klark Morrigan's Utilities; see t
 - [The trace: one path to a cluster's rings](#the-trace-one-path-to-a-clusters-rings)
 - [Smoothing and packing](#smoothing-and-packing)
 - [The split fill: one border, several fills](#the-split-fill-one-border-several-fills)
+- [Painting: the draw-list seam](#painting-the-draw-list-seam)
 - [What is not here](#what-is-not-here)
 
 ## The vocabulary
@@ -72,6 +73,9 @@ without a gap opening between them.
   Each form holds what that cell has and nothing else, so a pass that fills never reaches a
   fused cell and one that strokes seams never reaches a lone one. A layer's own builder decides
   which form a cell takes.
+- `StyledCluster` - its cluster-level sibling: everything drawn once for a whole fused footprint
+  rather than per cell - the solid fill triangles, the hatch run, the border rings, and the paint
+  and width each strokes at. What a fused cell keeps is only its seam; the rest is here.
 
 ## The split fill: one border, several fills
 
@@ -100,6 +104,26 @@ edge back by different amounts - opening an unfilled wedge on the more-receded s
 Both drawn states are then clipped to the smoothed loops, so neither keeps the mitered corner the
 rounding cut and pokes out past the line the border strokes. The unfilled state is never
 tessellated at all: it holds ground for the border and the name and paints nothing.
+
+## Painting: the draw-list seam
+
+`ClusterRenderer` is the emission: it scales world coordinates into map space and strokes and
+fills the flattened runs, in one blended pass with the fills below the seams below the borders. It
+knows nothing of settings, caches, or how any run was shaped, and the ids it walks are opaque to
+it.
+
+What it paints arrives through `ClusterDrawLists`, which is four reads and no more - is there
+anything to paint, the sector-wide style tier, the cell records, the cluster records. A layer's own
+built state satisfies it directly wherever its draw lists already are those two maps, so nothing is
+copied or adapted per frame.
+
+The seam exists because the emission is the framework's and the built state is not. Typed on one
+layer's model, the only cluster painter there is would have to live in that layer's package, and a
+second layer would reach it by importing the first or by copying the emission wholesale. Four reads
+is what it actually uses, so four reads is what a layer has to answer.
+
+`debug/`'s `ClusterBorderStageRenderer` is the diagnostic analogue, over its own overlay record
+rather than these lists.
 
 ## What is not here
 

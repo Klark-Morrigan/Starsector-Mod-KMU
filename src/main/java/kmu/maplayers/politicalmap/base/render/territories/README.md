@@ -1,8 +1,10 @@
 # Territory fills and borders (`render.territories`)
 
-The production draw of the political map: each faction's coloured cluster, its national border,
-and the per-cell province seams and factionless outlines. This is the base layer the labels
-overlay sits over - what the player reads as "who holds what".
+What the production draw of the political map is made of: each faction's coloured cluster, its
+national border, and the per-cell province seams and factionless outlines, baked into the
+framework's draw packets. This is the base layer the labels overlay sits over - what the player
+reads as "who holds what". The emission itself is the framework's, reached through a seam this
+package's built state satisfies.
 
 Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; see the
 [mod README](../../../../../../../../../README.md) for project context.
@@ -31,18 +33,18 @@ identical to a full rebuild.
   cell (decivilised, or uninhabited) does not fuse, so it becomes a `LoneCell` carrying its own fill
   and outline, and resolves both palette slots to the shared neutral colour. Of the two, only
   decivilised ground takes the pass's recede - see [what recedes](#what-recedes) below.
-- `FactionTerritoryBuilder` bakes one bloc: its national border, traced across every system it
-  holds, and its fill - which it hands to the framework's `SplitFillBuilder`, see
-  [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and border come from the
-  same loops, so they cannot drift apart.
+- `FactionTerritoryBuilder` bakes one bloc into a `StyledCluster`: its national border, traced
+  across every system it holds, and its fill - which it hands to the framework's
+  `SplitFillBuilder`, see [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and
+  border come from the same loops, so they cannot drift apart.
 
 The shaping the two builders drive is the framework's, in
 [`base.render.clusters`](../../../../base/render/clusters/README.md): `BorderSmoothing` sands spikes
 and rounds corners of the traced borders, `VertexRuns` flattens shaped cells into GL vertex runs,
-and `StyledCell` is the per-cell packet they bake into, in whichever of its two forms. Element
-colours, opacities, and widths
-come from cascading the `base.theme` records with each bloc's recede adjustment, asked for through
-`PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc resolves from one read.
+and `StyledCell` and `StyledCluster` are the two packets they bake into. Element colours,
+opacities, and widths come from cascading the `base.theme` records with each bloc's recede
+adjustment, asked for through `PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc
+resolves from one read.
 
 ## What recedes
 
@@ -79,7 +81,7 @@ in the neutral style on the far side of that channel.
 Those factionless fills are per cell rather than per cluster: factionless ground never fuses into
 a cluster, so it has no traced cluster to fill from and each cell tessellates its own outline
 instead. Which is why a `LoneCell` carries fill triangles at all, where an owned cell has no fill of
-its own to carry and takes it from its `FactionTerritory`.
+its own to carry and takes it from its `StyledCluster`.
 
 The two player settings under Territory reach on the **Dev**
 tab - *Uncontrolled systems give way to faction territory* and *Frontier keep-out* -
@@ -89,11 +91,17 @@ changing them does not move a border.
 ## The draw packets
 
 `PoliticalMapTerritories` is the built state a rebuild produces and an incremental refresh edits in
-place: the two draw lists (`FactionTerritory` per owned faction, `StyledCell` per cell) plus the
-retained ownership, theme, and filter inputs a re-shape needs. `FactionTerritory` is this package's
-own - one faction's fill triangles, contested-hatch segments, and border loops; the per-cell
-`StyledCell` beside it is the framework's packet, described in
-[`base.render.clusters`](../../../../base/render/clusters/README.md).
+place: the two draw lists (`StyledCluster` per bloc, `StyledCell` per cell) plus the retained
+ownership, theme, and filter inputs a re-shape needs. Both packets are the framework's, described
+in [`base.render.clusters`](../../../../base/render/clusters/README.md) - one bloc's fill
+triangles, contested-hatch segments and border loops, and one cell's seam or its own fill and
+outline.
+
+Holding the framework's packets is what lets it satisfy `ClusterDrawLists` outright, so the
+framework's emission paints this layer without either side naming the other: the two maps it hands
+over are the two it already keeps, and the bloc keys stay opaque across the seam. What is
+political is entirely upstream of it - which is why `FactionTerritoryBuilder` keeps its name while
+producing a record that says nothing about factions.
 
 It also records each drawn cell's shaped fill polygon alongside its `StyledCell`, written and
 dropped by the same two calls, and that pairing is what lets it answer `base.hover`'s
@@ -117,7 +125,7 @@ from its own traced rings rather than from its members' cells. What is political
 land in the two non-solid sets, and what that reads as on the map.
 
 **Hatched.** When the filter spotlights one bloc, its whole footprint - the systems it dominates
-plus the ones it merely contests - clusters into a single `FactionTerritory` under one national
+plus the ones it merely contests - clusters into a single `StyledCluster` under one national
 frontier, and the fill splits: solid where the bloc dominates, a pre-clipped diagonal hatch where it
 is only present ("mine, but contested").
 
@@ -138,9 +146,10 @@ a continuous frontier. Which systems are unfilled is resolved in
 
 ## Rendering
 
-`TerritoryRenderer` is a pure GL loop over an already-baked `PoliticalMapTerritories`: it scales
-world coordinates into map space and strokes/fills the flattened runs, with no knowledge of
-settings or how the runs were shaped.
+Nothing here paints. The draw is the framework's `ClusterRenderer`, reached through the
+`ClusterDrawLists` seam `PoliticalMapTerritories` satisfies; see
+[`base.render.clusters`](../../../../base/render/clusters/README.md) for what it emits and in
+what order.
 
 ## What is not here
 
@@ -151,7 +160,7 @@ out of; this package consumes both, it does not decide either. The *name overlay
 that sits on top is the framework's [`base.labels`](../../../../base/labels/README.md), fed the
 names and shades this layer resolves in `render.labels.anchor`. The *shape work* the two builders
 drive - the border-ring trace, the smoothing passes, the vertex packing, the `StyledCell` packet,
-and the split-fill machinery - is the framework's
+the split-fill machinery, and the GL emission itself - is the framework's
 [`base.render.clusters`](../../../../base/render/clusters/README.md), which knows nothing of who
 holds what; the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
 *incremental refresh* that folds per-system ownership changes into the packets is

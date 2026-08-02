@@ -10,6 +10,7 @@ import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.FillSplit;
 import kmu.maplayers.base.render.clusters.SplitFillBuilder;
+import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
@@ -20,9 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Bakes one bloc's cells into the {@link FactionTerritory} the renderer paints: its fill and
+ * Bakes one bloc's cells into the {@link StyledCluster} the renderer paints: its fill and
  * its national border, traced across every system it holds so a multi-system cluster reads as
  * one continuous frontier.
+ *
+ * <p>What it produces is a framework draw record, but what it decides is political throughout -
+ * whose palette the fill resolves against, which systems the filter has left contested, which
+ * ground the spotlight recedes. So it keeps its own vocabulary and stays on this side of the
+ * seam, handing over a record that says nothing about factions.
  *
  * <p>Fill and border come from the same loops - triangulated for the one, flattened for the
  * other - so they can never drift apart, whichever smoothing passes ran. Disjoint clusters and
@@ -50,7 +56,7 @@ public final class FactionTerritoryBuilder {
      * @return the bloc's fill and border, or null when it paints neither, or when its cells
      *         yield no borderable geometry
      */
-    public static FactionTerritory buildFactionTerritory(
+    public static StyledCluster buildFactionTerritory(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             String blocId,
@@ -121,7 +127,7 @@ public final class FactionTerritoryBuilder {
                 blocId,
                 fillColour);
 
-        return new FactionTerritory(
+        return new StyledCluster(
             fill.solidTriangles(),
             fill.hatchSegments(),
             new UiElementPaint(
@@ -156,7 +162,7 @@ public final class FactionTerritoryBuilder {
                 bloc.getValue());
 
             if (territory != null) {
-                territories.getFactionTerritoryByFactionId().put(bloc.getKey(), territory);
+                territories.getStyledClusterById().put(bloc.getKey(), territory);
             }
         }
     }

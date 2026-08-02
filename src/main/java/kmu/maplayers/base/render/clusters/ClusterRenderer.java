@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.base.render.clusters;
 
 import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;
@@ -8,7 +8,6 @@ import kmlib.opengl.GlRuns;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 
@@ -18,23 +17,21 @@ import java.util.Collection;
 import java.util.function.Consumer;
 
 /**
- * Paints the political map's pre-built draw lists on the sector (M) map: every fill first -
- * the faction clusters' and then the factionless cells' - and over them the interior seams,
- * factionless outlines, and national borders. The debug cluster anchors are not drawn here:
- * they are an independent
- * overlay ({@link kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer}) the terrain
- * plugin layers over whichever
- * base view is live.
+ * Paints pre-built cluster draw lists on the sector (M) map: every fill first - the fused
+ * footprints' and then the lone cells' - and over them the interior seams, the lone cells'
+ * outlines, and the cluster borders. The debug cluster anchors are not drawn here: they are an
+ * independent overlay ({@link kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer}) the
+ * terrain plugin layers over whichever base view is live.
  *
- * <p>This is pure GL emission over an already-baked {@link PoliticalMapTerritories} - it
- * scales each world coordinate into map space and strokes/fills the flattened vertex
- * runs, with no knowledge of settings, caches, or how the runs were shaped. The map
- * widget has already applied the map's pan and centering to the GL matrix, so only the
- * scale is applied here.
+ * <p>This is pure GL emission over an already-baked {@link ClusterDrawLists} - it scales each
+ * world coordinate into map space and strokes/fills the flattened vertex runs, with no knowledge
+ * of settings, caches, or how the runs were shaped. The map widget has already applied the map's
+ * pan and centering to the GL matrix, so only the scale is applied here.
  */
-public final class TerritoryRenderer {
+public final class ClusterRenderer {
+    
     // Emits only; never instantiated.
-    private TerritoryRenderer() {
+    private ClusterRenderer() {
     }
 
     // Draws the whole overlay for one map frame. Drawn in the below-UI map pass so
@@ -42,14 +39,14 @@ public final class TerritoryRenderer {
     // and line settings from the rest of the map render. An empty overlay skips the
     // push entirely.
     public static void renderOnMap(
-            PoliticalMapTerritories territories,
+            ClusterDrawLists drawLists,
             float factor,
             float alphaMult) {
 
         // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would
         // emit every run at zero effective alpha - all cost, nothing on screen - so the
         // whole GL pass is skipped, not just left to blend away.
-        if (territories.isEmpty() || alphaMult <= 0f) {
+        if (drawLists.isEmpty() || alphaMult <= 0f) {
             return;
         }
         // Aliased: the fills and their borders are large filled shapes whose edges the map's own
@@ -65,57 +62,57 @@ public final class TerritoryRenderer {
                 // accumulated view is affordable here, never a per-frame log line.
                 var profiler = KmuProfiling.getProfiler();
                 profiler.measure(
-                    "politicalMap.render",
+                    "mapLayer.render.clusters",
                     () -> {
                         profiler.measure(
-                            "politicalMap.render.fills",
-                            () -> drawFills(territories, factor, alphaMult));
+                            "mapLayer.render.clusters.fills",
+                            () -> drawFills(drawLists, factor, alphaMult));
                         profiler.measure(
-                            "politicalMap.render.borders",
-                            () -> drawBorders(territories, factor, alphaMult));
+                            "mapLayer.render.clusters.borders",
+                            () -> drawBorders(drawLists, factor, alphaMult));
                     });
             });
     }
 
-    // Fills each owned faction's cluster(s) with the faction's resolved fill colour at
-    // its opacity, then each factionless cell that carries a fill of its own. Both are
-    // pre-tessellated triangle soups, so a concave cluster (or one with an enclave) fills
-    // correctly and exactly matches the stroked border. A hidden fill (UiElementPaint.isHidden) is
-    // skipped, its geometry kept to shape its neighbours but never emitted. The spotlighted
-    // bloc splits its one footprint into both runs at once - solid triangles where it
-    // dominates and pre-clipped diagonal hatch lines where it is contested, in the same colour
-    // and opacity - so its contested pocket reads as "mine but contested" within one frontier;
-    // every other territory carries an empty hatch run and paints only its triangles.
-    private static void drawFills(PoliticalMapTerritories territories, float factor, float alphaMult) {
+    // Fills each fused footprint with its resolved fill colour at its opacity, then each lone
+    // cell that carries a fill of its own. Both are pre-tessellated triangle soups, so a concave
+    // footprint (or one with an enclave) fills correctly and exactly matches the stroked border.
+    // A hidden fill (UiElementPaint.isHidden) is skipped, its geometry kept to shape its
+    // neighbours but never emitted. A footprint whose ground does not all fill solid splits into
+    // both runs at once - solid triangles where it fills and pre-clipped diagonal hatch lines
+    // where the layer marked it hatched, in the same colour and opacity - so a partly-filled body
+    // still reads as one inside a single border; every other footprint carries an empty hatch run
+    // and paints only its triangles.
+    private static void drawFills(ClusterDrawLists drawLists, float factor, float alphaMult) {
 
-        // The hatch fills the contested pocket in the fill colour but strokes as GL_LINES, so its
-        // own pixel width tunes the contested texture apart from the solid fill. The width is
-        // sector-wide, so set it once here off the theme's global tier rather than per territory;
-        // the triangle soups below are width-agnostic, and only the one spotlit territory carries a
+        // The hatch fills its sub-cluster in the fill colour but strokes as GL_LINES, so its own
+        // pixel width tunes the hatched texture apart from the solid fill. The width is
+        // sector-wide, so set it once here off the theme's global tier rather than per footprint;
+        // the triangle soups below are width-agnostic, and typically only one footprint carries a
         // non-empty hatch run.
-        GL11.glLineWidth((float) territories.getGlobalStyle().hatch().width());
-        for (var territory : territories.getFactionTerritoryByFactionId().values()) {
+        GL11.glLineWidth((float) drawLists.getGlobalStyle().hatch().width());
+        for (var cluster : drawLists.getStyledClusterById().values()) {
             emitIfVisible(
-                territory.fill(),
+                cluster.fill(),
                 alphaMult,
                 () -> {
                     GlRuns.drawScaled(
                         GL11.GL_TRIANGLES,
-                        territory.fillTriangles(),
+                        cluster.fillTriangles(),
                         factor);
                     GlRuns.drawScaled(
                         GL11.GL_LINES,
-                        territory.hatchSegments(),
+                        cluster.hatchSegments(),
                         factor);
             });
         }
-        // Then the lone cells' own fills - dead colonies washed in the neutral colour. They fill
-        // per cell rather than per cluster because factionless ground never fuses into one, and
-        // they cover no faction's cluster, so drawing them after the cluster fills is a matter of
-        // grouping the fill pass rather than of layering. A fused cell is not reached at all: its
-        // fill is its cluster's, drawn above, so this pass sees only the cells that have one.
+        // Then the lone cells' own fills. They fill per cell rather than per footprint because
+        // unowned ground never fuses into one, and they cover no footprint, so drawing them after
+        // the footprint fills is a matter of grouping the fill pass rather than of layering. A
+        // fused cell is not reached at all: its fill is its footprint's, drawn above, so this pass
+        // sees only the cells that have one.
         drawEachCellOfForm(
-            territories.getStyledCellByCellId().values(),
+            drawLists.getStyledCellByCellId().values(),
             LoneCell.class,
             lone -> emitIfVisible(
                 lone.fillPaint(),
@@ -155,15 +152,15 @@ public final class TerritoryRenderer {
         emitRuns.run();
     }
 
-    // Strokes the interior province seams first, then the lone cells' outlines, then the
-    // smoothed national borders over them, so a cluster's frontier dominates its internal
-    // province lines where they meet. Color, opacity, and line width are all per element, and a
-    // hidden element (UiElementPaint.isHidden) is skipped - its geometry stays baked to shape its
-    // neighbours, but nothing invisible is emitted. Which cells each stroke reaches is the cell's
-    // own form rather than a test here: a fused cell carries only seams and a lone cell only an
-    // outline, and a cluster's national border is its border ring in factionTerritories.
+    // Strokes the interior seams first, then the lone cells' outlines, then the smoothed cluster
+    // borders over them, so a footprint's border dominates the seams inside it where they meet.
+    // Colour, opacity, and line width are all per element, and a hidden element
+    // (UiElementPaint.isHidden) is skipped - its geometry stays baked to shape its neighbours, but
+    // nothing invisible is emitted. Which cells each stroke reaches is the cell's own form rather
+    // than a test here: a fused cell carries only seams and a lone cell only an outline, and a
+    // footprint's border is its border ring in the cluster draw list.
     private static void drawBorders(
-            PoliticalMapTerritories territories,
+            ClusterDrawLists drawLists,
             float factor,
             float alphaMult) {
 
@@ -171,7 +168,7 @@ public final class TerritoryRenderer {
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
         drawEachCellOfForm(
-            territories.getStyledCellByCellId().values(),
+            drawLists.getStyledCellByCellId().values(),
             FusedCell.class,
             fused -> emitIfVisible(
                 fused.seamPaint(),
@@ -182,7 +179,7 @@ public final class TerritoryRenderer {
                 }));
 
         drawEachCellOfForm(
-            territories.getStyledCellByCellId().values(),
+            drawLists.getStyledCellByCellId().values(),
             LoneCell.class,
             lone -> emitIfVisible(
                 lone.outlinePaint(),
@@ -192,16 +189,16 @@ public final class TerritoryRenderer {
                     GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), factor);
                 }));
 
-        // The national border in its own style, over the interior seams so the frontier dominates
-        // where they meet. Each border ring is a closed rounded loop, so it strokes as one
-        // continuous GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
-        for (var territory : territories.getFactionTerritoryByFactionId().values()) {
+        // The cluster border in its own style, over the interior seams so it dominates where they
+        // meet. Each border ring is a closed rounded loop, so it strokes as one continuous
+        // GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges use.
+        for (var cluster : drawLists.getStyledClusterById().values()) {
             emitIfVisible(
-                territory.border(),
+                cluster.border(),
                 alphaMult,
                 () -> {
-                    GL11.glLineWidth(territory.borderWidth());
-                    for (var loop : territory.borderLoops()) {
+                    GL11.glLineWidth(cluster.borderWidth());
+                    for (var loop : cluster.borderLoops()) {
                         GlRuns.drawScaled(GL11.GL_LINE_LOOP, loop, factor);
                     }
             });

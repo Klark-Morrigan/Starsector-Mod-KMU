@@ -235,10 +235,10 @@ final class FactionTerritoryBuilderTest {
 
             // One entry per bloc rather than per system: the two Hegemony systems fuse into the
             // single territory their shared key groups them into.
-            assertThat(territories.getFactionTerritoryByFactionId())
+            assertThat(territories.getStyledClusterById())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
 
-            assertThat(territories.getFactionTerritoryByFactionId().get(HEGEMONY).borderLoops())
+            assertThat(territories.getStyledClusterById().get(HEGEMONY).borderLoops())
                 .hasSize(1);
         }
 
@@ -266,7 +266,7 @@ final class FactionTerritoryBuilderTest {
             FactionTerritoryBuilder.buildAllFactionTerritories(territories, geometryCacheMock);
 
             // Absent rather than mapped to null: every reader of this map paints what it finds.
-            assertThat(territories.getFactionTerritoryByFactionId()).containsOnlyKeys(HEGEMONY);
+            assertThat(territories.getStyledClusterById()).containsOnlyKeys(HEGEMONY);
         }
     }
 

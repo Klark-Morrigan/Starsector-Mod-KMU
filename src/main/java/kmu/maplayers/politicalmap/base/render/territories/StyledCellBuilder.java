@@ -8,6 +8,7 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.VertexRuns;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -23,7 +24,7 @@ import java.util.List;
  * two forms the cell takes.
  *
  * <p>An <em>owned</em> cell contributes only its interior seams: its fill and national border
- * are per cluster, drawn from the tessellated cluster in {@link FactionTerritory}, because a
+ * are per cluster, drawn from the tessellated cluster in {@link StyledCluster}, because a
  * bloc's cells fuse into one frontier. Keeping the seams is what lets a footprint read as its
  * constituent cells rather than one smooth blob - the spotlighted bloc included, where the
  * solid-to-hatched transition is such a border like any other.

@@ -23,7 +23,7 @@ import java.util.List;
  * rebuilds the whole of it, so nothing here updates a subset of one between rebuilds.
  *
  * <p>Pure GL emission over an already-built {@link ClusterBorderStageOverlay}, the debug analogue
- * of {@link kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer}. Line widths
+ * of {@link kmu.maplayers.base.render.clusters.ClusterRenderer}. Line widths
  * taper from base to rounded so an inner stage rings out from under the one drawn over it rather
  * than being fully hidden.
  */

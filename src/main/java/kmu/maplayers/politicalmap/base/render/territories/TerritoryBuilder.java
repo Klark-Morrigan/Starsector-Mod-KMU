@@ -179,7 +179,7 @@ public final class TerritoryBuilder {
             LOG.debug("Political map cells shaped; shaped="
                 + shapedCells.size()
                 + " styledCells=" + territories.getStyledCellByCellId().size()
-                + " factionTerritories=" + territories.getFactionTerritoryByFactionId().size()
+                + " factionTerritories=" + territories.getStyledClusterById().size()
                 + " hatchSegments=" + countHatchSegments(territories)
                 + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
 
@@ -192,7 +192,7 @@ public final class TerritoryBuilder {
     // depends on the filter, and all but the spotlit bloc hatch nothing.
     private static int countHatchSegments(PoliticalMapTerritories territories) {
         var hatchSegments = 0;
-        for (var territory : territories.getFactionTerritoryByFactionId().values()) {
+        for (var territory : territories.getStyledClusterById().values()) {
             hatchSegments += territory.hatchSegments().length / GlVertexRuns.FLOATS_PER_SEGMENT;
         }
         return hatchSegments;

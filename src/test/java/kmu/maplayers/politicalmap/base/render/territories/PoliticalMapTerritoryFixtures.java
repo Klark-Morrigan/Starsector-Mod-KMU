@@ -4,6 +4,7 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.mock;
  * state on top through the model's own accessors and keeps that variant local to itself.
  */
 public final class PoliticalMapTerritoryFixtures {
+
     /** The shared neutral shade unowned ground resolves to, wherever a test asserts against it. */
     public static final Color NEUTRAL_COLOUR = Color.GRAY;
 
@@ -58,17 +60,20 @@ public final class PoliticalMapTerritoryFixtures {
     public static PoliticalMapTerritories createTerritoriesOwnedBy(
             Map<String, DominantHolder> ownerBySystemId) {
         return new PoliticalMapTerritories(
-                new LinkedHashMap<>(ownerBySystemId),
-                new LinkedHashSet<>(),
-                new LinkedHashSet<>(),
-                new MapStyling(
-                    null,
-                    NEUTRAL_COLOUR,
-                    new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR)),
-                new ViewGrouping(
-                    mock(PoliticalMapView.class),
-                    HolderGrouping.identity()),
-                new FilterSnapshot(null, BlocStyleAdjustment.NONE, new LinkedHashSet<>()));
+            new LinkedHashMap<>(ownerBySystemId),
+            new LinkedHashSet<>(),
+            new LinkedHashSet<>(),
+            new MapStyling(
+                null, // No render style.
+                NEUTRAL_COLOUR, // Neutral color.
+                new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR)), // Desaturation palette.
+            new ViewGrouping(
+                mock(PoliticalMapView.class),
+                HolderGrouping.identity()),
+            new FilterSnapshot(
+                null, // No selected bloc ID.
+                BlocStyleAdjustment.NONE, // No recede adjustment.
+                new LinkedHashSet<>())); // No contested system IDs.
     }
 
     /**
@@ -107,12 +112,16 @@ public final class PoliticalMapTerritoryFixtures {
      * and paints are inert.
      *
      * @param borderLoops the loops to carry, empty for a territory that baked no border
-     * @return a placeholder faction territory
+     * @return a placeholder styled cluster standing in for one bloc's territory
      */
-    public static FactionTerritory createTerritoryWithLoops(List<float[]> borderLoops) {
-        return new FactionTerritory(
-                new float[0], new float[0], createHiddenPaint(),
-                borderLoops, createHiddenPaint(), 0f);
+    public static StyledCluster createTerritoryWithLoops(List<float[]> borderLoops) {
+        return new StyledCluster(
+            new float[0],
+            new float[0],
+            createHiddenPaint(),
+            borderLoops,
+            createHiddenPaint(),
+            0f); // Border width.
     }
 
     // A hidden element paint (null colour) - enough to stand in wherever a draw record only

@@ -6,7 +6,9 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.SystemClusterIndex;
 import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.hover.MapHoverTargets;
+import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.RenderStyle;
@@ -31,7 +33,7 @@ import java.util.Set;
  * incremental re-shape needs to rebuild a handful of cells against the same holding
  * and styles the full rebuild used.
  *
- * <p>The styled-cell and faction-territory maps are the render output - the per-cell
+ * <p>The styled-cell and styled-cluster maps are the render output - the per-cell
  * seam/outline records and each faction's fill and national border. They start empty and
  * the build fills them, so they are created here rather than passed in. The rest are
  * retained inputs, grouped into three cohesive snapshots: {@link MapStyling} (the theme,
@@ -44,11 +46,16 @@ import java.util.Set;
  * build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
- * not values: the styled-cell, faction-territory, and holder-by-system maps are mutated
+ * not values: the styled-cell, styled-cluster, and holder-by-system maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions an
  * holder change touched. The styling, decivilised and unfilled sets, view grouping, and
  * filter snapshot are set once at build and only read after, so an incremental pass re-shapes
  * against the exact inputs the full build baked in.
+ *
+ * <p>It satisfies {@link ClusterDrawLists} directly, and so is what the framework's cluster
+ * emission paints: the two draw lists it hands over are the two it already holds, and the
+ * global tier the pass binds once is the one its own builders resolved against. Nothing
+ * political crosses that seam - the ids in both maps stay opaque to the emission.
  *
  * <p>It satisfies {@link MapHoverTargets} directly rather than through an adapter, because the
  * two reads the cursor needs are already exactly the two it exposes - the shapes it painted and
@@ -56,12 +63,14 @@ import java.util.Set;
  * verbatim, the adapter is the right shape and the layer supplies one; see
  * {@code PoliticalMapHoverHighlightSource}.
  */
-public final class PoliticalMapTerritories implements MapHoverTargets {
+public final class PoliticalMapTerritories implements ClusterDrawLists, MapHoverTargets {
 
     // Render output, mutated in place by the incremental refresh. Created empty here since a
-    // fresh build fills them and no caller ever supplies them pre-populated.
+    // fresh build fills them and no caller ever supplies them pre-populated. Each bloc's
+    // footprint is keyed by its holder - a faction id under the factions view, or one of the
+    // filter's synthetic spotlight keys - which the emission never interprets.
     private final Map<String, StyledCell> styledCellByCellId = new LinkedHashMap<>();
-    private final Map<String, FactionTerritory> factionTerritoryByFactionId = new LinkedHashMap<>();
+    private final Map<String, StyledCluster> styledClusterById = new LinkedHashMap<>();
 
     // Each drawn cell's shaped fill polygon, the shape the cursor is tested against. Written only
     // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
@@ -128,6 +137,7 @@ public final class PoliticalMapTerritories implements MapHoverTargets {
             FilterSnapshot.unfiltered());
     }
 
+    @Override
     public Map<String, StyledCell> getStyledCellByCellId() {
         return styledCellByCellId;
     }
@@ -199,8 +209,12 @@ public final class PoliticalMapTerritories implements MapHoverTargets {
             DominantHolder.mapCellGrouping(systemIdByCellId, ownerBySystemId)));
     }
 
-    public Map<String, FactionTerritory> getFactionTerritoryByFactionId() {
-        return factionTerritoryByFactionId;
+    // Each bloc's fill, hatch, and national border, keyed by its holder. Named for the framework
+    // record it hands over rather than for the political word for it: the same map answers the
+    // emission's cluster read and this layer's own lookups, so it carries one name.
+    @Override
+    public Map<String, StyledCluster> getStyledClusterById() {
+        return styledClusterById;
     }
 
     public Map<String, DominantHolder> getHolderBySystemId() {
@@ -231,6 +245,7 @@ public final class PoliticalMapTerritories implements MapHoverTargets {
 
     // The sector-wide tier (hatch, border smoothing, desaturation profile), read by the
     // renderer and the builders so a global knob resolves once off the theme.
+    @Override
     public GlobalStyle getGlobalStyle() {
         return styling.renderStyle().global();
     }
@@ -313,7 +328,8 @@ public final class PoliticalMapTerritories implements MapHoverTargets {
 
     // True when there is nothing to paint, so the renderer can skip the GL state push
     // entirely.
+    @Override
     public boolean isEmpty() {
-        return styledCellByCellId.isEmpty() && factionTerritoryByFactionId.isEmpty();
+        return styledCellByCellId.isEmpty() && styledClusterById.isEmpty();
     }
 }

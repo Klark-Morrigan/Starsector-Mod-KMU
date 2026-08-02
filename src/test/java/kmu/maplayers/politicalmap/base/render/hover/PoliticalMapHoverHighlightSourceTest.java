@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
+import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
-import kmu.maplayers.politicalmap.base.render.territories.FactionTerritory;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 
@@ -163,7 +163,7 @@ final class PoliticalMapHoverHighlightSourceTest {
     private static PoliticalMapTerritories territoriesWith(
             Map<String, DominantHolder> ownerBySystemId,
             Map<String, List<double[]>> fillPolygonBySystemId,
-            FactionTerritory territory) {
+            StyledCluster territory) {
 
         var territories = PoliticalMapTerritoryFixtures
             .createTerritoriesOwnedBy(ownerBySystemId);
@@ -175,13 +175,13 @@ final class PoliticalMapHoverHighlightSourceTest {
                 cell.getValue());
         }
         if (territory != null) {
-            territories.getFactionTerritoryByFactionId().put(FACTION_ID, territory);
+            territories.getStyledClusterById().put(FACTION_ID, territory);
         }
         return territories;
     }
 
     // A territory whose loops are all the source reads; its fills and paints never come up here.
-    private static FactionTerritory territoryWithLoops(List<float[]> borderLoops) {
+    private static StyledCluster territoryWithLoops(List<float[]> borderLoops) {
         return PoliticalMapTerritoryFixtures.createTerritoryWithLoops(borderLoops);
     }
 

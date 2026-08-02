@@ -73,7 +73,7 @@ import javax.swing.SwingUtilities;
  *       {@code PolygonTessellator.tessellateToBoundaryLoops}, {@code tessellateToTriangles},
  *       {@code Hatching.computeHatchSegments}, {@code GlVertexRuns.flattenVertices}.</li>
  *   <li><i>Painting it</i> - {@code RenderStyleReader.readRenderStyle}, {@code MapPalettes},
- *       {@code TerritoryRenderer}, the label pass, and {@code KmuLunaSettings} entirely.
+ *       {@code ClusterRenderer}, the label pass, and {@code KmuLunaSettings} entirely.
  *       Nothing reads {@code Global}. Colours here are hash-derived hues for telling blocs
  *       apart, never the faction palette, and this is Java2D, so no blend mode, line
  *       smoothing, corner rounding, hatching, or layering against vanilla is exercised.</li>

@@ -79,7 +79,7 @@ final class StyledCellBuilderTest {
         private static final DominantHolder OWNER =
             new DominantHolder("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
 
-        // An owned cell's fill and national border are per cluster (in FactionTerritory),
+        // An owned cell's fill and national border are per cluster (in StyledCluster),
         // so fill and outer are "No color" here and only inner - the interior seam -
         // resolves a real colour, the one slot these tests can observe.
         private static final CategoryStyle STYLE = new CategoryStyle(

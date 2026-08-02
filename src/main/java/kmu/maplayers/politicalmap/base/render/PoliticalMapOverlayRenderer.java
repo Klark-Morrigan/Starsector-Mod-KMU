@@ -6,10 +6,10 @@ import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
+import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
-import kmu.maplayers.politicalmap.base.render.territories.TerritoryRenderer;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -54,7 +54,7 @@ final class PoliticalMapOverlayRenderer {
                 factor,
                 alphaMult);
         } else {
-            TerritoryRenderer.renderOnMap(
+            ClusterRenderer.renderOnMap(
                 cache.getTerritories(),
                 factor,
                 alphaMult);
