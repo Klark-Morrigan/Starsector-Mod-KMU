@@ -2,31 +2,26 @@ package kmu.maplayers.base.hover;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.starsector.ui.map.CampaignMapTransform;
+import kmlib.starsector.ui.map.MapCursor;
 import kmlib.starsector.ui.map.ModelviewMatrixReader;
 
 import kmu.maplayers.base.geometry.CellHitTest;
 
 import org.apache.log4j.Logger;
-import org.lwjgl.input.Mouse;
 
 /**
- * Works out what the cursor is over on the map and publishes it for the frame.
+ * Works out which cell the cursor is over on the map and publishes it for the frame.
  *
- * <p>Runs inside the map's render pass because that is the only place it can: undoing the map's
- * pan, centring, and zoom to turn a cursor pixel back into a world point needs the widget's GL
- * matrices, which are only bound while that pass runs. A layer therefore drives this from its
- * {@code renderOnMap} rather than from an input listener.
+ * <p>Runs inside the map's render pass because that is the only place it can: the cursor read it
+ * drives needs the map widget's GL matrices, which are bound only while that pass runs. A layer
+ * therefore drives this from its {@code renderOnMap} rather than from an input listener.
  *
- * <p>Reading the cursor rather than consuming input events is the whole point: the map keeps
- * hovering stars and drawing their tooltips exactly as it did, because nothing here takes an event
- * away from it. The overlay is a passive second reader of a cursor the game is still free to
- * interpret its own way.
- *
- * <p>Framework rather than one layer's, because the matrix inversion is the hard part of hovering
- * and it is the same inversion whatever a layer paints: {@link MapHoverState} already declares the
- * value, the shared holder, and the consumers, so the only piece a second layer would otherwise
- * have to rediscover is this one.
+ * <p>What is owned here is the step from a world point to a hover, and the rule that anything less
+ * than a trustworthy answer parks: {@link MapCursor} resolves the pixel, {@link CellHitTest} names
+ * the cell, and this decides what the frame is told. Framework rather than one layer's, because
+ * {@link MapHoverState} already declares the value, the shared holder and the consumers, so the
+ * sequencing between them is the last piece a second layer would otherwise have to work out again
+ * - and it would have to get every park right to avoid lighting a cell the cursor is not on.
  */
 public final class MapHoverPublisher {
     private static final Logger LOG = Global.getLogger(MapHoverPublisher.class);
@@ -64,18 +59,14 @@ public final class MapHoverPublisher {
      */
     public void publishHoverFrom(MapHoverTargets targets, float factor) {
 
-        if (targets == null || !Mouse.isInsideWindow()) {
+        if (targets == null) {
             parkHover();
             return;
         }
-        // A snapshot the map's transform could not be read into resolves nothing, so the hover
-        // parks rather than reporting a cell worked out from a transform that is not the map's.
-        var transform = CampaignMapTransform.captureFromMapPass(factor, modelviewMatrixReader);
-        if (transform == null) {
-            parkHover();
-            return;
-        }
-        var worldPoint = transform.unprojectToWorld(Mouse.getX(), Mouse.getY());
+        // No world point means the read could not be trusted - the cursor has left the window, the
+        // transform is not the map's, or it will not invert. Which of the three it was does not
+        // change the answer here: a cell resolved from an untrustworthy point is worse than none.
+        var worldPoint = MapCursor.resolveWorldPointDuringMapPass(factor, modelviewMatrixReader);
         if (worldPoint == null) {
             parkHover();
             return;

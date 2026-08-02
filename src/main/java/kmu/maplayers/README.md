@@ -126,11 +126,12 @@ about what the overlay means.
   `MapHover` (the hovered cell and the cluster around it), `MapHoverState` (the
   shared holder the map render pass publishes to and the later UI passes read, since only that pass
   can invert a cursor pixel to a world point), and `HoverHighlight` (the loops and triangles one
-  hover lights up). `MapHoverPublisher` is that pass: it undoes the map's pan, centring and zoom,
-  hit-tests the resulting world point, and widens the hit to its cluster - all over
-  `MapHoverTargets`, one frame's drawn cell shapes and the clusters they fuse into. The inversion
-  is the hard part of hovering and is the same one whatever a layer paints, so it is written here
-  once rather than per layer. `HoverHighlightGeometry` resolves the highlight geometry and
+  hover lights up). `MapHoverPublisher` is that pass: it takes the world point KMLib's `MapCursor`
+  resolves, hit-tests it, and widens the hit to its cluster - all over `MapHoverTargets`, one
+  frame's drawn cell shapes and the clusters they fuse into. What it owns is the sequencing and the
+  parking: a cursor that cannot be trusted must clear the hover rather than leave the last frame's
+  standing, and getting that wrong lights a cell the cursor is not on. The pixel-to-world inversion
+  underneath is KMLib's. `HoverHighlightGeometry` resolves the highlight geometry and
   `HoverHighlightRenderer` burns the halo and the wash, both over a `HoverHighlightSource` - the
   two questions only the layer that owns the clusters can answer: the loops the hovered cell might
   sit inside, and the shade its ground draws in. Both seams extend `PaintedCellShapes`, the frame's
