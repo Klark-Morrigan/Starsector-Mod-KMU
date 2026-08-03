@@ -33,8 +33,6 @@ public final class KmuStrings {
     public static final String DIALOG_CLOSE = "dialog_close";
     public static final String MAP_LAYER_TAB_NO_LAYER = "map_layer_tab_no_layer";
     public static final String MAP_LAYER_CTL_COLUMNS_CAPTION = "map_layer_ctl_columns_caption";
-    public static final String MAP_LAYER_CTL_COLUMNS_ONE = "map_layer_ctl_columns_one";
-    public static final String MAP_LAYER_CTL_COLUMNS_TWO = "map_layer_ctl_columns_two";
     public static final String POLITICAL_MAP_TAB_POLITICAL_MAP = "political_map_tab_political_map";
     public static final String POLITICAL_MAP_CTL_UNINHABITED = "political_map_ctl_uninhabited";
     public static final String POLITICAL_MAP_CTL_NAME_FULL = "political_map_ctl_name_full";

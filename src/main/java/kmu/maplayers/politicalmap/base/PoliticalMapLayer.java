@@ -7,9 +7,9 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.render.MapLayerRenderer;
+import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
 import kmu.maplayers.base.sidebar.FilterPickerControl;
 import kmu.maplayers.base.sidebar.FilterSelection;
-import kmu.maplayers.base.sidebar.ListColumns;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
@@ -97,7 +97,7 @@ public final class PoliticalMapLayer implements MapLayer {
 
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
-            var columns = ListColumns.resolveStored();
+            var columns = ColumnSelectionBinder.resolveStoredColumns();
             var viewId = selectedView.getId();
 
             // The picker lists the selected view's own selectable blocs under the player's live

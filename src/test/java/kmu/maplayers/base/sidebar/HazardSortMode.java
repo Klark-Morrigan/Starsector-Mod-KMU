@@ -1,5 +1,10 @@
 package kmu.maplayers.base.sidebar;
 
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
+import kmlib.starsector.ui.widgets.lists.SortDirection;
+
+import kmu.util.KmuStrings;
+
 import java.util.Comparator;
 
 /**
@@ -9,6 +14,10 @@ import java.util.Comparator;
  * descending, so a suite can tell a mode's own default direction from the active sort's live one.
  * Only {@link #RADIUS} declares a trailing value; the other two leave the seam's blank default, so
  * a suite can tell a mode that writes a number onto its rows from one that shows none.
+ *
+ * <p>Each label resolves through {@link kmu.util.KmuStrings} under a key of its own, which is what a
+ * real layer does with the seam's hand-over-drawn-text rule, so a suite that stubs the strings table
+ * exercises the same path the political modes take.
  */
 enum HazardSortMode implements ListSortMode<Hazard> {
     ALPHA(
@@ -60,8 +69,8 @@ enum HazardSortMode implements ListSortMode<Hazard> {
     }
 
     @Override
-    public String labelKey() {
-        return labelKey;
+    public String resolveLabelText() {
+        return KmuStrings.get(labelKey);
     }
 
     @Override
@@ -74,5 +83,11 @@ enum HazardSortMode implements ListSortMode<Hazard> {
         return direction == SortDirection.ASCENDING
             ? ascendingOrder
             : ascendingOrder.reversed();
+    }
+
+    // The key this mode's label resolves through, so a suite stubbing the strings table names the
+    // same key the resolution reads rather than repeating the spelling.
+    String labelKey() {
+        return labelKey;
     }
 }

@@ -2,6 +2,10 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
+import kmlib.starsector.ui.widgets.lists.ListColumns;
+import kmlib.starsector.ui.widgets.lists.ListSort;
+import kmlib.starsector.ui.widgets.lists.ListSortModes;
+import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.util.KmuStrings;
 
@@ -310,6 +314,52 @@ final class FilterPickerControlTest {
                     .isEqualTo(2);
             }
         }
+
+        @Test
+        void buildControlsBindsAColumnsSegmentPickToTheColumnStore() {
+            // The columns selector reports its pick rather than storing one, so this is the only
+            // place the report is joined to the save - a binding that silently came unwired would
+            // leave the segment lighting up and the count never persisting.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<ColumnSelection> selectionMock =
+                        mockStatic(ColumnSelection.class)) {
+                stubLabels(stringsMock);
+
+                var columnsSelector = (ControlSpec.HorizontalRadio)
+                    build(HAZARDS, null, HazardSortMode.ALPHA)
+                        .get(COLUMNS_SELECTOR);
+
+                columnsSelector.action().activateCell(
+                    List.of(ListColumns.values()).indexOf(ListColumns.TWO));
+
+                selectionMock.verify(
+                    () -> ColumnSelection.selectColumnCount(ListColumns.TWO.persistenceKey()));
+            }
+        }
+
+        @Test
+        void buildControlsBindsASortRowPickToTheSortStore() {
+            // The same join for the other selector: a click on an unlit mode's row stores that mode
+            // and its own default direction, both keys written as one pick.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
+                stubLabels(stringsMock);
+
+                var sortSelector = (ControlSpec.VerticalTable) sortRowOf(
+                        build(HAZARDS, null, HazardSortMode.ALPHA))
+                    .leftColumn()
+                    .get(0);
+
+                sortSelector.action().activateCell(
+                    List.of(HazardSortMode.values()).indexOf(HazardSortMode.SEVERITY));
+
+                selectionMock.verify(
+                    () -> SortSelection.selectSortMode(HazardSortMode.SEVERITY.persistenceKey()));
+                selectionMock.verify(
+                    () -> SortSelection.selectSortDirection(
+                        HazardSortMode.SEVERITY.defaultDirection().persistenceKey()));
+            }
+        }
     }
 
     @Nested
@@ -438,20 +488,19 @@ final class FilterPickerControlTest {
         return (ControlSpec.SideBySide) controls.get(SORT_ROW);
     }
 
-    // Stubs the selector row labels the picker resolves, so the assertions read the wiring without
-    // the live strings table. A control's labels are copied and reject a null option name, so both
-    // the sort rows and the columns segments must resolve to real text; the constant names stand in
-    // for the drawn labels, which no assertion here reads.
+    // Stubs the text the picker resolves through this mod's strings table, so the assertions read
+    // the wiring without the live table. A control's labels are copied and reject a null option
+    // name, so every sort row must resolve to real text; the constant names stand in for the drawn
+    // labels, which no assertion here reads. The columns segments need no stub - their labels are
+    // the counts themselves - but the caption beside them is prose and is resolved here.
     private static void stubLabels(MockedStatic<KmuStrings> stringsMock) {
         for (var mode : HazardSortMode.values()) {
             stringsMock
                 .when(() -> KmuStrings.get(mode.labelKey()))
                 .thenReturn(mode.name());
         }
-        for (var columns : ListColumns.values()) {
-            stringsMock
-                .when(() -> KmuStrings.get(columns.labelKey()))
-                .thenReturn(columns.name());
-        }
+        stringsMock
+            .when(() -> KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION))
+            .thenReturn("Columns");
     }
 }

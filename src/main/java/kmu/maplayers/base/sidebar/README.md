@@ -128,34 +128,34 @@ the previous save's scroll offset in the same move.
 
 A layer whose body carries a sortable, column-laid list needs somewhere to keep how that list is
 ranked, wrapped, and filtered - and the widgets that change those choices. `SortSelection`,
-`ColumnSelection`, and `FilterSelection` are the stores, `SortDirection` is the
-ascending/descending value the first of them round-trips, and the sort and column models with
-their two selector controls sit beside them. `FilterPickerControl` is the picker those pieces
-compose into, `SelectableListItem` the seam its rows are drawn from, and `SelectableItemCache` the
-memo a layer holds its list in.
+`ColumnSelection`, and `FilterSelection` are the stores. `FilterPickerControl` is the picker the
+pieces compose into, `SelectableListItem` the seam its rows are drawn from, and
+`SelectableItemCache` the memo a layer holds its list in.
 
 The stores are leaves: they hold the raw stored keys and nothing that resolves one. What a
 filtered-to id points at stays with the layer that offers the choices, and a stored sort or
-column key only means something to the models below, so the framework carries the storage without
-learning what any one layer's list holds.
+column key only means something to the model that owns it, so this package carries the storage
+without learning what any one layer's list holds.
 
-`ListSortMode` is the seam a layer's sort vocabulary implements: each mode carries the key its
-choice persists under, its selector-row label, its natural direction, the comparator that lays
-the list out under it, and the trailing value a row shows beside an item (blank by default, for a
-mode with no number to show). A layer hands its modes over as one `ListSortModes` value - the
-set in display order bundled with its fallback, so the two cannot be mixed from different
-layers. `ListSort` pairs the active mode with its direction and is the one place the stored pair
-is resolved - against the caller's vocabulary, so an unrecognised key falls back to its default
-and an unstored direction to the mode's own.
-`ListColumns` is framework outright rather than a seam: nothing in a one-or-two column choice is
-any layer's own, so the choices, their frozen keys, and the stored-count resolution all live
-here.
+The sort and column *model* is not here at all - `ListSortMode`, `ListSortModes`, `ListSort`,
+`SortDirection`, `ListColumns` and the two selector controls are KMLib's
+(`kmlib.starsector.ui.widgets.lists`), since a sortable list with a persisted mode and a
+column-count segment selector knows nothing about a map. The split is that **KMLib owns the model and the
+resolution rule; KMU owns where the answer is kept.**
+`SortSelectionBinder` and `ColumnSelectionBinder` are the join: each reads its
+store's raw keys into the model's resolution and writes a picked value back out, so a reading
+layer asks for "the stored sort over my modes" exactly as it did while the model lived here.
 
-`SortSelectorControl` and `ColumnsSelectorControl` are the selectors over those models. The sort
-selector is a re-firing radio over the caller's modes - a click on an unlit row switches to that
-mode at its default direction, a re-click of the lit row flips the direction - with each row's
-trailing triangle previewing the order picking it would give. The columns selector is an ordinary
-two-segment radio, inert on a re-pick. Both persist through the stores above.
+The keys are why the split falls where it does. They are the frozen `$kmu_political_*` spellings
+below - save state this mod cannot move and a shared library has no business holding.
+
+`SortSelectorControl` and `ColumnsSelectorControl` draw those models. The sort selector is a
+re-firing radio over the caller's modes - a click on an unlit row switches to that mode at its
+default direction, a re-click of the lit row flips the direction - with each row's trailing
+triangle previewing the order picking it would give. The columns selector is an ordinary
+two-segment radio, inert on a re-pick. Neither reaches a save: each reports its pick, and
+`FilterPickerControl` is where those picks are bound to the binders above and where the columns
+caption is resolved out of this mod's strings.
 
 `FilterSelection` holds one selected id per opaque scope, so each scope keeps its own choice and
 switching scopes neither clears nor cross-reads another's. Beyond the read, pick, and clear it
@@ -229,12 +229,13 @@ fields read through `kmu.settings.KmuLunaSettings`.
 
 The *panel widget itself* - frame, tab strip, scrollbar, collapse handle, control widgets, and the
 `TabPanelController` that holds scroll and collapse state - is KMLib
-(`kmlib.starsector.ui.widgets`, `.input`, `.render.gl`); this package supplies only the wiring
+(`kmlib.starsector.ui.widgets`, `.input`, `.render.gl`), as is the *list sort and column model*
+and its two selectors (`.widgets.lists`, see [Picker state](#picker-state)); this package supplies only the wiring
 KMLib cannot know. The *layer roster and each screen's active pick*, including the save migrations
 behind them, are `base/layer`'s (`MapLayerRegistry`), summarised in
 [map layers](../../README.md). The *body composition* the panel lays out belongs to whichever
 layer is active - for the political map, [`politicalmap`](../../politicalmap/README.md) and its
-`base/sidebar` controls - though the spotlight picker a body embeds, and the sort and columns
-selectors within it, are this package's (see [Picker state](#picker-state)). What the political map
-keeps of its own there is what the picker refuses to know: which blocs are on offer, what
-invalidates that list, and the recede toggles it pairs with the sort. Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.
+`base/sidebar` controls - though the spotlight picker a body embeds is this package's, and it is
+here that KMLib's two selectors are bound to the save (see [Picker state](#picker-state)). What
+the political map keeps of its own there is what the picker refuses to know: which blocs are on
+offer, what invalidates that list, and the recede toggles it pairs with the sort. Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.

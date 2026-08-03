@@ -1,6 +1,14 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.widgets.lists.ColumnsSelectorControl;
+import kmlib.starsector.ui.widgets.lists.ListColumns;
+import kmlib.starsector.ui.widgets.lists.ListSort;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
+import kmlib.starsector.ui.widgets.lists.ListSortModes;
+import kmlib.starsector.ui.widgets.lists.SortSelectorControl;
+
+import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +29,11 @@ import java.util.function.Function;
  * picker sorts the items by that metric and labels each row with its value), while the right half is
  * the caller's - the political map fills it with the recede toggles that fade the rest of the
  * sector, a layer with nothing to pair passes none and the row draws as the sort selector alone.
+ *
+ * <p>Both selectors are KMLib widgets that hold no store of their own, so this is where their picks
+ * are bound to KMU's save slots ({@link SortSelectionBinder}, {@link ColumnSelectionBinder}) and
+ * where the columns caption is resolved. Binding here rather than a step further out is what keeps
+ * a calling layer's signature free of them.
  */
 public final class FilterPickerControl {
 
@@ -78,15 +91,24 @@ public final class FilterPickerControl {
         controls.add(new ControlSpec.Divider());
 
         // The columns selector rides directly under the rule, so the column count is chosen for the
-        // block as a whole; the list below then wraps its rows across that many columns.
-        controls.add(ColumnsSelectorControl.buildSelector(columns));
+        // block as a whole; the list below then wraps its rows across that many columns. The
+        // selector itself neither resolves the caption nor reaches a save - both are this mod's, so
+        // the caption is looked up here and the pick handed to the store binder.
+        controls.add(ColumnsSelectorControl.buildSelector(
+            columns,
+            KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION),
+            ColumnSelectionBinder::storeColumns));
 
         // The sort selector and the caller's trailing controls share one row, the sort on the left
         // picking the metric the list ranks by. Pairing them keeps the picker compact; what sits
         // beside the sort is the caller's decision, so the framework composes the row and the layer
-        // fills its right half.
+        // fills its right half. Like the columns selector it reports its pick rather than storing
+        // one, so the binder is named here.
         controls.add(new ControlSpec.SideBySide(
-            List.of(SortSelectorControl.buildSelector(sort, sortModes)),
+            List.of(SortSelectorControl.buildSelector(
+                sort,
+                sortModes,
+                SortSelectionBinder::storeSort)),
             trailingControls));
 
         // The item list is the body's one scrolling cluster: when the picker plus the controls above

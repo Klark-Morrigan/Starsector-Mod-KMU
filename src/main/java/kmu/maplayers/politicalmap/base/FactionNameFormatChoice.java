@@ -9,8 +9,9 @@ package kmu.maplayers.politicalmap.base;
  * the short form fits a tighter cluster at a larger font, or turn the names off entirely and read
  * the map by colour alone. Whether names draw is part of this one choice rather than a separate
  * gate, so the single control the player sees maps to a single stored state. This names the options
- * and, like {@link kmu.maplayers.base.sidebar.SortDirection}, owns the save-stable key each persists
- * under, so the stored choice resolves back without matching a display string that is free to change.
+ * and, like {@link kmlib.starsector.ui.widgets.lists.SortDirection}, owns the save-stable key each
+ * persists under, so the stored choice resolves back without matching a display string that is free
+ * to change.
  */
 public enum FactionNameFormatChoice {
 

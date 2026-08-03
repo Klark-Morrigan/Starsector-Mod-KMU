@@ -1,9 +1,11 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmu.maplayers.base.sidebar.ListSort;
-import kmu.maplayers.base.sidebar.ListSortMode;
-import kmu.maplayers.base.sidebar.ListSortModes;
-import kmu.maplayers.base.sidebar.SortDirection;
+import kmlib.starsector.ui.widgets.lists.ListSort;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
+import kmlib.starsector.ui.widgets.lists.ListSortModes;
+import kmlib.starsector.ui.widgets.lists.SortDirection;
+
+import kmu.maplayers.base.sidebar.SortSelectionBinder;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.util.KmuStrings;
 
@@ -101,7 +103,7 @@ public enum BlocSortMode implements ListSortMode<SelectableBloc> {
      * @return the stored sort
      */
     public static ListSort<SelectableBloc> resolveStoredSort() {
-        return ListSort.resolveStored(MODES);
+        return SortSelectionBinder.resolveStoredSort(MODES);
     }
 
     /**
@@ -113,10 +115,16 @@ public enum BlocSortMode implements ListSortMode<SelectableBloc> {
         return persistenceKey;
     }
 
-    /** @return the string key of this mode's selector-row label */
+    /**
+     * The text this mode's selector row draws. The seam hands drawn text over rather than a string
+     * key, since it cannot look a key up against this mod's own strings category, so the lookup
+     * happens here.
+     *
+     * @return the drawn label for this mode's selector row
+     */
     @Override
-    public String labelKey() {
-        return labelKey;
+    public String resolveLabelText() {
+        return KmuStrings.get(labelKey);
     }
 
     /**

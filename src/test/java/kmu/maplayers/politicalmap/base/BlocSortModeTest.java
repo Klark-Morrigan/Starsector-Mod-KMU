@@ -1,7 +1,8 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmu.maplayers.base.sidebar.ListSort;
-import kmu.maplayers.base.sidebar.SortDirection;
+import kmlib.starsector.ui.widgets.lists.ListSort;
+import kmlib.starsector.ui.widgets.lists.SortDirection;
+
 import kmu.maplayers.base.sidebar.SortSelection;
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 
