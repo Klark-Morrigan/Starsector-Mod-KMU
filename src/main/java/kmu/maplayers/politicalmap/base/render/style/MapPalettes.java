@@ -8,7 +8,7 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import java.awt.Color;
@@ -34,7 +34,7 @@ public final class MapPalettes {
      * all recolour off one decision rather than three copies of it.
      */
     public static FactionPalette resolveEffectivePalette(
-            BlocStyleAdjustment adjustment,
+            ElementStyleAdjustment adjustment,
             DominantHolder holder,
             FactionPalette desaturationPalette) {
         return resolveEffectivePalette(
@@ -54,10 +54,10 @@ public final class MapPalettes {
      * single rule no matter what the un-desaturated shades came from.
      */
     public static FactionPalette resolveEffectivePalette(
-            BlocStyleAdjustment adjustment,
+            ElementStyleAdjustment adjustment,
             FactionPalette ownPalette,
             FactionPalette desaturationPalette) {
-        return adjustment.desaturate()
+        return adjustment.shouldDesaturate()
             ? desaturationPalette
             : ownPalette;
     }

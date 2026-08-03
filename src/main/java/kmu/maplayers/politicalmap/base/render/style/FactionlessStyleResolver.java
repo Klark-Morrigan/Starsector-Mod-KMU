@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 
 import java.util.Set;
 
@@ -52,16 +52,16 @@ public final class FactionlessStyleResolver {
      *
      * @param category   the category the ground draws in
      * @param passRecede the recede every non-spotlighted bloc takes this pass, which is
-     *                   {@link BlocStyleAdjustment#NONE} off filter - so an unfiltered map draws
+     *                   {@link ElementStyleAdjustment#NONE} off filter - so an unfiltered map draws
      *                   its dead worlds untouched
      * @return the adjustment this ground draws under
      */
-    public static BlocStyleAdjustment resolveRecedeOf(
+    public static ElementStyleAdjustment resolveRecedeOf(
             PoliticalMapCategory category,
-            BlocStyleAdjustment passRecede) {
+            ElementStyleAdjustment passRecede) {
 
         return category == PoliticalMapCategory.DECIVILISED
             ? passRecede
-            : BlocStyleAdjustment.NONE;
+            : ElementStyleAdjustment.NONE;
     }
 }

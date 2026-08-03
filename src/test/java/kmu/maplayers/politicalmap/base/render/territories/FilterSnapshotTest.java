@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ final class FilterSnapshotTest {
             // filter at all; an empty contested set means no cell hatches.
             var snapshot = FilterSnapshot.unfiltered();
 
-            assertThat(snapshot.recedeAdjustment()).isEqualTo(BlocStyleAdjustment.NONE);
+            assertThat(snapshot.recedeAdjustment()).isEqualTo(ElementStyleAdjustment.NONE);
             assertThat(snapshot.contestedSystemIds()).isEmpty();
         }
     }
@@ -45,7 +45,7 @@ final class FilterSnapshotTest {
 
         @Test
         void isFilteringIsTrueWhenABlocIsSelected() {
-            var snapshot = new FilterSnapshot("hegemony", BlocStyleAdjustment.NONE, Set.of());
+            var snapshot = new FilterSnapshot("hegemony", ElementStyleAdjustment.NONE, Set.of());
 
             assertThat(snapshot.isFiltering()).isTrue();
         }

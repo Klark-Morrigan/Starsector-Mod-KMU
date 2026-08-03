@@ -6,6 +6,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -279,7 +280,7 @@ final class RecedePreferencesTest {
                 stubToggles(memoryAccessMock, settingsMock, true, MUTED_MODIFIER, false);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment())
-                        .isEqualTo(new BlocStyleAdjustment(MUTED_MODIFIER, false));
+                        .isEqualTo(new ElementStyleAdjustment(MUTED_MODIFIER, false));
             }
         }
 
@@ -292,7 +293,7 @@ final class RecedePreferencesTest {
                 stubToggles(memoryAccessMock, settingsMock, false, MUTED_MODIFIER, true);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment())
-                        .isEqualTo(new BlocStyleAdjustment(1.0, true));
+                        .isEqualTo(new ElementStyleAdjustment(1.0, true));
             }
         }
 
@@ -305,7 +306,7 @@ final class RecedePreferencesTest {
                 stubToggles(memoryAccessMock, settingsMock, true, MUTED_MODIFIER, true);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment())
-                        .isEqualTo(new BlocStyleAdjustment(MUTED_MODIFIER, true));
+                        .isEqualTo(new ElementStyleAdjustment(MUTED_MODIFIER, true));
             }
         }
 
@@ -318,7 +319,7 @@ final class RecedePreferencesTest {
                 stubToggles(memoryAccessMock, settingsMock, false, MUTED_MODIFIER, false);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment())
-                        .isEqualTo(BlocStyleAdjustment.NONE);
+                        .isEqualTo(ElementStyleAdjustment.NONE);
             }
         }
 

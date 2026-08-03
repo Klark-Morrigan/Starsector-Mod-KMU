@@ -7,10 +7,10 @@ import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -74,7 +74,7 @@ public final class PoliticalMapTerritoryFixtures {
                 HolderGrouping.identity()),
             new FilterSnapshot(
                 null, // No selected bloc ID.
-                BlocStyleAdjustment.NONE, // No recede adjustment.
+                ElementStyleAdjustment.NONE, // No recede adjustment.
                 new LinkedHashSet<>())); // No contested system IDs.
     }
 

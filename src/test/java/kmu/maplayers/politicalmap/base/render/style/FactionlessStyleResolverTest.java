@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ final class FactionlessStyleResolverTest {
     @Nested
     class ResolveRecedeOf {
 
-        private static final BlocStyleAdjustment PASS_RECEDE = new BlocStyleAdjustment(0.5, true);
+        private static final ElementStyleAdjustment PASS_RECEDE = new ElementStyleAdjustment(0.5, true);
 
         @Test
         void resolveRecedeOfGivesDecivilisedGroundThePassRecede() {
@@ -63,7 +63,7 @@ final class FactionlessStyleResolverTest {
             // drawn over it.
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
                     PoliticalMapCategory.UNINHABITED, PASS_RECEDE))
-                    .isEqualTo(BlocStyleAdjustment.NONE);
+                    .isEqualTo(ElementStyleAdjustment.NONE);
         }
 
         @Test
@@ -71,8 +71,8 @@ final class FactionlessStyleResolverTest {
             // Off filter the pass's recede is the identity, so the rule is a no-op rather than a
             // path that has to be gated on whether a filter is active.
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
-                    PoliticalMapCategory.DECIVILISED, BlocStyleAdjustment.NONE))
-                    .isEqualTo(BlocStyleAdjustment.NONE);
+                    PoliticalMapCategory.DECIVILISED, ElementStyleAdjustment.NONE))
+                    .isEqualTo(ElementStyleAdjustment.NONE);
         }
     }
 }

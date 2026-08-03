@@ -10,9 +10,9 @@ import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.RenderStyle;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -361,9 +361,9 @@ public final class PoliticalMapTerritories implements
     }
 
     // The styling every non-spotlighted bloc recedes to this pass - and, through
-    // FactionlessStyleResolver, decivilised ground with it; BlocStyleAdjustment.NONE off filter,
+    // FactionlessStyleResolver, decivilised ground with it; ElementStyleAdjustment.NONE off filter,
     // so anything no filter recedes draws untouched.
-    public BlocStyleAdjustment getRecedeAdjustment() {
+    public ElementStyleAdjustment getRecedeAdjustment() {
         return filter.recedeAdjustment();
     }
 

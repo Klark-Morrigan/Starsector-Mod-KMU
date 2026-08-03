@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -107,12 +108,12 @@ public interface PoliticalMapView {
     boolean shouldUseIndependentStyle(
         String blocId,
         HolderGrouping grouping,
-        BlocStyleAdjustment adjustment);
+        ElementStyleAdjustment adjustment);
 
     /**
      * How a bloc's fills, borders, and name are dimmed or recoloured before the pipeline
      * paints it, applied uniformly wherever the style classification is read. The faction
-     * view never adjusts a bloc ({@link BlocStyleAdjustment#NONE}); the alliances view dims
+     * view never adjusts a bloc ({@link ElementStyleAdjustment#NONE}); the alliances view dims
      * and/or desaturates every non-alliance bloc when the player has asked it to, leaving
      * alliances untouched. Resolving it here lets the pipeline apply the two knobs without
      * knowing why a view wanted them, mirroring the {@link #shouldUseIndependentStyle} seam.
@@ -120,10 +121,10 @@ public interface PoliticalMapView {
      * @param blocId   the winning bloc for a system, as resolved under {@code grouping}
      * @param grouping the grouping this pass resolved, so the decision is a pure lookup over
      *                 the once-sampled snapshot rather than a fresh read
-     * @return the per-bloc styling adjustment; {@link BlocStyleAdjustment#NONE} to draw the
+     * @return the per-bloc styling adjustment; {@link ElementStyleAdjustment#NONE} to draw the
      *         bloc exactly as classified
      */
-    BlocStyleAdjustment resolveBlocStyleAdjustment(String blocId, HolderGrouping grouping);
+    ElementStyleAdjustment resolveBlocStyleAdjustment(String blocId, HolderGrouping grouping);
 
     /**
      * The label a bloc reads under this view: a faction's display name for a faction

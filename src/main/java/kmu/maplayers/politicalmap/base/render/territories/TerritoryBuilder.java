@@ -13,7 +13,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.sidebar.FilterSelection;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -121,7 +121,7 @@ public final class TerritoryBuilder {
             // identity adjustment off filter, so a normal pass touches no bloc.
             var recedeAdjustment = isFiltering
                 ? RecedePreferences.FILTER.resolveRecedeAdjustment()
-                : BlocStyleAdjustment.NONE;
+                : ElementStyleAdjustment.NONE;
 
             var territories = new PoliticalMapTerritories(
                 ownerBySystemId,

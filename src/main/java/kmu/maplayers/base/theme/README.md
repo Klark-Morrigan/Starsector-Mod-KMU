@@ -1,14 +1,16 @@
 # The theme records (`base.theme`)
 
 The player's authored choices, as value types: what the player picked, held in the shape the rest
-of the map reads it in. Everything here is a record apart from three interfaces. Two are places a
+of the map reads it in - plus `ElementStyleAdjustment`, the one value here a rebuild decides rather
+than the player, laid over a style to push an element into the background. Everything here is a
+record apart from three interfaces. Two are places a
 layer's own vocabulary plugs in rather than types this package populates: `MapStyleCategory`, the
 key the per-category bundles are held under, and `ElementPaintSelection`, the colour pick an
 element carries. The third, `HatchStroke`, is sealed over this package's own records - see
 [the two tiers](#the-two-tiers). What little behaviour the records carry answers only from their
-own components - `ElementStyle.isDrawn`, `RenderStyle.categoryStyle`, and the per-layer width and
-alpha `HoverGlowStyle` derives from its stack and pulse. None of it reads a setting, resolves a
-colour, or touches geometry.
+own components - `ElementStyle.isDrawn`, `RenderStyle.categoryStyle`, `ElementStyleAdjustment`'s
+union and mute, and the per-layer width and alpha `HoverGlowStyle` derives from its stack and
+pulse. None of it reads a setting, resolves a colour, or touches geometry.
 
 A leaf of the framework rather than of any one layer: the *tiers* describe how a map is styled -
 sector-wide knobs plus one bundle per category - and say nothing about what a bundle is painting.
@@ -28,6 +30,7 @@ Part of [the map-layer framework](../../README.md); see the
 
 - [The two tiers](#the-two-tiers)
 - [The element unit](#the-element-unit)
+- [The adjustment](#the-adjustment)
 - [What is not here](#what-is-not-here)
 
 ## The two tiers
@@ -70,6 +73,23 @@ Widths stay outside it, on `CategoryStyle` - only the two borders have one.
 The selection is the player's *unresolved* pick, which is the whole of what the noun buys: it is
 resolved against a cluster's actual shades late, at draw time, because one bundle serves many
 clusters. That resolution is not here; see below.
+
+## The adjustment
+
+`ElementStyleAdjustment` is the second axis on the same unit: an opacity multiplier and a
+desaturate flag, applied on top of whatever the style says so the draw code can push an element
+into the background without knowing why it was asked to. It is a separate record rather than more
+components on `ElementStyle` because the two have different lifetimes - a style is what the player
+authored and outlives a rebuild, an adjustment is what one rebuild decided about one subject.
+
+`NONE` is the identity, and `mergeRecede` is the union: the strongest mute and the OR of
+desaturate. Combining multiplicatively would over-dim a subject every extra reason applies, so the
+union is what keeps a subject receding for two reasons dimming once, and what makes folding a
+reason in twice a no-op. That rule is here rather than at each site precisely because it is easy to
+get subtly wrong and there is no reason for two callers to answer it differently.
+
+*Why* a subject recedes stays with whoever has the reason - this tier owns only the shape and the
+combination rule.
 
 ## What is not here
 

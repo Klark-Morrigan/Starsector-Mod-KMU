@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.RenderStyle;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 
 /**
  * The concrete style one bloc draws under this pass: the category bundle it paints from,
@@ -19,7 +19,7 @@ import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
  */
 public record BlocStyling(
     CategoryStyle style,
-    BlocStyleAdjustment adjustment) {
+    ElementStyleAdjustment adjustment) {
 
     /**
      * Maps a resolved decision onto the pass's theme: the independent bundle when the decision
@@ -54,9 +54,9 @@ public record BlocStyling(
     private static CategoryStyle applyDesaturatedFillOpacity(
             CategoryStyle independentStyle,
             CategoryStyle factionStyle,
-            BlocStyleAdjustment adjustment) {
+            ElementStyleAdjustment adjustment) {
 
-        if (!adjustment.desaturate()) {
+        if (!adjustment.shouldDesaturate()) {
             return independentStyle;
         }
         return new CategoryStyle(

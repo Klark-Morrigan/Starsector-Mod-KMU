@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.base.theme.CategoryStyle;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
@@ -44,7 +44,7 @@ public final class BlocStyleResolver {
             String blocId,
             PoliticalMapView view,
             HolderGrouping grouping,
-            BlocStyleAdjustment recedeAdjustment) {
+            ElementStyleAdjustment recedeAdjustment) {
 
         if (isFiltering) {
             var isSpotlit = FilteredPolitics.isSpotlitBloc(blocId);
@@ -71,12 +71,12 @@ public final class BlocStyleResolver {
      * the alliances view - does not mute a second time when the filter recedes it too. Pure over
      * its inputs so the rule pins without geometry.
      */
-    public static BlocStyleAdjustment resolveFilterAdjustment(
+    public static ElementStyleAdjustment resolveFilterAdjustment(
             boolean isSpotlit,
-            BlocStyleAdjustment viewAdjustment,
-            BlocStyleAdjustment recedeAdjustment) {
+            ElementStyleAdjustment viewAdjustment,
+            ElementStyleAdjustment recedeAdjustment) {
         return isSpotlit
-            ? BlocStyleAdjustment.NONE
+            ? ElementStyleAdjustment.NONE
             : viewAdjustment.mergeRecede(recedeAdjustment);
     }
 }

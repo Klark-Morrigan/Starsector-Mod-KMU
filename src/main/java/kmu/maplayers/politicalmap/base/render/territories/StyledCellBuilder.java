@@ -12,7 +12,7 @@ import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.VertexRuns;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
@@ -165,7 +165,7 @@ public final class StyledCellBuilder {
     private static UiElementPaint resolvePaintOf(
             ElementStyle element,
             FactionPalette palette,
-            BlocStyleAdjustment adjustment) {
+            ElementStyleAdjustment adjustment) {
 
         return new UiElementPaint(
             MapPalettes.pickPaletteColour(

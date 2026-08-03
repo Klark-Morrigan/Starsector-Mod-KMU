@@ -10,7 +10,7 @@ import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.base.labels.LabelFonts;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -128,7 +128,7 @@ final class ClusterLabelStyling {
             boolean isFiltering,
             PoliticalMapView view,
             HolderGrouping grouping,
-            BlocStyleAdjustment recedeAdjustment) {
+            ElementStyleAdjustment recedeAdjustment) {
 
         return memoisePerBlocId(blocId -> BlocStyleResolver.resolveBlocStyleDecision(
             isFiltering,

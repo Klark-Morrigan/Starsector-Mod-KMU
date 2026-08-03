@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.refresh.MapLayerRefresh;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -90,13 +90,13 @@ final class FactionsViewTest {
         @Test
         void shouldUseIndependentStyleIsTrueForIndependentSpace() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT, ANY_GROUPING, BlocStyleAdjustment.NONE)).isTrue();
+                    Factions.INDEPENDENT, ANY_GROUPING, ElementStyleAdjustment.NONE)).isTrue();
         }
 
         @Test
         void shouldUseIndependentStyleIsFalseForACoreFaction() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, BlocStyleAdjustment.NONE)).isFalse();
+                    "hegemony", ANY_GROUPING, ElementStyleAdjustment.NONE)).isFalse();
         }
 
         @Test
@@ -105,7 +105,7 @@ final class FactionsViewTest {
             // the independent borders and seams paired with the desaturation palette - the same
             // classification the alliances view makes for a desaturated non-allied bloc.
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, new BlocStyleAdjustment(0.3, true))).isTrue();
+                    "hegemony", ANY_GROUPING, new ElementStyleAdjustment(0.3, true))).isTrue();
         }
 
         @Test
@@ -113,7 +113,7 @@ final class FactionsViewTest {
             // Muting dims a bloc but does not desaturate it, so a merely muted faction keeps its
             // faction bundle: dimming alone never swaps border weight or the palette slot.
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, new BlocStyleAdjustment(0.3, false))).isFalse();
+                    "hegemony", ANY_GROUPING, new ElementStyleAdjustment(0.3, false))).isFalse();
         }
     }
 
@@ -125,9 +125,9 @@ final class FactionsViewTest {
             // The faction view adjusts no bloc - a core faction and independent space alike
             // draw exactly as classified, so the pipeline has nothing to dim or recolour.
             assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment("hegemony", ANY_GROUPING))
-                    .isEqualTo(BlocStyleAdjustment.NONE);
+                    .isEqualTo(ElementStyleAdjustment.NONE);
             assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
-                    Factions.INDEPENDENT, ANY_GROUPING)).isEqualTo(BlocStyleAdjustment.NONE);
+                    Factions.INDEPENDENT, ANY_GROUPING)).isEqualTo(ElementStyleAdjustment.NONE);
         }
     }
 

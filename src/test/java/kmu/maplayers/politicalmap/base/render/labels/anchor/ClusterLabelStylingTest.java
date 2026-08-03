@@ -4,7 +4,7 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
@@ -49,13 +49,13 @@ final class ClusterLabelStylingTest {
 
     // The two classifications under an identity adjustment, so a colour test names only the
     // branch it exercises.
-    private static final BlocStyleDecision FACTION_STYLED = factionStyled(BlocStyleAdjustment.NONE);
+    private static final BlocStyleDecision FACTION_STYLED = factionStyled(ElementStyleAdjustment.NONE);
     private static final BlocStyleDecision INDEPENDENT_STYLED =
-        new BlocStyleDecision(true, BlocStyleAdjustment.NONE);
+        new BlocStyleDecision(true, ElementStyleAdjustment.NONE);
 
     // A faction-styled bloc under a given recede, for the tests that vary the adjustment
     // rather than the classification.
-    private static BlocStyleDecision factionStyled(BlocStyleAdjustment adjustment) {
+    private static BlocStyleDecision factionStyled(ElementStyleAdjustment adjustment) {
         return new BlocStyleDecision(false, adjustment);
     }
 
@@ -213,7 +213,7 @@ final class ClusterLabelStylingTest {
             var colour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
                 nameStyles(FactionPaletteSlot.PRIMARY),
-                factionStyled(new BlocStyleAdjustment(HALF_OPACITY, false)),
+                factionStyled(new ElementStyleAdjustment(HALF_OPACITY, false)),
                 UNUSED_PALETTE);
 
             assertThat(colour.getAlpha())
@@ -229,7 +229,7 @@ final class ClusterLabelStylingTest {
             var colour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
                 nameStyles(FactionPaletteSlot.PRIMARY),
-                factionStyled(new BlocStyleAdjustment(FULL_OPACITY, true)),
+                factionStyled(new ElementStyleAdjustment(FULL_OPACITY, true)),
                 new FactionPalette(Color.GREEN, Color.YELLOW));
 
             assertThat(colour).isEqualTo(Color.GREEN);
@@ -256,7 +256,7 @@ final class ClusterLabelStylingTest {
             // the same recede - so the receded name never drifts from the receded fill. The recede
             // both mutes and desaturates, as a real filter recede can; the colour comparison reads
             // RGB, since the label additionally fades its alpha by the name opacity the fill omits.
-            var recede = new BlocStyleAdjustment(HALF_OPACITY, true);
+            var recede = new ElementStyleAdjustment(HALF_OPACITY, true);
             var desaturationPalette = new FactionPalette(Color.GREEN, Color.YELLOW);
 
             var labelColour = ClusterLabelStyling.resolveLabelColour(
@@ -298,7 +298,7 @@ final class ClusterLabelStylingTest {
             var resolver = ClusterLabelStyling.newLabelColourResolver(
                 Map.of("alpha", FACTION_F, "beta", FACTION_G),
                 nameStyles(FactionPaletteSlot.PRIMARY),
-                blocId -> new BlocStyleDecision(false, BlocStyleAdjustment.NONE),
+                blocId -> new BlocStyleDecision(false, ElementStyleAdjustment.NONE),
                 UNUSED_PALETTE);
 
             assertThat(resolver.apply("F")).isEqualTo(PRIMARY);
@@ -317,7 +317,7 @@ final class ClusterLabelStylingTest {
                     FactionPaletteSlot.SECONDARY,
                     FULL_OPACITY,
                     FULL_OPACITY),
-                blocId -> new BlocStyleDecision("F".equals(blocId), BlocStyleAdjustment.NONE),
+                blocId -> new BlocStyleDecision("F".equals(blocId), ElementStyleAdjustment.NONE),
                 UNUSED_PALETTE);
 
             assertThat(resolver.apply("F")).isEqualTo(SECONDARY);
@@ -334,7 +334,7 @@ final class ClusterLabelStylingTest {
                 nameStyles(FactionPaletteSlot.PRIMARY),
                 blocId -> {
                     askedBlocIds.add(blocId);
-                    return new BlocStyleDecision(false, BlocStyleAdjustment.NONE);
+                    return new BlocStyleDecision(false, ElementStyleAdjustment.NONE);
                 },
                 UNUSED_PALETTE);
 

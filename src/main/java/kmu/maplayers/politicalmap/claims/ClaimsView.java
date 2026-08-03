@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.hashing.Fingerprints;
 
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -78,7 +78,7 @@ public final class ClaimsView implements PoliticalMapView {
     public boolean shouldUseIndependentStyle(
             String blocId,
             HolderGrouping grouping,
-            BlocStyleAdjustment adjustment) {
+            ElementStyleAdjustment adjustment) {
         // A claimant bloc styles exactly as the faction view styles a held one, so an independent
         // claimant recedes to the muted style like independent ground; delegated so the two views
         // can never diverge on the classification.
@@ -86,7 +86,7 @@ public final class ClaimsView implements PoliticalMapView {
     }
 
     @Override
-    public BlocStyleAdjustment resolveBlocStyleAdjustment(
+    public ElementStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
             HolderGrouping grouping) {
         // The claims view dims or recolours no bloc, exactly as the faction view does not; delegated

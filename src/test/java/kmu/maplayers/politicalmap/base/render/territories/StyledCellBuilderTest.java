@@ -7,11 +7,11 @@ import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -50,7 +50,7 @@ final class StyledCellBuilderTest {
     // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
     private static PoliticalMapView viewMockDeciding(
             boolean usesIndependentStyle,
-            BlocStyleAdjustment adjustment) {
+            ElementStyleAdjustment adjustment) {
 
         var viewMock = mock(PoliticalMapView.class);
         
@@ -108,7 +108,7 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, false))),
+                drawablesWith(viewMockAdjusting(new ElementStyleAdjustment(0.5, false))),
                 SYSTEM_ID,
                 ownedCell());
 
@@ -121,7 +121,7 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemDesaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(1.0, true))),
+                drawablesWith(viewMockAdjusting(new ElementStyleAdjustment(1.0, true))),
                 SYSTEM_ID,
                 ownedCell());
 
@@ -134,7 +134,7 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemMutesAndDesaturatesTogetherWhenBothAreSet() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(new BlocStyleAdjustment(0.5, true))),
+                drawablesWith(viewMockAdjusting(new ElementStyleAdjustment(0.5, true))),
                 SYSTEM_ID,
                 ownedCell());
 
@@ -147,7 +147,7 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemLeavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
+                drawablesWith(viewMockAdjusting(ElementStyleAdjustment.NONE)),
                 SYSTEM_ID,
                 ownedCell());
 
@@ -164,7 +164,7 @@ final class StyledCellBuilderTest {
             // does not draw is a fact about its type rather than a hidden paint a reader has to
             // spot - and the seams it does draw are all it carries.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE)),
+                drawablesWith(viewMockAdjusting(ElementStyleAdjustment.NONE)),
                 SYSTEM_ID,
                 ownedCell());
 
@@ -181,7 +181,7 @@ final class StyledCellBuilderTest {
             // stub returns the identity adjustment, so seeing the recede applied proves the filter,
             // not the view, styled the cell.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                filteringDrawablesWith(new BlocStyleAdjustment(0.5, true)),
+                filteringDrawablesWith(new ElementStyleAdjustment(0.5, true)),
                 SYSTEM_ID,
                 ownedCell());
 
@@ -235,7 +235,7 @@ final class StyledCellBuilderTest {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 filteringFactionlessDrawablesWith(
                     filledOutlineStyle(),
-                    new BlocStyleAdjustment(0.5, true)),
+                    new ElementStyleAdjustment(0.5, true)),
                 DECIVILISED_SYSTEM_ID,
                 ownedCell());
 
@@ -257,7 +257,7 @@ final class StyledCellBuilderTest {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 filteringFactionlessDrawablesWith(
                     filledOutlineStyle(),
-                    new BlocStyleAdjustment(0.5, false)),
+                    new ElementStyleAdjustment(0.5, false)),
                 DECIVILISED_SYSTEM_ID,
                 ownedCell());
 
@@ -275,7 +275,7 @@ final class StyledCellBuilderTest {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 filteringFactionlessDrawablesWith(
                     filledOutlineStyle(),
-                    new BlocStyleAdjustment(0.5, true)),
+                    new ElementStyleAdjustment(0.5, true)),
                 "never-settled-system",
                 ownedCell());
 
@@ -378,7 +378,7 @@ final class StyledCellBuilderTest {
         // A view stub that paints in the full faction style (never independent) and
         // returns the given adjustment for any bloc, so each test names only the
         // adjustment it exercises.
-        private static PoliticalMapView viewMockAdjusting(BlocStyleAdjustment adjustment) {
+        private static PoliticalMapView viewMockAdjusting(ElementStyleAdjustment adjustment) {
             return viewMockDeciding(false, adjustment);
         }
 
@@ -393,7 +393,7 @@ final class StyledCellBuilderTest {
                     uninhabitedStyle,
                     ThemeFixtures.createInertGlobalStyle()),
                 null,
-                BlocStyleAdjustment.NONE);
+                ElementStyleAdjustment.NONE);
         }
 
         // A filtered pass over the factionless backdrop, receding by the given adjustment, with one
@@ -401,7 +401,7 @@ final class StyledCellBuilderTest {
         // the outcome and the styles themselves cannot account for it.
         private static PoliticalMapTerritories filteringFactionlessDrawablesWith(
                 CategoryStyle factionlessStyle,
-                BlocStyleAdjustment recede) {
+                ElementStyleAdjustment recede) {
             return factionlessDrawablesWith(
                 factionlessTheme(
                     factionlessStyle,
@@ -428,7 +428,7 @@ final class StyledCellBuilderTest {
                         CORNER_SEGMENTS,
                         NO_CHAMFER))),
                 null,
-                BlocStyleAdjustment.NONE);
+                ElementStyleAdjustment.NONE);
         }
 
         // The theme a factionless case reads: the two factionless bundles it is about over the
@@ -458,7 +458,7 @@ final class StyledCellBuilderTest {
         private static PoliticalMapTerritories factionlessDrawablesWith(
                 RenderStyle theme,
                 String selectedBlocId,
-                BlocStyleAdjustment recede) {
+                ElementStyleAdjustment recede) {
 
             return new PoliticalMapTerritories(
                 Map.of(),
@@ -469,7 +469,7 @@ final class StyledCellBuilderTest {
                     FACTIONLESS_NEUTRAL,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
                 new ViewGrouping(
-                    viewMockAdjusting(BlocStyleAdjustment.NONE),
+                    viewMockAdjusting(ElementStyleAdjustment.NONE),
                     HolderGrouping.identity()),
                 new FilterSnapshot(
                     selectedBlocId,
@@ -531,14 +531,14 @@ final class StyledCellBuilderTest {
         // An un-filtered pass over one owned system, styled by the given view stub - the backdrop
         // the view-driven adjustment tests read.
         private static PoliticalMapTerritories drawablesWith(PoliticalMapView viewMock) {
-            return drawablesWith(viewMock, false, BlocStyleAdjustment.NONE);
+            return drawablesWith(viewMock, false, ElementStyleAdjustment.NONE);
         }
 
         // A filtered pass whose recede is the given adjustment, backed by a view stub that would
         // return the identity adjustment if consulted - so a recede in the output can only have
         // come from the filter mode bypassing the view.
-        private static PoliticalMapTerritories filteringDrawablesWith(BlocStyleAdjustment recede) {
-            return drawablesWith(viewMockAdjusting(BlocStyleAdjustment.NONE), true, recede);
+        private static PoliticalMapTerritories filteringDrawablesWith(ElementStyleAdjustment recede) {
+            return drawablesWith(viewMockAdjusting(ElementStyleAdjustment.NONE), true, recede);
         }
 
         // The one owned system every adjustment test shares over a fixed style/palette backdrop;
@@ -546,7 +546,7 @@ final class StyledCellBuilderTest {
         private static PoliticalMapTerritories drawablesWith(
                 PoliticalMapView viewMock,
                 boolean isFiltering,
-                BlocStyleAdjustment recede) {
+                ElementStyleAdjustment recede) {
 
             // A filtered pass carries the selected bloc's id; the fixture's holder is never that
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.

@@ -8,7 +8,7 @@ import kmlib.colour.Colours;
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import org.junit.jupiter.api.Nested;
@@ -165,7 +165,7 @@ final class MapPalettesTest {
         @Test
         void resolveEffectivePaletteKeepsTheHoldersOwnShadesWhenTheAdjustmentDoesNotDesaturate() {
             var palette = MapPalettes.resolveEffectivePalette(
-                new BlocStyleAdjustment(0.5, false),
+                new ElementStyleAdjustment(0.5, false),
                 OWNER,
                 DESATURATION);
 
@@ -178,7 +178,7 @@ final class MapPalettesTest {
             // Muting is orthogonal: the multiplier scales opacity elsewhere and never touches
             // which two shades are painted.
             var palette = MapPalettes.resolveEffectivePalette(
-                new BlocStyleAdjustment(1.0, true),
+                new ElementStyleAdjustment(1.0, true),
                 OWNER,
                 DESATURATION);
 
@@ -190,7 +190,7 @@ final class MapPalettesTest {
             // Ground with no holder recolours by the same rule: a receding decivilised cell leaves
             // its neutral pair for the desaturation palette rather than staying neutral.
             var palette = MapPalettes.resolveEffectivePalette(
-                new BlocStyleAdjustment(1.0, true),
+                new ElementStyleAdjustment(1.0, true),
                 NEUTRAL_PAIR,
                 DESATURATION);
 
@@ -200,7 +200,7 @@ final class MapPalettesTest {
         @Test
         void resolveEffectivePaletteKeepsUnownedNeutralShadesForTheNoneAdjustment() {
             var palette = MapPalettes.resolveEffectivePalette(
-                BlocStyleAdjustment.NONE,
+                ElementStyleAdjustment.NONE,
                 NEUTRAL_PAIR,
                 DESATURATION);
 

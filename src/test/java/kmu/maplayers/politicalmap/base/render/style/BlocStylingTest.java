@@ -2,10 +2,10 @@ package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ final class BlocStylingTest {
         void resolveFromPaintsFromTheFactionBundleWhenTheBlocDoesNotRecede() {
             var styling = BlocStyling.resolveFrom(
                 theme(),
-                new BlocStyleDecision(false, BlocStyleAdjustment.NONE));
+                new BlocStyleDecision(false, ElementStyleAdjustment.NONE));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(FACTION_FILL_OPACITY);
@@ -47,7 +47,7 @@ final class BlocStylingTest {
 
         @Test
         void resolveFromCarriesTheDecisionsAdjustmentThrough() {
-            var adjustment = new BlocStyleAdjustment(0.5, true);
+            var adjustment = new ElementStyleAdjustment(0.5, true);
 
             var styling = BlocStyling.resolveFrom(
                 theme(),
@@ -63,7 +63,7 @@ final class BlocStylingTest {
             // space still recedes behind faction ground.
             var styling = BlocStyling.resolveFrom(
                 theme(),
-                new BlocStyleDecision(true, BlocStyleAdjustment.NONE));
+                new BlocStyleDecision(true, ElementStyleAdjustment.NONE));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(INDEPENDENT_FILL_OPACITY);
@@ -75,7 +75,7 @@ final class BlocStylingTest {
             // surface reads uniform rather than splitting into two weights of grey.
             var styling = BlocStyling.resolveFrom(
                 theme(),
-                new BlocStyleDecision(true, new BlocStyleAdjustment(1.0, true)));
+                new BlocStyleDecision(true, new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(FACTION_FILL_OPACITY);
@@ -89,7 +89,7 @@ final class BlocStylingTest {
                 theme(),
                 new BlocStyleDecision(
                     true, // Uses independent style.
-                    new BlocStyleAdjustment(1.0, true)));
+                    new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().colour())
                 .isEqualTo(FactionPaletteSlot.SECONDARY);
@@ -103,7 +103,7 @@ final class BlocStylingTest {
                 theme(),
                 new BlocStyleDecision(
                     true, // Uses independent style.
-                    new BlocStyleAdjustment(1.0, true)));
+                    new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().innerWidth())
                 .isEqualTo(INDEPENDENT_INNER_WIDTH);

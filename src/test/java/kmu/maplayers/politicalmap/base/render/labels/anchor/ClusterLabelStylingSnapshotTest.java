@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmlib.starsector.factions.FactionPalette;
 
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -100,7 +100,7 @@ final class ClusterLabelStylingSnapshotTest {
     private static FilterSnapshot buildSpotlightFilter() {
         return new FilterSnapshot(
             SPOTLIT_BLOC_ID,
-            BlocStyleAdjustment.NONE,
+            ElementStyleAdjustment.NONE,
             Set.of("corvus"));
     }
 }

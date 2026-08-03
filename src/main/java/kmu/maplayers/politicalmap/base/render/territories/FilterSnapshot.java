@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 
 import java.util.Set;
 
@@ -16,14 +16,14 @@ import java.util.Set;
  */
 public record FilterSnapshot(
     String selectedBlocId,
-    BlocStyleAdjustment recedeAdjustment,
+    ElementStyleAdjustment recedeAdjustment,
     Set<String> contestedSystemIds) {
 
     // The inert default: nothing spotlighted, so nothing recedes and no system is contested.
     // Named here rather than spelt out at each pass that has no filter, so "off filter" is one
     // value every such pass shares and cannot get subtly wrong.
     public static FilterSnapshot unfiltered() {
-        return new FilterSnapshot(null, BlocStyleAdjustment.NONE, Set.of());
+        return new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of());
     }
 
     // A build spotlights a bloc exactly when one was selected, so the shared cell and faction

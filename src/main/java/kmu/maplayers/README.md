@@ -124,8 +124,9 @@ about what the overlay means.
   how it is drawn. What the name reads and what shade it takes arrive from the layer as functions
   of an owner, so the overlay names nothing itself.
 - **[The theme records](base/theme/README.md)** - the player's appearance choices as inert value
-  types, read once per rebuild. The per-category tier is keyed on an open interface, so a layer
-  brings its own categories and its own reader to populate them.
+  types, read once per rebuild, plus the `ElementStyleAdjustment` a rebuild lays over one of them
+  to recede an element. The per-category tier is keyed on an open interface, so a layer brings its
+  own categories and its own reader to populate them.
 - **`base/hover`** - what the cursor is over, and what the map says back. The values are
   `MapHover` (the hovered cell and the cluster around it), `MapHoverState` (the
   shared holder the map render pass publishes to and the later UI passes read, since only that pass

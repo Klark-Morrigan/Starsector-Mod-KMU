@@ -106,11 +106,13 @@ which composes both off one retained snapshot.
 
 ## What is not here
 
-*Muting and desaturation* are a separate, dynamic axis: a `BlocStyleAdjustment` applied on top of
-the resolved style, per bloc or per piece of ownerless ground. This layer owns the desaturation
-*mechanism* (the palette swap in `MapPalettes`) and the rule for which factionless ground it
-reaches (`FactionlessStyleResolver`); the *policy* of which bloc recedes and by how much lives one
-package up in `politicalmap.base` (`RecedePreferences` and the views). *Baking* the resolved style into the draw
+*Muting and desaturation* are a separate, dynamic axis: an `ElementStyleAdjustment` applied on top
+of the resolved style, per bloc or per piece of ownerless ground. The adjustment itself - the pair
+of knobs and the rule for unioning two of them - is the framework's, in
+[`base.theme`](../../../../base/theme/README.md); this layer owns the desaturation *mechanism* (the
+palette swap in `MapPalettes`) and the rule for which factionless ground it reaches
+(`FactionlessStyleResolver`); the *policy* of which bloc recedes and by how much lives one package
+up in `politicalmap.base` (`RecedePreferences` and the views). *Baking* the resolved style into the draw
 packets is [`render.territories`](../territories/README.md) - its `StyledCellBuilder` and
 `FactionTerritoryBuilder`. What makes the "once per map rebuild" above actually happen - which
 settings change is noticed, and how it reaches this layer - is

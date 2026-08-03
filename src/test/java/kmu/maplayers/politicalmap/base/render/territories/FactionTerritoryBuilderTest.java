@@ -7,7 +7,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -476,7 +476,7 @@ final class FactionTerritoryBuilderTest {
                 Color.GRAY,
                 new FactionPalette(Color.GREEN, Color.YELLOW)),
             new ViewGrouping(viewMockAdjustingNothing(), HolderGrouping.identity()),
-            new FilterSnapshot(null, BlocStyleAdjustment.NONE, Set.of()));
+            new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of()));
     }
 
     // A view stub that styles every bloc as its own faction and recedes none of them, so the
@@ -488,7 +488,7 @@ final class FactionTerritoryBuilderTest {
             .thenReturn(false);
 
         when(viewMock.resolveBlocStyleAdjustment(any(), any()))
-            .thenReturn(BlocStyleAdjustment.NONE);
+            .thenReturn(ElementStyleAdjustment.NONE);
 
         return viewMock;
     }

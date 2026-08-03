@@ -7,12 +7,13 @@ import kmlib.starsector.memory.SectorMemoryFlag;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.settings.KmuLunaSettings;
 
 /**
  * One receding context's per-save state: whether its background ground is muted (dimmed) and whether
  * it is desaturated (recoloured to the desaturation profile), plus how those two toggles resolve into
- * a receded bloc's {@link BlocStyleAdjustment}. It is instantiable so each context that recedes ground
+ * a receded bloc's {@link ElementStyleAdjustment}. It is instantiable so each context that recedes ground
  * owns its own toggle set rather than sharing one - the filter recede (the "rest of the sector" behind
  * a spotlight) and the alliances view's non-allied recede are separate grounds a player tunes
  * independently, so each holds its own instance over its own memory keys. Within one instance the two
@@ -122,12 +123,12 @@ public final class RecedePreferences {
     /**
      * Resolves how a bloc this set recedes draws under the current toggles: Mute scales its opacity by
      * the modifier (0 hides it, 1 leaves it), Desaturate recolours it, and the two combine. Both off is
-     * {@link BlocStyleAdjustment#NONE}, so a bloc this set does not recede draws untouched.
+     * {@link ElementStyleAdjustment#NONE}, so a bloc this set does not recede draws untouched.
      *
      * @return the styling every bloc this set recedes takes this pass, resolved in one place so the
      *         recede reads the same in every context that applies this set
      */
-    public BlocStyleAdjustment resolveRecedeAdjustment() {
+    public ElementStyleAdjustment resolveRecedeAdjustment() {
         // Mute scales by the Luna modifier reading, not a constant, so the screen knob tunes how far a
         // receded bloc dims; unread while Mute is off, which leaves opacity untouched at 1. The getter
         // keeps its shipped "alliance" spelling - a frozen LunaLib field id shared by every set, not a
@@ -135,7 +136,7 @@ public final class RecedePreferences {
         double opacityMultiplier = isMuted()
             ? KmuLunaSettings.getPoliticalMapAllianceMutedOpacityModifier()
             : 1.0;
-        return new BlocStyleAdjustment(opacityMultiplier, isDesaturated());
+        return new ElementStyleAdjustment(opacityMultiplier, isDesaturated());
     }
 
     /**

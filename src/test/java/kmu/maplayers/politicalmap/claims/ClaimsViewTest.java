@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.refresh.MapLayerRefresh;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
@@ -98,7 +98,7 @@ final class ClaimsViewTest {
             // Delegated to the faction view: an independent claimant recedes to the muted style like
             // independent ground.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT, ANY_GROUPING, BlocStyleAdjustment.NONE)).isTrue();
+                    Factions.INDEPENDENT, ANY_GROUPING, ElementStyleAdjustment.NONE)).isTrue();
         }
 
         @Test
@@ -106,7 +106,7 @@ final class ClaimsViewTest {
             // A held claimant faction paints in full faction style, exactly as the faction view draws
             // it.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, BlocStyleAdjustment.NONE)).isFalse();
+                    "hegemony", ANY_GROUPING, ElementStyleAdjustment.NONE)).isFalse();
         }
 
         @Test
@@ -115,7 +115,7 @@ final class ClaimsViewTest {
             // desaturated takes the independent style, so passing a desaturating adjustment (rather
             // than NONE) flips the result - pinning that the arg is forwarded, not dropped.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, new BlocStyleAdjustment(0.3, true))).isTrue();
+                    "hegemony", ANY_GROUPING, new ElementStyleAdjustment(0.3, true))).isTrue();
         }
     }
 
@@ -127,9 +127,9 @@ final class ClaimsViewTest {
             // The claims view adjusts no bloc, delegating the faction view's decision that a claimant
             // and independent space alike draw exactly as classified.
             assertThat(ClaimsView.INSTANCE.resolveBlocStyleAdjustment("hegemony", ANY_GROUPING))
-                    .isEqualTo(BlocStyleAdjustment.NONE);
+                    .isEqualTo(ElementStyleAdjustment.NONE);
             assertThat(ClaimsView.INSTANCE.resolveBlocStyleAdjustment(
-                    Factions.INDEPENDENT, ANY_GROUPING)).isEqualTo(BlocStyleAdjustment.NONE);
+                    Factions.INDEPENDENT, ANY_GROUPING)).isEqualTo(ElementStyleAdjustment.NONE);
         }
     }
 

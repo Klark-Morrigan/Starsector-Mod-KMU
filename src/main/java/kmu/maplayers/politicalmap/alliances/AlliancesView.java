@@ -9,8 +9,8 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
@@ -95,7 +95,7 @@ public final class AlliancesView implements PoliticalMapView {
     public boolean shouldUseIndependentStyle(
             String blocId,
             HolderGrouping grouping,
-            BlocStyleAdjustment adjustment) {
+            ElementStyleAdjustment adjustment) {
 
         // Genuine independent space always takes the independent style, exactly as the faction view
         // classifies it. A non-allied faction takes it too once it desaturates: desaturation means
@@ -114,11 +114,11 @@ public final class AlliancesView implements PoliticalMapView {
         // filter recede desaturates painted grey but still in the faction bundle, and flipping this
         // view's toggle would then appear to change nothing but the border weight.
         return Factions.INDEPENDENT.equals(blocId)
-            || (!grouping.isAlliance(blocId) && adjustment.desaturate());
+            || (!grouping.isAlliance(blocId) && adjustment.shouldDesaturate());
     }
 
     @Override
-    public BlocStyleAdjustment resolveBlocStyleAdjustment(
+    public ElementStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
             HolderGrouping grouping) {
 
@@ -128,7 +128,7 @@ public final class AlliancesView implements PoliticalMapView {
         // the gate here (like the grouping already samples Nex) leaves the pipeline a pure applier
         // that never names an alliance.
         if (grouping.isAlliance(blocId)) {
-            return BlocStyleAdjustment.NONE;
+            return ElementStyleAdjustment.NONE;
         }
         return RecedePreferences.ALLIANCE_NON_ALLIED.resolveRecedeAdjustment();
     }

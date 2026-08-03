@@ -16,8 +16,8 @@ import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.labels.anchor.specifications.LeanScoring;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -192,7 +192,7 @@ final class ClusterAnchorsBuilderTest {
         when(viewMock.resolveGrouping())
             .thenReturn(HolderGrouping.identity());
         when(viewMock.resolveBlocStyleAdjustment(any(), any()))
-            .thenReturn(BlocStyleAdjustment.NONE);
+            .thenReturn(ElementStyleAdjustment.NONE);
 
         when(geometryCacheMock.getCellEdgesByCellId())
             .thenReturn(EDGES);
@@ -274,7 +274,7 @@ final class ClusterAnchorsBuilderTest {
                     new ViewGrouping(viewMock, HolderGrouping.identity()),
                     new FilterSnapshot(
                         HEGEMONY,
-                        new BlocStyleAdjustment(FULL_OPACITY, true),
+                        new ElementStyleAdjustment(FULL_OPACITY, true),
                         Set.of())));
 
             assertThat(anchors.get(0).colour())

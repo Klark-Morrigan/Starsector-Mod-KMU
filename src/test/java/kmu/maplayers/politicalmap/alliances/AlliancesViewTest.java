@@ -12,7 +12,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -137,15 +137,15 @@ final class AlliancesViewTest {
         // The two adjustments the style test discriminates on: one that desaturates the bloc and one
         // that only dims it. The mute multiplier is arbitrary - the test proves only desaturation
         // moves the bundle.
-        private static final BlocStyleAdjustment DESATURATED = new BlocStyleAdjustment(0.3, true);
-        private static final BlocStyleAdjustment MUTED_ONLY = new BlocStyleAdjustment(0.3, false);
+        private static final ElementStyleAdjustment DESATURATED = new ElementStyleAdjustment(0.3, true);
+        private static final ElementStyleAdjustment MUTED_ONLY = new ElementStyleAdjustment(0.3, false);
 
         @Test
         void shouldUseIndependentStyleIsTrueForIndependentSpace() {
             // Genuine independent space always takes the independent style, exactly as the faction
             // view classifies it - short-circuiting before the adjustment is even read.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT, ALLIANCE_GROUPING, BlocStyleAdjustment.NONE)).isTrue();
+                    Factions.INDEPENDENT, ALLIANCE_GROUPING, ElementStyleAdjustment.NONE)).isTrue();
         }
 
         @Test
@@ -161,7 +161,7 @@ final class AlliancesViewTest {
             // Undesaturated, a non-allied faction keeps its own faction style, so it reads exactly as
             // the faction view draws it.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ALLIANCE_GROUPING, BlocStyleAdjustment.NONE)).isFalse();
+                    "hegemony", ALLIANCE_GROUPING, ElementStyleAdjustment.NONE)).isFalse();
         }
 
         @Test
@@ -190,7 +190,7 @@ final class AlliancesViewTest {
         // The muted modifier and the two toggles the non-allied recede set is driven to, so a test
         // proves the view returns exactly what that set resolves rather than composing its own.
         private static final double MUTED_MODIFIER = 0.3;
-        private static final BlocStyleAdjustment RECEDED = new BlocStyleAdjustment(MUTED_MODIFIER, true);
+        private static final ElementStyleAdjustment RECEDED = new ElementStyleAdjustment(MUTED_MODIFIER, true);
 
         @Test
         void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocEvenWhenGroundRecedes() {
@@ -198,7 +198,7 @@ final class AlliancesViewTest {
             // recede set is consulted, so recede can never dim or desaturate an alliance - and no
             // memory is touched.
             assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                    "rebel_pact", ALLIANCE_GROUPING)).isEqualTo(BlocStyleAdjustment.NONE);
+                    "rebel_pact", ALLIANCE_GROUPING)).isEqualTo(ElementStyleAdjustment.NONE);
         }
 
         @Test

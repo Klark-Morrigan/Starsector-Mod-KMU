@@ -11,12 +11,12 @@ import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -92,7 +92,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.isFiltering())
                 .isFalse();
             assertThat(territories.getRecedeAdjustment())
-                .isEqualTo(BlocStyleAdjustment.NONE);
+                .isEqualTo(ElementStyleAdjustment.NONE);
             assertThat(territories.getContestedSystemIds())
                 .isEmpty();
         }
@@ -280,7 +280,7 @@ final class PoliticalMapTerritoriesTest {
             var grouping = HolderGrouping.identity();
 
             // A distinct, non-identity adjustment so a swapped recede field is caught by value.
-            var recedeAdjustment = new BlocStyleAdjustment(0.25, true);
+            var recedeAdjustment = new ElementStyleAdjustment(0.25, true);
 
             // A non-null selected bloc so the filter snapshot is caught by value and isFiltering()
             // reads true off it.

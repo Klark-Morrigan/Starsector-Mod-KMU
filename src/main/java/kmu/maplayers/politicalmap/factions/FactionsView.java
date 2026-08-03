@@ -7,8 +7,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.factions.FactionCrests;
 
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.politicalmap.base.BlocStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -71,7 +71,7 @@ public final class FactionsView implements PoliticalMapView {
     public boolean shouldUseIndependentStyle(
             String blocId,
             HolderGrouping grouping,
-            BlocStyleAdjustment adjustment) {
+            ElementStyleAdjustment adjustment) {
         // Genuine independent space always takes the independent style. A faction the recede has
         // desaturated takes it too: desaturation means "read as background ground", so the bloc
         // adopts the independent borders and seams paired with the desaturation palette the same
@@ -83,16 +83,16 @@ public final class FactionsView implements PoliticalMapView {
         // The test reads the passed adjustment - the filter recede already unioned in - not this
         // view's own toggle, so the border bundle and the desaturation palette can never disagree
         // about whether a bloc has desaturated.
-        return Factions.INDEPENDENT.equals(blocId) || adjustment.desaturate();
+        return Factions.INDEPENDENT.equals(blocId) || adjustment.shouldDesaturate();
     }
 
     @Override
-    public BlocStyleAdjustment resolveBlocStyleAdjustment(
+    public ElementStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
             HolderGrouping grouping) {
         // The faction view dims or recolours no bloc - every faction paints exactly as its
         // style classification says, so there is nothing for the pipeline to adjust.
-        return BlocStyleAdjustment.NONE;
+        return ElementStyleAdjustment.NONE;
     }
 
     @Override
