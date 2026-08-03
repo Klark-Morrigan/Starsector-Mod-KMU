@@ -642,16 +642,22 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
     private static final double DEFAULT_HATCH_WIDTH = 1.0;
 
-    // Per-triangle by default: the emission the hatch shipped with, so the merging joining is
-    // something a player opts into and the two can be compared against a fixed reference.
+    // Coalesced by default: a stroke that never leaves the cluster comes back as one primitive,
+    // which is what stops a wide aliased line restarting its stair-step phase mid-stroke. Per
+    // triangle stays selectable as the reference the merge is measured against.
     private static final HatchJoiningChoice DEFAULT_HATCH_JOINING =
-        HatchJoiningChoice.PER_TRIANGLE;
+        HatchJoiningChoice.COALESCED;
 
-    // A tenth of a percent of the spacing by default - four hundredths of a world unit at the
-    // default spacing, far below anything the eye reads as a break and far above the rounding
-    // two triangles could disagree by. Stored 0..100 in the CSV as a percentage, exposed as the
-    // fraction the hatch merge works in: the slider rounds a Double to two decimals, so a
-    // fraction authored directly would collapse to zero the moment it was dragged.
+    // A tenth of a percent of the spacing by default, which sits between two measured bounds
+    // rather than between two guessed ones. On a real sector the crossings the merge has to close
+    // disagree by around 1e-14 of the spacing - double rounding, not geometry - while the narrowest
+    // gap it must leave open, where a territory genuinely stops, is around 0.4 of it. Anywhere in
+    // that range works; this is far enough above the rounding to survive a coarser tessellation and
+    // still some four hundred times below the nearest real break.
+    //
+    // Stored 0..100 in the CSV as a percentage, exposed as the fraction the hatch merge works in:
+    // the slider rounds a Double to two decimals, so a fraction authored directly would collapse to
+    // zero the moment it was dragged.
     private static final double DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT = 0.1;
     private static final double HATCH_JOIN_TOLERANCE_PERCENT_PER_UNIT = 100.0;
 
