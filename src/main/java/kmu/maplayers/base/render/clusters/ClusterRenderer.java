@@ -14,7 +14,6 @@ import kmu.maplayers.base.theme.GlLineHatchStroke;
 
 import org.lwjgl.opengl.GL11;
 
-import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -52,6 +51,11 @@ public final class ClusterRenderer {
         if (drawLists.isEmpty() || alphaMult <= 0f) {
             return;
         }
+        // The three ambient values bundled once, here, so the passes below carry only what each of
+        // them varies. The public seam keeps the signature the terrain adapter hands it, so nothing
+        // outside this package learns the type.
+        var frame = new ClusterMapFrame(drawLists, factor, alphaMult);
+
         // Aliased: the fills and their borders are large filled shapes whose edges the map's own
         // scaling already softens, and smoothing every border run costs a blend per covered pixel
         // across the whole sector. The hatch does not inherit this - it opens a pass of its own,
@@ -70,10 +74,10 @@ public final class ClusterRenderer {
                     () -> {
                         profiler.measure(
                             "mapLayer.render.clusters.fills",
-                            () -> drawFills(drawLists, factor, alphaMult));
+                            () -> drawFills(frame));
                         profiler.measure(
                             "mapLayer.render.clusters.borders",
-                            () -> drawBorders(drawLists, factor, alphaMult));
+                            () -> drawBorders(frame));
                     });
             });
     }
@@ -88,21 +92,19 @@ public final class ClusterRenderer {
     // ground, and typically only one owner (the filter's spotlit bloc) carries a non-empty hatch
     // run at all. What the split buys is that the line state the hatch strokes under is set once
     // for the whole map rather than pushed and popped around every solid fill.
-    private static void drawFills(ClusterDrawLists drawLists, float factor, float alphaMult) {
-        drawSolidFills(drawLists, factor, alphaMult);
-        drawHatchedFills(drawLists, factor, alphaMult);
+    private static void drawFills(ClusterMapFrame frame) {
+        drawSolidFills(frame);
+        drawHatchedFills(frame);
     }
 
     // Fills every cluster an owner holds with that owner's resolved fill colour at its opacity,
     // then each lone cell that carries a fill of its own. Both are pre-tessellated triangle
     // soups, so a concave cluster (or one with an enclave) fills correctly and exactly matches
     // the stroked boundary.
-    private static void drawSolidFills(ClusterDrawLists drawLists, float factor, float alphaMult) {
+    private static void drawSolidFills(ClusterMapFrame frame) {
 
         drawEachClusterRun(
-            drawLists,
-            factor,
-            alphaMult,
+            frame,
             GL11.GL_TRIANGLES,
             StyledCluster::fillTriangles);
 
@@ -112,28 +114,26 @@ public final class ClusterRenderer {
         // fused cell is not reached at all: its fill is its cluster's, drawn above, so this pass
         // sees only the cells that have one.
         drawEachCellOfForm(
-            drawLists.getStyledCellByCellId().values(),
+            frame,
             LoneCell.class,
             lone -> emitIfVisible(
                 lone.fillPaint(),
-                alphaMult,
+                frame.alphaMult(),
                 () -> GlRuns.drawScaled(
                     GL11.GL_TRIANGLES,
                     lone.fillTriangles(),
-                    factor)));
+                    frame.factor())));
     }
 
     // Lays the hatch over the solid ground, in whichever way the theme's stroke says. The stroke
     // is the sector-wide choice of substrate, so it is resolved once for the whole pass rather
     // than per owner - the geometry underneath is the same runs either way, and only how they are
     // turned into pixels differs.
-    private static void drawHatchedFills(
-            ClusterDrawLists drawLists,
-            float factor,
-            float alphaMult) {
+    private static void drawHatchedFills(ClusterMapFrame frame) {
 
-        if (drawLists.getGlobalStyle().hatch().stroke() instanceof GlLineHatchStroke lineStroke) {
-            drawHatchAsGlLines(drawLists, factor, alphaMult, lineStroke);
+        var stroke = frame.drawLists().getGlobalStyle().hatch().stroke();
+        if (stroke instanceof GlLineHatchStroke lineStroke) {
+            drawHatchAsGlLines(frame, lineStroke);
         }
     }
 
@@ -141,11 +141,7 @@ public final class ClusterRenderer {
     // and width it strokes at are the hatch's own rather than whatever the surrounding fill pass
     // happened to leave in force. A cluster that fills solid carries an empty hatch run and so
     // costs this pass nothing beyond the colour bind its group already needs.
-    private static void drawHatchAsGlLines(
-            ClusterDrawLists drawLists,
-            float factor,
-            float alphaMult,
-            GlLineHatchStroke stroke) {
+    private static void drawHatchAsGlLines(ClusterMapFrame frame, GlLineHatchStroke stroke) {
 
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
@@ -153,9 +149,7 @@ public final class ClusterRenderer {
             () -> {
                 GL11.glLineWidth((float) stroke.widthPixels());
                 drawEachClusterRun(
-                    drawLists,
-                    factor,
-                    alphaMult,
+                    frame,
                     GL11.GL_LINES,
                     StyledCluster::hatchSegments);
             });
@@ -172,34 +166,36 @@ public final class ClusterRenderer {
     // sector costs one bind, not one per body. A hidden fill (UiElementPaint.isHidden) is skipped,
     // its geometry kept to shape its neighbours but never emitted.
     private static void drawEachClusterRun(
-            ClusterDrawLists drawLists,
-            float factor,
-            float alphaMult,
+            ClusterMapFrame frame,
             int primitiveMode,
             Function<StyledCluster, float[]> selectRun) {
 
-        for (var group : drawLists.getStyledClusterGroupByOwnerId().values()) {
+        for (var group : frame.drawLists().getStyledClusterGroupByOwnerId().values()) {
             emitIfVisible(
                 group.fill(),
-                alphaMult,
+                frame.alphaMult(),
                 () -> {
                     for (var cluster : group.clusters()) {
-                        GlRuns.drawScaled(primitiveMode, selectRun.apply(cluster), factor);
+                        GlRuns.drawScaled(
+                            primitiveMode,
+                            selectRun.apply(cluster),
+                            frame.factor());
                     }
             });
         }
     }
 
     // Draws one element of every cell of one form, skipping the cells of the other. Each pass over
-    // the cells names the form it draws and what it draws for it, rather than restating the walk and
-    // the narrowing - which is what keeps a later pass from being written over every cell and
-    // reaching for a part the form it meant does not have.
+    // the cells names the form it draws and what it draws for it, rather than restating the walk,
+    // the narrowing, and which of the frame's lists the cells come out of - which is what keeps a
+    // later pass from being written over every cell and reaching for a part the form it meant does
+    // not have.
     private static <T extends StyledCell> void drawEachCellOfForm(
-            Collection<StyledCell> cells,
+            ClusterMapFrame frame,
             Class<T> form,
             Consumer<T> drawCell) {
 
-        for (var cell : cells) {
+        for (var cell : frame.drawLists().getStyledCellByCellId().values()) {
             if (form.isInstance(cell)) {
                 drawCell.accept(form.cast(cell));
             }
@@ -226,53 +222,53 @@ public final class ClusterRenderer {
     // nothing invisible is emitted. Which cells each stroke reaches is the cell's own form rather
     // than a test here: a fused cell carries only seams and a lone cell only an outline, and a
     // cluster's boundary is its own loops in the cluster draw list.
-    private static void drawBorders(
-            ClusterDrawLists drawLists,
-            float factor,
-            float alphaMult) {
+    private static void drawBorders(ClusterMapFrame frame) {
 
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
         drawEachCellOfForm(
-            drawLists.getStyledCellByCellId().values(),
+            frame,
             FusedCell.class,
             fused -> emitIfVisible(
                 fused.seamPaint(),
-                alphaMult,
+                frame.alphaMult(),
                 () -> {
                     GL11.glLineWidth(fused.seamWidth());
-                    GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), factor);
+                    GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), frame.factor());
                 }));
 
         drawEachCellOfForm(
-            drawLists.getStyledCellByCellId().values(),
+            frame,
             LoneCell.class,
             lone -> emitIfVisible(
                 lone.outlinePaint(),
-                alphaMult,
+                frame.alphaMult(),
                 () -> {
                     GL11.glLineWidth(lone.outlineWidth());
-                    GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), factor);
+                    GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), frame.factor());
                 }));
 
         // The cluster boundaries in the owner's own style, over the interior seams so a boundary
         // dominates where they meet. Each loop is closed and already rounded, so it strokes as
         // one continuous GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges
         // use. Colour and width bind once per owner, as the fills do.
-        for (var group : drawLists.getStyledClusterGroupByOwnerId().values()) {
+        for (var group : frame.drawLists().getStyledClusterGroupByOwnerId().values()) {
             emitIfVisible(
                 group.border(),
-                alphaMult,
+                frame.alphaMult(),
                 () -> {
                     GL11.glLineWidth(group.borderWidth());
                     for (var cluster : group.clusters()) {
                         // The two are walked apart rather than through the cluster's own loop
                         // list, which would allocate one per cluster per frame; the stroke
                         // itself does not distinguish them.
-                        GlRuns.drawScaled(GL11.GL_LINE_LOOP, cluster.outerLoop(), factor);
+                        GlRuns.drawScaled(
+                            GL11.GL_LINE_LOOP,
+                            cluster.outerLoop(),
+                            frame.factor());
                         for (var enclaveLoop : cluster.enclaveLoops()) {
-                            GlRuns.drawScaled(GL11.GL_LINE_LOOP, enclaveLoop, factor);
+                            GlRuns.drawScaled(GL11.GL_LINE_LOOP, enclaveLoop, frame.factor());
                         }
                     }
             });
