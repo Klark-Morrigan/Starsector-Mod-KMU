@@ -130,7 +130,9 @@ A layer whose body carries a sortable, column-laid list needs somewhere to keep 
 ranked, wrapped, and filtered - and the widgets that change those choices. `SortSelection`,
 `ColumnSelection`, and `FilterSelection` are the stores, `SortDirection` is the
 ascending/descending value the first of them round-trips, and the sort and column models with
-their two selector controls sit beside them.
+their two selector controls sit beside them. `FilterPickerControl` is the picker those pieces
+compose into, `SelectableListItem` the seam its rows are drawn from, and `SelectableItemCache` the
+memo a layer holds its list in.
 
 The stores are leaves: they hold the raw stored keys and nothing that resolves one. What a
 filtered-to id points at stays with the layer that offers the choices, and a stored sort or
@@ -159,7 +161,26 @@ two-segment radio, inert on a re-pick. Both persist through the stores above.
 switching scopes neither clears nor cross-reads another's. Beyond the read, pick, and clear it
 heals a stored id a caller-supplied predicate no longer accepts (for a save whose selection stopped
 being on offer between sessions) and carries a pre-per-scope save's single shared slot into a scope
-slot on load.
+slot on load. Binding that predicate to a live source of what is selectable *now* is the reading
+layer's, since the source is exactly the knowledge these classes refuse.
+
+`FilterPickerControl` is the spotlight picker those pieces compose into: a section rule, the
+columns selector, a row pairing the sort selector with whatever the caller pairs beside it, then a
+deselectable icon-radio list wired straight to `FilterSelection` - so a pick spotlights a row and a
+re-pick clears the filter. Two things keep it layer-neutral. `SelectableListItem` is the seam its
+rows are drawn from - an id, a label, a crest, and nothing else - which a layer implements on its
+own item type, so the list ranks through the layer's own comparators and nothing is copied into a
+framework value on the way in. And the right half of the sort row is a parameter: pairing something
+with the sort is a layout decision this package can hold, but what sits there is not, and a layer
+with nothing to pair passes none.
+
+`SelectableItemCache` is where a layer holds the resolved list between frames. A body build runs
+twice a frame (render and hit-test) and a picker list is typically a full pass over whatever the
+layer scores its items from, so the list is rebuilt only when a caller-supplied revision moves.
+What belongs in that revision is the caller's judgement and is the whole of the invalidation
+contract; the key also carries the sector identity, weakly held, so a save reloaded in the same
+session recomputes rather than serving the previous save's items. [The caching
+notes](../../../../../../../docs/dev/caching.md) own that model in full.
 
 | Key | Holds |
 | --- | --- |
@@ -213,5 +234,7 @@ KMLib cannot know. The *layer roster and each screen's active pick*, including t
 behind them, are `base/layer`'s (`MapLayerRegistry`), summarised in
 [map layers](../../README.md). The *body composition* the panel lays out belongs to whichever
 layer is active - for the political map, [`politicalmap`](../../politicalmap/README.md) and its
-`base/sidebar` controls - though the sort and columns selectors a body embeds are this package's
-(see [Picker state](#picker-state)). Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.
+`base/sidebar` controls - though the spotlight picker a body embeds, and the sort and columns
+selectors within it, are this package's (see [Picker state](#picker-state)). What the political map
+keeps of its own there is what the picker refuses to know: which blocs are on offer, what
+invalidates that list, and the recede toggles it pairs with the sort. Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.

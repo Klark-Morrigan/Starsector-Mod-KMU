@@ -2,29 +2,21 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.sidebar.SelectableItemCache;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.settings.KmuLunaSettings;
 
-import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Objects;
 
 /**
- * Memoises the selected view's selectable-bloc list (each option's stats included) so the per-frame
- * sidebar draw reads a cache instead of re-walking the economy. The political-map tab resolves its
- * picker options every frame the map is open - twice a frame, for the render and the hit-test passes -
- * and each list is a full grouped dominance pass over the sector, so without a memo the picker would
- * rescan the whole economy several times a frame. The list changes only when the economy-weighting
- * settings or the view's live grouping change, so it is rebuilt only when that revision moves and the
- * per-frame path is otherwise an int compare.
- *
- * <p>Keyed on the sector identity as well, so a save reloaded in the same session - a fresh sector
- * whose settings and alliance counters happen to match the last - recomputes against the loaded
- * economy rather than serving the previous save's blocs. The held sector reference is weak, so a
- * cached sector never outlives its unload. The list is filter-independent - it lists every selectable
- * bloc, not which one is spotlighted - so the filter revision is deliberately absent from the key: a
- * pick or a clear moves the lit row without invalidating the list.
+ * What invalidates the political map's memoised picker list. The memo itself is the framework's
+ * {@link SelectableItemCache}; what this adds is the one thing the framework cannot know - which
+ * moving values a selectable-bloc list actually depends on, so a stale list is rebuilt and a live one
+ * is not. Each list is a full grouped dominance pass over the sector, and the picker resolves its
+ * options twice a frame the map is open, so getting that judgement right is what keeps the sidebar
+ * from rescanning the whole economy several times a frame.
  *
  * <p>The economy can drift between rebuild triggers (a colony resized without changing holder leaves
  * the settings and grouping revisions untouched), so a metric can lag until the next settings, view,
@@ -33,12 +25,9 @@ import java.util.Objects;
  */
 public final class SelectableBlocCache {
 
-    // The sector the memo was built against, held weakly so a cached sector never outlives its
-    // unload. Starts empty so the first resolve after class load always recomputes.
-    private static WeakReference<SectorAPI> cachedSector = new WeakReference<>(null);
-    private static String cachedViewId;
-    private static int cachedRevision;
-    private static List<SelectableBloc> cachedBlocs = List.of();
+    // One memo for the whole tab, not one per view: the picker draws a single view at a time, so a
+    // switch is a miss on the view id and the switched-in view's list replaces the previous one.
+    private static final SelectableItemCache<SelectableBloc> blocCache = new SelectableItemCache<>();
 
     private SelectableBlocCache() {
     }
@@ -56,18 +45,11 @@ public final class SelectableBlocCache {
             PoliticalMapView view,
             SectorAPI sector) {
 
-        var revision = computeRevision(view);
-
-        if (sector != cachedSector.get()
-                || !view.getId().equals(cachedViewId)
-                || revision != cachedRevision) {
-
-            cachedSector = new WeakReference<>(sector);
-            cachedViewId = view.getId();
-            cachedRevision = revision;
-            cachedBlocs = view.resolveSelectableBlocs(sector);
-        }
-        return cachedBlocs;
+        return blocCache.resolveItems(
+            sector,
+            view.getId(),
+            computeRevision(view),
+            () -> view.resolveSelectableBlocs(sector));
     }
 
     // The revision the memoised list is valid for: the economy-weighting settings (the dominance

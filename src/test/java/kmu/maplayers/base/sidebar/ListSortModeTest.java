@@ -18,7 +18,8 @@ final class ListSortModeTest {
 
         @Test
         void resolveTrailingValueDefaultsToBlankForAModeThatDeclaresNone() {
-            // The foreign fixture leaves the default in place, so its rows read as a plain list.
+            // The foreign fixture's severity mode leaves the default in place, so a list ranked by
+            // it reads as a plain one.
             assertThat(HazardSortMode.SEVERITY.resolveTrailingValue(new Hazard("Mild", 1, 5)))
                 .isEmpty();
         }

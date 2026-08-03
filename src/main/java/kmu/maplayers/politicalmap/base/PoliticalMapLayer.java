@@ -7,11 +7,12 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.render.MapLayerRenderer;
+import kmu.maplayers.base.sidebar.FilterPickerControl;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.sidebar.ListColumns;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
-import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
+import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
 import kmu.util.KmuStrings;
 
@@ -90,10 +91,6 @@ public final class PoliticalMapLayer implements MapLayer {
 
         if (selectedView != null) {
 
-            // The picker lists the selected view's own selectable blocs under the player's live
-            // dominance and dev-reveal settings; empty (no present bloc) contributes no picker. Read
-            // through the memo so this per-frame body build reads a cached list rather than re-walking
-            // the economy every frame the map is open.
             // The stored sort (mode and direction), resolved live so a save with no stored direction
             // reads the mode's natural order.
             var sort = BlocSortMode.resolveStoredSort();
@@ -103,13 +100,28 @@ public final class PoliticalMapLayer implements MapLayer {
             var columns = ListColumns.resolveStored();
             var viewId = selectedView.getId();
 
+            // The picker lists the selected view's own selectable blocs under the player's live
+            // dominance and dev-reveal settings; empty (no present bloc) contributes no picker. Read
+            // through the memo so this per-frame body build reads a cached list rather than re-walking
+            // the economy every frame the map is open.
+            //
+            // The framework picker composes the block; what pairs with its sort selector is this
+            // layer's to decide, and the political map pairs it with the filter recede - how the rest
+            // of the sector fades behind a spotlight. It is always shown: a change there simply has no
+            // visible effect until a bloc is spotlighted, so the knobs stay put whether or not a filter
+            // is active. It is the same reusable control the alliances view places under its own
+            // caption, here bound to the filter recede set rather than the non-allied one.
             controls.addAll(FilterPickerControl.buildControls(
                 viewId,
                 SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
                 FilterSelection.getSelectedIdOf(viewId),
                 sort,
-                columns));
-                
+                BlocSortMode.MODES,
+                columns,
+                RecedeControl.buildControls(
+                    RecedePreferences.FILTER,
+                    KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))));
+
             controls.addAll(selectedView.getViewBodyControls());
         }
         return List.copyOf(controls);

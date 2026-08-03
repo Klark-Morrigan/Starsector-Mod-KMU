@@ -8,8 +8,8 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
-import kmu.maplayers.politicalmap.base.sidebar.FilterPickerControl;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 
 import org.junit.jupiter.api.Nested;
@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
  * contain.
  */
 final class PoliticalMapLayerTest {
+
     // The frozen sector-memory key the active-view selection serialises under, pinned as a literal so
     // a rename that would reset every save to the default fails here rather than shipping.
     private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
@@ -55,7 +56,7 @@ final class PoliticalMapLayerTest {
             // The counterpart to No Layer's null: this tab is the one that draws, and it hands the map
             // surface one view-neutral renderer rather than branching on the view roster.
             assertThat(PoliticalMapLayer.INSTANCE.getMapRenderer())
-                    .isSameAs(PoliticalMapLayerRenderer.INSTANCE);
+                .isSameAs(PoliticalMapLayerRenderer.INSTANCE);
         }
     }
 
@@ -68,14 +69,19 @@ final class PoliticalMapLayerTest {
             registerDefaultView(viewWithControlsMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class);
                     MockedStatic<PoliticalMapBodyControls> controlsMock =
-                            mockStatic(PoliticalMapBodyControls.class)) {
+                        mockStatic(PoliticalMapBodyControls.class)) {
+
                 // No sector resolves the default view as selected, so the registered view paints.
-                globalMock.when(Global::getSector).thenReturn(null);
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
                 stubSharedControlsAndSelector(controlsMock);
 
                 var body = PoliticalMapLayer.INSTANCE.getBodyControls();
 
-                assertThat(body).containsExactly(SHARED_MARKER, SELECTOR_MARKER, VIEW_MARKER);
+                assertThat(body)
+                    .containsExactly(SHARED_MARKER, SELECTOR_MARKER, VIEW_MARKER);
             }
         }
 
@@ -85,36 +91,56 @@ final class PoliticalMapLayerTest {
             registerDefaultView(viewWithControlsMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class);
                     MockedStatic<PoliticalMapBodyControls> controlsMock =
-                            mockStatic(PoliticalMapBodyControls.class);
+                        mockStatic(PoliticalMapBodyControls.class);
                     MockedStatic<FilterPickerControl> pickerMock =
-                            mockStatic(FilterPickerControl.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
+                        mockStatic(FilterPickerControl.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
                 stubSharedControlsAndSelector(controlsMock);
-                pickerMock.when(() -> FilterPickerControl.buildControls(any(), any(), any(), any(),
-                        any())).thenReturn(List.of(PICKER_MARKER));
+                pickerMock
+                    .when(() -> FilterPickerControl.buildControls(
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
+                    .thenReturn(List.of(PICKER_MARKER));
 
                 var body = PoliticalMapLayer.INSTANCE.getBodyControls();
 
                 assertThat(body)
-                        .containsExactly(SHARED_MARKER, SELECTOR_MARKER, PICKER_MARKER, VIEW_MARKER);
+                    .containsExactly(SHARED_MARKER, SELECTOR_MARKER, PICKER_MARKER, VIEW_MARKER);
             }
         }
 
         @Test
         void getBodyControlsOmitsViewControlsWhenTheSelectedViewAddsNone() {
+
             // The faction view adds no controls of its own, so the body is only the shared rows and
             // the selector - nothing trails the selector.
-            when(viewWithoutControlsMock.getViewBodyControls()).thenReturn(List.of());
+            when(viewWithoutControlsMock.getViewBodyControls())
+                .thenReturn(List.of());
+
             registerDefaultView(viewWithoutControlsMock);
+
             try (MockedStatic<Global> globalMock = mockStatic(Global.class);
                     MockedStatic<PoliticalMapBodyControls> controlsMock =
-                            mockStatic(PoliticalMapBodyControls.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
+                        mockStatic(PoliticalMapBodyControls.class)) {
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
                 stubSharedControlsAndSelector(controlsMock);
 
                 var body = PoliticalMapLayer.INSTANCE.getBodyControls();
 
-                assertThat(body).containsExactly(SHARED_MARKER, SELECTOR_MARKER);
+                assertThat(body)
+                    .containsExactly(SHARED_MARKER, SELECTOR_MARKER);
             }
         }
 
@@ -125,29 +151,119 @@ final class PoliticalMapLayerTest {
             registerDefaultView(viewWithControlsMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class);
                     MockedStatic<PoliticalMapBodyControls> controlsMock =
-                            mockStatic(PoliticalMapBodyControls.class)) {
+                        mockStatic(PoliticalMapBodyControls.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
-                when(sectorMock.getMemoryWithoutUpdate()).thenReturn(memoryMock);
-                globalMock.when(Global::getSector).thenReturn(sectorMock);
-                when(memoryMock.contains(ACTIVE_VIEW_KEY)).thenReturn(true);
-                when(memoryMock.getString(ACTIVE_VIEW_KEY)).thenReturn("");
+
+                when(sectorMock.getMemoryWithoutUpdate())
+                    .thenReturn(memoryMock);
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                when(memoryMock.contains(ACTIVE_VIEW_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(ACTIVE_VIEW_KEY))
+                    .thenReturn("");
+
                 stubSharedControlsAndSelector(controlsMock);
 
                 var body = PoliticalMapLayer.INSTANCE.getBodyControls();
 
-                assertThat(body).containsExactly(SHARED_MARKER, SELECTOR_MARKER);
+                assertThat(body)
+                    .containsExactly(SHARED_MARKER, SELECTOR_MARKER);
             }
         }
+
+        @Test
+        void getBodyControlsPairsTheFilterRecedeWithThePickersSortSelector() {
+            // What sits beside the sort selector is this layer's decision, not the framework
+            // picker's: the political map fills that half with the filter recede - a caption and the
+            // Mute and Desaturate checkboxes - so the "rest of the sector" knobs read beside the
+            // metric. Built for real (no picker stub), since the pairing is the thing under test.
+            registerViewWithOneBloc(viewWithoutControlsMock);
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
+                    MockedStatic<PoliticalMapBodyControls> controlsMock =
+                        mockStatic(PoliticalMapBodyControls.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                stubSharedControlsAndSelector(controlsMock);
+
+                var sortRow = findSortRow(PoliticalMapLayer.INSTANCE.getBodyControls());
+
+                // The left half is the sort selector over this layer's own vocabulary, one row per
+                // mode, so the modes reaching the picker are the political map's.
+                assertThat(sortRow.leftColumn())
+                    .hasSize(1);
+                assertThat(sortRow.leftColumn().get(0).labels())
+                    .hasSize(BlocSortMode.values().length);
+
+                // The right half is the recede: its caption, then the two toggles.
+                assertThat(sortRow.rightColumn().get(0))
+                    .isInstanceOf(ControlSpec.Label.class);
+                assertThat(sortRow.rightColumn().get(1))
+                    .isInstanceOf(ControlSpec.Checkbox.class);
+                assertThat(sortRow.rightColumn().get(2))
+                    .isInstanceOf(ControlSpec.Checkbox.class);
+            }
+        }
+    }
+
+    // Registers a view offering one spotlightable bloc, under an id and revision of its own so the
+    // shared picker memo misses on it rather than serving the empty list the composition tests leave
+    // cached. The bloc's contents do not matter - what matters is that the picker builds at all,
+    // since an empty list contributes none.
+    private static void registerViewWithOneBloc(PoliticalMapView view) {
+
+        when(view.getId())
+            .thenReturn("picker-view");
+
+        when(view.getContentRevision())
+            .thenReturn(1);
+
+        when(view.getViewBodyControls())
+            .thenReturn(List.of());
+
+        when(view.resolveSelectableBlocs(any()))
+            .thenReturn(List.of(new SelectableBloc("hegemony", "Hegemony", null)));
+
+        var hostTabMock = mock(MapLayer.class);
+
+        when(hostTabMock.getId())
+            .thenReturn("host");
+
+        PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);
+        MapLayerRegistry.registerLayers(List.of(hostTabMock), hostTabMock);
+    }
+
+    // The picker's paired sort row, found by type rather than by index so the assertion does not
+    // re-state the framework picker's own row order, which is pinned where the picker lives.
+    private static ControlSpec.SideBySide findSortRow(List<ControlSpec> body) {
+        return body
+            .stream()
+            .filter(ControlSpec.SideBySide.class::isInstance)
+            .map(ControlSpec.SideBySide.class::cast)
+            .findFirst()
+            .orElseThrow();
     }
 
     // Stubs the two view-agnostic pieces to their sentinels so a test asserts only the composition
     // order the layer imposes, not the pieces' own contents.
     private static void stubSharedControlsAndSelector(
             MockedStatic<PoliticalMapBodyControls> controlsMock) {
-        controlsMock.when(PoliticalMapBodyControls::buildSharedControls)
-                .thenReturn(List.of(SHARED_MARKER));
-        controlsMock.when(PoliticalMapBodyControls::buildViewSelector).thenReturn(SELECTOR_MARKER);
+
+        controlsMock
+            .when(PoliticalMapBodyControls::buildSharedControls)
+            .thenReturn(List.of(SHARED_MARKER));
+
+        controlsMock
+            .when(PoliticalMapBodyControls::buildViewSelector)
+            .thenReturn(SELECTOR_MARKER);
     }
 
     // Registers the one view as both the sole registered view and the default, with a host tab the
@@ -157,11 +273,19 @@ final class PoliticalMapLayerTest {
     // the view directly - an empty list contributes no picker, keeping these composition assertions
     // about where the picker sits, not what it holds.
     private static void registerDefaultView(PoliticalMapView view) {
-        when(view.getId()).thenReturn("selected-view");
-        when(view.getContentRevision()).thenReturn(0);
-        when(view.resolveSelectableBlocs(any())).thenReturn(List.of());
+
+        when(view.getId())
+            .thenReturn("selected-view");
+        when(view.getContentRevision())
+            .thenReturn(0);
+        when(view.resolveSelectableBlocs(any()))
+            .thenReturn(List.of());
+
         var hostTabMock = mock(MapLayer.class);
-        when(hostTabMock.getId()).thenReturn("host");
+
+        when(hostTabMock.getId())
+            .thenReturn("host");
+            
         PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);
         MapLayerRegistry.registerLayers(List.of(hostTabMock), hostTabMock);
     }

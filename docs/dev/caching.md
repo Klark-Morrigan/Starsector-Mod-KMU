@@ -21,7 +21,7 @@ through.
   - [Cell geometry](#cell-geometry)
   - [Territories and draw lists](#territories-and-draw-lists)
   - [Hover lookups](#hover-lookups)
-  - [Sidebar bloc lists](#sidebar-bloc-lists)
+  - [Sidebar picker lists](#sidebar-picker-lists)
   - [Per-rebuild memos](#per-rebuild-memos)
 - [The four rebuild paths](#the-four-rebuild-paths)
 - [Persistence: none of it is saved](#persistence-none-of-it-is-saved)
@@ -188,23 +188,27 @@ re-running the cluster search per frame. Deriving it from the same clustering th
 map drew is what keeps the highlighted region identical to the region that carries
 the name.
 
-### Sidebar bloc lists
+### Sidebar picker lists
+
+[`SelectableItemCache`](../../src/main/java/kmu/maplayers/base/sidebar/SelectableItemCache.java)
+is the memo any layer's sidebar picker holds its option list in, keyed on the sector,
+the scope, and a revision the caller supplies. A body build runs twice a frame
+(render and hit-test), so without a memo every picker would re-resolve its list
+several times a frame.
+
+Its key is unusual in one way worth knowing: it includes the **sector identity**,
+held through a `WeakReference`, so a save reloaded in the same session recomputes
+against the loaded state instead of serving the previous save's list - and a cached
+sector never outlives its unload.
 
 [`SelectableBlocCache`](../../src/main/java/kmu/maplayers/politicalmap/base/sidebar/SelectableBlocCache.java)
-memoises the selected view's picker options with their stats. The picker resolves
-its options twice a frame (render and hit-test) and each resolve is a full grouped
-dominance pass over the sector, so the memo is what keeps the sidebar from
-rescanning the economy several times a frame.
-
-Its key is unusual in two ways worth knowing:
-
-- It includes the **sector identity**, held through a `WeakReference`, so a save
-  reloaded in the same session recomputes against the loaded economy instead of
-  serving the previous save's blocs - and a cached sector never outlives its
-  unload.
-- It deliberately **excludes** the filter revision. The list is which blocs are
-  selectable, not which one is spotlighted, so picking or clearing a filter moves
-  the lit row without invalidating the list.
+is the political map's use of it: what it adds is the revision, the one thing the
+memo cannot know. Each of its resolves is a full grouped dominance pass over the
+sector, so it is the layer that most needs the memo to hold. That revision is the
+economy-weighting settings plus the view's own grouping inputs, and it deliberately
+**excludes** the filter selection. The list is which blocs are selectable, not which
+one is spotlighted, so picking or clearing a filter moves the lit row without
+invalidating the list.
 
 Because the economy can drift between rebuild triggers, a displayed metric can lag
 until the next settings, view, or alliance change - the same cadence the overlay's

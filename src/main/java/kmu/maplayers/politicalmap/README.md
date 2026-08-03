@@ -127,7 +127,11 @@ ANDed with the framework's, plus whether either kind of feedback still needs the
 standings behind the fills, which the faction and alliance views inject into the framework's hover
 box and the claims view does not, plus the standing, territory, and status lines it is written from),
 and `sidebar` - the last being this layer's own body
-controls, not the box they sit in, which is [the sidebar](../base/sidebar/README.md) one level up. The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
+controls, neither the box they sit in nor the spotlight picker among them, both of which are
+[the sidebar](../base/sidebar/README.md) one level up. What stays here is what that picker refuses
+to know: which blocs are on offer and what makes that list stale (`SelectableBlocCache`), and the
+recede toggles the layer pairs with the picker's sort (`RecedeControl`).
+The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
 up; how a layer is picked and what each screen remembers is [map layers](../README.md).
 
 ## When the map is rebuilt

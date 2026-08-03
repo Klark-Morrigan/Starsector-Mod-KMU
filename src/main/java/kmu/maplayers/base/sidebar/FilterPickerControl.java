@@ -1,0 +1,185 @@
+package kmu.maplayers.base.sidebar;
+
+import kmlib.starsector.ui.controls.ControlSpec;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+/**
+ * A spotlight picker's body controls, top to bottom: a rule heading the block, the columns selector,
+ * a row pairing the sort selector beside whatever the caller pairs with it, then the vertical
+ * icon-radio list of selectable items. It turns a layer's {@link SelectableListItem} options into
+ * one clickable list and wires each click straight to {@link FilterSelection}, so picking a row
+ * spotlights that item and re-picking the lit row clears the filter. Which items the list holds is
+ * decided before this is called, so it names no layer and no scope of its own.
+ *
+ * <p>The rule parts the controls above from the picker below, marking the section a caption string
+ * used to. The columns selector rides directly under the rule, so how many columns the list wraps
+ * across is chosen for the block as a whole. Below it a paired row sets the sort beside the caller's
+ * own trailing controls: the sort selector on the left picks the metric the list ranks by (the
+ * picker sorts the items by that metric and labels each row with its value), while the right half is
+ * the caller's - the political map fills it with the recede toggles that fade the rest of the
+ * sector, a layer with nothing to pair passes none and the row draws as the sort selector alone.
+ */
+public final class FilterPickerControl {
+
+    private FilterPickerControl() {
+    }
+
+    /**
+     * Builds the picker block for one scope's selectable items, filter selection, and sort mode, top
+     * to bottom: the section rule, the columns selector, a row pairing the sort selector beside the
+     * caller's trailing controls, then the icon-radio list ranked by the sort mode (its lit row the
+     * spotlighted item, or none when the stored id is not among these items). Returns an empty list
+     * when there are no selectable items, so a scope with nothing to spotlight contributes no picker
+     * rather than an empty list widget.
+     *
+     * @param <T>              the caller's own item type, ranked by its own comparators throughout
+     * @param scopeId          the scope a pick or clear writes into, so the choice is remembered
+     *                         against this scope alone
+     * @param items            the selectable items in this scope; order here is immaterial since the
+     *                         sort mode reorders them for display
+     * @param selectedItemId   the currently spotlighted item's id, or null when no filter is active
+     * @param sort             the metric and direction the list is ranked by, which also picks each
+     *                         row's trailing value and the sort selector previews
+     * @param sortModes        the caller's sort vocabulary the selector lays its rows out from and a
+     *                         click resolves the stored mode against
+     * @param columns          how many columns the item list wraps its rows across, which the columns
+     *                         selector lights and the list lays out under
+     * @param trailingControls the controls filling the right half of the sort row; empty leaves the
+     *                         sort selector alone on the row
+     * @return the picker body controls, top to bottom; empty when {@code items} is empty
+     */
+    public static <T extends SelectableListItem> List<ControlSpec> buildControls(
+            String scopeId,
+            List<T> items,
+            String selectedItemId,
+            ListSort<T> sort,
+            ListSortModes<T> sortModes,
+            ListColumns columns,
+            List<ControlSpec> trailingControls) {
+
+        if (items.isEmpty()) {
+            return List.of();
+        }
+
+        // Rank a copy under the active mode and direction, leaving the caller's (cached) list
+        // untouched, so the rows draw in the chosen order and the lit index below is resolved against
+        // that same order.
+        var rankedItems = new ArrayList<>(items);
+        rankedItems.sort(sort.comparator());
+
+        var selectedIndex = resolveSelectedIndex(rankedItems, selectedItemId);
+        var controls = new ArrayList<ControlSpec>();
+
+        // A rule heads the block, parting the controls above from the picker below - the section
+        // break a caption used to mark, now carrying no text.
+        controls.add(new ControlSpec.Divider());
+
+        // The columns selector rides directly under the rule, so the column count is chosen for the
+        // block as a whole; the list below then wraps its rows across that many columns.
+        controls.add(ColumnsSelectorControl.buildSelector(columns));
+
+        // The sort selector and the caller's trailing controls share one row, the sort on the left
+        // picking the metric the list ranks by. Pairing them keeps the picker compact; what sits
+        // beside the sort is the caller's decision, so the framework composes the row and the layer
+        // fills its right half.
+        controls.add(new ControlSpec.SideBySide(
+            List.of(SortSelectorControl.buildSelector(sort, sortModes)),
+            trailingControls));
+
+        // The item list is the body's one scrolling cluster: when the picker plus the controls above
+        // and below it would run the box past the bottom margin, the list gives up the difference and
+        // scrolls while everything around it stays pinned. asScrolling marks the list; the capped
+        // layout, renderer, and input listener all read that one flag.
+        controls.add(
+            ControlSpec.VerticalTable
+                .iconList(
+                    resolveLabels(rankedItems),
+                    resolveIconPaths(rankedItems),
+                    resolveTrailingValues(rankedItems, sort.mode()),
+                    selectedIndex,
+                    cellIndex -> pickItem(scopeId, rankedItems, selectedIndex, cellIndex),
+                    columns.columnCount())
+                .asScrolling());
+
+        return List.copyOf(controls);
+    }
+
+    // Spotlights the clicked item, or clears the filter when the click landed on the already-lit row.
+    // The list is deselectable, so a press on the lit option reaches here with its own index; re-
+    // picking it means "stop spotlighting". Any index outside the item list is ignored, so a stray
+    // hit changes nothing.
+    private static void pickItem(
+            String scopeId,
+            List<? extends SelectableListItem> items,
+            int selectedIndex,
+            int cellIndex) {
+
+        if (cellIndex < 0 || cellIndex >= items.size()) {
+            return;
+        }
+        if (cellIndex == selectedIndex) {
+            FilterSelection.clearSelection(scopeId);
+        } else {
+            FilterSelection.selectId(scopeId, items.get(cellIndex).itemId());
+        }
+    }
+
+    // The lit row: the index of the item whose id is stored, or no selection when the stored id is
+    // absent (no filter) or names an item no longer in the list (a stale id the load heal has not yet
+    // cleared). An unlit list still shows every option, so the player can pick one.
+    private static int resolveSelectedIndex(
+            List<? extends SelectableListItem> items,
+            String selectedItemId) {
+
+        if (selectedItemId == null) {
+            return ControlSpec.NO_SELECTION;
+        }
+        for (var index = 0; index < items.size(); index++) {
+            if (selectedItemId.equals(items.get(index).itemId())) {
+                return index;
+            }
+        }
+        return ControlSpec.NO_SELECTION;
+    }
+
+    // Each option's label, in list order; an item with no resolved name draws as an unlabelled row
+    // rather than a null the width measurer would choke on, so an empty string stands in.
+    private static List<String> resolveLabels(List<? extends SelectableListItem> items) {
+        return mapItems(
+            items,
+            item -> item.displayName() == null ? "" : item.displayName());
+    }
+
+    // Each option's crest path, in list order, keeping the nulls: an item with no crest contributes a
+    // null the row draws without an icon, so the list stays aligned to the labels index for index.
+    private static List<String> resolveIconPaths(List<? extends SelectableListItem> items) {
+        return mapItems(
+            items,
+            SelectableListItem::crestSpritePath);
+    }
+
+    // Each option's trailing value, in list order: the active sort metric's number for the item, drawn
+    // right-aligned so the rows read as a ranked table sorted by the value shown. Kept aligned to the
+    // labels index for index, so every row carries a value (an item with a zero metric shows "0"
+    // rather than dropping the column). A mode with no numeric metric yields blanks, and the rows read
+    // as a plain list.
+    private static <T> List<String> resolveTrailingValues(List<T> items, ListSortMode<T> sortMode) {
+        return mapItems(
+            items,
+            sortMode::resolveTrailingValue);
+    }
+
+    // One column of the picker table: each item mapped to a cell string, in list order, so the label,
+    // crest, and value columns stay aligned index for index. A null entry is kept (a crestless item's
+    // null path is a real "no icon"), so callers that need to null-guard do it in their own mapping.
+    private static <T> List<String> mapItems(List<T> items, Function<T, String> resolveCell) {
+        var cells = new ArrayList<String>(items.size());
+        for (var item : items) {
+            cells.add(resolveCell.apply(item));
+        }
+        return cells;
+    }
+}

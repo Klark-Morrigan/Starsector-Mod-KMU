@@ -7,15 +7,15 @@ import java.util.Comparator;
  * whatever a second layer ranks its picker list by. An enum, since that is the shape a layer is
  * expected to reach for. Alpha runs ascending by default while the two numeric modes run
  * descending, so a suite can tell a mode's own default direction from the active sort's live one.
- * None of the modes overrides the trailing value, so the seam's blank default is what a foreign
- * row shows.
+ * Only {@link #RADIUS} declares a trailing value; the other two leave the seam's blank default, so
+ * a suite can tell a mode that writes a number onto its rows from one that shows none.
  */
 enum HazardSortMode implements ListSortMode<Hazard> {
     ALPHA(
         "alpha",
         "hazard_sort_alpha",
         SortDirection.ASCENDING,
-        Comparator.comparing(Hazard::name, String.CASE_INSENSITIVE_ORDER)),
+        Comparator.comparing(Hazard::displayName, String.CASE_INSENSITIVE_ORDER)),
     SEVERITY(
         "severity",
         "hazard_sort_severity",
@@ -25,7 +25,15 @@ enum HazardSortMode implements ListSortMode<Hazard> {
         "radius",
         "hazard_sort_radius",
         SortDirection.DESCENDING,
-        Comparator.comparingInt(Hazard::radius));
+        Comparator.comparingInt(Hazard::radius)) {
+
+        // The one mode that writes its number onto the rows, so a suite can tell a drawn trailing
+        // value apart from the blank the other two leave.
+        @Override
+        public String resolveTrailingValue(Hazard hazard) {
+            return String.valueOf(hazard.radius());
+        }
+    };
 
     private final String persistenceKey;
     private final String labelKey;
