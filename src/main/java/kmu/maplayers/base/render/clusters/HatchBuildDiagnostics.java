@@ -3,7 +3,7 @@ package kmu.maplayers.base.render.clusters;
 import com.fs.starfarer.api.Global;
 
 import kmlib.opengl.GlVertexRuns;
-import kmlib.opengl.hatch.HatchRun;
+import kmlib.profiling.Timings;
 
 import kmu.maplayers.base.theme.HatchStyle;
 
@@ -64,7 +64,7 @@ public final class HatchBuildDiagnostics {
     // Which readings a body's row carries, as the function that produces it. Split from the
     // observer above so that what is extracted is separable from where it is put: the choice is
     // the part with a rule behind it, and a logger is the part that cannot be read back.
-    static Function<HatchRun, String> selectRunDescriberFor(HatchStyle hatch) {
+    static Function<TimedHatchRun, String> selectRunDescriberFor(HatchStyle hatch) {
         if (hatch.joining().isMerging()) {
             return HatchBuildDiagnostics::describeJoinedHatchRun;
         }
@@ -93,9 +93,9 @@ public final class HatchBuildDiagnostics {
     // is load-bearing. The widest gap it closed is the reach it had to have; the narrowest one left
     // open is what the next notch up would start joining, and is the only reading a run at zero
     // tolerance can give, since nothing can be tolerated there.
-    static String describeJoinedHatchRun(HatchRun hatchRun) {
-        var joins = hatchRun.joins();
-        return describeHatchRun(hatchRun)
+    static String describeJoinedHatchRun(TimedHatchRun timedHatchRun) {
+        var joins = timedHatchRun.hatchRun().joins();
+        return describeHatchRun(timedHatchRun)
             + " exactJoins=" + joins.exactJoinCount()
             + " toleranceJoins=" + joins.toleranceJoinCount()
             + " overlappingJoins=" + joins.overlappingJoinCount()
@@ -103,10 +103,13 @@ public final class HatchBuildDiagnostics {
             + " narrowestOpenGap=" + joins.narrowestOpenGapFraction();
     }
 
-    // One body's line under any joining: how many primitives its ground came back as, which is the
-    // measurement the joinings are compared on.
-    static String describeHatchRun(HatchRun hatchRun) {
+    // One body's line under any joining: how many primitives its ground came back as, and what
+    // cutting them cost. Those two are the measurement the joinings are compared on, and the cost
+    // is stated in microseconds because a cut is a sub-pass - milliseconds at two decimals round
+    // most of them to zero, which compares against nothing.
+    static String describeHatchRun(TimedHatchRun timedHatchRun) {
         return "Cluster hatch built; segments="
-            + hatchRun.segments().length / GlVertexRuns.FLOATS_PER_SEGMENT;
+            + timedHatchRun.hatchRun().segments().length / GlVertexRuns.FLOATS_PER_SEGMENT
+            + " took=" + Timings.formatMicros(timedHatchRun.elapsedNanos());
     }
 }

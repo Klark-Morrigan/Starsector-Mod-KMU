@@ -26,6 +26,10 @@ final class HatchBuildDiagnosticsTest {
     private static final double JOIN_TOLERANCE = 0.001;
     private static final double WIDTH_PIXELS = 2.0;
 
+    // Three microseconds: a span the millisecond format every other build line uses would round to
+    // "0.00ms", so a row reporting the cut in milliseconds fails the expectations below.
+    private static final long ELAPSED_NANOS = 3_000L;
+
     @Nested
     class DescribeHatchSpecification {
 
@@ -70,12 +74,14 @@ final class HatchBuildDiagnosticsTest {
         @Test
         void describeHatchRunReportsTheSegmentCountInSegmentsRatherThanFloats() {
             // Eight floats pack two segments, so a row reporting the array's own length reads 8.
-            var run = new HatchRun(
-                new float[] {0f, 0f, 1f, 1f, 2f, 2f, 3f, 3f},
-                HatchJoinTally.NO_JOINS);
+            var run = new TimedHatchRun(
+                new HatchRun(
+                    new float[] {0f, 0f, 1f, 1f, 2f, 2f, 3f, 3f},
+                    HatchJoinTally.NO_JOINS),
+                ELAPSED_NANOS);
 
             assertThat(HatchBuildDiagnostics.describeHatchRun(run))
-                .isEqualTo("Cluster hatch built; segments=2");
+                .isEqualTo("Cluster hatch built; segments=2 took=3.0us");
         }
     }
 
@@ -86,8 +92,8 @@ final class HatchBuildDiagnosticsTest {
         void describeJoinedHatchRunAddsTheJoinReadingsToTheSegmentCount() {
             // Every reading varies per body, so all of them belong on the row - and none of them
             // restates the tolerance they were measured against, which the heading already gave.
-            assertThat(HatchBuildDiagnostics.describeJoinedHatchRun(createHatchRun()))
-                .isEqualTo("Cluster hatch built; segments=1"
+            assertThat(HatchBuildDiagnostics.describeJoinedHatchRun(createTimedHatchRun()))
+                .isEqualTo("Cluster hatch built; segments=1 took=3.0us"
                     + " exactJoins=7"
                     + " toleranceJoins=2"
                     + " overlappingJoins=1"
@@ -106,8 +112,8 @@ final class HatchBuildDiagnosticsTest {
             var describeRun = HatchBuildDiagnostics.selectRunDescriberFor(
                 createHatchStyle(HatchJoining.PER_TRIANGLE));
 
-            assertThat(describeRun.apply(createHatchRun()))
-                .isEqualTo("Cluster hatch built; segments=1");
+            assertThat(describeRun.apply(createTimedHatchRun()))
+                .isEqualTo("Cluster hatch built; segments=1 took=3.0us");
         }
 
         @Test
@@ -115,18 +121,21 @@ final class HatchBuildDiagnosticsTest {
             var describeRun = HatchBuildDiagnostics.selectRunDescriberFor(
                 createHatchStyle(HatchJoining.COALESCED));
 
-            assertThat(describeRun.apply(createHatchRun()))
+            assertThat(describeRun.apply(createTimedHatchRun()))
                 .contains("exactJoins=7")
                 .contains("narrowestOpenGap=0.06");
         }
     }
 
     // One segment, with a tally distinctive enough that a row built from the wrong describer is
-    // caught by the readings it does or does not carry rather than by its length.
-    private static HatchRun createHatchRun() {
-        return new HatchRun(
-            new float[] {0f, 0f, 1f, 1f},
-            new HatchJoinTally(7, 2, 1, 0.004, 0.06));
+    // caught by the readings it does or does not carry rather than by its length. Timed at a span
+    // milliseconds would round away, so a row that reported it in them fails here.
+    private static TimedHatchRun createTimedHatchRun() {
+        return new TimedHatchRun(
+            new HatchRun(
+                new float[] {0f, 0f, 1f, 1f},
+                new HatchJoinTally(7, 2, 1, 0.004, 0.06)),
+            ELAPSED_NANOS);
     }
 
     private static HatchStyle createHatchStyle(HatchJoining joining) {

@@ -96,18 +96,26 @@ public sealed interface TracedFill {
         @Override
         public ClusterFill buildFillFor(RingRegion clusterRegion) {
             var clusterRings = clusterRegion.toRings();
+
+            // The hatched ground is tessellated before the clock starts, so what is timed is the
+            // clip and merge alone - the part a joining or a tolerance changes. Tessellating costs
+            // the same either way, and is much the larger of the two.
+            var hatchedTriangles = clipToCluster(hatchedRings, clusterRings);
+
+            var cutStart = System.nanoTime();
             var hatchRun = Hatching.computeHatchRun(
-                clipToCluster(hatchedRings, clusterRings),
+                hatchedTriangles,
                 hatch.angleRadians(),
                 hatch.spacing(),
                 hatch.joining(),
                 hatch.joinToleranceFraction());
+            var elapsedNanos = System.nanoTime() - cutStart;
 
             // Offered only where there is a hatch to offer. A body of a splitting owner that
             // holds no hatched member cuts nothing, and an observer counting bodies would find
             // those indistinguishable from ones whose hatch came out empty for a reason.
             if (hatchRun.segments().length > 0) {
-                hatchRunObserver.observeHatchRun(hatchRun);
+                hatchRunObserver.observeHatchRun(new TimedHatchRun(hatchRun, elapsedNanos));
             }
             return new ClusterFill(
                 clipToCluster(solidRings, clusterRings),

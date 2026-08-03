@@ -1,7 +1,5 @@
 package kmu.maplayers.base.render.clusters;
 
-import kmlib.opengl.hatch.HatchRun;
-
 /**
  * What a caller wants extracted from each hatch run as it is baked - handed to the fill builder
  * rather than decided inside it, so building the geometry and reading something off it stay
@@ -21,13 +19,13 @@ import kmlib.opengl.hatch.HatchRun;
 public interface HatchRunObserver {
 
     /** Extracts nothing, for a build no one is reading - which is every build but a diagnostic. */
-    HatchRunObserver IGNORED = hatchRun -> { };
+    HatchRunObserver IGNORED = timedHatchRun -> { };
 
     /**
      * Offers one body's freshly baked hatch.
      *
-     * @param hatchRun the segments cut for this body, and how the joining that packed them closed
-     *                 its joins
+     * @param timedHatchRun the segments cut for this body, how the joining that packed them closed
+     *                      its joins, and what the cut cost
      */
-    void observeHatchRun(HatchRun hatchRun);
+    void observeHatchRun(TimedHatchRun timedHatchRun);
 }
