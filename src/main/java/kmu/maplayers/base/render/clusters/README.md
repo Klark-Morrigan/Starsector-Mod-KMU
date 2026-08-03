@@ -139,9 +139,13 @@ tessellated at all: it holds ground for the border and the name and paints nothi
 ## Painting: the draw-list seam
 
 `ClusterRenderer` is the emission: it scales world coordinates into map space and strokes and
-fills the flattened runs, in one blended pass with the fills below the seams below the borders. It
-knows nothing of settings, caches, or how any run was shaped, and the ids it walks are opaque to
-it.
+fills the flattened runs, with the fills below the seams below the borders. It knows nothing of
+settings, caches, or how any run was shaped, and the ids it walks are opaque to it.
+
+Each family of lines opens a blended pass of its own rather than sharing one line state: the hatch
+at whatever quality the theme's stroke names, the borders smoothed because they are long continuous
+runs a player follows. The outer pass blends the solid triangle fills and leaves aliased in force
+as the baseline nothing inherits by accident.
 
 The fills go down in two sweeps, all the solid triangle soups and then every hatch run, rather than
 both runs per owner. Hoisting the hatch above every solid fill covers nothing that was visible

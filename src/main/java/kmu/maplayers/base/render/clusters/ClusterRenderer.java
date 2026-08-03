@@ -56,10 +56,11 @@ public final class ClusterRenderer {
         // outside this package learns the type.
         var frame = new ClusterMapFrame(drawLists, factor, alphaMult);
 
-        // Aliased: the fills and their borders are large filled shapes whose edges the map's own
-        // scaling already softens, and smoothing every border run costs a blend per covered pixel
-        // across the whole sector. The hatch does not inherit this - it opens a pass of its own,
-        // since its line quality is the player's theme rather than this pass's convenience.
+        // The outer pass blends the solid triangle fills, which are the only thing drawn directly
+        // under it - both line passes inside open their own, since the quality a line wants is the
+        // pass's own decision rather than something to inherit from whatever wraps it. Aliased is
+        // the baseline it leaves in force, so a run added here later lands hard-edged instead of
+        // quietly picking up the smoothing of the pass that happened to run last.
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
             GlLineQuality.ALIASED,
@@ -215,17 +216,26 @@ public final class ClusterRenderer {
         emitRuns.run();
     }
 
-    // Strokes the interior seams first, then the lone cells' outlines, then the smoothed cluster
-    // boundaries over them, so a cluster's boundary dominates the seams inside it where they
-    // meet. Colour, opacity, and line width are all per element, and a hidden element
-    // (UiElementPaint.isHidden) is skipped - its geometry stays baked to shape its neighbours, but
-    // nothing invisible is emitted. Which cells each stroke reaches is the cell's own form rather
-    // than a test here: a fused cell carries only seams and a lone cell only an outline, and a
-    // cluster's boundary is its own loops in the cluster draw list.
+    // Every border stroke, in a smoothed pass of its own. Borders are long continuous runs a
+    // player follows across the sector - the case antialiasing is worth its blend per covered
+    // pixel, unlike the dense short strokes of the hatch - and saying so as the pass's quality is
+    // what keeps the choice one the library applies rather than a pair of GL calls restated here.
     private static void drawBorders(ClusterMapFrame frame) {
 
-        GL11.glEnable(GL11.GL_LINE_SMOOTH);
-        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+        GlPasses.runBlendedPass(
+            GlBlendMode.ALPHA,
+            GlLineQuality.SMOOTHED,
+            () -> strokeBorderRuns(frame));
+    }
+
+    // Strokes the interior seams first, then the lone cells' outlines, then the cluster boundaries
+    // over them, so a cluster's boundary dominates the seams inside it where they meet. Colour,
+    // opacity, and line width are all per element, and a hidden element (UiElementPaint.isHidden)
+    // is skipped - its geometry stays baked to shape its neighbours, but nothing invisible is
+    // emitted. Which cells each stroke reaches is the cell's own form rather than a test here: a
+    // fused cell carries only seams and a lone cell only an outline, and a cluster's boundary is
+    // its own loops in the cluster draw list.
+    private static void strokeBorderRuns(ClusterMapFrame frame) {
 
         drawEachCellOfForm(
             frame,
