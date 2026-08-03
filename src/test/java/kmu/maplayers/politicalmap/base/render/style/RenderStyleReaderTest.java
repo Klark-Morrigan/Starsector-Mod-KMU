@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmlib.opengl.GlLineQuality;
-import kmlib.opengl.HatchJoining;
+import kmlib.opengl.hatch.HatchJoining;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -363,6 +363,22 @@ final class RenderStyleReaderTest {
                     .isEqualTo(DESATURATION_DARKENING);
                 assertThat(global.hoverHighlight().glow().opacity())
                     .isEqualTo(HOVER_GLOW_OPACITY);
+            }
+        }
+
+        @Test
+        void readGlobalStyleCarriesTheOtherJoiningWhenThatIsWhatIsPicked() {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+
+                settingsMock
+                    .when(KmuLunaSettings::getPoliticalMapHatchJoining)
+                    .thenReturn(HatchJoiningChoice.PER_TRIANGLE);
+
+                // The case above pins the other arm. Both are named because the crossing is a
+                // two-case switch: one arm asserted alone is satisfied by a switch that answers
+                // the same joining whatever it was handed.
+                assertThat(RenderStyleReader.readGlobalStyle().hatch().joining())
+                    .isEqualTo(HatchJoining.PER_TRIANGLE);
             }
         }
     }

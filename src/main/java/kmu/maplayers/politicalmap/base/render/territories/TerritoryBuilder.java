@@ -12,6 +12,7 @@ import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -108,6 +109,11 @@ public final class TerritoryBuilder {
             // re-shapes cells against the same snapshot this pass used.
             var renderStyle = RenderStyleReader.readRenderStyle();
             var neutralColour = StarsectorFactionColours.resolveNeutralColour(sector);
+
+            // Stated once here, ahead of any geometry, because it does not vary across the bodies
+            // this pass then cuts: it is the heading the per-body hatch lines below are read
+            // under, and the one place their units are given.
+            HatchBuildDiagnostics.logHatchSpecification(renderStyle.global().hatch());
 
             // The receded background desaturates to a uniform Independent-based grey, darkened by the
             // live setting so it sits below genuine independent-held space - a spotlit bloc, even

@@ -1,6 +1,6 @@
 package kmu.maplayers.base.theme;
 
-import kmlib.opengl.HatchJoining;
+import kmlib.opengl.hatch.HatchJoining;
 
 /**
  * The sector-wide hatch pattern that ground in the

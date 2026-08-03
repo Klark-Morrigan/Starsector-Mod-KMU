@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmlib.opengl.GlLineQuality;
-import kmlib.opengl.HatchJoining;
+import kmlib.opengl.hatch.HatchJoining;
 
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;

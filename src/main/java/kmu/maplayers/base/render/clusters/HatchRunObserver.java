@@ -1,6 +1,6 @@
 package kmu.maplayers.base.render.clusters;
 
-import kmlib.opengl.HatchRun;
+import kmlib.opengl.hatch.HatchRun;
 
 /**
  * What a caller wants extracted from each hatch run as it is baked - handed to the fill builder

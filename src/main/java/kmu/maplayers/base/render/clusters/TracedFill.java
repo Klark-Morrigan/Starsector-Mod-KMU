@@ -2,8 +2,8 @@ package kmu.maplayers.base.render.clusters;
 
 import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
-import kmlib.opengl.Hatching;
 import kmlib.opengl.PolygonTessellator;
+import kmlib.opengl.hatch.Hatching;
 
 import kmu.maplayers.base.render.clusters.SplitFillBuilder.ClusterFill;
 import kmu.maplayers.base.theme.HatchStyle;

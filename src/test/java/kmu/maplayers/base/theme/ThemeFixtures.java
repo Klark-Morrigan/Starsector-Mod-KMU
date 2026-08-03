@@ -1,7 +1,7 @@
 package kmu.maplayers.base.theme;
 
 import kmlib.opengl.GlLineQuality;
-import kmlib.opengl.HatchJoining;
+import kmlib.opengl.hatch.HatchJoining;
 
 /**
  * Shared fixtures for the tests that need a theme they are not testing: the global tier and the

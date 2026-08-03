@@ -1,9 +1,9 @@
 package kmu.maplayers.base.render.clusters;
 
 import kmlib.opengl.GlLineQuality;
-import kmlib.opengl.HatchJoinTally;
-import kmlib.opengl.HatchJoining;
-import kmlib.opengl.HatchRun;
+import kmlib.opengl.hatch.HatchJoinTally;
+import kmlib.opengl.hatch.HatchJoining;
+import kmlib.opengl.hatch.HatchRun;
 
 import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.HatchStyle;

@@ -11,6 +11,7 @@ import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.FillSplit;
+import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.base.render.clusters.SplitFillBuilder;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
@@ -125,11 +126,16 @@ public final class FactionTerritoryBuilder {
         // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
         // one key, so it clusters under one bloc and then splits its fill inside each of its
         // bodies. Whether that split happens is the fill builder's own call.
+        // The hatch and what is being read off it come from one value, so the observer cannot be
+        // picked for a joining other than the one the geometry is cut under.
+        var hatch = territories.getGlobalStyle().hatch();
+
         var tracedFill = new SplitFillBuilder(
                 geometryCache.getCellEdgesByCellId(),
                 cellGrouping,
                 borderTrace,
-                territories.getGlobalStyle().hatch())
+                hatch,
+                HatchBuildDiagnostics.selectRunObserverFor(hatch))
             .traceFill(
                 FilteredPolitics.isSpotlitBloc(blocId),
                 FillSplit.splitMembersByFillState(
