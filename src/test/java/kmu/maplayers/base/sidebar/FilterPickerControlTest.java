@@ -57,8 +57,10 @@ final class FilterPickerControlTest {
     private static final List<Hazard> HAZARDS = List.of(STORM, DRIFT);
 
     // The trailing controls the caller pairs with the sort selector; a plain label stands in for
-    // whatever a layer actually pairs there, since the picker only places what it is handed.
-    private static final ControlSpec TRAILING_MARKER = new ControlSpec.Label("trailing");
+    // whatever a layer actually pairs there, since the picker only places what it is handed. Its tone
+    // is arbitrary - nothing under test reads what colour a placed control draws in.
+    private static final ControlSpec TRAILING_MARKER =
+        ControlSpec.Label.createLabel(new TextSpan("trailing", Color.WHITE));
     private static final List<ControlSpec> TRAILING = List.of(TRAILING_MARKER);
 
     // The block is a fixed four rows: the section rule, the columns selector, the paired sort row,

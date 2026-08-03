@@ -1,6 +1,8 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.util.KmuStrings;
@@ -33,14 +35,18 @@ public final class RecedeControl {
      *         receded ground is dimmed), and the Desaturate checkbox (lit when it is recoloured)
      */
     public static List<ControlSpec> buildControls(RecedePreferences preferences, String captionLabel) {
+        // The caption and both boxes read in the engine's plain text tone - the control block calls
+        // nothing out, so every run of it is the same one colour, resolved once here.
+        var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
+
         return List.of(
-            new ControlSpec.Label(captionLabel),
+            ControlSpec.Label.createLabel(new TextSpan(captionLabel, textColour)),
             ControlSpec.Checkbox.lit(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED),
+                new TextSpan(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED), textColour),
                 preferences.isMuted(),
                 cellIndex -> toggleMuted(preferences)),
             ControlSpec.Checkbox.lit(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED),
+                new TextSpan(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED), textColour),
                 preferences.isDesaturated(),
                 cellIndex -> toggleDesaturated(preferences)));
     }

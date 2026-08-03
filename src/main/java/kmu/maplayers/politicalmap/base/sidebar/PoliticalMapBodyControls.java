@@ -1,6 +1,8 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
@@ -46,7 +48,10 @@ public final class PoliticalMapBodyControls {
     public static List<ControlSpec> buildSharedControls() {
         return List.of(
             ControlSpec.Checkbox.lit(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
+                // The plain text tone: the box states an option rather than calling anything out.
+                new TextSpan(
+                    KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
+                    StarsectorUiColour.VANILLA_TEXT.resolve()),
                 UninhabitedOutlinePreference.isOutlineDrawn(),
                 cellIndex -> toggleUninhabitedSystems()),
             ControlSpec.HorizontalRadio

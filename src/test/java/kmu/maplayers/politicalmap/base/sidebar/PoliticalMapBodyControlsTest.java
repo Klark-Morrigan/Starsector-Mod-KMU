@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
+import com.fs.starfarer.api.util.Misc;
+
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
@@ -10,12 +12,17 @@ import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
+import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuStrings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
+import java.awt.Color;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,8 +45,33 @@ import static org.mockito.Mockito.when;
  * asserted rather than how either choice persists.
  */
 final class PoliticalMapBodyControlsTest {
+
+    // The engine tone the checkbox label carries, stood in for so the controls can be built without
+    // the live palette in reach.
+    private static final Color TEXT = Color.LIGHT_GRAY;
+
     private final PoliticalMapView factionsViewMock = mock(PoliticalMapView.class);
     private final PoliticalMapView alliancesViewMock = mock(PoliticalMapView.class);
+
+    private MockedStatic<Misc> miscMock;
+
+    @BeforeEach
+    void installColours() {
+        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
+        // mocking it against an uninstalled settings proxy would fail on class load.
+        StarsectorSettingsFake.installSettings();
+
+        miscMock = Mockito.mockStatic(Misc.class);
+        miscMock
+            .when(Misc::getTextColor)
+            .thenReturn(TEXT);
+    }
+
+    @AfterEach
+    void clearColours() {
+        miscMock.close();
+        StarsectorSettingsFake.clearSettings();
+    }
 
     @Nested
     class SelectViewSegment {

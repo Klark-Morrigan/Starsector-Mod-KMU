@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -41,11 +42,13 @@ final class PoliticalMapLayerTest {
     private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
 
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
-    // order without depending on the real shared controls or selector contents.
-    private static final ControlSpec SHARED_MARKER = new ControlSpec.Label("shared");
-    private static final ControlSpec SELECTOR_MARKER = new ControlSpec.Label("selector");
-    private static final ControlSpec VIEW_MARKER = new ControlSpec.Label("view");
-    private static final ControlSpec PICKER_MARKER = new ControlSpec.Label("picker");
+    // order without depending on the real shared controls or selector contents. Their tone is
+    // arbitrary - composition order is what is under test, not what colour a control draws in.
+    private static final Color MARKER_COLOUR = Color.WHITE;
+    private static final ControlSpec SHARED_MARKER = buildMarker("shared");
+    private static final ControlSpec SELECTOR_MARKER = buildMarker("selector");
+    private static final ControlSpec VIEW_MARKER = buildMarker("view");
+    private static final ControlSpec PICKER_MARKER = buildMarker("picker");
 
     private final PoliticalMapView viewWithControlsMock = mock(PoliticalMapView.class);
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);
@@ -78,6 +81,15 @@ final class PoliticalMapLayerTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
+                // The recede paired with the picker's sort selector carries the engine's text tone,
+                // which Misc reads off the live settings - so a body built here needs a settings proxy
+                // that answers a colour. Stubbed before the static stubbing opens, since its own
+                // stubbing would otherwise land inside that one.
+                var settingsMock = settingsAnsweringColours();
+                globalMock
+                    .when(Global::getSettings)
+                    .thenReturn(settingsMock);
+
                 stubSharedControlsAndSelector(controlsMock);
 
                 var body = PoliticalMapLayer.INSTANCE.getBodyControls();
@@ -100,6 +112,15 @@ final class PoliticalMapLayerTest {
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(null);
+
+                // The recede paired with the picker's sort selector carries the engine's text tone,
+                // which Misc reads off the live settings - so a body built here needs a settings proxy
+                // that answers a colour. Stubbed before the static stubbing opens, since its own
+                // stubbing would otherwise land inside that one.
+                var settingsMock = settingsAnsweringColours();
+                globalMock
+                    .when(Global::getSettings)
+                    .thenReturn(settingsMock);
 
                 stubSharedControlsAndSelector(controlsMock);
                 pickerMock
@@ -136,6 +157,15 @@ final class PoliticalMapLayerTest {
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(null);
+
+                // The recede paired with the picker's sort selector carries the engine's text tone,
+                // which Misc reads off the live settings - so a body built here needs a settings proxy
+                // that answers a colour. Stubbed before the static stubbing opens, since its own
+                // stubbing would otherwise land inside that one.
+                var settingsMock = settingsAnsweringColours();
+                globalMock
+                    .when(Global::getSettings)
+                    .thenReturn(settingsMock);
 
                 stubSharedControlsAndSelector(controlsMock);
 
@@ -250,6 +280,12 @@ final class PoliticalMapLayerTest {
 
         PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);
         MapLayerRegistry.registerLayers(List.of(hostTabMock), hostTabMock);
+    }
+
+    // One sentinel control, named so an assertion can tell the composed pieces apart. A caption is the
+    // simplest control there is, which is why it stands in for whatever the layer really contributes.
+    private static ControlSpec buildMarker(String markerText) {
+        return ControlSpec.Label.createLabel(new TextSpan(markerText, MARKER_COLOUR));
     }
 
     // A settings proxy that answers every colour lookup with one tone. Which tone a row draws in is
