@@ -18,6 +18,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Fits the label placements: one {@link ClusterAnchor} per contiguous same-owner cluster, its
@@ -75,6 +76,11 @@ public final class ClusterAnchorPlacement {
      * plain functions of the key, so the search never asks what a key means; the candidate
      * lines use a fixed diagnostic palette instead, painted by the renderer.
      *
+     * <p>That owner and the cluster's members are also what name the cluster, so each anchor
+     * comes back carrying the {@link ClusterIdentity} it was fitted to. It is handed down into
+     * the search rather than stamped on afterwards, so every path out - including the two that
+     * collapse to a dot - names its cluster by construction.
+     *
      * @param clusters        each contiguous cluster's member system ids
      * @param edgesByCellId   each cell's raw edges - the geometry lines are clipped against
      * @param siteBySystemId  each system's world position, for the axis fit and the icon
@@ -110,6 +116,10 @@ public final class ClusterAnchorPlacement {
                 grouping);
 
             var search = searchClusterAnchor(
+                // Set.copyOf here is where the member list stops being ordered: the sweep
+                // walks the members in whatever order the grouping gave them, and that
+                // order is not part of which cluster this is.
+                new ClusterIdentity(owner, Set.copyOf(memberSystemIds)),
                 rings,
                 siteBySystemId,
                 axis,
@@ -142,6 +152,7 @@ public final class ClusterAnchorPlacement {
     // With the unbiased toggle on, the box that wins on raw font height (no slope
     // penalty) rides along as the yellow diagnostic whenever the penalty moved the pick.
     private static ClusterSearch searchClusterAnchor(
+            ClusterIdentity identity,
             List<List<double[]>> rings,
             Map<String, double[]> siteBySystemId,
             PrincipalAxis axis,
@@ -157,6 +168,7 @@ public final class ClusterAnchorPlacement {
             // one dead end the search cannot work around, so only the dot can show.
             return new ClusterSearch(
                 new ClusterAnchor(
+                    identity,
                     centroidX,
                     centroidY,
                     colour,
@@ -244,6 +256,7 @@ public final class ClusterAnchorPlacement {
 
             return new ClusterSearch(
                 new ClusterAnchor(
+                    identity,
                     midX,
                     midY,
                     colour,
@@ -264,6 +277,7 @@ public final class ClusterAnchorPlacement {
 
         return new ClusterSearch(
             new ClusterAnchor(
+                identity,
                 centroidX,
                 centroidY,
                 colour,

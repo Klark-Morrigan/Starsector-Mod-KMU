@@ -41,6 +41,12 @@ is taken against. Its tuning is read into `LabelAnchorSpecification` (see `ancho
 The anchor is computed once and shared by both consumers below, so a name and its debug dot never
 disagree.
 
+Each placement also names the cluster it was fitted to, as a
+[`ClusterIdentity`](anchor/ClusterIdentity.java): the owner key plus the exact member set, compared
+order-free. Nothing drawn reads it - it is what lets a standing placement be recognised as still
+belonging to the cluster a later rebuild produced, where a split or a merge matches nothing and
+re-fits by construction.
+
 The search takes each cluster's name measurement and colour as one `ClusterLabelResolvers`, keyed
 off the key its members carry. That is the whole seam between a layer and this overlay: the layer
 decides who a key is and what it looks like, the search decides where its name goes. The two

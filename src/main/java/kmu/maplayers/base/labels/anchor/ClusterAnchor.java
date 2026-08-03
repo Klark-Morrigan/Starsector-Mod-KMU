@@ -15,6 +15,13 @@ import java.util.List;
  * on, so the two consumers share one computation; each then draws only under its own
  * toggle.
  *
+ * <p>{@code identity} names the cluster the fit was made for - the owner its name and shade
+ * were resolved from, and the exact members whose cells the search ran inside. It rides on
+ * the placement rather than in a list beside it because the anchors are what a rebuild
+ * inherits, so a second list would have to be kept in step by hand. Nothing that draws
+ * reads it; it is there so a placement can be recognised as still belonging to the cluster
+ * it was made for.
+ *
  * <p>{@code (anchorX, anchorY)} is the point the name block centres on, in world
  * (hyperspace) coordinates. When a label line was accepted it is that line's own
  * midpoint - the accepted line has no tie to the cluster's centre, since the search is
@@ -66,6 +73,7 @@ import java.util.List;
  * (dot only), where there is no band.
  */
 public record ClusterAnchor(
+    ClusterIdentity identity,
     float anchorX,
     float anchorY,
     Color colour,

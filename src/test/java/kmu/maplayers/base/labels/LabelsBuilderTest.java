@@ -3,12 +3,14 @@ package kmu.maplayers.base.labels;
 import kmlib.math.geometry.Segment;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -29,6 +31,11 @@ import static org.assertj.core.api.Assertions.within;
 final class LabelsBuilderTest {
 
     private static final Color OWNER_COLOUR = Color.RED;
+
+    // Which cluster a fixture placement was fitted to. The planner reads text, colour and
+    // geometry only, so one identity serves every fixture.
+    private static final ClusterIdentity CLUSTER_IDENTITY =
+        new ClusterIdentity("owner", Set.of("system"));
 
     // The stack geometry the multi-line tests compute by hand.
     private static final float FONT_HEIGHT = 100f;
@@ -233,6 +240,7 @@ final class LabelsBuilderTest {
 
         var lineCount = Math.max(nameLines.size(), 1);
         return new ClusterAnchor(
+            CLUSTER_IDENTITY,
             anchorX,
             anchorY,
             OWNER_COLOUR,
@@ -248,6 +256,7 @@ final class LabelsBuilderTest {
     // A collapsed placement: only the dot, no accepted line, so no name is drawn.
     private static ClusterAnchor collapsedAnchor(float anchorX, float anchorY) {
         return new ClusterAnchor(
+            CLUSTER_IDENTITY,
             anchorX, anchorY,
             OWNER_COLOUR,
             List.of(),

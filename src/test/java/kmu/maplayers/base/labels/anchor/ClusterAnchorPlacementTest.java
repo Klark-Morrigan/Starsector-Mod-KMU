@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -111,6 +112,15 @@ final class ClusterAnchorPlacementTest {
             "A", new double[] {500, 500}, "B", new double[] {1500, 500});
         private static final CellGrouping HORIZONTAL_PAIR_GROUPING = grouping(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY));
+
+        // The identity that pair's cluster must report, spelled out from the fixture's own
+        // key and members rather than read back off the grouping the search was handed, so a
+        // search that named the wrong cluster fails instead of agreeing with itself.
+        private static final ClusterIdentity HORIZONTAL_PAIR_IDENTITY =
+            new ClusterIdentity("F", Set.of("A", "B"));
+
+        // A second owner, for the case that sweeps two clusters at once.
+        private static final String RIVAL_GROUP_KEY = "G";
 
         // Two 500-wide, 1000-tall cells stacked: the cluster is genuinely tall and thin
         // (inset x 150..350, y 150..1850), so a slanted line is width-limited to a short
@@ -633,6 +643,84 @@ final class ClusterAnchorPlacementTest {
                 .containsExactly(GROUP_KEY);
             assertThat(anchors.get(0).colour())
                 .isEqualTo(Color.MAGENTA);
+        }
+
+        @Test
+        void computeClusterAnchorsNamesTheClusterEachAnchorWasFittedTo() {
+            // The anchors are all a rebuild inherits, so a placement that could not say
+            // which cluster it was made for could never be matched against a later
+            // rebuild's clusters - the owner its name and shade came from, and the members
+            // whose cells bounded the search, are both part of that answer.
+            var anchors = computeAnchors(
+                List.of(List.of("A", "B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                spec(0.0, 0.0, 3, 1, 0.0, 2.0),
+                createLabelResolvers(slenderNameEstimators()));
+
+            assertThat(anchors.get(0).identity())
+                .isEqualTo(HORIZONTAL_PAIR_IDENTITY);
+        }
+
+        @Test
+        void computeClusterAnchorsNamesEachClusterOfASweepAfterItsOwnMembers() {
+            // The same two cells split between two owners, so the sweep fits two clusters in
+            // one call. An identity resolved once for the whole call - or left over from the
+            // cluster before - would have both anchors claiming the same owner or the same
+            // members, which is exactly the mismatch that makes a placement reusable for a
+            // cluster it was never fitted to.
+            var anchors = computeAnchors(
+                List.of(List.of("A"), List.of("B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)),
+                spec(0.0, 0.0, 3, 1, 0.0, 2.0),
+                createLabelResolvers(slenderNameEstimators()));
+
+            assertThat(anchors)
+                .extracting(ClusterAnchor::identity)
+                .containsExactly(
+                    new ClusterIdentity("F", Set.of("A")),
+                    new ClusterIdentity("G", Set.of("B")));
+        }
+
+        @Test
+        void computeClusterAnchorsNamesTheClusterWhenNoLineFits() {
+            // The no-room collapse mints its own anchor. An unnamed dot would have to be
+            // re-fitted every rebuild, and re-proving that a cluster still has no room is
+            // the one search there is least point repeating.
+            var anchors = computeAnchors(
+                List.of(List.of("A", "B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                spec(1000.0, 0.0, 3, 3, 0.0, 2.0),
+                createLabelResolvers(slenderNameEstimators()));
+
+            assertThat(anchors.get(0).acceptedAxis())
+                .isNull();
+            assertThat(anchors.get(0).identity())
+                .isEqualTo(HORIZONTAL_PAIR_IDENTITY);
+        }
+
+        @Test
+        void computeClusterAnchorsNamesTheClusterWhenNoBorderRingTraces() {
+            // The third and last way an anchor is minted: the dead end where no border
+            // traces at all. It names its cluster like the other two, so no path out of
+            // the search produces a placement that cannot be recognised.
+            var anchors = computeAnchors(
+                List.of(List.of("A", "B")),
+                Map.of(),
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                spec(0.0, 0.0, 3, 3, 0.0, 2.0),
+                createLabelResolvers(slenderNameEstimators()));
+
+            assertThat(anchors.get(0).acceptedAxis())
+                .isNull();
+            assertThat(anchors.get(0).identity())
+                .isEqualTo(HORIZONTAL_PAIR_IDENTITY);
         }
 
         @Test

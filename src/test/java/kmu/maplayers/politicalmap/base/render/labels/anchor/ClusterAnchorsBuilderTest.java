@@ -11,6 +11,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
@@ -448,6 +449,7 @@ final class ClusterAnchorsBuilderTest {
     // is cleared. Only its presence is read, so every field is inert.
     private static ClusterAnchor staleAnchor() {
         return new ClusterAnchor(
+            new ClusterIdentity("stale", Set.of("stale")),
             0f,
             0f,
             Color.WHITE,

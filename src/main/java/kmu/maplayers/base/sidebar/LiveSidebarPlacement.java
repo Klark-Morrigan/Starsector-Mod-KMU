@@ -11,9 +11,9 @@ import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.input.TabPanelController;
-import kmlib.starsector.ui.layout.ControlStripLayout;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
+import kmlib.starsector.ui.layout.TabsControlLayout;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.tabs.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
@@ -243,7 +243,7 @@ public final class LiveSidebarPlacement {
             headerBandHeight,
             VanillaTabColours.mapTabs(),
             HotkeyStyle.createUnderlined(),
-            new TextFace(TAB_FONT, ControlStripLayout.TAB_FONT_SIZE));
+            new TextFace(TAB_FONT, TabsControlLayout.TAB_FONT_SIZE));
     }
 
     // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
