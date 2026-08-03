@@ -89,10 +89,10 @@ public abstract class BaseSidebarHost implements SidebarHost {
 
     /**
      * Opens the panel at the fold the loaded save was left at, replacing the controller with one seeded at
-     * that end so the panel is already there on the first frame rather than sliding into place. Call once on
-     * game load: a host is a process-lifetime singleton built long before any sector exists, so its
-     * construction cannot read the save and only a per-load reseed can.
+     * that end so the panel is already there on the first frame rather than sliding into place. Replacing
+     * also clears the previous save's scroll offset in the same move.
      */
+    @Override
     public final void restoreFoldFromSave() {
         controller = createControllerAtFold(foldSelection.isRailDocked());
     }

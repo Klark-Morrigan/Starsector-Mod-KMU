@@ -52,6 +52,19 @@ flag, so the intel host reads the visor's, not the campaign map's.
 `IntelSidebarHost` reaches the concrete intel panel through KMLib's `IntelScreenView` seam, which
 fails closed - an unresolvable link hides the sidebar rather than throwing on a live screen.
 
+`SidebarHosts` is the roster, and where a question about "the sidebar" with no screen attached to it
+is put to all of them: `isPointOverAnySidebar` answers whether a point in UI coordinates lands on a
+live panel, for code reached through hooks that never name the screen that invoked them. It asks each
+host's `isOverlayShowing()` before its placement, in that order, because only the intel host's
+placement goes null off its screen - the on-map host hangs its panel from the screen corner and
+resolves a box wherever it is asked. What the point is tested against is the placement's own
+`containsPoint`, so the body-plus-notch footprint is KMLib's answer and not a second copy here.
+
+That roster is the whole of "every host": `KMU_ModPlugin` walks it for the per-load fold reseed and
+for both listener registrations, which is why `restoreFoldFromSave` sits on `SidebarHost` rather than
+only on `BaseSidebarHost`. A new screen is added to the roster and is reseeded, registered, and
+answered for from that one edit.
+
 Border edges are decided twice for one reason: `layoutBorderEdges()` is what the layout reserves
 inset space for, `decideBorderEdges()` is what gets stroked. The left is dropped in both (reserving
 it would gap the box off the visor); the bottom keeps its reserved inset but drops its stroke once

@@ -12,8 +12,7 @@ import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.render.SectorMapLayerTerrainPlugin;
-import kmu.maplayers.base.sidebar.runtime.IntelSidebarHost;
-import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
+import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
 import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
@@ -138,12 +137,13 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         try {
-            // Open both sidebars at the folds this save was left at. Per load rather than at construction:
+            // Open every sidebar at the fold this save was left at. Per load rather than at construction:
             // the hosts are process-lifetime singletons built before any sector exists, so this is the only
             // point they can read the save - and it also stops the previous save's folds leaking into this
-            // one. Each host reads its own key, so the two screens' folds stay independent.
-            MapSidebarHost.INSTANCE.restoreFoldFromSave();
-            IntelSidebarHost.INSTANCE.restoreFoldFromSave();
+            // one. Each host reads its own key, so the screens' folds stay independent.
+            for (var host : SidebarHosts.getRegisteredHosts()) {
+                host.restoreFoldFromSave();
+            }
         } catch (RuntimeException exception) {
             LOG.error("Failed to restore KMU political map sidebar folds", exception);
         }
@@ -306,13 +306,13 @@ public class KMU_ModPlugin extends BaseModPlugin {
             new MapLayerSectorWatcher(new PoliticalMapStalenessSource()));
     }
 
-    // Registers the sidebar's render and input listeners for both screens it draws on: the sector
-    // map (MapSidebarHost) and the intel screen (IntelSidebarHost). One SidebarRenderer and one
+    // Registers the sidebar's render and input listeners for every screen it draws on, walking the one
+    // roster the rest of the mod asks its host-blind questions of. One SidebarRenderer and one
     // SidebarInput per host - a render listener that draws the panel and an input listener that reads
     // its clicks, notch, and hotkeys (a render pass gets no events to consume). All transient: each
     // host's active-layer pick lives in sector memory and the render listeners' cached GL text must
     // never enter a save, so all are re-added fresh each load. Remove-then-add per class clears any
-    // persistent registration an older save captured and re-adds both hosts, so exactly one of each
+    // persistent registration an older save captured and re-adds every host, so exactly one of each
     // renders per screen.
     static void installPoliticalMapSidebar(SectorAPI sector) {
         if (sector == null) {
@@ -324,13 +324,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
             return;
         }
 
+        // Both classes are cleared before either is re-added, so a host is never left with one half of
+        // its pair registered while the loop is partway through the roster.
         listenerManager.removeListenerOfClass(SidebarRenderer.class);
-        listenerManager.addListener(new SidebarRenderer(MapSidebarHost.INSTANCE), true);
-        listenerManager.addListener(new SidebarRenderer(IntelSidebarHost.INSTANCE), true);
-
         listenerManager.removeListenerOfClass(SidebarInput.class);
-        listenerManager.addListener(new SidebarInput(MapSidebarHost.INSTANCE), true);
-        listenerManager.addListener(new SidebarInput(IntelSidebarHost.INSTANCE), true);
+
+        for (var host : SidebarHosts.getRegisteredHosts()) {
+            listenerManager.addListener(new SidebarRenderer(host), true);
+            listenerManager.addListener(new SidebarInput(host), true);
+        }
     }
 
     // Registers the hover-tooltip dispatcher - the render listener that draws whichever tooltip the

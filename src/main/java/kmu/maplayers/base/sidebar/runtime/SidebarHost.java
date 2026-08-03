@@ -69,6 +69,19 @@ public interface SidebarHost {
     void handleKeyPress(InputEventAPI event);
 
     /**
+     * Opens this host's panel at the fold the loaded save was left at. Call once on game load: a host is a
+     * process-lifetime singleton built long before any sector exists, so its construction cannot read the
+     * save and only a per-load reseed can - which is also what stops the previous save's fold leaking into
+     * the next one loaded in the same run.
+     *
+     * <p>On the role rather than on an implementation because the load-time pass over the hosts is the same
+     * pass that registers their listeners: a host that could not be reseeded through this interface would
+     * have to be named separately there, and a roster naming its members twice is one a new host can be
+     * added to only halfway.
+     */
+    void restoreFoldFromSave();
+
+    /**
      * @return a short description of this host's current view state, for the sidebar's view-state log so a
      *         panel gated out or drawn off-screen is diagnosable from the log alone. Prose for whoever reads
      *         that log, not a value to branch on: each host names its own states in its own words, and the

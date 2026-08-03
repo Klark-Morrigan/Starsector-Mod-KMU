@@ -10,7 +10,7 @@ import kmlib.starsector.ui.map.ModelviewMatrixReaders;
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.maplayers.base.sidebar.runtime.MapSidebarHost;
+import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
@@ -197,24 +197,11 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             && !surfaceBox.containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
     }
 
-    // Whether the cursor sits over the map sidebar. Reads the same placement the sidebar draws and
-    // hit-tests, so the hover parks over exactly the box the panel occupies; a null placement (the
-    // bar is not on screen) is nothing to be over.
+    // Whether the cursor sits over a map-layer sidebar, on whichever screen this frame is being drawn
+    // for. Host-blind because this renderer has no way to be anything else: it is reached through a
+    // hook that names no screen, and the layer draws on the sector map and on the intel screen's map
+    // visor through the same terrain pass, so the bar the cursor is over is not always the on-map one.
     private static boolean isCursorOverSidebar() {
-
-        // The on-map sidebar is the one drawn on this screen, so the cursor test reads the on-map host's
-        // own placement - the same host, controller, layer selection, and layout the render pass draws.
-        var placement = MapSidebarHost.INSTANCE.resolvePlacement();
-        if (placement == null) {
-            return false;
-        }
-        
-        var uiX = UiCursor.getUiX();
-        var uiY = UiCursor.getUiY();
-
-        // The collapse notch protrudes past the body's edge - when the panel is docked it is the
-        // only part still on screen - so a cursor over it is still over the sidebar.
-        return placement.body().box().containsPoint(uiX, uiY)
-            || (placement.notch() != null && placement.notch().containsPoint(uiX, uiY));
+        return SidebarHosts.isPointOverAnySidebar(UiCursor.getUiX(), UiCursor.getUiY());
     }
 }
