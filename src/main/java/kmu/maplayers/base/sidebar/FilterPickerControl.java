@@ -1,6 +1,11 @@
 package kmu.maplayers.base.sidebar;
 
+import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.ReselectBehaviour;
+import kmlib.starsector.ui.text.TextSpan;
+import kmlib.starsector.ui.widgets.LabelledRow;
+import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.lists.ColumnsSelectorControl;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 import kmlib.starsector.ui.widgets.lists.ListSort;
@@ -12,7 +17,6 @@ import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * A spotlight picker's body controls, top to bottom: a rule heading the block, the columns selector,
@@ -117,13 +121,12 @@ public final class FilterPickerControl {
         // layout, renderer, and input listener all read that one flag.
         controls.add(
             ControlSpec.VerticalTable
-                .iconList(
-                    resolveLabels(rankedItems),
-                    resolveIconPaths(rankedItems),
-                    resolveTrailingValues(rankedItems, sort.mode()),
+                .createColumnTable(
+                    buildItemRows(rankedItems, sort.mode()),
                     selectedIndex,
-                    cellIndex -> pickItem(scopeId, rankedItems, selectedIndex, cellIndex),
-                    columns.columnCount())
+                    cellIndex -> pickItem(scopeId, rankedItems, selectedIndex, cellIndex))
+                .handlesReselect(ReselectBehaviour.DESELECT)
+                .spreadsAcross(columns.columnCount())
                 .asScrolling());
 
         return List.copyOf(controls);
@@ -167,41 +170,33 @@ public final class FilterPickerControl {
         return ControlSpec.NO_SELECTION;
     }
 
-    // Each option's label, in list order; an item with no resolved name draws as an unlabelled row
-    // rather than a null the width measurer would choke on, so an empty string stands in.
-    private static List<String> resolveLabels(List<? extends SelectableListItem> items) {
-        return mapItems(
-            items,
-            item -> item.displayName() == null ? "" : item.displayName());
-    }
+    // One row per item, in list order: the item's crest leading it, its name, and the active sort
+    // metric's value for that item trailing it. Built as whole rows rather than as a column each, so an
+    // item's three parts are written together and cannot fall out of step with one another.
+    //
+    // An item with no resolved name draws as an unlabelled row rather than a null the width measurer
+    // would choke on; an item with no crest leads with nothing; and every row carries the metric's value
+    // (a zero metric shows "0" rather than dropping the column), which for a mode with no numeric metric
+    // is blank throughout and the rows read as a plain list.
+    private static <T extends SelectableListItem> List<LabelledRow> buildItemRows(
+            List<T> items,
+            ListSortMode<T> sortMode) {
 
-    // Each option's crest path, in list order, keeping the nulls: an item with no crest contributes a
-    // null the row draws without an icon, so the list stays aligned to the labels index for index.
-    private static List<String> resolveIconPaths(List<? extends SelectableListItem> items) {
-        return mapItems(
-            items,
-            SelectableListItem::crestSpritePath);
-    }
+        var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
+        var itemRows = new ArrayList<LabelledRow>(items.size());
 
-    // Each option's trailing value, in list order: the active sort metric's number for the item, drawn
-    // right-aligned so the rows read as a ranked table sorted by the value shown. Kept aligned to the
-    // labels index for index, so every row carries a value (an item with a zero metric shows "0"
-    // rather than dropping the column). A mode with no numeric metric yields blanks, and the rows read
-    // as a plain list.
-    private static <T> List<String> resolveTrailingValues(List<T> items, ListSortMode<T> sortMode) {
-        return mapItems(
-            items,
-            sortMode::resolveTrailingValue);
-    }
-
-    // One column of the picker table: each item mapped to a cell string, in list order, so the label,
-    // crest, and value columns stay aligned index for index. A null entry is kept (a crestless item's
-    // null path is a real "no icon"), so callers that need to null-guard do it in their own mapping.
-    private static <T> List<String> mapItems(List<T> items, Function<T, String> resolveCell) {
-        var cells = new ArrayList<String>(items.size());
         for (var item : items) {
-            cells.add(resolveCell.apply(item));
+            var displayName = item.displayName() == null ? "" : item.displayName();
+            var crestSpritePath = item.crestSpritePath();
+
+            itemRows.add(LabelledRow
+                .createRow(new TextSpan(displayName, textColour))
+                .leadsWith(crestSpritePath == null
+                    ? RowSlot.EMPTY
+                    : new RowSlot.Image(crestSpritePath))
+                .trailsWith(new RowSlot.Text(
+                    new TextSpan(sortMode.resolveTrailingValue(item), textColour))));
         }
-        return cells;
+        return itemRows;
     }
 }

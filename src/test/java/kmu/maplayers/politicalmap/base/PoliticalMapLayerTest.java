@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.awt.Color;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -192,6 +194,15 @@ final class PoliticalMapLayerTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
+                // The picker's rows carry the engine's text tone, which Misc reads off the live
+                // settings - so building one for real needs a settings proxy that answers a colour.
+                // Stubbed before the static stubbing opens, since its own stubbing would otherwise
+                // land inside that one.
+                var settingsMock = settingsAnsweringColours();
+                globalMock
+                    .when(Global::getSettings)
+                    .thenReturn(settingsMock);
+
                 stubSharedControlsAndSelector(controlsMock);
 
                 var sortRow = findSortRow(PoliticalMapLayer.INSTANCE.getBodyControls());
@@ -239,6 +250,17 @@ final class PoliticalMapLayerTest {
 
         PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);
         MapLayerRegistry.registerLayers(List.of(hostTabMock), hostTabMock);
+    }
+
+    // A settings proxy that answers every colour lookup with one tone. Which tone a row draws in is
+    // not what these tests read, so one stands in for the whole palette.
+    private static SettingsAPI settingsAnsweringColours() {
+        
+        var settingsMock = mock(SettingsAPI.class);
+        when(settingsMock.getColor(any()))
+            .thenReturn(Color.LIGHT_GRAY);
+
+        return settingsMock;
     }
 
     // The picker's paired sort row, found by type rather than by index so the assertion does not

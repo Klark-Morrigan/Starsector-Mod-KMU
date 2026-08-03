@@ -1,18 +1,28 @@
 package kmu.maplayers.base.sidebar;
 
+import com.fs.starfarer.api.util.Misc;
+
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
+import kmlib.starsector.ui.text.TextSpan;
+import kmlib.starsector.ui.widgets.LabelledRow;
+import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
+import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuStrings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
+import java.awt.Color;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,6 +66,30 @@ final class FilterPickerControlTest {
     private static final int DIVIDER = 0;
     private static final int COLUMNS_SELECTOR = 1;
     private static final int SORT_ROW = 2;
+
+    // The engine tone the picker's rows carry, stood in for so the rows can be built without the live
+    // palette in reach.
+    private static final Color TEXT = Color.LIGHT_GRAY;
+
+    private MockedStatic<Misc> miscMock;
+
+    @BeforeEach
+    void installColours() {
+        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
+        // mocking it against an uninstalled settings proxy would fail on class load.
+        StarsectorSettingsFake.installSettings();
+        
+        miscMock = Mockito.mockStatic(Misc.class);
+        miscMock
+            .when(Misc::getTextColor)
+            .thenReturn(TEXT);
+    }
+
+    @AfterEach
+    void clearColours() {
+        miscMock.close();
+        StarsectorSettingsFake.clearSettings();
+    }
 
     @Nested
     class BuildControls {
@@ -182,13 +216,13 @@ final class FilterPickerControlTest {
                 assertThat(picker.scrolls())
                     .isTrue();
 
-                // Labels are the items' names, the icons their crests, aligned index for index so a
-                // crestless item rides as a null entry rather than dropping a row. Alpha-sorted, so
-                // Drift leads.
+                // Each row carries its own name and its own crest, so a crestless item leads with the
+                // empty slot rather than dropping out of a parallel column. Alpha-sorted, so Drift
+                // leads.
                 assertThat(picker.labels())
                     .containsExactly("Drift", "Storm");
-                assertThat(picker.iconPaths())
-                    .containsExactly(null, "crest_storm");
+                assertThat(readLeadingRowSlots(picker))
+                    .containsExactly(RowSlot.EMPTY, new RowSlot.Image("crest_storm"));
             }
         }
 
@@ -210,8 +244,8 @@ final class FilterPickerControlTest {
 
                 assertThat(picker.labels())
                     .containsExactly("Squall", "Storm", "Drift");
-                assertThat(picker.trailingLabels())
-                    .containsExactly("12", "8", "3");
+                assertThat(readTrailingRowSlots(picker))
+                    .containsExactly(valueRowSlot("12"), valueRowSlot("8"), valueRowSlot("3"));
             }
         }
 
@@ -231,8 +265,8 @@ final class FilterPickerControlTest {
 
                 assertThat(picker.labels())
                     .containsExactly("Drift", "Storm");
-                assertThat(picker.trailingLabels())
-                    .containsExactly("3", "8");
+                assertThat(readTrailingRowSlots(picker))
+                    .containsExactly(valueRowSlot("3"), valueRowSlot("8"));
             }
         }
 
@@ -245,8 +279,8 @@ final class FilterPickerControlTest {
 
                 var picker = pickerOf(build(HAZARDS, null, HazardSortMode.ALPHA));
 
-                assertThat(picker.trailingLabels())
-                    .containsExactly("", "");
+                assertThat(readTrailingRowSlots(picker))
+                    .containsExactly(valueRowSlot(""), valueRowSlot(""));
             }
         }
 
@@ -476,10 +510,30 @@ final class FilterPickerControlTest {
     }
 
     // The picker list is always the block's last row, so a test reads it from the tail. Read as the
-    // vertical table it is, so a test reads its icon and value columns, its scroll flag, and its
-    // re-pick behaviour.
+    // vertical table it is, so a test reads its rows, its scroll flag, and its re-pick behaviour.
     private static ControlSpec.VerticalTable pickerOf(List<ControlSpec> controls) {
         return (ControlSpec.VerticalTable) controls.get(controls.size() - 1);
+    }
+
+    // What each row leads with, top to bottom - an item's crest, or the empty slot for an item with
+    // none.
+    private static List<RowSlot> readLeadingRowSlots(ControlSpec.VerticalTable picker) {
+        return picker.labelledRows().stream()
+            .map(LabelledRow::leadingRowSlot)
+            .toList();
+    }
+
+    // What each row trails with, top to bottom - the sort metric's value for that item.
+    private static List<RowSlot> readTrailingRowSlots(ControlSpec.VerticalTable picker) {
+        return picker.labelledRows().stream()
+            .map(LabelledRow::trailingRowSlot)
+            .toList();
+    }
+
+    // The trailing slot a row carrying this value holds, in the tone the picker resolves - what an
+    // assertion spells out to say "this row's value column reads that".
+    private static RowSlot valueRowSlot(String value) {
+        return new RowSlot.Text(new TextSpan(value, TEXT));
     }
 
     // The paired sort row, read as the side-by-side group it is so a test reads its left column (the
