@@ -112,8 +112,9 @@ keeps the builder out of the question entirely: it neither formats, nor decides 
 mean anything under the joining in force, nor holds a logger. `IGNORED` is the normal answer.
 `HatchBuildDiagnostics` is the implementation that reports a build, and the shape it reports in is
 the point - the settings once, ahead of any geometry, then one row per body carrying only what
-that body decided. A value that cannot vary across a rebuild belongs on the heading; restated per
-row it buries the few numbers that do vary among repetitions of the ones that never do.
+that body decided (its segment count, what cutting it cost, and how its joins closed). A value
+that cannot vary across a rebuild belongs on the heading; restated per row it buries the few
+numbers that do vary among repetitions of the ones that never do.
 
 `TracedFill` is what it hands back, and where the cutting lives: sealed over the three ways an
 owner fills - nothing, whole bodies, or per fill state - so only the third carries rings, and

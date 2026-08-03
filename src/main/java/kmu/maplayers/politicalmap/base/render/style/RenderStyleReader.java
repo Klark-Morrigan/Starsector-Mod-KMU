@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmlib.opengl.GlLineQuality;
-import kmlib.opengl.hatch.HatchJoining;
 
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
@@ -18,7 +17,6 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
-import kmu.settings.HatchJoiningChoice;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.LinkedHashMap;
@@ -79,7 +77,6 @@ public final class RenderStyleReader {
             new HatchStyle(
                 KmuLunaSettings.getPoliticalMapHatchSpacing(),
                 KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
-                resolveHatchJoiningOf(KmuLunaSettings.getPoliticalMapHatchJoining()),
                 KmuLunaSettings.getPoliticalMapHatchJoinToleranceFraction(),
                 new GlLineHatchStroke(
                     HATCH_LINE_QUALITY,
@@ -213,13 +210,4 @@ public final class RenderStyleReader {
             0);
     }
 
-    // The player's pick as the hatch geometry takes it. The crossing lives here rather than on the
-    // settings enum for the reason the palette slot's does: the translation belongs to the side
-    // that knows what the value is for, and {@code kmu.settings} stays clear of the render layer.
-    private static HatchJoining resolveHatchJoiningOf(HatchJoiningChoice choice) {
-        return switch (choice) {
-            case PER_TRIANGLE -> HatchJoining.PER_TRIANGLE;
-            case COALESCED -> HatchJoining.COALESCED;
-        };
-    }
 }

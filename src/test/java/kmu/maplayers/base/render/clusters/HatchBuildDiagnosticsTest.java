@@ -2,7 +2,6 @@ package kmu.maplayers.base.render.clusters;
 
 import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.hatch.HatchJoinTally;
-import kmlib.opengl.hatch.HatchJoining;
 import kmlib.opengl.hatch.HatchRun;
 
 import kmu.maplayers.base.theme.GlLineHatchStroke;
@@ -34,42 +33,35 @@ final class HatchBuildDiagnosticsTest {
     class DescribeHatchSpecification {
 
         @Test
-        void describeHatchSpecificationCarriesTheToleranceOnlyForAJoiningThatReadsIt() {
-
-            var merging = HatchBuildDiagnostics.describeHatchSpecification(
-                createHatchStyle(HatchJoining.COALESCED));
-
-            var unmerging = HatchBuildDiagnostics.describeHatchSpecification(
-                createHatchStyle(HatchJoining.PER_TRIANGLE));
-
-            assertThat(merging)
-                .contains("tolerance=0.001");
-
-            // A joining that merges nothing never reads the tolerance, so naming it would report a
-            // setting that had no part in what was drawn.
-            assertThat(unmerging)
-                .doesNotContain("tolerance");
-        }
-
-        @Test
-        void describeHatchSpecificationNamesBothHalvesOfTheStyle() {
-            
-            var specification = HatchBuildDiagnostics.describeHatchSpecification(
-                createHatchStyle(HatchJoining.COALESCED));
-
-            // The layout is baked and the stroke is read per frame, so a capture attributed to one
-            // half alone cannot be reproduced. The stroke prints as itself, which is what keeps a
-            // kind this class has never heard of legible.
-            assertThat(specification)
-                .contains("joining=COALESCED")
-                .contains("spacing=400.0")
-                .contains("angleRadians=0.75")
-                .contains("stroke=GlLineHatchStroke[quality=ALIASED, widthPixels=2.0]");
+        void describeHatchSpecificationNamesEverySettingTheCutIsMadeUnder() {
+            // A capture is attributed to the settings that produced it, so both halves of the
+            // style are named: the layout that was baked and the stroke read per frame. The stroke
+            // prints as itself rather than as fields picked out here, which is what keeps a kind
+            // this class has never heard of legible.
+            assertThat(HatchBuildDiagnostics.describeHatchSpecification(createHatchStyle()))
+                .isEqualTo("Cluster hatch specification; spacing=400.0"
+                    + " angleRadians=0.75"
+                    + " tolerance=0.001"
+                    + " stroke=GlLineHatchStroke[quality=ALIASED, widthPixels=2.0]"
+                    + " (tolerance and gaps as fractions of spacing)");
         }
     }
 
     @Nested
     class DescribeHatchRun {
+
+        @Test
+        void describeHatchRunCarriesOnlyWhatVariesPerBody() {
+            // Every reading here differs body to body, and none of them restates the tolerance
+            // they were measured against - the heading already gave it, once.
+            assertThat(HatchBuildDiagnostics.describeHatchRun(createTimedHatchRun()))
+                .isEqualTo("Cluster hatch built; segments=1 took=3.0us"
+                    + " exactJoins=7"
+                    + " toleranceJoins=2"
+                    + " overlappingJoins=1"
+                    + " widestClosedGap=0.004"
+                    + " narrowestOpenGap=0.06");
+        }
 
         @Test
         void describeHatchRunReportsTheSegmentCountInSegmentsRatherThanFloats() {
@@ -81,55 +73,13 @@ final class HatchBuildDiagnosticsTest {
                 ELAPSED_NANOS);
 
             assertThat(HatchBuildDiagnostics.describeHatchRun(run))
-                .isEqualTo("Cluster hatch built; segments=2 took=3.0us");
+                .startsWith("Cluster hatch built; segments=2 ");
         }
     }
 
-    @Nested
-    class DescribeJoinedHatchRun {
-
-        @Test
-        void describeJoinedHatchRunAddsTheJoinReadingsToTheSegmentCount() {
-            // Every reading varies per body, so all of them belong on the row - and none of them
-            // restates the tolerance they were measured against, which the heading already gave.
-            assertThat(HatchBuildDiagnostics.describeJoinedHatchRun(createTimedHatchRun()))
-                .isEqualTo("Cluster hatch built; segments=1 took=3.0us"
-                    + " exactJoins=7"
-                    + " toleranceJoins=2"
-                    + " overlappingJoins=1"
-                    + " widestClosedGap=0.004"
-                    + " narrowestOpenGap=0.06");
-        }
-    }
-
-    @Nested
-    class SelectRunDescriberFor {
-
-        @Test
-        void selectRunDescriberForOmitsTheJoinReadingsUnderAJoiningThatMakesNoJoins() {
-            // Its tally is structural zeroes rather than measurements, so a row carrying them
-            // would read exactly like a merge that ran and closed nothing.
-            var describeRun = HatchBuildDiagnostics.selectRunDescriberFor(
-                createHatchStyle(HatchJoining.PER_TRIANGLE));
-
-            assertThat(describeRun.apply(createTimedHatchRun()))
-                .isEqualTo("Cluster hatch built; segments=1 took=3.0us");
-        }
-
-        @Test
-        void selectRunDescriberForCarriesTheJoinReadingsUnderAJoiningThatMerges() {
-            var describeRun = HatchBuildDiagnostics.selectRunDescriberFor(
-                createHatchStyle(HatchJoining.COALESCED));
-
-            assertThat(describeRun.apply(createTimedHatchRun()))
-                .contains("exactJoins=7")
-                .contains("narrowestOpenGap=0.06");
-        }
-    }
-
-    // One segment, with a tally distinctive enough that a row built from the wrong describer is
-    // caught by the readings it does or does not carry rather than by its length. Timed at a span
-    // milliseconds would round away, so a row that reported it in them fails here.
+    // One segment, with a tally distinctive enough that a reading threaded into the wrong slot is
+    // caught by value. Timed at a span milliseconds would round away, so a row that reported the
+    // cut in them fails here.
     private static TimedHatchRun createTimedHatchRun() {
         return new TimedHatchRun(
             new HatchRun(
@@ -138,11 +88,10 @@ final class HatchBuildDiagnosticsTest {
             ELAPSED_NANOS);
     }
 
-    private static HatchStyle createHatchStyle(HatchJoining joining) {
+    private static HatchStyle createHatchStyle() {
         return new HatchStyle(
             SPACING,
             ANGLE_RADIANS,
-            joining,
             JOIN_TOLERANCE,
             new GlLineHatchStroke(GlLineQuality.ALIASED, WIDTH_PIXELS));
     }

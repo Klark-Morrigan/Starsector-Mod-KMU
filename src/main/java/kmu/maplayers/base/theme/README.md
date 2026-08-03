@@ -54,11 +54,9 @@ knob is handed. Splitting `BorderSmoothingStyle` that way is what lets each smoo
 only its own half, so a sanding number cannot reach the rounding pass and back again.
 
 `HatchStyle` splits along the same line, by *when* each part is decided rather than by which pass
-reads it: `spacing`, `angleRadians`, `joining` and `joinToleranceFraction` shape the clipped line
-geometry and are baked into the drawables, while `stroke` is read per frame at the emit. The
-tolerance sits flat beside the joining rather than inside it because only one joining reads it and
-the pair would otherwise have to be a type of its own for the sake of one number - the theme
-carries it and the geometry ignores it where it does not apply. The stroke is the one sealed
+reads it: `spacing`, `angleRadians` and `joinToleranceFraction` shape the clipped line geometry and
+are baked into the drawables, while `stroke` is read per frame at the emit. The stroke is the one
+sealed
 interface here - `GlLineHatchStroke` today - because how a hatch reaches the screen decides which
 numbers it needs at all, and a flat record carrying every substrate's fields would leave
 combinations nothing can draw representable. The renderer dispatches on which arrived and reads

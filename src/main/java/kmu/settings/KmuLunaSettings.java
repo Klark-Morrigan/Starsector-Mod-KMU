@@ -363,21 +363,18 @@ public final class KmuLunaSettings {
     // cluster - the spotlighted bloc's present-but-dominated systems - so it reads as
     // "mine, but contested" against the solid cluster it holds outright. Only that one
     // territory hatches; spacing is the perpendicular gap between lines in world units,
-    // angle their direction in degrees off horizontal, width the pixel stroke of each
-    // line, and joining how many drawn segments one line's crossings of that ground are
-    // packed into. All four feed the drawables rebuild, so a change repaints the hatch live.
+    // angle their direction in degrees off horizontal, and width the pixel stroke of each
+    // line. All three feed the drawables rebuild, so a change repaints the hatch live.
     private static final String HATCH_SPACING_FIELD =
         "kmu_politicalMapHatchSpacing";
     private static final String HATCH_ANGLE_FIELD =
         "kmu_politicalMapHatchAngle";
     private static final String HATCH_WIDTH_FIELD =
         "kmu_politicalMapHatchWidth";
-    private static final String HATCH_JOINING_FIELD =
-        "kmu_politicalMapHatchJoining";
 
-    // Hatch fill - coalesced (Dev tab): the one knob only the merging joining reads. Sits in
-    // its own section because a knob that is inert under the other joining should not read as
-    // part of the pattern every hatch has.
+    // Hatch fill - joining (Dev tab): how near two of one hatch line's crossings must be to
+    // count as the same stroke. Its own section because it tunes the merge that packs the
+    // clipped crossings into segments, not the pattern those lines are laid out in.
     private static final String HATCH_JOIN_TOLERANCE_FIELD =
         "kmu_politicalMapHatchJoinTolerance";
 
@@ -641,12 +638,6 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_HATCH_SPACING = 400.0;
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
     private static final double DEFAULT_HATCH_WIDTH = 1.0;
-
-    // Coalesced by default: a stroke that never leaves the cluster comes back as one primitive,
-    // which is what stops a wide aliased line restarting its stair-step phase mid-stroke. Per
-    // triangle stays selectable as the reference the merge is measured against.
-    private static final HatchJoiningChoice DEFAULT_HATCH_JOINING =
-        HatchJoiningChoice.COALESCED;
 
     // A tenth of a percent of the spacing by default, which sits between two measured bounds
     // rather than between two guessed ones. On a real sector the crossings the merge has to close
@@ -1169,15 +1160,6 @@ public final class KmuLunaSettings {
      */
     public static double getPoliticalMapHatchWidth() {
         return readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH);
-    }
-
-    /**
-     * @return how one contested-cluster hatch line's several crossings of that ground are cut
-     *         into drawn segments - one per triangle crossed, or merged so a stroke that never
-     *         leaves the cluster is a single primitive
-     */
-    public static HatchJoiningChoice getPoliticalMapHatchJoining() {
-        return readChoice(HATCH_JOINING_FIELD, DEFAULT_HATCH_JOINING);
     }
 
     /**

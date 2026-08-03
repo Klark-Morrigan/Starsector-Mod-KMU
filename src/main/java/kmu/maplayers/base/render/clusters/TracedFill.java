@@ -107,7 +107,6 @@ public sealed interface TracedFill {
                 hatchedTriangles,
                 hatch.angleRadians(),
                 hatch.spacing(),
-                hatch.joining(),
                 hatch.joinToleranceFraction());
             var elapsedNanos = System.nanoTime() - cutStart;
 

@@ -169,26 +169,6 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     @Nested
-    class ChoiceBackedDefaults {
-
-        @Test
-        void hatchJoiningShipsTheMergingJoining() {
-            // Which joining ships is a decision taken on measured evidence - the merging one is
-            // what removes the stair-phase artefacts along a stroke - so the shipped value is
-            // pinned rather than left to survive whatever edits the file sees next.
-            //
-            // Only the file's half is held here. The Java fallback beside it cannot be read in a
-            // unit test: KmuLunaSettings cannot initialise without LunaLib, which is compileOnly,
-            // so a CSV default and a Java default that drift apart still fail silently.
-            assertThat(readColumn(
-                    "kmu_politicalMapHatchJoining",
-                    DEFAULT_VALUE_COLUMN,
-                    RADIO_FIELD_TYPE))
-                .isEqualTo(HatchJoiningChoice.COALESCED.getLabel());
-        }
-    }
-
-    @Nested
     class HoverTierDefaults {
 
         @ParameterizedTest(name = "{0}")
@@ -298,8 +278,7 @@ final class LunaSettingsCsvIntegrationTest {
             Arguments.of("kmu_politicalMapIndependentOuterBorderColor", FactionPaletteChoice.values()),
             Arguments.of("kmu_politicalMapIndependentInnerBorderColor", FactionPaletteChoice.values()),
             Arguments.of("kmu_politicalMapIndependentFillColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapHoverHighlightColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapHatchJoining", HatchJoiningChoice.values()));
+            Arguments.of("kmu_politicalMapHoverHighlightColor", FactionPaletteChoice.values()));
     }
 
     // The rows hovering is switched at, one case each, so a row shipped off is named by the failure

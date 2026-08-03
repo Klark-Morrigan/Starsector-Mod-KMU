@@ -1,7 +1,6 @@
 package kmu.maplayers.base.theme;
 
 import kmlib.opengl.GlLineQuality;
-import kmlib.opengl.hatch.HatchJoining;
 
 /**
  * Shared fixtures for the tests that need a theme they are not testing: the global tier and the
@@ -27,12 +26,10 @@ public final class ThemeFixtures {
     // shared grey, so zeroing it would leave the desaturation path exercised against a no-op.
     private static final double DESATURATION_DARKENING = 0.3;
 
-    // The joining a fixture hatches under, and the tolerance that goes with it. Per-triangle
-    // because it is the emission with no merge in it: a suite about which ground hatches reads
-    // the same segments however the crossings would have been packed, and one that is about the
-    // packing says so by naming a joining of its own. The tolerance is zero because this joining
-    // never reads it - a number here would suggest it did.
-    private static final HatchJoining FIXTURE_HATCH_JOINING = HatchJoining.PER_TRIANGLE;
+    // The join tolerance a fixture hatches under. Zero merges only crossings that coincide
+    // exactly, which is the reading with no epsilon in it: a suite about which ground hatches gets
+    // the same segments either way, and one whose subject is the merge names a tolerance of its
+    // own rather than inheriting a number chosen here.
     private static final double FIXTURE_HATCH_JOIN_TOLERANCE = 0;
 
     // Fixtures only; never instantiated.
@@ -89,7 +86,6 @@ public final class ThemeFixtures {
         return new HatchStyle(
             spacing,
             angleRadians,
-            FIXTURE_HATCH_JOINING,
             FIXTURE_HATCH_JOIN_TOLERANCE,
             new GlLineHatchStroke(GlLineQuality.ALIASED, widthPixels));
     }

@@ -126,16 +126,12 @@ public final class FactionTerritoryBuilder {
         // The spotlighted bloc's whole footprint - dominated and contested systems alike - shares
         // one key, so it clusters under one bloc and then splits its fill inside each of its
         // bodies. Whether that split happens is the fill builder's own call.
-        // The hatch and what is being read off it come from one value, so the observer cannot be
-        // picked for a joining other than the one the geometry is cut under.
-        var hatch = territories.getGlobalStyle().hatch();
-
         var tracedFill = new SplitFillBuilder(
                 geometryCache.getCellEdgesByCellId(),
                 cellGrouping,
                 borderTrace,
-                hatch,
-                HatchBuildDiagnostics.selectRunObserverFor(hatch))
+                territories.getGlobalStyle().hatch(),
+                HatchBuildDiagnostics.createRunObserver())
             .traceFill(
                 FilteredPolitics.isSpotlitBloc(blocId),
                 FillSplit.splitMembersByFillState(

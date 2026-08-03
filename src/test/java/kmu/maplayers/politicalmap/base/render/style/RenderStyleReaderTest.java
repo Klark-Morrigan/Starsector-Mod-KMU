@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmlib.opengl.GlLineQuality;
-import kmlib.opengl.hatch.HatchJoining;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -9,7 +8,6 @@ import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
-import kmu.settings.HatchJoiningChoice;
 import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -301,9 +299,6 @@ final class RenderStyleReaderTest {
                     .when(KmuLunaSettings::getPoliticalMapHatchWidth)
                     .thenReturn(HATCH_WIDTH);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHatchJoining)
-                    .thenReturn(HatchJoiningChoice.COALESCED);
-                settingsMock
                     .when(KmuLunaSettings::getPoliticalMapHatchJoinToleranceFraction)
                     .thenReturn(HATCH_JOIN_TOLERANCE);
                 settingsMock
@@ -332,11 +327,6 @@ final class RenderStyleReaderTest {
                 assertThat(global.hatch().angleRadians())
                     .isEqualTo(HATCH_ANGLE);
 
-                // The joining crosses from the settings enum the player's pick is stored as to
-                // the one the hatch geometry runs on - a crossing that can only be checked by
-                // reading a non-default pick back out.
-                assertThat(global.hatch().joining())
-                    .isEqualTo(HatchJoining.COALESCED);
                 assertThat(global.hatch().joinToleranceFraction())
                     .isEqualTo(HATCH_JOIN_TOLERANCE);
 
@@ -366,21 +356,6 @@ final class RenderStyleReaderTest {
             }
         }
 
-        @Test
-        void readGlobalStyleCarriesTheOtherJoiningWhenThatIsWhatIsPicked() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
-
-                settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHatchJoining)
-                    .thenReturn(HatchJoiningChoice.PER_TRIANGLE);
-
-                // The case above pins the other arm. Both are named because the crossing is a
-                // two-case switch: one arm asserted alone is satisfied by a switch that answers
-                // the same joining whatever it was handed.
-                assertThat(RenderStyleReader.readGlobalStyle().hatch().joining())
-                    .isEqualTo(HatchJoining.PER_TRIANGLE);
-            }
-        }
     }
 
     @Nested
@@ -527,14 +502,6 @@ final class RenderStyleReaderTest {
                 settingsMock
                     .when(KmuLunaSettings::getPoliticalMapDesaturationDarkening)
                     .thenReturn(0.3);
-
-                // The one knob the mock cannot default: a mocked choice getter answers null,
-                // where the real one always resolves to a constant, and the tier's hatch has to
-                // name a joining. Stubbed rather than tolerated in the reader, since a null
-                // joining is a mock artefact and not a state the settings can be in.
-                settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHatchJoining)
-                    .thenReturn(HatchJoiningChoice.PER_TRIANGLE);
 
                 // Every category getter can default here: the assertions below only check that
                 // each category slot is populated, not its values. The uninhabited category's
