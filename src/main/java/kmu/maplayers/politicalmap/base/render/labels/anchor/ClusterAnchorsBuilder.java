@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.math.solving.Bisection;
 import kmlib.profiling.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -51,6 +52,11 @@ import java.util.List;
  */
 public final class ClusterAnchorsBuilder {
     private static final Logger LOG = Global.getLogger(ClusterAnchorsBuilder.class);
+
+    // The font tolerance last announced, so a knob that sits still is not restated on every
+    // fit. Zero cannot come from the read - the tuning floors it above zero - so it doubles
+    // as "nothing announced yet" and the first fit after the log opens labels its baseline.
+    private static double lastLoggedFontTolerance;
 
     // Drives only; never instantiated.
     private ClusterAnchorsBuilder() {
@@ -118,6 +124,8 @@ public final class ClusterAnchorsBuilder {
             filter.recedeAdjustment());
 
         var spec = LabelAnchorSpecification.readFromLunaSettings();
+        logFontToleranceChange(spec);
+
         var fit = ClusterAnchorPlacement.computeClusterAnchors(
             clusters,
             geometryCache.getCellEdgesByCellId(),
@@ -196,5 +204,28 @@ public final class ClusterAnchorsBuilder {
                 desaturationPalette,
                 new ViewGrouping(view, grouping),
                 FilterSnapshot.unfiltered()));
+    }
+
+    // Announces the font tolerance when it moves, not on every fit: it is a static setting,
+    // so restating it per fit would only pad a line already carrying the counts that do
+    // move. A capture still needs each reading attributable to the precision behind it,
+    // which one line per change gives at a fraction of the noise. The halving count comes
+    // with it because the mapping is a step function - neighbouring tolerances can resolve
+    // to the same count, and this is what says an unmoved band-fit total is the knob doing
+    // nothing rather than the sweep failing to take.
+    private static void logFontToleranceChange(LabelAnchorSpecification spec) {
+
+        var tolerance = spec.bandFit().fontHeightTolerance();
+        if (tolerance == lastLoggedFontTolerance || !LOG.isDebugEnabled()) {
+            return;
+        }
+        lastLoggedFontTolerance = tolerance;
+
+        LOG.debug("Political map anchor font search precision;"
+            + " tolerance=" + tolerance
+            + " bisections=" + Bisection.countStepsForTolerance(
+                spec.nameFit().minFontHeight(),
+                spec.nameFit().maxFontHeight(),
+                tolerance));
     }
 }
