@@ -71,7 +71,7 @@ import javax.swing.SwingUtilities;
  *       {@code buildStyledCellForSystem}, {@code buildFactionTerritory},
  *       {@code BorderSmoothing.sandBorderSpikes}, {@code roundBorderCorners},
  *       {@code PolygonTessellator.tessellateToBoundaryLoops}, {@code tessellateToTriangles},
- *       {@code Hatching.computeHatchSegments}, {@code GlVertexRuns.flattenVertices}.</li>
+ *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}.</li>
  *   <li><i>Painting it</i> - {@code RenderStyleReader.readRenderStyle}, {@code MapPalettes},
  *       {@code ClusterRenderer}, the label pass, and {@code KmuLunaSettings} entirely.
  *       Nothing reads {@code Global}. Colours here are hash-derived hues for telling blocs

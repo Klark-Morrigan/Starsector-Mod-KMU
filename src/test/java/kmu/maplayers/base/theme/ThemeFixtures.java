@@ -27,6 +27,14 @@ public final class ThemeFixtures {
     // shared grey, so zeroing it would leave the desaturation path exercised against a no-op.
     private static final double DESATURATION_DARKENING = 0.3;
 
+    // The joining a fixture hatches under, and the tolerance that goes with it. Per-triangle
+    // because it is the emission with no merge in it: a suite about which ground hatches reads
+    // the same segments however the crossings would have been packed, and one that is about the
+    // packing says so by naming a joining of its own. The tolerance is zero because this joining
+    // never reads it - a number here would suggest it did.
+    private static final HatchJoining FIXTURE_HATCH_JOINING = HatchJoining.PER_TRIANGLE;
+    private static final double FIXTURE_HATCH_JOIN_TOLERANCE = 0;
+
     // Fixtures only; never instantiated.
     private ThemeFixtures() {
     }
@@ -65,7 +73,7 @@ public final class ThemeFixtures {
      * A hatch laid out to the given pattern and stroked the way the shipped theme strokes it, for
      * a suite whose subject is the hatched geometry rather than how it reaches the screen.
      *
-     * <p>The two axes a caller does not name are the ones a geometry case has no opinion on, and
+     * <p>The axes a caller does not name are the ones a geometry case has no opinion on, and
      * pinning them here is what keeps a suite from having to state a stroke it never draws.
      *
      * @param spacing      the perpendicular gap between lines, in world units
@@ -81,7 +89,8 @@ public final class ThemeFixtures {
         return new HatchStyle(
             spacing,
             angleRadians,
-            HatchJoining.PER_TRIANGLE,
+            FIXTURE_HATCH_JOINING,
+            FIXTURE_HATCH_JOIN_TOLERANCE,
             new GlLineHatchStroke(GlLineQuality.ALIASED, widthPixels));
     }
 }

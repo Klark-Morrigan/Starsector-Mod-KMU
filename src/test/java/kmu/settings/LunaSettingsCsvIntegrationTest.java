@@ -278,7 +278,8 @@ final class LunaSettingsCsvIntegrationTest {
             Arguments.of("kmu_politicalMapIndependentOuterBorderColor", FactionPaletteChoice.values()),
             Arguments.of("kmu_politicalMapIndependentInnerBorderColor", FactionPaletteChoice.values()),
             Arguments.of("kmu_politicalMapIndependentFillColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapHoverHighlightColor", FactionPaletteChoice.values()));
+            Arguments.of("kmu_politicalMapHoverHighlightColor", FactionPaletteChoice.values()),
+            Arguments.of("kmu_politicalMapHatchJoining", HatchJoiningChoice.values()));
     }
 
     // The rows hovering is switched at, one case each, so a row shipped off is named by the failure

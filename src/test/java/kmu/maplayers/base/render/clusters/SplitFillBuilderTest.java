@@ -186,12 +186,16 @@ final class SplitFillBuilderTest {
         }
     }
 
+    // Reads nothing off the hatches it cuts: this suite's subject is which ground each state
+    // fills, so a case asserts on the geometry that comes back rather than on anything observed
+    // along the way.
     private static SplitFillBuilder builder() {
         return new SplitFillBuilder(
             EDGES,
             GROUPING,
             new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT),
-            HATCH);
+            HATCH,
+            HatchRunObserver.IGNORED);
     }
 
     // Both members held outright - the common case, and the one the solid fast path is for.

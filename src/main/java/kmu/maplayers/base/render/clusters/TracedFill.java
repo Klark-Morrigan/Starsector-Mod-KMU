@@ -81,25 +81,37 @@ public sealed interface TracedFill {
      * <p>The unfilled state is deliberately absent - it holds ground for a boundary and a label
      * and paints nothing, so there is no geometry to carry for it.
      *
-     * @param solidRings   the solid state's traced rings, empty when no member is solid
-     * @param hatchedRings the hatched state's traced rings, empty when no member is hatched
-     * @param hatch        the sector-wide hatch geometry the hatched area is cut with
+     * @param solidRings        the solid state's traced rings, empty when no member is solid
+     * @param hatchedRings      the hatched state's traced rings, empty when no member is hatched
+     * @param hatch             the sector-wide hatch geometry the hatched area is cut with
+     * @param hatchRunObserver  what the caller wants read off each body's hatch as it is baked;
+     *                          {@link HatchRunObserver#IGNORED} for a build nobody is reading
      */
     record PerFillState(
         List<List<double[]>> solidRings,
         List<List<double[]>> hatchedRings,
-        HatchStyle hatch) implements TracedFill {
+        HatchStyle hatch,
+        HatchRunObserver hatchRunObserver) implements TracedFill {
 
         @Override
         public ClusterFill buildFillFor(RingRegion clusterRegion) {
             var clusterRings = clusterRegion.toRings();
+            var hatchRun = Hatching.computeHatchRun(
+                clipToCluster(hatchedRings, clusterRings),
+                hatch.angleRadians(),
+                hatch.spacing(),
+                hatch.joining(),
+                hatch.joinToleranceFraction());
+
+            // Offered only where there is a hatch to offer. A body of a splitting owner that
+            // holds no hatched member cuts nothing, and an observer counting bodies would find
+            // those indistinguishable from ones whose hatch came out empty for a reason.
+            if (hatchRun.segments().length > 0) {
+                hatchRunObserver.observeHatchRun(hatchRun);
+            }
             return new ClusterFill(
                 clipToCluster(solidRings, clusterRings),
-                Hatching.computeHatchSegments(
-                    clipToCluster(hatchedRings, clusterRings),
-                    hatch.angleRadians(),
-                    hatch.spacing(),
-                    hatch.joining()));
+                hatchRun.segments());
         }
 
         // The part of one state's traced rings falling inside one body, as a triangle soup. The

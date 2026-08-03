@@ -363,14 +363,23 @@ public final class KmuLunaSettings {
     // cluster - the spotlighted bloc's present-but-dominated systems - so it reads as
     // "mine, but contested" against the solid cluster it holds outright. Only that one
     // territory hatches; spacing is the perpendicular gap between lines in world units,
-    // angle their direction in degrees off horizontal, and width the pixel stroke of each
-    // line. All three feed the drawables rebuild, so a change repaints the hatch live.
+    // angle their direction in degrees off horizontal, width the pixel stroke of each
+    // line, and joining how many drawn segments one line's crossings of that ground are
+    // packed into. All four feed the drawables rebuild, so a change repaints the hatch live.
     private static final String HATCH_SPACING_FIELD =
         "kmu_politicalMapHatchSpacing";
     private static final String HATCH_ANGLE_FIELD =
         "kmu_politicalMapHatchAngle";
     private static final String HATCH_WIDTH_FIELD =
         "kmu_politicalMapHatchWidth";
+    private static final String HATCH_JOINING_FIELD =
+        "kmu_politicalMapHatchJoining";
+
+    // Hatch fill - coalesced (Dev tab): the one knob only the merging joining reads. Sits in
+    // its own section because a knob that is inert under the other joining should not read as
+    // part of the pattern every hatch has.
+    private static final String HATCH_JOIN_TOLERANCE_FIELD =
+        "kmu_politicalMapHatchJoinTolerance";
 
     // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor search -
     // the straight line a cluster's name will sit on, chosen by scoring many candidate
@@ -632,6 +641,19 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_HATCH_SPACING = 400.0;
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
     private static final double DEFAULT_HATCH_WIDTH = 1.0;
+
+    // Per-triangle by default: the emission the hatch shipped with, so the merging joining is
+    // something a player opts into and the two can be compared against a fixed reference.
+    private static final HatchJoiningChoice DEFAULT_HATCH_JOINING =
+        HatchJoiningChoice.PER_TRIANGLE;
+
+    // A tenth of a percent of the spacing by default - four hundredths of a world unit at the
+    // default spacing, far below anything the eye reads as a break and far above the rounding
+    // two triangles could disagree by. Stored 0..100 in the CSV as a percentage, exposed as the
+    // fraction the hatch merge works in: the slider rounds a Double to two decimals, so a
+    // fraction authored directly would collapse to zero the moment it was dragged.
+    private static final double DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT = 0.1;
+    private static final double HATCH_JOIN_TOLERANCE_PERCENT_PER_UNIT = 100.0;
 
     // Hover-highlight knobs, mirroring the CSV defaults: the hovered ground's own bright
     // shade, a four-layer halo peaking at half alpha and fading out by 14 pixels with a slow
@@ -1141,6 +1163,25 @@ public final class KmuLunaSettings {
      */
     public static double getPoliticalMapHatchWidth() {
         return readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH);
+    }
+
+    /**
+     * @return how one contested-cluster hatch line's several crossings of that ground are cut
+     *         into drawn segments - one per triangle crossed, or merged so a stroke that never
+     *         leaves the cluster is a single primitive
+     */
+    public static HatchJoiningChoice getPoliticalMapHatchJoining() {
+        return readChoice(HATCH_JOINING_FIELD, DEFAULT_HATCH_JOINING);
+    }
+
+    /**
+     * @return how far apart two of one hatch line's crossings may sit and still merge into one
+     *         segment, as a fraction of the hatch spacing (the setting is authored as a
+     *         percentage of it and converted here). Read only by the merging joining
+     */
+    public static double getPoliticalMapHatchJoinToleranceFraction() {
+        return readDouble(HATCH_JOIN_TOLERANCE_FIELD, DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT)
+            / HATCH_JOIN_TOLERANCE_PERCENT_PER_UNIT;
     }
 
     /**

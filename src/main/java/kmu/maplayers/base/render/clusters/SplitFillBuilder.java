@@ -39,6 +39,7 @@ public final class SplitFillBuilder {
     private final CellGrouping cellGrouping;
     private final ClusterBorderTrace borderTrace;
     private final HatchStyle hatch;
+    private final HatchRunObserver hatchRunObserver;
 
     /**
      * @param cellEdgesByCellId the raw cell adjacency the sub-cluster rings are traced from -
@@ -48,17 +49,22 @@ public final class SplitFillBuilder {
      *                          owner - the keys the sub-clusters are derived from
      * @param borderTrace       the trace parameters the whole fill shares with its border
      * @param hatch             the sector-wide hatch geometry the hatched sub-cluster is cut with
+     * @param hatchRunObserver  what the caller wants read off each hatch as it is cut, since a
+     *                          run is otherwise reduced to its segments before anyone sees it;
+     *                          {@link HatchRunObserver#IGNORED} to read nothing
      */
     public SplitFillBuilder(
             Map<String, List<CellEdge>> cellEdgesByCellId,
             CellGrouping cellGrouping,
             ClusterBorderTrace borderTrace,
-            HatchStyle hatch) {
+            HatchStyle hatch,
+            HatchRunObserver hatchRunObserver) {
 
         this.cellEdgesByCellId = cellEdgesByCellId;
         this.cellGrouping = cellGrouping;
         this.borderTrace = borderTrace;
         this.hatch = hatch;
+        this.hatchRunObserver = hatchRunObserver;
     }
 
     /**
@@ -102,7 +108,8 @@ public final class SplitFillBuilder {
         return new TracedFill.PerFillState(
             traceSubClusterRings(FillState.SOLID, split, subClusterOwners),
             traceSubClusterRings(FillState.HATCHED, split, subClusterOwners),
-            hatch);
+            hatch,
+            hatchRunObserver);
     }
 
     // Keys the footprint's three fill states apart, so the border tracer - which fuses cells sharing

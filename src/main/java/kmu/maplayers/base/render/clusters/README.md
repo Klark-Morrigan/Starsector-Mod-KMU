@@ -105,6 +105,16 @@ case, which pays nothing for the machinery. Built per owner around the context t
 shares (the cells, their grouping, the trace, the hatch geometry), and answered per owner rather
 than per body, since the split's rings are the owner's and are traced once.
 
+It is also handed a `HatchRunObserver` - what the caller wants read off each hatch as it is cut.
+A run is reduced to its segments the moment it lands in a draw record, so anything else it knows
+(how the joining closed its joins) is gone unless someone asks during the build. Inverting it
+keeps the builder out of the question entirely: it neither formats, nor decides which readings
+mean anything under the joining in force, nor holds a logger. `IGNORED` is the normal answer.
+`HatchBuildDiagnostics` is the implementation that reports a build, and the shape it reports in is
+the point - the settings once, ahead of any geometry, then one row per body carrying only what
+that body decided. A value that cannot vary across a rebuild belongs on the heading; restated per
+row it buries the few numbers that do vary among repetitions of the ones that never do.
+
 `TracedFill` is what it hands back, and where the cutting lives: sealed over the three ways an
 owner fills - nothing, whole bodies, or per fill state - so only the third carries rings, and
 `buildFillFor(RingRegion)` cuts one body's share of them on demand. Splitting it this way is what

@@ -18,6 +18,7 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
+import kmu.settings.HatchJoiningChoice;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.LinkedHashMap;
@@ -42,15 +43,11 @@ import java.util.Map;
  */
 public final class RenderStyleReader {
 
-    // The hatch's two structural axes, fixed here rather than read back from a knob: the player
-    // tunes the pattern (spacing, angle, width), not how the clipped line family is cut into
-    // primitives or how those primitives rasterise. Named constants rather than literals inline in
-    // the assembly below, so each decision is stated once, where the rest of the hatch is read.
-    private static final HatchJoining HATCH_JOINING = HatchJoining.PER_TRIANGLE;
-
     // Aliased: the hatch is a dense field of short strokes, so smoothing it would cost a blend per
     // covered pixel across the whole contested territory while making every line read softer and
-    // slightly wider - the opposite of the crisp texture the hatch is there to give.
+    // slightly wider - the opposite of the crisp texture the hatch is there to give. Fixed here
+    // rather than read back from a knob, since nothing the player tunes decides how a stroke
+    // rasterises; named rather than written inline so the decision is stated once.
     private static final GlLineQuality HATCH_LINE_QUALITY = GlLineQuality.ALIASED;
 
     // Reads only settings; never instantiated.
@@ -82,7 +79,8 @@ public final class RenderStyleReader {
             new HatchStyle(
                 KmuLunaSettings.getPoliticalMapHatchSpacing(),
                 KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
-                HATCH_JOINING,
+                resolveHatchJoiningOf(KmuLunaSettings.getPoliticalMapHatchJoining()),
+                KmuLunaSettings.getPoliticalMapHatchJoinToleranceFraction(),
                 new GlLineHatchStroke(
                     HATCH_LINE_QUALITY,
                     KmuLunaSettings.getPoliticalMapHatchWidth())),
@@ -213,5 +211,15 @@ public final class RenderStyleReader {
             outlineWidth,
             ElementStyle.NOT_DRAWN,
             0);
+    }
+
+    // The player's pick as the hatch geometry takes it. The crossing lives here rather than on the
+    // settings enum for the reason the palette slot's does: the translation belongs to the side
+    // that knows what the value is for, and {@code kmu.settings} stays clear of the render layer.
+    private static HatchJoining resolveHatchJoiningOf(HatchJoiningChoice choice) {
+        return switch (choice) {
+            case PER_TRIANGLE -> HatchJoining.PER_TRIANGLE;
+            case COALESCED -> HatchJoining.COALESCED;
+        };
     }
 }
