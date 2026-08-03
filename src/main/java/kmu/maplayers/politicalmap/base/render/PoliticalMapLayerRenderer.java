@@ -143,10 +143,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             MapHoverState.getInstance().clearHover();
             return;
         }
-        // The map screen's own chrome is drawn over the map for the same reason, and the hover is
-        // equally blind to it: it resolves a cell from map geometry, which has no notion of the tab
-        // strip and control bar composited on top. Tested second because it costs a read into the
-        // live widget tree, while the sidebar test above is arithmetic over a box KMU already holds.
+        // The map's own chrome is drawn over it for the same reason, and the hover is equally blind
+        // to it: it resolves a cell from map geometry, which has no notion of the tab strip and
+        // control bar composited on top. Tested second because it costs a read into the live widget
+        // tree, while the sidebar test above is arithmetic over a box KMU already holds.
         if (isCursorOverVanillaMapChrome()) {
             MapHoverState.getInstance().clearHover();
             return;
@@ -182,19 +182,24 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         }
     }
 
-    // Whether the cursor sits over the map screen's own chrome - the tab strip above the map and the
-    // control bar below it - rather than over the map. Asked as the complement: the chrome is
-    // several small widgets whose identities are a fact about one game build, while the map surface
-    // is one widget, so "outside the surface but on this screen" is the durable way to put it.
+    // Whether the cursor sits over the map's own chrome - the tab strip above it, the control bar
+    // below or across it - rather than over the map. The chrome is several small widgets whose
+    // identities are a fact about one game build, while the map surface is one widget, so the rule
+    // is stated about the surface: on the map means inside it and clear of everything drawn with it.
     //
-    // Fails open. An unreadable widget tree, or a build this rule no longer fits, reads as "the
-    // cursor is on the map" - which merely restores the un-suppressed behaviour rather than
-    // silencing every hover the layer has. A read taken to refine a feature must not be able to
-    // switch it off. The absence is not silent: the surface read warns once when it cannot answer.
+    // Screen-blind, like the sidebar test above and for the same reason: the layer draws on the
+    // sector map and on the intel screen's map visor through one terrain pass, so the map the cursor
+    // is over is whichever the library reports on screen.
+    //
+    // Fails open. An unreadable widget tree, a screen showing no map at all, or a build this rule no
+    // longer fits reads as "the cursor is on the map" - which merely restores the un-suppressed
+    // behaviour rather than silencing every hover the layer has. A read taken to refine a feature
+    // must not be able to switch it off. The absence is not silent: the surface read warns once when
+    // it cannot answer for a map tab it did reach.
     private static boolean isCursorOverVanillaMapChrome() {
-        var surfaceBox = MapSurfaceBounds.resolveSurfaceBox();
-        return surfaceBox != null
-            && !surfaceBox.containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
+        var surfaceArea = MapSurfaceBounds.resolveSurfaceArea();
+        return surfaceArea != null
+            && !surfaceArea.containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
     }
 
     // Whether the cursor sits over a map-layer sidebar, on whichever screen this frame is being drawn
