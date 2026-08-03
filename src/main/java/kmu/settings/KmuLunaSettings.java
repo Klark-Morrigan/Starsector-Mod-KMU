@@ -395,7 +395,10 @@ public final class KmuLunaSettings {
     // shape how much a line straying from the cluster's own lean may sacrifice in length
     // and still win, so slant preference is decided on measured lengths rather than by
     // bending any direction before the fit; the max-slant degrees cap that lean short of
-    // vertical (and it fades to level for round clusters whose axis is meaningless).
+    // vertical (and it fades to level for round clusters whose axis is meaningless); the
+    // font-height tolerance is how finely each candidate's font is resolved, the third
+    // cost knob beside the two counts and the one that says how much of the search is
+    // spent per candidate rather than how many there are.
     private static final String ANCHOR_DIRECTION_COUNT_FIELD =
         "kmu_politicalMapAnchorDirectionCount";
     private static final String ANCHOR_OFFSET_COUNT_FIELD =
@@ -410,6 +413,8 @@ public final class KmuLunaSettings {
         "kmu_politicalMapAnchorEndInsetMultiple";
     private static final String ANCHOR_ICON_CLEARANCE_FIELD =
         "kmu_politicalMapAnchorIconClearance";
+    private static final String ANCHOR_FONT_HEIGHT_TOLERANCE_FIELD =
+        "kmu_politicalMapAnchorFontHeightTolerance";
 
     // Debug band-quad knobs (Dev tab, Label anchors): the opacity is the band quad's
     // fill alpha, and the line opacity the separate alpha of that box's strokes so the
@@ -699,6 +704,10 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_ANCHOR_MAX_SLANT_DEGREES = 22.0;
     private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 4.0;
     private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 750.0;
+    // One world unit, on a font clamped between 200 and 1200 of them: already far below
+    // what a map pixel resolves at any zoom, so the halvings this stops the font search
+    // short of would have bought a height difference no one can see.
+    private static final double DEFAULT_ANCHOR_FONT_HEIGHT_TOLERANCE = 1.0;
 
     // Name-fit defaults, in world units where a distance. The font-size clamp brackets
     // a readable line against the map's scale (the border inset channel is 150); three
@@ -1393,6 +1402,21 @@ public final class KmuLunaSettings {
         return readInt(
             ANCHOR_OFFSET_COUNT_FIELD,
             DEFAULT_ANCHOR_OFFSET_COUNT);
+    }
+
+    /**
+     * @return how close the anchor search must land to the largest font height each
+     *         candidate line holds, in world units. The fit grows the font by halving
+     *         the size clamp and re-measures the label's band against the border and the
+     *         system icons at every halving, so a coarser tolerance buys those
+     *         measurements back one for one; too coarse and a label visibly under-fills
+     *         the space its cluster had for it. Returned as stored, so a reader that
+     *         cannot take a nonsensical value holds it to a floor of its own
+     */
+    public static double getMapAnchorFontHeightTolerance() {
+        return readDouble(
+            ANCHOR_FONT_HEIGHT_TOLERANCE_FIELD,
+            DEFAULT_ANCHOR_FONT_HEIGHT_TOLERANCE);
     }
 
     /**

@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -74,6 +75,7 @@ import static org.mockito.Mockito.when;
  * band is, which the placements are counted independently of.
  */
 final class ClusterAnchorsBuilderTest {
+
     private static final String HEGEMONY = "hegemony";
     private static final String TRITACHYON = "tritachyon";
 
@@ -113,13 +115,19 @@ final class ClusterAnchorsBuilderTest {
     // The search tuning every case runs under: no end inset or icon keep-out, a small direction fan
     // and a single centre offset (the fixtures are wide rectangles, so the winner is horizontal
     // whatever the fan's resolution), no slope penalty, no diagnostics, and a single line free to
-    // grow to any font. Sized so a label fits every fixture cluster - a case that comes back empty
-    // did so because of the gate, not because the geometry ran out of room.
+    // grow to any font, sized to a tolerance finer than anything these cases read back. Sized so a
+    // label fits every fixture cluster - a case that comes back empty did so because of the gate,
+    // not because the geometry ran out of room.
+    private static final double FINE_FONT_TOLERANCE = 0.01;
     private static final LabelAnchorSpecification ANCHOR_SPECIFICATION =
         new LabelAnchorSpecification(
-            new AnchorSearch(new ClusterBorderTrace(WELD_TOLERANCE, MITER_LIMIT), 0.0, 0.0, 3, 1),
+            new AnchorSearch(
+                new ClusterBorderTrace(WELD_TOLERANCE, MITER_LIMIT),
+                3,
+                1),
             new LeanScoring(0.0, 2.0, 0.0),
             new AnchorDiagnostics(false, false),
+            new BandFitSpecification(0.0, 0.0, FINE_FONT_TOLERANCE),
             new NameFitSpecification(0.0, 2000.0, 1, 1.0));
 
     // Both groups' names pointed at the bright primary shade at full opacity, so a label's colour
@@ -155,6 +163,7 @@ final class ClusterAnchorsBuilderTest {
 
     @BeforeEach
     void openTheSettingsHolderAndFontSeams() {
+
         settingsMock = mockStatic(KmuLunaSettings.class);
         nameFormatMock = mockStatic(NameFormatPreference.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
@@ -204,6 +213,7 @@ final class ClusterAnchorsBuilderTest {
 
     @AfterEach
     void closeTheSettingsHolderAndFontSeams() {
+
         politicsMock.close();
         styleReaderMock.close();
         fontsMock.close();
@@ -295,7 +305,8 @@ final class ClusterAnchorsBuilderTest {
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
-            assertThat(anchors).hasSize(1);
+            assertThat(anchors)
+                .hasSize(1);
         }
 
         @Test
@@ -310,7 +321,8 @@ final class ClusterAnchorsBuilderTest {
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
-            assertThat(anchors).isEmpty();
+            assertThat(anchors)
+                .isEmpty();
         }
 
         @Test
@@ -327,7 +339,8 @@ final class ClusterAnchorsBuilderTest {
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
-            assertThat(anchors).isEmpty();
+            assertThat(anchors)
+                .isEmpty();
         }
     }
 
@@ -374,7 +387,8 @@ final class ClusterAnchorsBuilderTest {
                 sectorMock,
                 viewMock);
 
-            assertThat(anchors).hasSize(1);
+            assertThat(anchors)
+                .hasSize(1);
         }
 
         @Test
@@ -390,7 +404,9 @@ final class ClusterAnchorsBuilderTest {
                 sectorMock,
                 viewMock);
 
-            assertThat(anchors).isEmpty();
+            assertThat(anchors)
+                .isEmpty();
+                
             politicsMock.verifyNoInteractions();
         }
     }

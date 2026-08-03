@@ -278,18 +278,17 @@ public final class ClusterAnchorPlacement {
             fitter.getBandFitCount());
     }
 
-    // Builds the box fitter from the tuning and the cluster's name estimator: the
-    // font-size clamp, line count, and spacing that shape the growth, the icon clearance
-    // and end inset every band trim reads, and the name the fit sizes against.
+    // Builds the box fitter from the tuning and the cluster's name estimator. Both halves
+    // of the fit's tuning are handed over as they were read - the text's own clamp and the
+    // room it is measured within - so this seam carries no arithmetic of its own and a
+    // knob's meaning cannot drift on the way through.
     private static LabelBoxFitter newBoxFitter(
             LabelAnchorSpecification spec,
             LabelLengthEstimator nameEstimator) {
 
-        var search = spec.search();
         return new LabelBoxFitter(
             spec.nameFit(),
-            search.iconClearance(),
-            search.endInsetDistance(),
+            spec.bandFit(),
             nameEstimator);
     }
 

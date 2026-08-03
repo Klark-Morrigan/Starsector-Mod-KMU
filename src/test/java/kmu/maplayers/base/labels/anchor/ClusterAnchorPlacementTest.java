@@ -1,6 +1,7 @@
 package kmu.maplayers.base.labels.anchor;
 
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
+import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 import kmlib.starsector.ui.label.NameFitSpecification;
 
@@ -132,12 +133,14 @@ final class ClusterAnchorPlacementTest {
             "D", squareCellEdges(CELL_SIDE, CELL_SIDE, "B", null, null, "C"));
         private static final CellGrouping SQUARE_GRID_GROUPING = grouping(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY, "C", GROUP_KEY, "D", GROUP_KEY));
+
         // Sites strung vertically down the square's centre: the cluster's principal axis
         // reads vertical though the cluster is square, the setup that makes the penalty
         // flip the accepted line horizontal.
         private static final Map<String, double[]> SQUARE_GRID_VERTICAL_SITES = Map.of(
             "A", new double[] {1000, 200}, "B", new double[] {1000, 700},
             "C", new double[] {1000, 1300}, "D", new double[] {1000, 1800});
+
         // Sites at the cell centres: a square point cloud with no preferred axis, used
         // where the winner should be decided purely by length.
         private static final Map<String, double[]> SQUARE_GRID_CENTERED_SITES = Map.of(
@@ -744,6 +747,54 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
+        void computeClusterAnchorsSizesTheBandToTheFontToleranceItsTuningCarries() {
+            // The same girth-capped slab, fitted twice under tunings that differ in nothing
+            // but how finely the font search runs. At the fine tolerance the fit resolves
+            // the ~700 of girth the border allows; a tolerance of 1000 over the 100..2000
+            // clamp buys a single halving, which fails at 1050 and leaves the search on the
+            // 100-unit floor it started from - a label visibly under-filling its cluster,
+            // which is what too coarse a knob costs.
+            var fineSpec = bandSpec(
+                0.0,
+                0.0,
+                3,
+                3,
+                0.0,
+                2.0,
+                false,
+                false,
+                100.0,
+                2000.0,
+                1,
+                1.0);
+
+            var coarseSpec = specWithFontTolerance(fineSpec, 1000.0);
+            
+            var fineAnchors = computeAnchors(
+                List.of(List.of("A", "B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                fineSpec,
+                createLabelResolvers(aspectNameEstimators(1.0)));
+
+            var coarseAnchors = computeAnchors(
+                List.of(List.of("A", "B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                coarseSpec,
+                createLabelResolvers(aspectNameEstimators(1.0)));
+
+            // The tolerance reaches the fitter only through this tuning, so a search that
+            // dropped it on the way would size both runs alike.
+            assertThat(fineAnchors.get(0).thickness())
+                .isGreaterThan(600f);
+            assertThat(coarseAnchors.get(0).thickness())
+                .isCloseTo(100f, within(1f));
+        }
+
+        @Test
         void computeClusterAnchorsStacksASquareClusterNameIntoTwoLines() {
             // In a square cluster (inset 1700 on a side) a name six times as long as it is
             // tall cannot run big on one line - the side caps a single line's font. Stacking
@@ -892,6 +943,10 @@ final class ClusterAnchorPlacementTest {
         private static final double AMPLE_MAX_FONT_SIZE = 2000.0;
         private static final int ONE_LINE = 1;
         private static final double FLUSH_LINES = 1.0;
+        
+        // A font-height tolerance far below the world units these fixtures assert their
+        // geometry in, so how finely the sizing searched is never what a failure is about.
+        private static final double FINE_FONT_TOLERANCE = 0.01;
 
         // A per-key estimator resolver that hands every cluster the same aspect stand-in -
         // the name-estimator seam the line- and band-fit tests size against.
@@ -981,17 +1036,39 @@ final class ClusterAnchorPlacementTest {
             return new LabelAnchorSpecification(
                 new AnchorSearch(
                     new ClusterBorderTrace(WELD_TOLERANCE, MITER_LIMIT),
-                    endInsetDistance,
-                    iconClearance,
                     directionCount,
                     offsetCount),
                 new LeanScoring(verticalPenaltyStrength, verticalPenaltyExponent, 0.0),
                 new AnchorDiagnostics(showRejectedAxis, showUnbiasedAxis),
+                new BandFitSpecification(
+                    iconClearance,
+                    endInsetDistance,
+                    FINE_FONT_TOLERANCE),
                 new NameFitSpecification(
                     nameMinFontSize,
                     nameMaxFontSize,
                     nameMaxLines,
                     nameLineSpacing));
+        }
+
+        // The same tuning at a different font-height tolerance, for the one test that reads
+        // how finely the sizing searched. Copied from a built spec rather than threaded
+        // through the builders above, so "everything else is identical" is structural
+        // rather than a claim two argument lists have to keep agreeing on.
+        private static LabelAnchorSpecification specWithFontTolerance(
+                LabelAnchorSpecification spec,
+                double fontHeightTolerance) {
+
+            var bandFit = spec.bandFit();
+            return new LabelAnchorSpecification(
+                spec.search(),
+                spec.scoring(),
+                spec.diagnostics(),
+                new BandFitSpecification(
+                    bandFit.keepOutClearance(),
+                    bandFit.endInsetDistance(),
+                    fontHeightTolerance),
+                spec.nameFit());
         }
 
         // One square cell's CCW edges (bottom, right, top, left), each tagged with the

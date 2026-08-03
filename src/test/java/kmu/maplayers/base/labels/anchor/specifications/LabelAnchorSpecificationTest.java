@@ -13,18 +13,21 @@ import static org.mockito.Mockito.mockStatic;
 /**
  * Pins the read that turns the live settings into the anchor search's whole tuning surface: every
  * knob lands in the sub-record that owns it, the end-inset multiple is resolved against the
- * border channel here rather than downstream, and the border trace comes from the same source the
- * drawn border uses.
+ * border channel here rather than downstream, the border trace comes from the same source the
+ * drawn border uses, and a stored font tolerance naming no reachable precision is held to a
+ * floor rather than passed on to a fitter that rejects it.
  *
  * <p>Worth pinning because the search takes this value and reads nothing else: a knob wired into
  * the wrong component would move the wrong part of the search with nothing at the call site to
  * catch it.
  */
 class LabelAnchorSpecificationTest {
+
     private static final double END_INSET_MULTIPLE = 2.0;
     private static final double ICON_CLEARANCE = 45.0;
     private static final int DIRECTION_COUNT = 12;
     private static final int OFFSET_COUNT = 5;
+    private static final double FONT_HEIGHT_TOLERANCE = 0.75;
     private static final double VERTICAL_PENALTY_STRENGTH = 0.8;
     private static final double VERTICAL_PENALTY_EXPONENT = 1.5;
     private static final double MAX_SLANT_DEGREES = 30.0;
@@ -38,6 +41,7 @@ class LabelAnchorSpecificationTest {
     // Every knob the read touches, given a distinct value so a component wired to the wrong
     // getter shows up as the wrong number rather than as a coincidence.
     private static void stubEveryAnchorSetting(MockedStatic<KmuLunaSettings> settingsMock) {
+
         settingsMock.when(KmuLunaSettings::getMapAnchorEndInsetMultiple)
             .thenReturn(END_INSET_MULTIPLE);
         settingsMock.when(KmuLunaSettings::getMapAnchorIconClearance)
@@ -46,19 +50,24 @@ class LabelAnchorSpecificationTest {
             .thenReturn(DIRECTION_COUNT);
         settingsMock.when(KmuLunaSettings::getMapAnchorOffsetCount)
             .thenReturn(OFFSET_COUNT);
+        settingsMock.when(KmuLunaSettings::getMapAnchorFontHeightTolerance)
+            .thenReturn(FONT_HEIGHT_TOLERANCE);
         settingsMock.when(KmuLunaSettings::getMapAnchorVerticalPenaltyStrength)
             .thenReturn(VERTICAL_PENALTY_STRENGTH);
         settingsMock.when(KmuLunaSettings::getMapAnchorVerticalPenaltyExponent)
             .thenReturn(VERTICAL_PENALTY_EXPONENT);
         settingsMock.when(KmuLunaSettings::getMapAnchorMaxSlantDegrees)
             .thenReturn(MAX_SLANT_DEGREES);
-        settingsMock.when(KmuLunaSettings::getMapShowRejectedAxes).thenReturn(true);
-        settingsMock.when(KmuLunaSettings::getMapShowUnbiasedAxes).thenReturn(false);
+        settingsMock.when(KmuLunaSettings::getMapShowRejectedAxes)
+            .thenReturn(true);
+        settingsMock.when(KmuLunaSettings::getMapShowUnbiasedAxes)
+            .thenReturn(false);
         settingsMock.when(KmuLunaSettings::getMapNameMinFontSize)
             .thenReturn(MIN_FONT_SIZE);
         settingsMock.when(KmuLunaSettings::getMapNameMaxFontSize)
             .thenReturn(MAX_FONT_SIZE);
-        settingsMock.when(KmuLunaSettings::getMapNameMaxLines).thenReturn(MAX_LINES);
+        settingsMock.when(KmuLunaSettings::getMapNameMaxLines)
+            .thenReturn(MAX_LINES);
         settingsMock.when(KmuLunaSettings::getMapNameLineSpacing)
             .thenReturn(LINE_SPACING);
         settingsMock.when(KmuLunaSettings::getMapBorderWeldTolerance)
@@ -77,9 +86,9 @@ class LabelAnchorSpecificationTest {
 
                 var spec = LabelAnchorSpecification.readFromLunaSettings();
 
-                // Authored as a multiple of the channel and resolved here, so the search itself
+                // Authored as a multiple of the channel and resolved here, so the fit itself
                 // works in plain distances and never has to know what it was a multiple of.
-                assertThat(spec.search().endInsetDistance())
+                assertThat(spec.bandFit().endInsetDistance())
                     .isEqualTo(END_INSET_MULTIPLE * CellShaper.BORDER_INSET_DISTANCE);
             }
         }
@@ -91,9 +100,66 @@ class LabelAnchorSpecificationTest {
 
                 var search = LabelAnchorSpecification.readFromLunaSettings().search();
 
-                assertThat(search.iconClearance()).isEqualTo(ICON_CLEARANCE);
-                assertThat(search.directionCount()).isEqualTo(DIRECTION_COUNT);
-                assertThat(search.offsetCount()).isEqualTo(OFFSET_COUNT);
+                assertThat(search.directionCount())
+                    .isEqualTo(DIRECTION_COUNT);
+                assertThat(search.offsetCount())
+                    .isEqualTo(OFFSET_COUNT);
+            }
+        }
+
+        @Test
+        void readFromLunaSettingsPutsEachMeasurementKnobOnTheBandFitRecord() {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubEveryAnchorSetting(settingsMock);
+
+                var bandFit = LabelAnchorSpecification.readFromLunaSettings().bandFit();
+
+                // Both are properties of the room a candidate is measured in, and both are
+                // handed to the box fitter as they stand, so they land on the record the
+                // fitter takes rather than among the knobs that decide how many candidates
+                // there are.
+                assertThat(bandFit.keepOutClearance())
+                    .isEqualTo(ICON_CLEARANCE);
+                assertThat(bandFit.fontHeightTolerance())
+                    .isEqualTo(FONT_HEIGHT_TOLERANCE);
+            }
+        }
+
+        @Test
+        void readFromLunaSettingsHoldsAStoredFontToleranceOfZeroToTheFloor() {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubEveryAnchorSetting(settingsMock);
+
+                settingsMock
+                    .when(KmuLunaSettings::getMapAnchorFontHeightTolerance)
+                    .thenReturn(0.0);
+
+                var bandFit = LabelAnchorSpecification.readFromLunaSettings().bandFit();
+
+                // The slider cannot produce a zero, but the file it writes to outlives any
+                // edit to the table and is hand-editable. A tolerance of zero names a
+                // precision no halving reaches and the fitter rejects it, so a stored one
+                // has to be caught here rather than thrown from inside a rebuild.
+                assertThat(bandFit.fontHeightTolerance())
+                    .isEqualTo(0.05);
+            }
+        }
+
+        @Test
+        void readFromLunaSettingsHoldsAStoredFontToleranceThatIsNotANumberToTheFloor() {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                stubEveryAnchorSetting(settingsMock);
+                
+                settingsMock
+                    .when(KmuLunaSettings::getMapAnchorFontHeightTolerance)
+                    .thenReturn(Double.NaN);
+
+                var bandFit = LabelAnchorSpecification.readFromLunaSettings().bandFit();
+
+                // Named separately because the obvious clamp does not cover it: a NaN
+                // survives Math.max and would reach the fitter as a tolerance of its own.
+                assertThat(bandFit.fontHeightTolerance())
+                    .isEqualTo(0.05);
             }
         }
 
@@ -108,8 +174,10 @@ class LabelAnchorSpecificationTest {
 
                 // The same two trace parameters the border renders with, so a name is clipped
                 // against the rings the player actually sees.
-                assertThat(borderTrace.weldTolerance()).isEqualTo(WELD_TOLERANCE);
-                assertThat(borderTrace.miterSpikeLimit()).isEqualTo(MITER_LIMIT);
+                assertThat(borderTrace.weldTolerance())
+                    .isEqualTo(WELD_TOLERANCE);
+                assertThat(borderTrace.miterSpikeLimit())
+                    .isEqualTo(MITER_LIMIT);
             }
         }
 
@@ -138,8 +206,10 @@ class LabelAnchorSpecificationTest {
 
                 // Stubbed opposite ways round, so a read that crossed the two would fail rather
                 // than agree with itself.
-                assertThat(diagnostics.showRejectedAxis()).isTrue();
-                assertThat(diagnostics.showUnbiasedAxis()).isFalse();
+                assertThat(diagnostics.showRejectedAxis())
+                    .isTrue();
+                assertThat(diagnostics.showUnbiasedAxis())
+                    .isFalse();
             }
         }
 
@@ -150,10 +220,14 @@ class LabelAnchorSpecificationTest {
 
                 var nameFit = LabelAnchorSpecification.readFromLunaSettings().nameFit();
 
-                assertThat(nameFit.minFontHeight()).isEqualTo(MIN_FONT_SIZE);
-                assertThat(nameFit.maxFontHeight()).isEqualTo(MAX_FONT_SIZE);
-                assertThat(nameFit.maxLines()).isEqualTo(MAX_LINES);
-                assertThat(nameFit.lineSpacing()).isEqualTo(LINE_SPACING);
+                assertThat(nameFit.minFontHeight())
+                    .isEqualTo(MIN_FONT_SIZE);
+                assertThat(nameFit.maxFontHeight())
+                    .isEqualTo(MAX_FONT_SIZE);
+                assertThat(nameFit.maxLines())
+                    .isEqualTo(MAX_LINES);
+                assertThat(nameFit.lineSpacing())
+                    .isEqualTo(LINE_SPACING);
             }
         }
     }
