@@ -302,6 +302,9 @@ final class RenderStyleReaderTest {
                     .when(KmuLunaSettings::getPoliticalMapHatchJoinToleranceFraction)
                     .thenReturn(HATCH_JOIN_TOLERANCE);
                 settingsMock
+                    .when(KmuLunaSettings::shouldSmoothHatchLines)
+                    .thenReturn(false);
+                settingsMock
                     .when(KmuLunaSettings::shouldSandBorderSpikes)
                     .thenReturn(true);
                 settingsMock
@@ -330,8 +333,8 @@ final class RenderStyleReaderTest {
                 assertThat(global.hatch().joinToleranceFraction())
                     .isEqualTo(HATCH_JOIN_TOLERANCE);
 
-                // The line quality has no knob behind it, so it is held to the shipped value
-                // here - the one place it is decided.
+                // Both halves of the stroke at once, since the width the player set is only the
+                // stroke they asked for if it arrives at the quality they set as well.
                 assertThat(global.hatch().stroke())
                     .isEqualTo(new GlLineHatchStroke(GlLineQuality.ALIASED, HATCH_WIDTH));
 
@@ -356,6 +359,26 @@ final class RenderStyleReaderTest {
             }
         }
 
+        // The switched-on arm of the same crossing. Its own case rather than a second assertion
+        // above, because the mapping is the whole of what this reads: a stroke that came back
+        // aliased whatever the player set would pass every other assertion in this class.
+        @Test
+        void readGlobalStyleStrokesTheHatchSmoothedWhenTheSmoothingKnobIsOn() {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+
+                settingsMock
+                    .when(KmuLunaSettings::shouldSmoothHatchLines)
+                    .thenReturn(true);
+                settingsMock
+                    .when(KmuLunaSettings::getPoliticalMapHatchWidth)
+                    .thenReturn(HATCH_WIDTH);
+
+                var global = RenderStyleReader.readGlobalStyle();
+
+                assertThat(global.hatch().stroke())
+                    .isEqualTo(new GlLineHatchStroke(GlLineQuality.SMOOTHED, HATCH_WIDTH));
+            }
+        }
     }
 
     @Nested

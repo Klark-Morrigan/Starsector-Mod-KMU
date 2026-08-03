@@ -364,13 +364,20 @@ public final class KmuLunaSettings {
     // "mine, but contested" against the solid cluster it holds outright. Only that one
     // territory hatches; spacing is the perpendicular gap between lines in world units,
     // angle their direction in degrees off horizontal, and width the pixel stroke of each
-    // line. All three feed the drawables rebuild, so a change repaints the hatch live.
+    // line. All four feed the drawables rebuild, so a change repaints the hatch live.
+    //
+    // Smoothing is the odd one out in kind rather than in placement: the other three lay the
+    // pattern out, while it picks how a laid-out line is rasterised. It sits here because a
+    // player tuning how the hatch reads reaches for it beside the width it trades against -
+    // a smoothed line reads wider and lighter than the same width stroked hard-edged.
     private static final String HATCH_SPACING_FIELD =
         "kmu_politicalMapHatchSpacing";
     private static final String HATCH_ANGLE_FIELD =
         "kmu_politicalMapHatchAngle";
     private static final String HATCH_WIDTH_FIELD =
         "kmu_politicalMapHatchWidth";
+    private static final String HATCH_SMOOTHING_FIELD =
+        "kmu_politicalMapHatchSmoothing";
 
     // Hatch fill - joining (Dev tab): how near two of one hatch line's crossings must be to
     // count as the same stroke. Its own section because it tunes the merge that packs the
@@ -638,6 +645,12 @@ public final class KmuLunaSettings {
     private static final double DEFAULT_HATCH_SPACING = 400.0;
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
     private static final double DEFAULT_HATCH_WIDTH = 1.0;
+
+    // Hard-edged by default, which is the state the hatch was tuned and verified at; what
+    // smoothing costs a dense field of short strokes is GlLineQuality's own doc to state. A knob
+    // rather than a fixed value because the trade turns on taste once the stroke is wide, and
+    // because whether a GL bridge honours the smoothing hint at all varies.
+    private static final boolean DEFAULT_HATCH_SMOOTHING = false;
 
     // A tenth of a percent of the spacing by default, which sits between two measured bounds
     // rather than between two guessed ones. On a real sector the crossings the merge has to close
@@ -1160,6 +1173,15 @@ public final class KmuLunaSettings {
      */
     public static double getPoliticalMapHatchWidth() {
         return readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH);
+    }
+
+    /**
+     * @return whether the contested-cluster hatch is antialiased rather than stroked hard-edged;
+     *         off by default. Covers the hatch alone - the fills and borders around it pick their
+     *         own line quality - and a GL bridge that ignores the smoothing hint leaves it inert
+     */
+    public static boolean shouldSmoothHatchLines() {
+        return readBoolean(HATCH_SMOOTHING_FIELD, DEFAULT_HATCH_SMOOTHING);
     }
 
     /**

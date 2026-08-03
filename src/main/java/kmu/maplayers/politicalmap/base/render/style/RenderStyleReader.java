@@ -41,13 +41,6 @@ import java.util.Map;
  */
 public final class RenderStyleReader {
 
-    // Aliased: the hatch is a dense field of short strokes, so smoothing it would cost a blend per
-    // covered pixel across the whole contested territory while making every line read softer and
-    // slightly wider - the opposite of the crisp texture the hatch is there to give. Fixed here
-    // rather than read back from a knob, since nothing the player tunes decides how a stroke
-    // rasterises; named rather than written inline so the decision is stated once.
-    private static final GlLineQuality HATCH_LINE_QUALITY = GlLineQuality.ALIASED;
-
     // Reads only settings; never instantiated.
     private RenderStyleReader() {
     }
@@ -70,8 +63,8 @@ public final class RenderStyleReader {
     // national-border smoothing, the hover highlight, and how far a receded bloc's
     // Independent-based grey darkens. The hatch angle is authored in degrees and converted to
     // radians at the reader so the hatch math downstream stays in radians. The player's hatch
-    // width is a property of the stroke rather than of the pattern, so it is read into the stroke
-    // the renderer dispatches on rather than sitting loose beside the layout.
+    // width and smoothing are properties of the stroke rather than of the pattern, so both are
+    // read into the stroke the renderer dispatches on rather than sitting loose beside the layout.
     public static GlobalStyle readGlobalStyle() {
         return new GlobalStyle(
             new HatchStyle(
@@ -79,7 +72,7 @@ public final class RenderStyleReader {
                 KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
                 KmuLunaSettings.getPoliticalMapHatchJoinToleranceFraction(),
                 new GlLineHatchStroke(
-                    HATCH_LINE_QUALITY,
+                    resolveHatchLineQualityOf(KmuLunaSettings.shouldSmoothHatchLines()),
                     KmuLunaSettings.getPoliticalMapHatchWidth())),
             readBorderSmoothingStyle(),
             readHoverHighlightStyle(),
@@ -183,6 +176,13 @@ public final class RenderStyleReader {
             UninhabitedOutlinePreference.isOutlineDrawn(),
             KmuLunaSettings.getUninhabitedBorderOpacity(),
             KmuLunaSettings.getUninhabitedBorderWidth());
+    }
+
+    // Turns the player's smoothing switch into the quality the hatch pass strokes at. Named here
+    // rather than left as a conditional inside the assembly because the mapping is where a boolean
+    // knob becomes a rendering term - the theme downstream reads a quality and never a switch.
+    private static GlLineQuality resolveHatchLineQualityOf(boolean shouldSmoothLines) {
+        return shouldSmoothLines ? GlLineQuality.SMOOTHED : GlLineQuality.ALIASED;
     }
 
     // Assembles a factionless category's style: the given fill, its outline as the outer
