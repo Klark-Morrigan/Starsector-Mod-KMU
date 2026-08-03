@@ -3,7 +3,6 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
-import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.map.VanillaMapTooltip;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
@@ -39,6 +38,7 @@ import static org.mockito.Mockito.when;
  * registered pick at all resolve alike to nothing to draw.
  */
 final class MapLayerCellTooltipTest {
+
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
@@ -46,10 +46,17 @@ final class MapLayerCellTooltipTest {
 
     @BeforeEach
     void registerALayerShowingATooltip() {
-        when(tooltipLayerMock.getId()).thenReturn("tooltip_layer");
-        when(tooltipLayerMock.getMapRenderer()).thenReturn(layerRendererMock);
-        when(layerRendererMock.resolveHoverTooltip()).thenReturn(Optional.of(tooltipMock));
+
+        when(tooltipLayerMock.getId())
+            .thenReturn("tooltip_layer");
+        when(tooltipLayerMock.getMapRenderer())
+            .thenReturn(layerRendererMock);
+
+        when(layerRendererMock.resolveHoverTooltip())
+            .thenReturn(Optional.of(tooltipMock));
+
         MapLayerRegistry.registerLayers(List.of(tooltipLayerMock), tooltipLayerMock);
+
         // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
         // each test from the intel screen closed, which resolves reads to the map screen's pick.
         MapLayerRegistry.registerIntelScreen(intelScreenFake);
@@ -69,19 +76,56 @@ final class MapLayerCellTooltipTest {
             // stack over one icon. Every gate above this one is open, so a dispatcher that skipped
             // the step-aside would reach the injected tooltip and draw.
             var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
-            when(vanillaMapTooltipMock.isShowing()).thenReturn(true);
-            MapHoverState.getInstance().publishHover(new MapHover("system", List.of("system")));
 
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
-                    MockedStatic<CampaignMapView> mapViewMock = mockStatic(CampaignMapView.class)) {
+            when(vanillaMapTooltipMock.isShowing())
+                .thenReturn(true);
 
-                settingsMock.when(KmuLunaSettings::getMapHoveringEnabled).thenReturn(true);
-                settingsMock.when(KmuLunaSettings::getMapHoverTooltipEnabled).thenReturn(true);
-                mapViewMock.when(CampaignMapView::isSectorMapWithStarscapeOff).thenReturn(true);
+            MapHoverState
+                .getInstance()
+                .publishHover(new MapHover("system", List.of("system")));
 
-                new MapLayerCellTooltip(vanillaMapTooltipMock)
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                
+                settingsMock
+                    .when(KmuLunaSettings::getMapHoveringEnabled)
+                    .thenReturn(true);
+                settingsMock
+                    .when(KmuLunaSettings::getMapHoverTooltipEnabled)
+                    .thenReturn(true);
+
+                new MapLayerCellTooltip(vanillaMapTooltipMock, () -> true)
                     .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
+                verifyNoInteractions(tooltipMock);
+            }
+            MapHoverState.getInstance().clearHover();
+        }
+
+        @Test
+        void drawsNothingWhileNoMapIsOnScreen() {
+            // The gate that lets the box onto the intel screen is also what keeps it off every screen
+            // showing no map at all: this listener is called for the whole campaign UI, so with the
+            // gate open and no map up the box would float over whatever screen the player is on.
+            // Every other gate is open, and the vanilla probe is never even asked.
+            var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
+
+            MapHoverState
+                .getInstance()
+                .publishHover(new MapHover("system", List.of("system")));
+
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                
+                settingsMock
+                    .when(KmuLunaSettings::getMapHoveringEnabled)
+                    .thenReturn(true);
+                settingsMock
+                    .when(KmuLunaSettings::getMapHoverTooltipEnabled)
+                    .thenReturn(true);
+
+                new MapLayerCellTooltip(vanillaMapTooltipMock, () -> false)
+                    .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
+
+                verifyNoInteractions(vanillaMapTooltipMock);
                 verifyNoInteractions(tooltipMock);
             }
             MapHoverState.getInstance().clearHover();
@@ -95,12 +139,14 @@ final class MapLayerCellTooltipTest {
         void shouldDrawTooltipForIsTrueForAHoveredCell() {
             var hover = new MapHover("system", List.of("system"));
 
-            assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(hover)).isTrue();
+            assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(hover))
+                .isTrue();
         }
 
         @Test
         void shouldDrawTooltipForIsFalseWhenNothingIsHovered() {
-            assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(MapHover.NONE)).isFalse();
+            assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(MapHover.NONE))
+                .isFalse();
         }
     }
 
@@ -111,9 +157,12 @@ final class MapLayerCellTooltipTest {
         void resolveActiveTooltipAnswersTheActiveLayersInjectedTooltip() {
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 // No sector means no stored pick, so the registry resolves to the registered default.
-                globalMock.when(Global::getSector).thenReturn(null);
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
 
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip()).contains(tooltipMock);
+                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
+                    .contains(tooltipMock);
             }
         }
 
@@ -122,9 +171,12 @@ final class MapLayerCellTooltipTest {
             // The claims view's shape: the layer paints, and simply has nothing to say about one cell.
             when(layerRendererMock.resolveHoverTooltip()).thenReturn(Optional.empty());
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
 
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip()).isEmpty();
+                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
+                    .isEmpty();
             }
         }
 
@@ -136,18 +188,26 @@ final class MapLayerCellTooltipTest {
             // between a withheld box and a layer that has nothing to say, and must not.
             var silencedLayerMock = mock(MapLayer.class);
             var silencedRendererMock = mock(MapLayerRenderer.class);
-            when(silencedLayerMock.getId()).thenReturn("silenced_layer");
-            when(silencedLayerMock.getMapRenderer()).thenReturn(silencedRendererMock);
-            when(silencedRendererMock.resolveHoverTooltip()).thenReturn(Optional.empty());
+
+            when(silencedLayerMock.getId())
+                .thenReturn("silenced_layer");
+            when(silencedLayerMock.getMapRenderer())
+                .thenReturn(silencedRendererMock);
+
+            when(silencedRendererMock.resolveHoverTooltip())
+                .thenReturn(Optional.empty());
 
             MapLayerRegistry.registerLayers(
                 List.of(silencedLayerMock, tooltipLayerMock),
                 tooltipLayerMock);
 
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
 
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip()).contains(tooltipMock);
+                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
+                    .contains(tooltipMock);
             }
         }
 
@@ -156,12 +216,20 @@ final class MapLayerCellTooltipTest {
             // The "show nothing" tab's shape: a registered layer that supplies no renderer, which must
             // stay an ordinary layer here rather than a named special case.
             var silentLayerMock = mock(MapLayer.class);
-            when(silentLayerMock.getId()).thenReturn("silent");
-            MapLayerRegistry.registerLayers(List.of(silentLayerMock), silentLayerMock);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
 
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip()).isEmpty();
+            when(silentLayerMock.getId())
+                .thenReturn("silent");
+
+            MapLayerRegistry.registerLayers(List.of(silentLayerMock), silentLayerMock);
+
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
+                    .isEmpty();
             }
         }
 
@@ -170,10 +238,15 @@ final class MapLayerCellTooltipTest {
             // The pre-registration frame: the listener is installed on game load, so it can be asked
             // before any composition root has run rather than dereference a null pick.
             MapLayerRegistry.registerLayers(List.of(), null);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
 
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip()).isEmpty();
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
+                    .isEmpty();
             }
         }
     }

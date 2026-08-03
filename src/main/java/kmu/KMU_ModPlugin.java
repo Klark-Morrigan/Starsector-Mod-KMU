@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.CampaignTerrainAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.ui.map.SchematicMapPresence;
 import kmlib.starsector.ui.map.VanillaMapTooltip;
 
 import kmu.maplayers.MapLayers;
@@ -351,9 +352,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         listenerManager.removeListenerOfClass(MapLayerCellTooltip.class);
-        // The vanilla-tooltip probe is supplied rather than built by the dispatcher, so a test can
-        // stand a stub in its place and pin the step-aside.
-        listenerManager.addListener(new MapLayerCellTooltip(new VanillaMapTooltip()), true);
+        // Both live reads are supplied rather than built by the dispatcher, so a test can stand
+        // stand-ins in their place and pin the step-aside and the on-screen gate. The map read is
+        // host-blind: the box draws wherever the layer paints, which is the sector map and the intel
+        // screen's map visor alike.
+        listenerManager.addListener(
+            new MapLayerCellTooltip(
+                new VanillaMapTooltip(),
+                new SchematicMapPresence()::isSchematicMapShowing),
+            true);
     }
 
     static void installSectorMapLayerTerrain(SectorAPI sector) {

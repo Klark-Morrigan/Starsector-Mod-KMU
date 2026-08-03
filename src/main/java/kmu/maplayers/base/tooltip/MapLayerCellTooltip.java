@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.ui.map.CampaignMapView;
 import kmlib.starsector.ui.map.VanillaMapTooltip;
 
 import kmu.maplayers.base.hover.MapHover;
@@ -14,6 +13,7 @@ import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 /**
  * The map's hover-tooltip dispatcher: a render listener that draws whichever {@link MapHoverTooltip}
@@ -28,8 +28,9 @@ import java.util.Optional;
  * reason it paints nothing.
  *
  * <p>The dispatcher owns only the gates every hover tooltip shares - the settings switches that
- * answer for every layer ({@link MapHoverGates}), the sector-map-with-starscape-off gate, a hovered
- * cell, stepping aside while the vanilla map draws its own tooltip - and resolves the hovered system,
+ * answer for every layer ({@link MapHoverGates}), a map on screen drawing the ordinary schematic, a
+ * hovered cell, stepping aside while the vanilla map draws its own tooltip - and resolves the hovered
+ * system,
  * then hands it to the injected tooltip. A layer's own tooltip switch stays with the layer, which
  * withholds its box by injecting none. The pass is
  * read-only over the hover state and consumes no input, so the vanilla star-system tooltip keeps
@@ -37,17 +38,28 @@ import java.util.Optional;
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
+    // Whether a map is on screen at all this frame, on either host. Supplied rather than read here so
+    // a test can name the answer: the live read walks the running game's widget tree on the intel
+    // side, which no test can stand up.
+    private final BooleanSupplier isSchematicMapShowing;
+
     // The live read this dispatcher steps aside for. Supplied rather than built here: it is the one
     // collaborator whose answer changes what this draws, so a caller that can hand over a stub is
     // what makes the step-aside checkable at all.
     private final VanillaMapTooltip vanillaMapTooltip;
 
     /**
-     * @param vanillaMapTooltip the probe answering whether the map is drawing its own tooltip, which
-     *                          this box stands aside for
+     * @param vanillaMapTooltip     the probe answering whether the map is drawing its own tooltip,
+     *                              which this box stands aside for
+     * @param isSchematicMapShowing whether a map drawing the ordinary schematic is on screen, on
+     *                              either host - host-blind because this listener is called for the
+     *                              whole campaign UI and is never told which screen is up
      */
-    public MapLayerCellTooltip(VanillaMapTooltip vanillaMapTooltip) {
+    public MapLayerCellTooltip(
+            VanillaMapTooltip vanillaMapTooltip,
+            BooleanSupplier isSchematicMapShowing) {
         this.vanillaMapTooltip = vanillaMapTooltip;
+        this.isSchematicMapShowing = isSchematicMapShowing;
     }
 
     @Override
@@ -69,9 +81,11 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (!MapHoverGates.isHoverTooltipEnabled()) {
             return;
         }
-        // Only the sector map with the starscape filter off shows the overlay, so only then is a hover
-        // meaningful; the same gate the sidebar uses.
-        if (!CampaignMapView.isSectorMapWithStarscapeOff()) {
+        // A map has to be on screen drawing the ordinary schematic for the overlay to be up, and only
+        // then is a hover meaningful. Asked host-blind because the box belongs on either host: the
+        // layer paints through the terrain pass, which runs on the sector map and on the intel
+        // screen's map visor alike, and the box is placed at the cursor rather than against a screen.
+        if (!isSchematicMapShowing.getAsBoolean()) {
             return;
         }
         var hover = MapHoverState.getInstance().getHover();
