@@ -98,7 +98,8 @@ public sealed interface TracedFill {
                 Hatching.computeHatchSegments(
                     clipToCluster(hatchedRings, clusterRings),
                     hatch.angleRadians(),
-                    hatch.spacing()));
+                    hatch.spacing(),
+                    hatch.joining()));
         }
 
         // The part of one state's traced rings falling inside one body, as a triangle soup. The

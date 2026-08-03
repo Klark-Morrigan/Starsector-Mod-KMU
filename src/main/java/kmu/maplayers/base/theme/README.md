@@ -6,10 +6,9 @@ layer's own vocabulary plugs in rather than types this package populates: `MapSt
 key the per-category bundles are held under, and `ElementPaintSelection`, the colour pick an
 element carries. The third, `HatchStroke`, is sealed over this package's own records - see
 [the two tiers](#the-two-tiers). What little behaviour the records carry answers only from their
-own components -
-`ElementStyle.isDrawn`, `RenderStyle.categoryStyle`, and the per-layer width and alpha
-`HoverGlowStyle` derives from its stack and pulse. None of it reads a setting, resolves a colour,
-or touches geometry.
+own components - `ElementStyle.isDrawn`, `RenderStyle.categoryStyle`, and the per-layer width and
+alpha `HoverGlowStyle` derives from its stack and pulse. None of it reads a setting, resolves a
+colour, or touches geometry.
 
 A leaf of the framework rather than of any one layer: the *tiers* describe how a map is styled -
 sector-wide knobs plus one bundle per category - and say nothing about what a bundle is painting.

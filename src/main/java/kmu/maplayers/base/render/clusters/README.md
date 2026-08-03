@@ -132,6 +132,14 @@ fills the flattened runs, in one blended pass with the fills below the seams bel
 knows nothing of settings, caches, or how any run was shaped, and the ids it walks are opaque to
 it.
 
+The fills go down in two sweeps, all the solid triangle soups and then every hatch run, rather than
+both runs per owner. Hoisting the hatch above every solid fill covers nothing that was visible
+before - cells are disjoint, so no owner's triangles can land on another's hatched ground - and it
+buys the hatch a pass of its own, so the line state it strokes under is set once for the whole map
+instead of being pushed and popped around each owner. That pass is where `HatchStroke` is
+dispatched on: the theme decides which substrate the hatch reaches the screen through, and the
+renderer reads only the numbers that substrate carries.
+
 What it paints arrives through `ClusterDrawLists`, which is four reads and no more - is there
 anything to paint, the sector-wide style tier, the cell records, and the cluster groups keyed by
 owner. A layer's own built state satisfies it directly wherever its draw lists already are those

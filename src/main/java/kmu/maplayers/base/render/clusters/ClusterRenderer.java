@@ -10,16 +10,19 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
+import kmu.maplayers.base.theme.GlLineHatchStroke;
 
 import org.lwjgl.opengl.GL11;
 
 import java.util.Collection;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
- * Paints pre-built cluster draw lists on the sector (M) map: every fill first - the clusters'
- * and then the lone cells' - and over them the interior seams, the lone cells' outlines, and the
- * cluster boundaries. The debug cluster anchors are not drawn here: they are an
+ * Paints pre-built cluster draw lists on the sector (M) map: every solid fill first - the
+ * clusters' and then the lone cells' - then the contested hatch over them, and over that the
+ * interior seams, the lone cells' outlines, and the cluster boundaries. The debug cluster anchors
+ * are not drawn here: they are an
  * independent overlay ({@link kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer}) the
  * terrain plugin layers over whichever base view is live.
  *
@@ -51,7 +54,8 @@ public final class ClusterRenderer {
         }
         // Aliased: the fills and their borders are large filled shapes whose edges the map's own
         // scaling already softens, and smoothing every border run costs a blend per covered pixel
-        // across the whole sector.
+        // across the whole sector. The hatch does not inherit this - it opens a pass of its own,
+        // since its line quality is the player's theme rather than this pass's convenience.
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
             GlLineQuality.ALIASED,
@@ -74,44 +78,34 @@ public final class ClusterRenderer {
             });
     }
 
+    // All the solid ground first, then the contested hatch over it. A cluster whose ground does
+    // not all fill solid carries both runs at once - solid triangles where it fills and
+    // pre-clipped diagonal hatch lines where the layer marked it hatched, in the same colour and
+    // opacity - so a partly-filled body still reads as one inside its boundary.
+    //
+    // Hoisting every hatch run above every solid fill covers nothing that was visible before:
+    // cells are disjoint, so no owner's solid triangles can land on another owner's hatched
+    // ground, and typically only one owner (the filter's spotlit bloc) carries a non-empty hatch
+    // run at all. What the split buys is that the line state the hatch strokes under is set once
+    // for the whole map rather than pushed and popped around every solid fill.
+    private static void drawFills(ClusterDrawLists drawLists, float factor, float alphaMult) {
+        drawSolidFills(drawLists, factor, alphaMult);
+        drawHatchedFills(drawLists, factor, alphaMult);
+    }
+
     // Fills every cluster an owner holds with that owner's resolved fill colour at its opacity,
     // then each lone cell that carries a fill of its own. Both are pre-tessellated triangle
     // soups, so a concave cluster (or one with an enclave) fills correctly and exactly matches
-    // the stroked boundary. A hidden fill (UiElementPaint.isHidden) is skipped, its geometry kept
-    // to shape its neighbours but never emitted. A cluster whose ground does not all fill solid
-    // carries both runs at once - solid triangles where it fills and pre-clipped diagonal hatch
-    // lines where the layer marked it hatched, in the same colour and opacity - so a partly-filled
-    // body still reads as one inside its boundary; a cluster that fills solid carries an empty
-    // hatch run and paints only its triangles.
-    private static void drawFills(ClusterDrawLists drawLists, float factor, float alphaMult) {
+    // the stroked boundary.
+    private static void drawSolidFills(ClusterDrawLists drawLists, float factor, float alphaMult) {
 
-        // The hatch fills its sub-cluster in the fill colour but strokes as GL_LINES, so its own
-        // pixel width tunes the hatched texture apart from the solid fill. The width is
-        // sector-wide, so set it once here off the theme's global tier rather than per owner;
-        // the triangle soups below are width-agnostic, and typically only one owner carries a
-        // non-empty hatch run.
-        GL11.glLineWidth((float) drawLists.getGlobalStyle().hatch().width());
-        
-        // The colour binds once per owner and every body that owner holds emits under it, which
-        // is what the paint-per-owner, geometry-per-cluster split buys: a holding scattered over
-        // the sector costs one bind, not one per body.
-        for (var group : drawLists.getStyledClusterGroupByOwnerId().values()) {
-            emitIfVisible(
-                group.fill(),
-                alphaMult,
-                () -> {
-                    for (var cluster : group.clusters()) {
-                        GlRuns.drawScaled(
-                            GL11.GL_TRIANGLES,
-                            cluster.fillTriangles(),
-                            factor);
-                        GlRuns.drawScaled(
-                            GL11.GL_LINES,
-                            cluster.hatchSegments(),
-                            factor);
-                    }
-            });
-        }
+        drawEachClusterRun(
+            drawLists,
+            factor,
+            alphaMult,
+            GL11.GL_TRIANGLES,
+            StyledCluster::fillTriangles);
+
         // Then the lone cells' own fills. They fill per cell rather than per cluster because
         // unowned ground never fuses into one, and they cover no cluster, so drawing them after
         // the cluster fills is a matter of grouping the fill pass rather than of layering. A
@@ -127,6 +121,73 @@ public final class ClusterRenderer {
                     GL11.GL_TRIANGLES,
                     lone.fillTriangles(),
                     factor)));
+    }
+
+    // Lays the hatch over the solid ground, in whichever way the theme's stroke says. The stroke
+    // is the sector-wide choice of substrate, so it is resolved once for the whole pass rather
+    // than per owner - the geometry underneath is the same runs either way, and only how they are
+    // turned into pixels differs.
+    private static void drawHatchedFills(
+            ClusterDrawLists drawLists,
+            float factor,
+            float alphaMult) {
+
+        if (drawLists.getGlobalStyle().hatch().stroke() instanceof GlLineHatchStroke lineStroke) {
+            drawHatchAsGlLines(drawLists, factor, alphaMult, lineStroke);
+        }
+    }
+
+    // The hatch handed to the GL line rasteriser, in a blended pass of its own so the line quality
+    // and width it strokes at are the hatch's own rather than whatever the surrounding fill pass
+    // happened to leave in force. A cluster that fills solid carries an empty hatch run and so
+    // costs this pass nothing beyond the colour bind its group already needs.
+    private static void drawHatchAsGlLines(
+            ClusterDrawLists drawLists,
+            float factor,
+            float alphaMult,
+            GlLineHatchStroke stroke) {
+
+        GlPasses.runBlendedPass(
+            GlBlendMode.ALPHA,
+            stroke.quality(),
+            () -> {
+                GL11.glLineWidth((float) stroke.widthPixels());
+                drawEachClusterRun(
+                    drawLists,
+                    factor,
+                    alphaMult,
+                    GL11.GL_LINES,
+                    StyledCluster::hatchSegments);
+            });
+    }
+
+    // Emits one run of every body every owner holds, under that owner's fill paint. The two fill
+    // passes are the same walk over the same bodies and differ only in which of a body's runs they
+    // read and what primitive it draws as, so the walk is written once and each pass names only
+    // that difference - which is what stops one of them from later growing a narrowing or a paint
+    // the other silently lacks.
+    //
+    // The colour binds once per owner and every body that owner holds emits under it, which is
+    // what the paint-per-owner, geometry-per-cluster split buys: a holding scattered over the
+    // sector costs one bind, not one per body. A hidden fill (UiElementPaint.isHidden) is skipped,
+    // its geometry kept to shape its neighbours but never emitted.
+    private static void drawEachClusterRun(
+            ClusterDrawLists drawLists,
+            float factor,
+            float alphaMult,
+            int primitiveMode,
+            Function<StyledCluster, float[]> selectRun) {
+
+        for (var group : drawLists.getStyledClusterGroupByOwnerId().values()) {
+            emitIfVisible(
+                group.fill(),
+                alphaMult,
+                () -> {
+                    for (var cluster : group.clusters()) {
+                        GlRuns.drawScaled(primitiveMode, selectRun.apply(cluster), factor);
+                    }
+            });
+        }
     }
 
     // Draws one element of every cell of one form, skipping the cells of the other. Each pass over
