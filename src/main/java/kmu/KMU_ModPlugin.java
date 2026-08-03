@@ -6,8 +6,8 @@ import com.fs.starfarer.api.campaign.CampaignTerrainAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.ui.map.SchematicMapPresence;
-import kmlib.starsector.ui.map.VanillaMapTooltip;
+import kmlib.starsector.ui.map.presence.SchematicMapPresence;
+import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;

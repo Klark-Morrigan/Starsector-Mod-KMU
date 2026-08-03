@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.ui.map.VanillaMapTooltip;
+import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverGates;

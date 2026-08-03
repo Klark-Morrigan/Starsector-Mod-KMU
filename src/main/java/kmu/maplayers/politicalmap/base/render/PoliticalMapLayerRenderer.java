@@ -3,9 +3,9 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.ui.input.UiCursor;
-import kmlib.starsector.ui.map.MapSurfaceBounds;
-import kmlib.starsector.ui.map.MapTabWidgetTrace;
-import kmlib.starsector.ui.map.ModelviewMatrixReaders;
+import kmlib.starsector.ui.map.probes.MapSurfaceBounds;
+import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
+import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;

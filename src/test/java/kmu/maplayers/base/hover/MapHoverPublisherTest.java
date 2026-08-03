@@ -1,7 +1,7 @@
 package kmu.maplayers.base.hover;
 
-import kmlib.starsector.ui.map.MapCursor;
-import kmlib.starsector.ui.map.ModelviewMatrixReader;
+import kmlib.starsector.ui.map.transform.MapCursor;
+import kmlib.starsector.ui.map.transform.ModelviewMatrixReader;
 
 import kmu.maplayers.base.geometry.SystemClusterIndex;
 

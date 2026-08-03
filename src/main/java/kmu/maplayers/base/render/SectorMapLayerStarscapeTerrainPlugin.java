@@ -1,6 +1,6 @@
 package kmu.maplayers.base.render;
 
-import kmlib.starsector.ui.map.StarscapeMapPresence;
+import kmlib.starsector.ui.map.presence.StarscapeMapPresence;
 
 import java.util.function.BooleanSupplier;
 

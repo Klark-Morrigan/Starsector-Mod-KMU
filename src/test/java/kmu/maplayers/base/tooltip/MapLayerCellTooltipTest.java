@@ -3,7 +3,7 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
-import kmlib.starsector.ui.map.VanillaMapTooltip;
+import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;

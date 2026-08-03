@@ -2,8 +2,8 @@ package kmu.maplayers.base.hover;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.starsector.ui.map.MapCursor;
-import kmlib.starsector.ui.map.ModelviewMatrixReader;
+import kmlib.starsector.ui.map.transform.MapCursor;
+import kmlib.starsector.ui.map.transform.ModelviewMatrixReader;
 
 import kmu.maplayers.base.geometry.CellHitTest;
 
