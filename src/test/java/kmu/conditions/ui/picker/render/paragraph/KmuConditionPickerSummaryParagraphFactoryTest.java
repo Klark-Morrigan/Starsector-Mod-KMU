@@ -54,12 +54,12 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
 
         @Test
         void returnsTwoLines() {
-            assertThat(KmuConditionPickerSummaryParagraphFactory.get(model(entries()))).hasSize(2);
+            assertThat(KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()))).hasSize(2);
         }
 
         @Test
         void returnsConditionsHeaderAsFirstLine() {
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
 
             assertThat(paragraphs.get(0).getText()).isEqualTo("Conditions:");
             assertThat(paragraphs.get(0).getHighlightTexts()).isEmpty();
@@ -67,14 +67,14 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
 
         @Test
         void conditionsHeaderHasGrayBaseColour() {
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
 
             assertThat(paragraphs.get(0).getBaseColour()).isEqualTo(GRAY);
         }
 
         @Test
         void summarizesTotalAndPresentConditionsInCountsLine() {
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
 
             assertThat(paragraphs.get(1).getText())
                     .isEqualTo("2 visible - 1 suppressed, 3 present, 1 hidden - 1 available, 4 total.");
@@ -83,7 +83,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         @Test
         void showsOnlyTailWhenAllCountsAreZero() {
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
-                    model(Collections.emptyList()));
+                    buildModel(Collections.emptyList()));
 
             assertThat(paragraphs.get(1).getText()).isEqualTo("0 available, 0 total.");
         }
@@ -92,8 +92,8 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         void startsDirectlyWithFirstCountTokenWhenVisibleIsZero() {
             // Entry that is both suppressed and hidden: visible=0 (hidden), suppressed=1
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
-                    model(Collections.singletonList(
-                            entry("hot", KmuConditionPickerEntryState.PRESENT, true, true))));
+                    buildModel(Collections.singletonList(
+                            buildEntry("hot", KmuConditionPickerEntryState.PRESENT, true, true))));
 
             assertThat(paragraphs.get(1).getText())
                     .isEqualTo("1 suppressed, 1 present, 1 hidden - 0 available, 1 total.");
@@ -105,7 +105,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
             // "3 present" has no highlight slot because its colour matches the label base
             // (white). The " - " before "1 available" and the ", " before "4 total." are
             // each highlighted in grey so the trailing tail renders fully grey.
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
 
             assertThat(paragraphs.get(1).getHighlightTexts())
                     .containsExactly(
@@ -117,7 +117,7 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         void exposesHighlightColoursOnCountsLine() {
             // Colours align one-to-one with highlights above. The four trailing segments
             // (" - ", "1 available", ", ", "4 total.") are all grey.
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(model(entries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
 
             assertThat(paragraphs.get(1).getHighlightColours())
                     .containsExactly(GREEN, RED, BLUE, GRAY, GRAY, GRAY, GRAY);
@@ -126,8 +126,8 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         @Test
         void omitsZeroSuppressedSegment() {
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
-                    model(Collections.singletonList(
-                            entry("hot", KmuConditionPickerEntryState.PRESENT, false, false))));
+                    buildModel(Collections.singletonList(
+                            buildEntry("hot", KmuConditionPickerEntryState.PRESENT, false, false))));
 
             assertThat(paragraphs.get(1).getHighlightTexts()).doesNotContain("0 suppressed");
         }
@@ -135,8 +135,8 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         @Test
         void exposesRedHighlightForSuppressedSegment() {
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
-                    model(Collections.singletonList(
-                            entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false))));
+                    buildModel(Collections.singletonList(
+                            buildEntry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false))));
 
             var highlights = paragraphs.get(1).getHighlightTexts();
             var colours = paragraphs.get(1).getHighlightColours();
@@ -147,20 +147,20 @@ class KmuConditionPickerSummaryParagraphFactoryTest {
         }
     }
 
-    private static KmuConditionPickerModel model(List<KmuConditionPickerEntry> entryList) {
+    private static KmuConditionPickerModel buildModel(List<KmuConditionPickerEntry> entryList) {
         return new KmuConditionPickerModel(entryList,
                 new KmuConditionPickerLocation(null, null, null, null, null, null, null));
     }
 
-    private static List<KmuConditionPickerEntry> entries() {
+    private static List<KmuConditionPickerEntry> listEntries() {
         return Arrays.asList(
-                entry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
-                entry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
-                entry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
-                entry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false));
+                buildEntry("hot", KmuConditionPickerEntryState.PRESENT, false, false),
+                buildEntry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
+                buildEntry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
+                buildEntry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false));
     }
 
-    private static KmuConditionPickerEntry entry(
+    private static KmuConditionPickerEntry buildEntry(
             String id,
             KmuConditionPickerEntryState state,
             boolean suppressed,

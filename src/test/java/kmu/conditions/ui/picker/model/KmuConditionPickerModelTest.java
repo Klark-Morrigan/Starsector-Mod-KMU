@@ -16,15 +16,15 @@ class KmuConditionPickerModelTest {
 
         @Test
         void findEntryReturnsPresentForMatchingId() {
-            var hotEntry = entry("hot", KmuConditionPickerEntryState.PRESENT);
-            var model = model(hotEntry);
+            var hotEntry = buildEntry("hot", KmuConditionPickerEntryState.PRESENT);
+            var model = buildModel(hotEntry);
 
             assertThat(model.findEntry("hot")).contains(hotEntry);
         }
 
         @Test
         void findEntryReturnsEmptyForNonMatchingId() {
-            var model = model(entry("hot", KmuConditionPickerEntryState.PRESENT));
+            var model = buildModel(buildEntry("hot", KmuConditionPickerEntryState.PRESENT));
 
             assertThat(model.findEntry("cold")).isEmpty();
         }
@@ -35,10 +35,10 @@ class KmuConditionPickerModelTest {
 
         @Test
         void getVisibleCountCountsPresentNonHiddenEntries() {
-            var model = model(
-                    entry("hot", KmuConditionPickerEntryState.PRESENT),
-                    hiddenEntry("no_atmosphere"),
-                    entry("cold", KmuConditionPickerEntryState.ABSENT));
+            var model = buildModel(
+                    buildEntry("hot", KmuConditionPickerEntryState.PRESENT),
+                    buildHiddenEntry("no_atmosphere"),
+                    buildEntry("cold", KmuConditionPickerEntryState.ABSENT));
 
             assertThat(model.getVisibleCount()).isEqualTo(1);
         }
@@ -49,10 +49,10 @@ class KmuConditionPickerModelTest {
 
         @Test
         void getAvailableCountCountsAbsentEntries() {
-            var model = model(
-                    entry("hot", KmuConditionPickerEntryState.PRESENT),
-                    entry("cold", KmuConditionPickerEntryState.ABSENT),
-                    entry("arid", KmuConditionPickerEntryState.ABSENT));
+            var model = buildModel(
+                    buildEntry("hot", KmuConditionPickerEntryState.PRESENT),
+                    buildEntry("cold", KmuConditionPickerEntryState.ABSENT),
+                    buildEntry("arid", KmuConditionPickerEntryState.ABSENT));
 
             assertThat(model.getAvailableCount()).isEqualTo(2);
         }
@@ -60,15 +60,15 @@ class KmuConditionPickerModelTest {
 
     // --- helpers ---
 
-    private static KmuConditionPickerModel model(KmuConditionPickerEntry... entries) {
+    private static KmuConditionPickerModel buildModel(KmuConditionPickerEntry... entries) {
         return new KmuConditionPickerModel(List.of(entries), EMPTY_LOCATION);
     }
 
-    private static KmuConditionPickerEntry entry(String id, KmuConditionPickerEntryState state) {
+    private static KmuConditionPickerEntry buildEntry(String id, KmuConditionPickerEntryState state) {
         return new KmuConditionPickerEntry(id, id, null, state, null);
     }
 
-    private static KmuConditionPickerEntry hiddenEntry(String id) {
+    private static KmuConditionPickerEntry buildHiddenEntry(String id) {
         return new KmuConditionPickerEntry(
                 id, id, null, KmuConditionPickerEntryState.PRESENT, null, null, false, true);
     }

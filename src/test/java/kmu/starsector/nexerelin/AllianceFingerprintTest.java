@@ -21,8 +21,8 @@ class AllianceFingerprintTest {
 
         @Test
         void yieldsTheSameTokenForAnUnchangedSet() {
-            assertThat(AllianceFingerprint.compute(List.of(alliedPowers())))
-                    .isEqualTo(AllianceFingerprint.compute(List.of(alliedPowers())));
+            assertThat(AllianceFingerprint.compute(List.of(buildAlliedPowers())))
+                    .isEqualTo(AllianceFingerprint.compute(List.of(buildAlliedPowers())));
         }
 
         @Test
@@ -44,13 +44,13 @@ class AllianceFingerprintTest {
             var relead = new AllianceRecord(
                     "alliance-1", "Allied Powers", List.of("astral_armada", "hegemony"));
             assertThat(AllianceFingerprint.compute(List.of(relead)))
-                    .isNotEqualTo(AllianceFingerprint.compute(List.of(alliedPowers())));
+                    .isNotEqualTo(AllianceFingerprint.compute(List.of(buildAlliedPowers())));
         }
 
         @Test
         void ignoresTheOrderAlliancesAreReportedIn() {
-            var first = List.of(alliedPowers(), rivalBloc());
-            var second = List.of(rivalBloc(), alliedPowers());
+            var first = List.of(buildAlliedPowers(), buildRivalBloc());
+            var second = List.of(buildRivalBloc(), buildAlliedPowers());
             assertThat(AllianceFingerprint.compute(second))
                     .isEqualTo(AllianceFingerprint.compute(first));
         }
@@ -60,7 +60,7 @@ class AllianceFingerprintTest {
             var grown = new AllianceRecord(
                     "alliance-1", "Allied Powers", List.of("hegemony", "astral_armada", "diktat"));
             assertThat(AllianceFingerprint.compute(List.of(grown)))
-                    .isNotEqualTo(AllianceFingerprint.compute(List.of(alliedPowers())));
+                    .isNotEqualTo(AllianceFingerprint.compute(List.of(buildAlliedPowers())));
         }
 
         @Test
@@ -68,32 +68,32 @@ class AllianceFingerprintTest {
             var shrunk = new AllianceRecord(
                     "alliance-1", "Allied Powers", List.of("hegemony"));
             assertThat(AllianceFingerprint.compute(List.of(shrunk)))
-                    .isNotEqualTo(AllianceFingerprint.compute(List.of(alliedPowers())));
+                    .isNotEqualTo(AllianceFingerprint.compute(List.of(buildAlliedPowers())));
         }
 
         @Test
         void movesWhenAnAllianceForms() {
-            assertThat(AllianceFingerprint.compute(List.of(alliedPowers(), rivalBloc())))
-                    .isNotEqualTo(AllianceFingerprint.compute(List.of(alliedPowers())));
+            assertThat(AllianceFingerprint.compute(List.of(buildAlliedPowers(), buildRivalBloc())))
+                    .isNotEqualTo(AllianceFingerprint.compute(List.of(buildAlliedPowers())));
         }
 
         @Test
         void movesWhenAnAllianceDissolves() {
             assertThat(AllianceFingerprint.compute(List.of()))
-                    .isNotEqualTo(AllianceFingerprint.compute(List.of(alliedPowers())));
+                    .isNotEqualTo(AllianceFingerprint.compute(List.of(buildAlliedPowers())));
         }
     }
 
     // Two members ranked hegemony-first; reused across the steady-token and membership-move
     // assertions.
-    private static AllianceRecord alliedPowers() {
+    private static AllianceRecord buildAlliedPowers() {
         return new AllianceRecord(
                 "alliance-1", "Allied Powers", List.of("hegemony", "astral_armada"));
     }
 
     // A second, distinct alliance, so forming and reordering can be probed against
     // alliedPowers.
-    private static AllianceRecord rivalBloc() {
+    private static AllianceRecord buildRivalBloc() {
         return new AllianceRecord(
                 "alliance-2", "Rival Bloc", List.of("tritachyon", "luddic_church"));
     }

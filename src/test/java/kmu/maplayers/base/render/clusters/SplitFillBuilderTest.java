@@ -48,15 +48,15 @@ final class SplitFillBuilderTest {
     // both 2000 tall. Their shared edge is a same-owner seam; every other edge is a border.
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
         HELD_SYSTEM, List.of(
-            edge(0, 0, 2000, 0, null),
-            edge(2000, 0, 2000, 2000, HATCHED_SYSTEM),
-            edge(2000, 2000, 0, 2000, null),
-            edge(0, 2000, 0, 0, null)),
+            buildEdge(0, 0, 2000, 0, null),
+            buildEdge(2000, 0, 2000, 2000, HATCHED_SYSTEM),
+            buildEdge(2000, 2000, 0, 2000, null),
+            buildEdge(0, 2000, 0, 0, null)),
         HATCHED_SYSTEM, List.of(
-            edge(2000, 0, 4000, 0, null),
-            edge(4000, 0, 4000, 2000, null),
-            edge(4000, 2000, 2000, 2000, null),
-            edge(2000, 2000, 2000, 0, HELD_SYSTEM)));
+            buildEdge(2000, 0, 4000, 0, null),
+            buildEdge(4000, 0, 4000, 2000, null),
+            buildEdge(4000, 2000, 2000, 2000, null),
+            buildEdge(2000, 2000, 2000, 0, HELD_SYSTEM)));
 
     private static final CellGrouping GROUPING = new CellGrouping(
         Map.of(HELD_SYSTEM, HELD_SYSTEM, HATCHED_SYSTEM, HATCHED_SYSTEM),
@@ -65,14 +65,14 @@ final class SplitFillBuilderTest {
     // The body the fill is clipped to: the square [0, 1000] x [0, 1000], area 1e6, overlapping
     // the members' own cells.
     private static final RingRegion HOME_BODY = new RingRegion(
-        square(0, 0, 1000),
+        buildSquare(0, 0, 1000),
         List.of());
 
     // A second body of the same owner, clear of the members' cells and half the size - so a
     // fill that leaked from one body into the other, or that was built against the two together,
     // is caught by area rather than by mere presence. Area 25e4.
     private static final RingRegion DISTANT_BODY =
-        new RingRegion(square(10000, 0, 500), List.of());
+        new RingRegion(buildSquare(10000, 0, 500), List.of());
 
     @Nested
     class TraceFill {
@@ -82,9 +82,9 @@ final class SplitFillBuilderTest {
             // An owner the player has switched the fill off for pays no tessellation at all,
             // rather than baking triangles the draw pass would then skip - and every body it
             // holds cuts to nothing, since the bodies themselves still stroke and hold a label.
-            var tracedFill = builder().traceFill(
+            var tracedFill = createSplitFillBuilder().traceFill(
                 false, // Is not spotlit.
-                solidOnlySplit(),
+                buildSolidOnlySplit(),
                 REGION_KEY,
                 null); // No fill colour.
 
@@ -100,11 +100,11 @@ final class SplitFillBuilderTest {
         void traceFillTessellatesTheFrontierWhenEveryMemberFillsSolid() {
             // The fast path: no trace of its own, just the smoothed loops the border strokes, so
             // the fill lands exactly where the border does.
-            var fill = builder()
-                .traceFill(false, solidOnlySplit(), REGION_KEY, Color.RED)
+            var fill = createSplitFillBuilder()
+                .traceFill(false, buildSolidOnlySplit(), REGION_KEY, Color.RED)
                 .buildFillFor(HOME_BODY);
 
-            assertThat(totalTriangleArea(fill.solidTriangles()))
+            assertThat(computeTotalTriangleArea(fill.solidTriangles()))
                 .isCloseTo(1e6, within(1.0));
             assertThat(fill.hatchSegments())
                 .isEmpty();
@@ -115,15 +115,15 @@ final class SplitFillBuilderTest {
             // Two bodies of one owner cut from the same traced fill, each from its own loops.
             // Cut against both at once, either would carry the union - the error the flat record
             // could not have caught, since it held one soup over everything either way.
-            var tracedFill = builder().traceFill(
+            var tracedFill = createSplitFillBuilder().traceFill(
                 false, // Is not spotlit.
-                solidOnlySplit(),
+                buildSolidOnlySplit(),
                 REGION_KEY,
                 Color.RED);
 
-            assertThat(totalTriangleArea(tracedFill.buildFillFor(HOME_BODY).solidTriangles()))
+            assertThat(computeTotalTriangleArea(tracedFill.buildFillFor(HOME_BODY).solidTriangles()))
                 .isCloseTo(1e6, within(1.0));
-            assertThat(totalTriangleArea(tracedFill.buildFillFor(DISTANT_BODY).solidTriangles()))
+            assertThat(computeTotalTriangleArea(tracedFill.buildFillFor(DISTANT_BODY).solidTriangles()))
                 .isCloseTo(25e4, within(1.0));
         }
 
@@ -131,8 +131,8 @@ final class SplitFillBuilderTest {
         void traceFillCarvesPerStateWhenTheOwnerHoldsAHatchedMember() {
             // Non-solid members force the carve even off the spotlight, so solid and hatched
             // fills read apart inside the one frontier.
-            var fill = builder()
-                .traceFill(false, hatchedSplit(), REGION_KEY, Color.RED)
+            var fill = createSplitFillBuilder()
+                .traceFill(false, buildHatchedSplit(), REGION_KEY, Color.RED)
                 .buildFillFor(HOME_BODY);
 
             assertThat(fill.solidTriangles())
@@ -144,9 +144,9 @@ final class SplitFillBuilderTest {
             // The states are traced once across the whole owner, so nothing but the per-body clip
             // keeps the distant body from being painted over area it does not contain. Its fill
             // has to come back empty: its own loops enclose none of the members.
-            var tracedFill = builder().traceFill(
+            var tracedFill = createSplitFillBuilder().traceFill(
                 false, // Is not spotlit.
-                hatchedSplit(),
+                buildHatchedSplit(),
                 REGION_KEY,
                 Color.RED);
 
@@ -162,11 +162,11 @@ final class SplitFillBuilderTest {
         void traceFillCarvesPerStateForASpotlitOwnerThatFillsSolidThroughout() {
             // The spotlight always splits: its fill is per state even where it dominates
             // everywhere, so a spotlit owner does not fall into the solid fast path.
-            var solid = builder()
-                .traceFill(false, solidOnlySplit(), REGION_KEY, Color.RED)
+            var solid = createSplitFillBuilder()
+                .traceFill(false, buildSolidOnlySplit(), REGION_KEY, Color.RED)
                 .buildFillFor(HOME_BODY);
-            var spotlit = builder()
-                .traceFill(true, solidOnlySplit(), REGION_KEY, Color.RED)
+            var spotlit = createSplitFillBuilder()
+                .traceFill(true, buildSolidOnlySplit(), REGION_KEY, Color.RED)
                 .buildFillFor(HOME_BODY);
 
             // The carve traces its own rings and clips them to the frontier, so it cannot come
@@ -177,8 +177,8 @@ final class SplitFillBuilderTest {
 
         @Test
         void traceFillLeavesTheHatchEmptyWhenNoMemberIsHatched() {
-            var fill = builder()
-                .traceFill(true, solidOnlySplit(), REGION_KEY, Color.RED)
+            var fill = createSplitFillBuilder()
+                .traceFill(true, buildSolidOnlySplit(), REGION_KEY, Color.RED)
                 .buildFillFor(HOME_BODY);
 
             assertThat(fill.hatchSegments())
@@ -189,7 +189,7 @@ final class SplitFillBuilderTest {
     // Reads nothing off the hatches it cuts: this suite's subject is which cells each state
     // fills, so a case asserts on the geometry that comes back rather than on anything observed
     // along the way.
-    private static SplitFillBuilder builder() {
+    private static SplitFillBuilder createSplitFillBuilder() {
         return new SplitFillBuilder(
             EDGES,
             GROUPING,
@@ -199,7 +199,7 @@ final class SplitFillBuilderTest {
     }
 
     // Both members held outright - the common case, and the one the solid fast path is for.
-    private static FillSplit solidOnlySplit() {
+    private static FillSplit buildSolidOnlySplit() {
         return FillSplit.splitMembersByFillState(
             GROUPING,
             List.of(HELD_SYSTEM, HATCHED_SYSTEM),
@@ -208,7 +208,7 @@ final class SplitFillBuilderTest {
     }
 
     // One member solid, one hatched - the split the carve exists to draw.
-    private static FillSplit hatchedSplit() {
+    private static FillSplit buildHatchedSplit() {
         return FillSplit.splitMembersByFillState(
             GROUPING,
             List.of(HELD_SYSTEM, HATCHED_SYSTEM),
@@ -217,7 +217,7 @@ final class SplitFillBuilderTest {
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge edge(double x1, double y1, double x2, double y2, String neighbour) {
+    private static CellEdge buildEdge(double x1, double y1, double x2, double y2, String neighbour) {
         return new CellEdge(x1, y1, x2, y2,
             neighbour == null
                 ? EdgeTarget.REACH_BOUND
@@ -226,7 +226,7 @@ final class SplitFillBuilderTest {
 
     // An axis-aligned square ring, counter-clockwise, spanning [minX, minX + side] x
     // [minY, minY + side].
-    private static List<double[]> square(double minX, double minY, double side) {
+    private static List<double[]> buildSquare(double minX, double minY, double side) {
         return List.of(
             new double[] {minX, minY},
             new double[] {minX + side, minY},
@@ -236,7 +236,7 @@ final class SplitFillBuilderTest {
 
     // Sums the unsigned area of every triangle in a flat [x, y, x, y, ...] soup, six floats per
     // triangle - what the fill actually covers.
-    private static double totalTriangleArea(float[] triangles) {
+    private static double computeTotalTriangleArea(float[] triangles) {
         var floatsPerTriangle = 6;
         var total = 0.0;
         for (var i = 0; i + floatsPerTriangle <= triangles.length; i += floatsPerTriangle) {

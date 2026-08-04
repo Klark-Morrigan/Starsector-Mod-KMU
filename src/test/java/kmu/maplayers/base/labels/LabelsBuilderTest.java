@@ -46,7 +46,7 @@ final class LabelsBuilderTest {
 
         @Test
         void planLabelsPlansOneLineWithItsTextColourAndFontHeight() {
-            var anchors = List.of(acceptedAnchor(
+            var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean League"),
                 100f,
                 200f,
@@ -64,7 +64,7 @@ final class LabelsBuilderTest {
         @Test
         void planLabelsHangsASingleLineAtTheAnchorPoint() {
             // One line has no stack to spread: its centre is the block centre, the anchor.
-            var anchors = List.of(acceptedAnchor(
+            var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean League"),
                 100f,
                 200f,
@@ -81,7 +81,7 @@ final class LabelsBuilderTest {
             // A horizontal axis stacks straight up the y axis: line centres half a step
             // (font height times spacing) above and below the anchor, first line on the
             // upper side so the block reads top-down.
-            var anchors = List.of(acceptedAnchor(
+            var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean", "League"),
                 100f,
                 200f,
@@ -104,7 +104,7 @@ final class LabelsBuilderTest {
         void planLabelsStacksAlongTheSlantedAxisPerpendicular() {
             // A 45-degree axis: the stack runs along its "up" perpendicular
             // (-sin45, cos45), so each line centre is offset half a step along it.
-            var anchors = List.of(acceptedAnchor(
+            var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean", "League"),
                 100f,
                 200f,
@@ -124,7 +124,7 @@ final class LabelsBuilderTest {
         @Test
         void planLabelsTakesTheSlantFromTheAcceptedAxis() {
             // A line rising 45 degrees to the right: the label leans at +45.
-            var anchors = List.of(acceptedAnchor(
+            var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean League"),
                 50f,
                 50f,
@@ -141,7 +141,7 @@ final class LabelsBuilderTest {
             // as is it would render the name upside down (~180 degrees); folded upright it
             // reads left-to-right at the same shallow lean (here dead level, 0) - and the
             // stack still puts the first line on the upper side, from the folded direction.
-            var anchors = List.of(acceptedAnchor(
+            var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean", "League"),
                 100f,
                 200f,
@@ -158,7 +158,7 @@ final class LabelsBuilderTest {
             // The invariant the whole stack exists to hold: the outermost line centres, plus
             // half a line height at each end, span exactly the band the fit reserved. Checked
             // on three lines, where a wrong step compounds rather than cancelling.
-            var anchors = List.of(acceptedAnchor(
+            var anchors = List.of(buildAcceptedAnchor(
                 List.of("Tri", "Tachyon", "Corporation"),
                 100f,
                 200f,
@@ -177,7 +177,7 @@ final class LabelsBuilderTest {
             // wider - with no spacing read here to tell it so. Fitted at double the ordinary
             // spacing, the step doubles with it.
             var wideSpacing = LINE_SPACING * 2.0;
-            var anchors = List.of(acceptedAnchorFittedAt(
+            var anchors = List.of(buildAcceptedAnchorFittedAt(
                 wideSpacing,
                 List.of("Persean", "League"),
                 100f,
@@ -195,7 +195,7 @@ final class LabelsBuilderTest {
         void planLabelsSkipsACollapsedPlacementWithNoAcceptedAxis() {
             // A cluster whose search collapsed to the dot carries no accepted line, so it
             // gets no name rather than an empty box.
-            var anchors = List.of(collapsedAnchor(100f, 200f));
+            var anchors = List.of(buildCollapsedAnchor(100f, 200f));
 
             assertThat(LabelsBuilder.planLabels(anchors)).isEmpty();
         }
@@ -205,7 +205,7 @@ final class LabelsBuilderTest {
             // An accepted box whose fit ran on the aspect stand-in (font or faction name
             // unresolved) carries no lines, so no label is planned for it - the debug band
             // is that cluster's only footprint.
-            var anchors = List.of(acceptedAnchor(
+            var anchors = List.of(buildAcceptedAnchor(
                 List.of(),
                 100f,
                 200f,
@@ -218,20 +218,20 @@ final class LabelsBuilderTest {
     // A placement that accepted a label line, hung at (anchorX, anchorY) with the given
     // accepted axis and wrapped lines at the shared font height - the input labels are
     // built from, fitted at the ordinary line spacing.
-    private static ClusterAnchor acceptedAnchor(
+    private static ClusterAnchor buildAcceptedAnchor(
             List<String> nameLines,
             float anchorX,
             float anchorY,
             Segment acceptedAxis) {
 
-        return acceptedAnchorFittedAt(LINE_SPACING, nameLines, anchorX, anchorY, acceptedAxis);
+        return buildAcceptedAnchorFittedAt(LINE_SPACING, nameLines, anchorX, anchorY, acceptedAxis);
     }
 
     // The same placement with its band sized at a named spacing, mirroring the fit's own
     // thickness formula (one line height plus a step per gap). The spacing reaches the
     // planner only through this thickness - nothing hands it the multiple - so a test that
     // varies it here is varying exactly what the fit would have written into the band.
-    private static ClusterAnchor acceptedAnchorFittedAt(
+    private static ClusterAnchor buildAcceptedAnchorFittedAt(
             double lineSpacing,
             List<String> nameLines,
             float anchorX,
@@ -254,7 +254,7 @@ final class LabelsBuilderTest {
     }
 
     // A collapsed placement: only the dot, no accepted line, so no name is drawn.
-    private static ClusterAnchor collapsedAnchor(float anchorX, float anchorY) {
+    private static ClusterAnchor buildCollapsedAnchor(float anchorX, float anchorY) {
         return new ClusterAnchor(
             CLUSTER_IDENTITY,
             anchorX, anchorY,

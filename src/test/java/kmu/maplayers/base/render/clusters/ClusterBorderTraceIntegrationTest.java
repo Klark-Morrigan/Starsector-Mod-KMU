@@ -37,15 +37,15 @@ class ClusterBorderTraceIntegrationTest {
     // left edge. B holds no market, so it is absent from the owner map (an unheld frontier star).
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
             "A", List.of(
-                    edge(0, 0, 2000, 0, null),
-                    edge(2000, 0, 2000, 2000, "B"),
-                    edge(2000, 2000, 0, 2000, null),
-                    edge(0, 2000, 0, 0, null)),
+                    buildEdge(0, 0, 2000, 0, null),
+                    buildEdge(2000, 0, 2000, 2000, "B"),
+                    buildEdge(2000, 2000, 0, 2000, null),
+                    buildEdge(0, 2000, 0, 0, null)),
             "C", List.of(
-                    edge(4000, 0, 6000, 0, null),
-                    edge(6000, 0, 6000, 2000, null),
-                    edge(6000, 2000, 4000, 2000, null),
-                    edge(4000, 2000, 4000, 0, "B")));
+                    buildEdge(4000, 0, 6000, 0, null),
+                    buildEdge(6000, 0, 6000, 2000, null),
+                    buildEdge(6000, 2000, 4000, 2000, null),
+                    buildEdge(4000, 2000, 4000, 0, "B")));
     private static final Map<String, String> OWNERS = Map.of("A", "F", "C", "G");
     // Each cell drawing as its own star (identity draws-as over A and C), keyed by OWNERS - the
     // grouping every trace here runs under.
@@ -53,7 +53,7 @@ class ClusterBorderTraceIntegrationTest {
             new CellGrouping(Map.of("A", "A", "C", "C"), OWNERS);
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge edge(double x1, double y1, double x2, double y2, String neighbour) {
+    private static CellEdge buildEdge(double x1, double y1, double x2, double y2, String neighbour) {
         return new CellEdge(x1, y1, x2, y2,
                 neighbour == null
                         ? EdgeTarget.REACH_BOUND
@@ -75,7 +75,7 @@ class ClusterBorderTraceIntegrationTest {
             assertRingsEqual(fullPassF, incrementalRetraceF);
             // The channel actually fired: F's right border sits 150 inside its raw x = 2000 edge
             // facing B, so the rings are the real inset geometry rather than the raw cells.
-            assertThat(maxXOf(fullPassF.get(0))).isCloseTo(1850.0, within(1e-6));
+            assertThat(computeMaxXOf(fullPassF.get(0))).isCloseTo(1850.0, within(1e-6));
         }
 
         @Test
@@ -103,8 +103,8 @@ class ClusterBorderTraceIntegrationTest {
             var fRings = trace.traceRings(List.of("A"), EDGES, GROUPING);
             var gRings = trace.traceRings(List.of("C"), EDGES, GROUPING);
 
-            assertThat(maxXOf(fRings.get(0))).isCloseTo(1850.0, within(1e-6));
-            assertThat(minXOf(gRings.get(0))).isCloseTo(4150.0, within(1e-6));
+            assertThat(computeMaxXOf(fRings.get(0))).isCloseTo(1850.0, within(1e-6));
+            assertThat(computeMinXOf(gRings.get(0))).isCloseTo(4150.0, within(1e-6));
         }
     }
 
@@ -122,11 +122,11 @@ class ClusterBorderTraceIntegrationTest {
         }
     }
 
-    private static double maxXOf(List<double[]> ring) {
+    private static double computeMaxXOf(List<double[]> ring) {
         return ring.stream().mapToDouble(vertex -> vertex[0]).max().orElseThrow();
     }
 
-    private static double minXOf(List<double[]> ring) {
+    private static double computeMinXOf(List<double[]> ring) {
         return ring.stream().mapToDouble(vertex -> vertex[0]).min().orElseThrow();
     }
 }

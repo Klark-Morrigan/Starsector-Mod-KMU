@@ -71,14 +71,14 @@ class BorderSmoothingTest {
     private static final CornerRoundingStyle ROUNDING_SHAPE =
         new CornerRoundingStyle(true, CORNER_RADIUS, CORNER_SEGMENTS, NO_CHAMFER);
 
-    private static final BorderSmoothingStyle BOTH_GATES_OFF = styleWithGates(false, false);
-    private static final BorderSmoothingStyle SANDING_ONLY = styleWithGates(true, false);
-    private static final BorderSmoothingStyle ROUNDING_ONLY = styleWithGates(false, true);
-    private static final BorderSmoothingStyle BOTH_GATES_ON = styleWithGates(true, true);
+    private static final BorderSmoothingStyle BOTH_GATES_OFF = buildStyleWithGates(false, false);
+    private static final BorderSmoothingStyle SANDING_ONLY = buildStyleWithGates(true, false);
+    private static final BorderSmoothingStyle ROUNDING_ONLY = buildStyleWithGates(false, true);
+    private static final BorderSmoothingStyle BOTH_GATES_ON = buildStyleWithGates(true, true);
 
     // The profile with each half's gate as asked and one shared shape, so a test naming a gate is
     // not also silently choosing a radius.
-    private static BorderSmoothingStyle styleWithGates(
+    private static BorderSmoothingStyle buildStyleWithGates(
             boolean shouldSandSpikes,
             boolean shouldRoundCorners) {
 

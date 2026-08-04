@@ -22,7 +22,7 @@ final class BlocStyleResolverTest {
 
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
     // whether the decision consulted the view (off filter) or bypassed it (under filter).
-    private static PoliticalMapView viewMockDeciding(boolean usesIndependentStyle,
+    private static PoliticalMapView buildViewMockDeciding(boolean usesIndependentStyle,
             ElementStyleAdjustment adjustment) {
         var viewMock = mock(PoliticalMapView.class);
         when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
@@ -78,7 +78,7 @@ final class BlocStyleResolverTest {
             // the faction style when a filter turns on. The stub says independent, so a true result
             // proves the filter left the view's base-style call live.
             var decision = BlocStyleResolver.resolveBlocStyleDecision(true, "independent",
-                    viewMockDeciding(true, ElementStyleAdjustment.NONE),
+                    buildViewMockDeciding(true, ElementStyleAdjustment.NONE),
                     HolderGrouping.identity(), new ElementStyleAdjustment(0.3, true));
 
             assertThat(decision.usesIndependentStyle()).isTrue();
@@ -93,7 +93,7 @@ final class BlocStyleResolverTest {
             var viewRecede = new ElementStyleAdjustment(0.5, false);
             var sharedRecede = new ElementStyleAdjustment(0.3, true);
             var decision = BlocStyleResolver.resolveBlocStyleDecision(true, "hegemony",
-                    viewMockDeciding(false, viewRecede), HolderGrouping.identity(), sharedRecede);
+                    buildViewMockDeciding(false, viewRecede), HolderGrouping.identity(), sharedRecede);
 
             assertThat(decision.usesIndependentStyle()).isFalse();
             assertThat(decision.adjustment()).isEqualTo(new ElementStyleAdjustment(0.3, true));
@@ -106,7 +106,7 @@ final class BlocStyleResolverTest {
             // which resolves from this same adjustment. Here only the shared recede desaturates: the
             // view's style test must still be offered a desaturating adjustment, or a bloc would paint
             // in the desaturation palette while keeping the faction bundle.
-            var viewMock = viewMockDeciding(false, new ElementStyleAdjustment(0.5, false));
+            var viewMock = buildViewMockDeciding(false, new ElementStyleAdjustment(0.5, false));
 
             BlocStyleResolver.resolveBlocStyleDecision(true, "hegemony", viewMock,
                     HolderGrouping.identity(), new ElementStyleAdjustment(0.3, true));
@@ -120,7 +120,7 @@ final class BlocStyleResolverTest {
             // Off filter the view's own adjustment is what the bloc paints under, so that is what its
             // style test reads - the same "bundle and palette agree" rule, with nothing to union in.
             var adjustment = new ElementStyleAdjustment(0.5, true);
-            var viewMock = viewMockDeciding(true, adjustment);
+            var viewMock = buildViewMockDeciding(true, adjustment);
 
             BlocStyleResolver.resolveBlocStyleDecision(false, "pirates", viewMock,
                     HolderGrouping.identity(), ElementStyleAdjustment.NONE);
@@ -135,7 +135,7 @@ final class BlocStyleResolverTest {
             // recede test and its per-bloc adjustment, so a normal pass styles exactly as before.
             var adjustment = new ElementStyleAdjustment(0.5, true);
             var decision = BlocStyleResolver.resolveBlocStyleDecision(false, "pirates",
-                    viewMockDeciding(true, adjustment), HolderGrouping.identity(),
+                    buildViewMockDeciding(true, adjustment), HolderGrouping.identity(),
                     ElementStyleAdjustment.NONE);
 
             assertThat(decision.usesIndependentStyle()).isTrue();

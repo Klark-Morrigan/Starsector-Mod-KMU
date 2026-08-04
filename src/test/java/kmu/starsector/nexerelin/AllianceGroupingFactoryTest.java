@@ -24,7 +24,7 @@ class AllianceGroupingFactoryTest {
         @Test
         void mapsEveryMemberToItsBloc() {
             HolderGrouping grouping = AllianceGroupingFactory.buildFrom(
-                    List.of(alliedPowers()));
+                    List.of(buildAlliedPowers()));
             assertThat(grouping.resolveBlocId("hegemony")).isEqualTo("alliance-1");
             assertThat(grouping.resolveBlocId("astral_armada")).isEqualTo("alliance-1");
         }
@@ -32,14 +32,14 @@ class AllianceGroupingFactoryTest {
         @Test
         void coloursTheBlocOffTheSortedFirstMember() {
             HolderGrouping grouping = AllianceGroupingFactory.buildFrom(
-                    List.of(alliedPowers()));
+                    List.of(buildAlliedPowers()));
             assertThat(grouping.resolveColourFactionId("alliance-1")).isEqualTo("hegemony");
         }
 
         @Test
         void carriesTheAllianceName() {
             HolderGrouping grouping = AllianceGroupingFactory.buildFrom(
-                    List.of(alliedPowers()));
+                    List.of(buildAlliedPowers()));
             assertThat(grouping.resolveAllianceName("alliance-1")).isEqualTo("Allied Powers");
             assertThat(grouping.isAlliance("alliance-1")).isTrue();
         }
@@ -47,7 +47,7 @@ class AllianceGroupingFactoryTest {
         @Test
         void leavesAFactionInNoRecordAsItsOwnBloc() {
             HolderGrouping grouping = AllianceGroupingFactory.buildFrom(
-                    List.of(alliedPowers()));
+                    List.of(buildAlliedPowers()));
             assertThat(grouping.resolveBlocId("tritachyon")).isEqualTo("tritachyon");
             assertThat(grouping.isAlliance("tritachyon")).isFalse();
         }
@@ -75,7 +75,7 @@ class AllianceGroupingFactoryTest {
             // hegemony is named by both records; the fold visits them in list order, so
             // the second record wins and the mapping stays total and deterministic.
             HolderGrouping grouping = AllianceGroupingFactory.buildFrom(List.of(
-                    alliedPowers(),
+                    buildAlliedPowers(),
                     new AllianceRecord(
                             "alliance-2", "Rival Bloc", List.of("hegemony", "luddic_church"))));
             assertThat(grouping.resolveBlocId("hegemony")).isEqualTo("alliance-2");
@@ -85,7 +85,7 @@ class AllianceGroupingFactoryTest {
 
     // Two members ranked hegemony-first, so the bloc colours off hegemony; reused across
     // tests probing both the grouped members and an outsider left to itself.
-    private static AllianceRecord alliedPowers() {
+    private static AllianceRecord buildAlliedPowers() {
         return new AllianceRecord(
                 "alliance-1", "Allied Powers", List.of("hegemony", "astral_armada"));
     }

@@ -101,7 +101,7 @@ final class FillSplitTest {
         void hasNonSolidMembersIsFalseWhenEveryMemberFillsSolid() {
             // The fast path a cluster takes to fill as one area: nothing to split apart.
             var split = FillSplit.splitMembersByFillState(
-                    groupingOf(Map.of("cell-solid", SOLID_SYSTEM)),
+                    buildGroupingOf(Map.of("cell-solid", SOLID_SYSTEM)),
                     List.of("cell-solid"),
                     Set.of(),
                     Set.of());
@@ -132,7 +132,7 @@ final class FillSplitTest {
     // single fixture exercises every bucket and the cell/system split at once.
     private static FillSplit splitFootprint() {
         return FillSplit.splitMembersByFillState(
-                groupingOf(Map.of(
+                buildGroupingOf(Map.of(
                         "cell-solid", SOLID_SYSTEM,
                         "cell-hatched", HATCHED_SYSTEM,
                         "cell-unfilled", UNFILLED_SYSTEM)),
@@ -143,7 +143,7 @@ final class FillSplitTest {
 
     // A grouping that only has to answer "which system does this cell draw as" - the split reads
     // nothing else off it, and a cell absent from the map resolves to no system at all.
-    private static CellGrouping groupingOf(Map<String, String> systemIdByCellId) {
+    private static CellGrouping buildGroupingOf(Map<String, String> systemIdByCellId) {
         return new CellGrouping(systemIdByCellId, Map.of());
     }
 }

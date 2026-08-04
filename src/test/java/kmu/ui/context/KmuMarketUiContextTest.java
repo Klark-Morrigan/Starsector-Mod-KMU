@@ -20,7 +20,7 @@ class KmuMarketUiContextTest {
 
         @Test
         void createsContextWithoutPanel() {
-            var market = market();
+            var market = buildMarket();
 
             var context = KmuMarketUiContext.withoutPanel(
                     market,
@@ -37,8 +37,8 @@ class KmuMarketUiContextTest {
 
         @Test
         void createsContextWithPanel() {
-            var market = market();
-            var panel = panel();
+            var market = buildMarket();
+            var panel = buildPanel();
 
             var context = KmuMarketUiContext.withPanel(
                     market,
@@ -56,8 +56,8 @@ class KmuMarketUiContextTest {
 
         @Test
         void rejectsMissingRequiredValues() {
-            var market = market();
-            var panel = panel();
+            var market = buildMarket();
+            var panel = buildPanel();
 
             assertThatThrownBy(() -> KmuMarketUiContext.withoutPanel(
                     null,
@@ -79,11 +79,11 @@ class KmuMarketUiContextTest {
         }
     }
 
-    private static MarketAPI market() {
+    private static MarketAPI buildMarket() {
         return proxy(MarketAPI.class, KmuMarketUiContextTest::handleObjectMethodOrThrow);
     }
 
-    private static UIPanelAPI panel() {
+    private static UIPanelAPI buildPanel() {
         return proxy(UIPanelAPI.class, KmuMarketUiContextTest::handleObjectMethodOrThrow);
     }
 

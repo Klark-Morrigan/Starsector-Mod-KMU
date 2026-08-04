@@ -109,7 +109,7 @@ final class RecedeControlTest {
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isMuted()).thenReturn(true);
 
-                assertThat(interactiveAt(preferencesMock, MUTE_CHECKBOX).selectedIndex()).isEqualTo(0);
+                assertThat(buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).selectedIndex()).isEqualTo(0);
             }
         }
 
@@ -120,7 +120,7 @@ final class RecedeControlTest {
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isMuted()).thenReturn(false);
 
-                assertThat(interactiveAt(preferencesMock, MUTE_CHECKBOX).selectedIndex())
+                assertThat(buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).selectedIndex())
                         .isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
@@ -132,7 +132,7 @@ final class RecedeControlTest {
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isDesaturated()).thenReturn(true);
 
-                assertThat(interactiveAt(preferencesMock, DESATURATE_CHECKBOX).selectedIndex())
+                assertThat(buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).selectedIndex())
                         .isEqualTo(0);
             }
         }
@@ -144,7 +144,7 @@ final class RecedeControlTest {
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isDesaturated()).thenReturn(false);
 
-                assertThat(interactiveAt(preferencesMock, DESATURATE_CHECKBOX).selectedIndex())
+                assertThat(buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).selectedIndex())
                         .isEqualTo(ControlSpec.NO_SELECTION);
             }
         }
@@ -158,7 +158,7 @@ final class RecedeControlTest {
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isMuted()).thenReturn(false);
 
-                interactiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
+                buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
 
                 verify(preferencesMock).setMuted(true);
             }
@@ -171,7 +171,7 @@ final class RecedeControlTest {
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isMuted()).thenReturn(true);
 
-                interactiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
+                buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
 
                 verify(preferencesMock).setMuted(false);
             }
@@ -184,7 +184,7 @@ final class RecedeControlTest {
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isDesaturated()).thenReturn(false);
 
-                interactiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
+                buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
 
                 verify(preferencesMock).setDesaturated(true);
             }
@@ -197,7 +197,7 @@ final class RecedeControlTest {
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isDesaturated()).thenReturn(true);
 
-                interactiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
+                buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
 
                 verify(preferencesMock).setDesaturated(false);
             }
@@ -207,7 +207,7 @@ final class RecedeControlTest {
     // The control at index, built over the given set and read as the Interactive control it is - a
     // caption is chrome and not Interactive, so only the checkboxes below it expose the lit cell and
     // click action a test drives. Rebuilt fresh each call, so a test reads the state its stubs set.
-    private static ControlSpec.Interactive interactiveAt(RecedePreferences preferences, int index) {
+    private static ControlSpec.Interactive buildInteractiveAt(RecedePreferences preferences, int index) {
         return (ControlSpec.Interactive) RecedeControl.buildControls(preferences, CAPTION_LABEL)
                 .get(index);
     }

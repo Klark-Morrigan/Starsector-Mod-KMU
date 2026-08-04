@@ -50,7 +50,7 @@ final class PoliticalMapStalenessSourceTest {
         @Test
         void firstPollEstablishesBaselinesWithoutRefreshingOrMarking() {
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
-                    snapshot(1, "a", "hegemony"), snapshot(1, "a", "hegemony")), 1);
+                    takeSnapshot(1, "a", "hegemony"), takeSnapshot(1, "a", "hegemony")), 1);
 
             assertThat(outcome.geometryDelta()).isZero();
             assertThat(outcome.staleSystemIds()).isEmpty();
@@ -61,7 +61,7 @@ final class PoliticalMapStalenessSourceTest {
             // Same holding, moved visibility: a system joined or left the map, so
             // the cells rebuild but no holder reshapes.
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
-                    snapshot(1, "a", "hegemony"), snapshot(9, "a", "hegemony")), 2);
+                    takeSnapshot(1, "a", "hegemony"), takeSnapshot(9, "a", "hegemony")), 2);
 
             assertThat(outcome.geometryDelta()).isEqualTo(1);
             assertThat(outcome.staleSystemIds()).isEmpty();
@@ -72,7 +72,7 @@ final class PoliticalMapStalenessSourceTest {
             // The AI-captures-or-founds case: same membership, a drawn system changed
             // hands, so only that system is marked stale and no geometry rebuilds.
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
-                    snapshot(1, "a", "hegemony"), snapshot(1, "a", "tritachyon")), 2);
+                    takeSnapshot(1, "a", "hegemony"), takeSnapshot(1, "a", "tritachyon")), 2);
 
             assertThat(outcome.geometryDelta()).isZero();
             assertThat(outcome.staleSystemIds()).containsExactly("a");
@@ -81,7 +81,7 @@ final class PoliticalMapStalenessSourceTest {
         @Test
         void ownerGainedMarksTheSystemStale() {
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
-                    snapshot(1, Map.of()), snapshot(1, "a", "hegemony")), 2);
+                    takeSnapshot(1, Map.of()), takeSnapshot(1, "a", "hegemony")), 2);
 
             assertThat(outcome.staleSystemIds()).containsExactly("a");
         }
@@ -91,7 +91,7 @@ final class PoliticalMapStalenessSourceTest {
             // A colony decivilised or abandoned drops from the holder map, so its
             // system is marked stale to repaint neutral.
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
-                    snapshot(1, "a", "hegemony"), snapshot(1, Map.of())), 2);
+                    takeSnapshot(1, "a", "hegemony"), takeSnapshot(1, Map.of())), 2);
 
             assertThat(outcome.staleSystemIds()).containsExactly("a");
         }
@@ -99,7 +99,7 @@ final class PoliticalMapStalenessSourceTest {
         @Test
         void bothAxesMovingRefreshGeometryAndMarkHolderStale() {
             var outcome = pollThenReadRefreshOutcome(PollInputs.buildForSnapshotChange(
-                    snapshot(1, "a", "hegemony"), snapshot(9, "a", "tritachyon")), 2);
+                    takeSnapshot(1, "a", "hegemony"), takeSnapshot(9, "a", "tritachyon")), 2);
 
             assertThat(outcome.geometryDelta()).isEqualTo(1);
             assertThat(outcome.staleSystemIds()).containsExactly("a");
@@ -158,12 +158,12 @@ final class PoliticalMapStalenessSourceTest {
         }
     }
 
-    private static PoliticalMapSectorSnapshot snapshot(int visibilityFingerprint,
+    private static PoliticalMapSectorSnapshot takeSnapshot(int visibilityFingerprint,
             String systemId, String factionId) {
-        return snapshot(visibilityFingerprint, Map.of(systemId, factionId));
+        return takeSnapshot(visibilityFingerprint, Map.of(systemId, factionId));
     }
 
-    private static PoliticalMapSectorSnapshot snapshot(int visibilityFingerprint,
+    private static PoliticalMapSectorSnapshot takeSnapshot(int visibilityFingerprint,
             Map<String, String> ownerBySystemId) {
         return new PoliticalMapSectorSnapshot(visibilityFingerprint, ownerBySystemId);
     }

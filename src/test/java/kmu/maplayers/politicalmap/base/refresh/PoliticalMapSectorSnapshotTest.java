@@ -67,7 +67,7 @@ class PoliticalMapSectorSnapshotTest {
         @Test
         void ownerMapNamesTheDominantFactionOfAnOwnedSystem() {
             var snapshot = scanUnderStabilityWeighting(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)));
+                    buildSectorWith(buildSystem("a"), buildOwnedMarket("hegemony", 5)));
 
             assertThat(snapshot.ownerBySystemId()).containsExactly(entry("a", "hegemony"));
         }
@@ -76,11 +76,11 @@ class PoliticalMapSectorSnapshotTest {
         void visibilityFingerprintShiftsWhenASystemBecomesInhabited() {
             // An empty system is off the map; a colony admits it, so the on-map set
             // - and the visibility fingerprint - changes.
-            var before = scanUnderStabilityWeighting(sectorWith(system("a")))
+            var before = scanUnderStabilityWeighting(buildSectorWith(buildSystem("a")))
                     .visibilityFingerprint();
 
             var after = scanUnderStabilityWeighting(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)))
+                    buildSectorWith(buildSystem("a"), buildOwnedMarket("hegemony", 5)))
                     .visibilityFingerprint();
 
             assertThat(after).isNotEqualTo(before);
@@ -92,10 +92,10 @@ class PoliticalMapSectorSnapshotTest {
             // its holder flips. The holder map must move while the visibility hash
             // stays put, so only that system reshapes and no geometry rebuilds.
             var before = scanUnderStabilityWeighting(
-                    sectorWith(system("a"), ownedMarket("hegemony", 5)));
+                    buildSectorWith(buildSystem("a"), buildOwnedMarket("hegemony", 5)));
 
             var after = scanUnderStabilityWeighting(
-                    sectorWith(system("a"), ownedMarket("tritachyon", 5)));
+                    buildSectorWith(buildSystem("a"), buildOwnedMarket("tritachyon", 5)));
 
             assertThat(after.ownerBySystemId()).containsExactly(entry("a", "tritachyon"));
             assertThat(after.visibilityFingerprint()).isEqualTo(before.visibilityFingerprint());
@@ -105,7 +105,7 @@ class PoliticalMapSectorSnapshotTest {
         void ownerMapOmitsADecivilisedShellThatStillCountsForVisibility() {
             // A revealed dead colony is drawn (visibility) but confers no holder, so
             // it is absent from the holder map - the mirror image of an owned system.
-            var snapshot = scanUnderStabilityWeighting(sectorWith(decivilisedSystem("a")));
+            var snapshot = scanUnderStabilityWeighting(buildSectorWith(buildDecivilisedSystem("a")));
 
             assertThat(snapshot.visibilityFingerprint()).isNotZero();
             assertThat(snapshot.ownerBySystemId()).isEmpty();
@@ -124,7 +124,7 @@ class PoliticalMapSectorSnapshotTest {
     // A single-system sector whose economy returns the given markets for that
     // system. Hyperspace holds no star anchor, so no system reads as star-visible:
     // inhabitation is the only route onto the map here.
-    private static SectorAPI sectorWith(StarSystemAPI system, MarketAPI... markets) {
+    private static SectorAPI buildSectorWith(StarSystemAPI system, MarketAPI... markets) {
         var economyMock = mock(EconomyAPI.class);
         when(economyMock.getMarkets(system)).thenReturn(List.of(markets));
         var hyperspaceMock = mock(LocationAPI.class);
@@ -139,7 +139,7 @@ class PoliticalMapSectorSnapshotTest {
     // An unreachable system: no jump point and its star not drawn, so it appears
     // only when inhabited. getPlanets() defaults to an empty list under Mockito, so
     // it is uninhabited unless a caller adds a colony or a decivilised planet.
-    private static StarSystemAPI system(String id) {
+    private static StarSystemAPI buildSystem(String id) {
         var systemMock = mock(StarSystemAPI.class);
         when(systemMock.getId()).thenReturn(id);
         when(systemMock.getLocation()).thenReturn(new Vector2f(2f, 2f));
@@ -149,14 +149,14 @@ class PoliticalMapSectorSnapshotTest {
 
     // An unreachable system holding a revealed decivilised planet: on the map as a
     // dead colony, yet unowned, so it drives visibility without an holder.
-    private static StarSystemAPI decivilisedSystem(String id) {
-        var planet = decivilisedPlanet();
-        var systemMock = system(id);
+    private static StarSystemAPI buildDecivilisedSystem(String id) {
+        var planet = buildDecivilisedPlanet();
+        var systemMock = buildSystem(id);
         when(systemMock.getPlanets()).thenReturn(List.of(planet));
         return systemMock;
     }
 
-    private static PlanetAPI decivilisedPlanet() {
+    private static PlanetAPI buildDecivilisedPlanet() {
         var conditionMock = mock(MarketConditionAPI.class);
         when(conditionMock.requiresSurveying()).thenReturn(false);
         var marketMock = mock(MarketAPI.class);
@@ -169,7 +169,7 @@ class PoliticalMapSectorSnapshotTest {
 
     // A discovered, openly owned colony of the given faction and size: what the
     // footprint read counts as presence, and what the dominance rule ranks.
-    private static MarketAPI ownedMarket(String factionId, int size) {
+    private static MarketAPI buildOwnedMarket(String factionId, int size) {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.isDiscoverable()).thenReturn(false);
         var factionMock = mock(FactionAPI.class);

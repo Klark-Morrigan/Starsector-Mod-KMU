@@ -25,12 +25,12 @@ final class HoverGlowStyleTest {
     // A four-layer halo reaching 20 pixels at full opacity, and breathing down to half
     // brightness over a two-second cycle - values picked so each layer, the crest, and the
     // trough land on exact fractions.
-    private static HoverGlowStyle breathingHalo() {
+    private static HoverGlowStyle buildBreathingHalo() {
         return new HoverGlowStyle(1, 20, 4, 0.5, 2);
     }
 
     // The same halo with its pulse off, so a layer's alpha reads as its falloff alone.
-    private static HoverGlowStyle steadyHalo() {
+    private static HoverGlowStyle buildSteadyHalo() {
         return new HoverGlowStyle(1, 20, 4, 0, 2);
     }
 
@@ -38,7 +38,7 @@ final class HoverGlowStyleTest {
     class ComputeLayerWidth {
         @Test
         void the_layers_widen_evenly_out_to_the_halos_full_width() {
-            var style = steadyHalo();
+            var style = buildSteadyHalo();
 
             assertThat(style.computeLayerWidth(0)).isCloseTo(5, within(TOLERANCE));
             assertThat(style.computeLayerWidth(1)).isCloseTo(10, within(TOLERANCE));
@@ -59,7 +59,7 @@ final class HoverGlowStyleTest {
     class ComputeLayerAlpha {
         @Test
         void the_layers_fade_outward_from_the_full_opacity_at_the_rim() {
-            var style = steadyHalo();
+            var style = buildSteadyHalo();
 
             assertThat(style.computeLayerAlpha(0, 0)).isCloseTo(1, within(TOLERANCE));
             assertThat(style.computeLayerAlpha(1, 0)).isCloseTo(0.75, within(TOLERANCE));
@@ -71,7 +71,7 @@ final class HoverGlowStyleTest {
         void a_wider_layer_is_never_brighter_than_the_one_inside_it() {
             // The falloff is what makes the stack read as a halo rather than a thick line, so
             // its direction is pinned rather than left to the arithmetic.
-            var style = steadyHalo();
+            var style = buildSteadyHalo();
 
             for (var layer = 1; layer < style.layers(); layer++) {
                 assertThat(style.computeLayerAlpha(layer, 0))
@@ -83,7 +83,7 @@ final class HoverGlowStyleTest {
 
         @Test
         void the_breath_starts_full_bottoms_out_midway_and_returns() {
-            var style = breathingHalo();
+            var style = buildBreathingHalo();
 
             assertThat(style.computeLayerAlpha(0, 0)).isCloseTo(1, within(TOLERANCE));
             assertThat(style.computeLayerAlpha(0, 1)).isCloseTo(0.5, within(TOLERANCE));
@@ -94,7 +94,7 @@ final class HoverGlowStyleTest {
         void the_breath_scales_every_layer_alike() {
             // One pulse over the whole stack, so the halo breathes as one thing rather than
             // its layers sliding against each other.
-            var style = breathingHalo();
+            var style = buildBreathingHalo();
 
             assertThat(style.computeLayerAlpha(2, 1))
                     .isCloseTo(style.computeLayerAlpha(2, 0) * 0.5, within(TOLERANCE));
@@ -102,7 +102,7 @@ final class HoverGlowStyleTest {
 
         @Test
         void the_breath_never_dims_past_its_strength_at_any_phase() {
-            var style = breathingHalo();
+            var style = buildBreathingHalo();
 
             // Sampled across a whole cycle at a phase that hits neither crest nor trough
             // squarely, so an inverted or overdriven pulse shows up as an out-of-range alpha.
@@ -113,7 +113,7 @@ final class HoverGlowStyleTest {
 
         @Test
         void a_halo_with_no_pulse_strength_holds_steady() {
-            assertThat(steadyHalo().computeLayerAlpha(0, 0.7)).isEqualTo(1);
+            assertThat(buildSteadyHalo().computeLayerAlpha(0, 0.7)).isEqualTo(1);
         }
 
         @Test

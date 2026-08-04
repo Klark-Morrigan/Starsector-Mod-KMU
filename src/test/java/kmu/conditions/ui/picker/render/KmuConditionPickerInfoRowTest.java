@@ -88,7 +88,7 @@ class KmuConditionPickerInfoRowTest {
         @Test
         void rendersAllTextsWithWhiteBaseColour() {
             var paraColours = new ArrayList<Color>();
-            var row = rowPanel(paraColours);
+            var row = buildRowPanel(paraColours);
 
             var locationParagraphs = Arrays.asList(
                     new HighlightedParagraph("Location:"),
@@ -106,7 +106,7 @@ class KmuConditionPickerInfoRowTest {
         @Test
         void rendersOnlySummaryWhenLocationListIsEmpty() {
             var paraColours = new ArrayList<Color>();
-            var row = rowPanel(paraColours);
+            var row = buildRowPanel(paraColours);
 
             var summaryParagraphs = Arrays.asList(
                     new HighlightedParagraph("Conditions:"),
@@ -123,32 +123,32 @@ class KmuConditionPickerInfoRowTest {
      * Builds a row panel whose every UI element captures addPara base colours
      * into {@code paraColours}.
      */
-    private static CustomPanelAPI rowPanel(List<Color> paraColours) {
-        var position = proxy(PositionAPI.class,
-                (p, method, args) -> defaultValue(method.getReturnType()));
-        var element = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+    private static CustomPanelAPI buildRowPanel(List<Color> paraColours) {
+        var position = buildProxy(PositionAPI.class,
+                (p, method, args) -> resolveDefaultValue(method.getReturnType()));
+        var element = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
             if ("addPara".equals(method.getName()) && args != null && args.length >= 2
                     && args[1] instanceof Color) {
                 paraColours.add((Color) args[1]);
                 return createLabel();
             }
-            return defaultValue(method.getReturnType());
+            return resolveDefaultValue(method.getReturnType());
         });
         // createCustomPanel returns self so the inner row proxy is this same panel proxy,
         // allowing createUIElement and addUIElement calls on it to be intercepted.
-        return proxy(CustomPanelAPI.class, (p, method, args) -> {
+        return buildProxy(CustomPanelAPI.class, (p, method, args) -> {
             if ("createCustomPanel".equals(method.getName())) return p;
             if ("createUIElement".equals(method.getName())) return element;
             if ("addUIElement".equals(method.getName())) return position;
-            return defaultValue(method.getReturnType());
+            return resolveDefaultValue(method.getReturnType());
         });
     }
 
     private static LabelAPI createLabel() {
-        return proxy(LabelAPI.class, (p, method, args) -> defaultValue(method.getReturnType()));
+        return buildProxy(LabelAPI.class, (p, method, args) -> resolveDefaultValue(method.getReturnType()));
     }
 
-    private static Object defaultValue(Class<?> returnType) {
+    private static Object resolveDefaultValue(Class<?> returnType) {
         if (!returnType.isPrimitive()) return null;
         if (boolean.class.equals(returnType)) return false;
         if (char.class.equals(returnType)) return '\0';
@@ -161,7 +161,7 @@ class KmuConditionPickerInfoRowTest {
         return null;
     }
 
-    private static <T> T proxy(Class<T> type, InvocationHandler handler) {
+    private static <T> T buildProxy(Class<T> type, InvocationHandler handler) {
         return type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, handler));
     }
 }

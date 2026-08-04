@@ -29,7 +29,7 @@ class KmuConditionPickerActionHandlerTest {
         @Test
         void addsAbsentConditionRefreshesModelAndShowsFeedback() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var marketFake = new EditableMarketFake();
             var handler = new KmuConditionPickerActionHandler(
                     service,
@@ -56,7 +56,7 @@ class KmuConditionPickerActionHandlerTest {
         @Test
         void presentConditionActionDoesNotMutateMarket() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var marketFake = new EditableMarketFake("hot");
             var handler = new KmuConditionPickerActionHandler(
                     service,
@@ -78,7 +78,7 @@ class KmuConditionPickerActionHandlerTest {
         void failedAddRefreshesModelAndShowsFailureFeedback() {
             var exception = new IllegalStateException("add failed");
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var marketFake = new EditableMarketFake()
                     .failAddCondition(exception);
             var handler = new KmuConditionPickerActionHandler(
@@ -104,7 +104,7 @@ class KmuConditionPickerActionHandlerTest {
         }
     }
 
-    private static KmuConditionSpec spec(String id, String name, boolean planetary) {
+    private static KmuConditionSpec buildSpec(String id, String name, boolean planetary) {
         return new KmuConditionSpec(id, name, "graphics/icons/" + id + ".png", planetary);
     }
 

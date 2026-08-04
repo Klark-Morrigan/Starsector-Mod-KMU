@@ -29,7 +29,7 @@ class SystemDominanceTest {
 
         @Test
         void picksTheOnlyFactionPresent() {
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "hegemony", new MarketFootprint(7, 5, 5));
 
             assertThat(SystemDominance.resolveDominantFactionId(footprints))
@@ -41,7 +41,7 @@ class SystemDominanceTest {
             // Tritachyon holds the heavier single market and all the planet
             // weight, but combined weight is the top level, so the larger sum
             // wins.
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "tritachyon", new MarketFootprint(6, 6, 6),
                     "hegemony", new MarketFootprint(8, 4, 0));
 
@@ -52,7 +52,7 @@ class SystemDominanceTest {
         @Test
         void breaksCombinedWeightTieByHeaviestSingleMarket() {
             // Equal totals: the faction holding the single heaviest market wins.
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "tritachyon", new MarketFootprint(9, 4, 0),
                     "hegemony", new MarketFootprint(9, 6, 0));
 
@@ -64,7 +64,7 @@ class SystemDominanceTest {
         void breaksHeaviestMarketTieByPlanetWeight() {
             // Equal total and equal heaviest market: more weight on planets (vs
             // stations) outranks a footprint leaning on stations.
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "tritachyon", new MarketFootprint(9, 5, 2),
                     "hegemony", new MarketFootprint(9, 5, 7));
 
@@ -76,7 +76,7 @@ class SystemDominanceTest {
         void breaksFullTieByLowestFactionId() {
             // Identical footprints fall to the lowest faction id, so the result
             // is deterministic and independent of insertion order.
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "tritachyon", new MarketFootprint(9, 5, 5),
                     "hegemony", new MarketFootprint(9, 5, 5));
 
@@ -89,7 +89,7 @@ class SystemDominanceTest {
             // With a comparator given, the full tie falls to whichever id it
             // orders first - here reverse order, so the higher id wins, proving
             // the tie-break comes from the comparator and not the natural id order.
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "hegemony", new MarketFootprint(9, 5, 5),
                     "tritachyon", new MarketFootprint(9, 5, 5));
 
@@ -103,7 +103,7 @@ class SystemDominanceTest {
             // A clear winner on combined weight is decided before the tie-break,
             // so a comparator that would throw if consulted proves the rule never
             // reaches it without a full tie.
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "tritachyon", new MarketFootprint(6, 6, 6),
                     "hegemony", new MarketFootprint(8, 4, 0));
             Comparator<String> throwingTieBreak = (left, right) -> {
@@ -117,7 +117,7 @@ class SystemDominanceTest {
 
     // Builds the input map preserving insertion order, so a test can list the
     // higher-id faction first and still expect the rule to pick the right one.
-    private static Map<String, MarketFootprint> orderedFootprints(Object... idsAndFootprints) {
+    private static Map<String, MarketFootprint> listOrderedFootprints(Object... idsAndFootprints) {
         var footprints = new LinkedHashMap<String, MarketFootprint>();
         for (var i = 0; i < idsAndFootprints.length; i += 2) {
             footprints.put((String) idsAndFootprints[i],

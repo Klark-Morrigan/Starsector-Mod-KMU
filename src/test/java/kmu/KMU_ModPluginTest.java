@@ -115,7 +115,7 @@ class KMU_ModPluginTest {
         void installsMarketUiContextTrackerWhenMissing() {
             var listenerManager = new RecordingListenerManager(false);
 
-            KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
+            KMU_ModPlugin.installMarketUiContextTracker(buildSector(listenerManager));
 
             assertThat(listenerManager.addedListeners)
                     .singleElement()
@@ -127,7 +127,7 @@ class KMU_ModPluginTest {
         void doesNotInstallDuplicateMarketUiContextTracker() {
             var listenerManager = new RecordingListenerManager(true);
 
-            KMU_ModPlugin.installMarketUiContextTracker(sector(listenerManager));
+            KMU_ModPlugin.installMarketUiContextTracker(buildSector(listenerManager));
 
             assertThat(listenerManager.addedListeners).isEmpty();
         }
@@ -140,7 +140,7 @@ class KMU_ModPluginTest {
         void reinstallsEverySidebarListenerFreshAsTransient() {
             var listenerManager = new RecordingListenerManager(false);
 
-            KMU_ModPlugin.installPoliticalMapSidebar(sector(listenerManager));
+            KMU_ModPlugin.installPoliticalMapSidebar(buildSector(listenerManager));
 
             // Remove-then-add the sidebar's render and input listeners: one remove per class clears any
             // registration an older save carried, then a fresh render+input instance is added for each of
@@ -158,7 +158,7 @@ class KMU_ModPluginTest {
         @Test
         void toleratesAMissingListenerManager() {
             var sidebarInstallOnNullManager = (Runnable) () ->
-                    KMU_ModPlugin.installPoliticalMapSidebar(sector(null));
+                    KMU_ModPlugin.installPoliticalMapSidebar(buildSector(null));
 
             assertThatCode(sidebarInstallOnNullManager::run).doesNotThrowAnyException();
         }
@@ -173,7 +173,7 @@ class KMU_ModPluginTest {
             // and a registration an older save carried has to be cleared or two would draw the same box.
             var listenerManager = new RecordingListenerManager(false);
 
-            KMU_ModPlugin.installMapLayerHoverTooltip(sector(listenerManager));
+            KMU_ModPlugin.installMapLayerHoverTooltip(buildSector(listenerManager));
 
             assertThat(listenerManager.removedListenerClasses)
                     .containsExactly(MapLayerCellTooltip.class);
@@ -186,7 +186,7 @@ class KMU_ModPluginTest {
         @Test
         void toleratesAMissingListenerManager() {
             var tooltipInstallOnNullManager = (Runnable) () ->
-                    KMU_ModPlugin.installMapLayerHoverTooltip(sector(null));
+                    KMU_ModPlugin.installMapLayerHoverTooltip(buildSector(null));
 
             assertThatCode(tooltipInstallOnNullManager::run).doesNotThrowAnyException();
         }
@@ -255,9 +255,9 @@ class KMU_ModPluginTest {
 
         @Test
         void installsTheTerrainWhenHyperspaceCarriesNone() {
-            var hyperspaceMock = hyperspaceCarrying();
+            var hyperspaceMock = buildHyperspaceCarrying();
 
-            KMU_ModPlugin.installSectorMapLayerTerrain(sectorWithHyperspace(hyperspaceMock));
+            KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
             verify(hyperspaceMock).addTerrain(CURRENT_TERRAIN_TYPE, null);
         }
@@ -266,10 +266,10 @@ class KMU_ModPluginTest {
         void doesNotStackASecondTerrainOnAReloadedSave() {
             // Terrain persists, so a reloaded save already carries it; adding another would paint
             // the same overlay twice and double the alpha of every fill.
-            var hyperspaceMock = hyperspaceCarrying(
-                    terrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin()));
+            var hyperspaceMock = buildHyperspaceCarrying(
+                    buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin()));
 
-            KMU_ModPlugin.installSectorMapLayerTerrain(sectorWithHyperspace(hyperspaceMock));
+            KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
             verify(hyperspaceMock, never()).addTerrain(any(), any());
             verify(hyperspaceMock, never()).removeEntity(any());
@@ -280,10 +280,10 @@ class KMU_ModPluginTest {
             // The type id is serialised, so a save written before the rename holds an entity under
             // the old id whose spec no longer resolves. It has to go, or the save ends up with the
             // stale entity plus the freshly added one.
-            var staleTerrainMock = terrainMock(LEGACY_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
-            var hyperspaceMock = hyperspaceCarrying(staleTerrainMock);
+            var staleTerrainMock = buildTerrainMock(LEGACY_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
+            var hyperspaceMock = buildHyperspaceCarrying(staleTerrainMock);
 
-            KMU_ModPlugin.installSectorMapLayerTerrain(sectorWithHyperspace(hyperspaceMock));
+            KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
             verify(hyperspaceMock).removeEntity(staleTerrainMock);
             verify(hyperspaceMock).addTerrain(CURRENT_TERRAIN_TYPE, null);
@@ -294,10 +294,10 @@ class KMU_ModPluginTest {
             // The sweep identifies its own by plugin class, so a third-party terrain is neither
             // retired nor counted as the map layer already being present.
             var otherModTerrainMock =
-                    terrainMock("some_other_terrain", mock(CampaignTerrainPlugin.class));
-            var hyperspaceMock = hyperspaceCarrying(otherModTerrainMock);
+                    buildTerrainMock("some_other_terrain", mock(CampaignTerrainPlugin.class));
+            var hyperspaceMock = buildHyperspaceCarrying(otherModTerrainMock);
 
-            KMU_ModPlugin.installSectorMapLayerTerrain(sectorWithHyperspace(hyperspaceMock));
+            KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
             verify(hyperspaceMock, never()).removeEntity(any());
             verify(hyperspaceMock).addTerrain(CURRENT_TERRAIN_TYPE, null);
@@ -309,35 +309,35 @@ class KMU_ModPluginTest {
             // this sweep retire the other half's entity - which reports a type id this one never
             // installs, and so looks stale to any test that is not exact about the class.
             var starscapeTerrainMock =
-                    terrainMock("slipstream", new SectorMapLayerStarscapeTerrainPlugin());
-            var hyperspaceMock = hyperspaceCarrying(starscapeTerrainMock);
+                    buildTerrainMock("slipstream", new SectorMapLayerStarscapeTerrainPlugin());
+            var hyperspaceMock = buildHyperspaceCarrying(starscapeTerrainMock);
 
-            KMU_ModPlugin.installSectorMapLayerTerrain(sectorWithHyperspace(hyperspaceMock));
+            KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
             verify(hyperspaceMock, never()).removeEntity(any());
         }
     }
 
-    private static LocationAPI hyperspaceCarrying(CampaignTerrainAPI... terrain) {
+    private static LocationAPI buildHyperspaceCarrying(CampaignTerrainAPI... terrain) {
         var hyperspaceMock = mock(LocationAPI.class);
         when(hyperspaceMock.getTerrainCopy()).thenReturn(List.of(terrain));
         return hyperspaceMock;
     }
 
-    private static CampaignTerrainAPI terrainMock(String type, CampaignTerrainPlugin plugin) {
+    private static CampaignTerrainAPI buildTerrainMock(String type, CampaignTerrainPlugin plugin) {
         var terrainMock = mock(CampaignTerrainAPI.class);
         when(terrainMock.getType()).thenReturn(type);
         when(terrainMock.getPlugin()).thenReturn(plugin);
         return terrainMock;
     }
 
-    private static SectorAPI sectorWithHyperspace(LocationAPI hyperspace) {
+    private static SectorAPI buildSectorWithHyperspace(LocationAPI hyperspace) {
         var sectorMock = mock(SectorAPI.class);
         when(sectorMock.getHyperspace()).thenReturn(hyperspace);
         return sectorMock;
     }
 
-    private static SectorAPI sector(ListenerManagerAPI listenerManager) {
+    private static SectorAPI buildSector(ListenerManagerAPI listenerManager) {
         return proxy(SectorAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getListenerManager")) {
                 return listenerManager;

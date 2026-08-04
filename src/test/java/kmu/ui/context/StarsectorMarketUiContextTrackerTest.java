@@ -20,7 +20,7 @@ class StarsectorMarketUiContextTrackerTest {
 
         @Test
         void tracksOutpostsTabMarketParam() {
-            var market = market();
+            var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
 
             tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
@@ -30,17 +30,17 @@ class StarsectorMarketUiContextTrackerTest {
 
         @Test
         void tracksOutpostsTabEntityMarketParam() {
-            var market = market();
+            var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
 
-            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, entity(market));
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, buildEntity(market));
 
             assertThat(tracker.getTrackedMarket()).containsSame(market);
         }
 
         @Test
         void ignoresNonOutpostsTabParams() {
-            var market = market();
+            var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
 
             tracker.reportAboutToOpenCoreTab(CoreUITabId.INTEL, market);
@@ -50,7 +50,7 @@ class StarsectorMarketUiContextTrackerTest {
 
         @Test
         void clearsTrackedMarketWhenCoreUiOpensWithoutMarketContext() {
-            var market = market();
+            var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
             tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
 
@@ -61,7 +61,7 @@ class StarsectorMarketUiContextTrackerTest {
 
         @Test
         void clearsTrackedMarketWhenNonOutpostsCoreTabOpens() {
-            var market = market();
+            var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
             tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
 
@@ -76,7 +76,7 @@ class StarsectorMarketUiContextTrackerTest {
 
         @Test
         void tracksMarketAndCargoUpdatedEvent() {
-            var market = market();
+            var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
 
             tracker.reportPlayerOpenedMarketAndCargoUpdated(market);
@@ -90,7 +90,7 @@ class StarsectorMarketUiContextTrackerTest {
 
         @Test
         void tracksAndClearsPlayerMarketEvents() {
-            var market = market();
+            var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
 
             tracker.reportPlayerOpenedMarket(market);
@@ -102,8 +102,8 @@ class StarsectorMarketUiContextTrackerTest {
 
         @Test
         void doesNotClearDifferentTrackedMarket() {
-            var tracked = market();
-            var closed = market();
+            var tracked = buildMarket();
+            var closed = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
             tracker.reportPlayerOpenedMarket(tracked);
 
@@ -114,8 +114,8 @@ class StarsectorMarketUiContextTrackerTest {
 
         @Test
         void clearsClosedMarketWithSameId() {
-            var tracked = market("same_market");
-            var closed = market("same_market");
+            var tracked = buildMarket("same_market");
+            var closed = buildMarket("same_market");
             var tracker = new StarsectorMarketUiContextTracker();
             tracker.reportPlayerOpenedMarket(tracked);
 
@@ -125,7 +125,7 @@ class StarsectorMarketUiContextTrackerTest {
         }
     }
 
-    private static SectorEntityToken entity(MarketAPI market) {
+    private static SectorEntityToken buildEntity(MarketAPI market) {
         return proxy(SectorEntityToken.class, (proxy, method, args) -> {
             if (method.getName().equals("getMarket")) {
                 return market;
@@ -134,11 +134,11 @@ class StarsectorMarketUiContextTrackerTest {
         });
     }
 
-    private static MarketAPI market() {
+    private static MarketAPI buildMarket() {
         return proxy(MarketAPI.class, StarsectorMarketUiContextTrackerTest::handleObjectMethodOrThrow);
     }
 
-    private static MarketAPI market(String id) {
+    private static MarketAPI buildMarket(String id) {
         return proxy(MarketAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getId")) {
                 return id;

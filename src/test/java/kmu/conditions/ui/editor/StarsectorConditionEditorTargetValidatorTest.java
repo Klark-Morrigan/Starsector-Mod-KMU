@@ -26,7 +26,7 @@ class StarsectorConditionEditorTargetValidatorTest {
         void allowsCurrentlyOpenMarketRegardlessOfPlanet() {
             // CURRENTLY_OPEN_MARKET bypasses all planet checks — the market screen
             // is already open so no further validation is needed.
-            var context = context(market(null, false),
+            var context = buildContext(buildMarket(null, false),
                     KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
 
             assertThat(validator.getUnsupportedReason(context)).isEmpty();
@@ -34,7 +34,7 @@ class StarsectorConditionEditorTargetValidatorTest {
 
         @Test
         void allowsMarketWithPlanetEntity() {
-            var context = context(market(planetProxy(), false),
+            var context = buildContext(buildMarket(buildPlanetProxy(), false),
                     KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
 
             assertThat(validator.getUnsupportedReason(context)).isEmpty();
@@ -42,7 +42,7 @@ class StarsectorConditionEditorTargetValidatorTest {
 
         @Test
         void allowsMarketThatIsPlanetConditionMarketOnly() {
-            var context = context(market(null, true),
+            var context = buildContext(buildMarket(null, true),
                     KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
 
             assertThat(validator.getUnsupportedReason(context)).isEmpty();
@@ -50,18 +50,18 @@ class StarsectorConditionEditorTargetValidatorTest {
 
         @Test
         void rejectsMarketWithNeitherPlanetNorConditionOnlyFlag() {
-            var context = context(market(null, false),
+            var context = buildContext(buildMarket(null, false),
                     KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
 
             assertThat(validator.getUnsupportedReason(context)).isPresent();
         }
     }
 
-    private static KmuMarketUiContext context(MarketAPI market, KmuMarketUiContextSource source) {
+    private static KmuMarketUiContext buildContext(MarketAPI market, KmuMarketUiContextSource source) {
         return KmuMarketUiContext.withoutPanel(market, source);
     }
 
-    private static MarketAPI market(PlanetAPI planet, boolean planetConditionMarketOnly) {
+    private static MarketAPI buildMarket(PlanetAPI planet, boolean planetConditionMarketOnly) {
         return proxy(MarketAPI.class, (p, method, args) -> {
             switch (method.getName()) {
                 case "getPlanetEntity": return planet;
@@ -71,7 +71,7 @@ class StarsectorConditionEditorTargetValidatorTest {
         });
     }
 
-    private static PlanetAPI planetProxy() {
+    private static PlanetAPI buildPlanetProxy() {
         return proxy(PlanetAPI.class,
                 (p, method, args) -> handleObjectMethodOrThrow(p, method, args));
     }

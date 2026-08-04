@@ -46,9 +46,9 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void buildsEntriesForPlanetarySpecsInServiceOrder() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true),
-                    spec("population_3", "Population 3", false),
-                    spec("farmland_rich", "Farmland: Rich", true)));
+                    buildSpec("hot", "Hot", true),
+                    buildSpec("population_3", "Population 3", false),
+                    buildSpec("farmland_rich", "Farmland: Rich", true)));
             var factory = new KmuConditionPickerModelFactory(service);
 
             var model = factory.create(new EditableMarketFake("hot"));
@@ -87,7 +87,7 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void marksPresentSuppressedEntries() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("no_atmosphere", "No Atmosphere", true)));
+                    buildSpec("no_atmosphere", "No Atmosphere", true)));
             var factory = new KmuConditionPickerModelFactory(service);
 
             var entry = factory.create(new EditableMarketFake(
@@ -104,16 +104,16 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void extractsLocationNamesFromStarsectorMarket() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
             var constellation = new Constellation(
                     Constellation.ConstellationType.NORMAL,
                     StarAge.AVERAGE);
             constellation.setNameOverride("Corvus");
-            var system = starSystem("Corvus Star System", constellation);
+            var system = buildStarSystem("Corvus Star System", constellation);
 
             var model = factory.create(new StarsectorEditableMarket(
-                    market(
+                    buildMarket(
                             List.of(),
                             Map.of(),
                             Set.of(),
@@ -128,21 +128,21 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void extractsPlanetOwnerRelationshipAndGravityWellDetailsFromStarsectorMarket() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
-            var star = planet("Corvus", "yellow star", null);
-            var planet = planet("Valis", "terran world", star);
+            var star = buildPlanet("Corvus", "yellow star", null);
+            var planet = buildPlanet("Valis", "terran world", star);
 
             var model = factory.create(new StarsectorEditableMarket(
-                    market(
+                    buildMarket(
                             List.of(),
                             Map.of(),
                             Set.of(),
                             "Valis Outpost",
-                            starSystem("Corvus Star System", null),
+                            buildStarSystem("Corvus Star System", null),
                             planet,
                             planet,
-                            faction("Hegemony"))));
+                            buildFaction("Hegemony"))));
 
             var location = model.getLocation();
             assertThat(location.getPlanetName()).contains("Valis");
@@ -159,20 +159,20 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void omitsFactionWhenFactionNameIsUnreadable() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
-            var planet = planet("Valis", "terran world", null);
+            var planet = buildPlanet("Valis", "terran world", null);
 
             var model = factory.create(new StarsectorEditableMarket(
-                    market(
+                    buildMarket(
                             List.of(),
                             Map.of(),
                             Set.of(),
                             "Valis Outpost",
-                            starSystem("Corvus Star System", null),
+                            buildStarSystem("Corvus Star System", null),
                             planet,
                             planet,
-                            faction(null))));
+                            buildFaction(null))));
 
             assertThat(model.getLocation().getFaction()).isEmpty();
         }
@@ -180,19 +180,19 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void tracesGravityWellThroughNestedOrbitFocusChain() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
-            var barycenter = entity("Kumari barycenter");
-            var gasGiant = planet("Kumari", "gas giant", barycenter);
-            var moon = planet("Valis", "barren moon", gasGiant);
+            var barycenter = buildEntity("Kumari barycenter");
+            var gasGiant = buildPlanet("Kumari", "gas giant", barycenter);
+            var moon = buildPlanet("Valis", "barren moon", gasGiant);
 
             var model = factory.create(new StarsectorEditableMarket(
-                    market(
+                    buildMarket(
                             List.of(),
                             Map.of(),
                             Set.of(),
                             "Valis Outpost",
-                            starSystem("Kumari Star System", null),
+                            buildStarSystem("Kumari Star System", null),
                             moon,
                             moon,
                             null)));
@@ -204,12 +204,12 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void marksPresentHiddenEntriesFromLiveConditionPlugin() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("no_atmosphere", "No Atmosphere", true)));
+                    buildSpec("no_atmosphere", "No Atmosphere", true)));
             var factory = new KmuConditionPickerModelFactory(service);
-            var condition = condition("no_atmosphere", plugin(false, "graphics/icons/live.png"));
+            var condition = buildCondition("no_atmosphere", buildPlugin(false, "graphics/icons/live.png"));
 
             var entry = factory.create(new StarsectorEditableMarket(
-                    market(List.of(condition), Map.of("no_atmosphere", condition), Set.of())))
+                    buildMarket(List.of(condition), Map.of("no_atmosphere", condition), Set.of())))
                     .getEntries()
                     .get(0);
 
@@ -223,7 +223,7 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void defaultsToNotSuppressedWhenSuppressedCheckThrows() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
             var market = new KmuEditableMarket() {
                 @Override public Set<String> getConditionIds() { return Set.of("hot"); }
@@ -245,9 +245,9 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void treatsLiveConditionAsAbsentWhenConditionLookupThrows() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
-            var hotCondition = condition("hot", null);
+            var hotCondition = buildCondition("hot", null);
             var throwingMarket = proxy(MarketAPI.class, (p, method, args) -> {
                 switch (method.getName()) {
                     case "getConditions": return List.of(hotCondition);
@@ -269,12 +269,12 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void usesSpecIconWhenLiveConditionHasNullPlugin() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
-            var conditionWithNullPlugin = condition("hot", null);
+            var conditionWithNullPlugin = buildCondition("hot", null);
 
             var entry = factory.create(new StarsectorEditableMarket(
-                    market(List.of(conditionWithNullPlugin),
+                    buildMarket(List.of(conditionWithNullPlugin),
                             Map.of("hot", conditionWithNullPlugin), Set.of())))
                     .getEntries().get(0);
 
@@ -286,12 +286,12 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void usesSpecIconWhenLiveIconNameIsBlank() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
-            var conditionWithBlankIcon = condition("hot", plugin(true, "  "));
+            var conditionWithBlankIcon = buildCondition("hot", buildPlugin(true, "  "));
 
             var entry = factory.create(new StarsectorEditableMarket(
-                    market(List.of(conditionWithBlankIcon),
+                    buildMarket(List.of(conditionWithBlankIcon),
                             Map.of("hot", conditionWithBlankIcon), Set.of())))
                     .getEntries().get(0);
 
@@ -301,7 +301,7 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void defaultsToNotHiddenAndUsesSpecIconWhenPluginThrows() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
             var throwingPluginCondition = proxy(MarketConditionAPI.class, (p, method, args) -> {
                 switch (method.getName()) {
@@ -312,7 +312,7 @@ class KmuConditionPickerModelFactoryTest {
             });
 
             var entry = factory.create(new StarsectorEditableMarket(
-                    market(List.of(throwingPluginCondition),
+                    buildMarket(List.of(throwingPluginCondition),
                             Map.of("hot", throwingPluginCondition), Set.of())))
                     .getEntries().get(0);
 
@@ -324,7 +324,7 @@ class KmuConditionPickerModelFactoryTest {
         @Test
         void returnsImmutableEntryList() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true)));
+                    buildSpec("hot", "Hot", true)));
             var factory = new KmuConditionPickerModelFactory(service);
 
             var model = factory.create(new EditableMarketFake());
@@ -339,7 +339,7 @@ class KmuConditionPickerModelFactoryTest {
         }
     }
 
-    private static KmuConditionSpec spec(String id, String name, boolean planetary) {
+    private static KmuConditionSpec buildSpec(String id, String name, boolean planetary) {
         return new KmuConditionSpec(id, name, "graphics/icons/" + id + ".png", planetary);
     }
 
@@ -407,23 +407,23 @@ class KmuConditionPickerModelFactoryTest {
         }
     }
 
-    private static MarketAPI market(
+    private static MarketAPI buildMarket(
             List<MarketConditionAPI> conditions,
             Map<String, MarketConditionAPI> conditionsById,
             Set<String> suppressedConditionIds) {
-        return market(conditions, conditionsById, suppressedConditionIds, null, null);
+        return buildMarket(conditions, conditionsById, suppressedConditionIds, null, null);
     }
 
-    private static MarketAPI market(
+    private static MarketAPI buildMarket(
             List<MarketConditionAPI> conditions,
             Map<String, MarketConditionAPI> conditionsById,
             Set<String> suppressedConditionIds,
             String marketName,
             StarSystemAPI starSystem) {
-        return market(conditions, conditionsById, suppressedConditionIds, marketName, starSystem, null, null, null);
+        return buildMarket(conditions, conditionsById, suppressedConditionIds, marketName, starSystem, null, null, null);
     }
 
-    private static MarketAPI market(
+    private static MarketAPI buildMarket(
             List<MarketConditionAPI> conditions,
             Map<String, MarketConditionAPI> conditionsById,
             Set<String> suppressedConditionIds,
@@ -458,7 +458,7 @@ class KmuConditionPickerModelFactoryTest {
         });
     }
 
-    private static StarSystemAPI starSystem(String nameWithTypeShort, Constellation constellation) {
+    private static StarSystemAPI buildStarSystem(String nameWithTypeShort, Constellation constellation) {
         return proxy(StarSystemAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getNameWithTypeShort":
@@ -473,7 +473,7 @@ class KmuConditionPickerModelFactoryTest {
         });
     }
 
-    private static PlanetAPI planet(String name, String typeNameWithWorld, SectorEntityToken orbitFocus) {
+    private static PlanetAPI buildPlanet(String name, String typeNameWithWorld, SectorEntityToken orbitFocus) {
         return proxy(PlanetAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getName":
@@ -489,7 +489,7 @@ class KmuConditionPickerModelFactoryTest {
         });
     }
 
-    private static SectorEntityToken entity(String name) {
+    private static SectorEntityToken buildEntity(String name) {
         return proxy(SectorEntityToken.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getName":
@@ -504,7 +504,7 @@ class KmuConditionPickerModelFactoryTest {
         });
     }
 
-    private static FactionAPI faction(String name) {
+    private static FactionAPI buildFaction(String name) {
         return proxy(FactionAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getDisplayNameLong":
@@ -535,7 +535,7 @@ class KmuConditionPickerModelFactoryTest {
         });
     }
 
-    private static MarketConditionAPI condition(String id, MarketConditionPlugin plugin) {
+    private static MarketConditionAPI buildCondition(String id, MarketConditionPlugin plugin) {
         return proxy(MarketConditionAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getId":
@@ -548,7 +548,7 @@ class KmuConditionPickerModelFactoryTest {
         });
     }
 
-    private static MarketConditionPlugin plugin(boolean showIcon, String iconName) {
+    private static MarketConditionPlugin buildPlugin(boolean showIcon, String iconName) {
         return proxy(MarketConditionPlugin.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "showIcon":
@@ -578,10 +578,10 @@ class KmuConditionPickerModelFactoryTest {
         // primitives) for unstubbed Starsector API methods so the now-bare
         // production reads do not crash. Tests that need a specific method
         // to throw still stub it explicitly in their switch case.
-        return defaultForReturnType(method.getReturnType());
+        return resolveDefaultForReturnType(method.getReturnType());
     }
 
-    private static Object defaultForReturnType(Class<?> returnType) {
+    private static Object resolveDefaultForReturnType(Class<?> returnType) {
         if (!returnType.isPrimitive()) return null;
         if (returnType == boolean.class) return false;
         if (returnType == void.class) return null;

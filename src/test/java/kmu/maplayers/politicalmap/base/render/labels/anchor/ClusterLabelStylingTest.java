@@ -49,13 +49,13 @@ final class ClusterLabelStylingTest {
 
     // The two classifications under an identity adjustment, so a colour test names only the
     // branch it exercises.
-    private static final BlocStyleDecision FACTION_STYLED = factionStyled(ElementStyleAdjustment.NONE);
+    private static final BlocStyleDecision FACTION_STYLED = buildFactionStyled(ElementStyleAdjustment.NONE);
     private static final BlocStyleDecision INDEPENDENT_STYLED =
         new BlocStyleDecision(true, ElementStyleAdjustment.NONE);
 
     // A faction-styled bloc under a given recede, for the tests that vary the adjustment
     // rather than the classification.
-    private static BlocStyleDecision factionStyled(ElementStyleAdjustment adjustment) {
+    private static BlocStyleDecision buildFactionStyled(ElementStyleAdjustment adjustment) {
         return new BlocStyleDecision(false, adjustment);
     }
 
@@ -213,7 +213,7 @@ final class ClusterLabelStylingTest {
             var colour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
                 nameStyles(FactionPaletteSlot.PRIMARY),
-                factionStyled(new ElementStyleAdjustment(HALF_OPACITY, false)),
+                buildFactionStyled(new ElementStyleAdjustment(HALF_OPACITY, false)),
                 UNUSED_PALETTE);
 
             assertThat(colour.getAlpha())
@@ -229,7 +229,7 @@ final class ClusterLabelStylingTest {
             var colour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
                 nameStyles(FactionPaletteSlot.PRIMARY),
-                factionStyled(new ElementStyleAdjustment(FULL_OPACITY, true)),
+                buildFactionStyled(new ElementStyleAdjustment(FULL_OPACITY, true)),
                 new FactionPalette(Color.GREEN, Color.YELLOW));
 
             assertThat(colour).isEqualTo(Color.GREEN);
@@ -262,7 +262,7 @@ final class ClusterLabelStylingTest {
             var labelColour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
                 nameStyles(FactionPaletteSlot.PRIMARY),
-                factionStyled(recede),
+                buildFactionStyled(recede),
                 desaturationPalette);
 
             // The shade MapPalettes resolves the same bloc's fill to under the same recede.

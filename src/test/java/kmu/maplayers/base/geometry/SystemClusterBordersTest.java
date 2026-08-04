@@ -34,7 +34,7 @@ final class SystemClusterBordersTest {
 
     // One CCW square cell edge, facing the neighbour system across it, or the reach bound
     // when that is null.
-    private static CellEdge edge(double x1, double y1, double x2, double y2, String neighbour) {
+    private static CellEdge buildEdge(double x1, double y1, double x2, double y2, String neighbour) {
         return new CellEdge(x1, y1, x2, y2,
                 neighbour == null
                         ? EdgeTarget.REACH_BOUND
@@ -43,7 +43,7 @@ final class SystemClusterBordersTest {
 
     // The grouping to trace under: each cell drawing as its own star (identity draws-as over
     // the cell set), keyed by the given owners.
-    private static CellGrouping grouping(
+    private static CellGrouping buildGrouping(
             Map<String, List<CellEdge>> edges, Map<String, String> owners) {
         var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
         for (var cellId : edges.keySet()) {
@@ -61,15 +61,15 @@ final class SystemClusterBordersTest {
             // edges chain into the single outline of the fused 20x10 rectangle.
             var edges = Map.of(
                     "A", List.of(
-                            edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
-                            edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)),
+                            buildEdge(0, 0, 10, 0, null), buildEdge(10, 0, 10, 10, "B"),
+                            buildEdge(10, 10, 0, 10, null), buildEdge(0, 10, 0, 0, null)),
                     "B", List.of(
-                            edge(10, 0, 20, 0, null), edge(20, 0, 20, 10, null),
-                            edge(20, 10, 10, 10, null), edge(10, 10, 10, 0, "A")));
+                            buildEdge(10, 0, 20, 0, null), buildEdge(20, 0, 20, 10, null),
+                            buildEdge(20, 10, 10, 10, null), buildEdge(10, 10, 10, 0, "A")));
             var owners = Map.of("A", "F", "B", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A", "B"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A", "B"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
@@ -83,12 +83,12 @@ final class SystemClusterBordersTest {
             // and A's whole square outlines one ring.
             var edges = Map.of(
                     "A", List.of(
-                            edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
-                            edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)));
+                            buildEdge(0, 0, 10, 0, null), buildEdge(10, 0, 10, 10, "B"),
+                            buildEdge(10, 10, 0, 10, null), buildEdge(0, 10, 0, 0, null)));
             var owners = Map.of("A", "F", "B", "G");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
@@ -103,12 +103,12 @@ final class SystemClusterBordersTest {
             // open chain of the remaining three edges could not close into a ring.
             var edges = Map.of(
                     "A", List.of(
-                            edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
-                            edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)));
+                            buildEdge(0, 0, 10, 0, null), buildEdge(10, 0, 10, 10, "B"),
+                            buildEdge(10, 10, 0, 10, null), buildEdge(0, 10, 0, 0, null)));
             var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
@@ -117,7 +117,7 @@ final class SystemClusterBordersTest {
         @Test
         void a_group_with_no_geometry_yields_no_rings() {
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("missing"), Map.of(), grouping(Map.of(), Map.of()),
+                    List.of("missing"), Map.of(), buildGrouping(Map.of(), Map.of()),
                     NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
@@ -130,12 +130,12 @@ final class SystemClusterBordersTest {
             // sees the winding flip and drops it rather than stroking a tangle.
             var edges = Map.of(
                     "A", List.of(
-                            edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, null),
-                            edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)));
+                            buildEdge(0, 0, 10, 0, null), buildEdge(10, 0, 10, 10, null),
+                            buildEdge(10, 10, 0, 10, null), buildEdge(0, 10, 0, 0, null)));
             var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     20.0, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).isEmpty();
@@ -150,8 +150,8 @@ final class SystemClusterBordersTest {
             // them. Their outward edges still take the plain channel.
             var rings = traceCarvedNeighbours(Set.of("B"), Set.of("A"));
 
-            assertThat(maxXOf(rings.first())).isCloseTo(10.0, within(1e-6));
-            assertThat(minXOf(rings.second())).isCloseTo(10.0, within(1e-6));
+            assertThat(computeMaxXOf(rings.first())).isCloseTo(10.0, within(1e-6));
+            assertThat(computeMinXOf(rings.second())).isCloseTo(10.0, within(1e-6));
         }
 
         @Test
@@ -161,8 +161,8 @@ final class SystemClusterBordersTest {
             // border channel two rival nations are meant to be separated by.
             var rings = traceCarvedNeighbours(NO_COINCIDENT_NEIGHBOURS, NO_COINCIDENT_NEIGHBOURS);
 
-            assertThat(maxXOf(rings.first())).isCloseTo(8.0, within(1e-6));
-            assertThat(minXOf(rings.second())).isCloseTo(12.0, within(1e-6));
+            assertThat(computeMaxXOf(rings.first())).isCloseTo(8.0, within(1e-6));
+            assertThat(computeMinXOf(rings.second())).isCloseTo(12.0, within(1e-6));
         }
 
         // Traces the two differently-keyed neighbours A and B, each naming the given coincident
@@ -171,17 +171,17 @@ final class SystemClusterBordersTest {
                 Set<String> aCoincidentNeighbours, Set<String> bCoincidentNeighbours) {
             var edges = Map.of(
                     "A", List.of(
-                            edge(0, 0, 10, 0, null), edge(10, 0, 10, 10, "B"),
-                            edge(10, 10, 0, 10, null), edge(0, 10, 0, 0, null)),
+                            buildEdge(0, 0, 10, 0, null), buildEdge(10, 0, 10, 10, "B"),
+                            buildEdge(10, 10, 0, 10, null), buildEdge(0, 10, 0, 0, null)),
                     "B", List.of(
-                            edge(10, 0, 20, 0, null), edge(20, 0, 20, 10, null),
-                            edge(20, 10, 10, 10, null), edge(10, 10, 10, 0, "A")));
+                            buildEdge(10, 0, 20, 0, null), buildEdge(20, 0, 20, 10, null),
+                            buildEdge(20, 10, 10, 10, null), buildEdge(10, 10, 10, 0, "A")));
             var owners = Map.of("A", "F#solid", "B", "F#hatched");
             return new TracedPair(
-                    SystemClusterBorders.traceBorderRings(List.of("A"), edges, grouping(edges, owners),
+                    SystemClusterBorders.traceBorderRings(List.of("A"), edges, buildGrouping(edges, owners),
                             aCoincidentNeighbours,
                             BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT).get(0),
-                    SystemClusterBorders.traceBorderRings(List.of("B"), edges, grouping(edges, owners),
+                    SystemClusterBorders.traceBorderRings(List.of("B"), edges, buildGrouping(edges, owners),
                             bCoincidentNeighbours,
                             BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT).get(0));
         }
@@ -194,16 +194,16 @@ final class SystemClusterBordersTest {
             // toward B - a grouped cluster stops at the Voronoi midline like any other border.
             var edges = Map.of(
                     "A", List.of(
-                            edge(0, 0, 100, 0, null), edge(100, 0, 100, 100, "B"),
-                            edge(100, 100, 0, 100, null), edge(0, 100, 0, 0, null)));
+                            buildEdge(0, 0, 100, 0, null), buildEdge(100, 0, 100, 100, "B"),
+                            buildEdge(100, 100, 0, 100, null), buildEdge(0, 100, 0, 0, null)));
             var owners = Map.of("A", "F");
 
             var rings = SystemClusterBorders.traceBorderRings(
-                    List.of("A"), edges, grouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
+                    List.of("A"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
             assertThat(rings).hasSize(1);
-            assertThat(maxXOf(rings.get(0))).isCloseTo(98.0, within(1e-6));
+            assertThat(computeMaxXOf(rings.get(0))).isCloseTo(98.0, within(1e-6));
         }
     }
 
@@ -212,11 +212,11 @@ final class SystemClusterBordersTest {
     private record TracedPair(List<double[]> first, List<double[]> second) {
     }
 
-    private static double maxXOf(List<double[]> ring) {
+    private static double computeMaxXOf(List<double[]> ring) {
         return ring.stream().mapToDouble(vertex -> vertex[0]).max().orElseThrow();
     }
 
-    private static double minXOf(List<double[]> ring) {
+    private static double computeMinXOf(List<double[]> ring) {
         return ring.stream().mapToDouble(vertex -> vertex[0]).min().orElseThrow();
     }
 }

@@ -105,7 +105,7 @@ final class IncrementalPoliticsRefreshTest {
         // case so what a re-fit is handed can be read back as the caller's own pair rather than
         // as a value that merely compares equal to it.
         private final RevisedCellGeometry cellGeometry =
-            new RevisedCellGeometry(twoAdjacentCells(), GEOMETRY_REVISION);
+            new RevisedCellGeometry(buildTwoAdjacentCells(), GEOMETRY_REVISION);
 
         private MockedStatic<Global> globalMock;
         private MockedStatic<SectorPolitics> politicsMock;
@@ -129,7 +129,7 @@ final class IncrementalPoliticsRefreshTest {
             // Built before the stubbing rather than inside it: each system is itself a mock,
             // and building one while another stubbing is open reads to Mockito as an
             // unfinished stub.
-            var systems = List.of(system(FLIPPED_SYSTEM), system(NEIGHBOUR_SYSTEM));
+            var systems = List.of(buildSystem(FLIPPED_SYSTEM), buildSystem(NEIGHBOUR_SYSTEM));
 
             sectorMock = mock(SectorAPI.class);
 
@@ -195,7 +195,7 @@ final class IncrementalPoliticsRefreshTest {
         void applyStalePoliticsUpdatesReadsNoSectorWhenNothingIsStale() {
             // The per-frame path: this runs every frame, and on almost all of them the
             // stale set is empty, so it must cost nothing before it returns.
-            var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             applyTo(territories);
 
@@ -211,7 +211,7 @@ final class IncrementalPoliticsRefreshTest {
             // A resize changes holding over cells already drawn; it never admits a
             // system to the map, so one with no cell has nothing to re-shape and must not
             // reach the re-derive at all.
-            var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             MapLayerRefresh.markSystemGroupingStale(CELL_LESS_SYSTEM);
             applyTo(territories);
@@ -226,15 +226,15 @@ final class IncrementalPoliticsRefreshTest {
         void applyStalePoliticsUpdatesRedrawsNothingWhenTheHolderDidNotChange() {
             // The common resize: a colony grows, its faction still wins, and the drawing is
             // identical - so the whole redraw below the re-derive must be skipped.
-            var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            resolvesTo(FLIPPED_SYSTEM, ownerOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getHolderBySystemId())
-                .containsExactly(entryOwnedBy(FLIPPED_SYSTEM, HEGEMONY));
+                .containsExactly(buildEntryOwnedBy(FLIPPED_SYSTEM, HEGEMONY));
 
             styledCellsMock.verifyNoInteractions();
             territoriesMock.verifyNoInteractions();
@@ -243,9 +243,9 @@ final class IncrementalPoliticsRefreshTest {
         @Test
         void applyStalePoliticsUpdatesRecordsTheNewHolderWhenASystemChangesHands() {
 
-            var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(TRITACHYON));
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
             applyTo(territories);
@@ -258,9 +258,9 @@ final class IncrementalPoliticsRefreshTest {
         void applyStalePoliticsUpdatesDropsTheHolderOfASystemThatLostItsLastColony() {
             // Decivilised or bombed out: the system stays drawn but holds no holder, so the
             // entry goes rather than being left pointing at the faction that lost it.
-            var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            resolvesTo(FLIPPED_SYSTEM, null);
+            assertResolvesTo(FLIPPED_SYSTEM, null);
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
             applyTo(territories);
@@ -274,13 +274,13 @@ final class IncrementalPoliticsRefreshTest {
             // The neighbour's own holder did not move, but the edge it shares with the
             // flipped system just turned from a same-faction seam into a national border,
             // so it has to be re-shaped too or the border draws down one side only.
-            var territories = ownedBy(Map.of(
+            var territories = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY));
 
-            resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(TRITACHYON));
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
             applyTo(territories);
@@ -303,13 +303,13 @@ final class IncrementalPoliticsRefreshTest {
             // Both sides of the transfer change shape - one loses the cell, the other gains
             // it - and no third faction's rings trace a cell that moved, so exactly these
             // two rebuild.
-            var territories = ownedBy(Map.of(
+            var territories = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY));
 
-            resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(TRITACHYON));
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
             applyTo(territories);
@@ -334,13 +334,13 @@ final class IncrementalPoliticsRefreshTest {
             // re-shapes cells within a partition it never recut - so the fit ran against the very
             // geometry the caller named, and a re-fit reported against any other one would offer
             // its placements to a later rebuild standing somewhere else.
-            var territories = ownedBy(Map.of(
+            var territories = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY));
 
-            resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(TRITACHYON));
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
             applyTo(territories);
@@ -361,13 +361,13 @@ final class IncrementalPoliticsRefreshTest {
             // searched again. That record and the placements are one value, and it is the
             // caller's own - handing a copy down would carry over correctly and still leave
             // the caller holding placements labelled by the pass before this one.
-            var territories = ownedBy(Map.of(
+            var territories = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY));
 
-            resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(TRITACHYON));
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
             applyTo(territories);
@@ -384,7 +384,7 @@ final class IncrementalPoliticsRefreshTest {
         void applyStalePoliticsUpdatesLeavesTheStandingPairAloneWhenNothingIsStale() {
             // Nothing was re-fitted, so the standing placements and the rules recorded for them
             // still describe each other and neither half may move.
-            var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             applyTo(territories);
 
@@ -397,9 +397,9 @@ final class IncrementalPoliticsRefreshTest {
         void applyStalePoliticsUpdatesLeavesTheStandingPairAloneWhenTheHolderDidNotChange() {
             // The same claim on the other early return: a resize that leaves the winner alone
             // leaves the placements alone, so there is nothing about them to restate.
-            var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            resolvesTo(FLIPPED_SYSTEM, ownerOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
             applyTo(territories);
@@ -420,13 +420,13 @@ final class IncrementalPoliticsRefreshTest {
         // What the re-derive answers for one system this pass. Every case stubs the systems
         // it marks; an unstubbed one comes back null, which reads as a system that lost its
         // holder rather than as a missing stub.
-        private void resolvesTo(String systemId, DominantHolder holder) {
+        private void assertResolvesTo(String systemId, DominantHolder holder) {
             // The grouping matcher is typed because a sibling entry point takes a resolved
             // dominance pass in the same slot, and a bare any() would name neither.
             politicsMock
                 .when(() -> SectorPolitics.resolveDominantHolder(
                     any(),
-                    argThatIsSystem(systemId),
+                    matchSystemArg(systemId),
                     any(HolderGrouping.class)))
                 .thenReturn(holder);
         }
@@ -447,16 +447,16 @@ final class IncrementalPoliticsRefreshTest {
     // shape the fold reads to find a flipped system's neighbours. Mocked rather than built
     // from a sector because only its two lookups are read here, and a real partition would
     // make each case depend on the Voronoi build as well as on the fold.
-    private static CellGeometryCache twoAdjacentCells() {
+    private static CellGeometryCache buildTwoAdjacentCells() {
 
         var geometryCacheMock = mock(CellGeometryCache.class);
 
         when(geometryCacheMock.getCellEdgesByCellId())
             .thenReturn(Map.of(
                 FLIPPED_SYSTEM,
-                squareCellFacing(NEIGHBOUR_SYSTEM, 0),
+                buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
                 NEIGHBOUR_SYSTEM,
-                squareCellFacing(FLIPPED_SYSTEM, 100)));
+                buildSquareCellFacing(FLIPPED_SYSTEM, 100)));
 
         when(geometryCacheMock.getSystemIdByCellId())
             .thenReturn(Map.of(
@@ -471,7 +471,7 @@ final class IncrementalPoliticsRefreshTest {
     // A closed four-edge cell offset along x, one edge of which faces the given neighbour
     // while the rest face open space. Real coordinates because the re-shape insets these
     // edges for real; only the adjacency tag is what the fold itself reads.
-    private static List<CellEdge> squareCellFacing(String neighbourSystemId, double offsetX) {
+    private static List<CellEdge> buildSquareCellFacing(String neighbourSystemId, double offsetX) {
 
         var frontier = new EdgeTarget.NoSystem("frontier");
 
@@ -487,29 +487,29 @@ final class IncrementalPoliticsRefreshTest {
             new CellEdge(offsetX, 50, offsetX, 0, frontier));
     }
 
-    private static PoliticalMapTerritories ownedBy(Map<String, String> factionIdBySystemId) {
+    private static PoliticalMapTerritories buildOwnedBy(Map<String, String> factionIdBySystemId) {
 
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
 
         for (var entry : factionIdBySystemId.entrySet()) {
-            ownerBySystemId.put(entry.getKey(), ownerOf(entry.getValue()));
+            ownerBySystemId.put(entry.getKey(), readOwnerOf(entry.getValue()));
         }
         return PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(ownerBySystemId);
     }
 
     // The fold compares whole holders, so the shades matter only in that two holders of the
     // same faction must compare equal; one shared placeholder pair gives that.
-    private static DominantHolder ownerOf(String factionId) {
+    private static DominantHolder readOwnerOf(String factionId) {
         return new DominantHolder(factionId, Color.GRAY, Color.GRAY);
     }
 
-    private static Map.Entry<String, DominantHolder> entryOwnedBy(
+    private static Map.Entry<String, DominantHolder> buildEntryOwnedBy(
             String systemId,
             String factionId) {
-        return Map.entry(systemId, ownerOf(factionId));
+        return Map.entry(systemId, readOwnerOf(factionId));
     }
 
-    private static StarSystemAPI system(String systemId) {
+    private static StarSystemAPI buildSystem(String systemId) {
         var systemMock = mock(StarSystemAPI.class);
         when(systemMock.getId()).thenReturn(systemId);
         return systemMock;
@@ -517,7 +517,7 @@ final class IncrementalPoliticsRefreshTest {
 
     // Matches the star system carrying the given id, so a stub names the system it answers
     // for rather than the mock instance the fixture happened to build.
-    private static StarSystemAPI argThatIsSystem(String systemId) {
+    private static StarSystemAPI matchSystemArg(String systemId) {
         return argThat(system -> system != null && systemId.equals(system.getId()));
     }
 }

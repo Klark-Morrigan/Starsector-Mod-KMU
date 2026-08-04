@@ -47,7 +47,7 @@ final class HolderFlipDisturbanceTest {
             // would leave the new territory undrawn until some later full rebuild.
             var disturbance = new HolderFlipDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, holderOf(HEGEMONY));
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildHolderOf(HEGEMONY));
 
             assertThat(disturbance.hasFlips())
                 .isTrue();
@@ -59,7 +59,7 @@ final class HolderFlipDisturbanceTest {
             // territory is exactly the one that has to stop drawing the cell.
             var disturbance = new HolderFlipDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), holderOf(HEGEMONY), null);
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), buildHolderOf(HEGEMONY), null);
 
             assertThat(disturbance.hasFlips())
                 .isTrue();
@@ -79,8 +79,8 @@ final class HolderFlipDisturbanceTest {
             disturbance.recordFlip(
                 FLIPPED_SYSTEM,
                 List.of(NEIGHBOUR_SYSTEM),
-                holderOf(HEGEMONY),
-                holderOf(TRITACHYON));
+                buildHolderOf(HEGEMONY),
+                buildHolderOf(TRITACHYON));
 
             assertThat(disturbance.getCellIdsToReshape())
                 .containsExactly(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM);
@@ -95,8 +95,8 @@ final class HolderFlipDisturbanceTest {
             disturbance.recordFlip(
                 FLIPPED_SYSTEM,
                 List.of(NEIGHBOUR_SYSTEM),
-                holderOf(HEGEMONY),
-                holderOf(TRITACHYON));
+                buildHolderOf(HEGEMONY),
+                buildHolderOf(TRITACHYON));
 
             assertThat(disturbance.getAffectedFactionIds())
                 .containsExactly(HEGEMONY, TRITACHYON);
@@ -108,7 +108,7 @@ final class HolderFlipDisturbanceTest {
             // send a faction that never drew this cell through a rebuild for nothing.
             var disturbance = new HolderFlipDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, holderOf(TRITACHYON));
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildHolderOf(TRITACHYON));
 
             assertThat(disturbance.getAffectedFactionIds())
                 .containsExactly(TRITACHYON);
@@ -119,7 +119,7 @@ final class HolderFlipDisturbanceTest {
             
             var disturbance = new HolderFlipDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), holderOf(HEGEMONY), null);
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), buildHolderOf(HEGEMONY), null);
 
             assertThat(disturbance.getAffectedFactionIds())
                 .containsExactly(HEGEMONY);
@@ -136,13 +136,13 @@ final class HolderFlipDisturbanceTest {
             disturbance.recordFlip(
                 FLIPPED_SYSTEM,
                 List.of(NEIGHBOUR_SYSTEM),
-                holderOf(HEGEMONY),
-                holderOf(TRITACHYON));
+                buildHolderOf(HEGEMONY),
+                buildHolderOf(TRITACHYON));
             disturbance.recordFlip(
                 NEIGHBOUR_SYSTEM,
                 List.of(FLIPPED_SYSTEM),
-                holderOf(HEGEMONY),
-                holderOf(TRITACHYON));
+                buildHolderOf(HEGEMONY),
+                buildHolderOf(TRITACHYON));
 
             assertThat(disturbance.getCellIdsToReshape())
                 .containsExactly(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM);
@@ -152,7 +152,7 @@ final class HolderFlipDisturbanceTest {
     }
 
     // Only the faction id is read here, so the shades are inert placeholders.
-    private static DominantHolder holderOf(String factionId) {
+    private static DominantHolder buildHolderOf(String factionId) {
         return new DominantHolder(factionId, Color.GRAY, Color.GRAY);
     }
 }

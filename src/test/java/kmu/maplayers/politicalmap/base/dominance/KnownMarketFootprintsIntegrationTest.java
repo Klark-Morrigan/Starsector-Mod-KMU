@@ -23,14 +23,14 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints.DOMINANCE_WEIGHT_SCALE;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.faction;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.hiddenMarket;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.market;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.marketAtStability;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.onlySystem;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.sectorWith;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.undiscoveredHiddenMarket;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.visibleMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildMarketAtStability;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildUndiscoveredHiddenMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -127,7 +127,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
     }
 
-    private static RulesBuilder rules() {
+    private static RulesBuilder buildRules() {
         return new RulesBuilder();
     }
 
@@ -138,10 +138,10 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionWeighsAKnownMarketUnderItsFaction() {
             // At full stability a market is worth its whole size on the weight grid:
             // size 5 -> 5 grid units.
-            var sector = sectorWith("owned-system", visibleMarket(faction("hegemony"), 5));
+            var sector = buildSectorWith("owned-system", buildVisibleMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build());
+                    sector, buildOnlySystem(sector), buildRules().build());
 
             assertThat(footprints).containsOnlyKeys("hegemony");
             assertThat(footprints.get("hegemony").totalWeight())
@@ -152,11 +152,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionScalesColonySizeByStabilityAtFullPenalty() {
             // The colony penalty defaults to a full collapse, so a size-4 market at
             // stability 5 contributes half its size.
-            var sector = sectorWith("shaky-system",
-                    marketAtStability(faction("hegemony"), 4, HALF_STABILITY));
+            var sector = buildSectorWith("shaky-system",
+                    buildMarketAtStability(buildFaction("hegemony"), 4, HALF_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build());
+                    sector, buildOnlySystem(sector), buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -167,11 +167,11 @@ class KnownMarketFootprintsIntegrationTest {
             // With the master toggle off, a destabilised market folds in at its full
             // size regardless of any penalty - the raw-size dominance the toggle
             // opts back into.
-            var sector = sectorWith("shaky-system",
-                    marketAtStability(faction("hegemony"), 4, HALF_STABILITY));
+            var sector = buildSectorWith("shaky-system",
+                    buildMarketAtStability(buildFaction("hegemony"), 4, HALF_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withStabilityMaster(false).build());
+                    sector, buildOnlySystem(sector), buildRules().withStabilityMaster(false).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(4 * DOMINANCE_WEIGHT_SCALE);
@@ -182,11 +182,11 @@ class KnownMarketFootprintsIntegrationTest {
             // At a full colony penalty a colony at 0 stability is worth nothing to
             // dominance, but it is still a known colony: the faction keeps its
             // footprint entry, so presence (and painting an unopposed system) holds.
-            var sector = sectorWith("collapsed-system",
-                    marketAtStability(faction("hegemony"), 5, NO_STABILITY));
+            var sector = buildSectorWith("collapsed-system",
+                    buildMarketAtStability(buildFaction("hegemony"), 5, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build());
+                    sector, buildOnlySystem(sector), buildRules().build());
 
             assertThat(footprints).containsOnlyKeys("hegemony");
             assertThat(footprints.get("hegemony").totalWeight()).isZero();
@@ -196,11 +196,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionKeepsPartOfColonyWeightAtZeroStabilityUnderAPartialPenalty() {
             // A half colony penalty leaves half the colony's weight at 0 stability: a
             // size-4 market -> 4 * (1 - 0.5) = 2 grid units.
-            var sector = sectorWith("shaky-system",
-                    marketAtStability(faction("hegemony"), 4, NO_STABILITY));
+            var sector = buildSectorWith("shaky-system",
+                    buildMarketAtStability(buildFaction("hegemony"), 4, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withNormalPenalty(0.5).build());
+                    sector, buildOnlySystem(sector), buildRules().withNormalPenalty(0.5).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -210,11 +210,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionClampsStabilityIntoTheVanillaBand() {
             // A modded market can report stability above 10; the fraction clamps to
             // full so a market never outweighs its own size.
-            var sector = sectorWith("overstable-system",
-                    marketAtStability(faction("hegemony"), 3, 12.0f));
+            var sector = buildSectorWith("overstable-system",
+                    buildMarketAtStability(buildFaction("hegemony"), 3, 12.0f));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build());
+                    sector, buildOnlySystem(sector), buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(3 * DOMINANCE_WEIGHT_SCALE);
@@ -224,21 +224,21 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionSkipsConditionOnlyMarket() {
             // A bare rock's condition-only placeholder is no colony, so it folds into
             // no footprint.
-            var sector = sectorWith("bare-system",
-                    market(faction("hegemony"), 6, true, false, false, FULL_STABILITY));
+            var sector = buildSectorWith("bare-system",
+                    buildMarket(buildFaction("hegemony"), 6, true, false, false, FULL_STABILITY));
 
             assertThat(KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build())).isEmpty();
+                    sector, buildOnlySystem(sector), buildRules().build())).isEmpty();
         }
 
         @Test
         void readByFactionCountsHiddenMarketAtItsFixedWeightByDefault() {
             // A hidden market folds in at its fixed token weight of 1 rather than its
             // real size 5, so it flags presence without skewing dominance.
-            var sector = sectorWith("hidden-system", hiddenMarket(faction("hegemony"), 5));
+            var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build());
+                    sector, buildOnlySystem(sector), buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(DOMINANCE_WEIGHT_SCALE);
@@ -248,11 +248,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionScalesTheFixedHiddenMarketTokenByStability() {
             // The fixed token is a size rating like any other, so the colony penalty
             // scales it too: a destabilised hidden market marks less presence.
-            var sector = sectorWith("hidden-shaky-system",
-                    hiddenMarketAtStability(faction("hegemony"), 5, HALF_STABILITY));
+            var sector = buildSectorWith("hidden-shaky-system",
+                    buildHiddenMarketAtStability(buildFaction("hegemony"), 5, HALF_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build());
+                    sector, buildOnlySystem(sector), buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(DOMINANCE_WEIGHT_SCALE / 2);
@@ -262,10 +262,10 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionCountsHiddenMarketByRealSizeUnderNormalScaling() {
             // Under Normal scaling a hidden market counts by its real size like any
             // colony: size 5 -> 5 grid units.
-            var sector = sectorWith("hidden-system", hiddenMarket(faction("hegemony"), 5));
+            var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withHiddenMarketScaling(HiddenMarketScalingChoice.NORMAL).build());
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withHiddenMarketScaling(HiddenMarketScalingChoice.NORMAL).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -275,10 +275,10 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionUsesTheConfiguredFixedHiddenMarketWeight() {
             // The fixed hidden-market weight sets the token size a hidden market folds in
             // at: at weight 2 a hidden market of any real size -> 2 grid units.
-            var sector = sectorWith("hidden-system", hiddenMarket(faction("hegemony"), 5));
+            var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withHiddenMarketFixedWeight(2.0).build());
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withHiddenMarketFixedWeight(2.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -288,11 +288,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionScalesTheFixedHiddenMarketTokenByTheColonyWeight() {
             // The colony-size weight scales a hidden market's fixed token of 1 the same
             // way as any base size: at weight 2, 2 grid units.
-            var sector = sectorWith("weighted-hidden-system",
-                    hiddenMarket(faction("hegemony"), 5));
+            var sector = buildSectorWith("weighted-hidden-system",
+                    buildHiddenMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withColonyWeight(2.0).build());
+                    sector, buildOnlySystem(sector), buildRules().withColonyWeight(2.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -302,11 +302,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionExcludesUndiscoveredStation() {
             // An undiscovered hidden market on a still-discoverable entity fails
             // the known-market gate, so it folds into no footprint.
-            var sector = sectorWith("undiscovered-system",
-                    undiscoveredHiddenMarket(faction("knights_of_selkie"), 5));
+            var sector = buildSectorWith("undiscovered-system",
+                    buildUndiscoveredHiddenMarket(buildFaction("knights_of_selkie"), 5));
 
             assertThat(KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build())).isEmpty();
+                    sector, buildOnlySystem(sector), buildRules().build())).isEmpty();
         }
 
         @Test
@@ -314,11 +314,11 @@ class KnownMarketFootprintsIntegrationTest {
             // The show-all-factions dev reveal drops the known-to-player gate, so an
             // undiscovered hidden market folds in at its fixed token size of 1 rather
             // than being skipped as it is under the normal filter.
-            var sector = sectorWith("undiscovered-system",
-                    undiscoveredHiddenMarket(faction("knights_of_selkie"), 5));
+            var sector = buildSectorWith("undiscovered-system",
+                    buildUndiscoveredHiddenMarket(buildFaction("knights_of_selkie"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build(), true);
+                    sector, buildOnlySystem(sector), buildRules().build(), true);
 
             assertThat(footprints).containsOnlyKeys("knights_of_selkie");
             assertThat(footprints.get("knights_of_selkie").totalWeight())
@@ -329,10 +329,10 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionAddsTheStationWeightForAnAttachedStation() {
             // A stationed size-5 market at full stability is worth the station weight
             // more than its size alone: (5 + 1) grid units.
-            var sector = sectorWith("stationed-system", stationedMarket(faction("hegemony"), 5));
+            var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withStationWeighting().build());
+                    sector, buildOnlySystem(sector), buildRules().withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(6 * DOMINANCE_WEIGHT_SCALE);
@@ -343,11 +343,11 @@ class KnownMarketFootprintsIntegrationTest {
             // Isolating the station factor (colony weight zeroed), the station bonus
             // keeps half its worth at 0 stability under its default half penalty:
             // 1 * (1 - 0.5) -> half a grid unit.
-            var sector = sectorWith("shaky-fortress-system",
-                    stationedMarketAtStability(faction("hegemony"), 5, NO_STABILITY));
+            var sector = buildSectorWith("shaky-fortress-system",
+                    buildStationedMarketAtStability(buildFaction("hegemony"), 5, NO_STABILITY));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withColonyWeight(0.0).withStationWeighting().build());
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withColonyWeight(0.0).withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(DOMINANCE_WEIGHT_SCALE / 2);
@@ -357,10 +357,10 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionAddsTheStationBonusWithoutStabilityWeighting() {
             // With the master toggle off but station weighting on, the market folds in
             // at its full size plus the flat station weight: (4 + 1) grid units.
-            var sector = sectorWith("stationed-system", stationedMarket(faction("hegemony"), 4));
+            var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 4));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withStabilityMaster(false).withStationWeighting().build());
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withStabilityMaster(false).withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -370,10 +370,10 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionDropsTheStationBonusWhenStationWeightingIsOff() {
             // A stationed market read under a station-off weighting is worth exactly its
             // size, matching an unstationed colony - the bonus is gone.
-            var sector = sectorWith("stationed-system", stationedMarket(faction("hegemony"), 5));
+            var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build());
+                    sector, buildOnlySystem(sector), buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -383,11 +383,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionGivesAHiddenStationedMarketTheStationPointAtTheHiddenRate() {
             // A hidden stationed market gets the station weight times the hidden rate on
             // its token rating of 1, at full stability: (1 + 0.5) size points.
-            var sector = sectorWith("hidden-fortress-system",
-                    hiddenStationedMarket(faction("hegemony"), 5));
+            var sector = buildSectorWith("hidden-fortress-system",
+                    buildHiddenStationedMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withStationWeighting().build());
+                    sector, buildOnlySystem(sector), buildRules().withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(3 * DOMINANCE_WEIGHT_SCALE / 2);
@@ -397,11 +397,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionIgnoresAStationTaggedNoOrbitalStation() {
             // A "station"-tagged connected entity opted out via NO_ORBITAL_STATION is not
             // a market's orbital station, so it earns no bonus: size 5 alone.
-            var sector = sectorWith("opted-out-system",
-                    marketWithOptedOutStation(faction("hegemony"), 5));
+            var sector = buildSectorWith("opted-out-system",
+                    buildMarketWithOptedOutStation(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withStationWeighting().build());
+                    sector, buildOnlySystem(sector), buildRules().withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -411,11 +411,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionSkipsTheStationScanWhenTheStationWeightIsZero() {
             // A zero station weight can add nothing, so the connected-entity station scan
             // is skipped and the stationed market folds in at its size alone.
-            var market = stationedMarket(faction("hegemony"), 5);
-            var sector = sectorWith("zero-weight-station-system", market);
+            var market = buildStationedMarket(buildFaction("hegemony"), 5);
+            var sector = buildSectorWith("zero-weight-station-system", market);
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withStabilityMaster(false).withStationWeighting()
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withStabilityMaster(false).withStationWeighting()
                             .withStationWeight(0.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -427,11 +427,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionScalesTheStationBonusByTheStationWeight() {
             // The station weight sets how many size points a station is worth: at weight
             // 2 a stationed size-4 market folds in at 4 + 2 -> 6 grid units.
-            var sector = sectorWith("heavy-station-system",
-                    stationedMarket(faction("hegemony"), 4));
+            var sector = buildSectorWith("heavy-station-system",
+                    buildStationedMarket(buildFaction("hegemony"), 4));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withStabilityMaster(false).withStationWeighting()
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withStabilityMaster(false).withStationWeighting()
                             .withStationWeight(2.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -442,10 +442,10 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionScalesVisibleMarketSizeByTheColonyWeight() {
             // The colony-size weight multiplies a visible market's raw size before the
             // station and patrol bonuses: size 4 at weight 2 -> 8 grid units.
-            var sector = sectorWith("weighted-system", visibleMarket(faction("hegemony"), 4));
+            var sector = buildSectorWith("weighted-system", buildVisibleMarket(buildFaction("hegemony"), 4));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withColonyWeight(2.0).build());
+                    sector, buildOnlySystem(sector), buildRules().withColonyWeight(2.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(8 * DOMINANCE_WEIGHT_SCALE);
@@ -455,11 +455,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionAppliesTheColonyWeightToSizeButNotTheStationPoint() {
             // The weight multiplies base size only; the station point is added after,
             // unweighted: (4 * 2) + 1 -> 9 grid units, not (4 + 1) * 2.
-            var sector = sectorWith("weighted-fortress-system",
-                    stationedMarket(faction("hegemony"), 4));
+            var sector = buildSectorWith("weighted-fortress-system",
+                    buildStationedMarket(buildFaction("hegemony"), 4));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withStabilityMaster(false).withColonyWeight(2.0)
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withStabilityMaster(false).withColonyWeight(2.0)
                             .withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -471,11 +471,11 @@ class KnownMarketFootprintsIntegrationTest {
             // A zero colony-size weight with no station or patrol bonus zeroes every
             // factor before stability, so the stability read is skipped; the market
             // still folds into the footprint (marking presence) at no dominance weight.
-            var market = visibleMarket(faction("hegemony"), 5);
-            var sector = sectorWith("weightless-system", market);
+            var market = buildVisibleMarket(buildFaction("hegemony"), 5);
+            var sector = buildSectorWith("weightless-system", market);
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withColonyWeight(0.0).build());
+                    sector, buildOnlySystem(sector), buildRules().withColonyWeight(0.0).build());
 
             assertThat(footprints).containsOnlyKeys("hegemony");
             assertThat(footprints.get("hegemony").totalWeight()).isZero();
@@ -487,11 +487,11 @@ class KnownMarketFootprintsIntegrationTest {
             // With patrols on, a colony's small/medium/large counts each fold in at their
             // tier weight: 2 small * 0.25 + 1 medium * 0.5 -> 1 size point on top of the
             // size-3 colony -> 4 grid units at full stability.
-            var sector = sectorWith("garrison-system",
-                    patrolMarket(faction("hegemony"), 3, 2, 1, 0));
+            var sector = buildSectorWith("garrison-system",
+                    buildPatrolMarket(buildFaction("hegemony"), 3, 2, 1, 0));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withPatrolWeighting().build());
+                    sector, buildOnlySystem(sector), buildRules().withPatrolWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(4 * DOMINANCE_WEIGHT_SCALE);
@@ -501,11 +501,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionWeighsPatrolTiersByTheirOwnWeights() {
             // Isolating the patrol factor (colony weight zeroed, master off), two large
             // patrols at the default large weight of 1 -> 2 size points.
-            var sector = sectorWith("heavy-garrison-system",
-                    patrolMarket(faction("hegemony"), 5, 0, 0, 2));
+            var sector = buildSectorWith("heavy-garrison-system",
+                    buildPatrolMarket(buildFaction("hegemony"), 5, 0, 0, 2));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withColonyWeight(0.0).withStabilityMaster(false)
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withColonyWeight(0.0).withStabilityMaster(false)
                             .withPatrolWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -517,11 +517,11 @@ class KnownMarketFootprintsIntegrationTest {
             // Isolating the patrol factor, a medium patrol worth 0.5 at 0 stability keeps
             // half its worth under the default half patrol penalty: 2 * 0.5 * 0.5 -> half
             // a grid unit.
-            var sector = sectorWith("shaky-garrison-system",
-                    patrolMarketAtStability(faction("hegemony"), 5, 0, 2, 0, NO_STABILITY));
+            var sector = buildSectorWith("shaky-garrison-system",
+                    buildPatrolMarketAtStability(buildFaction("hegemony"), 5, 0, 2, 0, NO_STABILITY));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withColonyWeight(0.0).withPatrolWeighting().build());
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withColonyWeight(0.0).withPatrolWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(DOMINANCE_WEIGHT_SCALE / 2);
@@ -531,11 +531,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionKeepsPatrolStrengthFullWhenTheStabilityMasterIsOff() {
             // The same garrison with the master toggle off keeps its full patrol worth at
             // 0 stability: 2 * 0.5 -> 1 grid unit.
-            var sector = sectorWith("shaky-garrison-system",
-                    patrolMarketAtStability(faction("hegemony"), 5, 0, 2, 0, NO_STABILITY));
+            var sector = buildSectorWith("shaky-garrison-system",
+                    buildPatrolMarketAtStability(buildFaction("hegemony"), 5, 0, 2, 0, NO_STABILITY));
 
-            var footprints = KnownMarketFootprints.readByFaction(sector, onlySystem(sector),
-                    rules().withColonyWeight(0.0).withStabilityMaster(false)
+            var footprints = KnownMarketFootprints.readByFaction(sector, buildOnlySystem(sector),
+                    buildRules().withColonyWeight(0.0).withStabilityMaster(false)
                             .withPatrolWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -546,11 +546,11 @@ class KnownMarketFootprintsIntegrationTest {
         void readByFactionDoesNotReadPatrolStatsWhenPatrolWeightingIsOff() {
             // With patrols off the economy patrol read is skipped, so the market's stats
             // are never touched and it folds in at its size alone.
-            var market = visibleMarket(faction("hegemony"), 5);
-            var sector = sectorWith("no-patrol-system", market);
+            var market = buildVisibleMarket(buildFaction("hegemony"), 5);
+            var sector = buildSectorWith("no-patrol-system", market);
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().build());
+                    sector, buildOnlySystem(sector), buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -562,11 +562,11 @@ class KnownMarketFootprintsIntegrationTest {
             // The patrol-count stats are also written by hidden raider and pather bases
             // that set no $patrol flag; without a functional patrol HQ the garrison
             // contributes no dominance, so a size-3 colony folds in at its size alone.
-            var sector = sectorWith("stat-only-garrison-system",
-                    patrolStatOnlyMarket(faction("hegemony"), 3, 2, 1, 0));
+            var sector = buildSectorWith("stat-only-garrison-system",
+                    buildPatrolStatOnlyMarket(buildFaction("hegemony"), 3, 2, 1, 0));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                    sector, onlySystem(sector), rules().withPatrolWeighting().build());
+                    sector, buildOnlySystem(sector), buildRules().withPatrolWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
                     .isEqualTo(3 * DOMINANCE_WEIGHT_SCALE);
@@ -575,57 +575,57 @@ class KnownMarketFootprintsIntegrationTest {
 
     // A hidden market at the given stability, for pinning that its token rating scales
     // with stability like any other size rating.
-    private static MarketAPI hiddenMarketAtStability(FactionAPI faction, int size,
+    private static MarketAPI buildHiddenMarketAtStability(FactionAPI faction, int size,
             float stability) {
-        return market(faction, size, false, true, false, stability);
+        return buildMarket(faction, size, false, true, false, stability);
     }
 
     // A visible owned market that owns an attached defensive station - a "station"-tagged
     // connected entity, the holding link vanilla itself reads.
-    private static MarketAPI stationedMarket(FactionAPI faction, int size) {
-        return withConnectedEntities(visibleMarket(faction, size), stationEntity());
+    private static MarketAPI buildStationedMarket(FactionAPI faction, int size) {
+        return withConnectedEntities(buildVisibleMarket(faction, size), buildStationEntity());
     }
 
     // A stationed market at the given stability, for pinning the station factor's own
     // low-stability penalty.
-    private static MarketAPI stationedMarketAtStability(FactionAPI faction, int size,
+    private static MarketAPI buildStationedMarketAtStability(FactionAPI faction, int size,
             float stability) {
-        return withConnectedEntities(marketAtStability(faction, size, stability), stationEntity());
+        return withConnectedEntities(buildMarketAtStability(faction, size, stability), buildStationEntity());
     }
 
     // A hidden market that owns a station, for pinning that it earns the station point
     // at the hidden rate on its token rating.
-    private static MarketAPI hiddenStationedMarket(FactionAPI faction, int size) {
-        return withConnectedEntities(hiddenMarket(faction, size), stationEntity());
+    private static MarketAPI buildHiddenStationedMarket(FactionAPI faction, int size) {
+        return withConnectedEntities(buildHiddenMarket(faction, size), buildStationEntity());
     }
 
     // A market whose only connected "station"-tagged entity is opted out via
     // NO_ORBITAL_STATION, so it is not the market's orbital station and earns no bonus.
-    private static MarketAPI marketWithOptedOutStation(FactionAPI faction, int size) {
-        return withConnectedEntities(visibleMarket(faction, size), optedOutStationEntity());
+    private static MarketAPI buildMarketWithOptedOutStation(FactionAPI faction, int size) {
+        return withConnectedEntities(buildVisibleMarket(faction, size), buildOptedOutStationEntity());
     }
 
     // A visible owned market that fields the given small/medium/large patrol counts,
     // stubbed onto its dynamic stats the way vanilla's military industries write them,
     // with the $patrol flag set so it reads as garrisoned by a functional patrol HQ.
-    private static MarketAPI patrolMarket(FactionAPI faction, int size, int small, int medium,
+    private static MarketAPI buildPatrolMarket(FactionAPI faction, int size, int small, int medium,
             int large) {
-        return withPatrols(visibleMarket(faction, size), small, medium, large);
+        return withPatrols(buildVisibleMarket(faction, size), small, medium, large);
     }
 
     // A patrolling market at the given stability, for pinning the patrol factor's own
     // low-stability penalty.
-    private static MarketAPI patrolMarketAtStability(FactionAPI faction, int size, int small,
+    private static MarketAPI buildPatrolMarketAtStability(FactionAPI faction, int size, int small,
             int medium, int large, float stability) {
-        return withPatrols(marketAtStability(faction, size, stability), small, medium, large);
+        return withPatrols(buildMarketAtStability(faction, size, stability), small, medium, large);
     }
 
     // A market carrying the patrol-count stats but no $patrol flag - a hidden raider or
     // pather base, which writes the tier counts without a functional patrol HQ. Pins that
     // the patrol contribution gates on the flag, not the raw counts.
-    private static MarketAPI patrolStatOnlyMarket(FactionAPI faction, int size, int small,
+    private static MarketAPI buildPatrolStatOnlyMarket(FactionAPI faction, int size, int small,
             int medium, int large) {
-        return withPatrolStats(visibleMarket(faction, size), small, medium, large);
+        return withPatrolStats(buildVisibleMarket(faction, size), small, medium, large);
     }
 
     // Stubs the market's connected entities - the holding link the station scan reads -
@@ -646,11 +646,11 @@ class KnownMarketFootprintsIntegrationTest {
     // the patrol read walks (getStats -> getDynamic -> getMod(tier).computeEffective).
     // Stats only: a raider base writes these without the $patrol flag.
     private static MarketAPI withPatrolStats(MarketAPI market, int small, int medium, int large) {
-        // Build each tier's mock before the getMod stubbing: patrolMod() stubs a mock
+        // Build each tier's mock before the getMod stubbing: buildPatrolMod() stubs a mock
         // of its own, and Mockito rejects a nested when(...) inside a thenReturn(...).
-        var smallMod = patrolMod(small);
-        var mediumMod = patrolMod(medium);
-        var largeMod = patrolMod(large);
+        var smallMod = buildPatrolMod(small);
+        var mediumMod = buildPatrolMod(medium);
+        var largeMod = buildPatrolMod(large);
         var dynamicMock = mock(DynamicStatsAPI.class);
         when(dynamicMock.getMod(Stats.PATROL_NUM_LIGHT_MOD)).thenReturn(smallMod);
         when(dynamicMock.getMod(Stats.PATROL_NUM_MEDIUM_MOD)).thenReturn(mediumMod);
@@ -671,7 +671,7 @@ class KnownMarketFootprintsIntegrationTest {
     }
 
     // A patrol-count mod whose effective value at base 0 is the given count.
-    private static StatBonus patrolMod(float effective) {
+    private static StatBonus buildPatrolMod(float effective) {
         var modMock = mock(StatBonus.class);
         when(modMock.computeEffective(0.0f)).thenReturn(effective);
         return modMock;
@@ -679,7 +679,7 @@ class KnownMarketFootprintsIntegrationTest {
 
     // A station entity: carries the "station" tag and no opt-out, so the scan counts it
     // as the market's orbital station.
-    private static SectorEntityToken stationEntity() {
+    private static SectorEntityToken buildStationEntity() {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.hasTag(Tags.STATION)).thenReturn(true);
         return entityMock;
@@ -687,8 +687,8 @@ class KnownMarketFootprintsIntegrationTest {
 
     // A "station"-tagged entity flagged NO_ORBITAL_STATION, vanilla's own opt-out, so
     // the scan skips it.
-    private static SectorEntityToken optedOutStationEntity() {
-        var entityMock = stationEntity();
+    private static SectorEntityToken buildOptedOutStationEntity() {
+        var entityMock = buildStationEntity();
         when(entityMock.hasTag("NO_ORBITAL_STATION")).thenReturn(true);
         return entityMock;
     }

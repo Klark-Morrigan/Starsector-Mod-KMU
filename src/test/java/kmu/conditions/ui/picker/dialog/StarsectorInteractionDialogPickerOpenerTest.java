@@ -31,10 +31,10 @@ class StarsectorInteractionDialogPickerOpenerTest {
             var openedDelegate = new AtomicReference<KmuConditionPickerDialogDelegate>();
             var openedWidth = new AtomicReference<Float>();
             var openedHeight = new AtomicReference<Float>();
-            var dialog = dialog(openedDelegate, openedWidth, openedHeight);
+            var dialog = buildDialog(openedDelegate, openedWidth, openedHeight);
             var opener = new StarsectorInteractionDialogPickerOpener(
-                    sector(campaignUI(dialog)));
-            var delegate = delegate(640f, 480f);
+                    buildSector(buildCampaignUI(dialog)));
+            var delegate = buildDelegate(640f, 480f);
 
             opener.open(delegate);
 
@@ -46,9 +46,9 @@ class StarsectorInteractionDialogPickerOpenerTest {
         @Test
         void failsWhenCampaignUiIsMissing() {
             var opener = new StarsectorInteractionDialogPickerOpener(
-                    sector(null));
+                    buildSector(null));
 
-            assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
+            assertThatThrownBy(() -> opener.open(buildDelegate(640f, 480f)))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessage("No campaign UI is active.");
         }
@@ -56,25 +56,25 @@ class StarsectorInteractionDialogPickerOpenerTest {
         @Test
         void failsWhenInteractionDialogIsMissing() {
             var opener = new StarsectorInteractionDialogPickerOpener(
-                    sector(campaignUI(null)));
+                    buildSector(buildCampaignUI(null)));
 
-            assertThatThrownBy(() -> opener.open(delegate(640f, 480f)))
+            assertThatThrownBy(() -> opener.open(buildDelegate(640f, 480f)))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessage("No interaction dialog is active.");
         }
     }
 
-    private static KmuConditionPickerDialogDelegate delegate(float width, float height) {
+    private static KmuConditionPickerDialogDelegate buildDelegate(float width, float height) {
         return new KmuConditionPickerDialogDelegate(
                 new KmuConditionPickerActionHandler(
-                        new KmuConditionService(emptyRepository()),
-                        new KmuConditionPickerModelFactory(new KmuConditionService(emptyRepository())),
+                        new KmuConditionService(buildEmptyRepository()),
+                        new KmuConditionPickerModelFactory(new KmuConditionService(buildEmptyRepository())),
                         new KmuEditableMarketStub()),
                 width,
                 height);
     }
 
-    private static KmuConditionRepository emptyRepository() {
+    private static KmuConditionRepository buildEmptyRepository() {
         return new KmuConditionRepository() {
             @Override
             public java.util.List<kmu.conditions.domain.KmuConditionSpec> getAllConditionSpecs() {
@@ -88,7 +88,7 @@ class StarsectorInteractionDialogPickerOpenerTest {
         };
     }
 
-    private static SectorAPI sector(CampaignUIAPI campaignUI) {
+    private static SectorAPI buildSector(CampaignUIAPI campaignUI) {
         return proxy(SectorAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getCampaignUI")) {
                 return campaignUI;
@@ -97,7 +97,7 @@ class StarsectorInteractionDialogPickerOpenerTest {
         });
     }
 
-    private static CampaignUIAPI campaignUI(InteractionDialogAPI dialog) {
+    private static CampaignUIAPI buildCampaignUI(InteractionDialogAPI dialog) {
         return proxy(CampaignUIAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getCurrentInteractionDialog")) {
                 return dialog;
@@ -106,7 +106,7 @@ class StarsectorInteractionDialogPickerOpenerTest {
         });
     }
 
-    private static InteractionDialogAPI dialog(
+    private static InteractionDialogAPI buildDialog(
             AtomicReference<KmuConditionPickerDialogDelegate> openedDelegate,
             AtomicReference<Float> openedWidth,
             AtomicReference<Float> openedHeight) {

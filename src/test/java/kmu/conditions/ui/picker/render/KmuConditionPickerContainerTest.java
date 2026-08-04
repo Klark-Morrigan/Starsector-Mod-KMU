@@ -64,7 +64,7 @@ class KmuConditionPickerContainerTest {
         @Test
         void renderDoesNotPrintTitleInsidePicker() {
             var titles = new ArrayList<String>();
-            var body = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            var body = buildProxy(TooltipMakerAPI.class, (proxy, method, args) -> {
                 if ("addTitle".equals(method.getName()) && args != null && args.length >= 1) {
                     titles.add(String.valueOf(args[0]));
                     return createLabel();
@@ -72,11 +72,11 @@ class KmuConditionPickerContainerTest {
                 if ("addPara".equals(method.getName())) {
                     return createLabel();
                 }
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            var panel = buildProxy(CustomPanelAPI.class, (proxy, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) return createRowPanel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
             var model = new KmuConditionPickerModel(
                     Collections.emptyList(),
@@ -93,7 +93,7 @@ class KmuConditionPickerContainerTest {
             var headerCustoms = new ArrayList<Object>();
             var gridParas = new ArrayList<String>();
 
-            var headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            var headerBody = buildProxy(TooltipMakerAPI.class, (proxy, method, args) -> {
                 if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
                     headerParas.add(String.valueOf(args[0]));
                     return createLabel();
@@ -102,18 +102,18 @@ class KmuConditionPickerContainerTest {
                     headerCustoms.add(args[0]);
                     return null;
                 }
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var gridBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            var gridBody = buildProxy(TooltipMakerAPI.class, (proxy, method, args) -> {
                 if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
                     gridParas.add(String.valueOf(args[0]));
                     return createLabel();
                 }
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            var panel = buildProxy(CustomPanelAPI.class, (proxy, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) return createRowPanel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
 
             // Empty model: summary row (containing location + conditions) goes via addCustom,
@@ -135,22 +135,22 @@ class KmuConditionPickerContainerTest {
             var headerCustoms = new ArrayList<Object>();
 
             // Proxy chain for the icon+text row panel created inside the container.
-            var position = proxy(PositionAPI.class,
-                    (proxy, method, args) -> defaultValue(method.getReturnType()));
-            var rowElement = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            var position = buildProxy(PositionAPI.class,
+                    (proxy, method, args) -> resolveDefaultValue(method.getReturnType()));
+            var rowElement = buildProxy(TooltipMakerAPI.class, (proxy, method, args) -> {
                 if ("addPara".equals(method.getName())) return createLabel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var summaryRow = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            var summaryRow = buildProxy(CustomPanelAPI.class, (proxy, method, args) -> {
                 if ("createUIElement".equals(method.getName())) return rowElement;
                 if ("addUIElement".equals(method.getName())) return position;
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var panel = proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+            var panel = buildProxy(CustomPanelAPI.class, (proxy, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) return summaryRow;
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var headerBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            var headerBody = buildProxy(TooltipMakerAPI.class, (proxy, method, args) -> {
                 if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
                     headerParas.add(String.valueOf(args[0]));
                     return createLabel();
@@ -159,11 +159,11 @@ class KmuConditionPickerContainerTest {
                     headerCustoms.add(args[0]);
                     return null;
                 }
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var gridBody = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+            var gridBody = buildProxy(TooltipMakerAPI.class, (proxy, method, args) -> {
                 if ("addPara".equals(method.getName())) return createLabel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
 
             var faction = new KmuPickerFaction(
@@ -184,7 +184,7 @@ class KmuConditionPickerContainerTest {
             var headerParas = new ArrayList<String>();
             var headerCustoms = new ArrayList<Object>();
 
-            var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            var headerBody = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
                 if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
                     headerParas.add(String.valueOf(args[0]));
                     return createLabel();
@@ -193,15 +193,15 @@ class KmuConditionPickerContainerTest {
                     headerCustoms.add(args[0]);
                     return null;
                 }
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var gridBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            var gridBody = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
                 if ("addPara".equals(method.getName())) return createLabel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            var panel = buildProxy(CustomPanelAPI.class, (p, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) return createRowPanel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
             var model = new KmuConditionPickerModel(
                     Collections.emptyList(),
@@ -218,7 +218,7 @@ class KmuConditionPickerContainerTest {
             var gridParas = new ArrayList<String>();
             var gridCustoms = new ArrayList<Object>();
 
-            var gridBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            var gridBody = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
                 if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
                     gridParas.add(String.valueOf(args[0]));
                     return createLabel();
@@ -227,32 +227,32 @@ class KmuConditionPickerContainerTest {
                     gridCustoms.add(args[0]);
                     return null;
                 }
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            var headerBody = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
                 if ("addPara".equals(method.getName())) return createLabel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
 
-            var gridPosition = proxy(PositionAPI.class,
-                    (p, method, args) -> defaultValue(method.getReturnType()));
-            var buttonPanelStub = proxy(CustomPanelAPI.class,
-                    (p, method, args) -> defaultValue(method.getReturnType()));
-            var gridPanel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            var gridPosition = buildProxy(PositionAPI.class,
+                    (p, method, args) -> resolveDefaultValue(method.getReturnType()));
+            var buttonPanelStub = buildProxy(CustomPanelAPI.class,
+                    (p, method, args) -> resolveDefaultValue(method.getReturnType()));
+            var gridPanel = buildProxy(CustomPanelAPI.class, (p, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) return buttonPanelStub;
                 if ("addComponent".equals(method.getName())) return gridPosition;
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
             int[] createCustomPanelCount = {0};
-            var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            var panel = buildProxy(CustomPanelAPI.class, (p, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) {
                     return (createCustomPanelCount[0]++ == 0) ? createRowPanel() : gridPanel;
                 }
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
 
             var model = new KmuConditionPickerModel(
-                    Collections.singletonList(entry("hot", KmuConditionPickerEntryState.PRESENT)),
+                    Collections.singletonList(buildEntry("hot", KmuConditionPickerEntryState.PRESENT)),
                     new KmuConditionPickerLocation(null, null, null, null, null, null, null));
 
             new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
@@ -263,13 +263,13 @@ class KmuConditionPickerContainerTest {
 
         @Test
         void renderResultReturnsFalseFromUpdateEntryWhenModelIsEmpty() {
-            var body = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            var body = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
                 if ("addPara".equals(method.getName())) return createLabel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            var panel = buildProxy(CustomPanelAPI.class, (p, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) return createRowPanel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
             var model = new KmuConditionPickerModel(
                     Collections.emptyList(),
@@ -278,42 +278,42 @@ class KmuConditionPickerContainerTest {
             var result =
                     new KmuConditionPickerContainer(panel).render(body, body, model, action -> { }, 400f);
 
-            assertThat(result.updateEntry(entry("hot", KmuConditionPickerEntryState.PRESENT))).isFalse();
+            assertThat(result.updateEntry(buildEntry("hot", KmuConditionPickerEntryState.PRESENT))).isFalse();
         }
 
         @Test
         void renderResultDelegatesToGridHandleForUpdateEntry() {
-            var headerBody = proxy(TooltipMakerAPI.class, (p, method, args) -> {
+            var headerBody = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
                 if ("addPara".equals(method.getName())) return createLabel();
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
-            var gridBody = proxy(TooltipMakerAPI.class,
-                    (p, method, args) -> defaultValue(method.getReturnType()));
+            var gridBody = buildProxy(TooltipMakerAPI.class,
+                    (p, method, args) -> resolveDefaultValue(method.getReturnType()));
 
-            var gridPosition = proxy(PositionAPI.class,
-                    (p, method, args) -> defaultValue(method.getReturnType()));
-            var buttonPanelStub = proxy(CustomPanelAPI.class,
-                    (p, method, args) -> defaultValue(method.getReturnType()));
-            var gridPanel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            var gridPosition = buildProxy(PositionAPI.class,
+                    (p, method, args) -> resolveDefaultValue(method.getReturnType()));
+            var buttonPanelStub = buildProxy(CustomPanelAPI.class,
+                    (p, method, args) -> resolveDefaultValue(method.getReturnType()));
+            var gridPanel = buildProxy(CustomPanelAPI.class, (p, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) return buttonPanelStub;
                 if ("addComponent".equals(method.getName())) return gridPosition;
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
             int[] count = {0};
-            var panel = proxy(CustomPanelAPI.class, (p, method, args) -> {
+            var panel = buildProxy(CustomPanelAPI.class, (p, method, args) -> {
                 if ("createCustomPanel".equals(method.getName())) return (count[0]++ == 0) ? createRowPanel() : gridPanel;
-                return defaultValue(method.getReturnType());
+                return resolveDefaultValue(method.getReturnType());
             });
 
             var model = new KmuConditionPickerModel(
-                    Collections.singletonList(entry("hot", KmuConditionPickerEntryState.PRESENT)),
+                    Collections.singletonList(buildEntry("hot", KmuConditionPickerEntryState.PRESENT)),
                     new KmuConditionPickerLocation(null, null, null, null, null, null, null));
 
             var result =
                     new KmuConditionPickerContainer(panel).render(headerBody, gridBody, model, action -> { }, 400f);
 
-            assertThat(result.updateEntry(entry("hot", KmuConditionPickerEntryState.ABSENT))).isTrue();
-            assertThat(result.updateEntry(entry("cold", KmuConditionPickerEntryState.ABSENT))).isFalse();
+            assertThat(result.updateEntry(buildEntry("hot", KmuConditionPickerEntryState.ABSENT))).isTrue();
+            assertThat(result.updateEntry(buildEntry("cold", KmuConditionPickerEntryState.ABSENT))).isFalse();
         }
     }
 
@@ -346,7 +346,7 @@ class KmuConditionPickerContainerTest {
         }
     }
 
-    private static KmuConditionPickerEntry entry(String id, KmuConditionPickerEntryState state) {
+    private static KmuConditionPickerEntry buildEntry(String id, KmuConditionPickerEntryState state) {
         return new KmuConditionPickerEntry(
                 id,
                 id,
@@ -370,24 +370,24 @@ class KmuConditionPickerContainerTest {
     }
 
     private static CustomPanelAPI createRowPanel() {
-        var position = proxy(PositionAPI.class,
-                (proxy, method, args) -> defaultValue(method.getReturnType()));
-        var rowElement = proxy(TooltipMakerAPI.class, (proxy, method, args) -> {
+        var position = buildProxy(PositionAPI.class,
+                (proxy, method, args) -> resolveDefaultValue(method.getReturnType()));
+        var rowElement = buildProxy(TooltipMakerAPI.class, (proxy, method, args) -> {
             if ("addPara".equals(method.getName())) return createLabel();
-            return defaultValue(method.getReturnType());
+            return resolveDefaultValue(method.getReturnType());
         });
-        return proxy(CustomPanelAPI.class, (proxy, method, args) -> {
+        return buildProxy(CustomPanelAPI.class, (proxy, method, args) -> {
             if ("createUIElement".equals(method.getName())) return rowElement;
             if ("addUIElement".equals(method.getName())) return position;
-            return defaultValue(method.getReturnType());
+            return resolveDefaultValue(method.getReturnType());
         });
     }
 
     private static LabelAPI createLabel() {
-        return proxy(LabelAPI.class, (proxy, method, args) -> defaultValue(method.getReturnType()));
+        return buildProxy(LabelAPI.class, (proxy, method, args) -> resolveDefaultValue(method.getReturnType()));
     }
 
-    private static Object defaultValue(Class<?> returnType) {
+    private static Object resolveDefaultValue(Class<?> returnType) {
         if (!returnType.isPrimitive()) {
             return null;
         }
@@ -418,7 +418,7 @@ class KmuConditionPickerContainerTest {
         return null;
     }
 
-    private static <T> T proxy(Class<T> type, InvocationHandler handler) {
+    private static <T> T buildProxy(Class<T> type, InvocationHandler handler) {
         return type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, handler));
     }
 }

@@ -14,16 +14,16 @@ class StarsectorConditionOfferPolicyTest {
         void offersEveryConditionWhenTheToggleIsOn() {
             var policy = new StarsectorConditionOfferPolicy(() -> true);
 
-            assertThat(policy.isConditionOfferable(spec("hot", true))).isTrue();
-            assertThat(policy.isConditionOfferable(spec("decivilized", false))).isTrue();
+            assertThat(policy.isConditionOfferable(buildSpec("hot", true))).isTrue();
+            assertThat(policy.isConditionOfferable(buildSpec("decivilized", false))).isTrue();
         }
 
         @Test
         void offersOnlyPlanetaryConditionsWhenTheToggleIsOff() {
             var policy = new StarsectorConditionOfferPolicy(() -> false);
 
-            assertThat(policy.isConditionOfferable(spec("hot", true))).isTrue();
-            assertThat(policy.isConditionOfferable(spec("decivilized", false))).isFalse();
+            assertThat(policy.isConditionOfferable(buildSpec("hot", true))).isTrue();
+            assertThat(policy.isConditionOfferable(buildSpec("decivilized", false))).isFalse();
         }
 
         @Test
@@ -34,7 +34,7 @@ class StarsectorConditionOfferPolicyTest {
                 throw new IllegalStateException("toggle must not be read for planetary conditions");
             });
 
-            assertThat(policy.isConditionOfferable(spec("hot", true))).isTrue();
+            assertThat(policy.isConditionOfferable(buildSpec("hot", true))).isTrue();
         }
 
         @Test
@@ -45,7 +45,7 @@ class StarsectorConditionOfferPolicyTest {
         }
     }
 
-    private static KmuConditionSpec spec(String id, boolean planetary) {
+    private static KmuConditionSpec buildSpec(String id, boolean planetary) {
         return new KmuConditionSpec(id, id, "graphics/icons/" + id + ".png", planetary);
     }
 }

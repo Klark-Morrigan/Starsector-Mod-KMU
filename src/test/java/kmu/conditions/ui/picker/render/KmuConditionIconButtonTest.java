@@ -59,10 +59,10 @@ class KmuConditionIconButtonTest {
 
         @Test
         void greysOutAbsentEntriesOnly() {
-            assertThat(entry(KmuConditionPickerEntryState.ABSENT).isPresent()).isFalse();
-            assertThat(entry(KmuConditionPickerEntryState.PRESENT).isPresent()).isTrue();
-            assertThat(suppressedEntry().isPresent()).isTrue();
-            assertThat(hiddenEntry().isPresent()).isTrue();
+            assertThat(buildEntry(KmuConditionPickerEntryState.ABSENT).isPresent()).isFalse();
+            assertThat(buildEntry(KmuConditionPickerEntryState.PRESENT).isPresent()).isTrue();
+            assertThat(buildSuppressedEntry().isPresent()).isTrue();
+            assertThat(buildHiddenEntry().isPresent()).isTrue();
         }
     }
 
@@ -71,7 +71,7 @@ class KmuConditionIconButtonTest {
 
         @Test
         void stylesAbsentEntriesWithDefaultButtonColoursAndGreyedOutIcon() {
-            var entry = entry(KmuConditionPickerEntryState.ABSENT);
+            var entry = buildEntry(KmuConditionPickerEntryState.ABSENT);
 
             assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
             assertButtonStyleRoles(entry, StarsectorUiColour.DARK_BLUE, StarsectorUiColour.LIGHT_BLUE);
@@ -81,7 +81,7 @@ class KmuConditionIconButtonTest {
 
         @Test
         void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenButtonColours() {
-            var entry = entry(KmuConditionPickerEntryState.PRESENT);
+            var entry = buildEntry(KmuConditionPickerEntryState.PRESENT);
 
             assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
             assertButtonStyleRoles(entry, StarsectorUiColour.DARK_GREEN, StarsectorUiColour.BRIGHT_GREEN);
@@ -91,7 +91,7 @@ class KmuConditionIconButtonTest {
 
         @Test
         void stylesHiddenPresentEntriesWithDefaultButtonColoursAndFullIcon() {
-            var entry = hiddenEntry();
+            var entry = buildHiddenEntry();
 
             assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
             assertThat(entry.isPresent()).isTrue();
@@ -100,7 +100,7 @@ class KmuConditionIconButtonTest {
 
         @Test
         void stylesSuppressedPresentEntriesWithWarningButtonColoursAndFullIcon() {
-            var entry = suppressedEntry();
+            var entry = buildSuppressedEntry();
 
             assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
             assertButtonStyleRoles(entry, StarsectorUiColour.MUTED_RED, StarsectorUiColour.BRIGHT_RED);
@@ -203,11 +203,11 @@ class KmuConditionIconButtonTest {
         @Test
         void updatesEntryStateInPlace() {
             var button = new KmuConditionIconButton(
-                    entry(KmuConditionPickerEntryState.ABSENT),
+                    buildEntry(KmuConditionPickerEntryState.ABSENT),
                     action -> {
                     });
 
-            button.updateEntry(entry(KmuConditionPickerEntryState.PRESENT));
+            button.updateEntry(buildEntry(KmuConditionPickerEntryState.PRESENT));
 
             assertThat(button.getEntry().getState()).isEqualTo(KmuConditionPickerEntryState.PRESENT);
             assertThat(button.getEntry().isPresent()).isTrue();
@@ -266,7 +266,7 @@ class KmuConditionIconButtonTest {
         }
     }
 
-    private static KmuConditionPickerEntry entry(KmuConditionPickerEntryState state) {
+    private static KmuConditionPickerEntry buildEntry(KmuConditionPickerEntryState state) {
         return new KmuConditionPickerEntry(
                 "hot",
                 "Hot",
@@ -275,7 +275,7 @@ class KmuConditionIconButtonTest {
                 "Test tooltip");
     }
 
-    private static KmuConditionPickerEntry suppressedEntry() {
+    private static KmuConditionPickerEntry buildSuppressedEntry() {
         return new KmuConditionPickerEntry(
                 "hot",
                 "Hot",
@@ -287,7 +287,7 @@ class KmuConditionIconButtonTest {
                 false);
     }
 
-    private static KmuConditionPickerEntry hiddenEntry() {
+    private static KmuConditionPickerEntry buildHiddenEntry() {
         return new KmuConditionPickerEntry(
                 "hot",
                 "Hot",
@@ -373,10 +373,10 @@ class KmuConditionIconButtonTest {
             if ("equals".equals(method.getName())) {
                 return proxy == args[0];
             }
-            return defaultValue(method.getReturnType());
+            return resolveDefaultValue(method.getReturnType());
         }
 
-        private Object defaultValue(Class<?> returnType) {
+        private Object resolveDefaultValue(Class<?> returnType) {
             if (!returnType.isPrimitive()) {
                 return null;
             }

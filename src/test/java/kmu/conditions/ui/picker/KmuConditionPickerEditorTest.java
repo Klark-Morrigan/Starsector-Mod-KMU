@@ -35,14 +35,14 @@ class KmuConditionPickerEditorTest {
         @Test
         void opensDialogBuiltFromResolvedMarketContext() {
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    spec("hot", "Hot", true),
-                    spec("cold", "Cold", true)));
+                    buildSpec("hot", "Hot", true),
+                    buildSpec("cold", "Cold", true)));
             var openedDialog = new AtomicReference<KmuConditionPickerDialogDelegate>();
             var editor = new KmuConditionPickerEditor(
                     service,
                     new KmuConditionPickerModelFactory(service),
                     openedDialog::set);
-            var market = marketWithConditions("hot");
+            var market = buildMarketWithConditions("hot");
             var context = KmuMarketUiContext.withoutPanel(
                     market,
                     KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
@@ -59,14 +59,14 @@ class KmuConditionPickerEditorTest {
         }
     }
 
-    private static KmuConditionSpec spec(String id, String name, boolean planetary) {
+    private static KmuConditionSpec buildSpec(String id, String name, boolean planetary) {
         return new KmuConditionSpec(id, name, "graphics/icons/" + id + ".png", planetary);
     }
 
-    private static MarketAPI marketWithConditions(String... conditionIds) {
+    private static MarketAPI buildMarketWithConditions(String... conditionIds) {
         var conditions = new ArrayList<MarketConditionAPI>();
         for (var conditionId : conditionIds) {
-            conditions.add(condition(conditionId));
+            conditions.add(buildCondition(conditionId));
         }
 
         return proxy(MarketAPI.class, (proxy, method, args) -> {
@@ -77,7 +77,7 @@ class KmuConditionPickerEditorTest {
         });
     }
 
-    private static MarketConditionAPI condition(String conditionId) {
+    private static MarketConditionAPI buildCondition(String conditionId) {
         return proxy(MarketConditionAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getId")) {
                 return conditionId;

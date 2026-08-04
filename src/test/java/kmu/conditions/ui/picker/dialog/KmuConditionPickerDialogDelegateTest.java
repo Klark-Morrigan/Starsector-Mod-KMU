@@ -34,7 +34,7 @@ class KmuConditionPickerDialogDelegateTest {
 
         @Test
         void resolvesActionPassedAsButtonId() {
-            var action = action();
+            var action = buildAction();
 
             assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent(action, null))
                     .contains(action);
@@ -42,7 +42,7 @@ class KmuConditionPickerDialogDelegateTest {
 
         @Test
         void resolvesActionPassedAsData() {
-            var action = action();
+            var action = buildAction();
 
             assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent("button-id", action))
                     .contains(action);
@@ -50,8 +50,8 @@ class KmuConditionPickerDialogDelegateTest {
 
         @Test
         void resolvesActionStoredOnButtonCustomData() {
-            var action = action();
-            var button = buttonWithCustomData(action);
+            var action = buildAction();
+            var button = buildButtonWithCustomData(action);
 
             assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent(button, null))
                     .contains(action);
@@ -63,7 +63,7 @@ class KmuConditionPickerDialogDelegateTest {
                     .isEmpty();
         }
 
-        private ButtonAPI buttonWithCustomData(Object customData) {
+        private ButtonAPI buildButtonWithCustomData(Object customData) {
             return (ButtonAPI) Proxy.newProxyInstance(
                     ButtonAPI.class.getClassLoader(),
                     new Class<?>[] {ButtonAPI.class},
@@ -80,11 +80,11 @@ class KmuConditionPickerDialogDelegateTest {
                         if ("equals".equals(method.getName())) {
                             return proxy == args[0];
                         }
-                        return defaultValue(method.getReturnType());
+                        return resolveDefaultValue(method.getReturnType());
                     });
         }
 
-        private Object defaultValue(Class<?> returnType) {
+        private Object resolveDefaultValue(Class<?> returnType) {
             if (!returnType.isPrimitive()) {
                 return null;
             }
@@ -171,7 +171,7 @@ class KmuConditionPickerDialogDelegateTest {
         }
     }
 
-    private static KmuConditionPickerAction action() {
+    private static KmuConditionPickerAction buildAction() {
         return KmuConditionPickerAction.fromEntry(new KmuConditionPickerEntry(
                 "hot",
                 "Hot",

@@ -58,10 +58,10 @@ final class AnchorFitFingerprintTest {
             // The case the whole mechanism turns on: nothing moved between two rebuilds, so
             // the earlier pass's placements are still describable by the later pass's rules.
             var fittedEarlier = new AnchorFitFingerprint(
-                baselineSpecification(),
+                buildBaselineSpecification(),
                 GEOMETRY_REVISION);
             var fittedLater = new AnchorFitFingerprint(
-                baselineSpecification(),
+                buildBaselineSpecification(),
                 GEOMETRY_REVISION);
 
             assertThat(fittedEarlier)
@@ -75,10 +75,10 @@ final class AnchorFitFingerprintTest {
             // A sweep knob re-aims every candidate line, so no placement made under the old
             // width describes where the search would put it now.
             var fittedAtFourteenOffsets = new AnchorFitFingerprint(
-                baselineSpecification(),
+                buildBaselineSpecification(),
                 GEOMETRY_REVISION);
             var fittedAtOneOffset = new AnchorFitFingerprint(
-                specificationWith(BORDER_TRACE, 1, FONT_HEIGHT_TOLERANCE),
+                buildSpecificationWith(BORDER_TRACE, 1, FONT_HEIGHT_TOLERANCE),
                 GEOMETRY_REVISION);
 
             assertThat(fittedAtFourteenOffsets)
@@ -90,10 +90,10 @@ final class AnchorFitFingerprintTest {
             // The band-fit half of the tuning is the library's own record, reached through
             // this one - a knob the search does not own still changes what it accepted.
             var fittedAtOneUnit = new AnchorFitFingerprint(
-                baselineSpecification(),
+                buildBaselineSpecification(),
                 GEOMETRY_REVISION);
             var fittedAtSixtyFourUnits = new AnchorFitFingerprint(
-                specificationWith(BORDER_TRACE, OFFSET_COUNT, 64.0),
+                buildSpecificationWith(BORDER_TRACE, OFFSET_COUNT, 64.0),
                 GEOMETRY_REVISION);
 
             assertThat(fittedAtOneUnit)
@@ -106,10 +106,10 @@ final class AnchorFitFingerprintTest {
             // looser weld traces different rings, so the boxes were sized inside a different
             // outline even where every other knob held.
             var fittedAgainstTightRings = new AnchorFitFingerprint(
-                baselineSpecification(),
+                buildBaselineSpecification(),
                 GEOMETRY_REVISION);
             var fittedAgainstLooseRings = new AnchorFitFingerprint(
-                specificationWith(
+                buildSpecificationWith(
                     new ClusterBorderTrace(100.0, MITER_LIMIT),
                     OFFSET_COUNT,
                     FONT_HEIGHT_TOLERANCE),
@@ -124,10 +124,10 @@ final class AnchorFitFingerprintTest {
             // Recut cells move the borders the boxes were clipped inside and the keep-out
             // sites they were trimmed clear of, neither of which any tuning knob mentions.
             var fittedBeforeTheRecut = new AnchorFitFingerprint(
-                baselineSpecification(),
+                buildBaselineSpecification(),
                 GEOMETRY_REVISION);
             var fittedAfterTheRecut = new AnchorFitFingerprint(
-                baselineSpecification(),
+                buildBaselineSpecification(),
                 GEOMETRY_REVISION + 1);
 
             assertThat(fittedBeforeTheRecut)
@@ -136,13 +136,13 @@ final class AnchorFitFingerprintTest {
     }
 
     // The tuning a case compares against, with every knob at its held value.
-    private static LabelAnchorSpecification baselineSpecification() {
-        return specificationWith(BORDER_TRACE, OFFSET_COUNT, FONT_HEIGHT_TOLERANCE);
+    private static LabelAnchorSpecification buildBaselineSpecification() {
+        return buildSpecificationWith(BORDER_TRACE, OFFSET_COUNT, FONT_HEIGHT_TOLERANCE);
     }
 
     // The same tuning with the three knobs a case varies opened up - one per depth of the
     // tree, so which nesting level a comparison failed at is named by the case that failed.
-    private static LabelAnchorSpecification specificationWith(
+    private static LabelAnchorSpecification buildSpecificationWith(
             ClusterBorderTrace borderTrace,
             int offsetCount,
             double fontHeightTolerance) {

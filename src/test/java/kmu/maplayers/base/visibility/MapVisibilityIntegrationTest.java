@@ -56,9 +56,9 @@ class MapVisibilityIntegrationTest {
 
         @Test
         void shouldAppearOnMapIsTrueForReachableSystem() {
-            var system = reachableSystem("a");
+            var system = buildReachableSystem("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(sectorWith(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWith(system), system))
                     .isTrue();
         }
 
@@ -66,25 +66,25 @@ class MapVisibilityIntegrationTest {
         void shouldAppearOnMapIsTrueForUnreachableSystemHoldingAColony() {
             // No jump point, so unreachable by the access rule, but a discovered
             // colony makes it inhabited and admits it to the map.
-            var system = unreachableSystem("a");
+            var system = buildUnreachableSystem("a");
 
             assertThat(shouldAppearOnMapUnderNoReveal(
-                    sectorWith(system, ownedMarket()), system)).isTrue();
+                    buildSectorWith(system, buildOwnedMarket()), system)).isTrue();
         }
 
         @Test
         void shouldAppearOnMapIsTrueForUnreachableSystemWithARevealedDecivilisedPlanet() {
-            var system = unreachableSystemWithDecivilisedPlanet("a");
+            var system = buildUnreachableSystemWithDecivilisedPlanet("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(sectorWith(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWith(system), system))
                     .isTrue();
         }
 
         @Test
         void shouldAppearOnMapIsFalseForUnreachableUninhabitedSystem() {
-            var system = unreachableSystem("a");
+            var system = buildUnreachableSystem("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(sectorWith(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWith(system), system))
                     .isFalse();
         }
 
@@ -92,9 +92,9 @@ class MapVisibilityIntegrationTest {
         void shouldAppearOnMapIsFalseForReachableSystemWhoseStarIsHiddenOnMap() {
             // Reachable by a jump point, but the vanilla map hides its star (an
             // abyssal rogue object), so reachability alone does not admit it.
-            var system = reachableSystem("a");
+            var system = buildReachableSystem("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(sectorWithHiddenStar(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWithHiddenStar(system), system))
                     .isFalse();
         }
 
@@ -103,9 +103,9 @@ class MapVisibilityIntegrationTest {
             // A nebula has no star anchor, so it is never in the visible-star
             // index; the vanilla map draws it as a cloud, so the rule must admit it
             // on the access path without an inhabitation.
-            var system = reachableNebula("a");
+            var system = buildReachableNebula("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(sectorWithoutStarAnchors(system), system))
+            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
                     .isTrue();
         }
 
@@ -113,8 +113,8 @@ class MapVisibilityIntegrationTest {
         void shouldAppearOnMapIsTrueForUninhabitedSystemWhenForcedOntoMap() {
             // The force override admits a system the normal rule omits - unreachable and
             // uninhabited - so the full partition can be inspected.
-            var system = unreachableSystem("a");
-            var visibleStars = VisibleStars.scan(sectorWithoutStarAnchors(system));
+            var system = buildUnreachableSystem("a");
+            var visibleStars = VisibleStars.scan(buildSectorWithoutStarAnchors(system));
 
             assertThat(MapVisibility.shouldAppearOnMap(
                     system, visibleStars, UNINHABITED, FORCED_ONTO_MAP)).isTrue();
@@ -124,8 +124,8 @@ class MapVisibilityIntegrationTest {
         void shouldAppearOnMapIsFalseForUninhabitedSystemWhenNotForced() {
             // Without the force override the same unreachable, uninhabited system
             // stays off, so the reveal is what admits it, not the fixture.
-            var system = unreachableSystem("a");
-            var visibleStars = VisibleStars.scan(sectorWithoutStarAnchors(system));
+            var system = buildUnreachableSystem("a");
+            var visibleStars = VisibleStars.scan(buildSectorWithoutStarAnchors(system));
 
             assertThat(MapVisibility.shouldAppearOnMap(
                     system, visibleStars, UNINHABITED, MapVisibilityOverrides.NONE)).isFalse();
@@ -137,44 +137,44 @@ class MapVisibilityIntegrationTest {
 
         @Test
         void isInhabitedIsTrueWhenADiscoveredColonyExists() {
-            var system = unreachableSystem("a");
+            var system = buildUnreachableSystem("a");
 
-            assertThat(isInhabitedUnderNoReveal(sectorWith(system, ownedMarket()), system))
+            assertThat(isInhabitedUnderNoReveal(buildSectorWith(system, buildOwnedMarket()), system))
                     .isTrue();
         }
 
         @Test
         void isInhabitedIsTrueWhenARevealedDecivilisedPlanetExists() {
-            var system = unreachableSystemWithDecivilisedPlanet("a");
+            var system = buildUnreachableSystemWithDecivilisedPlanet("a");
 
-            assertThat(isInhabitedUnderNoReveal(sectorWith(system), system)).isTrue();
+            assertThat(isInhabitedUnderNoReveal(buildSectorWith(system), system)).isTrue();
         }
 
         @Test
         void isInhabitedIsFalseWhenNeitherColonyNorRuinExists() {
-            var system = unreachableSystem("a");
+            var system = buildUnreachableSystem("a");
 
-            assertThat(isInhabitedUnderNoReveal(sectorWith(system), system)).isFalse();
+            assertThat(isInhabitedUnderNoReveal(buildSectorWith(system), system)).isFalse();
         }
 
         @Test
         void isInhabitedIsFalseForAnUndiscoveredColonyByDefault() {
             // An undiscovered colony fails the normal known-to-player gate, so the system
             // reads as uninhabited until the reveal is on.
-            var system = unreachableSystem("a");
+            var system = buildUnreachableSystem("a");
 
             assertThat(isInhabitedUnderNoReveal(
-                    sectorWith(system, undiscoveredColony()), system)).isFalse();
+                    buildSectorWith(system, buildUndiscoveredColony()), system)).isFalse();
         }
 
         @Test
         void isInhabitedIsTrueForAnUndiscoveredColonyWhenTheyAreIncluded() {
             // The widening folds the undiscovered colony in, so the system counts as
             // inhabited and earns a cell.
-            var system = unreachableSystem("a");
+            var system = buildUnreachableSystem("a");
 
             assertThat(MapVisibility.isInhabited(
-                    sectorWith(system, undiscoveredColony()),
+                    buildSectorWith(system, buildUndiscoveredColony()),
                     system,
                     INCLUDING_UNDISCOVERED_MARKETS)).isTrue();
         }
@@ -260,12 +260,12 @@ class MapVisibilityIntegrationTest {
 
     // Wires a single-system sector whose economy returns the given markets for
     // that system - the read the inhabitation rule makes when judging colonies.
-    private static SectorAPI sectorWith(StarSystemAPI system, MarketAPI... markets) {
+    private static SectorAPI buildSectorWith(StarSystemAPI system, MarketAPI... markets) {
         var economyMock = mock(EconomyAPI.class);
         when(economyMock.getMarkets(system)).thenReturn(List.of(markets));
         // The hyperspace mock is built before the getHyperspace() stubbing so its
         // own stubbing is not nested inside this one.
-        var hyperspaceMock = hyperspaceWithVisibleStarAnchorFor(system);
+        var hyperspaceMock = buildHyperspaceWithVisibleStarAnchorFor(system);
         var sectorMock = mock(SectorAPI.class);
         when(sectorMock.getStarSystems()).thenReturn(List.of(system));
         when(sectorMock.getEconomy()).thenReturn(economyMock);
@@ -275,10 +275,10 @@ class MapVisibilityIntegrationTest {
 
     // A reachable system whose only star anchor is hidden on the map, with an
     // empty economy so the inhabited path cannot admit it either.
-    private static SectorAPI sectorWithHiddenStar(StarSystemAPI system) {
+    private static SectorAPI buildSectorWithHiddenStar(StarSystemAPI system) {
         var economyMock = mock(EconomyAPI.class);
         when(economyMock.getMarkets(system)).thenReturn(List.of());
-        var hyperspaceMock = hyperspaceWithHiddenStarAnchorFor(system);
+        var hyperspaceMock = buildHyperspaceWithHiddenStarAnchorFor(system);
         var sectorMock = mock(SectorAPI.class);
         when(sectorMock.getStarSystems()).thenReturn(List.of(system));
         when(sectorMock.getEconomy()).thenReturn(economyMock);
@@ -288,7 +288,7 @@ class MapVisibilityIntegrationTest {
 
     // A star anchor tagged hidden leading into the system, so the vanilla map
     // draws no star and the system reads as map-invisible.
-    private static LocationAPI hyperspaceWithHiddenStarAnchorFor(StarSystemAPI system) {
+    private static LocationAPI buildHyperspaceWithHiddenStarAnchorFor(StarSystemAPI system) {
         var anchorMock = mock(JumpPointAPI.class);
         when(anchorMock.isStarAnchor()).thenReturn(true);
         when(anchorMock.hasTag(Tags.STAR_HIDDEN_ON_MAP)).thenReturn(true);
@@ -301,7 +301,7 @@ class MapVisibilityIntegrationTest {
     // A visible (untagged) star anchor leading into the system, so a reachable
     // system reads as map-visible. A system with no jump point stays off the map
     // regardless, so its anchor cannot wrongly admit it.
-    private static LocationAPI hyperspaceWithVisibleStarAnchorFor(StarSystemAPI system) {
+    private static LocationAPI buildHyperspaceWithVisibleStarAnchorFor(StarSystemAPI system) {
         var anchorMock = mock(JumpPointAPI.class);
         when(anchorMock.isStarAnchor()).thenReturn(true);
         when(anchorMock.getDestinationStarSystem()).thenReturn(system);
@@ -312,7 +312,7 @@ class MapVisibilityIntegrationTest {
 
     // A sector whose hyperspace holds no star anchor, so no system reads as
     // star-visible: the route onto the map is the nebula draw or inhabitation.
-    private static SectorAPI sectorWithoutStarAnchors(StarSystemAPI system) {
+    private static SectorAPI buildSectorWithoutStarAnchors(StarSystemAPI system) {
         var economyMock = mock(EconomyAPI.class);
         when(economyMock.getMarkets(system)).thenReturn(List.of());
         var hyperspaceMock = mock(LocationAPI.class);
@@ -324,7 +324,7 @@ class MapVisibilityIntegrationTest {
         return sectorMock;
     }
 
-    private static StarSystemAPI reachableSystem(String id) {
+    private static StarSystemAPI buildReachableSystem(String id) {
         // Wired into hyperspace by a jump point and its star drawn on the map, so
         // the access rule admits it.
         var systemMock = mock(StarSystemAPI.class);
@@ -334,15 +334,15 @@ class MapVisibilityIntegrationTest {
         return systemMock;
     }
 
-    private static StarSystemAPI reachableNebula(String id) {
+    private static StarSystemAPI buildReachableNebula(String id) {
         // Reachable, but drawn on the map as a nebula cloud rather than a star, so
         // it never appears in the visible-star index - its draw is the nebula flag.
-        var systemMock = reachableSystem(id);
+        var systemMock = buildReachableSystem(id);
         when(systemMock.isNebula()).thenReturn(true);
         return systemMock;
     }
 
-    private static StarSystemAPI unreachableSystem(String id) {
+    private static StarSystemAPI buildUnreachableSystem(String id) {
         // No jump point and not cut off - reachable only by transverse jump, so
         // the access rule rejects it; inhabitation is its only route onto the map.
         var systemMock = mock(StarSystemAPI.class);
@@ -352,16 +352,16 @@ class MapVisibilityIntegrationTest {
         return systemMock;
     }
 
-    private static StarSystemAPI unreachableSystemWithDecivilisedPlanet(String id) {
+    private static StarSystemAPI buildUnreachableSystemWithDecivilisedPlanet(String id) {
         // Build the planet (and its own stubs) before the getPlanets() stubbing,
         // so Mockito does not see one stubbing nested inside another.
-        var planet = decivilisedPlanet();
-        var systemMock = unreachableSystem(id);
+        var planet = buildDecivilisedPlanet();
+        var systemMock = buildUnreachableSystem(id);
         when(systemMock.getPlanets()).thenReturn(List.of(planet));
         return systemMock;
     }
 
-    private static PlanetAPI decivilisedPlanet() {
+    private static PlanetAPI buildDecivilisedPlanet() {
         var conditionMock = mock(MarketConditionAPI.class);
         when(conditionMock.requiresSurveying()).thenReturn(false);
         var marketMock = mock(MarketAPI.class);
@@ -374,7 +374,7 @@ class MapVisibilityIntegrationTest {
 
     // A discovered, openly owned colony: faction set, not condition-only, its
     // entity no longer discoverable - what StarSystems counts as a known colony.
-    private static MarketAPI ownedMarket() {
+    private static MarketAPI buildOwnedMarket() {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.isDiscoverable()).thenReturn(false);
         var factionMock = mock(FactionAPI.class);
@@ -391,7 +391,7 @@ class MapVisibilityIntegrationTest {
     // An undiscovered colony the player has not found: hidden market on a still-
     // discoverable entity, so it fails the normal known-to-player gate and confers
     // presence only under the show-all-factions reveal.
-    private static MarketAPI undiscoveredColony() {
+    private static MarketAPI buildUndiscoveredColony() {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.isDiscoverable()).thenReturn(true);
         var factionMock = mock(FactionAPI.class);

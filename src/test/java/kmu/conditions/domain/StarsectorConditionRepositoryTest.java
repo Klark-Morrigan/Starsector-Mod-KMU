@@ -25,11 +25,11 @@ class StarsectorConditionRepositoryTest {
 
         @Test
         void mapsAllConditionSpecsAndSkipsNullSpecs() {
-            var settings = settings(
+            var settings = buildSettings(
                     Arrays.asList(
-                            spec("hot", "Hot", "graphics/icons/hot.png", true),
+                            buildSpec("hot", "Hot", "graphics/icons/hot.png", true),
                             null,
-                            spec("population_3", "Population 3", "graphics/icons/population.png", false)),
+                            buildSpec("population_3", "Population 3", "graphics/icons/population.png", false)),
                     Map.of(),
                     new ArrayList<>());
             var repository = new StarsectorConditionRepository(settings);
@@ -48,7 +48,7 @@ class StarsectorConditionRepositoryTest {
         @Test
         void returnsEmptyListWhenSettingsReturnsNullSpecs() {
             var repository = new StarsectorConditionRepository(
-                    settings(null, Map.of(), new ArrayList<>()));
+                    buildSettings(null, Map.of(), new ArrayList<>()));
 
             assertThat(repository.getAllConditionSpecs()).isEmpty();
         }
@@ -57,7 +57,7 @@ class StarsectorConditionRepositoryTest {
         void propagatesSettingsListFailuresForServiceBoundaryToHandle() {
             var exception = new IllegalStateException("settings list failed");
             var repository = new StarsectorConditionRepository(
-                    throwingSettings("getAllMarketConditionSpecs", exception));
+                    buildThrowingSettings("getAllMarketConditionSpecs", exception));
 
             assertThatThrownBy(repository::getAllConditionSpecs)
                     .isSameAs(exception);
@@ -65,10 +65,10 @@ class StarsectorConditionRepositoryTest {
 
         @Test
         void skipsInvalidSpecsInsteadOfCrashing() {
-            var settings = settings(
+            var settings = buildSettings(
                     List.of(
-                            spec("hot", "Hot", "graphics/icons/hot.png", true),
-                            spec("   ", "Blank", "graphics/icons/blank.png", true)),
+                            buildSpec("hot", "Hot", "graphics/icons/hot.png", true),
+                            buildSpec("   ", "Blank", "graphics/icons/blank.png", true)),
                     Map.of(),
                     new ArrayList<>());
             var repository = new StarsectorConditionRepository(settings);
@@ -80,14 +80,14 @@ class StarsectorConditionRepositoryTest {
 
         @Test
         void mapsSourceModNameWhenSpecDeclaresOne() {
-            var hot = spec(
+            var hot = buildSpec(
                     "hot",
                     "Hot",
                     "graphics/icons/hot.png",
                     true,
-                    sourceMod("Utility Pack"));
+                    buildSourceMod("Utility Pack"));
             var repository = new StarsectorConditionRepository(
-                    settings(List.of(hot), Map.of(), new ArrayList<>()));
+                    buildSettings(List.of(hot), Map.of(), new ArrayList<>()));
 
             assertThat(repository.getAllConditionSpecs())
                     .singleElement()
@@ -102,9 +102,9 @@ class StarsectorConditionRepositoryTest {
         @Test
         void findsConditionSpecByTrimmedId() {
             var lookups = new ArrayList<String>();
-            var hot = spec("hot", "Hot", "graphics/icons/hot.png", true);
+            var hot = buildSpec("hot", "Hot", "graphics/icons/hot.png", true);
             var repository = new StarsectorConditionRepository(
-                    settings(List.of(), Map.of("hot", hot), lookups));
+                    buildSettings(List.of(), Map.of("hot", hot), lookups));
 
             assertThat(repository.findConditionSpec("  hot  "))
                     .hasValueSatisfying(spec -> {
@@ -118,7 +118,7 @@ class StarsectorConditionRepositoryTest {
         @Test
         void returnsEmptyForBlankOrMissingLookup() {
             var repository = new StarsectorConditionRepository(
-                    settings(List.of(), Map.of(), new ArrayList<>()));
+                    buildSettings(List.of(), Map.of(), new ArrayList<>()));
 
             assertThat(repository.findConditionSpec("   ")).isEmpty();
             assertThat(repository.findConditionSpec(null)).isEmpty();
@@ -129,14 +129,14 @@ class StarsectorConditionRepositoryTest {
         void propagatesSettingsLookupFailuresForServiceBoundaryToHandle() {
             var exception = new IllegalStateException("settings lookup failed");
             var repository = new StarsectorConditionRepository(
-                    throwingSettings("getMarketConditionSpec", exception));
+                    buildThrowingSettings("getMarketConditionSpec", exception));
 
             assertThatThrownBy(() -> repository.findConditionSpec("hot"))
                     .isSameAs(exception);
         }
     }
 
-    private static SettingsAPI settings(
+    private static SettingsAPI buildSettings(
             List<MarketConditionSpecAPI> allSpecs,
             Map<String, MarketConditionSpecAPI> lookupSpecs,
             List<String> lookupCalls) {
@@ -154,7 +154,7 @@ class StarsectorConditionRepositoryTest {
         });
     }
 
-    private static SettingsAPI throwingSettings(String methodName, RuntimeException exception) {
+    private static SettingsAPI buildThrowingSettings(String methodName, RuntimeException exception) {
         return proxy(SettingsAPI.class, (proxy, method, args) -> {
             if (method.getName().equals(methodName)) {
                 throw exception;
@@ -163,11 +163,11 @@ class StarsectorConditionRepositoryTest {
         });
     }
 
-    private static MarketConditionSpecAPI spec(String id, String name, String icon, boolean planetary) {
-        return spec(id, name, icon, planetary, null);
+    private static MarketConditionSpecAPI buildSpec(String id, String name, String icon, boolean planetary) {
+        return buildSpec(id, name, icon, planetary, null);
     }
 
-    private static MarketConditionSpecAPI spec(
+    private static MarketConditionSpecAPI buildSpec(
             String id,
             String name,
             String icon,
@@ -193,7 +193,7 @@ class StarsectorConditionRepositoryTest {
         });
     }
 
-    private static ModSpecAPI sourceMod(String name) {
+    private static ModSpecAPI buildSourceMod(String name) {
         return proxy(ModSpecAPI.class, (proxy, method, args) -> {
             if ("getName".equals(method.getName())) {
                 return name;

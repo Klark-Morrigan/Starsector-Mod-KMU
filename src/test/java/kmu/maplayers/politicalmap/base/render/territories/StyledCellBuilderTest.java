@@ -48,7 +48,7 @@ final class StyledCellBuilderTest {
 
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
     // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
-    private static PoliticalMapView viewMockDeciding(
+    private static PoliticalMapView buildViewMockDeciding(
             boolean usesIndependentStyle,
             ElementStyleAdjustment adjustment) {
 
@@ -108,9 +108,9 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(new ElementStyleAdjustment(0.5, false))),
+                buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, false))),
                 SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
                 .isEqualTo(OWNER_SECONDARY);
@@ -121,9 +121,9 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemDesaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(new ElementStyleAdjustment(1.0, true))),
+                buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(1.0, true))),
                 SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
                 .isEqualTo(DESATURATED_SECONDARY);
@@ -134,9 +134,9 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemMutesAndDesaturatesTogetherWhenBothAreSet() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(new ElementStyleAdjustment(0.5, true))),
+                buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, true))),
                 SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
                 .isEqualTo(DESATURATED_SECONDARY);
@@ -147,9 +147,9 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemLeavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(ElementStyleAdjustment.NONE)),
+                buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
                 SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
                 .isEqualTo(OWNER_SECONDARY);
@@ -164,9 +164,9 @@ final class StyledCellBuilderTest {
             // does not draw is a fact about its type rather than a hidden paint a reader has to
             // spot - and the seams it does draw are all it carries.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                drawablesWith(viewMockAdjusting(ElementStyleAdjustment.NONE)),
+                buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
                 SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(styled)
                 .isInstanceOf(StyledCell.FusedCell.class);
@@ -181,9 +181,9 @@ final class StyledCellBuilderTest {
             // stub returns the identity adjustment, so seeing the recede applied proves the filter,
             // not the view, styled the cell.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                filteringDrawablesWith(new ElementStyleAdjustment(0.5, true)),
+                buildFilteringDrawablesWith(new ElementStyleAdjustment(0.5, true)),
                 SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
                 .isEqualTo(DESATURATED_SECONDARY);
@@ -199,9 +199,9 @@ final class StyledCellBuilderTest {
             // map without being taken for decivilised: the decivilised category is "No color"
             // here, so had the null id been routed there the cell would have dropped to null.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                factionlessDrawablesWith(noColourStyle(), drawnOutlineStyle()),
+                buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
                 null,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(styled)
                 .isNotNull();
@@ -215,9 +215,9 @@ final class StyledCellBuilderTest {
             // it never fuses into a cluster with a tessellated cluster to fill from - so both the
             // paint and the baked triangles have to come back off the cell itself.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
+                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 DECIVILISED_SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
@@ -233,11 +233,11 @@ final class StyledCellBuilderTest {
             // outline recedes with it: the two are the whole of what the cell puts on the map, so
             // one receding without the other would leave a bright ring around a sunken fill.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                filteringFactionlessDrawablesWith(
-                    filledOutlineStyle(),
+                buildFilteringFactionlessDrawablesWith(
+                    buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true)),
                 DECIVILISED_SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
                 .isEqualTo(DESATURATED_PRIMARY);
@@ -255,11 +255,11 @@ final class StyledCellBuilderTest {
             // the dead colony sinks in weight while staying the neutral colour it reads as when
             // nothing is spotlighted.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                filteringFactionlessDrawablesWith(
-                    filledOutlineStyle(),
+                buildFilteringFactionlessDrawablesWith(
+                    buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, false)),
                 DECIVILISED_SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
@@ -273,11 +273,11 @@ final class StyledCellBuilderTest {
             // spotlight competes with, so the same receding pass leaves its outline at full
             // neutral strength - the sector keeps its shape.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                filteringFactionlessDrawablesWith(
-                    filledOutlineStyle(),
+                buildFilteringFactionlessDrawablesWith(
+                    buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true)),
                 "never-settled-system",
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireLoneCell(styled).outlinePaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
@@ -290,9 +290,9 @@ final class StyledCellBuilderTest {
             // Off filter the pass's recede is the identity, so a dead colony draws in the neutral
             // colour at its style opacity - an unfiltered map is unchanged by the recede path.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
+                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 DECIVILISED_SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
@@ -305,9 +305,9 @@ final class StyledCellBuilderTest {
             // The outline's opacity is its only on/off, so zeroing it must not take the fill down
             // with it: the cell is kept for whichever of the two still puts ink on the map.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                factionlessDrawablesWith(fillOnlyStyle(), drawnOutlineStyle()),
+                buildFactionlessDrawablesWith(buildFillOnlyStyle(), buildDrawnOutlineStyle()),
                 DECIVILISED_SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(styled)
                 .isNotNull();
@@ -322,9 +322,9 @@ final class StyledCellBuilderTest {
             // Uninhabited cells cover everything nothing else holds, so triangulating a fill they
             // never paints would be the rebuild's largest wasted cost - the geometry stays unbuilt.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
+                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 "never-settled-system",
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(styled)
                 .isNotNull();
@@ -335,13 +335,13 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemRoundsALoneCellsOutlineWhenTheSectorWideGateIsOn() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                roundingFactionlessDrawablesWith(filledOutlineStyle()),
+                buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
                 DECIVILISED_SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             // The cell's own sharp corner is gone: rounding steps back from it along both edges,
             // so the vertex the raw Voronoi cell had at the origin is not in the stroked outline.
-            assertThat(containsPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
+            assertThat(hasPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
                 .isFalse();
 
             // And the fill is triangulated from that same rounded ring rather than the raw one -
@@ -357,20 +357,20 @@ final class StyledCellBuilderTest {
             // has vertices": with rounding off the raw Voronoi cell is what the map draws, corner
             // at the origin included.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
+                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 DECIVILISED_SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
-            assertThat(containsPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
+            assertThat(hasPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
                 .isTrue();
         }
 
         @Test
         void buildStyledCellForSystemDropsAFactionlessCellThatDrawsNothing() {
             var styled = StyledCellBuilder.buildStyledCellForSystem(
-                factionlessDrawablesWith(noColourStyle(), drawnOutlineStyle()),
+                buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
                 DECIVILISED_SYSTEM_ID,
-                ownedCell());
+                buildOwnedCell());
 
             assertThat(styled).isNull();
         }
@@ -378,17 +378,17 @@ final class StyledCellBuilderTest {
         // A view stub that paints in the full faction style (never independent) and
         // returns the given adjustment for any bloc, so each test names only the
         // adjustment it exercises.
-        private static PoliticalMapView viewMockAdjusting(ElementStyleAdjustment adjustment) {
-            return viewMockDeciding(false, adjustment);
+        private static PoliticalMapView buildViewMockAdjusting(ElementStyleAdjustment adjustment) {
+            return buildViewMockDeciding(false, adjustment);
         }
 
         // The unfiltered factionless backdrop under a chosen pair of factionless category styles,
         // so a test names the two styles whose interplay it is about and shares everything else.
-        private static PoliticalMapTerritories factionlessDrawablesWith(
+        private static PoliticalMapTerritories buildFactionlessDrawablesWith(
                 CategoryStyle decivilisedStyle,
                 CategoryStyle uninhabitedStyle) {
-            return factionlessDrawablesWith(
-                factionlessTheme(
+            return buildFactionlessDrawablesWith(
+                buildFactionlessTheme(
                     decivilisedStyle,
                     uninhabitedStyle,
                     ThemeFixtures.createInertGlobalStyle()),
@@ -399,11 +399,11 @@ final class StyledCellBuilderTest {
         // A filtered pass over the factionless backdrop, receding by the given adjustment, with one
         // style shared by both factionless categories - so which of the two a test builds decides
         // the outcome and the styles themselves cannot account for it.
-        private static PoliticalMapTerritories filteringFactionlessDrawablesWith(
+        private static PoliticalMapTerritories buildFilteringFactionlessDrawablesWith(
                 CategoryStyle factionlessStyle,
                 ElementStyleAdjustment recede) {
-            return factionlessDrawablesWith(
-                factionlessTheme(
+            return buildFactionlessDrawablesWith(
+                buildFactionlessTheme(
                     factionlessStyle,
                     factionlessStyle,
                     ThemeFixtures.createInertGlobalStyle()),
@@ -415,11 +415,11 @@ final class StyledCellBuilderTest {
         // for the cases about the shape of a lone cell's outline rather than its colour. One
         // style for both factionless categories, since the rounding is global-tier and cannot
         // differ between them.
-        private static PoliticalMapTerritories roundingFactionlessDrawablesWith(
+        private static PoliticalMapTerritories buildRoundingFactionlessDrawablesWith(
                 CategoryStyle factionlessStyle) {
 
-            return factionlessDrawablesWith(
-                factionlessTheme(
+            return buildFactionlessDrawablesWith(
+                buildFactionlessTheme(
                     factionlessStyle,
                     factionlessStyle,
                     ThemeFixtures.createGlobalStyleRoundingBy(new CornerRoundingStyle(
@@ -435,7 +435,7 @@ final class StyledCellBuilderTest {
         // given sector-wide tier, with the owned pair held at the shared style. Taken apart from
         // the backdrop below because the two vary independently - a case is about a category
         // bundle or about a global-tier knob, never both.
-        private static RenderStyle factionlessTheme(
+        private static RenderStyle buildFactionlessTheme(
                 CategoryStyle decivilisedStyle,
                 CategoryStyle uninhabitedStyle,
                 GlobalStyle globalStyle) {
@@ -455,7 +455,7 @@ final class StyledCellBuilderTest {
         // immutable decivilised set, both null-hostile: a clean result for a null system proves
         // that path reads neither - it resolves no holder and is not taken for decivilised
         // without ever probing a map with the null key.
-        private static PoliticalMapTerritories factionlessDrawablesWith(
+        private static PoliticalMapTerritories buildFactionlessDrawablesWith(
                 RenderStyle theme,
                 String selectedBlocId,
                 ElementStyleAdjustment recede) {
@@ -469,7 +469,7 @@ final class StyledCellBuilderTest {
                     FACTIONLESS_NEUTRAL,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
                 new ViewGrouping(
-                    viewMockAdjusting(ElementStyleAdjustment.NONE),
+                    buildViewMockAdjusting(ElementStyleAdjustment.NONE),
                     HolderGrouping.identity()),
                 new FilterSnapshot(
                     selectedBlocId,
@@ -479,7 +479,7 @@ final class StyledCellBuilderTest {
 
         // A category whose outer outline is drawn (a real palette slot, resolved to the neutral
         // colour for a factionless cell), so a factionless cell built under it comes back drawable.
-        private static CategoryStyle drawnOutlineStyle() {
+        private static CategoryStyle buildDrawnOutlineStyle() {
             return new CategoryStyle(
                 new ElementStyle(
                     null,
@@ -494,7 +494,7 @@ final class StyledCellBuilderTest {
 
         // The decivilised shape: both a fill and an outline drawn, each in the neutral colour a
         // factionless cell resolves a PRIMARY slot to.
-        private static CategoryStyle filledOutlineStyle() {
+        private static CategoryStyle buildFilledOutlineStyle() {
             return new CategoryStyle(
                 new ElementStyle(
                     FactionPaletteSlot.PRIMARY, 1.0),
@@ -506,7 +506,7 @@ final class StyledCellBuilderTest {
 
         // A fill with its outline zeroed out - the one setting combination that can hide a
         // factionless outline now that neither element carries a colour choice.
-        private static CategoryStyle fillOnlyStyle() {
+        private static CategoryStyle buildFillOnlyStyle() {
             return new CategoryStyle(
                 new ElementStyle(
                     FactionPaletteSlot.PRIMARY, 1.0),
@@ -518,7 +518,7 @@ final class StyledCellBuilderTest {
 
         // A category that draws nothing - every slot "No color" - so a cell built under it drops
         // to null rather than a drawable record.
-        private static CategoryStyle noColourStyle() {
+        private static CategoryStyle buildNoColourStyle() {
             return new CategoryStyle(
                 new ElementStyle(
                     null, 1.0),
@@ -530,20 +530,20 @@ final class StyledCellBuilderTest {
 
         // An un-filtered pass over one owned system, styled by the given view stub - the backdrop
         // the view-driven adjustment tests read.
-        private static PoliticalMapTerritories drawablesWith(PoliticalMapView viewMock) {
-            return drawablesWith(viewMock, false, ElementStyleAdjustment.NONE);
+        private static PoliticalMapTerritories buildDrawablesWith(PoliticalMapView viewMock) {
+            return buildDrawablesWith(viewMock, false, ElementStyleAdjustment.NONE);
         }
 
         // A filtered pass whose recede is the given adjustment, backed by a view stub that would
         // return the identity adjustment if consulted - so a recede in the output can only have
         // come from the filter mode bypassing the view.
-        private static PoliticalMapTerritories filteringDrawablesWith(ElementStyleAdjustment recede) {
-            return drawablesWith(viewMockAdjusting(ElementStyleAdjustment.NONE), true, recede);
+        private static PoliticalMapTerritories buildFilteringDrawablesWith(ElementStyleAdjustment recede) {
+            return buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE), true, recede);
         }
 
         // The one owned system every adjustment test shares over a fixed style/palette backdrop;
         // only the view stub, whether the pass filters, and the recede it applies vary.
-        private static PoliticalMapTerritories drawablesWith(
+        private static PoliticalMapTerritories buildDrawablesWith(
                 PoliticalMapView viewMock,
                 boolean isFiltering,
                 ElementStyleAdjustment recede) {
@@ -562,7 +562,7 @@ final class StyledCellBuilderTest {
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never
         // fires; its edges are all interior seams, which the owned-cell path never reads.
-        private static ShapedCell ownedCell() {
+        private static ShapedCell buildOwnedCell() {
             return new ShapedCell(
                 List.of(
                     new double[] {0, 0},
@@ -584,7 +584,7 @@ final class StyledCellBuilderTest {
     // Whether a flattened GL_LINES run has an endpoint at the given point. The run is a flat
     // [x, y, x, y, ...] of segment endpoints, so a vertex the ring passes through appears in it
     // twice - once ending one segment and once starting the next - and either occurrence answers.
-    private static boolean containsPoint(float[] segments, float x, float y) {
+    private static boolean hasPoint(float[] segments, float x, float y) {
         for (var i = 0; i < segments.length; i += 2) {
             if (segments[i] == x && segments[i + 1] == y) {
                 return true;

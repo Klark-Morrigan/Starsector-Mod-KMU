@@ -26,7 +26,7 @@ class KmuConditionEditorEntryPointTest {
         @Test
         void opensResolvedMarketContext() {
             var context = KmuMarketUiContext.withoutPanel(
-                    market(),
+                    buildMarket(),
                     KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
             var opened = new AtomicReference<KmuMarketUiContext>();
             var entryPoint = new KmuConditionEditorEntryPoint(
@@ -51,7 +51,7 @@ class KmuConditionEditorEntryPointTest {
         @Test
         void allowsPlanetMarketTarget() {
             var context = KmuMarketUiContext.withoutPanel(
-                    planetMarket(),
+                    buildPlanetMarket(),
                     KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
             var opened = new AtomicReference<KmuMarketUiContext>();
             var entryPoint = new KmuConditionEditorEntryPoint(
@@ -65,7 +65,7 @@ class KmuConditionEditorEntryPointTest {
         @Test
         void allowsPlanetConditionOnlyMarketTarget() {
             var context = KmuMarketUiContext.withoutPanel(
-                    planetConditionOnlyMarket(),
+                    buildPlanetConditionOnlyMarket(),
                     KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
             var opened = new AtomicReference<KmuMarketUiContext>();
             var entryPoint = new KmuConditionEditorEntryPoint(
@@ -98,7 +98,7 @@ class KmuConditionEditorEntryPointTest {
             var exception = new IllegalStateException("editor failed");
             var reports = new ArrayList<String>();
             var context = KmuMarketUiContext.withoutPanel(
-                    market(),
+                    buildMarket(),
                     KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
             var entryPoint = new KmuConditionEditorEntryPoint(
                     () -> Optional.of(context),
@@ -118,7 +118,7 @@ class KmuConditionEditorEntryPointTest {
         @Test
         void returnsDetailedOpenedResult() {
             var context = KmuMarketUiContext.withoutPanel(
-                    market(),
+                    buildMarket(),
                     KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
             var entryPoint = new KmuConditionEditorEntryPoint(
                     () -> Optional.of(context),
@@ -134,7 +134,7 @@ class KmuConditionEditorEntryPointTest {
         @Test
         void rejectsUnsupportedMarketTarget() {
             var context = KmuMarketUiContext.withoutPanel(
-                    marketWithoutPlanetSupport(),
+                    buildMarketWithoutPlanetSupport(),
                     KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
             var opened = new AtomicReference<KmuMarketUiContext>();
             var entryPoint = new KmuConditionEditorEntryPoint(
@@ -153,7 +153,7 @@ class KmuConditionEditorEntryPointTest {
             var exception = new IllegalStateException("target check failed");
             var reports = new ArrayList<String>();
             var context = KmuMarketUiContext.withoutPanel(
-                    marketThrowingOnPlanetLookup(exception),
+                    buildMarketThrowingOnPlanetLookup(exception),
                     KmuMarketUiContextSource.INTERACTION_DIALOG_TARGET);
             var entryPoint = new KmuConditionEditorEntryPoint(
                     () -> Optional.of(context),
@@ -170,23 +170,23 @@ class KmuConditionEditorEntryPointTest {
         }
     }
 
-    private static MarketAPI market() {
+    private static MarketAPI buildMarket() {
         return proxy(MarketAPI.class, KmuConditionEditorEntryPointTest::handleObjectMethodOrThrow);
     }
 
-    private static MarketAPI marketWithoutPlanetSupport() {
-        return marketWithPlanetSupport(null, false);
+    private static MarketAPI buildMarketWithoutPlanetSupport() {
+        return buildMarketWithPlanetSupport(null, false);
     }
 
-    private static MarketAPI planetMarket() {
-        return marketWithPlanetSupport(proxy(PlanetAPI.class, KmuConditionEditorEntryPointTest::handleObjectMethodOrThrow), false);
+    private static MarketAPI buildPlanetMarket() {
+        return buildMarketWithPlanetSupport(proxy(PlanetAPI.class, KmuConditionEditorEntryPointTest::handleObjectMethodOrThrow), false);
     }
 
-    private static MarketAPI planetConditionOnlyMarket() {
-        return marketWithPlanetSupport(null, true);
+    private static MarketAPI buildPlanetConditionOnlyMarket() {
+        return buildMarketWithPlanetSupport(null, true);
     }
 
-    private static MarketAPI marketWithPlanetSupport(PlanetAPI planet, boolean planetConditionMarketOnly) {
+    private static MarketAPI buildMarketWithPlanetSupport(PlanetAPI planet, boolean planetConditionMarketOnly) {
         return proxy(MarketAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getPlanetEntity")) {
                 return planet;
@@ -198,7 +198,7 @@ class KmuConditionEditorEntryPointTest {
         });
     }
 
-    private static MarketAPI marketThrowingOnPlanetLookup(RuntimeException exception) {
+    private static MarketAPI buildMarketThrowingOnPlanetLookup(RuntimeException exception) {
         return proxy(MarketAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getPlanetEntity")) {
                 throw exception;

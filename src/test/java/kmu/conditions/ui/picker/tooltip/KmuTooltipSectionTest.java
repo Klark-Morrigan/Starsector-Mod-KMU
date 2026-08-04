@@ -153,10 +153,10 @@ class KmuTooltipSectionTest {
             if ("equals".equals(method.getName())) {
                 return proxy == args[0];
             }
-            return defaultValue(method.getReturnType());
+            return resolveDefaultValue(method.getReturnType());
         }
 
-        private Object defaultValue(Class<?> returnType) {
+        private Object resolveDefaultValue(Class<?> returnType) {
             if (!returnType.isPrimitive()) {
                 return null;
             }

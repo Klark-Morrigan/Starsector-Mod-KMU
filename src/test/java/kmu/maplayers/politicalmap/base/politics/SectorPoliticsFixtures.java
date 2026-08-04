@@ -59,7 +59,7 @@ public final class SectorPoliticsFixtures {
      *
      * @return the shared stability-only weighting rule
      */
-    public static DominanceRules stabilityWeightedRules() {
+    public static DominanceRules buildStabilityWeightedRules() {
         return new DominanceRules(true,
                 new BaseSizeWeighting(1.0, HiddenMarketScalingChoice.FIXED, 1.0, 1.0),
                 new StationWeighting(false, 1.0, 0.5, 0.5),
@@ -74,7 +74,7 @@ public final class SectorPoliticsFixtures {
      * @param bright the faction's bright fill colour
      * @return the derived dark seam shade
      */
-    public static Color dark(Color bright) {
+    public static Color buildDarkTheme(Color bright) {
         return bright.darker();
     }
 
@@ -85,7 +85,7 @@ public final class SectorPoliticsFixtures {
      * @param id the faction id
      * @return the faction mock
      */
-    public static FactionAPI faction(String id) {
+    public static FactionAPI buildFaction(String id) {
         var factionMock = mock(FactionAPI.class);
         when(factionMock.getId()).thenReturn(id);
         return factionMock;
@@ -99,10 +99,10 @@ public final class SectorPoliticsFixtures {
      * @param bright the faction's bright fill colour
      * @return the faction mock with its palette stubbed
      */
-    public static FactionAPI faction(String id, Color bright) {
-        var factionMock = faction(id);
+    public static FactionAPI buildFaction(String id, Color bright) {
+        var factionMock = buildFaction(id);
         when(factionMock.getBrightUIColor()).thenReturn(bright);
-        when(factionMock.getDarkUIColor()).thenReturn(dark(bright));
+        when(factionMock.getDarkUIColor()).thenReturn(buildDarkTheme(bright));
         return factionMock;
     }
 
@@ -113,8 +113,8 @@ public final class SectorPoliticsFixtures {
      * @param size    the colony size
      * @return the market mock
      */
-    public static MarketAPI visibleMarket(FactionAPI faction, int size) {
-        return market(faction, size, false, false, false, FULL_STABILITY);
+    public static MarketAPI buildVisibleMarket(FactionAPI faction, int size) {
+        return buildMarket(faction, size, false, false, false, FULL_STABILITY);
     }
 
     /**
@@ -126,8 +126,8 @@ public final class SectorPoliticsFixtures {
      * @param stability the market's stability value
      * @return the market mock
      */
-    public static MarketAPI marketAtStability(FactionAPI faction, int size, float stability) {
-        return market(faction, size, false, false, false, stability);
+    public static MarketAPI buildMarketAtStability(FactionAPI faction, int size, float stability) {
+        return buildMarket(faction, size, false, false, false, stability);
     }
 
     /**
@@ -138,8 +138,8 @@ public final class SectorPoliticsFixtures {
      * @param size    the colony size
      * @return the market mock
      */
-    public static MarketAPI hiddenMarket(FactionAPI faction, int size) {
-        return market(faction, size, false, true, false, FULL_STABILITY);
+    public static MarketAPI buildHiddenMarket(FactionAPI faction, int size) {
+        return buildMarket(faction, size, false, true, false, FULL_STABILITY);
     }
 
     /**
@@ -150,8 +150,8 @@ public final class SectorPoliticsFixtures {
      * @param size    the colony size
      * @return the market mock
      */
-    public static MarketAPI undiscoveredHiddenMarket(FactionAPI faction, int size) {
-        return market(faction, size, false, true, true, FULL_STABILITY);
+    public static MarketAPI buildUndiscoveredHiddenMarket(FactionAPI faction, int size) {
+        return buildMarket(faction, size, false, true, true, FULL_STABILITY);
     }
 
     /**
@@ -166,7 +166,7 @@ public final class SectorPoliticsFixtures {
      * @param stability       the market's stability value
      * @return the market mock
      */
-    public static MarketAPI market(FactionAPI faction, int size, boolean isConditionOnly,
+    public static MarketAPI buildMarket(FactionAPI faction, int size, boolean isConditionOnly,
             boolean isHidden, boolean isUndiscovered, float stability) {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.isDiscoverable()).thenReturn(isUndiscovered);
@@ -186,7 +186,7 @@ public final class SectorPoliticsFixtures {
      * @param sector the sector to read
      * @return its sole star system
      */
-    public static StarSystemAPI onlySystem(SectorAPI sector) {
+    public static StarSystemAPI buildOnlySystem(SectorAPI sector) {
         return sector.getStarSystems().get(0);
     }
 
@@ -198,7 +198,7 @@ public final class SectorPoliticsFixtures {
      * @param y the star's y location
      * @return the star mock
      */
-    public static PlanetAPI starAt(float x, float y) {
+    public static PlanetAPI buildStarAt(float x, float y) {
         var starMock = mock(PlanetAPI.class);
         when(starMock.isStar()).thenReturn(true);
         when(starMock.getLocation()).thenReturn(new Vector2f(x, y));
@@ -213,7 +213,7 @@ public final class SectorPoliticsFixtures {
      * @param focus  the body it orbits
      * @return the orbiting-entity mock
      */
-    public static SectorEntityToken orbitingEntity(float radius, SectorEntityToken focus) {
+    public static SectorEntityToken buildOrbitingEntity(float radius, SectorEntityToken focus) {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.getCircularOrbitRadius()).thenReturn(radius);
         when(entityMock.getOrbitFocus()).thenReturn(focus);
@@ -231,7 +231,7 @@ public final class SectorPoliticsFixtures {
     public static void placeMarketOnOrbit(MarketAPI market, float radius, SectorEntityToken focus) {
         // Build the orbiting entity (which stubs its own orbit) before opening the market's
         // stubbing, so the two do not nest into an unfinished-stubbing error.
-        var entityMock = orbitingEntity(radius, focus);
+        var entityMock = buildOrbitingEntity(radius, focus);
         when(market.getPrimaryEntity()).thenReturn(entityMock);
     }
 
@@ -255,7 +255,7 @@ public final class SectorPoliticsFixtures {
      * @param markets  the markets its economy holds
      * @return the sector mock
      */
-    public static SectorAPI sectorWith(String systemId, MarketAPI... markets) {
+    public static SectorAPI buildSectorWith(String systemId, MarketAPI... markets) {
         var systemMock = mock(StarSystemAPI.class);
         when(systemMock.getId()).thenReturn(systemId);
         var economyMock = mock(EconomyAPI.class);
@@ -275,8 +275,8 @@ public final class SectorPoliticsFixtures {
      * @param markets  the markets its economy holds
      * @return the sector mock
      */
-    public static SectorAPI sectorWith(String systemId, List<FactionAPI> factions, MarketAPI... markets) {
-        var sectorMock = sectorWith(systemId, markets);
+    public static SectorAPI buildSectorWith(String systemId, List<FactionAPI> factions, MarketAPI... markets) {
+        var sectorMock = buildSectorWith(systemId, markets);
         for (var faction : factions) {
             when(sectorMock.getFaction(faction.getId())).thenReturn(faction);
         }
@@ -292,7 +292,7 @@ public final class SectorPoliticsFixtures {
      * @param systems  each system's id paired with its markets
      * @return the sector mock
      */
-    public static SectorAPI sectorWithSystems(List<FactionAPI> factions, SystemMarkets... systems) {
+    public static SectorAPI buildSectorWithSystems(List<FactionAPI> factions, SystemMarkets... systems) {
         var economyMock = mock(EconomyAPI.class);
         var systemMocks = new ArrayList<StarSystemAPI>();
         for (var system : systems) {
@@ -327,7 +327,7 @@ public final class SectorPoliticsFixtures {
      * @param markets the markets the system's economy holds
      * @return the system-markets pairing
      */
-    public static SystemMarkets systemMarkets(String id, MarketAPI... markets) {
+    public static SystemMarkets listSystemMarkets(String id, MarketAPI... markets) {
         return new SystemMarkets(id, List.of(markets));
     }
 }

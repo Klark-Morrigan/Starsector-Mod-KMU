@@ -14,14 +14,14 @@ class KmuConditionOfferPolicyTest {
         void offersPlanetaryConditions() {
             var policy = KmuConditionOfferPolicy.planetaryOnly();
 
-            assertThat(policy.isConditionOfferable(spec("hot", true))).isTrue();
+            assertThat(policy.isConditionOfferable(buildSpec("hot", true))).isTrue();
         }
 
         @Test
         void rejectsNonPlanetaryConditions() {
             var policy = KmuConditionOfferPolicy.planetaryOnly();
 
-            assertThat(policy.isConditionOfferable(spec("decivilized", false))).isFalse();
+            assertThat(policy.isConditionOfferable(buildSpec("decivilized", false))).isFalse();
         }
 
         @Test
@@ -32,7 +32,7 @@ class KmuConditionOfferPolicyTest {
         }
     }
 
-    private static KmuConditionSpec spec(String id, boolean planetary) {
+    private static KmuConditionSpec buildSpec(String id, boolean planetary) {
         return new KmuConditionSpec(id, id, "graphics/icons/" + id + ".png", planetary);
     }
 }

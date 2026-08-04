@@ -90,30 +90,30 @@ final class FactionTerritoryBuilderTest {
     private static final double MITER_SPIKE_LIMIT = 4.0;
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
         HELD_SYSTEM, List.of(
-            edgeFacing(0, 0, 2000, 0, null),
-            edgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
-            edgeFacing(2000, 2000, 0, 2000, null),
-            edgeFacing(0, 2000, 0, 0, null)),
+            buildEdgeFacing(0, 0, 2000, 0, null),
+            buildEdgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
+            buildEdgeFacing(2000, 2000, 0, 2000, null),
+            buildEdgeFacing(0, 2000, 0, 0, null)),
         NEIGHBOUR_SYSTEM, List.of(
-            edgeFacing(2000, 0, 4000, 0, null),
-            edgeFacing(4000, 0, 4000, 2000, null),
-            edgeFacing(4000, 2000, 2000, 2000, null),
-            edgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
+            buildEdgeFacing(2000, 0, 4000, 0, null),
+            buildEdgeFacing(4000, 0, 4000, 2000, null),
+            buildEdgeFacing(4000, 2000, 2000, 2000, null),
+            buildEdgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
         ISLAND_SYSTEM, List.of(
-            edgeFacing(10000, 0, 12000, 0, null),
-            edgeFacing(12000, 0, 12000, 2000, null),
-            edgeFacing(12000, 2000, 10000, 2000, null),
-            edgeFacing(10000, 2000, 10000, 0, null)),
+            buildEdgeFacing(10000, 0, 12000, 0, null),
+            buildEdgeFacing(12000, 0, 12000, 2000, null),
+            buildEdgeFacing(12000, 2000, 10000, 2000, null),
+            buildEdgeFacing(10000, 2000, 10000, 0, null)),
         EXCLAVE_SYSTEM, List.of(
-            edgeFacing(30000, 0, 32000, 0, null),
-            edgeFacing(32000, 0, 32000, 2000, null),
-            edgeFacing(32000, 2000, 30000, 2000, null),
-            edgeFacing(30000, 2000, 30000, 0, null)),
+            buildEdgeFacing(30000, 0, 32000, 0, null),
+            buildEdgeFacing(32000, 0, 32000, 2000, null),
+            buildEdgeFacing(32000, 2000, 30000, 2000, null),
+            buildEdgeFacing(30000, 2000, 30000, 0, null)),
         RIVAL_SYSTEM, List.of(
-            edgeFacing(20000, 0, 22000, 0, null),
-            edgeFacing(22000, 0, 22000, 2000, null),
-            edgeFacing(22000, 2000, 20000, 2000, null),
-            edgeFacing(20000, 2000, 20000, 0, null)));
+            buildEdgeFacing(20000, 0, 22000, 0, null),
+            buildEdgeFacing(22000, 0, 22000, 2000, null),
+            buildEdgeFacing(22000, 2000, 20000, 2000, null),
+            buildEdgeFacing(20000, 2000, 20000, 0, null)));
 
     // The trace reads its parameters off the live settings, so the seam stands for every case
     // here; without it the two Dev-tab reads would fault outside the game.
@@ -141,8 +141,8 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryTracesTwoTouchingSystemsAsOneFrontier() {
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
-                territoriesStyledBy(drawnStyle()),
-                cellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
+                buildTerritoriesStyledBy(buildDrawnStyle()),
+                listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
                 HEGEMONY,
                 List.of(HELD_SYSTEM, NEIGHBOUR_SYSTEM));
 
@@ -163,8 +163,8 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryTracesDisjointHoldingsAsAClusterApiece() {
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
-                territoriesStyledBy(drawnStyle()),
-                cellsFor(ISLAND_SYSTEM, EXCLAVE_SYSTEM),
+                buildTerritoriesStyledBy(buildDrawnStyle()),
+                listCellsFor(ISLAND_SYSTEM, EXCLAVE_SYSTEM),
                 HEGEMONY,
                 List.of(ISLAND_SYSTEM, EXCLAVE_SYSTEM));
 
@@ -184,8 +184,8 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryTracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
-                territoriesStyledBy(drawnStyle(), gridHolders()),
-                gridCells(),
+                buildTerritoriesStyledBy(buildDrawnStyle(), listGridHolders()),
+                listGridCells(),
                 HEGEMONY,
                 listGridRingCellIds());
 
@@ -207,8 +207,8 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryPaintsEachSlotFromItsOwnPaletteChoiceAndOpacity() {
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
-                territoriesStyledBy(drawnStyle()),
-                cellsFor(ISLAND_SYSTEM),
+                buildTerritoriesStyledBy(buildDrawnStyle()),
+                listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
                 List.of(ISLAND_SYSTEM));
 
@@ -228,8 +228,8 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryBakesNoBorderRunsForANoColourBorder() {
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
-                territoriesStyledBy(fillOnlyStyle()),
-                cellsFor(ISLAND_SYSTEM),
+                buildTerritoriesStyledBy(buildFillOnlyStyle()),
+                listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
                 List.of(ISLAND_SYSTEM));
 
@@ -249,8 +249,8 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryBakesNothingWhenNeitherFillNorBorderDrawsAColour() {
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
-                territoriesStyledBy(noColourStyle()),
-                cellsFor(ISLAND_SYSTEM),
+                buildTerritoriesStyledBy(buildNoColourStyle()),
+                listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
                 List.of(ISLAND_SYSTEM));
 
@@ -268,7 +268,7 @@ final class FactionTerritoryBuilderTest {
                 HELD_SYSTEM));
 
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
-                territoriesStyledBy(drawnStyle()),
+                buildTerritoriesStyledBy(buildDrawnStyle()),
                 geometryCacheMock,
                 HEGEMONY,
                 List.of(HELD_SYSTEM));
@@ -284,7 +284,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildAllFactionTerritoriesKeysEachBlocsTerritoryByItsGroupingKey() {
-            var territories = territoriesStyledBy(drawnStyle(), Map.of(
+            var territories = buildTerritoriesStyledBy(buildDrawnStyle(), Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_OWNER,
                 NEIGHBOUR_SYSTEM,
@@ -294,7 +294,7 @@ final class FactionTerritoryBuilderTest {
 
             FactionTerritoryBuilder.buildAllFactionTerritories(
                 territories,
-                cellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM, RIVAL_SYSTEM));
+                listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM, RIVAL_SYSTEM));
 
             // One entry per bloc rather than per system: the two Hegemony systems fuse into the
             // single territory their shared key groups them into.
@@ -307,7 +307,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildAllFactionTerritoriesSkipsABlocThatBakesNothing() {
-            var territories = territoriesStyledBy(drawnStyle(), Map.of(
+            var territories = buildTerritoriesStyledBy(buildDrawnStyle(), Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_OWNER,
                 RIVAL_SYSTEM,
@@ -335,7 +335,7 @@ final class FactionTerritoryBuilderTest {
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge edgeFacing(
+    private static CellEdge buildEdgeFacing(
             double x1,
             double y1,
             double x2,
@@ -354,15 +354,15 @@ final class FactionTerritoryBuilderTest {
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
     // partition a bloc's border is traced from.
     // The 3x3 block as a geometry cache, every cell drawing as its own system.
-    private static CellGeometryCache gridCells() {
+    private static CellGeometryCache listGridCells() {
         var geometryCacheMock = mock(CellGeometryCache.class);
         var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
         var systemIdByCellId = new LinkedHashMap<String, String>();
 
         for (var column = 0; column < GRID_SPAN; column++) {
             for (var row = 0; row < GRID_SPAN; row++) {
-                edgesByCellId.put(gridCellId(column, row), listGridCellEdges(column, row));
-                systemIdByCellId.put(gridCellId(column, row), gridCellId(column, row));
+                edgesByCellId.put(readGridCellId(column, row), listGridCellEdges(column, row));
+                systemIdByCellId.put(readGridCellId(column, row), readGridCellId(column, row));
             }
         }
         when(geometryCacheMock.getCellEdgesByCellId())
@@ -375,12 +375,12 @@ final class FactionTerritoryBuilderTest {
 
     // The ring to the Hegemony and the middle to its rival - the holding that makes the middle an
     // enclave rather than a gap in the trace.
-    private static Map<String, DominantHolder> gridHolders() {
+    private static Map<String, DominantHolder> listGridHolders() {
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         for (var column = 0; column < GRID_SPAN; column++) {
             for (var row = 0; row < GRID_SPAN; row++) {
                 ownerBySystemId.put(
-                    gridCellId(column, row),
+                    readGridCellId(column, row),
                     isGridCentre(column, row) ? TRITACHYON_OWNER : HEGEMONY_OWNER);
             }
         }
@@ -393,7 +393,7 @@ final class FactionTerritoryBuilderTest {
         for (var column = 0; column < GRID_SPAN; column++) {
             for (var row = 0; row < GRID_SPAN; row++) {
                 if (!isGridCentre(column, row)) {
-                    cellIds.add(gridCellId(column, row));
+                    cellIds.add(readGridCellId(column, row));
                 }
             }
         }
@@ -409,10 +409,10 @@ final class FactionTerritoryBuilderTest {
         var maxY = minY + GRID_CELL_SIDE;
 
         return List.of(
-            edgeFacing(minX, minY, maxX, minY, findGridNeighbourId(column, row - 1)),
-            edgeFacing(maxX, minY, maxX, maxY, findGridNeighbourId(column + 1, row)),
-            edgeFacing(maxX, maxY, minX, maxY, findGridNeighbourId(column, row + 1)),
-            edgeFacing(minX, maxY, minX, minY, findGridNeighbourId(column - 1, row)));
+            buildEdgeFacing(minX, minY, maxX, minY, findGridNeighbourId(column, row - 1)),
+            buildEdgeFacing(maxX, minY, maxX, maxY, findGridNeighbourId(column + 1, row)),
+            buildEdgeFacing(maxX, maxY, minX, maxY, findGridNeighbourId(column, row + 1)),
+            buildEdgeFacing(minX, maxY, minX, minY, findGridNeighbourId(column - 1, row)));
     }
 
     // The cell across one edge, or null where the edge is on the block's rim and faces nothing.
@@ -420,10 +420,10 @@ final class FactionTerritoryBuilderTest {
         var isOffTheGrid = column < 0 || column >= GRID_SPAN || row < 0 || row >= GRID_SPAN;
         return isOffTheGrid
             ? null
-            : gridCellId(column, row);
+            : readGridCellId(column, row);
     }
 
-    private static String gridCellId(int column, int row) {
+    private static String readGridCellId(int column, int row) {
         return "grid-" + column + "-" + row;
     }
 
@@ -431,7 +431,7 @@ final class FactionTerritoryBuilderTest {
         return column == GRID_CENTRE && row == GRID_CENTRE;
     }
 
-    private static CellGeometryCache cellsFor(String... systemIds) {
+    private static CellGeometryCache listCellsFor(String... systemIds) {
 
         var geometryCacheMock = mock(CellGeometryCache.class);
         var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
@@ -452,8 +452,8 @@ final class FactionTerritoryBuilderTest {
 
     // An unfiltered pass over the four fixture systems, every category drawing under the one
     // style a test names - so which category the resolver picks cannot account for an outcome.
-    private static PoliticalMapTerritories territoriesStyledBy(CategoryStyle style) {
-        return territoriesStyledBy(style, Map.of(
+    private static PoliticalMapTerritories buildTerritoriesStyledBy(CategoryStyle style) {
+        return buildTerritoriesStyledBy(style, Map.of(
             HELD_SYSTEM,
             HEGEMONY_OWNER,
             NEIGHBOUR_SYSTEM,
@@ -466,7 +466,7 @@ final class FactionTerritoryBuilderTest {
             TRITACHYON_OWNER));
     }
 
-    private static PoliticalMapTerritories territoriesStyledBy(
+    private static PoliticalMapTerritories buildTerritoriesStyledBy(
             CategoryStyle style,
             Map<String, DominantHolder> ownerBySystemId) {
         return new PoliticalMapTerritories(
@@ -475,13 +475,13 @@ final class FactionTerritoryBuilderTest {
                 PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(style),
                 Color.GRAY,
                 new FactionPalette(Color.GREEN, Color.YELLOW)),
-            new ViewGrouping(viewMockAdjustingNothing(), HolderGrouping.identity()),
+            new ViewGrouping(buildViewMockAdjustingNothing(), HolderGrouping.identity()),
             new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of()));
     }
 
     // A view stub that styles every bloc as its own faction and recedes none of them, so the
     // paints below come from the category style and the holder's palette alone.
-    private static PoliticalMapView viewMockAdjustingNothing() {
+    private static PoliticalMapView buildViewMockAdjustingNothing() {
         var viewMock = mock(PoliticalMapView.class);
 
         when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
@@ -495,7 +495,7 @@ final class FactionTerritoryBuilderTest {
 
     // Fill and national border both drawn, each from a different palette slot so the two paints
     // are told apart by colour; the interior seam is a per-cell record and never read here.
-    private static CategoryStyle drawnStyle() {
+    private static CategoryStyle buildDrawnStyle() {
         return new CategoryStyle(
             new ElementStyle(
                 FactionPaletteSlot.PRIMARY,
@@ -511,7 +511,7 @@ final class FactionTerritoryBuilderTest {
     }
 
     // The fill on and the border switched off - the one slot combination that still draws.
-    private static CategoryStyle fillOnlyStyle() {
+    private static CategoryStyle buildFillOnlyStyle() {
         return new CategoryStyle(
             new ElementStyle(
                 FactionPaletteSlot.PRIMARY,
@@ -525,7 +525,7 @@ final class FactionTerritoryBuilderTest {
     }
 
     // Every slot "No color" - a bloc the player has switched off entirely.
-    private static CategoryStyle noColourStyle() {
+    private static CategoryStyle buildNoColourStyle() {
         return new CategoryStyle(
             new ElementStyle(
                 null,

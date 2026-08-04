@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.dark;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.faction;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.sectorWithSystems;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.systemMarkets;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -42,8 +42,8 @@ final class SectorClaimsIntegrationTest {
         void resolveClaimingHolderBySystemIdOmitsSystemsWithNoClaim() {
             // A system the port reports no claimant for is absent from the map, exactly as an
             // uninhabited system is absent from the held-dominance pass.
-            var sectorMock = sectorWithSystems(
-                    List.of(faction("hegemony", HEGEMONY_BRIGHT)), systemMarkets("unclaimed"));
+            var sectorMock = buildSectorWithSystems(
+                    List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("unclaimed"));
             var claimReaderFake = new ClaimReaderFake();
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
@@ -55,15 +55,15 @@ final class SectorClaimsIntegrationTest {
             // Under identity the claimant's bloc is itself, so the claimed system resolves to the
             // claiming faction's own key and authored shades - the same holder a held system of that
             // faction would carry, so the two fuse into one territory downstream.
-            var sectorMock = sectorWithSystems(
-                    List.of(faction("hegemony", HEGEMONY_BRIGHT)), systemMarkets("claimed"));
+            var sectorMock = buildSectorWithSystems(
+                    List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("claimed"));
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
                     sectorMock, HolderGrouping.identity(), claimReaderFake))
                     .containsExactly(Map.entry("claimed",
-                            new DominantHolder("hegemony", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT))));
+                            new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -75,15 +75,15 @@ final class SectorClaimsIntegrationTest {
                     Map.of("hegemony", "alliance-1"),
                     Map.of("alliance-1", "hegemony"),
                     Map.of("alliance-1", "Allied Powers"));
-            var sectorMock = sectorWithSystems(
-                    List.of(faction("hegemony", HEGEMONY_BRIGHT)), systemMarkets("claimed"));
+            var sectorMock = buildSectorWithSystems(
+                    List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("claimed"));
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
                     sectorMock, grouping, claimReaderFake))
                     .containsExactly(Map.entry("claimed",
-                            new DominantHolder("alliance-1", HEGEMONY_BRIGHT, dark(HEGEMONY_BRIGHT))));
+                            new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -91,7 +91,7 @@ final class SectorClaimsIntegrationTest {
             // A claimant the sector cannot resolve to a faction (its palette gone) yields a null
             // holder, which is dropped rather than painting a colourless cluster - mirroring how an
             // unresolved held holder drops its system.
-            var sectorMock = sectorWithSystems(List.of(), systemMarkets("claimed"));
+            var sectorMock = buildSectorWithSystems(List.of(), listSystemMarkets("claimed"));
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed", "ghost-faction");
 

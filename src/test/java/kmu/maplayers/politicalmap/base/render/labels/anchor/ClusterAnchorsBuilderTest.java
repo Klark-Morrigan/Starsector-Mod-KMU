@@ -173,7 +173,7 @@ final class ClusterAnchorsBuilderTest {
     private static final AnchorFitFingerprint FITTED_UNDER_MOVED_RULES =
         new AnchorFitFingerprint(ANCHOR_SPECIFICATION, MOVED_GEOMETRY_REVISION);
 
-    private static final Map<String, List<CellEdge>> EDGES = orderedEdges();
+    private static final Map<String, List<CellEdge>> EDGES = listOrderedEdges();
     private static final Map<String, double[]> SITES = Map.of(
         HELD_SYSTEM, new double[] {1000, 1000},
         NEIGHBOUR_SYSTEM, new double[] {3000, 1000},
@@ -253,7 +253,7 @@ final class ClusterAnchorsBuilderTest {
         when(geometryCacheMock.getSiteBySystemId())
             .thenReturn(SITES);
         when(geometryCacheMock.getSystemIdByCellId())
-            .thenReturn(identityCellsFor(EDGES.keySet()));
+            .thenReturn(listIdentityCellsFor(EDGES.keySet()));
     }
 
     @AfterEach
@@ -277,7 +277,7 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(
+                buildUnfilteredStyling(Map.of(
                     HELD_SYSTEM,
                     HEGEMONY_HOLDER,
                     NEIGHBOUR_SYSTEM,
@@ -297,7 +297,7 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(
+                buildUnfilteredStyling(Map.of(
                     HELD_SYSTEM,
                     HEGEMONY_HOLDER,
                     NEIGHBOUR_SYSTEM,
@@ -348,7 +348,7 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -364,7 +364,7 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -376,13 +376,13 @@ final class ClusterAnchorsBuilderTest {
             // alone: switching the names off has to take the fitted labels off the map, not
             // freeze the last pass's on it.
             stubNameFormat(FactionNameFormatChoice.NONE);
-            standingAnchors.replaceAnchors(List.of(staleAnchor()), FITTED_UNDER_MOVED_RULES);
+            standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -398,7 +398,7 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -412,7 +412,7 @@ final class ClusterAnchorsBuilderTest {
             // in the pair, it must hand the placements themselves on rather than searching the
             // same clusters again - the accepted line being the very object the first pass
             // produced is what says so.
-            var styling = unfilteredStyling(Map.of(
+            var styling = buildUnfilteredStyling(Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_HOLDER,
                 NEIGHBOUR_SYSTEM,
@@ -448,7 +448,7 @@ final class ClusterAnchorsBuilderTest {
             // identity can see that. The fingerprint is what catches it, and it drops the whole
             // carry-over rather than any part of it, so a moved rule leaves the rebuild exactly
             // as total as it was before reuse existed.
-            var styling = unfilteredStyling(Map.of(
+            var styling = buildUnfilteredStyling(Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_HOLDER,
                 NEIGHBOUR_SYSTEM,
@@ -480,13 +480,13 @@ final class ClusterAnchorsBuilderTest {
             // together, so a gate that emptied the list and left the previous pass's rules
             // standing beside it would offer those placements to a later rebuild that has none.
             stubNameFormat(FactionNameFormatChoice.NONE);
-            standingAnchors.replaceAnchors(List.of(staleAnchor()), FITTED_UNDER_MOVED_RULES);
+            standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -601,7 +601,7 @@ final class ClusterAnchorsBuilderTest {
             // Resolving holders walks the whole economy, so the toggle gates the read itself and
             // not just the drawing - the cost is only paid while someone is looking at the
             // overlay. The standing labels still go, as on every other path.
-            standingAnchors.replaceAnchors(List.of(staleAnchor()), FITTED_UNDER_MOVED_RULES);
+            standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 standingAnchors,
@@ -623,7 +623,7 @@ final class ClusterAnchorsBuilderTest {
 
     // The styling one unfiltered pass resolves: the given holders under the plain faction view,
     // with a palette nothing should recolour to since no bloc recedes off filter.
-    private ClusterLabelStylingSnapshot unfilteredStyling(
+    private ClusterLabelStylingSnapshot buildUnfilteredStyling(
             Map<String, DominantHolder> holderBySystemId) {
         return new ClusterLabelStylingSnapshot(
             holderBySystemId,
@@ -656,7 +656,7 @@ final class ClusterAnchorsBuilderTest {
 
     // A placement left over from an earlier pass, for the cases that ask whether the standing list
     // is cleared. Only its presence is read, so every field is inert.
-    private static ClusterAnchor staleAnchor() {
+    private static ClusterAnchor buildStaleAnchor() {
         return new ClusterAnchor(
             new ClusterIdentity("stale", Set.of("stale")),
             0f,
@@ -673,33 +673,33 @@ final class ClusterAnchorsBuilderTest {
 
     // The three fixture cells in first-seen order, so which cluster a case reads back at index 0 is
     // fixed by the map rather than by a hash.
-    private static Map<String, List<CellEdge>> orderedEdges() {
+    private static Map<String, List<CellEdge>> listOrderedEdges() {
         var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
 
         edgesByCellId.put(HELD_SYSTEM, List.of(
-            edgeFacing(0, 0, 2000, 0, null),
-            edgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
-            edgeFacing(2000, 2000, 0, 2000, null),
-            edgeFacing(0, 2000, 0, 0, null)));
+            buildEdgeFacing(0, 0, 2000, 0, null),
+            buildEdgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
+            buildEdgeFacing(2000, 2000, 0, 2000, null),
+            buildEdgeFacing(0, 2000, 0, 0, null)));
 
         edgesByCellId.put(NEIGHBOUR_SYSTEM, List.of(
-            edgeFacing(2000, 0, 4000, 0, null),
-            edgeFacing(4000, 0, 4000, 2000, null),
-            edgeFacing(4000, 2000, 2000, 2000, null),
-            edgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)));
+            buildEdgeFacing(2000, 0, 4000, 0, null),
+            buildEdgeFacing(4000, 0, 4000, 2000, null),
+            buildEdgeFacing(4000, 2000, 2000, 2000, null),
+            buildEdgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)));
             
         edgesByCellId.put(RIVAL_SYSTEM, List.of(
-            edgeFacing(20000, 0, 22000, 0, null),
-            edgeFacing(22000, 0, 22000, 2000, null),
-            edgeFacing(22000, 2000, 20000, 2000, null),
-            edgeFacing(20000, 2000, 20000, 0, null)));
+            buildEdgeFacing(20000, 0, 22000, 0, null),
+            buildEdgeFacing(22000, 0, 22000, 2000, null),
+            buildEdgeFacing(22000, 2000, 20000, 2000, null),
+            buildEdgeFacing(20000, 2000, 20000, 0, null)));
             
         return edgesByCellId;
     }
 
     // Every cell drawing as its own star - the partition the cluster walk runs over when no system
     // holds cells beyond its own.
-    private static Map<String, String> identityCellsFor(Iterable<String> cellIds) {
+    private static Map<String, String> listIdentityCellsFor(Iterable<String> cellIds) {
         var systemIdByCellId = new LinkedHashMap<String, String>();
         for (var cellId : cellIds) {
             systemIdByCellId.put(cellId, cellId);
@@ -708,7 +708,7 @@ final class ClusterAnchorsBuilderTest {
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge edgeFacing(
+    private static CellEdge buildEdgeFacing(
             double x1,
             double y1,
             double x2,

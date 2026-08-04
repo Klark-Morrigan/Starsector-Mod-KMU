@@ -89,7 +89,7 @@ final class FilterSelectionBinderTest {
                     .when(() -> FilterSelection.getSelectedIdOf(SCOPE_ID))
                     .thenReturn("storm_1");
 
-                var picker = pickerOf(buildPicker());
+                var picker = buildPickerFor(buildPicker());
 
                 // Alpha-sorted, Storm is the second row.
                 assertThat(picker.selectedIndex())
@@ -122,7 +122,7 @@ final class FilterSelectionBinderTest {
                         mockStatic(FilterSelection.class)) {
                 stubLabels(stringsMock);
 
-                var picker = pickerOf(buildPicker());
+                var picker = buildPickerFor(buildPicker());
 
                 picker.action().activateCell(0);
 
@@ -144,7 +144,7 @@ final class FilterSelectionBinderTest {
                     .when(() -> FilterSelection.getSelectedIdOf(SCOPE_ID))
                     .thenReturn("drift_1");
 
-                var picker = pickerOf(buildPicker());
+                var picker = buildPickerFor(buildPicker());
 
                 picker.action().activateCell(0);
 
@@ -196,7 +196,7 @@ final class FilterSelectionBinderTest {
     }
 
     // The picker list is always the block's last row, so a test reads it from the tail.
-    private static ControlSpec.VerticalTable pickerOf(List<ControlSpec> controls) {
+    private static ControlSpec.VerticalTable buildPickerFor(List<ControlSpec> controls) {
         return (ControlSpec.VerticalTable) controls.get(controls.size() - 1);
     }
 

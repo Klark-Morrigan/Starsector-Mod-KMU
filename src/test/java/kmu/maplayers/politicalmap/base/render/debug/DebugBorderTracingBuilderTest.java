@@ -96,30 +96,30 @@ final class DebugBorderTracingBuilderTest {
 
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
         HELD_SYSTEM, List.of(
-            edgeFacing(0, 0, 2000, 0, null),
-            edgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
-            edgeFacing(2000, 2000, 0, 2000, null),
-            edgeFacing(0, 2000, 0, 0, null)),
+            buildEdgeFacing(0, 0, 2000, 0, null),
+            buildEdgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
+            buildEdgeFacing(2000, 2000, 0, 2000, null),
+            buildEdgeFacing(0, 2000, 0, 0, null)),
         NEIGHBOUR_SYSTEM, List.of(
-            edgeFacing(2000, 0, 4000, 0, null),
-            edgeFacing(4000, 0, 4000, 2000, null),
-            edgeFacing(4000, 2000, 2000, 2000, null),
-            edgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
+            buildEdgeFacing(2000, 0, 4000, 0, null),
+            buildEdgeFacing(4000, 0, 4000, 2000, null),
+            buildEdgeFacing(4000, 2000, 2000, 2000, null),
+            buildEdgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
         DEAD_SYSTEM, List.of(
-            edgeFacing(10000, 0, 12000, 0, null),
-            edgeFacing(12000, 0, 12000, 2000, null),
-            edgeFacing(12000, 2000, 10000, 2000, null),
-            edgeFacing(10000, 2000, 10000, 0, null)),
+            buildEdgeFacing(10000, 0, 12000, 0, null),
+            buildEdgeFacing(12000, 0, 12000, 2000, null),
+            buildEdgeFacing(12000, 2000, 10000, 2000, null),
+            buildEdgeFacing(10000, 2000, 10000, 0, null)),
         EMPTY_SYSTEM, List.of(
-            edgeFacing(20000, 0, 22000, 0, null),
-            edgeFacing(22000, 0, 22000, 2000, null),
-            edgeFacing(22000, 2000, 20000, 2000, null),
-            edgeFacing(20000, 2000, 20000, 0, null)),
+            buildEdgeFacing(20000, 0, 22000, 0, null),
+            buildEdgeFacing(22000, 0, 22000, 2000, null),
+            buildEdgeFacing(22000, 2000, 20000, 2000, null),
+            buildEdgeFacing(20000, 2000, 20000, 0, null)),
         TINY_SYSTEM, List.of(
-            edgeFacing(30000, 0, 30100, 0, null),
-            edgeFacing(30100, 0, 30100, 100, null),
-            edgeFacing(30100, 100, 30000, 100, null),
-            edgeFacing(30000, 100, 30000, 0, null)));
+            buildEdgeFacing(30000, 0, 30100, 0, null),
+            buildEdgeFacing(30100, 0, 30100, 100, null),
+            buildEdgeFacing(30100, 100, 30000, 100, null),
+            buildEdgeFacing(30000, 100, 30000, 0, null)));
 
     // The sector is never read: every question the builder asks of it is stubbed at the resolver
     // that would have walked it, so this stands only for the argument those stubs match on.
@@ -147,7 +147,7 @@ final class DebugBorderTracingBuilderTest {
         // An empty sector by default, so a case names only the cells it is about.
         stubHolders(Map.of());
         stubDecivilisedSystems();
-        stubTheme(noSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
+        stubTheme(buildNoSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
     }
 
     @AfterEach
@@ -170,7 +170,7 @@ final class DebugBorderTracingBuilderTest {
                 HEGEMONY_OWNER));
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
+                listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
                 sectorMock);
 
             // One loop rather than two: the shared edge is a same-bloc seam, exactly as in the
@@ -186,10 +186,10 @@ final class DebugBorderTracingBuilderTest {
         @Test
         void buildDebugDrawablesCapturesTheDespikedStageOnlyWhenSandingIsGatedOn() {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
-            stubTheme(sandingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
+            stubTheme(buildSandingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellsFor(HELD_SYSTEM),
+                listCellsFor(HELD_SYSTEM),
                 sectorMock);
 
             assertThat(drawables.baseLoops()).hasSize(1);
@@ -200,10 +200,10 @@ final class DebugBorderTracingBuilderTest {
         @Test
         void buildDebugDrawablesRoundsTheBaseDirectlyWhenSandingIsGatedOff() {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
-            stubTheme(roundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
+            stubTheme(buildRoundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellsFor(HELD_SYSTEM), sectorMock);
+                listCellsFor(HELD_SYSTEM), sectorMock);
 
             // Rounding feeds off whatever the previous stage left, so with sanding off it rounds
             // the base - and the skipped stage stays empty rather than standing in for it.
@@ -214,10 +214,10 @@ final class DebugBorderTracingBuilderTest {
         @Test
         void buildDebugDrawablesOutlinesOnlyTheFactionlessCategoryWhoseOutlineIsSwitchedOn() {
             stubDecivilisedSystems(DEAD_SYSTEM);
-            stubTheme(noSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
+            stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
+                listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
 
             // The dead world's cell resolves to the decivilised bundle and draws; the uninhabited
             // one resolves to the bundle the player switched off and is skipped, which is what
@@ -230,7 +230,7 @@ final class DebugBorderTracingBuilderTest {
             stubDecivilisedSystems(DEAD_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
+                listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
 
             assertThat(drawables.isEmpty()).isTrue();
         }
@@ -238,10 +238,10 @@ final class DebugBorderTracingBuilderTest {
         @Test
         void buildDebugDrawablesLeavesAnOwnedCellToTheClusterPassRatherThanOutliningItTwice() {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
-            stubTheme(noSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
+            stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellsFor(HELD_SYSTEM), sectorMock);
+                listCellsFor(HELD_SYSTEM), sectorMock);
 
             // One loop with both factionless outlines on: the cell is grouped, so the factionless
             // pass steps over it instead of stroking a second ring inside its cluster border.
@@ -269,10 +269,10 @@ final class DebugBorderTracingBuilderTest {
         @Test
         void buildDebugDrawablesOutlinesNoFactionlessCellThatTheBorderChannelSwallows() {
             stubDecivilisedSystems(TINY_SYSTEM);
-            stubTheme(noSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
+            stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellsFor(TINY_SYSTEM), sectorMock);
+                listCellsFor(TINY_SYSTEM), sectorMock);
 
             // The cell is narrower than twice the border inset, so insetting leaves no polygon
             // at all - dropped rather than flattened into a degenerate run.
@@ -282,10 +282,10 @@ final class DebugBorderTracingBuilderTest {
         @Test
         void buildDebugDrawablesGivesAFactionlessOutlineNoDespikedStageEvenWithSandingOn() {
             stubDecivilisedSystems(DEAD_SYSTEM);
-            stubTheme(bothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
+            stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellsFor(DEAD_SYSTEM), sectorMock);
+                listCellsFor(DEAD_SYSTEM), sectorMock);
 
             // A lone convex cell has no needle protrusions to sand, so its two stages are the raw
             // inset and its rounded corners - the sanding gate being on does not invent a third.
@@ -296,7 +296,7 @@ final class DebugBorderTracingBuilderTest {
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge edgeFacing(
+    private static CellEdge buildEdgeFacing(
             double x1,
             double y1,
             double x2,
@@ -314,7 +314,7 @@ final class DebugBorderTracingBuilderTest {
 
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
     // partition both the cluster trace and the factionless outline pass walk.
-    private static CellGeometryCache cellsFor(String... systemIds) {
+    private static CellGeometryCache listCellsFor(String... systemIds) {
         var geometryCacheMock = mock(CellGeometryCache.class);
         var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
         var systemIdByCellId = new LinkedHashMap<String, String>();
@@ -329,23 +329,23 @@ final class DebugBorderTracingBuilderTest {
 
     // Both gates off, so a captured smoothed stage can only have come from a gate being honoured
     // wrongly rather than from the profile's shape.
-    private static BorderSmoothingStyle noSmoothing() {
-        return smoothing(false, false);
+    private static BorderSmoothingStyle buildNoSmoothing() {
+        return buildSmoothing(false, false);
     }
 
-    private static BorderSmoothingStyle sandingOnly() {
-        return smoothing(true, false);
+    private static BorderSmoothingStyle buildSandingOnly() {
+        return buildSmoothing(true, false);
     }
 
-    private static BorderSmoothingStyle roundingOnly() {
-        return smoothing(false, true);
+    private static BorderSmoothingStyle buildRoundingOnly() {
+        return buildSmoothing(false, true);
     }
 
-    private static BorderSmoothingStyle bothGatesOn() {
-        return smoothing(true, true);
+    private static BorderSmoothingStyle buildBothGatesOn() {
+        return buildSmoothing(true, true);
     }
 
-    private static BorderSmoothingStyle smoothing(
+    private static BorderSmoothingStyle buildSmoothing(
             boolean shouldSandSpikes,
             boolean shouldRoundCorners) {
         return new BorderSmoothingStyle(
@@ -366,10 +366,10 @@ final class DebugBorderTracingBuilderTest {
             ElementStyle uninhabitedOutline) {
 
         Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
-        categories.put(PoliticalMapCategory.FACTION, outlinedBy(DRAWN_OUTLINE));
-        categories.put(PoliticalMapCategory.INDEPENDENT, outlinedBy(DRAWN_OUTLINE));
-        categories.put(PoliticalMapCategory.DECIVILISED, outlinedBy(decivilisedOutline));
-        categories.put(PoliticalMapCategory.UNINHABITED, outlinedBy(uninhabitedOutline));
+        categories.put(PoliticalMapCategory.FACTION, buildOutlinedBy(DRAWN_OUTLINE));
+        categories.put(PoliticalMapCategory.INDEPENDENT, buildOutlinedBy(DRAWN_OUTLINE));
+        categories.put(PoliticalMapCategory.DECIVILISED, buildOutlinedBy(decivilisedOutline));
+        categories.put(PoliticalMapCategory.UNINHABITED, buildOutlinedBy(uninhabitedOutline));
 
         // The smoothing profile is the one sector-wide value these cases vary, so the rest of the
         // tier is the shared inert one.
@@ -399,7 +399,7 @@ final class DebugBorderTracingBuilderTest {
 
     // A bundle the overlay reads only for its outer element: fill and seam never reach the
     // border tracing, so they are inert.
-    private static CategoryStyle outlinedBy(ElementStyle outer) {
+    private static CategoryStyle buildOutlinedBy(ElementStyle outer) {
         return new CategoryStyle(
             ElementStyle.NOT_DRAWN,
             outer,

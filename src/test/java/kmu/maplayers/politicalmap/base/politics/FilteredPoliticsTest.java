@@ -27,7 +27,7 @@ class FilteredPoliticsTest {
         void returnsAbsentWhenTheSelectedBlocHasNoFootprint() {
             // A rival holds the system and the selected bloc owns nothing here, so its real
             // holder draws (receded) rather than the spotlighted bloc.
-            var footprints = orderedFootprints("hegemony", new MarketFootprint(9, 5, 5));
+            var footprints = listOrderedFootprints("hegemony", new MarketFootprint(9, 5, 5));
 
             assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "tritachyon"))
                     .isEqualTo(SelectedBlocPresence.ABSENT);
@@ -43,7 +43,7 @@ class FilteredPoliticsTest {
 
         @Test
         void returnsDominatesWhenTheSelectedBlocWinsTheSystem() {
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "hegemony", new MarketFootprint(9, 5, 5),
                     "tritachyon", new MarketFootprint(3, 3, 0));
 
@@ -55,7 +55,7 @@ class FilteredPoliticsTest {
         void returnsPresentButDominatedWhenARivalOutranksTheSelectedBloc() {
             // The selected bloc owns a market but loses the dominance comparison, so it draws
             // contested (hatched) in its own palette rather than ceding the cell to the rival.
-            var footprints = orderedFootprints(
+            var footprints = listOrderedFootprints(
                     "hegemony", new MarketFootprint(9, 5, 5),
                     "tritachyon", new MarketFootprint(3, 3, 0));
 
@@ -67,7 +67,7 @@ class FilteredPoliticsTest {
         void returnsDominatesForTheSoleWeightlessPresence() {
             // A weightless colony still marks presence, and unopposed it wins its system, so the
             // selected bloc dominates a cell it holds alone even at zero weight.
-            var footprints = orderedFootprints("hegemony", MarketFootprint.EMPTY);
+            var footprints = listOrderedFootprints("hegemony", MarketFootprint.EMPTY);
 
             assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "hegemony"))
                     .isEqualTo(SelectedBlocPresence.DOMINATES);
@@ -87,7 +87,7 @@ class FilteredPoliticsTest {
 
     // Builds the footprint map preserving insertion order, so a test can list the winner and the
     // loser in either order and still exercise the dominance rule the classifier leans on.
-    private static Map<String, MarketFootprint> orderedFootprints(Object... idsAndFootprints) {
+    private static Map<String, MarketFootprint> listOrderedFootprints(Object... idsAndFootprints) {
         var footprints = new LinkedHashMap<String, MarketFootprint>();
         for (var i = 0; i < idsAndFootprints.length; i += 2) {
             footprints.put((String) idsAndFootprints[i],

@@ -85,7 +85,7 @@ final class PoliticalMapLayerTest {
                 // which Misc reads off the live settings - so a body built here needs a settings proxy
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
-                var settingsMock = settingsAnsweringColours();
+                var settingsMock = buildSettingsAnsweringColours();
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -117,7 +117,7 @@ final class PoliticalMapLayerTest {
                 // which Misc reads off the live settings - so a body built here needs a settings proxy
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
-                var settingsMock = settingsAnsweringColours();
+                var settingsMock = buildSettingsAnsweringColours();
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -160,7 +160,7 @@ final class PoliticalMapLayerTest {
                 // which Misc reads off the live settings - so a body built here needs a settings proxy
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
-                var settingsMock = settingsAnsweringColours();
+                var settingsMock = buildSettingsAnsweringColours();
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -226,7 +226,7 @@ final class PoliticalMapLayerTest {
                 // settings - so building one for real needs a settings proxy that answers a colour.
                 // Stubbed before the static stubbing opens, since its own stubbing would otherwise
                 // land inside that one.
-                var settingsMock = settingsAnsweringColours();
+                var settingsMock = buildSettingsAnsweringColours();
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -288,7 +288,7 @@ final class PoliticalMapLayerTest {
 
     // A settings proxy that answers every colour lookup with one tone. Which tone a row draws in is
     // not what these tests read, so one stands in for the whole palette.
-    private static SettingsAPI settingsAnsweringColours() {
+    private static SettingsAPI buildSettingsAnsweringColours() {
         
         var settingsMock = mock(SettingsAPI.class);
         when(settingsMock.getColor(any()))

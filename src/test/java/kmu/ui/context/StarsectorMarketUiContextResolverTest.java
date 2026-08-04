@@ -27,9 +27,9 @@ class StarsectorMarketUiContextResolverTest {
 
         @Test
         void resolvesCurrentlyOpenMarketFirst() {
-            var currentMarket = market();
+            var currentMarket = buildMarket();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(currentMarket, throwingCampaignUi(), throwingPlayerFleet()));
+                    buildSector(currentMarket, buildThrowingCampaignUi(), buildThrowingPlayerFleet()));
 
             var context = resolver.findCurrentMarketContext();
 
@@ -42,12 +42,12 @@ class StarsectorMarketUiContextResolverTest {
 
         @Test
         void resolvesInteractionDialogTargetMarket() {
-            var dialogMarket = market();
+            var dialogMarket = buildMarket();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             (MarketAPI) null,
-                            campaignUi(dialog(entity(dialogMarket))),
-                            throwingPlayerFleet()));
+                            buildCampaignUi(buildDialog(buildEntity(dialogMarket))),
+                            buildThrowingPlayerFleet()));
 
             var context = resolver.findCurrentMarketContext();
 
@@ -60,12 +60,12 @@ class StarsectorMarketUiContextResolverTest {
 
         @Test
         void resolvesPlayerFleetInteractionTargetMarket() {
-            var targetMarket = market();
+            var targetMarket = buildMarket();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             (MarketAPI) null,
-                            campaignUi(null),
-                            playerFleet(entity(targetMarket))));
+                            buildCampaignUi(null),
+                            buildPlayerFleet(buildEntity(targetMarket))));
 
             var context = resolver.findCurrentMarketContext();
 
@@ -78,15 +78,15 @@ class StarsectorMarketUiContextResolverTest {
 
         @Test
         void resolvesTrackedCoreUiMarketAfterDirectContextSources() {
-            var trackedMarket = market();
+            var trackedMarket = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
             tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, trackedMarket);
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             (MarketAPI) null,
-                            campaignUi(null),
-                            playerFleet(entity(null)),
-                            listenerManager(tracker)));
+                            buildCampaignUi(null),
+                            buildPlayerFleet(buildEntity(null)),
+                            buildListenerManager(tracker)));
 
             var context = resolver.findCurrentMarketContext();
 
@@ -101,12 +101,12 @@ class StarsectorMarketUiContextResolverTest {
         void continuesAfterCurrentlyOpenMarketFailure() {
             var exception = new IllegalStateException("open market failed");
             var reports = new ArrayList<String>();
-            var dialogMarket = market();
+            var dialogMarket = buildMarket();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             exception,
-                            campaignUi(dialog(entity(dialogMarket))),
-                            throwingPlayerFleet()),
+                            buildCampaignUi(buildDialog(buildEntity(dialogMarket))),
+                            buildThrowingPlayerFleet()),
                     (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
             var context = resolver.findCurrentMarketContext();
@@ -122,12 +122,12 @@ class StarsectorMarketUiContextResolverTest {
         void continuesAfterInteractionDialogFailure() {
             var exception = new IllegalStateException("dialog failed");
             var reports = new ArrayList<String>();
-            var targetMarket = market();
+            var targetMarket = buildMarket();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             (MarketAPI) null,
-                            throwingCampaignUi(exception),
-                            playerFleet(entity(targetMarket))),
+                            buildThrowingCampaignUi(exception),
+                            buildPlayerFleet(buildEntity(targetMarket))),
                     (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
             var context = resolver.findCurrentMarketContext();
@@ -144,10 +144,10 @@ class StarsectorMarketUiContextResolverTest {
             var exception = new IllegalStateException("player fleet failed");
             var reports = new ArrayList<String>();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             (MarketAPI) null,
-                            campaignUi(null),
-                            throwingPlayerFleet(exception)),
+                            buildCampaignUi(null),
+                            buildThrowingPlayerFleet(exception)),
                     (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
             assertThat(resolver.findCurrentMarketContext()).isEmpty();
@@ -160,11 +160,11 @@ class StarsectorMarketUiContextResolverTest {
             var exception = new IllegalStateException("listener manager failed");
             var reports = new ArrayList<String>();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             (MarketAPI) null,
-                            campaignUi(null),
-                            playerFleet(entity(null)),
-                            throwingListenerManager(exception)),
+                            buildCampaignUi(null),
+                            buildPlayerFleet(buildEntity(null)),
+                            buildThrowingListenerManager(exception)),
                     (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
             assertThat(resolver.findCurrentMarketContext()).isEmpty();
@@ -177,10 +177,10 @@ class StarsectorMarketUiContextResolverTest {
             var exception = new IllegalStateException("dialog entity market failed");
             var reports = new ArrayList<String>();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             (MarketAPI) null,
-                            campaignUi(dialog(throwingEntity(exception))),
-                            playerFleet(entity(null))),
+                            buildCampaignUi(buildDialog(buildThrowingEntity(exception))),
+                            buildPlayerFleet(buildEntity(null))),
                     (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
             assertThat(resolver.findCurrentMarketContext()).isEmpty();
@@ -193,10 +193,10 @@ class StarsectorMarketUiContextResolverTest {
             var exception = new IllegalStateException("player target market failed");
             var reports = new ArrayList<String>();
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector(
+                    buildSector(
                             (MarketAPI) null,
-                            campaignUi(null),
-                            playerFleet(throwingEntity(exception))),
+                            buildCampaignUi(null),
+                            buildPlayerFleet(buildThrowingEntity(exception))),
                     (message, cause) -> reports.add(message + " / " + cause.getMessage()));
 
             assertThat(resolver.findCurrentMarketContext()).isEmpty();
@@ -208,34 +208,34 @@ class StarsectorMarketUiContextResolverTest {
         @Test
         void returnsEmptyWhenNoMarketContextExists() {
             var resolver = new StarsectorMarketUiContextResolver(
-                    sector((MarketAPI) null, campaignUi(dialog(entity(null))), playerFleet(entity(null))));
+                    buildSector((MarketAPI) null, buildCampaignUi(buildDialog(buildEntity(null))), buildPlayerFleet(buildEntity(null))));
 
             assertThat(resolver.findCurrentMarketContext()).isEmpty();
         }
     }
 
-    private static SectorAPI sector(
+    private static SectorAPI buildSector(
             MarketAPI currentlyOpenMarket,
             CampaignUIAPI campaignUI,
             CampaignFleetAPI playerFleet) {
-        return sector((Object) currentlyOpenMarket, campaignUI, playerFleet);
+        return buildSector((Object) currentlyOpenMarket, campaignUI, playerFleet);
     }
 
-    private static SectorAPI sector(
+    private static SectorAPI buildSector(
             RuntimeException currentlyOpenMarketException,
             CampaignUIAPI campaignUI,
             CampaignFleetAPI playerFleet) {
-        return sector((Object) currentlyOpenMarketException, campaignUI, playerFleet);
+        return buildSector((Object) currentlyOpenMarketException, campaignUI, playerFleet);
     }
 
-    private static SectorAPI sector(
+    private static SectorAPI buildSector(
             Object currentlyOpenMarketOrException,
             CampaignUIAPI campaignUI,
             CampaignFleetAPI playerFleet) {
-        return sector(currentlyOpenMarketOrException, campaignUI, playerFleet, listenerManager());
+        return buildSector(currentlyOpenMarketOrException, campaignUI, playerFleet, buildListenerManager());
     }
 
-    private static SectorAPI sector(
+    private static SectorAPI buildSector(
             Object currentlyOpenMarketOrException,
             CampaignUIAPI campaignUI,
             CampaignFleetAPI playerFleet,
@@ -259,7 +259,7 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static ListenerManagerAPI listenerManager(StarsectorMarketUiContextTracker... trackers) {
+    private static ListenerManagerAPI buildListenerManager(StarsectorMarketUiContextTracker... trackers) {
         return proxy(ListenerManagerAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getListeners")
                     && args[0].equals(StarsectorMarketUiContextTracker.class)) {
@@ -269,7 +269,7 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static ListenerManagerAPI throwingListenerManager(RuntimeException exception) {
+    private static ListenerManagerAPI buildThrowingListenerManager(RuntimeException exception) {
         return proxy(ListenerManagerAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getListeners")) {
                 throw exception;
@@ -278,7 +278,7 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static CampaignUIAPI campaignUi(InteractionDialogAPI dialog) {
+    private static CampaignUIAPI buildCampaignUi(InteractionDialogAPI dialog) {
         return proxy(CampaignUIAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getCurrentInteractionDialog")) {
                 return dialog;
@@ -287,11 +287,11 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static CampaignUIAPI throwingCampaignUi() {
-        return throwingCampaignUi(new IllegalStateException("campaign UI should not be queried"));
+    private static CampaignUIAPI buildThrowingCampaignUi() {
+        return buildThrowingCampaignUi(new IllegalStateException("campaign UI should not be queried"));
     }
 
-    private static CampaignUIAPI throwingCampaignUi(RuntimeException exception) {
+    private static CampaignUIAPI buildThrowingCampaignUi(RuntimeException exception) {
         return proxy(CampaignUIAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getCurrentInteractionDialog")) {
                 throw exception;
@@ -300,7 +300,7 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static CampaignFleetAPI playerFleet(SectorEntityToken target) {
+    private static CampaignFleetAPI buildPlayerFleet(SectorEntityToken target) {
         return proxy(CampaignFleetAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getInteractionTarget")) {
                 return target;
@@ -309,11 +309,11 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static CampaignFleetAPI throwingPlayerFleet() {
-        return throwingPlayerFleet(new IllegalStateException("player fleet should not be queried"));
+    private static CampaignFleetAPI buildThrowingPlayerFleet() {
+        return buildThrowingPlayerFleet(new IllegalStateException("player fleet should not be queried"));
     }
 
-    private static CampaignFleetAPI throwingPlayerFleet(RuntimeException exception) {
+    private static CampaignFleetAPI buildThrowingPlayerFleet(RuntimeException exception) {
         return proxy(CampaignFleetAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getInteractionTarget")) {
                 throw exception;
@@ -322,7 +322,7 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static InteractionDialogAPI dialog(SectorEntityToken target) {
+    private static InteractionDialogAPI buildDialog(SectorEntityToken target) {
         return proxy(InteractionDialogAPI.class, (proxy, method, args) -> {
             if (method.getName().equals("getInteractionTarget")) {
                 return target;
@@ -331,7 +331,7 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static SectorEntityToken entity(MarketAPI market) {
+    private static SectorEntityToken buildEntity(MarketAPI market) {
         return proxy(SectorEntityToken.class, (proxy, method, args) -> {
             if (method.getName().equals("getMarket")) {
                 return market;
@@ -340,7 +340,7 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static SectorEntityToken throwingEntity(RuntimeException exception) {
+    private static SectorEntityToken buildThrowingEntity(RuntimeException exception) {
         return proxy(SectorEntityToken.class, (proxy, method, args) -> {
             if (method.getName().equals("getMarket")) {
                 throw exception;
@@ -349,7 +349,7 @@ class StarsectorMarketUiContextResolverTest {
         });
     }
 
-    private static MarketAPI market() {
+    private static MarketAPI buildMarket() {
         return proxy(MarketAPI.class, StarsectorMarketUiContextResolverTest::handleObjectMethodOrThrow);
     }
 

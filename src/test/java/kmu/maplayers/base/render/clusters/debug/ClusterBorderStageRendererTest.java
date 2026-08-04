@@ -30,7 +30,7 @@ final class ClusterBorderStageRendererTest {
 
         @Test
         void listStageStrokesBottomToTopOrdersTheStagesBaseDespikedRounded() {
-            var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(overlay());
+            var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(buildOverlay());
 
             // Drawn in list order, so this is the stacking: the raw trace at the bottom and what
             // ships on top. Reversed, the overlay would show the finished border being buried by
@@ -42,7 +42,7 @@ final class ClusterBorderStageRendererTest {
 
         @Test
         void listStageStrokesBottomToTopGradesTheStagesDiscardedIntermediateAccepted() {
-            var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(overlay());
+            var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(buildOverlay());
 
             // The shared ramp, not colours of this overlay's own choosing: red always means
             // superseded and green always means what ships, across every diagnostic.
@@ -56,7 +56,7 @@ final class ClusterBorderStageRendererTest {
 
         @Test
         void listStageStrokesBottomToTopTapersTheWidthsSoEachStageRingsOutFromUnderTheNext() {
-            var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(overlay());
+            var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(buildOverlay());
 
             // Strictly decreasing, checked as a relation rather than against three literals: what
             // matters is that a lower stage is never covered by the one drawn over it, and the
@@ -84,7 +84,7 @@ final class ClusterBorderStageRendererTest {
         }
     }
 
-    private static ClusterBorderStageOverlay overlay() {
+    private static ClusterBorderStageOverlay buildOverlay() {
         return new ClusterBorderStageOverlay(BASE_LOOPS, DESPIKED_LOOPS, ROUNDED_LOOPS);
     }
 }

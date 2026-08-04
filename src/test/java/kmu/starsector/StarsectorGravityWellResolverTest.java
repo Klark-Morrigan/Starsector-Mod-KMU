@@ -22,9 +22,9 @@ class StarsectorGravityWellResolverTest {
 
         @Test
         void returnsSystemCenterWhenEntityHasNoOrbitChain() {
-            var center = entity("Corvus");
-            var planet = entity("Valis");
-            var market = market(null, planet, system(center, null));
+            var center = buildEntity("Corvus");
+            var planet = buildEntity("Valis");
+            var market = buildMarket(null, planet, buildSystem(center, null));
 
             assertThat(resolver.resolve(market)).isSameAs(center);
         }
@@ -33,19 +33,19 @@ class StarsectorGravityWellResolverTest {
         void returnsEntityItselfWhenNoOrbitChainAndNoSystem() {
             // When neither an orbit chain nor a system center is available, the entity
             // is the best known anchor point.
-            var station = entity("Station Alpha");
-            var market = market(null, station, null);
+            var station = buildEntity("Station Alpha");
+            var market = buildMarket(null, station, null);
 
             assertThat(resolver.resolve(market)).isSameAs(station);
         }
 
         @Test
         void returnsStarWhenSystemHasNoCenterButHasStar() {
-            var planet = entity("Valis");
+            var planet = buildEntity("Valis");
             // getStar() returns PlanetAPI, so the mock must implement PlanetAPI.
             var starMock = mock(PlanetAPI.class);
             when(starMock.getName()).thenReturn("Corvus");
-            var market = market(null, planet, system(null, starMock));
+            var market = buildMarket(null, planet, buildSystem(null, starMock));
 
             assertThat(resolver.resolve(market)).isSameAs(starMock);
         }
@@ -53,14 +53,14 @@ class StarsectorGravityWellResolverTest {
         @Test
         void resolvesViaOrbitApiWhenDirectOrbitFocusIsUnavailable() {
             // getOrbitFocus() returns null; getOrbit().getFocus() provides the focus.
-            var star = entity("Corvus");
+            var star = buildEntity("Corvus");
             var orbitMock = mock(OrbitAPI.class);
             when(orbitMock.getFocus()).thenReturn(star);
             var moonMock = mock(SectorEntityToken.class);
             when(moonMock.getName()).thenReturn("Valis");
             when(moonMock.getOrbit()).thenReturn(orbitMock);
             // getOrbitFocus defaults to null on a Mockito mock.
-            var market = market(null, moonMock, null);
+            var market = buildMarket(null, moonMock, null);
 
             assertThat(resolver.resolve(market)).isSameAs(star);
         }
@@ -73,7 +73,7 @@ class StarsectorGravityWellResolverTest {
             var node1Mock = mock(SectorEntityToken.class);
             when(node0Mock.getOrbitFocus()).thenReturn(node1Mock);
             when(node1Mock.getOrbitFocus()).thenReturn(node0Mock);
-            var market = market(null, node0Mock, null);
+            var market = buildMarket(null, node0Mock, null);
 
             assertThat(resolver.resolve(market)).isSameAs(node1Mock);
         }
@@ -90,7 +90,7 @@ class StarsectorGravityWellResolverTest {
             for (var i = 0; i < chainLength - 1; i++) {
                 when(nodes[i].getOrbitFocus()).thenReturn(nodes[i + 1]);
             }
-            var market = market(null, nodes[0], null);
+            var market = buildMarket(null, nodes[0], null);
 
             assertThat(resolver.resolve(market)).isSameAs(nodes[32]);
         }
@@ -98,20 +98,20 @@ class StarsectorGravityWellResolverTest {
 
     // --- mock helpers ---
 
-    private static SectorEntityToken entity(String name) {
+    private static SectorEntityToken buildEntity(String name) {
         var entityMock = mock(SectorEntityToken.class);
         when(entityMock.getName()).thenReturn(name);
         return entityMock;
     }
 
-    private static StarSystemAPI system(SectorEntityToken center, PlanetAPI star) {
+    private static StarSystemAPI buildSystem(SectorEntityToken center, PlanetAPI star) {
         var systemMock = mock(StarSystemAPI.class);
         when(systemMock.getCenter()).thenReturn(center);
         when(systemMock.getStar()).thenReturn(star);
         return systemMock;
     }
 
-    private static MarketAPI market(
+    private static MarketAPI buildMarket(
             PlanetAPI planet, SectorEntityToken primaryEntity, StarSystemAPI system) {
         var marketMock = mock(MarketAPI.class);
         when(marketMock.getPlanetEntity()).thenReturn(planet);

@@ -24,7 +24,7 @@ final class CellHitTestTest {
     // An axis-aligned square cell, counter-clockwise, spanning [minX, minX + side] x
     // [minY, minY + side]. Stands in for a shaped fill polygon; the test cares only
     // that it encloses a known area.
-    private static List<double[]> square(double minX, double minY, double side) {
+    private static List<double[]> buildSquare(double minX, double minY, double side) {
         return List.of(
                 new double[] {minX, minY},
                 new double[] {minX + side, minY},
@@ -36,7 +36,7 @@ final class CellHitTestTest {
     class ResolveSystemIdAt {
         @Test
         void a_point_inside_a_cell_resolves_to_its_system() {
-            var cells = Map.of("A", square(0, 0, 10));
+            var cells = Map.of("A", buildSquare(0, 0, 10));
 
             assertThat(CellHitTest.resolveSystemIdAt(5, 5, cells)).isEqualTo("A");
         }
@@ -46,8 +46,8 @@ final class CellHitTestTest {
             // Two disjoint cells: the point sits in the second, so the search must not
             // stop at the first polygon it tests.
             var cells = new LinkedHashMap<String, List<double[]>>();
-            cells.put("A", square(0, 0, 10));
-            cells.put("B", square(20, 0, 10));
+            cells.put("A", buildSquare(0, 0, 10));
+            cells.put("B", buildSquare(20, 0, 10));
 
             assertThat(CellHitTest.resolveSystemIdAt(25, 5, cells)).isEqualTo("B");
         }
@@ -57,15 +57,15 @@ final class CellHitTestTest {
             // The border channel the inset opens between two cells belongs to neither,
             // and reads as empty space just as it draws.
             var cells = new LinkedHashMap<String, List<double[]>>();
-            cells.put("A", square(0, 0, 10));
-            cells.put("B", square(20, 0, 10));
+            cells.put("A", buildSquare(0, 0, 10));
+            cells.put("B", buildSquare(20, 0, 10));
 
             assertThat(CellHitTest.resolveSystemIdAt(15, 5, cells)).isNull();
         }
 
         @Test
         void a_point_beyond_every_cell_resolves_to_nothing() {
-            var cells = Map.of("A", square(0, 0, 10));
+            var cells = Map.of("A", buildSquare(0, 0, 10));
 
             assertThat(CellHitTest.resolveSystemIdAt(100, 100, cells)).isNull();
         }
@@ -75,8 +75,8 @@ final class CellHitTestTest {
             // Two cells meeting flush along x = 10: whichever wins, the cursor must not
             // flicker between them while it rests there, so the verdict is stable.
             var cells = new LinkedHashMap<String, List<double[]>>();
-            cells.put("A", square(0, 0, 10));
-            cells.put("B", square(10, 0, 10));
+            cells.put("A", buildSquare(0, 0, 10));
+            cells.put("B", buildSquare(10, 0, 10));
 
             var first = CellHitTest.resolveSystemIdAt(10, 5, cells);
 

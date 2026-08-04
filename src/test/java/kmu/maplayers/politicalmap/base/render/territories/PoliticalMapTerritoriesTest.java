@@ -103,7 +103,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void isEmptyIsTrueWhenBothDrawListsAreEmpty() {
-            var territories = drawablesWith(Map.of(), Map.of());
+            var territories = buildDrawablesWith(Map.of(), Map.of());
 
             assertThat(territories.isEmpty())
                 .isTrue();
@@ -111,7 +111,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void isEmptyIsFalseWhenAStyledCellIsPresent() {
-            var territories = drawablesWith(Map.of("system", anyStyledCell()), Map.of());
+            var territories = buildDrawablesWith(Map.of("system", buildAnyStyledCell()), Map.of());
 
             assertThat(territories.isEmpty())
                 .isFalse();
@@ -119,7 +119,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void isEmptyIsFalseWhenAClusterGroupIsPresent() {
-            var territories = drawablesWith(Map.of(), Map.of("faction", anyStyledClusterGroup()));
+            var territories = buildDrawablesWith(Map.of(), Map.of("faction", buildAnyStyledClusterGroup()));
 
             assertThat(territories.isEmpty())
                 .isFalse();
@@ -132,13 +132,13 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void satisfiesClusterDrawListsWithTheDrawListsAndTierTheBuildItselfHolds() {
 
-            var styledCell = anyStyledCell();
-            var styledClusterGroup = anyStyledClusterGroup();
+            var styledCell = buildAnyStyledCell();
+            var styledClusterGroup = buildAnyStyledClusterGroup();
 
             // A real theme rather than the shared fixture's inert one, since the global tier is
             // one of the four reads and the seam has to hand over the build's own.
             var renderStyle = PoliticalMapTerritoryFixtures
-                .createRenderStyleForEveryCategory(styleMarked(1));
+                .createRenderStyleForEveryCategory(buildStyleMarked(1));
 
             var territories = new PoliticalMapTerritories(
                 new LinkedHashMap<>(),
@@ -179,7 +179,7 @@ final class PoliticalMapTerritoriesTest {
             var homeOuter = new float[] {0, 0};
             var homeEnclave = new float[] {1, 1};
             var exclaveOuter = new float[] {2, 2};
-            var territories = drawablesWith(Map.of(), Map.of(
+            var territories = buildDrawablesWith(Map.of(), Map.of(
                 "hegemony",
                 PoliticalMapTerritoryFixtures.createTerritoryWithLoops(List.of(
                     List.of(homeOuter, homeEnclave),
@@ -193,7 +193,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void listCandidateBorderLoopsOfReturnsNothingForABlocThatIsNotOnTheMap() {
-            var territories = drawablesWith(Map.of(), Map.of());
+            var territories = buildDrawablesWith(Map.of(), Map.of());
 
             assertThat(territories.listCandidateBorderLoopsOf("hegemony"))
                 .isEmpty();
@@ -201,7 +201,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void listCandidateBorderLoopsOfKeepsTheSameListWhileTheBlocsBodiesStand() {
-            var territories = drawablesWith(Map.of(), Map.of(
+            var territories = buildDrawablesWith(Map.of(), Map.of(
                 "hegemony",
                 PoliticalMapTerritoryFixtures.createTerritoryWithLoops(
                     List.of(List.of(new float[] {0, 0})))));
@@ -217,7 +217,7 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void listCandidateBorderLoopsOfRecomputesWhenARefreshReplacesTheBlocsBodies() {
             var rebuiltLoop = new float[] {9, 9};
-            var territories = drawablesWith(Map.of(), Map.of(
+            var territories = buildDrawablesWith(Map.of(), Map.of(
                 "hegemony",
                 PoliticalMapTerritoryFixtures.createTerritoryWithLoops(
                     List.of(List.of(new float[] {0, 0})))));
@@ -254,10 +254,10 @@ final class PoliticalMapTerritoriesTest {
             // Four distinct category instances plus a distinct global tier, all wrapped in one
             // theme, so a swapped style slot is caught by identity, not just by the shared
             // CategoryStyle type the compiler would accept either way.
-            var factionStyle = styleMarked(1);
-            var independentStyle = styleMarked(2);
-            var decivilisedStyle = styleMarked(3);
-            var uninhabitedStyle = styleMarked(4);
+            var factionStyle = buildStyleMarked(1);
+            var independentStyle = buildStyleMarked(2);
+            var decivilisedStyle = buildStyleMarked(3);
+            var uninhabitedStyle = buildStyleMarked(4);
 
             Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
 
@@ -349,9 +349,9 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void putStyledCellRecordsTheDrawRecordAndItsShapeUnderTheSameSystem() {
 
-            var territories = drawablesWith(Map.of(), Map.of());
-            var styledCell = anyStyledCell();
-            var fillPolygon = squarePolygon();
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+            var styledCell = buildAnyStyledCell();
+            var fillPolygon = buildSquarePolygon();
 
             territories.putStyledCell("system", styledCell, fillPolygon);
 
@@ -370,11 +370,11 @@ final class PoliticalMapTerritoriesTest {
         void putStyledCellReplacesBothHalvesWhenACellIsReshaped() {
             // The drift the paired write exists to prevent: a re-shaped cell must not keep
             // answering the cursor with the extent it had before it was re-shaped.
-            var territories = drawablesWith(Map.of(), Map.of());
-            territories.putStyledCell("system", anyStyledCell(), squarePolygon());
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
 
-            var reshapedCell = anyStyledCell();
-            var reshapedPolygon = trianglePolygon();
+            var reshapedCell = buildAnyStyledCell();
+            var reshapedPolygon = buildTrianglePolygon();
 
             territories.putStyledCell("system", reshapedCell, reshapedPolygon);
 
@@ -392,8 +392,8 @@ final class PoliticalMapTerritoriesTest {
         void removeStyledCellDropsTheDrawRecordAndItsShapeTogether() {
             // A cell that draws nothing can be hovered no more than it can be seen, so the
             // shape must go with the draw record rather than linger as a phantom hit cluster.
-            var territories = drawablesWith(Map.of(), Map.of());
-            territories.putStyledCell("system", anyStyledCell(), squarePolygon());
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
             territories.removeStyledCell("system");
 
             assertThat(territories.getStyledCellByCellId()).isEmpty();
@@ -403,9 +403,9 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void removeStyledCellLeavesEveryOtherCellStanding() {
 
-            var territories = drawablesWith(Map.of(), Map.of());
-            territories.putStyledCell("dropped", anyStyledCell(), squarePolygon());
-            territories.putStyledCell("kept", anyStyledCell(), trianglePolygon());
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+            territories.putStyledCell("dropped", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putStyledCell("kept", buildAnyStyledCell(), buildTrianglePolygon());
             territories.removeStyledCell("dropped");
 
             assertThat(territories.getStyledCellByCellId()).containsOnlyKeys("kept");
@@ -418,11 +418,11 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void reindexClustersResolvesASystemToItsWholeContiguousTerritory() {
-            var territories = ownedBy(Map.of("A", "F", "B", "F"));
+            var territories = buildOwnedBy(Map.of("A", "F", "B", "F"));
 
             reindex(territories, Map.of(
-                "A", List.of(edgeTo("B")),
-                "B", List.of(edgeTo("A"))));
+                "A", List.of(buildEdgeTo("B")),
+                "B", List.of(buildEdgeTo("A"))));
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
                 .containsExactlyInAnyOrder("A", "B");
@@ -430,11 +430,11 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void reindexClustersExcludesADifferentlyOwnedNeighbour() {
-            var territories = ownedBy(Map.of("A", "F", "B", "RIVAL"));
+            var territories = buildOwnedBy(Map.of("A", "F", "B", "RIVAL"));
 
             reindex(territories, Map.of(
-                "A", List.of(edgeTo("B")),
-                "B", List.of(edgeTo("A"))));
+                "A", List.of(buildEdgeTo("B")),
+                "B", List.of(buildEdgeTo("A"))));
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
                 .containsExactly("A");
@@ -446,17 +446,17 @@ final class PoliticalMapTerritoriesTest {
             // C, so B changing hands splits one territory into two pockets - a change no edit of
             // the old index would find, since neither A nor C was itself touched.
             var edges = Map.of(
-                "A", List.of(edgeTo("B")),
-                "B", List.of(edgeTo("A"), edgeTo("C")),
-                "C", List.of(edgeTo("B")));
+                "A", List.of(buildEdgeTo("B")),
+                "B", List.of(buildEdgeTo("A"), buildEdgeTo("C")),
+                "C", List.of(buildEdgeTo("B")));
 
-            var territories = ownedBy(Map.of("A", "F", "B", "F", "C", "F"));
+            var territories = buildOwnedBy(Map.of("A", "F", "B", "F", "C", "F"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
                 .containsExactlyInAnyOrder("A", "B", "C");
 
-            territories.getHolderBySystemId().put("B", ownerOf("RIVAL"));
+            territories.getHolderBySystemId().put("B", readOwnerOf("RIVAL"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
@@ -469,13 +469,13 @@ final class PoliticalMapTerritoriesTest {
         void reindexClustersBridgesTwoTerritoriesIntoOneWhenTheGapSystemIsGained() {
             // The mirror of the sever: B joining F merges what were two lone pockets.
             var edges = Map.of(
-                "A", List.of(edgeTo("B")),
-                "B", List.of(edgeTo("A"), edgeTo("C")),
-                "C", List.of(edgeTo("B")));
-            var territories = ownedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
+                "A", List.of(buildEdgeTo("B")),
+                "B", List.of(buildEdgeTo("A"), buildEdgeTo("C")),
+                "C", List.of(buildEdgeTo("B")));
+            var territories = buildOwnedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
             reindex(territories, edges);
 
-            territories.getHolderBySystemId().put("B", ownerOf("F"));
+            territories.getHolderBySystemId().put("B", readOwnerOf("F"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
@@ -485,11 +485,11 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void reindexClustersCarriesNoClusterForAnUnownedSystem() {
 
-            var territories = ownedBy(Map.of("A", "F"));
+            var territories = buildOwnedBy(Map.of("A", "F"));
 
             reindex(territories, Map.of(
-                "A", List.of(edgeTo("UNOWNED")),
-                "UNOWNED", List.of(edgeTo("A"))));
+                "A", List.of(buildEdgeTo("UNOWNED")),
+                "UNOWNED", List.of(buildEdgeTo("A"))));
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("UNOWNED"))
                 .isEmpty();
@@ -498,23 +498,23 @@ final class PoliticalMapTerritoriesTest {
 
     // A territories holding the given holders, the one input the cluster index is derived from;
     // every other slot is an inert placeholder.
-    private static PoliticalMapTerritories ownedBy(Map<String, String> factionIdBySystemId) {
+    private static PoliticalMapTerritories buildOwnedBy(Map<String, String> factionIdBySystemId) {
 
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         for (var entry : factionIdBySystemId.entrySet()) {
-            ownerBySystemId.put(entry.getKey(), ownerOf(entry.getValue()));
+            ownerBySystemId.put(entry.getKey(), readOwnerOf(entry.getValue()));
         }
         return PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(ownerBySystemId);
     }
 
     // Clustering keys off the faction id alone, so the palette shades are inert here.
-    private static DominantHolder ownerOf(String factionId) {
+    private static DominantHolder readOwnerOf(String factionId) {
         return new DominantHolder(factionId, Color.GRAY, Color.GRAY);
     }
 
     // One cell edge facing the given neighbour system. Clustering reads only the adjacency tag,
     // so the segment is left at the origin.
-    private static CellEdge edgeTo(String neighbourSystemId) {
+    private static CellEdge buildEdgeTo(String neighbourSystemId) {
         return new CellEdge(0, 0, 0, 0, new EdgeTarget.AcrossSystem(neighbourSystemId));
     }
 
@@ -533,7 +533,7 @@ final class PoliticalMapTerritoriesTest {
 
     // Two distinct fill shapes, so a test that swaps one for the other is caught by identity.
     // Nothing here reads the geometry, only which instance is held against a system.
-    private static List<double[]> squarePolygon() {
+    private static List<double[]> buildSquarePolygon() {
         return List.of(
             new double[] {0, 0},
             new double[] {1, 0},
@@ -541,7 +541,7 @@ final class PoliticalMapTerritoriesTest {
             new double[] {0, 1});
     }
 
-    private static List<double[]> trianglePolygon() {
+    private static List<double[]> buildTrianglePolygon() {
         return List.of(
             new double[] {0, 0},
             new double[] {2, 0},
@@ -550,7 +550,7 @@ final class PoliticalMapTerritoriesTest {
 
     // A territories whose only varying inputs are the two draw lists; the retained inputs are the
     // shared fixture's inert placeholders, since isEmpty reads only the draw lists.
-    private static PoliticalMapTerritories drawablesWith(
+    private static PoliticalMapTerritories buildDrawablesWith(
             Map<String, StyledCell> styledCells,
             Map<String, StyledClusterGroup> territories) {
 
@@ -564,17 +564,17 @@ final class PoliticalMapTerritoriesTest {
         return drawables;
     }
 
-    private static StyledCell anyStyledCell() {
+    private static StyledCell buildAnyStyledCell() {
         return PoliticalMapTerritoryFixtures.createPlaceholderStyledCell();
     }
 
-    private static StyledClusterGroup anyStyledClusterGroup() {
+    private static StyledClusterGroup buildAnyStyledClusterGroup() {
         return PoliticalMapTerritoryFixtures.createTerritoryWithLoops(List.of());
     }
 
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
     // interchangeable style bundles are distinct instances.
-    private static CategoryStyle styleMarked(double marker) {
+    private static CategoryStyle buildStyleMarked(double marker) {
         var element = new ElementStyle(FactionPaletteSlot.PRIMARY, marker);
         return new CategoryStyle(element, element, marker, element, marker);
     }

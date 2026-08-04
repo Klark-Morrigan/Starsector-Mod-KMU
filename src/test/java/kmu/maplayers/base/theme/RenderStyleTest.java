@@ -25,7 +25,7 @@ final class RenderStyleTest {
     // names the one component it is reading rather than a whole style. Written with the type
     // qualified: the @Nested group below is named for the method under test, which shadows the
     // simple name throughout this class.
-    private static kmu.maplayers.base.theme.CategoryStyle styleMarkedBy(double outerWidth) {
+    private static kmu.maplayers.base.theme.CategoryStyle buildStyleMarkedBy(double outerWidth) {
         return new kmu.maplayers.base.theme.CategoryStyle(
                 ElementStyle.NOT_DRAWN,
                 ElementStyle.NOT_DRAWN,
@@ -40,8 +40,8 @@ final class RenderStyleTest {
         void a_layer_reads_back_the_bundle_it_stored_under_its_own_category() {
             Map<MapStyleCategory, kmu.maplayers.base.theme.CategoryStyle> categories =
                     new LinkedHashMap<>();
-            categories.put(HazardCategory.IRRADIATED, styleMarkedBy(MARKED_WIDTH));
-            categories.put(HazardCategory.BENIGN, styleMarkedBy(OTHER_MARKED_WIDTH));
+            categories.put(HazardCategory.IRRADIATED, buildStyleMarkedBy(MARKED_WIDTH));
+            categories.put(HazardCategory.BENIGN, buildStyleMarkedBy(OTHER_MARKED_WIDTH));
             var theme = new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
 
             assertThat(theme.categoryStyle(HazardCategory.IRRADIATED).outerWidth())
@@ -57,7 +57,7 @@ final class RenderStyleTest {
             // its categories fresh per draw rather than holding the exact constants it seeded.
             Map<MapStyleCategory, kmu.maplayers.base.theme.CategoryStyle> categories =
                     new LinkedHashMap<>();
-            categories.put(new NamedCategory("irradiated"), styleMarkedBy(MARKED_WIDTH));
+            categories.put(new NamedCategory("irradiated"), buildStyleMarkedBy(MARKED_WIDTH));
             var theme = new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
 
             assertThat(theme.categoryStyle(new NamedCategory("irradiated")).outerWidth())
@@ -71,7 +71,7 @@ final class RenderStyleTest {
             // paint without noticing.
             Map<MapStyleCategory, kmu.maplayers.base.theme.CategoryStyle> categories =
                     new LinkedHashMap<>();
-            categories.put(HazardCategory.IRRADIATED, styleMarkedBy(MARKED_WIDTH));
+            categories.put(HazardCategory.IRRADIATED, buildStyleMarkedBy(MARKED_WIDTH));
             var theme = new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
 
             assertThat(theme.categoryStyle(HazardCategory.BENIGN)).isNull();

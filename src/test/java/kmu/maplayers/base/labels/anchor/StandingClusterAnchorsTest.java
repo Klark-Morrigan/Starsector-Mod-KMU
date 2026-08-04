@@ -50,7 +50,7 @@ final class StandingClusterAnchorsTest {
             // described it - the one state the whole carry-over assumes cannot happen.
             var standingAnchors = new StandingClusterAnchors();
 
-            assertThatThrownBy(() -> standingAnchors.getAnchors().add(anchorFor("hegemony")))
+            assertThatThrownBy(() -> standingAnchors.getAnchors().add(buildAnchorFor("hegemony")))
                 .isInstanceOf(UnsupportedOperationException.class);
         }
     }
@@ -63,7 +63,7 @@ final class StandingClusterAnchorsTest {
 
             var standingAnchors = new StandingClusterAnchors();
 
-            standingAnchors.replaceAnchors(List.of(anchorFor("hegemony")), EARLIER_FIT);
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), EARLIER_FIT);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -78,8 +78,8 @@ final class StandingClusterAnchorsTest {
             // one's box on the map under this pass's label.
             var standingAnchors = new StandingClusterAnchors();
 
-            standingAnchors.replaceAnchors(List.of(anchorFor("hegemony")), EARLIER_FIT);
-            standingAnchors.replaceAnchors(List.of(anchorFor("tritachyon")), LATER_FIT);
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), EARLIER_FIT);
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("tritachyon")), LATER_FIT);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -95,11 +95,11 @@ final class StandingClusterAnchorsTest {
             var standingAnchors = new StandingClusterAnchors();
 
             var fittedAnchors = new ArrayList<ClusterAnchor>();
-            fittedAnchors.add(anchorFor("hegemony"));
+            fittedAnchors.add(buildAnchorFor("hegemony"));
 
             standingAnchors.replaceAnchors(fittedAnchors, EARLIER_FIT);
 
-            fittedAnchors.add(anchorFor("tritachyon"));
+            fittedAnchors.add(buildAnchorFor("tritachyon"));
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -115,7 +115,7 @@ final class StandingClusterAnchorsTest {
             // would let the next sector's first rebuild match this one's fingerprint and carry
             // over placements fitted inside a partition that no longer exists.
             var standingAnchors = new StandingClusterAnchors();
-            standingAnchors.replaceAnchors(List.of(anchorFor("hegemony")), EARLIER_FIT);
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), EARLIER_FIT);
             standingAnchors.discardAnchors();
 
             assertThat(standingAnchors.getAnchors())
@@ -127,7 +127,7 @@ final class StandingClusterAnchorsTest {
 
     // One placement for the given owner. Nothing here reads a placement's geometry, so every
     // fitted component is inert and only the identity distinguishes one from another.
-    private static ClusterAnchor anchorFor(String ownerKey) {
+    private static ClusterAnchor buildAnchorFor(String ownerKey) {
         return new ClusterAnchor(
             new ClusterIdentity(ownerKey, Set.of(ownerKey)),
             0f,

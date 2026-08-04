@@ -39,7 +39,7 @@ final class NexerelinInvasionListenerInstallerTest {
         @Test
         void reinstallsFreshTransientListenerWhenNexEnabled() {
             var listenerManagerMock = mock(ListenerManagerAPI.class);
-            var sectorMock = sectorWith(listenerManagerMock);
+            var sectorMock = buildSectorWith(listenerManagerMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 stubModEnabled(globalMock, true);
 
@@ -58,7 +58,7 @@ final class NexerelinInvasionListenerInstallerTest {
         @Test
         void addsNothingWhenNexDisabled() {
             var listenerManagerMock = mock(ListenerManagerAPI.class);
-            var sectorMock = sectorWith(listenerManagerMock);
+            var sectorMock = buildSectorWith(listenerManagerMock);
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 stubModEnabled(globalMock, false);
 
@@ -82,7 +82,7 @@ final class NexerelinInvasionListenerInstallerTest {
         }
     }
 
-    private static SectorAPI sectorWith(ListenerManagerAPI listenerManager) {
+    private static SectorAPI buildSectorWith(ListenerManagerAPI listenerManager) {
         var sectorMock = mock(SectorAPI.class);
         when(sectorMock.getListenerManager()).thenReturn(listenerManager);
         return sectorMock;

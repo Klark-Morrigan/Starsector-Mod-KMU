@@ -26,9 +26,9 @@ class StarsectorEditableMarketTest {
 
         @Test
         void extractsConditionIdsInMarketOrderAndSkipsNulls() {
-            var market = new StarsectorEditableMarket(market(
-                    Arrays.asList(condition("hot", new ArrayList<>()), null, condition(null, new ArrayList<>()),
-                            condition("ore_sparse", new ArrayList<>())),
+            var market = new StarsectorEditableMarket(buildMarket(
+                    Arrays.asList(buildCondition("hot", new ArrayList<>()), null, buildCondition(null, new ArrayList<>()),
+                            buildCondition("ore_sparse", new ArrayList<>())),
                     Map.of(),
                     new ArrayList<>()));
 
@@ -40,7 +40,7 @@ class StarsectorEditableMarketTest {
         @Test
         void returnsEmptyConditionIdsWhenMarketConditionsAreNull() {
             var market = new StarsectorEditableMarket(
-                    market(null, Map.of(), new ArrayList<>()));
+                    buildMarket(null, Map.of(), new ArrayList<>()));
 
             assertThat(market.getConditionIds()).isEmpty();
         }
@@ -49,7 +49,7 @@ class StarsectorEditableMarketTest {
         void propagatesGetConditionsFailuresForServiceBoundaryToHandle() {
             var exception = new IllegalStateException("get conditions failed");
             var market = new StarsectorEditableMarket(
-                    throwingMarket("getConditions", exception));
+                    buildThrowingMarket("getConditions", exception));
 
             assertThatThrownBy(market::getConditionIds)
                     .isSameAs(exception);
@@ -61,7 +61,7 @@ class StarsectorEditableMarketTest {
 
         @Test
         void exposesWrappedStarsectorMarketForUiMetadata() {
-            var starsectorMarket = market(List.of(), Map.of(), new ArrayList<>());
+            var starsectorMarket = buildMarket(List.of(), Map.of(), new ArrayList<>());
             var market = new StarsectorEditableMarket(starsectorMarket);
 
             assertThat(market.getMarket()).isSameAs(starsectorMarket);
@@ -75,9 +75,9 @@ class StarsectorEditableMarketTest {
         void delegatesHasConditionAndAddCondition() {
             var calls = new ArrayList<String>();
             var conditionsById = new LinkedHashMap<String, MarketConditionAPI>();
-            conditionsById.put("hot", condition("hot", calls));
+            conditionsById.put("hot", buildCondition("hot", calls));
             var market = new StarsectorEditableMarket(
-                    market(List.of(), conditionsById, calls));
+                    buildMarket(List.of(), conditionsById, calls));
 
             assertThat(market.hasCondition("hot")).isTrue();
             assertThat(market.hasCondition("cold")).isFalse();
@@ -94,7 +94,7 @@ class StarsectorEditableMarketTest {
         @Test
         void delegatesConditionSuppressionLookup() {
             var market = new StarsectorEditableMarket(
-                    market(List.of(), Map.of(), new ArrayList<>(), Set.of("hot")));
+                    buildMarket(List.of(), Map.of(), new ArrayList<>(), Set.of("hot")));
 
             assertThat(market.isConditionSuppressed("hot")).isTrue();
             assertThat(market.isConditionSuppressed("cold")).isFalse();
@@ -108,7 +108,7 @@ class StarsectorEditableMarketTest {
         void propagatesAddConditionFailuresForServiceBoundaryToHandle() {
             var exception = new IllegalStateException("add condition failed");
             var market = new StarsectorEditableMarket(
-                    throwingMarket("addCondition", exception));
+                    buildThrowingMarket("addCondition", exception));
 
             assertThatThrownBy(() -> market.addCondition("hot"))
                     .isSameAs(exception);
@@ -122,9 +122,9 @@ class StarsectorEditableMarketTest {
         void marksExistingConditionSurveyed() {
             var calls = new ArrayList<String>();
             var conditionsById = new LinkedHashMap<String, MarketConditionAPI>();
-            conditionsById.put("hot", condition("hot", calls));
+            conditionsById.put("hot", buildCondition("hot", calls));
             var market = new StarsectorEditableMarket(
-                    market(List.of(), conditionsById, calls));
+                    buildMarket(List.of(), conditionsById, calls));
 
             market.markConditionSurveyed("hot");
 
@@ -135,7 +135,7 @@ class StarsectorEditableMarketTest {
         void propagatesConditionLookupFailuresForServiceBoundaryToHandle() {
             var exception = new IllegalStateException("condition lookup failed");
             var market = new StarsectorEditableMarket(
-                    throwingMarket("getFirstCondition", exception));
+                    buildThrowingMarket("getFirstCondition", exception));
 
             assertThatThrownBy(() -> market.markConditionSurveyed("hot"))
                     .isSameAs(exception);
@@ -144,9 +144,9 @@ class StarsectorEditableMarketTest {
         @Test
         void propagatesSurveyMarkerFailuresForServiceBoundaryToHandle() {
             var exception = new IllegalStateException("survey marker failed");
-            var condition = throwingCondition("setSurveyed", exception);
+            var condition = buildThrowingCondition("setSurveyed", exception);
             var market = new StarsectorEditableMarket(
-                    market(List.of(), Map.of("hot", condition), new ArrayList<>()));
+                    buildMarket(List.of(), Map.of("hot", condition), new ArrayList<>()));
 
             assertThatThrownBy(() -> market.markConditionSurveyed("hot"))
                     .isSameAs(exception);
@@ -156,7 +156,7 @@ class StarsectorEditableMarketTest {
         void ignoresSurveyedMarkerWhenConditionIsMissing() {
             var calls = new ArrayList<String>();
             var market = new StarsectorEditableMarket(
-                    market(List.of(), Map.of(), calls));
+                    buildMarket(List.of(), Map.of(), calls));
 
             market.markConditionSurveyed("missing");
 
@@ -171,7 +171,7 @@ class StarsectorEditableMarketTest {
         void delegatesReapplyConditions() {
             var calls = new ArrayList<String>();
             var market = new StarsectorEditableMarket(
-                    market(List.of(), Map.of(), calls));
+                    buildMarket(List.of(), Map.of(), calls));
 
             market.reapplyConditions();
 
@@ -182,21 +182,21 @@ class StarsectorEditableMarketTest {
         void propagatesReapplyFailuresForServiceBoundaryToHandle() {
             var exception = new IllegalStateException("reapply failed");
             var market = new StarsectorEditableMarket(
-                    throwingMarket("reapplyConditions", exception));
+                    buildThrowingMarket("reapplyConditions", exception));
 
             assertThatThrownBy(market::reapplyConditions)
                     .isSameAs(exception);
         }
     }
 
-    private static MarketAPI market(
+    private static MarketAPI buildMarket(
             List<MarketConditionAPI> conditions,
             Map<String, MarketConditionAPI> conditionsById,
             List<String> calls) {
-        return market(conditions, conditionsById, calls, Set.of());
+        return buildMarket(conditions, conditionsById, calls, Set.of());
     }
 
-    private static MarketAPI market(
+    private static MarketAPI buildMarket(
             List<MarketConditionAPI> conditions,
             Map<String, MarketConditionAPI> conditionsById,
             List<String> calls,
@@ -223,7 +223,7 @@ class StarsectorEditableMarketTest {
         });
     }
 
-    private static MarketAPI throwingMarket(String methodName, RuntimeException exception) {
+    private static MarketAPI buildThrowingMarket(String methodName, RuntimeException exception) {
         return proxy(MarketAPI.class, (proxy, method, args) -> {
             if (method.getName().equals(methodName)) {
                 throw exception;
@@ -232,7 +232,7 @@ class StarsectorEditableMarketTest {
         });
     }
 
-    private static MarketConditionAPI condition(String id, List<String> calls) {
+    private static MarketConditionAPI buildCondition(String id, List<String> calls) {
         return proxy(MarketConditionAPI.class, (proxy, method, args) -> {
             switch (method.getName()) {
                 case "getId":
@@ -246,7 +246,7 @@ class StarsectorEditableMarketTest {
         });
     }
 
-    private static MarketConditionAPI throwingCondition(String methodName, RuntimeException exception) {
+    private static MarketConditionAPI buildThrowingCondition(String methodName, RuntimeException exception) {
         return proxy(MarketConditionAPI.class, (proxy, method, args) -> {
             if (method.getName().equals(methodName)) {
                 throw exception;

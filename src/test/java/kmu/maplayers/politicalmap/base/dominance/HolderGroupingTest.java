@@ -44,12 +44,12 @@ class HolderGroupingTest {
 
         @Test
         void mapsAnAlliedFactionToItsBloc() {
-            assertThat(allianceGrouping().resolveBlocId("hegemony")).isEqualTo("alliance-1");
+            assertThat(buildAllianceGrouping().resolveBlocId("hegemony")).isEqualTo("alliance-1");
         }
 
         @Test
         void leavesAnOutsiderAsItsOwnBloc() {
-            assertThat(allianceGrouping().resolveBlocId("tritachyon")).isEqualTo("tritachyon");
+            assertThat(buildAllianceGrouping().resolveBlocId("tritachyon")).isEqualTo("tritachyon");
         }
     }
 
@@ -58,13 +58,13 @@ class HolderGroupingTest {
 
         @Test
         void namesTheAlliancesDominantMember() {
-            assertThat(allianceGrouping().resolveColourFactionId("alliance-1"))
+            assertThat(buildAllianceGrouping().resolveColourFactionId("alliance-1"))
                     .isEqualTo("hegemony");
         }
 
         @Test
         void coloursAFactionBlocAsItself() {
-            assertThat(allianceGrouping().resolveColourFactionId("tritachyon"))
+            assertThat(buildAllianceGrouping().resolveColourFactionId("tritachyon"))
                     .isEqualTo("tritachyon");
         }
     }
@@ -74,13 +74,13 @@ class HolderGroupingTest {
 
         @Test
         void carriesTheAllianceName() {
-            assertThat(allianceGrouping().resolveAllianceName("alliance-1"))
+            assertThat(buildAllianceGrouping().resolveAllianceName("alliance-1"))
                     .isEqualTo("Allied Powers");
         }
 
         @Test
         void returnsNullForAFactionBloc() {
-            assertThat(allianceGrouping().resolveAllianceName("tritachyon")).isNull();
+            assertThat(buildAllianceGrouping().resolveAllianceName("tritachyon")).isNull();
         }
     }
 
@@ -89,12 +89,12 @@ class HolderGroupingTest {
 
         @Test
         void isTrueForAnAllianceBloc() {
-            assertThat(allianceGrouping().isAlliance("alliance-1")).isTrue();
+            assertThat(buildAllianceGrouping().isAlliance("alliance-1")).isTrue();
         }
 
         @Test
         void isFalseForAFactionBloc() {
-            assertThat(allianceGrouping().isAlliance("tritachyon")).isFalse();
+            assertThat(buildAllianceGrouping().isAlliance("tritachyon")).isFalse();
         }
     }
 
@@ -161,7 +161,7 @@ class HolderGroupingTest {
     // Two allied factions folded into one bloc whose colour faction and dominant
     // member is hegemony, with tritachyon left an outsider mapped to itself, so a
     // test can probe both the grouped and the unowned path off one instance.
-    private static HolderGrouping allianceGrouping() {
+    private static HolderGrouping buildAllianceGrouping() {
         return new HolderGrouping(
                 Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
                 Map.of("alliance-1", "hegemony"),

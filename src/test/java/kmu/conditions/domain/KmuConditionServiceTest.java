@@ -23,9 +23,9 @@ class KmuConditionServiceTest {
         @Test
         void listsOnlyPlanetaryConditionSpecsInRepositoryOrder() {
             var repositoryFake = new ConditionRepositoryFake(
-                    spec("hot", "Hot", true),
-                    spec("population_3", "Population 3", false),
-                    spec("farmland_rich", "Farmland: Rich", true));
+                    buildSpec("hot", "Hot", true),
+                    buildSpec("population_3", "Population 3", false),
+                    buildSpec("farmland_rich", "Farmland: Rich", true));
             var service = new KmuConditionService(repositoryFake);
 
             var specs = service.listPlanetaryConditionSpecs();
@@ -38,9 +38,9 @@ class KmuConditionServiceTest {
         @Test
         void skipsNullSpecsWhenListingPlanetaryConditionSpecs() {
             var service = new KmuConditionService(new ListBackedConditionRepository(Arrays.asList(
-                    spec("hot", "Hot", true),
+                    buildSpec("hot", "Hot", true),
                     null,
-                    spec("farmland_rich", "Farmland: Rich", true))));
+                    buildSpec("farmland_rich", "Farmland: Rich", true))));
 
             var specs = service.listPlanetaryConditionSpecs();
 
@@ -52,11 +52,11 @@ class KmuConditionServiceTest {
         @Test
         void returnsImmutablePlanetaryConditionSpecList() {
             var service = new KmuConditionService(
-                    new ConditionRepositoryFake(spec("hot", "Hot", true)));
+                    new ConditionRepositoryFake(buildSpec("hot", "Hot", true)));
 
             var specs = service.listPlanetaryConditionSpecs();
 
-            assertThatThrownBy(() -> specs.add(spec("cold", "Cold", true)))
+            assertThatThrownBy(() -> specs.add(buildSpec("cold", "Cold", true)))
                     .isInstanceOf(UnsupportedOperationException.class);
         }
 
@@ -80,9 +80,9 @@ class KmuConditionServiceTest {
         @Test
         void visibleSpecsIncludePlanetarySpecsAndCurrentNonPlanetaryConditions() {
             var repositoryFake = new ConditionRepositoryFake(
-                    spec("hot", "Hot", true),
-                    spec("abandoned_station", "Abandoned Station", false),
-                    spec("population_3", "Population 3", false));
+                    buildSpec("hot", "Hot", true),
+                    buildSpec("abandoned_station", "Abandoned Station", false),
+                    buildSpec("population_3", "Population 3", false));
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake("abandoned_station");
 
@@ -96,9 +96,9 @@ class KmuConditionServiceTest {
         @Test
         void visibleSpecsIncludeNonPlanetaryConditionsTheOfferPolicyOffers() {
             var repositoryFake = new ConditionRepositoryFake(
-                    spec("hot", "Hot", true),
-                    spec("decivilized", "Decivilized", false),
-                    spec("population_3", "Population 3", false));
+                    buildSpec("hot", "Hot", true),
+                    buildSpec("decivilized", "Decivilized", false),
+                    buildSpec("population_3", "Population 3", false));
             KmuConditionOfferPolicy offerPolicy =
                     candidate -> candidate != null
                             && (candidate.isPlanetary() || "decivilized".equals(candidate.getId()));
@@ -157,7 +157,7 @@ class KmuConditionServiceTest {
 
         @Test
         void addsValidAbsentPlanetaryConditionAndReappliesMarket() {
-            var repositoryFake = new ConditionRepositoryFake(spec("habitable", "Habitable", true));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("habitable", "Habitable", true));
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake();
 
@@ -175,7 +175,7 @@ class KmuConditionServiceTest {
 
         @Test
         void trimsConditionIdBeforeLookupAndMutation() {
-            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("hot", "Hot", true));
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake();
 
@@ -187,7 +187,7 @@ class KmuConditionServiceTest {
 
         @Test
         void doesNotAddDuplicateCondition() {
-            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("hot", "Hot", true));
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake("hot");
 
@@ -237,7 +237,7 @@ class KmuConditionServiceTest {
 
         @Test
         void rejectsNonPlanetaryConditionSpecUnderThePlanetaryOnlyDefault() {
-            var repositoryFake = new ConditionRepositoryFake(spec("population_3", "Population 3", false));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("population_3", "Population 3", false));
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake();
 
@@ -250,7 +250,7 @@ class KmuConditionServiceTest {
 
         @Test
         void addsNonPlanetaryConditionWhenOfferPolicyOffersIt() {
-            var repositoryFake = new ConditionRepositoryFake(spec("decivilized", "Decivilized", false));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("decivilized", "Decivilized", false));
             KmuConditionOfferPolicy offerPolicy =
                     candidate -> candidate != null
                             && (candidate.isPlanetary() || "decivilized".equals(candidate.getId()));
@@ -287,7 +287,7 @@ class KmuConditionServiceTest {
         @Test
         void returnsFailedResultWhenMarketHasConditionThrows() {
             var exception = new IllegalStateException("market unavailable");
-            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("hot", "Hot", true));
             var reports = new ArrayList<String>();
             var service = new KmuConditionService(
                     repositoryFake,
@@ -306,7 +306,7 @@ class KmuConditionServiceTest {
         @Test
         void returnsFailedResultWhenMutationThrowsAfterAdd() {
             var exception = new IllegalStateException("survey failed");
-            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("hot", "Hot", true));
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake()
                     .failMarkConditionSurveyed(exception);
@@ -322,7 +322,7 @@ class KmuConditionServiceTest {
         @Test
         void returnsFailedResultWhenAddConditionThrows() {
             var exception = new IllegalStateException("add failed");
-            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("hot", "Hot", true));
             var reports = new ArrayList<String>();
             var service = new KmuConditionService(
                     repositoryFake,
@@ -343,7 +343,7 @@ class KmuConditionServiceTest {
         @Test
         void returnsFailedResultWhenReapplyThrowsAfterMutation() {
             var exception = new IllegalStateException("reapply failed");
-            var repositoryFake = new ConditionRepositoryFake(spec("hot", "Hot", true));
+            var repositoryFake = new ConditionRepositoryFake(buildSpec("hot", "Hot", true));
             var service = new KmuConditionService(repositoryFake);
             var marketFake = new EditableMarketFake()
                     .failReapplyConditions(exception);
@@ -357,7 +357,7 @@ class KmuConditionServiceTest {
         }
     }
 
-    private static KmuConditionSpec spec(String id, String name, boolean planetary) {
+    private static KmuConditionSpec buildSpec(String id, String name, boolean planetary) {
         return new KmuConditionSpec(id, name, "graphics/icons/" + id + ".png", planetary);
     }
 

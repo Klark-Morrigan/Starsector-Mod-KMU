@@ -73,9 +73,9 @@ final class CellGeometryCacheTest {
 
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("a", 0, 0),
-                    accessibleSystem("b", 4000, 0),
-                    inaccessibleSystem("hidden", 8000, 0));
+                    buildAccessibleSystem("a", 0, 0),
+                    buildAccessibleSystem("b", 4000, 0),
+                    buildInaccessibleSystem("hidden", 8000, 0));
 
             assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a", "b");
             assertThat(cache.getCellEdgesByCellId().get("a")).isNotEmpty();
@@ -91,15 +91,15 @@ final class CellGeometryCacheTest {
             var cache = new CellGeometryCache();
 
             cache.updateFromSector(
-                    sectorOf(
-                            accessibleSystem("a", 0, 0),
-                            inaccessibleSystem("hidden", 4000, 0)),
+                    buildSectorOf(
+                            buildAccessibleSystem("a", 0, 0),
+                            buildInaccessibleSystem("hidden", 4000, 0)),
                     NO_MOVING_SYSTEMS,
                     DEFAULT_SEED_INPUTS,
                     FORCED_ONTO_MAP);
 
             assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a", "hidden");
-            assertThat(neighboursOf(cache, "a")).containsExactly("hidden");
+            assertThat(listNeighboursOf(cache, "a")).containsExactly("hidden");
         }
 
         @Test
@@ -107,17 +107,17 @@ final class CellGeometryCacheTest {
             var cache = new CellGeometryCache();
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("a", 0, 0),
-                    accessibleSystem("b", FAR, 0));
+                    buildAccessibleSystem("a", 0, 0),
+                    buildAccessibleSystem("b", FAR, 0));
             var distantBefore = cache.getCellEdgesByCellId().get("b");
 
             // Add a system next to "a"; "b" is far away, so its cell must be the
             // very same object - proof it was not recomputed.
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("a", 0, 0),
-                    accessibleSystem("b", FAR, 0),
-                    accessibleSystem("c", 100, 0));
+                    buildAccessibleSystem("a", 0, 0),
+                    buildAccessibleSystem("b", FAR, 0),
+                    buildAccessibleSystem("c", 100, 0));
 
             assertThat(cache.getCellEdgesByCellId()).containsKey("c");
             assertThat(cache.getCellEdgesByCellId().get("b")).isSameAs(distantBefore);
@@ -127,9 +127,9 @@ final class CellGeometryCacheTest {
         void updateReseedsEveryCellWhenTheFrontierResolutionChanges() {
             var cache = new CellGeometryCache();
             cache.updateFromSector(
-                    sectorOf(
-                            accessibleSystem("a", 0, 0),
-                            accessibleSystem("b", FAR, 0)),
+                    buildSectorOf(
+                            buildAccessibleSystem("a", 0, 0),
+                            buildAccessibleSystem("b", FAR, 0)),
                     NO_MOVING_SYSTEMS,
                     DEFAULT_SEED_INPUTS,
                     NO_REVEAL);
@@ -141,9 +141,9 @@ final class CellGeometryCacheTest {
             // diff would leave. A lone bounded cell keeps one edge per seed segment,
             // so its edge count drops to the new count.
             cache.updateFromSector(
-                    sectorOf(
-                            accessibleSystem("a", 0, 0),
-                            accessibleSystem("b", FAR, 0)),
+                    buildSectorOf(
+                            buildAccessibleSystem("a", 0, 0),
+                            buildAccessibleSystem("b", FAR, 0)),
                     NO_MOVING_SYSTEMS,
                     new CellSeedInputs(24, DEFAULT_CELL_RADIUS),
                     NO_REVEAL);
@@ -156,9 +156,9 @@ final class CellGeometryCacheTest {
         void updateReseedsEveryCellWhenTheCellRadiusChanges() {
             var cache = new CellGeometryCache();
             cache.updateFromSector(
-                    sectorOf(
-                            accessibleSystem("a", 0, 0),
-                            accessibleSystem("b", FAR, 0)),
+                    buildSectorOf(
+                            buildAccessibleSystem("a", 0, 0),
+                            buildAccessibleSystem("b", FAR, 0)),
                     NO_MOVING_SYSTEMS,
                     DEFAULT_SEED_INPUTS,
                     NO_REVEAL);
@@ -169,9 +169,9 @@ final class CellGeometryCacheTest {
             // isolated cell must be a fresh object, not the untouched one an access diff
             // would leave in place, exactly as a frontier-resolution change reseeds it.
             cache.updateFromSector(
-                    sectorOf(
-                            accessibleSystem("a", 0, 0),
-                            accessibleSystem("b", FAR, 0)),
+                    buildSectorOf(
+                            buildAccessibleSystem("a", 0, 0),
+                            buildAccessibleSystem("b", FAR, 0)),
                     NO_MOVING_SYSTEMS,
                     new CellSeedInputs(
                             VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
@@ -184,9 +184,9 @@ final class CellGeometryCacheTest {
         @Test
         void updateDropsTheCellOfASystemThatLosesAccess() {
             var cache = new CellGeometryCache();
-            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0), accessibleSystem("b", FAR, 0));
+            updateAtDefaultResolution(cache, buildAccessibleSystem("a", 0, 0), buildAccessibleSystem("b", FAR, 0));
 
-            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
+            updateAtDefaultResolution(cache, buildAccessibleSystem("a", 0, 0));
 
             assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a");
         }
@@ -198,11 +198,11 @@ final class CellGeometryCacheTest {
             // Two close systems share a Voronoi edge, so each cell must name the
             // other across exactly that edge.
             updateAtDefaultResolution(cache,
-                    accessibleSystem("a", 0, 0),
-                    accessibleSystem("b", 1000, 0));
+                    buildAccessibleSystem("a", 0, 0),
+                    buildAccessibleSystem("b", 1000, 0));
 
-            assertThat(neighboursOf(cache, "a")).containsExactly("b");
-            assertThat(neighboursOf(cache, "b")).containsExactly("a");
+            assertThat(listNeighboursOf(cache, "a")).containsExactly("b");
+            assertThat(listNeighboursOf(cache, "b")).containsExactly("a");
         }
 
         @Test
@@ -211,7 +211,7 @@ final class CellGeometryCacheTest {
 
             // A lone system has no neighbour to share an edge with, so every edge
             // is a frontier into empty space - the cell's own reach bound.
-            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
+            updateAtDefaultResolution(cache, buildAccessibleSystem("a", 0, 0));
 
             assertThat(cache.getCellEdgesByCellId().get("a"))
                     .isNotEmpty()
@@ -225,8 +225,8 @@ final class CellGeometryCacheTest {
             // Every cell here is one star's own, so it draws as that star: the
             // draws-as map is the identity a cell-keyed consumer resolves a key through.
             updateAtDefaultResolution(cache,
-                    accessibleSystem("a", 0, 0),
-                    accessibleSystem("b", 1000, 0));
+                    buildAccessibleSystem("a", 0, 0),
+                    buildAccessibleSystem("b", 1000, 0));
 
             assertThat(cache.getSystemIdByCellId()).containsOnly(
                     org.assertj.core.api.Assertions.entry("a", "a"),
@@ -238,10 +238,10 @@ final class CellGeometryCacheTest {
             var cache = new CellGeometryCache();
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("a", 0, 0),
-                    accessibleSystem("b", FAR, 0));
+                    buildAccessibleSystem("a", 0, 0),
+                    buildAccessibleSystem("b", FAR, 0));
 
-            updateAtDefaultResolution(cache, accessibleSystem("a", 0, 0));
+            updateAtDefaultResolution(cache, buildAccessibleSystem("a", 0, 0));
 
             assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a");
         }
@@ -254,8 +254,8 @@ final class CellGeometryCacheTest {
 
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("a", 0, 0),
-                    decivilisedUnreachableSystem("ruin", 4000, 0));
+                    buildAccessibleSystem("a", 0, 0),
+                    buildDecivilisedUnreachableSystem("ruin", 4000, 0));
 
             assertThat(cache.getCellEdgesByCellId()).containsOnlyKeys("a", "ruin");
         }
@@ -265,9 +265,9 @@ final class CellGeometryCacheTest {
             var cache = new CellGeometryCache();
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("m", 0, 0),
-                    accessibleSystem("n", 2000, 0),
-                    accessibleSystem("f", FAR, 0));
+                    buildAccessibleSystem("m", 0, 0),
+                    buildAccessibleSystem("n", 2000, 0),
+                    buildAccessibleSystem("f", FAR, 0));
             var neighbourBefore = cache.getCellEdgesByCellId().get("n");
             var distantBefore = cache.getCellEdgesByCellId().get("f");
 
@@ -277,9 +277,9 @@ final class CellGeometryCacheTest {
             updateExcluding(
                     cache,
                     Set.of("m"),
-                    accessibleSystem("m", 0, 0),
-                    accessibleSystem("n", 2000, 0),
-                    accessibleSystem("f", FAR, 0));
+                    buildAccessibleSystem("m", 0, 0),
+                    buildAccessibleSystem("n", 2000, 0),
+                    buildAccessibleSystem("f", FAR, 0));
 
             assertThat(cache.getCellEdgesByCellId()).doesNotContainKey("m");
             assertThat(cache.getCellEdgesByCellId().get("n")).isNotSameAs(neighbourBefore);
@@ -291,20 +291,20 @@ final class CellGeometryCacheTest {
             var cache = new CellGeometryCache();
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("m", 0, 0),
-                    accessibleSystem("n", 2000, 0));
+                    buildAccessibleSystem("m", 0, 0),
+                    buildAccessibleSystem("n", 2000, 0));
             updateExcluding(
                     cache,
                     Set.of("m"),
-                    accessibleSystem("m", 0, 0),
-                    accessibleSystem("n", 2000, 0));
+                    buildAccessibleSystem("m", 0, 0),
+                    buildAccessibleSystem("n", 2000, 0));
 
             // "m" comes to rest, so it is no longer a mover and rejoins the partition
             // with a fresh cell.
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("m", 0, 0),
-                    accessibleSystem("n", 2000, 0));
+                    buildAccessibleSystem("m", 0, 0),
+                    buildAccessibleSystem("n", 2000, 0));
 
             assertThat(cache.getCellEdgesByCellId()).containsKey("m");
             assertThat(cache.getCellEdgesByCellId().get("m")).isNotEmpty();
@@ -315,8 +315,8 @@ final class CellGeometryCacheTest {
             var cache = new CellGeometryCache();
             updateAtDefaultResolution(
                     cache,
-                    accessibleSystem("m", 0, 0),
-                    accessibleSystem("f", FAR, 0));
+                    buildAccessibleSystem("m", 0, 0),
+                    buildAccessibleSystem("f", FAR, 0));
             var distantBefore = cache.getCellEdgesByCellId().get("f");
 
             // "m" starts moving but has no neighbour within a neighbourhood radius, so
@@ -324,8 +324,8 @@ final class CellGeometryCacheTest {
             updateExcluding(
                     cache,
                     Set.of("m"),
-                    accessibleSystem("m", 0, 0),
-                    accessibleSystem("f", FAR, 0));
+                    buildAccessibleSystem("m", 0, 0),
+                    buildAccessibleSystem("f", FAR, 0));
 
             assertThat(cache.getCellEdgesByCellId()).doesNotContainKey("m");
             assertThat(cache.getCellEdgesByCellId().get("f")).isSameAs(distantBefore);
@@ -334,7 +334,7 @@ final class CellGeometryCacheTest {
 
     // The distinct neighbouring system ids one cell names across its edges,
     // dropping the reach-bound edges - the adjacency the merge step reads.
-    private static Set<String> neighboursOf(CellGeometryCache cache, String systemId) {
+    private static Set<String> listNeighboursOf(CellGeometryCache cache, String systemId) {
         var neighbours = new LinkedHashSet<String>();
         for (var edge : cache.getCellEdgesByCellId().get(systemId)) {
             if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem) {
@@ -352,7 +352,7 @@ final class CellGeometryCacheTest {
             StarSystemAPI... systems) {
 
         cache.updateFromSector(
-                sectorOf(systems),
+                buildSectorOf(systems),
                 NO_MOVING_SYSTEMS,
                 DEFAULT_SEED_INPUTS,
                 NO_REVEAL);
@@ -367,16 +367,16 @@ final class CellGeometryCacheTest {
             StarSystemAPI... systems) {
                 
         cache.updateFromSector(
-                sectorOf(systems),
+                buildSectorOf(systems),
                 movingSystemIds,
                 DEFAULT_SEED_INPUTS,
                 NO_REVEAL);
     }
 
-    private static SectorAPI sectorOf(StarSystemAPI... systems) {
+    private static SectorAPI buildSectorOf(StarSystemAPI... systems) {
         // The hyperspace mock is built before the getHyperspace() stubbing so its
         // own stubbing is not nested inside this one.
-        var hyperspaceMock = hyperspaceWithVisibleStarAnchorsFor(systems);
+        var hyperspaceMock = buildHyperspaceWithVisibleStarAnchorsFor(systems);
         var sectorMock = mock(SectorAPI.class);
         when(sectorMock.getStarSystems()).thenReturn(List.of(systems));
         when(sectorMock.getHyperspace()).thenReturn(hyperspaceMock);
@@ -386,7 +386,7 @@ final class CellGeometryCacheTest {
     // A visible (untagged) star anchor leading into each system, so a system with
     // a jump point reads as map-visible. A cut-off or jump-point-less system stays
     // off the map regardless, so its anchor cannot admit it.
-    private static LocationAPI hyperspaceWithVisibleStarAnchorsFor(StarSystemAPI... systems) {
+    private static LocationAPI buildHyperspaceWithVisibleStarAnchorsFor(StarSystemAPI... systems) {
         var anchors = new ArrayList<JumpPointAPI>();
         for (var system : systems) {
             var anchorMock = mock(JumpPointAPI.class);
@@ -399,7 +399,7 @@ final class CellGeometryCacheTest {
         return hyperspaceMock;
     }
 
-    private static StarSystemAPI accessibleSystem(String id, float x, float y) {
+    private static StarSystemAPI buildAccessibleSystem(String id, float x, float y) {
         // Wired into hyperspace by a jump point, so the access rule admits it.
         var systemMock = mock(StarSystemAPI.class);
         when(systemMock.getId()).thenReturn(id);
@@ -408,19 +408,19 @@ final class CellGeometryCacheTest {
         return systemMock;
     }
 
-    private static StarSystemAPI inaccessibleSystem(String id, float x, float y) {
-        var system = accessibleSystem(id, x, y);
+    private static StarSystemAPI buildInaccessibleSystem(String id, float x, float y) {
+        var system = buildAccessibleSystem(id, x, y);
         when(system.hasTag(Tags.SYSTEM_CUT_OFF_FROM_HYPER)).thenReturn(true);
         when(system.getEntitiesWithTag(Tags.GATE)).thenReturn(List.of());
         return system;
     }
 
-    private static StarSystemAPI decivilisedUnreachableSystem(String id, float x, float y) {
+    private static StarSystemAPI buildDecivilisedUnreachableSystem(String id, float x, float y) {
         // No jump point (Mockito defaults the list empty) and not cut off, so the
         // access rule rejects it; the revealed decivilised planet is its only
         // route onto the map. The planet is built before the getPlanets() stubbing
         // so Mockito does not see one stubbing nested inside another.
-        var planet = decivilisedPlanet();
+        var planet = buildDecivilisedPlanet();
         var systemMock = mock(StarSystemAPI.class);
         when(systemMock.getId()).thenReturn(id);
         when(systemMock.getLocation()).thenReturn(new Vector2f(x, y));
@@ -428,7 +428,7 @@ final class CellGeometryCacheTest {
         return systemMock;
     }
 
-    private static PlanetAPI decivilisedPlanet() {
+    private static PlanetAPI buildDecivilisedPlanet() {
         var conditionMock = mock(MarketConditionAPI.class);
         when(conditionMock.requiresSurveying()).thenReturn(false);
         var marketMock = mock(MarketAPI.class);
