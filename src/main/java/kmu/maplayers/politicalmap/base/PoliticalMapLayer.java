@@ -115,7 +115,6 @@ public final class PoliticalMapLayer implements MapLayer {
                 viewId,
                 SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
                 sort,
-                BlocSortMode.MODES,
                 columns,
                 RecedeControl.buildControls(
                     RecedePreferences.FILTER,

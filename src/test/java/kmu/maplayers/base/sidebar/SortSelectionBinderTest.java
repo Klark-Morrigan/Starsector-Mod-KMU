@@ -42,7 +42,7 @@ final class SortSelectionBinderTest {
                     .thenReturn(SortDirection.ASCENDING.persistenceKey());
 
                 assertThat(SortSelectionBinder.resolveStoredSort(MODES))
-                    .isEqualTo(new ListSort<>(HazardSortMode.SEVERITY, SortDirection.ASCENDING));
+                    .isEqualTo(new ListSort<>(HazardSortMode.SEVERITY, SortDirection.ASCENDING, MODES));
             }
         }
     }
@@ -57,7 +57,7 @@ final class SortSelectionBinderTest {
             try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
 
                 SortSelectionBinder.storeSort(
-                    new ListSort<>(HazardSortMode.RADIUS, SortDirection.ASCENDING));
+                    new ListSort<>(HazardSortMode.RADIUS, SortDirection.ASCENDING, MODES));
 
                 selectionMock.verify(
                     () -> SortSelection.selectSortMode(HazardSortMode.RADIUS.persistenceKey()));

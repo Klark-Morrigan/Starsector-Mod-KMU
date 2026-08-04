@@ -129,7 +129,6 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
-                        any(),
                         any()))
                     .thenReturn(List.of(PICKER_MARKER));
 

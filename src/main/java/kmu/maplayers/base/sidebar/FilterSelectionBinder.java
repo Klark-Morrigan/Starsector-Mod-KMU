@@ -5,7 +5,6 @@ import kmlib.starsector.ui.widgets.lists.ListColumns;
 import kmlib.starsector.ui.widgets.lists.ListPickerControl;
 import kmlib.starsector.ui.widgets.lists.ListPickerStore;
 import kmlib.starsector.ui.widgets.lists.ListSort;
-import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SelectableListItem;
 
 import kmu.util.KmuStrings;
@@ -40,8 +39,8 @@ public final class FilterSelectionBinder {
      *                         choice is remembered against this scope alone
      * @param items            the selectable items in this scope; order here is immaterial since
      *                         the sort mode reorders them for display
-     * @param sort             the metric and direction the list is ranked by
-     * @param sortModes        the layer's sort vocabulary the selector lays its rows out from
+     * @param sort             how the list is ranked - the metric, its direction, and the layer's
+     *                         sort vocabulary the selector draws its rows from
      * @param columns          how many columns the item list wraps its rows across
      * @param trailingControls the controls filling the right half of the sort row; empty leaves the
      *                         sort selector alone on the row
@@ -51,7 +50,6 @@ public final class FilterSelectionBinder {
             String scopeId,
             List<T> items,
             ListSort<T> sort,
-            ListSortModes<T> sortModes,
             ListColumns columns,
             List<ControlSpec> trailingControls) {
 
@@ -59,7 +57,6 @@ public final class FilterSelectionBinder {
             items,
             FilterSelection.getSelectedIdOf(scopeId),
             sort,
-            sortModes,
             columns,
             KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION),
             trailingControls,

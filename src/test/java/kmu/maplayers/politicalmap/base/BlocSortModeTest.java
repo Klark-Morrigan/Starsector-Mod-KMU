@@ -42,7 +42,7 @@ final class BlocSortModeTest {
                     .thenReturn(SortDirection.ASCENDING.persistenceKey());
 
                 assertThat(BlocSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(BlocSortMode.PRESENCE, SortDirection.ASCENDING));
+                    .isEqualTo(new ListSort<>(BlocSortMode.PRESENCE, SortDirection.ASCENDING, BlocSortMode.MODES));
             }
         }
 
@@ -53,7 +53,10 @@ final class BlocSortModeTest {
             try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
 
                 assertThat(BlocSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection()));
+                    .isEqualTo(new ListSort<>(
+                        BlocSortMode.DEFAULT,
+                        BlocSortMode.DEFAULT.defaultDirection(),
+                        BlocSortMode.MODES));
                 assertThat(BlocSortMode.DEFAULT)
                     .isEqualTo(BlocSortMode.DOMINATION);
             }
@@ -70,7 +73,10 @@ final class BlocSortModeTest {
                     .thenReturn("no_such_mode");
 
                 assertThat(BlocSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(BlocSortMode.DEFAULT, BlocSortMode.DEFAULT.defaultDirection()));
+                    .isEqualTo(new ListSort<>(
+                        BlocSortMode.DEFAULT,
+                        BlocSortMode.DEFAULT.defaultDirection(),
+                        BlocSortMode.MODES));
             }
         }
 
@@ -85,7 +91,10 @@ final class BlocSortModeTest {
                     .thenReturn(BlocSortMode.PRESENCE.persistenceKey());
 
                 assertThat(BlocSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(BlocSortMode.PRESENCE, BlocSortMode.PRESENCE.defaultDirection()));
+                    .isEqualTo(new ListSort<>(
+                        BlocSortMode.PRESENCE,
+                        BlocSortMode.PRESENCE.defaultDirection(),
+                        BlocSortMode.MODES));
             }
         }
     }

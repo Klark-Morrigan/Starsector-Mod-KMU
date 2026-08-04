@@ -154,13 +154,13 @@ final class FilterSelectionBinderTest {
         }
 
         @Test
-        void buildPickerWritesAColumnsPickThroughTheColumnStore() {
-            // The other two picks route to the binders that already own their slots, so a wiring
-            // that silently came undone would leave the segment lighting up and the count never
-            // persisting.
+        void buildPickerRoutesAColumnsPickToTheColumnBinder() {
+            // The other two picks are handed to the binders that already own those slots. Asserted
+            // at the binder rather than at the sector-memory key behind it: what this class decides
+            // is which binder a report goes to, and the binder's own suite pins the write.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<ColumnSelection> selectionMock =
-                        mockStatic(ColumnSelection.class)) {
+                    MockedStatic<ColumnSelectionBinder> binderMock =
+                        mockStatic(ColumnSelectionBinder.class)) {
                 stubLabels(stringsMock);
 
                 var columnsSelector = (ControlSpec.HorizontalRadio) buildPicker()
@@ -169,15 +169,16 @@ final class FilterSelectionBinderTest {
                 columnsSelector.action().activateCell(
                     List.of(ListColumns.values()).indexOf(ListColumns.TWO));
 
-                selectionMock.verify(
-                    () -> ColumnSelection.selectColumnCount(ListColumns.TWO.persistenceKey()));
+                binderMock.verify(
+                    () -> ColumnSelectionBinder.storeColumns(ListColumns.TWO));
             }
         }
 
         @Test
-        void buildPickerWritesASortPickThroughTheSortStore() {
+        void buildPickerRoutesASortPickToTheSortBinder() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
+                    MockedStatic<SortSelectionBinder> binderMock =
+                        mockStatic(SortSelectionBinder.class)) {
                 stubLabels(stringsMock);
 
                 var sortSelector = (ControlSpec.VerticalTable)
@@ -188,11 +189,8 @@ final class FilterSelectionBinderTest {
                 sortSelector.action().activateCell(
                     List.of(HazardSortMode.values()).indexOf(HazardSortMode.SEVERITY));
 
-                selectionMock.verify(
-                    () -> SortSelection.selectSortMode(HazardSortMode.SEVERITY.persistenceKey()));
-                selectionMock.verify(
-                    () -> SortSelection.selectSortDirection(
-                        HazardSortMode.SEVERITY.defaultDirection().persistenceKey()));
+                binderMock.verify(
+                    () -> SortSelectionBinder.storeSort(sortOf(HazardSortMode.SEVERITY)));
             }
         }
     }
@@ -209,10 +207,15 @@ final class FilterSelectionBinderTest {
         return FilterSelectionBinder.buildPicker(
             SCOPE_ID,
             HAZARDS,
-            new ListSort<>(HazardSortMode.ALPHA, HazardSortMode.ALPHA.defaultDirection()),
-            MODES,
+            sortOf(HazardSortMode.ALPHA),
             ListColumns.ONE,
             List.of());
+    }
+
+    // A mode in its own natural direction over the foreign vocabulary - what a save that has never
+    // flipped the sort reads, and what a click on that mode's row reports back.
+    private static ListSort<Hazard> sortOf(HazardSortMode mode) {
+        return new ListSort<>(mode, mode.defaultDirection(), MODES);
     }
 
     // Stubs the text the binder resolves through this mod's strings table, so the assertions read
