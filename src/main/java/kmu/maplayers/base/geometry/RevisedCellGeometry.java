@@ -16,25 +16,34 @@ package kmu.maplayers.base.geometry;
  * advancing one without the other something a caller has to write out rather than something it
  * can forget.
  *
+ * <p>One obligation falls on whoever produces these, and it is the whole of the contract: the
+ * revision must change whenever the cells are recut, for <em>any</em> reason. A producer that
+ * echoes some upstream signal instead satisfies this only while that signal is the sole thing
+ * able to recut them - which is a property of the producer's own inputs, not of the signal, and
+ * is exactly the assumption that quietly stops holding when a second input is added. A number
+ * counted per recut carries no such assumption. Nothing here can check it, so it is stated:
+ * a revision that stands still through a recut is indistinguishable, to every consumer, from
+ * cells that never moved.
+ *
  * @param cells    the cells themselves, updated in place as the drawn set changes
- * @param revision the geometry revision those cells were last cut at
+ * @param revision names the cut of the cells currently held; changes on every recut
  */
 public record RevisedCellGeometry(
     CellGeometryCache cells,
     int revision) {
 
     /**
-     * The same cells, now standing at a different revision.
+     * The same cells, now naming a different cut.
      *
      * <p>The cells are updated in place, so a recut leaves the very same object holding
      * different geometry and only the revision beside them has moved. Naming that as one
      * operation is what keeps "these cells are now at revision N" from being written out as a
      * fresh pair each time, where the cells could quietly be swapped for another set.
      *
-     * @param cutAtRevision the revision the cells now stand at
+     * @param cutRevision the revision naming the cut the cells now hold
      * @return a copy naming that revision in place of this one's
      */
-    public RevisedCellGeometry copyWithRevision(int cutAtRevision) {
-        return new RevisedCellGeometry(cells, cutAtRevision);
+    public RevisedCellGeometry copyWithRevision(int cutRevision) {
+        return new RevisedCellGeometry(cells, cutRevision);
     }
 }

@@ -146,7 +146,9 @@ frame the map is open. It holds both halves (geometry and built draw lists) plus
 half was built against, and rebuilds only the stale half. The geometry's revision is not a
 field beside the cells but rides with them, for the same reason the placements ride with
 their fingerprint below: a revision naming cells other than the ones in hand reads as
-permission to reuse work fitted inside a partition that has since been recut.
+permission to reuse work fitted inside a partition that has since been recut. It **counts
+cuts** rather than echoing the reachable-set signal, since that signal is only one of the four
+things that recut them - see below.
 
 It is also where rebuild faults are contained: a failing rebuild is logged once
 rather than per frame, leaves the cached revisions un-advanced so the next frame
@@ -164,6 +166,12 @@ radius, and every farther cell is provably untouched.
 Two seed inputs bypass the diff and force a full reseed, because each changes every
 cell: the frontier resolution and the cell reach. So do the dev reveal toggles,
 which change *which* systems seed a cell at all.
+
+Those four - the reachable-set revision plus those three settings - are one value,
+[`CellCutInputs`](../../src/main/java/kmu/maplayers/politicalmap/base/render/CellCutInputs.java),
+because the question asked of them is the single one they answer together: would the cells be
+cut differently now. Only the first raises a framework signal; the other three move without it,
+so a staleness test taken on the signal alone reads a settings recut as no change at all.
 
 The cache holds raw cells, not shaped outlines. The inset that gives a cluster its
 border channel is ownership-dependent, so it belongs to the render pass - which is

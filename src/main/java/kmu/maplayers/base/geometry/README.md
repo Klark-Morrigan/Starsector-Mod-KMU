@@ -96,11 +96,14 @@ drawn-set change touched, and the cache discards what it holds instead of diffin
 They travel as one value because that consequence is shared, and because the reach
 doubles as the distance the diff above scans.
 
-[`RevisedCellGeometry`](RevisedCellGeometry.java) pairs the cells with the revision they stand at.
-Work derived from them and kept across rebuilds holds only while the cells behind it are the ones
-it was derived from, and the revision is how a later pass asks that without having kept the cells
-to compare. The two travel as one value because a pair handed over disagreeing reads as permission
-to reuse rather than as a fault.
+[`RevisedCellGeometry`](RevisedCellGeometry.java) pairs the cells with a revision naming the cut
+they currently hold. Work derived from them and kept across rebuilds holds only while the cells
+behind it are the ones it was derived from, and the revision is how a later pass asks that without
+having kept the cells to compare. The two travel as one value because a pair handed over
+disagreeing reads as permission to reuse rather than as a fault. The obligation that comes with
+producing one is that the revision move on *every* recut: a producer echoing some upstream signal
+meets it only while that signal is the sole thing able to recut the cells, which is a fact about
+that producer's inputs and not about the signal.
 
 Systems that move are the exception: a system that rewrites its own position has no
 stable cell, and letting it clip its neighbours would drag their borders with it,

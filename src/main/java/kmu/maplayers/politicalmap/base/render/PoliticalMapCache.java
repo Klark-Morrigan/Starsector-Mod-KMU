@@ -59,19 +59,28 @@ import java.util.Objects;
 final class PoliticalMapCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapCache.class);
 
-    // The revision seed every half starts at, below any revision a live signal can report, so
-    // the first refresh of a session finds both halves stale and builds them from scratch.
+    // The content revision's seed, below any revision the settings fold can report on a built
+    // map, so the first refresh of a session finds the draw lists stale and builds them.
     private static final int UNBUILT_REVISION = -1;
 
+    // The cut number the first cut of a session takes. Counts up from here and never repeats
+    // within a cache, so no two cuts of these cells can be mistaken for each other.
+    private static final int FIRST_CUT_NUMBER = 0;
+
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or lose
-    // access, paired with the revision it stands at. The cells themselves are the same object
-    // for the life of the cache - it is recreated per session, so they are never null once the
-    // cache exists - and only the revision beside them moves, which is why the pair is replaced
-    // rather than the cells. Held as the pair because the revision names those very cells:
-    // anything derived from them and reused across rebuilds is only sound while the two agree,
-    // so nothing may advance one and leave the other.
+    // access, paired with the number of the cut it currently holds. The cells themselves are the
+    // same object for the life of the cache - it is recreated per session, so they are never
+    // null once the cache exists - and only the number beside them moves, which is why the pair
+    // is replaced rather than the cells.
+    //
+    // That number counts cuts rather than echoing the reachable-set revision, because the two
+    // are not the same fact: a seed-input or dev-toggle change recuts every cell while that
+    // signal stands still (see CellCutInputs). Anything keying reused work off which cut it was
+    // derived against needs a value that moves on all three, and a counter moves on every recut
+    // by construction - where a fold of the three inputs could collide two cuts onto one number
+    // and offer work fitted inside cell shapes that are gone.
     private RevisedCellGeometry cellGeometry =
-        new RevisedCellGeometry(new CellGeometryCache(), UNBUILT_REVISION);
+        new RevisedCellGeometry(new CellGeometryCache(), FIRST_CUT_NUMBER);
 
     // The built draw lists plus the holding and style inputs an incremental re-shape needs.
     // Null until the first build this session; exactly one of this and borderStageOverlay is
@@ -96,21 +105,17 @@ final class PoliticalMapCache {
     private final List<Label> factionLabels = new ArrayList<>();
 
     // The revision the territories were built against. They rebuild on a content change
-    // (settings) or whenever the geometry itself was rebuilt; the geometry's own revision rides
-    // with the cells above. This starts at the unbuilt seed and the value fields at null, so the
-    // first refresh builds both halves.
+    // (settings) or whenever the geometry itself was rebuilt. This starts at the unbuilt seed and
+    // the value fields at null, so the first refresh builds both halves.
     private int lastContentRevision = UNBUILT_REVISION;
 
-    // The seed inputs the cached cells were cut at, held as the pair for the same reason as the
-    // toggles below: one value compare, and neither half can be advanced without the other.
-    private CellSeedInputs lastSeedInputs;
-
-    // The dev reveal toggles the cached geometry was last seeded under. Like the frontier
-    // resolution they change which systems seed a cell, so a flip reseeds the partition - the
-    // settings-revision bump alone only restyles fixed geometry. Held as the record rather than
-    // as its two booleans so the staleness check is one value compare, and null (not NONE) is
-    // the never-seeded seed, since NONE is a reading the player can actually be under.
-    private PoliticalMapDevToggles lastDevToggles;
+    // What the cells currently held were cut from. One value rather than a revision, the seed
+    // inputs and the dev toggles side by side, because each of the three recuts every cell and
+    // the question asked of them is the single one they answer together: would the cells be cut
+    // differently now. Null (not a zero reading) is the never-cut state, since every reading the
+    // record can hold is one the player can actually be under - and it is what makes the first
+    // refresh of a session cut, whatever the signal happens to say.
+    private CellCutInputs lastCellCut;
 
     // One-shot guard for rebuild faults: refresh runs every frame the map is open, so a recurring
     // rebuild failure would flood the log. The first is recorded at ERROR, the rest silenced.
@@ -158,13 +163,15 @@ final class PoliticalMapCache {
         standingAnchors.discardAnchors();
         territories = null;
         borderStageOverlay = null;
-        // The cells are emptied and their revision returned to the unbuilt seed together, since
-        // cells nothing was cut into must not keep answering for the revision they were cut at.
+        // Emptying the cells is itself a cut, so it takes its own number rather than rewinding to
+        // a seed: a placement fitted against the previous sector's cells must not be able to
+        // match the number these emptied ones now answer for.
         cellGeometry.cells().clearCachedCells();
-        cellGeometry = cellGeometry.copyWithRevision(UNBUILT_REVISION);
+        cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
         lastContentRevision = UNBUILT_REVISION;
-        lastSeedInputs = null;
-        lastDevToggles = null;
+        // Forgotten rather than zeroed, since every reading the record can hold is one the player
+        // can be under - this is what forces the next refresh to cut against the new sector.
+        lastCellCut = null;
         // Per-system staleness names systems of the sector being left, so it is dropped rather than
         // replayed against the next one - the rebuild this discard forces re-derives every system.
         MapLayerRefresh.drainStaleGroupingSystemIds();
@@ -199,36 +206,33 @@ final class PoliticalMapCache {
     private void rebuildStaleHalves(PoliticalMapView view) {
 
         var rebuiltCells = false;
-        var geometryRevision = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
 
-        // The frontier resolution and the cell reach are geometry inputs, not just styles: each
-        // reseeds every cell, so a change makes the geometry stale the same way an access change
-        // does. Read once here and let updateFromSector do the reseed.
-        var seedInputs = new CellSeedInputs(
-            KmuPoliticalMapSettings.getPoliticalMapCellBoundSegments(),
-            KmuPoliticalMapSettings.getPoliticalMapCellRadius());
+        // What the cells would be cut from right now. The reachable-set revision alone does not
+        // answer that: the frontier resolution, the cell reach and the two dev reveal toggles
+        // each reseed every cell without it moving, so all four are read into one value and the
+        // staleness question is asked of that value rather than of the signal.
+        var cellCut = new CellCutInputs(
+            MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
+            new CellSeedInputs(
+                KmuPoliticalMapSettings.getPoliticalMapCellBoundSegments(),
+                KmuPoliticalMapSettings.getPoliticalMapCellRadius()),
+            PoliticalMapDevToggles.readFromLunaSettings());
 
-        // The two dev reveal toggles are geometry inputs for the same reason: each changes which
-        // systems seed a cell, so a flip must reseed the partition here rather than only restyle it
-        // through the content revision below.
-        var devToggles = PoliticalMapDevToggles.readFromLunaSettings();
-        if (geometryRevision != cellGeometry.revision()
-                || !seedInputs.equals(lastSeedInputs)
-                || !devToggles.equals(lastDevToggles)) {
+        if (!cellCut.equals(lastCellCut)) {
 
             // Transition trace: a stale cell or one left behind after an access change can be tied
             // to the revision step - or the seed inputs or toggle flip - that drove it.
-            LOG.debug("Political map geometry stale; rebuilding from revision "
-                + cellGeometry.revision() + " to " + geometryRevision
-                + ", seedInputs " + lastSeedInputs + " to " + seedInputs
-                + ", devToggles " + lastDevToggles + " to " + devToggles);
+            LOG.debug("Political map geometry stale; rebuilding cut " + cellGeometry.revision()
+                + " from " + lastCellCut + " to " + cellCut);
 
-            rebuildGeometry(seedInputs, devToggles);
-            // Re-paired the moment the cells are recut, so the revision handed to anything that
-            // reuses derived work always names the cells actually in hand.
-            cellGeometry = cellGeometry.copyWithRevision(geometryRevision);
-            lastSeedInputs = seedInputs;
-            lastDevToggles = devToggles;
+            rebuildGeometry(cellCut.seedInputs(), cellCut.devToggles());
+
+            // A fresh cut number the moment the cells are recut, whichever of the four inputs
+            // drove it - so work derived from the previous cut can never read as derived from
+            // this one. Counted rather than taken from the reachable-set revision, which stands
+            // still through a seed-input or dev-toggle recut.
+            cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
+            lastCellCut = cellCut;
             rebuiltCells = true;
         }
 
