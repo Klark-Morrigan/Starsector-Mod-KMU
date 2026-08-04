@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.widgets.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
@@ -13,9 +12,9 @@ import kmu.maplayers.base.tooltip.CellTooltipRows;
  *
  * <p>A faction is named on a tooltip line for several different reasons - the one claiming a system,
  * the ones contesting it, the one holding it by decree - and each of those is a different fact about
- * the same faction. Resolving the crest and the name per reason would let two lines in one box
- * present the same faction differently, so how a faction appears on a line is settled once here and
- * what the line is about stays with whoever is making that point.
+ * the same faction. How the faction itself appears is therefore not decided here but taken from
+ * {@link FactionPresentation}: this settles only which shape of line the fact is stated on, and what
+ * the line is about stays with whoever is making that point.
  */
 public final class FactionTooltipRow {
 
@@ -37,11 +36,11 @@ public final class FactionTooltipRow {
             String factionId,
             String valueText) {
 
-        var faction = sector.getFaction(factionId);
+        var presentation = FactionPresentation.resolvePresentation(sector, factionId);
 
         return CellTooltipRows.buildNestedRow(
-            FactionCrests.resolveCrestPath(faction),
-            TooltipFactionNames.resolveLongName(faction, factionId),
+            presentation.crestSpritePath(),
+            presentation.fullName(),
             valueText);
     }
 
@@ -60,10 +59,10 @@ public final class FactionTooltipRow {
      * @return the row, ready to add to a body and to be qualified by the caller
      */
     public static TooltipRow.CentredRow buildFactionBannerRow(SectorAPI sector, String factionId) {
-        var faction = sector.getFaction(factionId);
+        var presentation = FactionPresentation.resolvePresentation(sector, factionId);
 
         return CellTooltipRows.buildBannerRow(
-            FactionCrests.resolveCrestPath(faction),
-            TooltipFactionNames.resolveLongName(faction, factionId));
+            presentation.crestSpritePath(),
+            presentation.fullName());
     }
 }

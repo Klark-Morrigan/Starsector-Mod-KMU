@@ -1,24 +1,20 @@
 package kmu.maplayers.base.tooltip;
 
-import com.fs.starfarer.api.util.Misc;
-
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
+import kmlib.starsector.ui.widgets.TooltipLabelPlacement;
 import kmlib.starsector.ui.widgets.TooltipRow;
-
-import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
@@ -34,37 +30,17 @@ import static org.assertj.core.api.Assertions.within;
  */
 final class CellTooltipSectionsTest {
 
-    private static final Color BRIGHT = new Color(200, 230, 255);
-    private static final Color TEXT = Color.LIGHT_GRAY;
-    private static final Color GOLD = new Color(255, 200, 100);
-
     // The runs a line reads as; every line here is one run, none being qualified.
     private static final int LABEL_RUN = 0;
 
-    private MockedStatic<Misc> miscMock;
-
     @BeforeEach
     void installColours() {
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getBrightPlayerColor)
-            .thenReturn(BRIGHT);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(TEXT);
-        miscMock
-            .when(Misc::getHighlightColor)
-            .thenReturn(GOLD);
+        CellTooltipPaletteFake.installPalette();
     }
 
     @AfterEach
     void clearColours() {
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
@@ -132,9 +108,9 @@ final class CellTooltipSectionsTest {
         }
 
         @Test
-        void appendSectionDrawsTheHeadingFlushAndCarryingNeitherCrestNorValue() {
-            // A heading names a block rather than being one of its entries, which is what the shape
-            // says: flush at the box's edge, in the bright colour, and with both slots left blank.
+        void appendSectionDrawsTheHeadingAtNoIndentCarryingNeitherCrestNorValue() {
+            // A heading names a block rather than being one of its entries: at no indent of its own,
+            // in the bright colour, and with both slots left blank.
             var rows = new ArrayList<TooltipRow>();
             var headingRow = 0;
 
@@ -146,13 +122,32 @@ final class CellTooltipSectionsTest {
             var heading = (TooltipRow.TableRow) rows.get(headingRow);
 
             assertThat(readLabelRun(heading, LABEL_RUN))
-                .isEqualTo(new TextSpan("Contested by:", BRIGHT));
+                .isEqualTo(new TextSpan("Contested by:", PLAYER_BRIGHT));
             assertThat(heading.indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
             assertThat(heading.labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
             assertThat(heading.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(GOLD)));
+                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
+        }
+
+        @Test
+        void appendSectionStartsTheHeadingWhereTheCrestedEntriesStart() {
+            // Not flush at the box's content edge, which zero indent alone would suggest: a heading
+            // carrying no crest still reserves the gutter its entries lead with, so it begins where
+            // their labels do rather than where the box's content does.
+            var rows = new ArrayList<TooltipRow>();
+            var headingRow = 0;
+
+            CellTooltipSections.appendSection(
+                rows,
+                "Contested by:",
+                List.of(createEntryRow("The Hegemony")));
+
+            var heading = (TooltipRow.TableRow) rows.get(headingRow);
+
+            assertThat(heading.labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
         }
     }
 

@@ -3,7 +3,6 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
-import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
@@ -12,8 +11,6 @@ import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.TooltipRow;
-
-import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +23,7 @@ import org.mockito.Mockito;
 import java.awt.Color;
 import java.util.List;
 
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,8 +38,6 @@ import static org.mockito.Mockito.when;
  */
 final class SystemCellTooltipTest {
     
-    private static final Color GOLD = new Color(255, 200, 100);
-    private static final Color PLAYER_BASE = new Color(100, 160, 200);
     private static final String SYSTEM_NAME = "Corvus";
 
     // The sizes the two atlases were rasterised at, restated here rather than read off the enum: taking
@@ -64,33 +60,14 @@ final class SystemCellTooltipTest {
     // The whole of a box headed by a name and one title line, with no body under it.
     private static final int HEADED_BOX_ROW_COUNT = 2;
 
-    private MockedStatic<Misc> miscMock;
-
     @BeforeEach
     void installColours() {
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getHighlightColor)
-            .thenReturn(GOLD);
-        miscMock
-            .when(Misc::getBasePlayerColor)
-            .thenReturn(PLAYER_BASE);
-
-        // The box's typography carries a default text colour of its own, resolved when the style is
-        // built for the paint - so it is stubbed even though no assertion here reads it.
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(Color.LIGHT_GRAY);
+        CellTooltipPaletteFake.installPalette();
     }
 
     @AfterEach
     void clearColours() {
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
@@ -105,7 +82,7 @@ final class SystemCellTooltipTest {
             // the box's typography, asserted below.
             assertThat(rows.get(HEADER_ROW))
                 .isEqualTo(TooltipRow
-                    .createCentredRow(new TextSpan(SYSTEM_NAME, GOLD))
+                    .createCentredRow(new TextSpan(SYSTEM_NAME, HIGHLIGHT))
                     .readsAs(TooltipLineStyle.HEADER));
         }
 
@@ -187,7 +164,7 @@ final class SystemCellTooltipTest {
             try (MockedStatic<CursorTooltipRenderer> rendererMock =
                     Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
-                tooltipFake.renderFor(sectorWithEconomy(), systemNamed());
+                tooltipFake.renderFor(buildSectorWithEconomy(), buildNamedSystem());
                 rendererMock.verifyNoInteractions();
             }
         }
@@ -201,7 +178,7 @@ final class SystemCellTooltipTest {
             try (MockedStatic<CursorTooltipRenderer> rendererMock =
                     Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
-                tooltipFake.renderFor(mock(SectorAPI.class), systemNamed());
+                tooltipFake.renderFor(mock(SectorAPI.class), buildNamedSystem());
                 rendererMock.verifyNoInteractions();
 
                 assertThat(tooltipFake.hasBuiltBodyRows)
@@ -220,7 +197,7 @@ final class SystemCellTooltipTest {
         try (MockedStatic<CursorTooltipRenderer> rendererMock =
                 Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
-            tooltip.renderFor(sectorWithEconomy(), systemNamed());
+            tooltip.renderFor(buildSectorWithEconomy(), buildNamedSystem());
 
             rendererMock.verify(
                 () -> CursorTooltipRenderer.render(
@@ -243,7 +220,7 @@ final class SystemCellTooltipTest {
         return TooltipRow.createRow(new TextSpan(text, Color.LIGHT_GRAY));
     }
 
-    private static SectorAPI sectorWithEconomy() {
+    private static SectorAPI buildSectorWithEconomy() {
 
         var sectorMock = mock(SectorAPI.class);
 
@@ -253,7 +230,7 @@ final class SystemCellTooltipTest {
         return sectorMock;
     }
 
-    private static StarSystemAPI systemNamed() {
+    private static StarSystemAPI buildNamedSystem() {
 
         var systemMock = mock(StarSystemAPI.class);
 

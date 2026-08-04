@@ -1,23 +1,18 @@
 package kmu.maplayers.base.tooltip;
 
-import com.fs.starfarer.api.util.Misc;
-
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.TooltipLabelPlacement;
 
-import kmu.starsector.StarsectorSettingsFake;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
-import java.awt.Color;
-
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
@@ -35,9 +30,6 @@ import static org.assertj.core.api.Assertions.within;
  */
 final class CellTooltipRowsTest {
 
-    private static final Color BRIGHT = new Color(200, 230, 255);
-    private static final Color TEXT = Color.LIGHT_GRAY;
-    private static final Color GOLD = new Color(255, 200, 100);
     private static final String CREST = "graphics/ion_storm_icon.png";
 
     // The runs a line reads as, in order: what it names, then any qualifier picked out beside it. A
@@ -48,30 +40,14 @@ final class CellTooltipRowsTest {
     private static final int BANNER_LABEL_RUN = 1;
     private static final int BANNER_QUALIFIER_RUN = 2;
 
-    private MockedStatic<Misc> miscMock;
-
     @BeforeEach
     void installColours() {
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getBrightPlayerColor)
-            .thenReturn(BRIGHT);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(TEXT);
-        miscMock
-            .when(Misc::getHighlightColor)
-            .thenReturn(GOLD);
+        CellTooltipPaletteFake.installPalette();
     }
 
     @AfterEach
     void clearColours() {
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
@@ -85,7 +61,7 @@ final class CellTooltipRowsTest {
             assertThat(readLabelTextRun(row, LABEL_RUN).text())
                 .isEqualTo("Ion Storm");
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
-                .isEqualTo(BRIGHT);
+                .isEqualTo(PLAYER_BRIGHT);
 
             assertThat(row.indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
@@ -93,7 +69,7 @@ final class CellTooltipRowsTest {
             assertThat(row.labelledRow().leadingRowSlot())
                 .isEqualTo(new RowSlot.Image(CREST));
             assertThat(row.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan("42", GOLD)));
+                .isEqualTo(new RowSlot.Text(new TextSpan("42", HIGHLIGHT)));
         }
 
         @Test
@@ -144,7 +120,7 @@ final class CellTooltipRowsTest {
             // The one decision the run exists for: a line that continues into it reads in two colours,
             // with what is being called out picked out from what is merely named.
             assertThat(CellTooltipRows.buildQualifierSpan("worsening"))
-                .isEqualTo(new TextSpan("worsening", GOLD));
+                .isEqualTo(new TextSpan("worsening", HIGHLIGHT));
         }
 
         @Test
@@ -158,7 +134,7 @@ final class CellTooltipRowsTest {
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(TEXT);
             assertThat(readLabelTextRun(row, QUALIFIER_RUN).colour())
-                .isEqualTo(GOLD);
+                .isEqualTo(HIGHLIGHT);
             assertThat(row.indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
         }
@@ -207,7 +183,7 @@ final class CellTooltipRowsTest {
                 .continuesWith(CellTooltipRows.buildQualifierSpan("worsening"));
 
             assertThat(readLabelRun(row, BANNER_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan("worsening", GOLD));
+                .isEqualTo(new TextSpan("worsening", HIGHLIGHT));
         }
     }
 }

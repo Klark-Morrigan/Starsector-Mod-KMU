@@ -3,8 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionCrests;
-
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -22,11 +20,13 @@ import java.util.List;
  * render layer consuming plain rows, mirroring how {@code SectorPolitics} confines the holding
  * palette lookups.
  *
- * <p>A member is always a faction, resolved by its long name and crest. A group header presents by
- * its kind: a lone-faction group reuses its one member's name and crest, so a singleton reads
- * identically to the member it wraps and the flat faction view falls out for free; an alliance group
- * takes its name from the grouping and its crest from the alliance's colour (lead) faction, the same
- * crest the alliances view paints the bloc's cluster by. A blank or absent crest resolves to a null
+ * <p>A member is always a faction, and how one appears is {@link FactionPresentation}'s answer rather
+ * than this resolver's, so a faction ranked here and the same faction named anywhere else in the box
+ * cannot present as two. A group header presents by its kind: a lone-faction group reuses its one
+ * member's name and crest, so a singleton reads identically to the member it wraps and the flat
+ * faction view falls out for free; an alliance group takes its name from the grouping and its crest
+ * from the alliance's colour (lead) faction, the same crest the alliances view paints the bloc's
+ * cluster by. A blank or absent crest resolves to a null
  * path the render layer draws around, so a header or member with no authored crest still shows its
  * name and score.
  */
@@ -80,8 +80,9 @@ public final class StandingRowResolver {
             // An alliance header carries the alliance's own name and its lead (colour) member's
             // crest - the same name and crest the alliances view paints the bloc's cluster by.
             displayName = grouping.resolveAllianceName(blocId);
-            crestSpritePath = FactionCrests.resolveCrestPath(
-                sector.getFaction(grouping.resolveColourFactionId(blocId)));
+            crestSpritePath = FactionPresentation
+                .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
+                .crestSpritePath();
 
         } else {
             // A lone-faction group has one member, so its header is exactly that member: reuse the
@@ -104,16 +105,16 @@ public final class StandingRowResolver {
     private static List<FactionStandingRow> resolveMemberRows(
             SectorAPI sector,
             List<FactionStanding> members) {
-                
+
         var rows = new ArrayList<FactionStandingRow>(members.size());
 
         for (var member : members) {
-            var faction = sector.getFaction(member.factionId());
+            var presentation = FactionPresentation.resolvePresentation(sector, member.factionId());
 
             rows.add(new FactionStandingRow(
                 member.factionId(),
-                TooltipFactionNames.resolveLongName(faction, member.factionId()),
-                FactionCrests.resolveCrestPath(faction),
+                presentation.fullName(),
+                presentation.crestSpritePath(),
                 member.score()));
         }
         return rows;

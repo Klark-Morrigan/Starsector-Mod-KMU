@@ -2,22 +2,19 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
-import java.awt.Color;
-
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -36,7 +33,6 @@ import static org.mockito.Mockito.when;
  */
 final class CoreTerritoryRowTest {
 
-    private static final Color HIGHLIGHT = new Color(255, 200, 100);
     private static final String CREST = "graphics/hegemony_crest.png";
 
     // The three runs a crested line reads as: the faction's mark, its name, then the status it holds
@@ -46,27 +42,14 @@ final class CoreTerritoryRowTest {
     private static final int CORE_STATUS_RUN = 2;
     private static final int CRESTLESS_FACTION_NAME_RUN = 0;
 
-    private MockedStatic<Misc> miscMock;
-
     @BeforeEach
     void installStringsAndColours() {
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(Color.LIGHT_GRAY);
-        miscMock
-            .when(Misc::getHighlightColor)
-            .thenReturn(HIGHLIGHT);
+        CellTooltipPaletteFake.installPalette();
     }
 
     @AfterEach
     void clearStringsAndColours() {
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
@@ -92,7 +75,7 @@ final class CoreTerritoryRowTest {
                 .orElseThrow();
 
             assertThat(readLabelRun(row, FACTION_NAME_RUN))
-                .isEqualTo(new TextSpan("The Hegemony", Color.LIGHT_GRAY));
+                .isEqualTo(new TextSpan("The Hegemony", TEXT));
         }
 
         @Test
@@ -141,7 +124,7 @@ final class CoreTerritoryRowTest {
                 .orElseThrow();
 
             assertThat(readLabelRun(row, CRESTLESS_FACTION_NAME_RUN))
-                .isEqualTo(new TextSpan("ghost_faction", Color.LIGHT_GRAY));
+                .isEqualTo(new TextSpan("ghost_faction", TEXT));
         }
 
         @Test

@@ -194,9 +194,9 @@ about what the overlay means.
   parted by the box's one break: title lines drawn tight under the name as more of the heading, and
   the body below the parting - so a verdict that settles the whole system heads the box while a status
   or an entry sits in it. `CellTooltipRows` is the line
-  vocabulary that content is written in - a top-tier row, a nested one, a standalone one, a banner
-  centred under the title (its crest set among the words as a label run, so crest and words centre as
-  one), and the qualifier run any of them may end on - and
+  vocabulary that content is written in - a top-tier row, a nested one, a banner centred under the
+  title (its crest set among the words as a label run, so crest and words centre as one), and the
+  qualifier run any of them may end on - and
   `CellTooltipSections` the heading that drops itself when the block under it resolves empty. So two
   layers' boxes differ only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that

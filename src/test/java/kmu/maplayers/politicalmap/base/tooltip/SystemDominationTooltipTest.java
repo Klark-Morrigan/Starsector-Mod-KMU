@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -12,6 +11,7 @@ import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.TooltipRow;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
+import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
@@ -22,7 +22,6 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
-import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,11 +30,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
@@ -62,10 +63,6 @@ import static org.mockito.Mockito.when;
  * rows are emitted, in what order, and at what tier.
  */
 final class SystemDominationTooltipTest {
-
-    private static final Color BRIGHT = new Color(200, 230, 255);
-    private static final Color TEXT = Color.LIGHT_GRAY;
-    private static final Color GOLD = new Color(255, 200, 100);
 
     private static final String SYSTEM_ID = "askonia";
 
@@ -118,7 +115,6 @@ final class SystemDominationTooltipTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
 
-    private MockedStatic<Misc> miscMock;
     private MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
     private MockedStatic<DominancePass> dominancePassMock;
     private MockedStatic<SystemStandings> standingsMock;
@@ -127,20 +123,7 @@ final class SystemDominationTooltipTest {
 
     @BeforeEach
     void installColoursAndTheRankingSeams() {
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getBrightPlayerColor)
-            .thenReturn(BRIGHT);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(TEXT);
-        miscMock
-            .when(Misc::getHighlightColor)
-            .thenReturn(GOLD);
+        CellTooltipPaletteFake.installPalette();
 
         // A view is active by default, since every case but one is about what its rows become. The
         // ranking and the settings read behind it are stood in so no case depends on a live economy or
@@ -190,8 +173,7 @@ final class SystemDominationTooltipTest {
         standingsMock.close();
         dominancePassMock.close();
         viewRegistryMock.close();
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
@@ -303,7 +285,7 @@ final class SystemDominationTooltipTest {
             var header = readTableRow(rows, GROUP_HEADER_ROW);
 
             assertThat(readLabelRun(header, LABEL_RUN))
-                .isEqualTo(new TextSpan("Rebel Pact", BRIGHT));
+                .isEqualTo(new TextSpan("Rebel Pact", PLAYER_BRIGHT));
 
             assertThat(header.indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
@@ -312,7 +294,7 @@ final class SystemDominationTooltipTest {
                 .isEqualTo(new RowSlot.Image(BLOC_CREST));
 
             assertThat(header.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", GOLD)));
+                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
         }
 
         @Test
@@ -332,7 +314,7 @@ final class SystemDominationTooltipTest {
             var firstMember = readTableRow(rows, FIRST_MEMBER_ROW);
 
             assertThat(readLabelRun(readTableRow(rows, GROUP_HEADER_ROW), LABEL_RUN))
-                .isEqualTo(new TextSpan("Rebel Pact", BRIGHT));
+                .isEqualTo(new TextSpan("Rebel Pact", PLAYER_BRIGHT));
 
             assertThat(readLabelRun(firstMember, LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
@@ -398,7 +380,7 @@ final class SystemDominationTooltipTest {
                 .isEqualTo(new RowSlot.Image(RIVAL_CREST));
 
             assertThat(rivalHeader.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan("400", GOLD)));
+                .isEqualTo(new RowSlot.Text(new TextSpan("400", HIGHLIGHT)));
         }
 
         @Test
@@ -443,7 +425,7 @@ final class SystemDominationTooltipTest {
                 DOMINATED_HEADING_ROW);
 
             assertThat(readLabelRun(heading, LABEL_RUN))
-                .isEqualTo(new TextSpan("Dominated by:", BRIGHT));
+                .isEqualTo(new TextSpan("Dominated by:", PLAYER_BRIGHT));
 
             assertThat(heading.indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
@@ -452,7 +434,7 @@ final class SystemDominationTooltipTest {
                 .isEqualTo(RowSlot.EMPTY);
 
             assertThat(heading.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(GOLD)));
+                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
         }
 
         @Test

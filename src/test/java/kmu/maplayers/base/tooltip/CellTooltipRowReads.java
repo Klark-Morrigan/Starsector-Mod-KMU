@@ -20,7 +20,7 @@ public final class CellTooltipRowReads {
     /** The inset a nested line draws at - what makes it read as belonging to the line above it. */
     public static final float MEMBER_INDENT = 14f;
 
-    /** Where a top-tier or standalone line sits: flush at the box's left content edge. */
+    /** Where a top-tier line sits: at no indent of its own, before the crest gutter is reserved. */
     public static final float NO_INDENT = 0f;
 
     /** Float comparison slack for the indents above, which are laid out in UI units. */

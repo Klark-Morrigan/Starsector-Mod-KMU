@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -12,8 +11,8 @@ import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.TooltipRow;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
+import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,10 +21,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
@@ -48,10 +49,6 @@ import static org.mockito.Mockito.when;
  * and in what order.
  */
 final class SystemClaimTooltipTest {
-
-    private static final Color BRIGHT = new Color(200, 230, 255);
-    private static final Color TEXT = Color.LIGHT_GRAY;
-    private static final Color GOLD = new Color(255, 200, 100);
 
     private static final String SYSTEM_ID = "askonia";
 
@@ -82,25 +79,11 @@ final class SystemClaimTooltipTest {
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
-    private MockedStatic<Misc> miscMock;
     private MockedStatic<SystemStatusRow> statusRowMock;
 
     @BeforeEach
     void installColoursAndTheSystemStatusSeam() {
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getBrightPlayerColor)
-            .thenReturn(BRIGHT);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(TEXT);
-        miscMock
-            .when(Misc::getHighlightColor)
-            .thenReturn(GOLD);
+        CellTooltipPaletteFake.installPalette();
 
         // The status line has its own suite and would otherwise demand a live economy here, so it is
         // stood in as absent - a populated system - for every case but the one about it.
@@ -128,8 +111,7 @@ final class SystemClaimTooltipTest {
     @AfterEach
     void clearColoursAndTheSystemStatusSeam() {
         statusRowMock.close();
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
@@ -248,7 +230,7 @@ final class SystemClaimTooltipTest {
             var rows = tooltip.buildBodyRows(sectorMock, systemMock);
 
             assertThat(readLabelRun(rows.get(contestedHeadingRow), LABEL_RUN))
-                .isEqualTo(new TextSpan("Contested by:", BRIGHT));
+                .isEqualTo(new TextSpan("Contested by:", PLAYER_BRIGHT));
             assertThat(readTableRow(rows, contestedHeadingRow).indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
             assertThat(readTableRow(rows, contestedHeadingRow).labelledRow().leadingRowSlot())
@@ -288,7 +270,7 @@ final class SystemClaimTooltipTest {
             assertThat(readLabelRun(claimRow, LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
             assertThat(readLabelRun(claimRow, MARKER_RUN))
-                .isEqualTo(new TextSpan("(core)", GOLD));
+                .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
             assertThat(claimRow.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("1,200", TEXT)));
         }

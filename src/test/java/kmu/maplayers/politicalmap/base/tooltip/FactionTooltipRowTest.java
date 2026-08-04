@@ -2,22 +2,18 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
-import java.awt.Color;
-
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
@@ -34,32 +30,20 @@ import static org.mockito.Mockito.when;
  */
 final class FactionTooltipRowTest {
 
-    private static final Color TEXT = Color.LIGHT_GRAY;
-
     private static final String HEGEMONY = "hegemony";
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
 
     // The line's label is one run - the qualifier a caller may add continues it afterwards.
     private static final int LABEL_RUN = 0;
 
-    private MockedStatic<Misc> miscMock;
-
     @BeforeEach
     void installColours() {
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(TEXT);
+        CellTooltipPaletteFake.installPalette();
     }
 
     @AfterEach
     void clearColours() {
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
