@@ -67,6 +67,25 @@ the thing it hands over".
 | **`ElementPaintSelection`** | `FactionPaletteSlot` | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every bloc. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
 | **shade** | **shade** | the concrete `Color` a selection resolves to once a bloc's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
 
+The right-hand column is a build gate too, for the reason the arrow above is one. A leaked import
+stops compiling the day a package moves; a leaked noun in a Javadoc survives every move in silence,
+and it is what a reader of `base` actually reads - so `enforcePackageVocabulary`, declared beside
+the layering rule in [build.gradle](../../../../../build.gradle), fails the build when anything
+under `base` says *territory*, *national border*, *contested fill* or *bloc*, in prose or in a
+name. Faction, alliance and claim are left off that list on purpose: this file and the `geometry`
+and `labels` READMEs name them as examples of what an opaque owner could be, which is the argument
+for the opacity rather than a leak of it.
+
+One word is forbidden mod-wide rather than only under `base`, and for a different reason:
+*ground* is not a layering leak, it is simply unclear. It stood for a cell, a cluster's fill, a
+whole territory and the receded backdrop in neighbouring sentences of the same file, while every
+one of those words was available. Say what is meant instead.
+
+The handful of files that may still say one of the political words are named in `build.gradle`
+rather than marked in place, so an exemption is something a reviewer reads in the diff. All of them name the political
+side's own identifiers - the frozen `$kmu_political_filter_bloc*` sector-memory keys, and the
+political class names the geometry viewer lists as pipeline stages it does not exercise.
+
 Two words that are **not** synonyms, despite looking alike:
 
 - A **cluster** is one connected component. A political **territory** may be several - a faction's

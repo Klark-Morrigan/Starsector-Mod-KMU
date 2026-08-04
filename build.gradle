@@ -52,6 +52,63 @@ enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base', of: 'kmu.maplayers.politicalmap'
 }
 
+// The same rule one level in, on the words rather than the imports. The carve
+// that produced `maplayers.base` moved the code and left the political nouns
+// behind in comments, Javadoc and READMEs, and a hand sweep against the
+// vocabulary table in `src/main/java/kmu/maplayers/README.md` missed both a
+// prose use and a method name - a leaked import stops compiling the day a
+// package moves, while a leaked noun survives every move in silence and is what
+// a reader of the framework actually reads.
+//
+// The list is that table's substitutions plus the bloc row, and it stops there:
+// faction, alliance and claim are political too, but `geometry/README.md` and
+// `labels/README.md` name all three as examples of what an opaque owner could
+// be, which is the argument for the opacity rather than a leak of it. A list
+// that fired mostly on legitimate prose would train its next reader to
+// allowlist rather than to read. Plurals are their own words to the gate, so
+// both spellings are declared.
+enforcePackageVocabulary {
+    forbidWords under: 'kmu.maplayers.base',
+                words: ['territory', 'territories', 'national border',
+                        'contested fill', 'bloc', 'blocs']
+
+    // Mod-wide rather than framework-only, because this one is not a layering
+    // leak: *ground* is simply unclear. It stood for a cell, a cluster's fill,
+    // a whole territory and the receded backdrop in different sentences of the
+    // same file, so a reader had to guess which each time - and the words it
+    // stood for were all available. Declared here beside the layering words so
+    // both halves of "what this tree may not say" read as one block.
+    forbidWords under: 'kmu',
+                words: ['ground']
+
+    // The four files that may say it, each for a reason no rewording reaches.
+    // Three name the sector-memory keys the picker's selection is stored under:
+    // those are save-serialised identities, frozen for the reason the terrain
+    // plugin's class name is, so the word is part of a key rather than a claim
+    // about the framework.
+    allowWord word: 'bloc',
+            inFile: 'src/main/java/kmu/maplayers/base/sidebar/FilterSelection.java'
+    allowWord word: 'bloc',
+            inFile: 'src/main/java/kmu/maplayers/base/sidebar/README.md'
+    allowWord word: 'bloc',
+            inFile: 'src/test/java/kmu/maplayers/base/sidebar/FilterSelectionTest.java'
+            
+    // The fourth is the legitimate shape the faction row above describes: the
+    // theme's README explains why `MapPalettes` stays political, and it cannot
+    // make that argument without naming what the political map resolves.
+    allowWord word: 'bloc',
+            inFile: 'src/main/java/kmu/maplayers/base/theme/README.md'
+
+    // The geometry viewer's header lists the pipeline stages it does *not*
+    // exercise, by their real class names on the political side. Naming another
+    // package's types is not this package speaking the word for itself, and the
+    // names are not ours to reword.
+    allowWord word: 'territory',
+            inFile: 'src/utils/java/kmu/maplayers/base/geometry/SectorGeometryViewer.java'
+    allowWord word: 'territories',
+            inFile: 'src/utils/java/kmu/maplayers/base/geometry/SectorGeometryViewer.java'
+}
+
 // On-demand Java formatting (`gradlew spotlessApply`). Applied after the source
 // sets above because the shared script formats
 // whichever ones exist when it runs; utils is KMU's own code, so it is styled
