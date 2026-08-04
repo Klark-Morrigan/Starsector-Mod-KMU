@@ -1,12 +1,15 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -44,29 +47,40 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins how the standings the map ranks become the lines the hover box draws: a lone faction reads as one
- * flat header, an alliance reads as a header over its indented members however few it has, and a system
- * that ranks empty says why rather than falling silent. Also that the ranking runs under the active
- * view's own grouping, which is what makes the numbers in the box the ones the fills were painted by.
+ * Pins how the standings the map ranks become the lines the hover box draws: the strongest group is
+ * named as dominating the system and the rest as contesting it, a lone faction reads as one flat header
+ * while an alliance reads as a header over its indented members however few it has, and what the system
+ * is beyond its standings - dead, or held by decree - is said above the contest. Also that the ranking
+ * runs under the active view's own grouping, which is what makes the numbers in the box the ones the
+ * fills were painted by.
  *
- * <p>The ranking and the row resolution behind it are stood in for, since each is pinned by its own
- * suite: what is left is the shape this class alone decides - which rows are emitted, in what order, and
- * at what tier.
+ * <p>The ranking, the row resolution, the status line and the claim read behind it are all stood in
+ * for, since each is pinned by its own suite: what is left is the shape this class alone decides - which
+ * rows are emitted, in what order, and at what tier.
  */
 final class SystemDominationTooltipTest {
+
     private static final Color BRIGHT = new Color(200, 230, 255);
     private static final Color TEXT = Color.LIGHT_GRAY;
     private static final Color GOLD = new Color(255, 200, 100);
 
+    private static final String SYSTEM_ID = "askonia";
+
+    private static final String CORE_FACTION = "hegemony";
+
     private static final String BLOC_CREST = "graphics/rebel_pact_crest.png";
     private static final String MEMBER_CREST = "graphics/hegemony_crest.png";
+    private static final String RIVAL_CREST = "graphics/persean_league_crest.png";
 
-    // The lines the box lays out, in draw order: the group's own header, then its members beneath.
-    private static final int HEADER_ROW = 0;
-    private static final int FIRST_MEMBER_ROW = 1;
-    private static final int SECOND_MEMBER_ROW = 2;
+    // The lines a box with no status and no decree lays out, in draw order: the heading naming who
+    // holds the system, that group's own header, then its members beneath.
+    private static final int DOMINATED_HEADING_ROW = 0;
+    private static final int GROUP_HEADER_ROW = 1;
+    private static final int FIRST_MEMBER_ROW = 2;
+    private static final int SECOND_MEMBER_ROW = 3;
 
-    // A line's label is one run here - no case below writes a qualifier onto one.
+    // A line's label is one run here - no case below writes a qualifier onto one, bar the decree line,
+    // which has its own suite.
     private static final int LABEL_RUN = 0;
 
     // The scores are only carried through to the value column, so any weights stand in; four figures,
@@ -74,16 +88,17 @@ final class SystemDominationTooltipTest {
     private static final int BLOC_SCORE = 1200;
     private static final int MEMBER_SCORE = 900;
     private static final int OTHER_MEMBER_SCORE = 300;
+    private static final int RIVAL_SCORE = 400;
 
-    // The pass is forwarded to the (stood-in) ranking, so its weights never reach an assertion - any
-    // rules stand in where the seam demands them.
-    private static final DominancePass ANY_PASS = new DominancePass(
-        new DominanceRules(false,
-            new BaseSizeWeighting(1.0, null, 1.0, 1.0),
-            new StationWeighting(false, 1.0, 0.5, 0.5),
-            new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5)),
-        false,
-        HolderGrouping.identity());
+    // The weights are forwarded to the (stood-in) ranking, so they never reach an assertion - any rules
+    // stand in where the seam demands them.
+    private static final DominanceRules ANY_RULES = new DominanceRules(false,
+        new BaseSizeWeighting(1.0, null, 1.0, 1.0),
+        new StationWeighting(false, 1.0, 0.5, 0.5),
+        new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
+
+    private static final DominancePass ANY_PASS =
+        new DominancePass(ANY_RULES, false, HolderGrouping.identity());
 
     // The grouping the active view answers with, and deliberately not the identity one: a grouping the
     // ranking could have reached for on its own would let a tooltip that ignored the view still pass
@@ -92,6 +107,10 @@ final class SystemDominationTooltipTest {
         Map.of("hegemony", "rebel_pact"),
         Map.of("rebel_pact", "hegemony"),
         Map.of("rebel_pact", "Rebel Pact"));
+
+    private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
+    private final SystemDominationTooltip tooltip =
+        new SystemDominationTooltip(claimBreakdownReaderFake);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -108,23 +127,57 @@ final class SystemDominationTooltipTest {
         // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
         // mocking it against an uninstalled settings proxy would fail on class load.
         StarsectorSettingsFake.installSettings();
+
         miscMock = Mockito.mockStatic(Misc.class);
-        miscMock.when(Misc::getBrightPlayerColor).thenReturn(BRIGHT);
-        miscMock.when(Misc::getTextColor).thenReturn(TEXT);
-        miscMock.when(Misc::getHighlightColor).thenReturn(GOLD);
+        miscMock
+            .when(Misc::getBrightPlayerColor)
+            .thenReturn(BRIGHT);
+        miscMock
+            .when(Misc::getTextColor)
+            .thenReturn(TEXT);
+        miscMock
+            .when(Misc::getHighlightColor)
+            .thenReturn(GOLD);
 
         // A view is active by default, since every case but one is about what its rows become. The
         // ranking and the settings read behind it are stood in so no case depends on a live economy or
         // a live LunaLib.
         var viewMock = mock(PoliticalMapView.class);
-        when(viewMock.resolveGrouping()).thenReturn(VIEW_GROUPING);
+
+        when(viewMock.resolveGrouping())
+            .thenReturn(VIEW_GROUPING);
+
         viewRegistryMock = Mockito.mockStatic(PoliticalMapViewRegistry.class);
-        viewRegistryMock.when(PoliticalMapViewRegistry::getActiveView).thenReturn(viewMock);
+        viewRegistryMock
+            .when(PoliticalMapViewRegistry::getActiveView)
+            .thenReturn(viewMock);
+
         dominancePassMock = Mockito.mockStatic(DominancePass.class);
-        dominancePassMock.when(() -> DominancePass.readFromLunaSettings(any())).thenReturn(ANY_PASS);
+        dominancePassMock
+            .when(() -> DominancePass.readFromLunaSettings(any()))
+            .thenReturn(ANY_PASS);
+
         standingsMock = Mockito.mockStatic(SystemStandings.class);
         rowResolverMock = Mockito.mockStatic(StandingRowResolver.class);
         statusRowMock = Mockito.mockStatic(SystemStatusRow.class);
+
+        // The system is populated and under no decree unless a case says otherwise, so the two lines
+        // above the standings stay out of the way of the cases about the standings themselves.
+        statusRowMock
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(Boolean.class)))
+            .thenReturn(Optional.empty());
+
+        var coreFactionMock = mock(FactionAPI.class);
+
+        when(coreFactionMock.getDisplayNameLong())
+            .thenReturn("The Hegemony");
+        when(coreFactionMock.getCrest())
+            .thenReturn(MEMBER_CREST);
+
+        when(systemMock.getId())
+            .thenReturn(SYSTEM_ID);
+        when(sectorMock.getFaction(CORE_FACTION))
+            .thenReturn(coreFactionMock);
     }
 
     @AfterEach
@@ -150,7 +203,7 @@ final class SystemDominationTooltipTest {
                 .when(PoliticalMapViewRegistry::getActiveView)
                 .thenReturn(null);
 
-            assertThat(SystemDominationTooltip.INSTANCE.buildBodyRows(sectorMock, systemMock))
+            assertThat(tooltip.buildBodyRows(sectorMock, systemMock))
                 .isEmpty();
         }
 
@@ -158,12 +211,13 @@ final class SystemDominationTooltipTest {
         void buildBodyRowsRanksTheSystemUnderTheActiveViewsOwnGrouping() {
             // What keeps the box honest: the tooltip ranks through the same grouping the map painted
             // its fills by, so the two can never disagree about who holds the system.
-            SystemDominationTooltip.INSTANCE.buildBodyRows(sectorMock, systemMock);
+            tooltip.buildBodyRows(sectorMock, systemMock);
 
-            rowResolverMock.verify(() -> StandingRowResolver.resolveRows(
-                same(sectorMock),
-                any(),
-                same(VIEW_GROUPING)));
+            rowResolverMock.verify(
+                () -> StandingRowResolver.resolveRows(
+                    same(sectorMock),
+                    any(),
+                    same(VIEW_GROUPING)));
         }
 
         @Test
@@ -172,12 +226,12 @@ final class SystemDominationTooltipTest {
             // the header, and the row that would carry it is never emitted.
             stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
 
-            var rows = SystemDominationTooltip.INSTANCE.buildBodyRows(sectorMock, systemMock);
+            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
 
             assertThat(rows)
-                .hasSize(1);
+                .hasSize(2);
 
-            var header = readTableRow(rows, HEADER_ROW);
+            var header = readTableRow(rows, GROUP_HEADER_ROW);
 
             assertThat(readLabelRun(header, LABEL_RUN))
                 .isEqualTo(new TextSpan("Rebel Pact", BRIGHT));
@@ -201,14 +255,14 @@ final class SystemDominationTooltipTest {
                     createMemberRow(MEMBER_SCORE),
                     createMemberRow(OTHER_MEMBER_SCORE)));
 
-            var rows = SystemDominationTooltip.INSTANCE.buildBodyRows(sectorMock, systemMock);
+            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
 
             assertThat(rows)
-                .hasSize(3);
+                .hasSize(4);
 
             var firstMember = readTableRow(rows, FIRST_MEMBER_ROW);
 
-            assertThat(readLabelRun(readTableRow(rows, HEADER_ROW), LABEL_RUN))
+            assertThat(readLabelRun(readTableRow(rows, GROUP_HEADER_ROW), LABEL_RUN))
                 .isEqualTo(new TextSpan("Rebel Pact", BRIGHT));
 
             assertThat(readLabelRun(firstMember, LABEL_RUN))
@@ -219,7 +273,7 @@ final class SystemDominationTooltipTest {
 
             assertThat(firstMember.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("900", TEXT)));
-                
+
             // Ranked as the standing ranked them, so the box reads strongest first like the fills.
             assertThat(readTableRow(rows, SECOND_MEMBER_ROW).labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("300", TEXT)));
@@ -232,37 +286,175 @@ final class SystemDominationTooltipTest {
             // bloc would read as two different things depending on how many members it happens to hold.
             stubResolvedRows(createGroupRow(true, createMemberRow(MEMBER_SCORE)));
 
-            var rows = SystemDominationTooltip.INSTANCE.buildBodyRows(sectorMock, systemMock);
+            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
 
             assertThat(rows)
-                .hasSize(2);
+                .hasSize(3);
 
             assertThat(readTableRow(rows, FIRST_MEMBER_ROW).indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
         }
 
         @Test
+        void buildBodyRowsNamesTheStrongestGroupAsHoldingTheSystemAndTheRestAsContestingIt() {
+            // The two headings are what turn a ranked list into an answer: the map fills the system in
+            // the leader's colour, so the box says outright that the leader holds it and the others are
+            // merely present, rather than leaving that to be read off the row order.
+            stubResolvedRows(
+                createGroupRow(false, createMemberRow(MEMBER_SCORE)),
+                createRivalGroupRow());
+
+            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Contested by:",
+                    "Persean League");
+        }
+
+        @Test
+        void buildBodyRowsKeepsAContestingGroupsOwnCrestAndScore() {
+            // A contesting group is a full standing, not a footnote to the leader's: it keeps the crest
+            // and the number the map ranked it by, so the player can see how close the contest is.
+            var rivalHeaderRow = 3;
+
+            stubResolvedRows(
+                createGroupRow(false, createMemberRow(MEMBER_SCORE)),
+                createRivalGroupRow());
+
+            var rivalHeader = readTableRow(tooltip.buildBodyRows(sectorMock, systemMock),
+                rivalHeaderRow);
+
+            assertThat(rivalHeader.labelledRow().leadingRowSlot())
+                .isEqualTo(new RowSlot.Image(RIVAL_CREST));
+
+            assertThat(rivalHeader.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("400", GOLD)));
+        }
+
+        @Test
+        void buildBodyRowsOmitsContestedWhenOneGroupHoldsTheSystemAlone() {
+            // An uncontested system has to read as uncontested, and a heading standing over no groups
+            // would read as a contest whose challengers failed to resolve.
+            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+
+            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
+                .containsExactly("Dominated by:", "Rebel Pact");
+        }
+
+        @Test
+        void buildBodyRowsOpensEverySectionSoItsBlockIsPartedFromTheOneAbove() {
+            // Only the headings take the break, so the box reads as blocks: an entry taking one would
+            // part it from the heading it belongs to.
+            var contestedHeadingRow = 2;
+
+            stubResolvedRows(
+                createGroupRow(false, createMemberRow(MEMBER_SCORE)),
+                createRivalGroupRow());
+
+            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+
+            assertThat(rows.get(DOMINATED_HEADING_ROW).hasSectionBreak())
+                .isTrue();
+            assertThat(rows.get(contestedHeadingRow).hasSectionBreak())
+                .isTrue();
+            assertThat(rows.get(GROUP_HEADER_ROW).hasSectionBreak())
+                .isFalse();
+        }
+
+        @Test
+        void buildBodyRowsDrawsHeadingsFlushAndCrestless() {
+            // A heading names a block rather than sitting in it, so it opens flush at the box's edge
+            // with no crest of its own and no number - the shape that tells it apart from the group
+            // rows beneath it, which carry both.
+            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+
+            var heading = readTableRow(
+                tooltip.buildBodyRows(sectorMock, systemMock),
+                DOMINATED_HEADING_ROW);
+
+            assertThat(readLabelRun(heading, LABEL_RUN))
+                .isEqualTo(new TextSpan("Dominated by:", BRIGHT));
+
+            assertThat(heading.indent())
+                .isCloseTo(NO_INDENT, within(TOLERANCE));
+
+            assertThat(heading.labelledRow().leadingRowSlot())
+                .isEqualTo(RowSlot.EMPTY);
+
+            assertThat(heading.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(GOLD)));
+        }
+
+        @Test
+        void buildBodyRowsNamesWhatTheSystemIsBeforeWhoHoldsIt() {
+            // The ground first, then the contest over it: a dead or decreed system states that much
+            // outright, so the standings below read as a contest over known ground rather than as the
+            // whole of what the box has to say.
+            stubStatusRow("Decivilised");
+            stubCoreFaction(CORE_FACTION);
+            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+
+            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
+                .containsExactly(
+                    "Decivilised",
+                    "The Hegemony",
+                    "Dominated by:",
+                    "Rebel Pact");
+        }
+
+        @Test
+        void buildBodyRowsOmitsTheCoreLineForASystemUnderNoDecree() {
+            // The ordinary case: no decree holds the system, so nothing is said about one - a line
+            // naming a core that does not exist would read as a claim the map never painted.
+            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+
+            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
+                .containsExactly("Dominated by:", "Rebel Pact");
+        }
+
+        @Test
+        void buildBodyRowsShowsTheCoreLineForASystemThatRanksEmpty() {
+            // What the decree line is for: a dead system a faction still holds by decree reads as
+            // claimed rather than as merely abandoned, which no ranking of its (absent) markets could
+            // ever have said.
+            stubStatusRow("Decivilised");
+            stubCoreFaction(CORE_FACTION);
+
+            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
+                .containsExactly("Decivilised", "The Hegemony");
+        }
+
+        @Test
         void buildBodyRowsFallsBackToTheSystemStatusWhenNothingRanks() {
             // A system nobody holds is not nothing: the status line says why it holds no standing, so
             // the hover reads as landing on a real but uninhabited system.
-            var statusRow = CellTooltipRows.buildStandaloneRow("Unpopulated");
-            statusRowMock
-                .when(() -> SystemStatusRow.resolveStatusRow(
-                    same(sectorMock),
-                    same(systemMock),
-                    any(Boolean.class)))
-                .thenReturn(Optional.of(statusRow));
+            var statusRow = stubStatusRow("Unpopulated");
 
-            var rows = SystemDominationTooltip.INSTANCE.buildBodyRows(sectorMock, systemMock);
+            assertThat(tooltip.buildBodyRows(sectorMock, systemMock))
+                .containsExactly(statusRow);
+        }
 
-            assertThat(rows).containsExactly(statusRow);
+        @Test
+        void buildBodyRowsJudgesTheSystemEmptyUnderTheRankingsOwnReveal() {
+            // The status has to admit exactly the colonies the standings were ranked through: judged
+            // under the narrower filter, a system revealed only by the dev knob would be called
+            // unpopulated directly above the rows scoring the faction holding it.
+            dominancePassMock
+                .when(() -> DominancePass.readFromLunaSettings(any()))
+                .thenReturn(new DominancePass(ANY_RULES, true, HolderGrouping.identity()));
+
+            tooltip.buildBodyRows(sectorMock, systemMock);
+
+            statusRowMock.verify(
+                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, true));
         }
 
         @Test
         void buildBodyRowsShowsNothingWhenNothingRanksAndTheSystemHasNoStatusEither() {
             // Nothing ranked and nothing to say about the system, so the body stays empty and no box is
             // drawn - the one case where a hover over a real system shows nothing at all.
-            assertThat(SystemDominationTooltip.INSTANCE.buildBodyRows(sectorMock, systemMock))
+            assertThat(tooltip.buildBodyRows(sectorMock, systemMock))
                 .isEmpty();
         }
     }
@@ -273,6 +465,36 @@ final class SystemDominationTooltipTest {
         rowResolverMock
             .when(() -> StandingRowResolver.resolveRows(any(), any(), any()))
             .thenReturn(List.of(groupRows));
+    }
+
+    // Puts the system under a faction's decree, through the same single-flag read the tooltip makes -
+    // the fake derives it from the breakdown, so the two can never be set to disagree.
+    private void stubCoreFaction(String factionId) {
+        claimBreakdownReaderFake.setBreakdown(
+            SYSTEM_ID,
+            new SystemClaimBreakdown(factionId, factionId, List.of()));
+    }
+
+    // Stands the status line in as present, which the (stood-in) resolver would otherwise need a live
+    // economy to decide. Returns the row so a case can assert the body carries that very line.
+    private TooltipRow stubStatusRow(String statusText) {
+
+        var statusRow = CellTooltipRows.buildStandaloneRow(statusText);
+
+        statusRowMock
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(Boolean.class)))
+            .thenReturn(Optional.of(statusRow));
+
+        return statusRow;
+    }
+
+    // The box read top to bottom as the words a player sees, headings and entries alike - the shape
+    // most of these cases are about, which asserting row by row would bury.
+    private static List<String> readLabelTexts(List<TooltipRow> rows) {
+        return rows
+            .stream()
+            .map(row -> readLabelRun(row, LABEL_RUN).text())
+            .toList();
     }
 
     // Reads one body line as the table row it is. The body is typed on the row supertype, since a
@@ -288,7 +510,7 @@ final class SystemDominationTooltipTest {
     private static StandingGroupRow createGroupRow(
             boolean shouldNestMembers,
             FactionStandingRow... members) {
-
+                
         return new StandingGroupRow(
             "rebel_pact",
             "Rebel Pact",
@@ -296,6 +518,18 @@ final class SystemDominationTooltipTest {
             BLOC_SCORE,
             shouldNestMembers,
             List.of(members));
+    }
+
+    // A second, lower-ranked group, named and scored apart from the leader so a case about which block
+    // a group lands in cannot pass by reading the leader's row twice.
+    private static StandingGroupRow createRivalGroupRow() {
+        return new StandingGroupRow(
+            "persean_league",
+            "Persean League",
+            RIVAL_CREST,
+            RIVAL_SCORE,
+            false,
+            List.of(createMemberRow(RIVAL_SCORE)));
     }
 
     // One member faction beneath a group header, told apart from its siblings by its score alone.

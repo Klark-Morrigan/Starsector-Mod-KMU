@@ -67,6 +67,7 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM, "Claim:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED, "Contested by:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL, "Non-territorial:");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED, "Dominated by:");
         return stringsByKey;
     }
 }

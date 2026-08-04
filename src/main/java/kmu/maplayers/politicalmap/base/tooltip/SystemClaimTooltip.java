@@ -12,6 +12,7 @@ import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.base.tooltip.SystemCellTooltip;
 import kmu.util.KmuStrings;
 
@@ -69,45 +70,26 @@ public final class SystemClaimTooltip extends SystemCellTooltip {
             .resolveStatusRow(sector, system, ADMITS_UNDISCOVERED_MARKETS)
             .ifPresent(rows::add);
 
-        appendSection(
+        CellTooltipSections.appendSection(
             rows,
-            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM,
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
             List.of(buildClaimantRow(sector, breakdown)));
 
-        appendSection(
+        CellTooltipSections.appendSection(
             rows,
-            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED,
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
             buildFactionRows(
                 sector,
                 selectRivalScores(breakdown, claimantFactionId, FactionClaimScore::isTerritorial)));
 
-        appendSection(
+        CellTooltipSections.appendSection(
             rows,
-            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL,
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
             buildFactionRows(
                 sector,
                 selectRivalScores(breakdown, claimantFactionId, score -> !score.isTerritorial())));
 
         return rows;
-    }
-
-    // Adds a section - its heading over its rows - and nothing at all when it has no rows, so a
-    // heading is never left standing over an empty block. Every section is added through here, which
-    // is what makes the order sections read in the order of these calls rather than a rule spread
-    // across them. The heading opens a section, parting its block from the one above it.
-    private static void appendSection(
-            List<TooltipRow> rows,
-            String headingKey,
-            List<TooltipRow> sectionRows) {
-
-        if (sectionRows.isEmpty()) {
-            return;
-        }
-        rows.add(CellTooltipRows
-            .buildTopTierRow(null, KmuStrings.get(headingKey), CellTooltipRows.NO_SCORE)
-            .opensSection());
-
-        rows.addAll(sectionRows);
     }
 
     // The one line the claim section always carries: whoever holds the system, or the plain word for
