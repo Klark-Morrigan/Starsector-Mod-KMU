@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.TooltipSection;
 import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
@@ -84,7 +85,7 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
     }
 
     @Override
-    protected List<TooltipRow> buildBodyRows(SectorAPI sector, StarSystemAPI system) {
+    protected List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
         var activeView = PoliticalMapViewRegistry.getActiveView();
         if (activeView == null) {
             return List.of();
@@ -96,18 +97,19 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         var pass = DominancePass.readFromLunaSettings(grouping);
         var standings = SystemStandings.rankByDominationScore(sector, system, pass);
         var groupRows = StandingRowResolver.resolveRows(sector, standings, grouping);
-        var rows = new ArrayList<TooltipRow>();
+        var sections = new ArrayList<TooltipSection>();
 
         // What the system is comes before who holds it, so the standings below read as a contest over
-        // a known system. The status resolves under this pass's reveal, the same filter the standings
-        // were ranked through, so the system counts as empty here exactly when the ranking found
-        // nothing to show - the two can never describe different systems.
+        // a known system. A block of its own, since the contest beneath it answers a different question.
+        // The status resolves under this pass's reveal, the same filter the standings were ranked
+        // through, so the system counts as empty here exactly when the ranking found nothing to show -
+        // the two can never describe different systems.
         SystemStatusRow
             .resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets())
-            .ifPresent(rows::add);
+            .ifPresent(statusRow -> sections.add(new TooltipSection(List.of(statusRow))));
 
-        appendStandingSections(rows, groupRows);
-        return rows;
+        appendStandingSections(sections, groupRows);
+        return sections;
     }
 
     // The standings as the two blocks they are read in: whoever dominates the system, then whoever
@@ -115,11 +117,11 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
     // has no rows for the second, and an unheld one none for either, so the heading that would have
     // stood over nothing is dropped rather than left to be read as a block that failed to fill.
     private static void appendStandingSections(
-            List<TooltipRow> rows,
+            List<TooltipSection> sections,
             List<StandingGroupRow> groupRows) {
 
         CellTooltipSections.appendSection(
-            rows,
+            sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED),
             buildGroupRows(groupRows
                 .stream()
@@ -127,7 +129,7 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
                 .toList()));
 
         CellTooltipSections.appendSection(
-            rows,
+            sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
             buildGroupRows(groupRows
                 .stream()

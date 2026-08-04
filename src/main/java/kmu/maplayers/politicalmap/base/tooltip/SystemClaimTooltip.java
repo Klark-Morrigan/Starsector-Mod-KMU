@@ -7,6 +7,7 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.TooltipSection;
 import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
 
@@ -53,39 +54,40 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
     }
 
     @Override
-    protected List<TooltipRow> buildBodyRows(SectorAPI sector, StarSystemAPI system) {
+    protected List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
         // One read for the whole box: the claimant, the override behind it, and every standing are all
         // taken from a single pass, so no two lines can describe different states of the system.
         var breakdown = claimBreakdownReader.readBreakdown(system);
         var claimantFactionId = breakdown.claimantFactionId();
-        var rows = new ArrayList<TooltipRow>();
+        var sections = new ArrayList<TooltipSection>();
 
         // Why the system holds nobody comes before who claims it, so a dead system names its state
-        // first and the claim below reads as a hold over an empty system rather than over a colony.
+        // first and the claim below reads as a hold over an empty system rather than over a colony. A
+        // block of its own, since it answers a different question from the claim beneath it.
         SystemStatusRow
             .resolveStatusRow(sector, system, ADMITS_UNDISCOVERED_MARKETS)
-            .ifPresent(rows::add);
+            .ifPresent(statusRow -> sections.add(new TooltipSection(List.of(statusRow))));
 
         CellTooltipSections.appendSection(
-            rows,
+            sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
             List.of(buildClaimantRow(sector, breakdown)));
 
         CellTooltipSections.appendSection(
-            rows,
+            sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
             buildFactionRows(
                 sector,
                 selectRivalScores(breakdown, claimantFactionId, FactionClaimScore::isTerritorial)));
 
         CellTooltipSections.appendSection(
-            rows,
+            sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
             buildFactionRows(
                 sector,
                 selectRivalScores(breakdown, claimantFactionId, score -> !score.isTerritorial())));
 
-        return rows;
+        return sections;
     }
 
     // The one line the claim section always carries: whoever holds the system, or the plain word for

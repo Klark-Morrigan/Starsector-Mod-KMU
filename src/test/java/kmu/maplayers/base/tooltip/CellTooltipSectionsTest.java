@@ -4,6 +4,7 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.TooltipLabelPlacement;
 import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.TooltipSection;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,14 +25,20 @@ import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins how a body divides into blocks, since the division is what a reader of the box actually sees: a
- * heading opens flush over the lines it names and takes the break parting it from whatever sits above,
- * and a block with no lines contributes nothing rather than leaving its heading standing over an
- * absence a player would read as a failure to resolve one.
+ * heading opens the block it names, its lines follow it inside that same block, and a block with no
+ * lines contributes nothing rather than leaving its heading standing over an absence a player would read
+ * as a failure to resolve one.
+ *
+ * <p>How far apart the blocks then stand is the widget's and pinned there; what is fixed here is that a
+ * heading and the lines it names are one block, which is what that spacing follows from.
  */
 final class CellTooltipSectionsTest {
 
     // The runs a line reads as; every line here is one run, none being qualified.
     private static final int LABEL_RUN = 0;
+
+    // Where the heading sits inside the block it opens, and where the first line it names follows.
+    private static final int HEADING_ROW = 0;
 
     @BeforeEach
     void installColours() {
@@ -49,77 +56,76 @@ final class CellTooltipSectionsTest {
         @Test
         void appendSectionPutsTheHeadingAboveTheBlocksOwnLinesInOrder() {
 
-            var rows = new ArrayList<TooltipRow>();
+            var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
-                rows,
+                sections,
                 "Contested by:",
                 List.of(createEntryRow("The Hegemony"), createEntryRow("Tri-Tachyon")));
 
-            assertThat(readLabelTexts(rows))
+            assertThat(readLabelTexts(sections))
                 .containsExactly("Contested by:", "The Hegemony", "Tri-Tachyon");
+        }
+
+        @Test
+        void appendSectionHoldsTheHeadingAndItsLinesAsOneBlock() {
+            // The heading belongs with what it names: parted from its own entries it would read as a
+            // line of the block above, which is the only thing that could tell a reader whose heading
+            // it is.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Contested by:",
+                List.of(createEntryRow("The Hegemony"), createEntryRow("Tri-Tachyon")));
+
+            assertThat(sections)
+                .hasSize(1);
+            assertThat(sections.get(0).rows())
+                .hasSize(3);
         }
 
         @Test
         void appendSectionLeavesTheBodyUntouchedForABlockWithNoLines() {
             // The rule the whole class exists for: a heading over nothing tells the player a block
             // failed to fill, when in truth there was nothing to put in it.
-            var rows = new ArrayList<TooltipRow>(List.of(createEntryRow("Unpopulated")));
+            var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(rows, "Contested by:", List.of());
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntryRow("Pirates")));
+            CellTooltipSections.appendSection(sections, "Contested by:", List.of());
 
-            assertThat(readLabelTexts(rows))
-                .containsExactly("Unpopulated");
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Claim:", "Pirates");
         }
 
         @Test
         void appendSectionAddsItsBlockBeneathWhateverTheBodyAlreadyHolds() {
             // Blocks read in the order they are appended, which is what leaves a body's running order
             // stated by its own calls rather than by a rule inside this one.
-            var rows = new ArrayList<TooltipRow>();
+            var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(rows, "Claim:", List.of(createEntryRow("Pirates")));
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntryRow("Pirates")));
             CellTooltipSections.appendSection(
-                rows,
+                sections,
                 "Contested by:",
                 List.of(createEntryRow("The Hegemony")));
 
-            assertThat(readLabelTexts(rows))
+            assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "Pirates", "Contested by:", "The Hegemony");
-        }
-
-        @Test
-        void appendSectionPartsItsBlockFromTheOneAboveOnTheHeadingAlone() {
-            // Only the heading takes the break, so the box reads as blocks: an entry taking one would
-            // part it from the heading it belongs to.
-            var rows = new ArrayList<TooltipRow>();
-            var headingRow = 0;
-            var entryRow = 1;
-
-            CellTooltipSections.appendSection(
-                rows,
-                "Contested by:",
-                List.of(createEntryRow("The Hegemony")));
-
-            assertThat(rows.get(headingRow).hasSectionBreak())
-                .isTrue();
-            assertThat(rows.get(entryRow).hasSectionBreak())
-                .isFalse();
         }
 
         @Test
         void appendSectionDrawsTheHeadingAtNoIndentCarryingNeitherCrestNorValue() {
             // A heading names a block rather than being one of its entries: at no indent of its own,
             // in the bright colour, and with both slots left blank.
-            var rows = new ArrayList<TooltipRow>();
-            var headingRow = 0;
+            var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
-                rows,
+                sections,
                 "Contested by:",
                 List.of(createEntryRow("The Hegemony")));
 
-            var heading = (TooltipRow.TableRow) rows.get(headingRow);
+            var heading = (TooltipRow.TableRow) readRow(sections, HEADING_ROW);
 
             assertThat(readLabelRun(heading, LABEL_RUN))
                 .isEqualTo(new TextSpan("Contested by:", PLAYER_BRIGHT));
@@ -136,15 +142,14 @@ final class CellTooltipSectionsTest {
             // Not flush at the box's content edge, which zero indent alone would suggest: a heading
             // carrying no crest still reserves the gutter its entries lead with, so it begins where
             // their labels do rather than where the box's content does.
-            var rows = new ArrayList<TooltipRow>();
-            var headingRow = 0;
+            var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
-                rows,
+                sections,
                 "Contested by:",
                 List.of(createEntryRow("The Hegemony")));
 
-            var heading = (TooltipRow.TableRow) rows.get(headingRow);
+            var heading = (TooltipRow.TableRow) readRow(sections, HEADING_ROW);
 
             assertThat(heading.labelPlacement())
                 .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
@@ -157,8 +162,17 @@ final class CellTooltipSectionsTest {
         return CellTooltipRows.buildNestedRow(null, text, CellTooltipRows.NO_SCORE);
     }
 
-    private static List<String> readLabelTexts(List<TooltipRow> rows) {
-        return rows
+    // One line of the body, by its place in the flat run the box draws - the cases below are about which
+    // lines a block contributes, so its own grouping is read back out rather than walked.
+    private static TooltipRow readRow(List<TooltipSection> sections, int rowIndex) {
+        return TooltipSection
+            .readRowsInOrder(sections)
+            .get(rowIndex);
+    }
+
+    private static List<String> readLabelTexts(List<TooltipSection> sections) {
+        return TooltipSection
+            .readRowsInOrder(sections)
             .stream()
             .map(row -> readLabelTextRun(row, LABEL_RUN).text())
             .toList();

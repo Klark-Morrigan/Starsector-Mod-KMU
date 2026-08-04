@@ -9,6 +9,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
@@ -46,7 +47,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>The breakdown itself is stood in for through the reader seam - it has its own suite in KMLib -
  * so what is left is the part this class alone decides: which lines are emitted, under which heading,
- * and in what order.
+ * in what order, and grouped into which blocks.
  */
 final class SystemClaimTooltipTest {
 
@@ -63,9 +64,17 @@ final class SystemClaimTooltipTest {
     private static final int LABEL_RUN = 0;
     private static final int MARKER_RUN = 1;
 
-    // The two lines every box opens with, whatever the contest below them holds.
+    // The two lines every box opens with, whatever the contest below them holds, by their place in the
+    // flat run the box draws.
     private static final int CLAIM_HEADING_ROW = 0;
     private static final int CLAIM_ROW = 1;
+
+    // The blocks a box with no status line holds, in draw order.
+    private static final int CLAIM_SECTION = 0;
+    private static final int SECOND_SECTION = 1;
+
+    // What a block naming one faction comes to: its heading and the one line beneath it.
+    private static final int HEADED_ONE_ENTRY_ROW_COUNT = 2;
 
     // Scores stand for market standings only, so any weights serve; four figures on the top one, so a
     // dropped thousands separator fails the assertion rather than passing unnoticed.
@@ -115,22 +124,22 @@ final class SystemClaimTooltipTest {
     }
 
     @Nested
-    class BuildBodyRows {
+    class BuildBodySections {
 
         @Test
-        void buildBodyRowsNamesTheClaimantWithItsCrestAndScoreUnderTheClaimHeading() {
+        void buildBodySectionsNamesTheClaimantWithItsCrestAndScoreUnderTheClaimHeading() {
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
                 List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
 
-            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
-            assertThat(readLabelText(rows, CLAIM_HEADING_ROW))
+            assertThat(readLabelText(sections, CLAIM_HEADING_ROW))
                 .isEqualTo("Claim:");
 
-            var claimRow = readTableRow(rows, CLAIM_ROW);
+            var claimRow = readTableRow(sections, CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
@@ -141,7 +150,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodyRowsSortsTheRivalsIntoContestedAndNonTerritorialBlocks() {
+        void buildBodySectionsSortsTheRivalsIntoContestedAndNonTerritorialBlocks() {
             // The two kinds of presence answer different questions - who nearly took the system, and
             // who is merely there - so they are told apart by the heading they sit under rather than
             // by a note on a line.
@@ -153,9 +162,9 @@ final class SystemClaimTooltipTest {
                     new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true),
                     new FactionClaimScore(PIRATES, OUTSIDER_SCORE, false))));
 
-            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
-            assertThat(readLabelTexts(rows))
+            assertThat(readLabelTexts(sections))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -166,11 +175,9 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodyRowsOpensEverySectionSoItsBlockIsPartedFromTheOneAbove() {
-            // Only the headings take the break, so the box reads as blocks: an entry taking one would
-            // part it from the heading it belongs to.
-            var secondHeadingRow = 2;
-
+        void buildBodySectionsHoldsEachHeadingWithTheLinesItNames() {
+            // Each block is a heading and its own entries, so the box parts one block from the next
+            // and nothing inside a block - the shape the whole reading of the box rests on.
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
@@ -178,18 +185,18 @@ final class SystemClaimTooltipTest {
                     new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
                     new FactionClaimScore(PIRATES, OUTSIDER_SCORE, false))));
 
-            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
-            assertThat(rows.get(CLAIM_HEADING_ROW).hasSectionBreak())
-                .isTrue();
-            assertThat(rows.get(secondHeadingRow).hasSectionBreak())
-                .isTrue();
-            assertThat(rows.get(CLAIM_ROW).hasSectionBreak())
-                .isFalse();
+            assertThat(sections)
+                .hasSize(2);
+            assertThat(sections.get(CLAIM_SECTION).rows())
+                .hasSize(HEADED_ONE_ENTRY_ROW_COUNT);
+            assertThat(sections.get(SECOND_SECTION).rows())
+                .hasSize(HEADED_ONE_ENTRY_ROW_COUNT);
         }
 
         @Test
-        void buildBodyRowsKeepsRivalsInTheOrderTheContestRankedThem() {
+        void buildBodySectionsKeepsRivalsInTheOrderTheContestRankedThem() {
             // The breakdown hands its standings over strongest first, which is the order a contest is
             // read in - a section that re-ordered or reversed them would put the nearest challenger
             // last while every other assertion in this suite still passed.
@@ -201,9 +208,9 @@ final class SystemClaimTooltipTest {
                     new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true),
                     new FactionClaimScore(PIRATES, OUTSIDER_SCORE, true))));
 
-            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
-            assertThat(readLabelTexts(rows))
+            assertThat(readLabelTexts(sections))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -213,7 +220,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodyRowsSetsHeadingsApartFromTheEntriesBeneathThem() {
+        void buildBodySectionsSetsHeadingsApartFromTheEntriesBeneathThem() {
             // The block shape the box is read by: a heading opens flush in the bright colour and its
             // entries indent under it. Swapping the two tiers would leave every other case in this
             // suite green while the box drew as a flat list of equals.
@@ -227,23 +234,23 @@ final class SystemClaimTooltipTest {
                     new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
                     new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true))));
 
-            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
-            assertThat(readLabelRun(rows.get(contestedHeadingRow), LABEL_RUN))
+            assertThat(readLabelRun(readTableRow(sections, contestedHeadingRow), LABEL_RUN))
                 .isEqualTo(new TextSpan("Contested by:", PLAYER_BRIGHT));
-            assertThat(readTableRow(rows, contestedHeadingRow).indent())
+            assertThat(readTableRow(sections, contestedHeadingRow).indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
-            assertThat(readTableRow(rows, contestedHeadingRow).labelledRow().leadingRowSlot())
+            assertThat(readTableRow(sections, contestedHeadingRow).labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
 
-            assertThat(readTableRow(rows, CLAIM_ROW).indent())
+            assertThat(readTableRow(sections, CLAIM_ROW).indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
-            assertThat(readTableRow(rows, contestedEntryRow).indent())
+            assertThat(readTableRow(sections, contestedEntryRow).indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
         }
 
         @Test
-        void buildBodyRowsOmitsContestedWhenTheClaimantIsTheOnlyTerritorialFaction() {
+        void buildBodySectionsOmitsContestedWhenTheClaimantIsTheOnlyTerritorialFaction() {
             // An uncontested claim has to read as uncontested, and a heading standing over no lines
             // would read as a contest whose rivals failed to resolve.
             stubBreakdown(new SystemClaimBreakdown(
@@ -251,12 +258,12 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
 
-            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony");
         }
 
         @Test
-        void buildBodyRowsMarksACoreClaimAndKeepsItsMarketScore() {
+        void buildBodySectionsMarksACoreClaimAndKeepsItsMarketScore() {
             // The decree is what took the system, so it is called out in the highlight colour on the
             // claim line itself - while the number beside it stays the faction's market standing,
             // which the decree does not erase.
@@ -265,7 +272,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodyRows(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
@@ -276,7 +283,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodyRowsDropsTheDisplacedTopScorerIntoContested() {
+        void buildBodySectionsDropsTheDisplacedTopScorerIntoContested() {
             // The regression this guards: a decree must not collapse the box to one line. The faction
             // that would have claimed by score is simply not the claimant, so it reads as contesting -
             // which is what shows the player a core imposed over a stronger presence.
@@ -287,9 +294,9 @@ final class SystemClaimTooltipTest {
                     new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
                     new FactionClaimScore(PIRATES, OUTSIDER_SCORE, false))));
 
-            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
-            assertThat(readLabelTexts(rows))
+            assertThat(readLabelTexts(sections))
                 .containsExactly(
                     "Claim:",
                     "Pirates",
@@ -298,12 +305,12 @@ final class SystemClaimTooltipTest {
 
             var displacedScorerRow = 3;
 
-            assertThat(readTableRow(rows, displacedScorerRow).labelledRow().trailingRowSlot())
+            assertThat(readTableRow(sections, displacedScorerRow).labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("1,200", TEXT)));
         }
 
         @Test
-        void buildBodyRowsShowsNoScoreForACoreFactionHoldingNoMarketThere() {
+        void buildBodySectionsShowsNoScoreForACoreFactionHoldingNoMarketThere() {
             // A decree needs no colony behind it, so the claimant is named with the value column left
             // blank rather than with a nought it never scored.
             stubBreakdown(new SystemClaimBreakdown(
@@ -311,14 +318,14 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodyRows(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
             assertThat(claimRow.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(TextSpan.createBlank(TEXT)));
         }
 
         @Test
-        void buildBodyRowsStatesTheClaimAsNoneWhenNobodyCanTakeTheSystem() {
+        void buildBodySectionsStatesTheClaimAsNoneWhenNobodyCanTakeTheSystem() {
             // A faction present but barred from claiming leaves the system unclaimed, which the box has
             // to say outright - the claim heading over nothing would read as a failure to resolve one.
             stubBreakdown(new SystemClaimBreakdown(
@@ -326,33 +333,34 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(new FactionClaimScore(PIRATES, OUTSIDER_SCORE, false))));
 
-            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
-            assertThat(readLabelTexts(rows))
+            assertThat(readLabelTexts(sections))
                 .containsExactly(
                     "Claim:",
                     "None",
                     "Non-territorial:",
                     "Pirates");
 
-            assertThat(readTableRow(rows, CLAIM_ROW).labelledRow().leadingRowSlot())
+            assertThat(readTableRow(sections, CLAIM_ROW).labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
         }
 
         @Test
-        void buildBodyRowsStatesTheClaimEvenForASystemNobodyIsPresentIn() {
+        void buildBodySectionsStatesTheClaimEvenForASystemNobodyIsPresentIn() {
             // The claim section is unconditional: a hover over a dead system still answers the question
             // the layer poses, rather than drawing a box the player has to interpret the absence of.
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "None");
         }
 
         @Test
-        void buildBodyRowsNamesTheSystemsStatusBeforeItsClaim() {
-            // A dead system names its state first, so the claim below reads as a hold over empty
-            // system rather than over a colony.
+        void buildBodySectionsNamesTheSystemsStatusBeforeItsClaimAndInABlockOfItsOwn() {
+            // A dead system names its state first, so the claim below reads as a hold over an empty
+            // system rather than over a colony - and parted from it, since the two answer different
+            // questions.
             var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
 
             statusRowMock
@@ -361,36 +369,40 @@ final class SystemClaimTooltipTest {
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
-            var claimHeadingUnderTheStatusRow = 1;
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var statusSection = 0;
+            var claimSectionUnderTheStatus = 1;
 
-            assertThat(rows.get(0))
-                .isSameAs(statusRow);
-            assertThat(readLabelText(rows, claimHeadingUnderTheStatusRow))
+            assertThat(sections.get(statusSection).rows())
+                .containsExactly(statusRow);
+            assertThat(readLabelTextRun(
+                    sections.get(claimSectionUnderTheStatus).rows().get(0),
+                    LABEL_RUN)
+                    .text())
                 .isEqualTo("Claim:");
         }
 
         @Test
-        void buildBodyRowsCountsUndiscoveredColoniesWhenJudgingTheSystemEmpty() {
+        void buildBodySectionsCountsUndiscoveredColoniesWhenJudgingTheSystemEmpty() {
             // The breakdown scores every market present, found or not, so the status above it has to
             // admit the same ones - otherwise an unfound colony's system reads "Unpopulated" directly
             // above the rows scoring the faction that holds it.
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            tooltip.buildBodyRows(sectorMock, systemMock);
+            tooltip.buildBodySections(sectorMock, systemMock);
 
             statusRowMock.verify(
                 () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, true));
         }
 
         @Test
-        void buildBodyRowsFallsBackToTheIdForAFactionTheSectorCannotResolve() {
+        void buildBodySectionsFallsBackToTheIdForAFactionTheSectorCannotResolve() {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 "ghost_faction",
                 List.of(new FactionClaimScore("ghost_faction", TOP_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodyRows(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
             assertThat(readLabelTextRun(claimRow, LABEL_RUN).text())
                 .isEqualTo("ghost_faction");
@@ -404,23 +416,30 @@ final class SystemClaimTooltipTest {
     }
 
     // The box read top to bottom as the words a player sees, headings and entries alike - the shape
-    // most of these cases are about, which asserting row by row would bury.
-    private static List<String> readLabelTexts(List<TooltipRow> rows) {
-        return rows
+    // most of these cases are about, which asserting block by block would bury. How those lines are
+    // grouped is the subject of one case of its own.
+    private static List<String> readLabelTexts(List<TooltipSection> sections) {
+        return TooltipSection
+            .readRowsInOrder(sections)
             .stream()
             .map(row -> readLabelTextRun(row, LABEL_RUN).text())
             .toList();
     }
 
-    private static String readLabelText(List<TooltipRow> rows, int rowIndex) {
-        return readLabelTextRun(rows.get(rowIndex), LABEL_RUN).text();
+    private static String readLabelText(List<TooltipSection> sections, int rowIndex) {
+        return readLabelTextRun(
+            TooltipSection.readRowsInOrder(sections).get(rowIndex),
+            LABEL_RUN)
+            .text();
     }
 
-    // Reads one body line as the table row it is. The body is typed on the row supertype, since a
-    // centred line is a legal shape for one, but every line these cases assert on lays into the box's
+    // Reads one body line as the table row it is. A block's lines are typed on the row supertype, since
+    // a centred line is a legal shape for one, but every line these cases assert on lays into the box's
     // columns - which is where the crest and value slots live.
-    private static TooltipRow.TableRow readTableRow(List<TooltipRow> rows, int rowIndex) {
-        return (TooltipRow.TableRow) rows.get(rowIndex);
+    private static TooltipRow.TableRow readTableRow(List<TooltipSection> sections, int rowIndex) {
+        return (TooltipRow.TableRow) TooltipSection
+            .readRowsInOrder(sections)
+            .get(rowIndex);
     }
 
     private static FactionAPI buildNamedFaction(String displayNameLong, String crestSpritePath) {

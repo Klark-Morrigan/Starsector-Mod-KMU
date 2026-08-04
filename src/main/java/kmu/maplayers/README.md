@@ -190,10 +190,12 @@ about what the overlay means.
   screen is up. `SystemCellTooltip` is
   the shape a layer's box takes - the hovered system's name over the layer's own content, one look and
   one draw for both, the name set in the game's own title face over body-face rows so a KM hover
-  reads as part of the interface rather than as text laid over it. That content comes in two blocks
-  parted by the box's one break: title lines drawn tight under the name as more of the heading, and
-  the body below the parting - so a verdict that settles the whole system heads the box while a status
-  or an entry sits in it. `CellTooltipRows` is the line
+  reads as part of the interface rather than as text laid over it. The box opens with a heading block
+  - the system name and any title lines read on from it - and the layer's own blocks follow beneath,
+  so a verdict that settles the whole system heads the box while a status or an entry sits in it. How
+  far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
+  one measurement, so the gap under the heading is the same gap as every gap below it. `CellTooltipRows`
+  is the line
   vocabulary that content is written in - a top-tier row, a nested one, a banner centred under the
   title (its crest set among the words as a label run, so crest and words centre as one), and the
   qualifier run any of them may end on - and

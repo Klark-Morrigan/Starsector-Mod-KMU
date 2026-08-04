@@ -11,6 +11,7 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.text.TextStyle;
 import kmlib.starsector.ui.widgets.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.TooltipSection;
 import kmlib.starsector.ui.widgets.TooltipStyle;
 
 import java.util.ArrayList;
@@ -24,10 +25,14 @@ import java.util.List;
  * about the system, never how the box is framed or named. Which lines that content may be written in is
  * {@link CellTooltipRows}.
  *
- * <p>That content comes in two blocks parted by one break: the {@linkplain #buildTitleRows title
- * lines}, drawn tight under the name as more of the heading, and the {@linkplain #buildBodyRows body}
- * below the parting. A layer that has nothing to head its box with supplies only the body and gets the
- * plain title-over-body box, which is the ordinary case.
+ * <p>The box opens with one block of its own - the system name and whatever {@linkplain #buildTitleRows
+ * title lines} the layer heads it with, read together as the heading - and the layer's own
+ * {@linkplain #buildBodySections blocks} follow beneath it. A layer that has nothing to head its box
+ * with supplies only the body and gets the plain title-over-body box, which is the ordinary case.
+ *
+ * <p>Composing the title as a block rather than parting it by hand is what makes the gap under the
+ * heading the same gap that parts every block below it: the box states which lines belong together and
+ * the widget spends one parting between any two blocks, so no line anywhere asks for room above itself.
  *
  * <p>Naming the system in the header is what makes the hover read as landing on a real system: content
  * that resolves to nothing at all draws no box, since a lone name repeats what the cursor already sits
@@ -58,38 +63,23 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             return;
         }
         var titleRows = buildTitleRows(sector, system);
-        var bodyRows = buildBodyRows(sector, system);
+        var bodySections = buildBodySections(sector, system);
         // Nothing to say about the system - drawing the name alone would only echo the cursor.
-        if (titleRows.isEmpty() && bodyRows.isEmpty()) {
+        if (titleRows.isEmpty() && bodySections.isEmpty()) {
             return;
         }
-        var rows = new ArrayList<TooltipRow>();
-        rows.add(buildHeaderRow(system));
+        var sections = new ArrayList<TooltipSection>();
+        sections.add(buildTitleSection(system, titleRows));
+        sections.addAll(bodySections);
 
-        // Title lines follow the name at the plain inter-line gap, so they read as continuing the
-        // heading rather than opening anything.
-        rows.addAll(titleRows);
-
-        // The body opens a section under the title block, so the heading is parted from what follows it
-        // rather than reading as the first entry of the list. Set here, not by each layer: every cell
-        // tooltip is a title over a body, so the parting belongs to that shape rather than to any one
-        // body - and it lands on the body's first line wherever the title block happened to end, which
-        // is what keeps one parting in the box however many lines head it.
-        if (!bodyRows.isEmpty()) {
-            rows.add(bodyRows
-                .get(0)
-                .opensSection());
-
-            rows.addAll(bodyRows.subList(1, bodyRows.size()));
-        }
-        CursorTooltipRenderer.render(rows, buildStyle());
+        CursorTooltipRenderer.render(sections, buildStyle());
     }
 
     /**
-     * Builds the lines belonging to this layer's title block, drawn tight under the system name and
-     * above the parting that opens the body. Called once per paint with the live sector, after the
-     * economy precondition holds; a layer with nothing to head its box with supplies none, which is the
-     * ordinary case.
+     * Builds the lines belonging to this layer's title block, read together with the system name above
+     * the parting that opens the body. Called once per paint with the live sector, after the economy
+     * precondition holds; a layer with nothing to head its box with supplies none, which is the ordinary
+     * case.
      *
      * <p>Held apart from the body because the two are parted differently, and that parting is what a
      * reader takes the shape of the box from: a title line is read off the system name as more of the
@@ -106,16 +96,35 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     }
 
     /**
-     * Builds this layer's content rows, drawn top to bottom under the system-name header. Called once
-     * per paint with the live sector, after the economy precondition holds. The seam the whole class
-     * exists around: the box is framed here and its content is the layer's, so this shape can be shared
-     * by layers it names none of.
+     * Builds this layer's content blocks, drawn top to bottom under the heading. Called once per paint
+     * with the live sector, after the economy precondition holds. The seam the whole class exists
+     * around: the box is framed here and its content is the layer's, so this shape can be shared by
+     * layers it names none of.
+     *
+     * <p>Stated as blocks rather than as lines because how far apart the box's content stands follows
+     * from how it is grouped: a layer says which of its lines belong together, and every parting in the
+     * box - including the one under the heading above - is then the same one decision.
      *
      * @param sector the live sector, whose economy the content may read
      * @param system the star system under the cursor
-     * @return the body rows, or an empty list when the layer has nothing to show for this system
+     * @return the body blocks, or an empty list when the layer has nothing to show for this system
      */
-    protected abstract List<TooltipRow> buildBodyRows(SectorAPI sector, StarSystemAPI system);
+    protected abstract List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system);
+
+    // The box's heading as one block: the hovered system's name, and any lines the layer heads its box
+    // with read on from it. One block rather than a name plus separately-placed lines, because a block
+    // is exactly what "these are read together" means - and what leaves the gap beneath them the box's
+    // one parting however many lines the layer added.
+    private static TooltipSection buildTitleSection(
+            StarSystemAPI system,
+            List<TooltipRow> titleRows) {
+
+        var rows = new ArrayList<TooltipRow>();
+        rows.add(buildHeaderRow(system));
+        rows.addAll(titleRows);
+
+        return new TooltipSection(rows);
+    }
 
     // The header every cell tooltip opens with: the hovered system's own name, crestless and drawn in
     // the highlight colour, so the body below it never has to repeat which system it describes and the
@@ -143,7 +152,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // drawn 1:1 rather than scaled.
     private static CursorTooltipStyle buildStyle() {
         return new CursorTooltipStyle(
-            new TooltipStyle(
+            TooltipStyle.createStyle(
                 TextStyle.createStyle(HEADER_FONT),
                 TextStyle.createStyle(BODY_FONT)),
             OPACITY,
