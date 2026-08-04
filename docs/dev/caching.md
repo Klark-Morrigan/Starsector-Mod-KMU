@@ -193,18 +193,16 @@ asked to notice a change:
 on each placement says which cluster it was fitted to, so a split or a merge matches
 nothing and re-fits by construction, and
 [`AnchorFitFingerprint`](../../src/main/java/kmu/maplayers/base/labels/anchor/AnchorFitFingerprint.java)
-says what the whole pass ran under. The second is the one to keep in
-mind when adding an input: the keep-out sites every box is trimmed clear of are the
-*whole sector's*, so a change no membership reflects still moves every fit, and only the
-fingerprint can catch it. A mismatch discards the carry-over whole and the rebuild is
-total, which is what it was before any of this existed.
+says what the whole pass ran under. The second is the one to keep in mind when adding an
+input: the keep-out sites every box is trimmed clear of are the *whole sector's*, so a
+change no membership reflects still moves every fit, and only the fingerprint can catch
+it. A mismatch discards the carry-over whole and the rebuild is total, which is what it
+was before any of this existed.
 
-The fingerprint and the list are held as one
-[`StandingClusterAnchors`](../../src/main/java/kmu/maplayers/base/labels/anchor/StandingClusterAnchors.java),
-so this cache hands the rebuild one value and gets its answer back in the same one. That is
-what keeps them in step across the paths that write them: the full rebuild, the debug
-view's, the gates that fit nothing and still have to label the list they empty, and the
-incremental fold, which leaves both alone on the frames it re-fits none.
+What this cache holds is therefore one
+[`StandingClusterAnchors`](../../src/main/java/kmu/maplayers/base/labels/anchor/StandingClusterAnchors.java)
+and not a list beside a fingerprint - it goes into a rebuild whole and comes back the same
+value.
 
 The mechanics - what is re-resolved on a carried placement, and why a collapsed one is
 never carried - are [the overlay's own README](../../src/main/java/kmu/maplayers/base/labels/README.md).
