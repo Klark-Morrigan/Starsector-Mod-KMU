@@ -5,6 +5,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * How a cell tooltip's body is divided into blocks: a heading naming what follows it, over the lines it
@@ -50,5 +51,31 @@ public final class CellTooltipSections {
 
         rows.addAll(sectionRows);
         sections.add(new TooltipSection(rows));
+    }
+
+    /**
+     * Appends a block holding {@code bannerRow} alone - a line speaking for the hovered system as a
+     * whole ({@link CellTooltipRows#buildBannerRow}) rather than entering it in a list - and nothing
+     * at all when there is none to state.
+     *
+     * <p>A block of one line is what a banner wants: what it says answers a different question from
+     * whatever is listed beneath it, so it is parted from that rather than read as its opening entry.
+     * Stated here because it is a rule about the box's shape, which two bodies stating it apart would
+     * eventually state differently.
+     *
+     * <p>Takes the banner as an {@link Optional} because a resolver answering "does this system have
+     * one" is what every caller is holding - so the absence rule stays here beside the empty-block
+     * rule above rather than being spelled at each call site. The bound is open because such a
+     * resolver answers with whichever kind of line it builds - a banner is a centred one - and a
+     * block only ever reads what it is handed.
+     *
+     * @param sections  the body being built, appended to in place
+     * @param bannerRow the line to state, or empty when the system has nothing to state
+     */
+    public static void appendBannerSection(
+            List<TooltipSection> sections,
+            Optional<? extends TooltipRow> bannerRow) {
+
+        bannerRow.ifPresent(row -> sections.add(new TooltipSection(List.of(row))));
     }
 }

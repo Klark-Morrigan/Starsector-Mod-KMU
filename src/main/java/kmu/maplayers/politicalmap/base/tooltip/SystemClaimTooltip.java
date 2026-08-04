@@ -62,11 +62,10 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         var sections = new ArrayList<TooltipSection>();
 
         // Why the system holds nobody comes before who claims it, so a dead system names its state
-        // first and the claim below reads as a hold over an empty system rather than over a colony. A
-        // block of its own, since it answers a different question from the claim beneath it.
-        SystemStatusRow
-            .resolveStatusRow(sector, system, ADMITS_UNDISCOVERED_MARKETS)
-            .ifPresent(statusRow -> sections.add(new TooltipSection(List.of(statusRow))));
+        // first and the claim below reads as a hold over an empty system rather than over a colony.
+        CellTooltipSections.appendBannerSection(
+            sections,
+            SystemStatusRow.resolveStatusRow(sector, system, ADMITS_UNDISCOVERED_MARKETS));
 
         CellTooltipSections.appendSection(
             sections,

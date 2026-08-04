@@ -100,13 +100,12 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         var sections = new ArrayList<TooltipSection>();
 
         // What the system is comes before who holds it, so the standings below read as a contest over
-        // a known system. A block of its own, since the contest beneath it answers a different question.
-        // The status resolves under this pass's reveal, the same filter the standings were ranked
-        // through, so the system counts as empty here exactly when the ranking found nothing to show -
-        // the two can never describe different systems.
-        SystemStatusRow
-            .resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets())
-            .ifPresent(statusRow -> sections.add(new TooltipSection(List.of(statusRow))));
+        // a known system. The status resolves under this pass's reveal, the same filter the standings
+        // were ranked through, so the system counts as empty here exactly when the ranking found
+        // nothing to show - the two can never describe different systems.
+        CellTooltipSections.appendBannerSection(
+            sections,
+            SystemStatusRow.resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets()));
 
         appendStandingSections(sections, groupRows);
         return sections;

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
@@ -25,9 +26,9 @@ import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins how a body divides into blocks, since the division is what a reader of the box actually sees: a
- * heading opens the block it names, its lines follow it inside that same block, and a block with no
- * lines contributes nothing rather than leaving its heading standing over an absence a player would read
- * as a failure to resolve one.
+ * heading opens the block it names, its lines follow it inside that same block, a line speaking for the
+ * whole system stands as a block of its own, and a block with no lines contributes nothing rather than
+ * leaving its heading standing over an absence a player would read as a failure to resolve one.
  *
  * <p>How far apart the blocks then stand is the widget's and pinned there; what is fixed here is that a
  * heading and the lines it names are one block, which is what that spacing follows from.
@@ -153,6 +154,51 @@ final class CellTooltipSectionsTest {
 
             assertThat(heading.labelPlacement())
                 .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+        }
+    }
+
+    @Nested
+    class AppendBannerSection {
+
+        @Test
+        void appendBannerSectionGivesTheLineABlockOfItsOwn() {
+            // A banner speaks for the system rather than opening a list, so it is parted from whatever
+            // follows instead of being read as that block's first entry.
+            var sections = new ArrayList<TooltipSection>();
+            var bannerRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
+
+            CellTooltipSections.appendBannerSection(sections, Optional.of(bannerRow));
+
+            assertThat(sections)
+                .hasSize(1);
+            assertThat(sections.get(0).rows())
+                .containsExactly(bannerRow);
+        }
+
+        @Test
+        void appendBannerSectionLeavesTheBodyUntouchedWhenThereIsNothingToState() {
+            // The absence rule the helper exists to hold: a system with nothing to state gets no empty
+            // block, which would part the body around a gap holding no line.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendBannerSection(sections, Optional.empty());
+
+            assertThat(sections)
+                .isEmpty();
+        }
+
+        @Test
+        void appendBannerSectionAddsItsBlockBeneathWhateverTheBodyAlreadyHolds() {
+            
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntryRow("Pirates")));
+            CellTooltipSections.appendBannerSection(
+                sections,
+                Optional.of(CellTooltipRows.buildBannerRow(null, "Decivilised")));
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Claim:", "Pirates", "Decivilised");
         }
     }
 
