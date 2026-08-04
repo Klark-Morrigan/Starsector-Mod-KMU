@@ -135,7 +135,8 @@ either box may have to say a system is held by decree, and a decree resolved one
 another way on the next would answer one hover two ways a keystroke apart),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
-[the sidebar](../base/sidebar/README.md) one level up. What stays here is what that picker refuses
+reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound
+to this mod's save slots there). What stays here is what that picker refuses
 to know: which blocs are on offer and what makes that list stale (`SelectableBlocCache`), and the
 recede toggles the layer pairs with the picker's sort (`RecedeControl`).
 The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level

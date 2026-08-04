@@ -1,11 +1,13 @@
 package kmu.maplayers.base.sidebar;
 
+import kmlib.starsector.ui.widgets.lists.SelectableListItem;
+
 /**
  * Test fixture: one row of a picker list no part of the political map declares - the stand-in item
  * a second layer's sidebar list would rank and spotlight. Implements the {@link SelectableListItem}
- * seam through its own components, so the picker draws and stores a foreign type without anything
- * being mapped into a framework value. Carries two numerics beside them so the foreign sort modes
- * ({@link HazardSortMode}) have distinct keys to rank and flip on.
+ * seam through its own components, so the binder reads and writes a foreign type's id without
+ * anything being mapped into a framework value. Carries two numerics beside them so the foreign
+ * sort modes ({@link HazardSortMode}) have distinct keys to rank and flip on.
  *
  * @param itemId          the id a pick stores, kept apart from the label so a suite can tell an
  *                        id-resolved lit row from a label-matched one

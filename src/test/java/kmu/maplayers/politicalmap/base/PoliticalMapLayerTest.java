@@ -10,7 +10,7 @@ import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.sidebar.FilterPickerControl;
+import kmu.maplayers.base.sidebar.FilterSelectionBinder;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 
@@ -106,8 +106,8 @@ final class PoliticalMapLayerTest {
             try (MockedStatic<Global> globalMock = mockStatic(Global.class);
                     MockedStatic<PoliticalMapBodyControls> controlsMock =
                         mockStatic(PoliticalMapBodyControls.class);
-                    MockedStatic<FilterPickerControl> pickerMock =
-                        mockStatic(FilterPickerControl.class)) {
+                    MockedStatic<FilterSelectionBinder> pickerMock =
+                        mockStatic(FilterSelectionBinder.class)) {
 
                 globalMock
                     .when(Global::getSector)
@@ -124,8 +124,7 @@ final class PoliticalMapLayerTest {
 
                 stubSharedControlsAndSelector(controlsMock);
                 pickerMock
-                    .when(() -> FilterPickerControl.buildControls(
-                        any(),
+                    .when(() -> FilterSelectionBinder.buildPicker(
                         any(),
                         any(),
                         any(),

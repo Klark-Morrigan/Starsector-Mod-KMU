@@ -140,35 +140,25 @@ the previous save's scroll offset in the same move.
 ## Picker state
 
 A layer whose body carries a sortable, column-laid list needs somewhere to keep how that list is
-ranked, wrapped, and filtered - and the widgets that change those choices. `SortSelection`,
-`ColumnSelection`, and `FilterSelection` are the stores. `FilterPickerControl` is the picker the
-pieces compose into, `SelectableListItem` the seam its rows are drawn from, and
-`SelectableItemCache` the memo a layer holds its list in.
+ranked, wrapped, and filtered. `SortSelection`, `ColumnSelection`, and `FilterSelection` are those
+stores, and `SortSelectionBinder`, `ColumnSelectionBinder`, and `FilterSelectionBinder` are what
+tie each to the widget that changes it. Three stores and their three binders is the whole of this
+half of the package.
 
 The stores are leaves: they hold the raw stored keys and nothing that resolves one. What a
 filtered-to id points at stays with the layer that offers the choices, and a stored sort or
 column key only means something to the model that owns it, so this package carries the storage
 without learning what any one layer's list holds.
 
-The sort and column *model* is not here at all - `ListSortMode`, `ListSortModes`, `ListSort`,
-`SortDirection`, `ListColumns` and the two selector controls are KMLib's
-(`kmlib.starsector.ui.widgets.lists`), since a sortable list with a persisted mode and a
-column-count segment selector knows nothing about a map. The split is that **KMLib owns the model and the
-resolution rule; KMU owns where the answer is kept.**
-`SortSelectionBinder` and `ColumnSelectionBinder` are the join: each reads its
-store's raw keys into the model's resolution and writes a picked value back out, so a reading
-layer asks for "the stored sort over my modes" exactly as it did while the model lived here.
+The picker itself is not here at all - `ListPickerControl`, `SelectableListItem`, `ListPickerStore`,
+`RevisionMemo`, and the sort and column model behind them (`ListSortMode`, `ListSortModes`,
+`ListSort`, `SortDirection`, `ListColumns`, and the two selector controls) are KMLib's
+(`kmlib.starsector.ui.widgets.lists`), since a sortable, column-laid, spotlight-picking list knows
+nothing about a map. The split is that **KMLib owns the model, the composition, and the resolution
+rule; KMU owns where the answer is kept.**
 
 The keys are why the split falls where it does. They are the frozen `$kmu_political_*` spellings
 below - save state this mod cannot move and a shared library has no business holding.
-
-`SortSelectorControl` and `ColumnsSelectorControl` draw those models. The sort selector is a
-re-firing radio over the caller's modes - a click on an unlit row switches to that mode at its
-default direction, a re-click of the lit row flips the direction - with each row's trailing
-triangle previewing the order picking it would give. The columns selector is an ordinary
-two-segment radio, inert on a re-pick. Neither reaches a save: each reports its pick, and
-`FilterPickerControl` is where those picks are bound to the binders above and where the columns
-caption is resolved out of this mod's strings.
 
 `FilterSelection` holds one selected id per opaque scope, so each scope keeps its own choice and
 switching scopes neither clears nor cross-reads another's. Beyond the read, pick, and clear it
@@ -177,22 +167,16 @@ being on offer between sessions) and carries a pre-per-scope save's single share
 slot on load. Binding that predicate to a live source of what is selectable *now* is the reading
 layer's, since the source is exactly the knowledge these classes refuse.
 
-`FilterPickerControl` is the spotlight picker those pieces compose into: a section rule, the
-columns selector, a row pairing the sort selector with whatever the caller pairs beside it, then a
-deselectable icon-radio list wired straight to `FilterSelection` - so a pick spotlights a row and a
-re-pick clears the filter. Two things keep it layer-neutral. `SelectableListItem` is the seam its
-rows are drawn from - an id, a label, a crest, and nothing else - which a layer implements on its
-own item type, so the list ranks through the layer's own comparators and nothing is copied into a
-framework value on the way in. And the right half of the sort row is a parameter: pairing something
-with the sort is a layout decision this package can hold, but what sits there is not, and a layer
-with nothing to pair passes none.
+`FilterSelectionBinder` is the one binder that also builds, because the picker's three ties resolve
+at one point: it reads the scope's spotlighted id on the way in, resolves the columns caption out of
+this mod's strings, and routes each of the picker's three reported picks to the slot that keeps it -
+the item pick to `FilterSelection` under that scope, the other two through the binders beside it. A
+layer that composed the picker itself would have to name all three slots, which is exactly the
+knowledge these binders exist to hold, so a calling layer hands over its items, its sort, its column
+count, and whatever it pairs beside the sort selector, and names no store at all.
 
-`SelectableItemCache` is where a layer holds the resolved list between frames. A body build runs
-twice a frame (render and hit-test) and a picker list is typically a full pass over whatever the
-layer scores its items from, so the list is rebuilt only when a caller-supplied revision moves.
-What belongs in that revision is the caller's judgement and is the whole of the invalidation
-contract; the key also carries the sector identity, weakly held, so a save reloaded in the same
-session recomputes rather than serving the previous save's items. [The caching
+`SelectableBlocCache` (the political map's) is where a layer holds the resolved list between frames,
+over KMLib's `RevisionMemo`; what invalidates it is the layer's own judgement. [The caching
 notes](../../../../../../../docs/dev/caching.md) own that model in full.
 
 | Key | Holds |
@@ -222,9 +206,11 @@ face, and `LiveSidebarPlacement.buildMapTabStyle()` for the tabs.
 That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `HotkeyStyle`, and the
 orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
 from and a snapped tab width cannot part from the text drawn into it. The palette holds both flavours
-of tab look: an absolute `TabBaseLook` per `TabBaseState` (unselected, selected) and a relative
-`TabWash` per `TabWashState` (hovered, clicked, hotkeyed), the lift being layered over whichever base
-the tab is already in. The two
+of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, hovered) and a relative
+`TabWash` per `TabWashState` (clicked, hotkeyed), the pulse lifting whichever look the tab has settled
+on. Hovering is a look rather than a lift because the resting and the selected tab meet at one shade
+under the pointer - the hovered shade is derived once from the selected look, so it cannot drift from
+it - and the selected tab's underline is what still marks the selection while it is hovered. The two
 screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the
 paint pass does not read. Both faces are named through KMLib's `StarsectorFont` enum rather than by
 atlas basename.
@@ -245,13 +231,14 @@ fields read through `kmu.settings.KmuMapLayerSettings`.
 
 The *panel widget itself* - frame, tab strip, scrollbar, collapse handle, control widgets, and the
 `TabPanelController` that holds scroll and collapse state - is KMLib
-(`kmlib.starsector.ui.widgets`, `.input`, `.render.gl`), as is the *list sort and column model*
-and its two selectors (`.widgets.lists`, see [Picker state](#picker-state)); this package supplies only the wiring
-KMLib cannot know. The *layer roster and each screen's active pick*, including the save migrations
+(`kmlib.starsector.ui.widgets`, `.input`, `.render.gl`), as is the *spotlight picker* with its item
+seam, its sort and column model, and the list memo behind it (`.widgets.lists`, see
+[Picker state](#picker-state)); this package supplies only the wiring KMLib cannot know. The *layer
+roster and each screen's active pick*, including the save migrations
 behind them, are `base/layer`'s (`MapLayerRegistry`), summarised in
 [map layers](../../README.md). The *body composition* the panel lays out belongs to whichever
 layer is active - for the political map, [`politicalmap`](../../politicalmap/README.md) and its
-`base/sidebar` controls - though the spotlight picker a body embeds is this package's, and it is
-here that KMLib's two selectors are bound to the save (see [Picker state](#picker-state)). What
-the political map keeps of its own there is what the picker refuses to know: which items are on
-offer, what invalidates that list, and the recede toggles it pairs with the sort. Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.
+`base/sidebar` controls - though it is here that KMLib's picker is bound to the save (see
+[Picker state](#picker-state)). What the political map keeps of its own there is what the picker
+refuses to know: which items are on offer, what invalidates that list, and the recede toggles it
+pairs with the sort. Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.

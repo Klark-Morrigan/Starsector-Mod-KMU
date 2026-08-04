@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmu.maplayers.base.sidebar.SelectableListItem;
+import kmlib.starsector.ui.widgets.lists.SelectableListItem;
+
 import kmu.maplayers.politicalmap.base.politics.BlocStats;
 
 /**
@@ -12,10 +13,10 @@ import kmu.maplayers.politicalmap.base.politics.BlocStats;
  * the {@link BlocStats} its whole-sector standing is scored from - nothing about how the id resolves
  * into presence-aware territory, which is the resolver's concern.
  *
- * <p>This is the political map's declaration of the framework's {@link SelectableListItem} seam: the
- * id, label, and crest are what the picker draws and stores, while the {@link BlocStats} beside them
+ * <p>This is the political map's declaration of the picker's {@link SelectableListItem} seam: the
+ * id, label, and crest are what the picker draws and reports, while the {@link BlocStats} beside them
  * are read only by {@link BlocSortMode}'s comparators and trailing values - the part of an item the
- * framework never opens.
+ * picker never opens.
  *
  * <p>Plain data with no Starsector types - the crest is the faction's crest sprite path, not a loaded
  * {@code SpriteAPI} - so the selectable list can be built and asserted on hand-built inputs and the
@@ -54,7 +55,7 @@ public record SelectableBloc(
     }
 
     /**
-     * The seam's neutral name for {@link #blocId()}, so the framework picker stores an id without
+     * The seam's neutral name for {@link #blocId()}, so the picker reports an id without
      * learning it names a bloc. The record keeps its own domain-named accessor, which is what the
      * political side reads - the resolvers and the heal key presence off a bloc id, not off "an
      * item".

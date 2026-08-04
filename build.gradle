@@ -81,6 +81,13 @@ enforcePackageVocabulary {
     forbidWords under: 'kmu',
                 words: ['ground']
 
+    // The one file that may say it: the map-layer README is where this rule is
+    // written down, and a rule that cannot name the word it forbids cannot be
+    // read. The same shape as the political-word exemptions below - naming an
+    // identifier or a rule is not the tree speaking the word for itself.
+    allowWord word: 'ground',
+            inFile: 'src/main/java/kmu/maplayers/README.md'
+
     // The four files that may say it, each for a reason no rewording reaches.
     // Three name the sector-memory keys the picker's selection is stored under:
     // those are save-serialised identities, frozen for the reason the terrain

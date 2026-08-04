@@ -235,11 +235,14 @@ the name.
 
 ### Sidebar picker lists
 
-[`SelectableItemCache`](../../src/main/java/kmu/maplayers/base/sidebar/SelectableItemCache.java)
-is the memo any layer's sidebar picker holds its option list in, keyed on the sector,
-the scope, and a revision the caller supplies. A body build runs twice a frame
-(render and hit-test), so without a memo every picker would re-resolve its list
-several times a frame.
+`RevisionMemo` is the memo any layer's sidebar picker holds its option list in, keyed
+on the sector, the scope, and a revision the caller supplies. A body build runs twice
+a frame (render and hit-test), so without a memo every picker would re-resolve its
+list several times a frame. It is KMLib's (`kmlib.starsector.ui.widgets.lists`), like
+the picker it feeds; [KMLib's caching
+notes](https://github.com/<owner>/KMLib/blob/main/docs/dev/caching.md) file it as an
+invalidation primitive rather than a cache, since what it holds and when it goes stale
+are entirely the consumer's declaration.
 
 Its key is unusual in one way worth knowing: it includes the **sector identity**,
 held through a `WeakReference`, so a save reloaded in the same session recomputes

@@ -8,8 +8,7 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
-import kmu.maplayers.base.sidebar.FilterPickerControl;
-import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.sidebar.FilterSelectionBinder;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
@@ -105,16 +104,16 @@ public final class PoliticalMapLayer implements MapLayer {
             // through the memo so this per-frame body build reads a cached list rather than re-walking
             // the economy every frame the map is open.
             //
-            // The framework picker composes the block; what pairs with its sort selector is this
-            // layer's to decide, and the political map pairs it with the filter recede - how the rest
-            // of the sector fades behind a spotlight. It is always shown: a change there simply has no
-            // visible effect until a bloc is spotlighted, so the knobs stay put whether or not a filter
-            // is active. It is the same reusable control the alliances view places under its own
-            // caption, here bound to the filter recede set rather than the non-allied one.
-            controls.addAll(FilterPickerControl.buildControls(
+            // KMLib's picker composes the block and the binder ties its picks to this mod's save
+            // slots; what pairs with its sort selector is this layer's to decide, and the political
+            // map pairs it with the filter recede - how the rest of the sector fades behind a
+            // spotlight. It is always shown: a change there simply has no visible effect until a bloc
+            // is spotlighted, so the knobs stay put whether or not a filter is active. It is the same
+            // reusable control the alliances view places under its own caption, here bound to the
+            // filter recede set rather than the non-allied one.
+            controls.addAll(FilterSelectionBinder.buildPicker(
                 viewId,
                 SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
-                FilterSelection.getSelectedIdOf(viewId),
                 sort,
                 BlocSortMode.MODES,
                 columns,

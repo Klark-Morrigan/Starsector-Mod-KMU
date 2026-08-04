@@ -2,7 +2,8 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.sidebar.SelectableItemCache;
+import kmlib.starsector.ui.widgets.lists.RevisionMemo;
+
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.settings.KmuLunaSettings;
@@ -11,9 +12,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * What invalidates the political map's memoised picker list. The memo itself is the framework's
- * {@link SelectableItemCache}; what this adds is the one thing the framework cannot know - which
- * moving values a selectable-bloc list actually depends on, so a stale list is rebuilt and a live one
+ * What invalidates the political map's memoised picker list. The memo itself is KMLib's
+ * {@link RevisionMemo}; what this adds is the one thing the memo cannot know - which moving values a
+ * selectable-bloc list actually depends on, so a stale list is rebuilt and a live one
  * is not. Each list is a full grouped dominance pass over the sector, and the picker resolves its
  * options twice a frame the map is open, so getting that judgement right is what keeps the sidebar
  * from rescanning the whole economy several times a frame.
@@ -27,7 +28,7 @@ public final class SelectableBlocCache {
 
     // One memo for the whole tab, not one per view: the picker draws a single view at a time, so a
     // switch is a miss on the view id and the switched-in view's list replaces the previous one.
-    private static final SelectableItemCache<SelectableBloc> blocCache = new SelectableItemCache<>();
+    private static final RevisionMemo<List<SelectableBloc>> blocCache = new RevisionMemo<>();
 
     private SelectableBlocCache() {
     }
@@ -45,7 +46,7 @@ public final class SelectableBlocCache {
             PoliticalMapView view,
             SectorAPI sector) {
 
-        return blocCache.resolveItems(
+        return blocCache.resolveValue(
             sector,
             view.getId(),
             computeRevision(view),
