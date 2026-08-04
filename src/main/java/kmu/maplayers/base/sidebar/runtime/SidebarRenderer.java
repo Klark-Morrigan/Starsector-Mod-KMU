@@ -8,6 +8,7 @@ import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.input.HoverFade;
 import kmlib.starsector.ui.render.gl.NotchState;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
 import kmlib.starsector.ui.render.gl.WidgetStyle;
@@ -26,9 +27,9 @@ import org.apache.log4j.Logger;
  * the vanilla-styled tab header, the body controls, the scrollbar, and the collapse handle - is the
  * renderer's; this class owns only the wiring KMLib cannot: when to draw (the host's gate), which colours
  * and fonts to draw in (a {@link WidgetStyle} built from the live player colours and settings), advancing
- * the collapse off real time (the campaign is paused while these screens are open, so a game-time delta
- * would freeze the fold), and the view-state log. One instance per host, so the sector map and the intel
- * screen each get their own frame clock and log dedupe.
+ * the panel's animations off real time (the campaign is paused while these screens are open, so a game-time
+ * delta would freeze the fold and the tab hovers alike), and the view-state log. One instance per host, so
+ * the sector map and the intel screen each get their own frame clock and log dedupe.
  *
  * <p>Both screens are vanilla core-UI surfaces with no seam to attach a mod panel, so the sidebar is drawn
  * in UI coordinates through {@link CampaignUIRenderingListener} - specifically the above-tooltips pass, the
@@ -88,15 +89,23 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // Drop the frame clock so the next re-open advances from nothing rather than by the whole gap
             // the screen was closed, which would otherwise snap a half-folded panel straight to its end.
             previousFrameNanos = 0L;
+
+            // The tab hovers reset with that clock: a fade left part-way up has no elapsed time to wind it
+            // down on re-open, so it would paint as the tail of a hover the player never saw begin.
+            host.getController().resetTabHovers();
             logViewStateOnChange("hidden; " + host.describeViewState());
             return;
         }
+
+        // Read once and spent on both of the panel's animations below, which run either side of the layout:
+        // a second read would charge the fold and the tab hovers different slices of the same frame.
+        var elapsedSeconds = elapsedSinceLastFrame();
 
         // Step the collapse toward its target by this frame's real elapsed time before laying the panel out,
         // so the placement resolves at the freshly-advanced fold; the pace is the player's collapse-seconds
         // setting, with zero meaning an instant snap.
         host.getController().advanceCollapse(
-            elapsedSinceLastFrame(),
+            elapsedSeconds,
             KmuMapLayerSettings.getMapSidebarCollapseSeconds());
 
         // Offer the freshly-advanced fold to the host's fold selection, which decides for itself whether
@@ -112,6 +121,14 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             logViewStateOnChange("hidden; placement unavailable; " + host.describeViewState());
             return;
         }
+        // Step the tab hovers against the placement just resolved - the one this frame draws - so the tab
+        // that lights is the tab the pointer is over now, not the one it was over before the panel last
+        // moved. After the layout for exactly that reason, where the fold has to run before it.
+        host.getController().advanceTabHovers(
+            placement,
+            elapsedSeconds,
+            HoverFade.DEFAULT_DURATION_SECONDS);
+
         var settings = Global.getSettings();
         var opacity = KmuMapLayerSettings.getMapSidebarBackgroundOpacity();
 
@@ -147,6 +164,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             placement,
             buildStyle(),
             border,
+            host.getController().getTabInteractionSources(),
             notchState,
             opacity);
     }
