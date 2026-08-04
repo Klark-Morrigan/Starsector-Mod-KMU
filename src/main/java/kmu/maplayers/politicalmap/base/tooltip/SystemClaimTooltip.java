@@ -6,11 +6,12 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
 
+import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.util.KmuStrings;
@@ -70,48 +71,53 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            List.of(buildClaimantRow(sector, breakdown)));
+            List.of(buildClaimantEntry(sector, breakdown)));
 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
-            buildFactionRows(
+            buildFactionEntries(
                 sector,
                 selectRivalScores(breakdown, claimantFactionId, FactionClaimScore::isTerritorial)));
 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
-            buildFactionRows(
+            buildFactionEntries(
                 sector,
                 selectRivalScores(breakdown, claimantFactionId, score -> !score.isTerritorial())));
 
         return sections;
     }
 
-    // The one line the claim section always carries: whoever holds the system, or the plain word for
+    // The one entry the claim section always lists: whoever holds the system, or the plain word for
     // nobody when no eligible faction scored and no decree imposed one.
-    private static TooltipRow buildClaimantRow(SectorAPI sector, SystemClaimBreakdown breakdown) {
+    private static CellTooltipEntry buildClaimantEntry(
+            SectorAPI sector,
+            SystemClaimBreakdown breakdown) {
+
         var claimantFactionId = breakdown.claimantFactionId();
 
         if (!KmlibStrings.hasText(claimantFactionId)) {
-            return CellTooltipRows.buildNestedRow(
+            return CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                 null,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
-                CellTooltipRows.NO_SCORE);
+                CellTooltipRows.NO_SCORE));
         }
-        var row = FactionTooltipRow.buildFactionRow(
+        var claimantLine = FactionTooltipEntry.buildFactionLine(
             sector,
             claimantFactionId,
             resolveScoreText(breakdown, claimantFactionId));
 
         // A core is held by decree rather than won, so the claim is qualified on the very line it is
-        // made. Its market standing stays in the value column beside the marker: a decreed hold does
-        // not erase the faction's presence, and a line of its own would read as a second claim.
-        return isCoreClaim(breakdown)
-            ? row.continuesWith(CellTooltipRows.buildQualifierSpan(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_MARKER)))
-            : row;
+        // made - it is why that line outranks a higher-scoring one beneath it, which the banner heading
+        // the box does not answer. Its market standing stays in the value column beside the qualifier:
+        // a decreed hold does not erase the faction's presence.
+        if (isCoreClaim(breakdown)) {
+            claimantLine = claimantLine.qualifiedWith(
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_MARKER));
+        }
+        return CellTooltipEntry.createEntry(claimantLine);
     }
 
     // The standings shown under a section other than the claim: everyone present but the claimant,
@@ -138,21 +144,22 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
             && breakdown.claimantFactionId().equals(breakdown.overrideFactionId());
     }
 
-    // The standings as lines, already ranked strongest first by the breakdown - the order a contest is
-    // read in, and the same order the mechanic itself settles it in.
-    private static List<TooltipRow> buildFactionRows(
+    // The standings as entries, already ranked strongest first by the breakdown - the order a contest
+    // is read in, and the same order the mechanic itself settles it in. Each stands on its own: claims
+    // resolve per faction, so nothing here is ever made up of anything.
+    private static List<CellTooltipEntry> buildFactionEntries(
             SectorAPI sector,
             List<FactionClaimScore> scores) {
 
-        var rows = new ArrayList<TooltipRow>(scores.size());
+        var entries = new ArrayList<CellTooltipEntry>(scores.size());
 
         for (var score : scores) {
-            rows.add(FactionTooltipRow.buildFactionRow(
+            entries.add(FactionTooltipEntry.buildFactionEntry(
                 sector,
                 score.factionId(),
                 KmlibNumbers.formatGroupedInteger(score.score())));
         }
-        return rows;
+        return entries;
     }
 
     // The claimant's own market standing, or no number at all when it holds none there: a core imposed

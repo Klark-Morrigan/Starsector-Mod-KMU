@@ -8,10 +8,13 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
+import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
+import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -53,15 +56,16 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins how the standings the map ranks become the lines the hover box draws: the strongest group is
- * named as dominating the system and the rest as contesting it, a lone faction reads as one flat header
- * while an alliance reads as a header over its indented members however few it has, and what the system
- * is beyond its standings - dead, or held by decree - is said above the contest. Also that the ranking
- * runs under the active view's own grouping, which is what makes the numbers in the box the ones the
- * fills were painted by.
+ * named as dominating the system and the rest as contesting it, a group made up of nothing reads as one
+ * flat line while one carrying members reads over them indented, and what the system is beyond its
+ * standings - dead, or held by decree - is said above the contest. Also that the ranking runs under the
+ * active view's own grouping, which is what makes the numbers in the box the ones the fills were painted
+ * by.
  *
- * <p>The ranking, the row resolution, the status line and the claim read behind it are all stood in
- * for, since each is pinned by its own suite: what is left is the shape this class alone decides - which
- * rows are emitted, in what order, at what tier, and grouped into which blocks.
+ * <p>The ranking, the resolution into entries, the status line and the claim read behind it are all
+ * stood in for, since each is pinned by its own suite - which group breaks down at all is the resolver's
+ * decision and pinned there. What is left is the shape this class alone decides: which entries are
+ * listed, in what order, and under which heading.
  */
 final class SystemDominationTooltipTest {
 
@@ -84,12 +88,12 @@ final class SystemDominationTooltipTest {
     // which has its own suite.
     private static final int LABEL_RUN = 0;
 
-    // The scores are only carried through to the value column, so any weights stand in; four figures,
-    // so the assertions also catch the thousands grouping being dropped on the way.
-    private static final int BLOC_SCORE = 1200;
-    private static final int MEMBER_SCORE = 900;
-    private static final int OTHER_MEMBER_SCORE = 300;
-    private static final int RIVAL_SCORE = 400;
+    // The scores reach this box already worded by the resolver, so they stand in as the text they draw
+    // as - what the box does with them is carry them into the value column.
+    private static final String BLOC_SCORE = "1,200";
+    private static final String MEMBER_SCORE = "900";
+    private static final String OTHER_MEMBER_SCORE = "300";
+    private static final String RIVAL_SCORE = "400";
 
     // The weights are forwarded to the (stood-in) ranking, so they never reach an assertion - any rules
     // stand in where the seam demands them.
@@ -196,7 +200,7 @@ final class SystemDominationTooltipTest {
             // A decree holds whatever it is laid over, colony or not, so the line does not hang off a
             // status line: a populated system under one is headed exactly as an empty one is.
             stubCoreFaction(CORE_FACTION);
-            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+            stubResolvedRows(createLoneGroupEntry());
 
             assertThat(readLabelTexts(tooltip.buildTitleRows(sectorMock, systemMock)))
                 .containsExactly("The Hegemony");
@@ -273,10 +277,10 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsDrawsALoneFactionAsOneFlatHeader() {
-            // The faction view's shape: the group is the faction, so its one member would only repeat
-            // the header, and the row that would carry it is never emitted.
-            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+        void buildBodySectionsDrawsAGroupMadeUpOfNothingAsOneFlatLine() {
+            // The faction view's shape: a lone faction resolves to a group made up of nothing, so the
+            // box lists it and nothing beneath it - and its number reads called-out like every value.
+            stubResolvedRows(createLoneGroupEntry());
 
             var rows = readBodyRows(tooltip.buildBodySections(sectorMock, systemMock));
 
@@ -299,13 +303,12 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsDrawsAnAllianceHeaderAboveItsIndentedMembers() {
-            // The alliances view's shape: the bloc heads its own block and its members read as
-            // belonging to it, by the indent and the plainer colour rather than by any label saying so.
-            stubResolvedRows(createGroupRow(
-                    true,
-                    createMemberRow(MEMBER_SCORE),
-                    createMemberRow(OTHER_MEMBER_SCORE)));
+        void buildBodySectionsDrawsAnAllianceAboveItsIndentedMembers() {
+            // The alliances view's shape: the bloc is listed and its members read as belonging to it, by
+            // the indent and the plainer colour rather than by any label saying so.
+            stubResolvedRows(createGroupEntry(
+                    createMemberLine(MEMBER_SCORE),
+                    createMemberLine(OTHER_MEMBER_SCORE)));
 
             var rows = readBodyRows(tooltip.buildBodySections(sectorMock, systemMock));
 
@@ -332,29 +335,13 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsNestsAOneMemberAllianceRatherThanCollapsingIt() {
-            // The regression this guards: branching on the member count instead of the nests-members
-            // flag would silently flatten a one-member alliance into a lone-faction line, so the same
-            // bloc would read as two different things depending on how many members it happens to hold.
-            stubResolvedRows(createGroupRow(true, createMemberRow(MEMBER_SCORE)));
-
-            var rows = readBodyRows(tooltip.buildBodySections(sectorMock, systemMock));
-
-            assertThat(rows)
-                .hasSize(3);
-
-            assertThat(readTableRow(rows, FIRST_MEMBER_ROW).indent())
-                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
-        }
-
-        @Test
         void buildBodySectionsNamesTheStrongestGroupAsHoldingTheSystemAndTheRestAsContestingIt() {
             // The two headings are what turn a ranked list into an answer: the map fills the system in
             // the leader's colour, so the box says outright that the leader holds it and the others are
             // merely present, rather than leaving that to be read off the row order.
             stubResolvedRows(
-                createGroupRow(false, createMemberRow(MEMBER_SCORE)),
-                createRivalGroupRow());
+                createLoneGroupEntry(),
+                createRivalGroupEntry());
 
             assertThat(readBodyLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly(
@@ -371,8 +358,8 @@ final class SystemDominationTooltipTest {
             var rivalHeaderRow = 3;
 
             stubResolvedRows(
-                createGroupRow(false, createMemberRow(MEMBER_SCORE)),
-                createRivalGroupRow());
+                createLoneGroupEntry(),
+                createRivalGroupEntry());
 
             var rivalHeader = readTableRow(
                 readBodyRows(tooltip.buildBodySections(sectorMock, systemMock)),
@@ -389,7 +376,7 @@ final class SystemDominationTooltipTest {
         void buildBodySectionsOmitsContestedWhenOneGroupHoldsTheSystemAlone() {
             // An uncontested system has to read as uncontested, and a heading standing over no groups
             // would read as a contest whose challengers failed to resolve.
-            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+            stubResolvedRows(createLoneGroupEntry());
 
             assertThat(readBodyLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Dominated by:", "Rebel Pact");
@@ -404,8 +391,8 @@ final class SystemDominationTooltipTest {
             var contestedSection = 1;
 
             stubResolvedRows(
-                createGroupRow(false, createMemberRow(MEMBER_SCORE)),
-                createRivalGroupRow());
+                createLoneGroupEntry(),
+                createRivalGroupEntry());
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -418,27 +405,27 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsDrawsHeadingsFlushAndCrestless() {
-            // A heading names a block rather than sitting in it, so it opens flush at the box's edge
-            // with no crest of its own and no number - the shape that tells it apart from the group
-            // rows beneath it, which carry both.
-            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+        void buildBodySectionsDrawsHeadingsAtTheContentEdgeInGold() {
+            // What the review found here: a heading laid inside the crest gutter starts where the group
+            // labels below it start and so reads as indented under nothing, and drawn in their own
+            // bright it is told apart from them only by lacking a crest.
+            stubResolvedRows(createLoneGroupEntry());
 
             var heading = readTableRow(
                 readBodyRows(tooltip.buildBodySections(sectorMock, systemMock)),
                 DOMINATED_HEADING_ROW);
 
             assertThat(readLabelRun(heading, LABEL_RUN))
-                .isEqualTo(new TextSpan("Dominated by:", PLAYER_BRIGHT));
+                .isEqualTo(new TextSpan("Dominated by:", HIGHLIGHT));
 
-            assertThat(heading.indent())
-                .isCloseTo(NO_INDENT, within(TOLERANCE));
+            assertThat(heading.labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
 
             assertThat(heading.labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
 
             assertThat(heading.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
+                .isEqualTo(RowSlot.EMPTY);
         }
 
         @Test
@@ -449,7 +436,7 @@ final class SystemDominationTooltipTest {
             // it heads the box instead, which the title cases above cover.
             stubStatusRow("Decivilised");
             stubCoreFaction(CORE_FACTION);
-            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+            stubResolvedRows(createLoneGroupEntry());
 
             assertThat(readBodyLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly(
@@ -497,12 +484,12 @@ final class SystemDominationTooltipTest {
         }
     }
 
-    // Hands the flattening the group rows it is about, standing in for the ranking and the resolution
-    // that would otherwise have to be driven through a live economy to produce them.
-    private void stubResolvedRows(StandingGroupRow... groupRows) {
+    // Hands the box the group entries it is about, standing in for the ranking and the resolution that
+    // would otherwise have to be driven through a live economy to produce them.
+    private void stubResolvedRows(CellTooltipEntry... groupEntries) {
         rowResolverMock
             .when(() -> StandingRowResolver.resolveRows(any(), any(), any()))
-            .thenReturn(List.of(groupRows));
+            .thenReturn(List.of(groupEntries));
     }
 
     // Puts the system under a faction's decree, through the same single-flag read the tooltip makes -
@@ -565,40 +552,30 @@ final class SystemDominationTooltipTest {
         return (TooltipRow.TableRow) rows.get(rowIndex);
     }
 
-    // One group as the resolver hands it over: a bloc header carrying its crest and summed score, over
-    // the members that make it up. The nesting flag is the group's kind, which is what the flattening
-    // branches on.
-    private static StandingGroupRow createGroupRow(
-            boolean shouldNestMembers,
-            FactionStandingRow... members) {
+    // One group as the resolver hands it over: a bloc carrying its crest and summed score, made up of
+    // the factions in it. Whether a group is made up of anything is the resolver's decision, so a case
+    // here states it by handing over the members or none.
+    private static CellTooltipEntry createGroupEntry(CellTooltipEntryLine... memberLines) {
+        return CellTooltipEntry
+            .createEntry(CellTooltipEntryLine.createLine(BLOC_CREST, "Rebel Pact", BLOC_SCORE))
+            .nesting(List.of(memberLines));
+    }
 
-        return new StandingGroupRow(
-            "rebel_pact",
-            "Rebel Pact",
-            BLOC_CREST,
-            BLOC_SCORE,
-            shouldNestMembers,
-            List.of(members));
+    // A group that breaks down no further - what a lone faction in the faction view resolves to.
+    private static CellTooltipEntry createLoneGroupEntry() {
+        return CellTooltipEntry.createEntry(
+            CellTooltipEntryLine.createLine(BLOC_CREST, "Rebel Pact", BLOC_SCORE));
     }
 
     // A second, lower-ranked group, named and scored apart from the leader so a case about which block
-    // a group lands in cannot pass by reading the leader's row twice.
-    private static StandingGroupRow createRivalGroupRow() {
-        return new StandingGroupRow(
-            "persean_league",
-            "Persean League",
-            RIVAL_CREST,
-            RIVAL_SCORE,
-            false,
-            List.of(createMemberRow(RIVAL_SCORE)));
+    // a group lands in cannot pass by reading the leader's line twice.
+    private static CellTooltipEntry createRivalGroupEntry() {
+        return CellTooltipEntry.createEntry(
+            CellTooltipEntryLine.createLine(RIVAL_CREST, "Persean League", RIVAL_SCORE));
     }
 
-    // One member faction beneath a group header, told apart from its siblings by its score alone.
-    private static FactionStandingRow createMemberRow(int score) {
-        return new FactionStandingRow(
-            "hegemony",
-            "The Hegemony",
-            MEMBER_CREST,
-            score);
+    // One member faction beneath a bloc, told apart from its siblings by its score alone.
+    private static CellTooltipEntryLine createMemberLine(String scoreText) {
+        return CellTooltipEntryLine.createLine(MEMBER_CREST, "The Hegemony", scoreText);
     }
 }

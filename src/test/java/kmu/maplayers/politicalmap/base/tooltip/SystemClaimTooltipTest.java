@@ -8,6 +8,7 @@ import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
+import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
@@ -27,8 +28,6 @@ import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
-import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
@@ -142,11 +141,11 @@ final class SystemClaimTooltipTest {
             var claimRow = readTableRow(sections, CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, LABEL_RUN))
-                .isEqualTo(new TextSpan("The Hegemony", TEXT));
+                .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
             assertThat(claimRow.labelledRow().leadingRowSlot())
                 .isEqualTo(new RowSlot.Image(HEGEMONY_CREST));
             assertThat(claimRow.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", TEXT)));
+                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
         }
 
         @Test
@@ -221,9 +220,9 @@ final class SystemClaimTooltipTest {
 
         @Test
         void buildBodySectionsSetsHeadingsApartFromTheEntriesBeneathThem() {
-            // The block shape the box is read by: a heading opens flush in the bright colour and its
-            // entries indent under it. Swapping the two tiers would leave every other case in this
-            // suite green while the box drew as a flat list of equals.
+            // The two faults the review found on this box: a heading laid inside the crest gutter reads
+            // as indented under nothing, and claim lines drawn as nested rows encode a second tier this
+            // box does not have - claims resolve per faction, so every line here is an entry.
             var contestedHeadingRow = 2;
             var contestedEntryRow = 3;
 
@@ -237,16 +236,16 @@ final class SystemClaimTooltipTest {
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
             assertThat(readLabelRun(readTableRow(sections, contestedHeadingRow), LABEL_RUN))
-                .isEqualTo(new TextSpan("Contested by:", PLAYER_BRIGHT));
-            assertThat(readTableRow(sections, contestedHeadingRow).indent())
-                .isCloseTo(NO_INDENT, within(TOLERANCE));
+                .isEqualTo(new TextSpan("Contested by:", HIGHLIGHT));
+            assertThat(readTableRow(sections, contestedHeadingRow).labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
             assertThat(readTableRow(sections, contestedHeadingRow).labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
 
             assertThat(readTableRow(sections, CLAIM_ROW).indent())
-                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+                .isCloseTo(NO_INDENT, within(TOLERANCE));
             assertThat(readTableRow(sections, contestedEntryRow).indent())
-                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+                .isCloseTo(NO_INDENT, within(TOLERANCE));
         }
 
         @Test
@@ -275,11 +274,11 @@ final class SystemClaimTooltipTest {
             var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, LABEL_RUN))
-                .isEqualTo(new TextSpan("The Hegemony", TEXT));
+                .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
             assertThat(readLabelRun(claimRow, MARKER_RUN))
                 .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
             assertThat(claimRow.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", TEXT)));
+                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
         }
 
         @Test
@@ -306,7 +305,7 @@ final class SystemClaimTooltipTest {
             var displacedScorerRow = 3;
 
             assertThat(readTableRow(sections, displacedScorerRow).labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", TEXT)));
+                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
         }
 
         @Test
@@ -321,7 +320,7 @@ final class SystemClaimTooltipTest {
             var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
             assertThat(claimRow.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(TEXT)));
+                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
         }
 
         @Test

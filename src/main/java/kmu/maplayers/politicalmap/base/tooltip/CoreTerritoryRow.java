@@ -47,8 +47,8 @@ public final class CoreTerritoryRow {
         }
         // The faction named as any other line names it, then the decree called out beside it as the
         // point of the line.
-        return Optional.of(FactionTooltipRow
-            .buildFactionBannerRow(sector, coreFactionId)
+        return Optional.of(FactionTooltipBanner
+            .buildFactionBanner(sector, coreFactionId)
             .continuesWith(CellTooltipRows.buildQualifierSpan(
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY))));
     }

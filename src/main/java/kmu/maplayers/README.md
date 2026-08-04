@@ -194,13 +194,16 @@ about what the overlay means.
   - the system name and any title lines read on from it - and the layer's own blocks follow beneath,
   so a verdict that settles the whole system heads the box while a status or an entry sits in it. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
-  one measurement, so the gap under the heading is the same gap as every gap below it. `CellTooltipRows`
-  is the line
-  vocabulary that content is written in - a top-tier row, a nested one, a banner centred under the
-  title (its crest set among the words as a label run, so crest and words centre as one), and the
-  qualifier run any of them may end on - and
-  `CellTooltipSections` the heading that drops itself when the block under it resolves empty. So two
-  layers' boxes differ only in what they say.
+  one measurement, so the gap under the heading is the same gap as every gap below it. A layer states
+  only *what* each block lists, as `CellTooltipEntry` values - a `CellTooltipEntryLine` (mark, name,
+  qualifier, value) over the member lines it is made up of, two types so the two tiers the box has are
+  the only two representable. `CellTooltipSections` populates a block from those: the heading laid at
+  the content edge in gold above them, entries flush and members inset, and no block at all when
+  nothing resolved for it. `CellTooltipRows` is the line vocabulary that lays out - a heading, a
+  top-tier row, a nested one, a banner centred under the title (its crest set among the words as a
+  label run, so crest and words centre as one), and the qualifier run any of them may end on - and its
+  three table shapes are the block's alone, so a body cannot author a fourth look. So two layers' boxes
+  differ only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
   finds the changes the engine announces to nobody. `MapLayerSectorWatcher` owns the loop
   alone and asks a `MapLayerStalenessSource` what moved since it last asked, so which changes

@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -18,11 +20,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link StandingRowResolver}'s id-to-presentation step against a mocked sector and grouping:
- * a faction standing resolves to its long name and crest, a blank crest collapses to a null path the
- * render layer draws around, and an alliance group takes the bloc name and its lead member's crest
- * above its ordered member rows. Together they show the flat faction view and the nested alliance
- * view fall out of one resolver, and that a missing crest never strips a row of its name or score.
+ * Pins {@link StandingRowResolver}'s id-to-presentation step against a mocked sector and grouping: a
+ * faction standing resolves to its long name, crest, and grouped score, a blank crest collapses to a
+ * null path the render layer draws around, and an alliance takes the bloc name and its lead member's
+ * crest over its ordered member lines.
+ *
+ * <p>Also that whether a group breaks down at all is settled here, which is the one place that knows a
+ * group's kind: a lone faction resolves to an entry made up of nothing and an alliance to one carrying
+ * its members however few it holds, so the box below simply lays out what it is handed.
  */
 final class StandingRowResolverTest {
 
@@ -30,91 +35,146 @@ final class StandingRowResolverTest {
     class ResolveRows {
 
         @Test
-        void resolveRowsResolvesAFactionStandingToItsLongNameAndCrest() {
+        void resolveRowsResolvesAFactionStandingToItsLongNameCrestAndScore() {
+
             var sectorMock = mock(SectorAPI.class);
+
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/hegemony_crest.png");
+
             var standings = List.of(
-                    new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
+                new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
 
-            var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, HolderGrouping.identity());
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                HolderGrouping.identity());
 
-            // A singleton group renders flat: its header is exactly its one member, both carrying the
-            // faction's long title and crest.
-            assertThat(rows).containsExactly(new StandingGroupRow(
-                    "hegemony", "The Hegemony", "graphics/hegemony_crest.png", 7, false,
-                    List.of(new FactionStandingRow(
-                            "hegemony", "The Hegemony", "graphics/hegemony_crest.png", 7))));
+            // A lone faction is made up of nothing: its one member would only repeat the line above it.
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry.createEntry(
+                    CellTooltipEntryLine.createLine(
+                        "graphics/hegemony_crest.png",
+                        "The Hegemony",
+                        "7")));
+        }
+
+        @Test
+        void resolveRowsGroupsTheThousandsOfALargeScore() {
+            // The number reaches the box as the words it draws, so the grouping is settled here rather
+            // than left to whichever body happens to list the entry.
+            var sectorMock = mock(SectorAPI.class);
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+
+            var standings = List.of(new GroupStanding(
+                "hegemony",
+                1200,
+                List.of(new FactionStanding("hegemony", 1200))));
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                HolderGrouping.identity());
+
+            assertThat(entries.get(0).line().valueText())
+                .isEqualTo("1,200");
         }
 
         @Test
         void resolveRowsCollapsesABlankCrestToANullPathKeepingNameAndScore() {
-            // A faction with an empty crest string still resolves - the row just carries a null crest
+            // A faction with an empty crest string still resolves - the line just carries a null crest
             // path and the render layer shows the name and score alone, rather than a broken sprite.
             var sectorMock = mock(SectorAPI.class);
+
             stubFaction(sectorMock, "hegemony", "The Hegemony", "");
+
             var standings = List.of(
-                    new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
+                new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
 
-            var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, HolderGrouping.identity());
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                HolderGrouping.identity());
 
-            assertThat(rows).containsExactly(new StandingGroupRow(
-                    "hegemony", "The Hegemony", null, 7, false,
-                    List.of(new FactionStandingRow("hegemony", "The Hegemony", null, 7))));
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry.createEntry(
+                    CellTooltipEntryLine.createLine(null, "The Hegemony", "7")));
         }
 
         @Test
-        void resolveRowsResolvesAnAllianceGroupToItsNameAndOrderedMemberRows() {
+        void resolveRowsResolvesAnAllianceToItsNameAndOrderedMemberLines() {
+
             var sectorMock = mock(SectorAPI.class);
+
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
             var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
-                    new FactionStanding("hegemony", 8),
-                    new FactionStanding("astral_armada", 3))));
+                new FactionStanding("hegemony", 8),
+                new FactionStanding("astral_armada", 3))));
 
-            var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, buildAllianceGrouping());
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                buildAllianceGrouping());
 
-            // The header takes the bloc name and its lead (colour) member's crest, and the members
-            // stay in the ranking order the standing placed them.
-            assertThat(rows).containsExactly(new StandingGroupRow(
-                    "alliance-1", "Allied Powers", "graphics/heg.png", 11, true,
-                    List.of(
-                            new FactionStandingRow("hegemony", "The Hegemony", "graphics/heg.png", 8),
-                            new FactionStandingRow(
-                                    "astral_armada", "Astral Armada", "graphics/aa.png", 3))));
+            // The bloc takes its own name and its lead (colour) member's crest, and the members stay in
+            // the ranking order the standing placed them.
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry
+                    .createEntry(CellTooltipEntryLine.createLine(
+                        "graphics/heg.png",
+                        "Allied Powers",
+                        "11"))
+                    .nesting(List.of(
+                        CellTooltipEntryLine.createLine(
+                            "graphics/heg.png",
+                            "The Hegemony",
+                            "8"),
+                        CellTooltipEntryLine.createLine(
+                            "graphics/aa.png",
+                            "Astral Armada",
+                            "3"))));
         }
 
         @Test
-        void resolveRowsLeavesAnAllianceHeaderCrestlessWhileMembersStayCrested() {
-            // The lead (colour) faction has no authored crest, so the header sprite is absent - but a
-            // non-lead member with its own crest keeps it, since a header's missing crest never
-            // reaches down into the member rows.
+        void resolveRowsLeavesAnAllianceCrestlessWhileMembersStayCrested() {
+            // The lead (colour) faction has no authored crest, so the bloc's sprite is absent - but a
+            // non-lead member with its own crest keeps it, since a bloc's missing crest never reaches
+            // down into the member lines.
             var sectorMock = mock(SectorAPI.class);
+
             stubFaction(sectorMock, "hegemony", "The Hegemony", "");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
             var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
-                    new FactionStanding("hegemony", 8),
-                    new FactionStanding("astral_armada", 3))));
+                new FactionStanding("hegemony", 8),
+                new FactionStanding("astral_armada", 3))));
 
-            var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, buildAllianceGrouping());
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                buildAllianceGrouping());
 
-            assertThat(rows).containsExactly(new StandingGroupRow(
-                    "alliance-1", "Allied Powers", null, 11, true,
-                    List.of(
-                            new FactionStandingRow("hegemony", "The Hegemony", null, 8),
-                            new FactionStandingRow(
-                                    "astral_armada", "Astral Armada", "graphics/aa.png", 3))));
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry
+                    .createEntry(CellTooltipEntryLine.createLine(null, "Allied Powers", "11"))
+                    .nesting(List.of(
+                        CellTooltipEntryLine.createLine(null, "The Hegemony", "8"),
+                        CellTooltipEntryLine.createLine(
+                            "graphics/aa.png",
+                            "Astral Armada",
+                            "3"))));
         }
 
         @Test
         void resolveRowsIsEmptyForEmptyStandings() {
-            // An uninhabited system ranks no groups, so the tooltip has no rows to draw.
+            // An uninhabited system ranks no groups, so the tooltip has nothing to list.
             assertThat(StandingRowResolver.resolveRows(
-                    mock(SectorAPI.class), List.of(), HolderGrouping.identity()))
-                    .isEmpty();
+                    mock(SectorAPI.class),
+                    List.of(),
+                    HolderGrouping.identity()))
+                .isEmpty();
         }
 
         @Test
@@ -122,52 +182,75 @@ final class StandingRowResolverTest {
             // The resolver renders groups in the order the ranking handed them over rather than
             // re-sorting, so the tooltip draws top-to-bottom exactly as the standings ranked.
             var sectorMock = mock(SectorAPI.class);
+
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "tritachyon", "Tri-Tachyon", "graphics/tt.png");
+
             var standings = List.of(
-                    new GroupStanding("hegemony", 9, List.of(new FactionStanding("hegemony", 9))),
-                    new GroupStanding(
-                            "tritachyon", 4, List.of(new FactionStanding("tritachyon", 4))));
+                new GroupStanding("hegemony", 9, List.of(new FactionStanding("hegemony", 9))),
+                new GroupStanding(
+                    "tritachyon",
+                    4,
+                    List.of(new FactionStanding("tritachyon", 4))));
 
-            var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, HolderGrouping.identity());
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                HolderGrouping.identity());
 
-            assertThat(rows).extracting(StandingGroupRow::groupId)
-                    .containsExactly("hegemony", "tritachyon");
+            assertThat(entries)
+                .extracting(entry -> entry.line().labelText())
+                .containsExactly("The Hegemony", "Tri-Tachyon");
         }
 
         @Test
         void resolveRowsFallsBackToTheIdWhenAFactionDoesNotResolve() {
-            // A footprint id the sector no longer knows still ranks, so the row shows the bare id
-            // rather than a nameless line - a tooltip draws one faction per row and cannot fall back
+            // A footprint id the sector no longer knows still ranks, so the line shows the bare id
+            // rather than a nameless line - a tooltip draws one faction per line and cannot fall back
             // to the stand-in band the picker uses for a null name. Its crest resolves absent.
             var sectorMock = mock(SectorAPI.class);
             var standings = List.of(
-                    new GroupStanding("ghost", 5, List.of(new FactionStanding("ghost", 5))));
+                new GroupStanding("ghost", 5, List.of(new FactionStanding("ghost", 5))));
 
-            var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, HolderGrouping.identity());
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                HolderGrouping.identity());
 
-            assertThat(rows).containsExactly(new StandingGroupRow(
-                    "ghost", "ghost", null, 5, false,
-                    List.of(new FactionStandingRow("ghost", "ghost", null, 5))));
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry.createEntry(
+                    CellTooltipEntryLine.createLine(null, "ghost", "5")));
         }
 
         @Test
-        void resolveRowsSetsNestsMembersTrueForASingleMemberAlliance() {
-            // An alliance with only one member present still nests - the flag is set from the group's
-            // kind, not its size - so the render layer draws the bloc header over its one member
-            // (a tree) rather than collapsing it to a single line.
+        void resolveRowsNestsASingleMemberAllianceRatherThanCollapsingIt() {
+            // The regression this guards: keying on the member count instead of the group's kind would
+            // silently flatten a one-member alliance into a lone faction, so the same bloc would read
+            // as two different things depending on how many members it happens to hold.
             var sectorMock = mock(SectorAPI.class);
+
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+
             var standings = List.of(new GroupStanding(
-                    "alliance-1", 8, List.of(new FactionStanding("hegemony", 8))));
+                "alliance-1",
+                8,
+                List.of(new FactionStanding("hegemony", 8))));
 
-            var rows = StandingRowResolver.resolveRows(sectorMock, standings, buildAllianceGrouping());
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                buildAllianceGrouping());
 
-            assertThat(rows).containsExactly(new StandingGroupRow(
-                    "alliance-1", "Allied Powers", "graphics/heg.png", 8, true,
-                    List.of(new FactionStandingRow("hegemony", "The Hegemony", "graphics/heg.png", 8))));
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry
+                    .createEntry(CellTooltipEntryLine.createLine(
+                        "graphics/heg.png",
+                        "Allied Powers",
+                        "8"))
+                    .nesting(List.of(CellTooltipEntryLine.createLine(
+                        "graphics/heg.png",
+                        "The Hegemony",
+                        "8"))));
         }
     }
 
@@ -175,18 +258,27 @@ final class StandingRowResolverTest {
     // matching the grouping the ranking step produces for an alliance.
     private static HolderGrouping buildAllianceGrouping() {
         return new HolderGrouping(
-                Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
-                Map.of("alliance-1", "hegemony"),
-                Map.of("alliance-1", "Allied Powers"));
+            Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
+            Map.of("alliance-1", "hegemony"),
+            Map.of("alliance-1", "Allied Powers"));
     }
 
     // Stubs one faction's long name and crest on the sector, so a test states each faction's
     // presentation in one line rather than three when-chains.
     private static void stubFaction(
-            SectorAPI sectorMock, String factionId, String longName, String crest) {
+            SectorAPI sectorMock,
+            String factionId,
+            String longName,
+            String crest) {
+
         var factionMock = mock(FactionAPI.class);
-        when(sectorMock.getFaction(factionId)).thenReturn(factionMock);
-        when(factionMock.getDisplayNameLong()).thenReturn(longName);
-        when(factionMock.getCrest()).thenReturn(crest);
+
+        when(sectorMock.getFaction(factionId))
+            .thenReturn(factionMock);
+
+        when(factionMock.getDisplayNameLong())
+            .thenReturn(longName);
+        when(factionMock.getCrest())
+            .thenReturn(crest);
     }
 }

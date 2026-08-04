@@ -129,8 +129,11 @@ ANDed with the framework's, plus whether either kind of feedback still needs the
 mechanic its own fills were painted by into the framework's hover box: `SystemDominationTooltip` -
 the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim
 contest behind a claims fill, its claimant over the rivals who could have taken the system and the
-factions present that never could - plus the faction, standing, territory, and status lines both are
-written from. Both sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer:
+factions present that never could - plus what both are written from: `FactionTooltipEntry` (a faction
+as something a block lists) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
+`StandingRowResolver` (the ranked groups as entries, an alliance carrying its members and a lone
+faction made up of nothing - the one place that knows a group's kind, so the box below only lays out
+what it is handed), and the territory and status lines. Both sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer:
 either box may have to say a system is held by decree, and a decree resolved one way on one view and
 another way on the next would answer one hover two ways a keystroke apart),
 and `sidebar` - the last being this layer's own body

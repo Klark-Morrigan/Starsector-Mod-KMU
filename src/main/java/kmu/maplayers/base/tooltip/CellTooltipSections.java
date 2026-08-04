@@ -2,20 +2,29 @@ package kmu.maplayers.base.tooltip;
 
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
+import kmlib.text.KmlibStrings;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * How a cell tooltip's body is divided into blocks: a heading naming what follows it, over the lines it
- * names. Composed here rather than by each body, because whether a heading appears at all is a rule
- * about the block and not about the body holding it - a heading left standing over no lines reads as a
- * block whose contents failed to resolve, which tells the player something untrue.
+ * How a cell tooltip's body is divided into blocks, and how a block lays out what it lists: a heading
+ * naming what follows it, over the entries it names and whatever those entries are made up of.
+ *
+ * <p>A block takes {@linkplain CellTooltipEntry entries} rather than built lines, which is the whole
+ * point of it. <em>What</em> a block lists is the layer's - it is the only side that knows the subject
+ * matter - while the heading's placement and colour, the two tiers, the crest gutter, and the value
+ * column are this construct's. So two layers listing unrelated content still list it alike, and neither
+ * can author a third look by reaching for the line vocabulary itself.
+ *
+ * <p>Whether a heading appears at all is likewise a rule about the block and not about the body holding
+ * it: a heading left standing over no entries reads as a block whose contents failed to resolve, which
+ * tells the player something untrue.
  *
  * <p>Held apart from {@link CellTooltipRows} because the two answer different questions - that decides
- * how one line reads, this how a run of them is grouped - so a body states only which blocks it has
- * and in what order, and two layers dividing different content still divide it alike.
+ * how one line reads, this how a run of them is grouped and tiered - so a body states only which blocks
+ * it has, in what order, and what each lists.
  */
 public final class CellTooltipSections {
 
@@ -23,33 +32,33 @@ public final class CellTooltipSections {
     }
 
     /**
-     * Appends a block - its heading over its lines - to a body, and nothing at all when the block has
-     * no lines. Adding every block through here is what leaves the order they read in stated by the
+     * Appends a block - its heading over its entries - to a body, and nothing at all when the block
+     * lists nothing. Adding every block through here is what leaves the order they read in stated by the
      * order of the calls, rather than by a rule spread across the body making them.
      *
      * @param sections    the body being built, appended to in place
      * @param headingText the heading naming the block
-     * @param sectionRows the block's own lines; empty leaves the body untouched
+     * @param entries     what the block lists, in the order they are read; empty leaves the body
+     *                    untouched
      */
     public static void appendSection(
             List<TooltipSection> sections,
             String headingText,
-            List<TooltipRow> sectionRows) {
+            List<CellTooltipEntry> entries) {
 
-        if (sectionRows.isEmpty()) {
+        if (entries.isEmpty()) {
             return;
         }
         var rows = new ArrayList<TooltipRow>();
+        rows.add(CellTooltipRows.buildSectionHeadingRow(headingText));
 
-        // The heading carries neither crest nor value: it names the block rather than being one of the
-        // entries inside it. What parts it from the block above is the block it opens, not anything the
-        // line itself asks for, so a heading is authored exactly as any other line is.
-        rows.add(CellTooltipRows.buildTopTierRow(
-            null,
-            headingText,
-            CellTooltipRows.NO_SCORE));
+        for (var entry : entries) {
+            rows.add(buildEntryRow(entry.line()));
 
-        rows.addAll(sectionRows);
+            for (var memberLine : entry.memberLines()) {
+                rows.add(buildMemberRow(memberLine));
+            }
+        }
         sections.add(new TooltipSection(rows));
     }
 
@@ -77,5 +86,35 @@ public final class CellTooltipSections {
             Optional<? extends TooltipRow> bannerRow) {
 
         bannerRow.ifPresent(row -> sections.add(new TooltipSection(List.of(row))));
+    }
+
+    // One of the things a block lists, laid at the block's own tier: the entries of a block are the
+    // things being listed, so they open flush rather than sitting inset under the heading that names
+    // them.
+    private static TooltipRow buildEntryRow(CellTooltipEntryLine line) {
+        return appendQualifier(
+            CellTooltipRows.buildTopTierRow(line.iconSpritePath(), line.labelText(), line.valueText()),
+            line);
+    }
+
+    // One of the things an entry is made up of, inset beneath it so the two tiers the box has are read
+    // off the indent rather than off any label saying which is which.
+    private static TooltipRow buildMemberRow(CellTooltipEntryLine line) {
+        return appendQualifier(
+            CellTooltipRows.buildNestedRow(line.iconSpritePath(), line.labelText(), line.valueText()),
+            line);
+    }
+
+    // Runs a line on into whatever it calls out, in the shade every line calls things out in. Applied at
+    // both tiers through one helper, so a status stated on a member reads exactly as one stated on the
+    // entry above it.
+    private static TooltipRow appendQualifier(
+            TooltipRow.TableRow row,
+            CellTooltipEntryLine line) {
+
+        if (!KmlibStrings.hasText(line.qualifierText())) {
+            return row;
+        }
+        return row.continuesWith(CellTooltipRows.buildQualifierSpan(line.qualifierText()));
     }
 }

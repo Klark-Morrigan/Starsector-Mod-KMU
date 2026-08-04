@@ -3,6 +3,10 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.text.KmlibNumbers;
+
+import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -11,24 +15,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Resolves a hovered system's pure two-tier standings into the render-ready rows the tooltip draws,
- * turning each id into the name and crest it presents as.
+ * Resolves a hovered system's pure two-tier standings into the entries the tooltip's block lists,
+ * turning each id into the name, crest, and number it presents as.
  *
  * <p>Separates "who ranks where" - {@code SystemStandings}, pure over footprints and a grouping -
  * from "how a group and its factions present", the Starsector and grouping lookups gathered here.
  * Confining {@link FactionAPI} and the grouping's label and crest reads to this resolver keeps the
- * render layer consuming plain rows, mirroring how {@code SectorPolitics} confines the holding
+ * render layer consuming plain entries, mirroring how {@code SectorPolitics} confines the holding
  * palette lookups.
+ *
+ * <p>It resolves into the shared entry model rather than into a model of its own, because a ranked
+ * group already <em>is</em> what an entry is - a thing with a name, a mark, and a number, over whatever
+ * it is made up of. A parallel record would mean converting one presentation-ready shape into another
+ * for nothing, and two records that could come to disagree about what a resolved line holds.
  *
  * <p>A member is always a faction, and how one appears is {@link FactionPresentation}'s answer rather
  * than this resolver's, so a faction ranked here and the same faction named anywhere else in the box
- * cannot present as two. A group header presents by its kind: a lone-faction group reuses its one
- * member's name and crest, so a singleton reads identically to the member it wraps and the flat
- * faction view falls out for free; an alliance group takes its name from the grouping and its crest
- * from the alliance's colour (lead) faction, the same crest the alliances view paints the bloc's
- * cluster by. A blank or absent crest resolves to a null
- * path the render layer draws around, so a header or member with no authored crest still shows its
- * name and score.
+ * cannot present as two. A group presents by its kind: a lone-faction group reuses its one member's
+ * name and crest and is made up of nothing, so a singleton reads identically to the member it wraps and
+ * the flat faction view falls out for free; an alliance group takes its name from the grouping and its
+ * crest from the alliance's colour (lead) faction - the same crest the alliances view paints the bloc's
+ * cluster by - over the members that make it up. Keying that on the group's kind rather than its size is
+ * what keeps a one-member alliance a bloc over its member rather than collapsing it into a lone faction,
+ * and it is settled here because this is the only side that knows the kind. A blank or absent crest
+ * resolves to a null path the render layer draws around, so a group or member with no authored crest
+ * still shows its name and score.
  */
 public final class StandingRowResolver {
 
@@ -36,87 +47,79 @@ public final class StandingRowResolver {
     }
 
     /**
-     * Resolves a hovered system's ranked groups into presentation rows in the same order, each
-     * group's members resolved beneath it. The rows the tooltip renders top to bottom.
+     * Resolves a hovered system's ranked groups into the entries a block lists, in the same order, each
+     * group's members resolved beneath it.
      *
      * @param sector    the sector whose {@link FactionAPI} names and crests are read
      * @param standings the two-tier standings ranked by {@code SystemStandings}, in draw order
-     * @param grouping  the active view's grouping, supplying an alliance header's name and colour
-     *                  faction; the identity grouping makes every group a lone faction
-     * @return one row per group in ranked order, each carrying its members' rows; empty when the
+     * @param grouping  the active view's grouping, supplying an alliance's name and colour faction; the
+     *                  identity grouping makes every group a lone faction
+     * @return one entry per group in ranked order, each carrying its members' lines; empty when the
      *         standings are empty
      */
-    public static List<StandingGroupRow> resolveRows(
+    public static List<CellTooltipEntry> resolveRows(
             SectorAPI sector,
             List<GroupStanding> standings,
             HolderGrouping grouping) {
 
-        var rows = new ArrayList<StandingGroupRow>(standings.size());
+        var entries = new ArrayList<CellTooltipEntry>(standings.size());
         for (var standing : standings) {
-            rows.add(resolveGroupRow(sector, standing, grouping));
+            entries.add(resolveGroupEntry(sector, standing, grouping));
         }
-        return List.copyOf(rows);
+        return List.copyOf(entries);
     }
 
-    // Resolves one group into a header over its members. The members resolve first so a lone-faction
-    // header can reuse its single member's already-resolved name and crest, which is what keeps a
-    // singleton group from ever drifting from the member it wraps.
-    private static StandingGroupRow resolveGroupRow(
+    // Resolves one group into the entry it is listed as. The members resolve first so a lone-faction
+    // group can reuse its single member's already-resolved name and crest, which is what keeps a
+    // singleton from ever drifting from the member it wraps.
+    private static CellTooltipEntry resolveGroupEntry(
             SectorAPI sector,
             GroupStanding standing,
             HolderGrouping grouping) {
 
-        var members = resolveMemberRows(sector, standing.members());
+        var memberLines = resolveMemberLines(sector, standing.members());
         var blocId = standing.blocId();
+        var aggregateScoreText = KmlibNumbers.formatGroupedInteger(standing.aggregateScore());
 
-        // An alliance bloc nests its members under the header; a lone faction does not. Keyed on the
-        // group's kind, not its size, so a one-member alliance still renders as a tree.
-        var nestsMembers = grouping.isAlliance(blocId);
+        if (!grouping.isAlliance(blocId)) {
+            // A lone-faction group has one member, so the group is exactly that member: reuse the
+            // resolved line rather than reading the faction a second time, and list nothing beneath it,
+            // since a member repeating the line above says nothing the line did not.
+            var groupMemberLine = memberLines.get(0);
 
-        String displayName;
-        String crestSpritePath;
-
-        if (nestsMembers) {
-            // An alliance header carries the alliance's own name and its lead (colour) member's
-            // crest - the same name and crest the alliances view paints the bloc's cluster by.
-            displayName = grouping.resolveAllianceName(blocId);
-            crestSpritePath = FactionPresentation
-                .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
-                .crestSpritePath();
-
-        } else {
-            // A lone-faction group has one member, so its header is exactly that member: reuse the
-            // resolved row rather than reading the faction a second time.
-            var headerMember = members.get(0);
-            displayName = headerMember.fullName();
-            crestSpritePath = headerMember.crestSpritePath();
+            return CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
+                groupMemberLine.iconSpritePath(),
+                groupMemberLine.labelText(),
+                aggregateScoreText));
         }
-        return new StandingGroupRow(
-            blocId,
-            displayName,
-            crestSpritePath,
-            standing.aggregateScore(),
-            nestsMembers,
-            members);
+        // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
+        // name and crest the alliances view paints the bloc's cluster by - over the factions in it.
+        var allianceLine = CellTooltipEntryLine.createLine(
+            FactionPresentation
+                .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
+                .crestSpritePath(),
+            grouping.resolveAllianceName(blocId),
+            aggregateScoreText);
+
+        return CellTooltipEntry
+            .createEntry(allianceLine)
+            .nesting(memberLines);
     }
 
-    // Resolves each ranked member standing into its rendered row, preserving the ranking order, so a
-    // group's members draw in the order the standing placed them.
-    private static List<FactionStandingRow> resolveMemberRows(
+    // Resolves each ranked member standing into its line, preserving the ranking order, so a group's
+    // members read in the order the standing placed them.
+    private static List<CellTooltipEntryLine> resolveMemberLines(
             SectorAPI sector,
             List<FactionStanding> members) {
 
-        var rows = new ArrayList<FactionStandingRow>(members.size());
+        var lines = new ArrayList<CellTooltipEntryLine>(members.size());
 
         for (var member : members) {
-            var presentation = FactionPresentation.resolvePresentation(sector, member.factionId());
-
-            rows.add(new FactionStandingRow(
+            lines.add(FactionTooltipEntry.buildFactionLine(
+                sector,
                 member.factionId(),
-                presentation.fullName(),
-                presentation.crestSpritePath(),
-                member.score()));
+                KmlibNumbers.formatGroupedInteger(member.score())));
         }
-        return rows;
+        return lines;
     }
 }

@@ -6,9 +6,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
-import kmlib.text.KmlibNumbers;
 
-import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.SystemCellTooltip;
@@ -31,10 +30,11 @@ import java.util.List;
  * colour of is named as dominating it and the rest as contesting it, so who holds the system is stated
  * outright instead of being left to be inferred from which line happens to sit at the top.
  *
- * <p>The two-tier shape is data-driven off the resolved rows: a lone-faction group (the faction view)
- * renders as one flat header, while an alliance bloc renders its header above its indented member
- * factions - and a one-member alliance still nests, since the {@link StandingGroupRow#nestsMembers()}
- * flag keys on the group's kind, not its member count.
+ * <p>The two-tier shape is settled where the group's kind is known ({@link StandingRowResolver}) rather
+ * than here: a lone-faction group (the faction view) resolves to an entry made up of nothing and reads
+ * as one flat line, while an alliance bloc resolves to one carrying its member factions and reads as a
+ * line over them, however few it holds. This box states only which groups it lists and under which
+ * heading.
  *
  * <p>What the system is beyond its standings - dead or unpopulated, or held by decree as some
  * faction's core - is stated above the contest, so a player crossing between this layer and the claims
@@ -96,7 +96,7 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         var grouping = activeView.resolveGrouping();
         var pass = DominancePass.readFromLunaSettings(grouping);
         var standings = SystemStandings.rankByDominationScore(sector, system, pass);
-        var groupRows = StandingRowResolver.resolveRows(sector, standings, grouping);
+        var groupEntries = StandingRowResolver.resolveRows(sector, standings, grouping);
         var sections = new ArrayList<TooltipSection>();
 
         // What the system is comes before who holds it, so the standings below read as a contest over
@@ -107,61 +107,32 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
             sections,
             SystemStatusRow.resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets()));
 
-        appendStandingSections(sections, groupRows);
+        appendStandingSections(sections, groupEntries);
         return sections;
     }
 
     // The standings as the two blocks they are read in: whoever dominates the system, then whoever
     // else is present to contest it. Both are offered unconditionally - an uncontested system simply
-    // has no rows for the second, and an unheld one none for either, so the heading that would have
+    // has no groups for the second, and an unheld one none for either, so the heading that would have
     // stood over nothing is dropped rather than left to be read as a block that failed to fill.
     private static void appendStandingSections(
             List<TooltipSection> sections,
-            List<StandingGroupRow> groupRows) {
+            List<CellTooltipEntry> groupEntries) {
 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED),
-            buildGroupRows(groupRows
+            groupEntries
                 .stream()
                 .limit(DOMINATING_GROUP_COUNT)
-                .toList()));
+                .toList());
 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
-            buildGroupRows(groupRows
+            groupEntries
                 .stream()
                 .skip(DOMINATING_GROUP_COUNT)
-                .toList()));
-    }
-
-    // Flattens the two-tier group rows into the flat draw rows the box paints top to bottom: a bloc
-    // header per group, and - only when the group nests its members - its member factions indented
-    // beneath. A lone-faction group (the faction view) does not nest, so its one member adds nothing
-    // the header does not already show; an alliance bloc nests even with a single member, so it always
-    // draws its members beneath. Branching on the nests-members flag, not the member count, is what
-    // keeps a one-member alliance a tree while the faction view stays flat.
-    private static List<TooltipRow> buildGroupRows(List<StandingGroupRow> groupRows) {
-        var rows = new ArrayList<TooltipRow>();
-
-        for (var group : groupRows) {
-
-            rows.add(CellTooltipRows.buildTopTierRow(
-                group.crestSpritePath(),
-                group.displayName(),
-                KmlibNumbers.formatGroupedInteger(group.aggregateScore())));
-
-            if (group.nestsMembers()) {
-
-                for (var member : group.members()) {
-                    rows.add(CellTooltipRows.buildNestedRow(
-                        member.crestSpritePath(),
-                        member.fullName(),
-                        KmlibNumbers.formatGroupedInteger(member.score())));
-                }
-            }
-        }
-        return rows;
+                .toList());
     }
 }

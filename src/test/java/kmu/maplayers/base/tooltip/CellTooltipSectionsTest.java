@@ -17,6 +17,8 @@ import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
@@ -25,21 +27,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Pins how a body divides into blocks, since the division is what a reader of the box actually sees: a
- * heading opens the block it names, its lines follow it inside that same block, a line speaking for the
- * whole system stands as a block of its own, and a block with no lines contributes nothing rather than
- * leaving its heading standing over an absence a player would read as a failure to resolve one.
+ * Pins how a body divides into blocks and how a block lays out what it lists, since both are exactly
+ * what a reader of the box sees: a heading stands clear of the crest gutter in gold above the entries it
+ * names, an entry sits flush with whatever it is made up of inset beneath it, a line speaking for the
+ * whole system stands as a block of its own, and a block with nothing to list contributes nothing rather
+ * than leaving its heading standing over an absence a player would read as a failure to resolve one.
  *
  * <p>How far apart the blocks then stand is the widget's and pinned there; what is fixed here is that a
- * heading and the lines it names are one block, which is what that spacing follows from.
+ * heading and the entries it names are one block, which is what that spacing follows from.
  */
 final class CellTooltipSectionsTest {
 
-    // The runs a line reads as; every line here is one run, none being qualified.
-    private static final int LABEL_RUN = 0;
+    private static final String CREST = "graphics/hegemony_crest.png";
 
-    // Where the heading sits inside the block it opens, and where the first line it names follows.
+    // The runs a line reads as: what it is called, then any status called out beside it.
+    private static final int LABEL_RUN = 0;
+    private static final int QUALIFIER_RUN = 1;
+
+    // Where the heading sits inside the block it opens, and where the first entry it names follows.
     private static final int HEADING_ROW = 0;
+    private static final int FIRST_ENTRY_ROW = 1;
 
     @BeforeEach
     void installColours() {
@@ -55,21 +62,21 @@ final class CellTooltipSectionsTest {
     class AppendSection {
 
         @Test
-        void appendSectionPutsTheHeadingAboveTheBlocksOwnLinesInOrder() {
+        void appendSectionPutsTheHeadingAboveTheBlocksOwnEntriesInOrder() {
 
             var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntryRow("The Hegemony"), createEntryRow("Tri-Tachyon")));
+                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")));
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Contested by:", "The Hegemony", "Tri-Tachyon");
         }
 
         @Test
-        void appendSectionHoldsTheHeadingAndItsLinesAsOneBlock() {
+        void appendSectionHoldsTheHeadingAndItsEntriesAsOneBlock() {
             // The heading belongs with what it names: parted from its own entries it would read as a
             // line of the block above, which is the only thing that could tell a reader whose heading
             // it is.
@@ -78,7 +85,7 @@ final class CellTooltipSectionsTest {
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntryRow("The Hegemony"), createEntryRow("Tri-Tachyon")));
+                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")));
 
             assertThat(sections)
                 .hasSize(1);
@@ -87,12 +94,12 @@ final class CellTooltipSectionsTest {
         }
 
         @Test
-        void appendSectionLeavesTheBodyUntouchedForABlockWithNoLines() {
+        void appendSectionLeavesTheBodyUntouchedForABlockWithNothingToList() {
             // The rule the whole class exists for: a heading over nothing tells the player a block
             // failed to fill, when in truth there was nothing to put in it.
             var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntryRow("Pirates")));
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")));
             CellTooltipSections.appendSection(sections, "Contested by:", List.of());
 
             assertThat(readLabelTexts(sections))
@@ -105,55 +112,144 @@ final class CellTooltipSectionsTest {
             // stated by its own calls rather than by a rule inside this one.
             var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntryRow("Pirates")));
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")));
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntryRow("The Hegemony")));
+                List.of(createEntry("The Hegemony")));
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "Pirates", "Contested by:", "The Hegemony");
         }
 
         @Test
-        void appendSectionDrawsTheHeadingAtNoIndentCarryingNeitherCrestNorValue() {
-            // A heading names a block rather than being one of its entries: at no indent of its own,
-            // in the bright colour, and with both slots left blank.
+        void appendSectionLaysTheHeadingAtTheBoxsContentEdgeInGold() {
+            // Where the review found the fault: a crestless heading at no indent still reserves the
+            // gutter its entries lead with, so it begins where their labels do and reads as indented
+            // under nothing. Placement, not indent, is what moves it - and gold is what stops it
+            // reading as one of the entries it names.
             var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntryRow("The Hegemony")));
+                List.of(createEntry("The Hegemony")));
 
             var heading = (TooltipRow.TableRow) readRow(sections, HEADING_ROW);
 
             assertThat(readLabelRun(heading, LABEL_RUN))
-                .isEqualTo(new TextSpan("Contested by:", PLAYER_BRIGHT));
-            assertThat(heading.indent())
-                .isCloseTo(NO_INDENT, within(TOLERANCE));
+                .isEqualTo(new TextSpan("Contested by:", HIGHLIGHT));
+            assertThat(heading.labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
             assertThat(heading.labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
             assertThat(heading.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
+                .isEqualTo(RowSlot.EMPTY);
         }
 
         @Test
-        void appendSectionStartsTheHeadingWhereTheCrestedEntriesStart() {
-            // Not flush at the box's content edge, which zero indent alone would suggest: a heading
-            // carrying no crest still reserves the gutter its entries lead with, so it begins where
-            // their labels do rather than where the box's content does.
+        void appendSectionLaysAnEntryFlushWithItsMarkAndItsValueCalledOut() {
+            // An entry is one of the things being listed, so it opens flush rather than inset under the
+            // heading that names it, and its number reads in the called-out shade like every value in
+            // the box.
             var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
                 sections,
-                "Contested by:",
-                List.of(createEntryRow("The Hegemony")));
+                "Claim:",
+                List.of(CellTooltipEntry.createEntry(
+                    CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200"))));
 
-            var heading = (TooltipRow.TableRow) readRow(sections, HEADING_ROW);
+            var entry = (TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW);
 
-            assertThat(heading.labelPlacement())
-                .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+            assertThat(readLabelRun(entry, LABEL_RUN))
+                .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
+            assertThat(entry.indent())
+                .isCloseTo(NO_INDENT, within(TOLERANCE));
+            assertThat(entry.labelledRow().leadingRowSlot())
+                .isEqualTo(new RowSlot.Image(CREST));
+            assertThat(entry.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
+        }
+
+        @Test
+        void appendSectionInsetsWhatAnEntryIsMadeUpOfBeneathIt() {
+            // The two tiers the box has, read off the indent and the plainer colour rather than off any
+            // label saying which is which - and the entries themselves stay flush, so a block of them
+            // does not read as a list nested under its own heading.
+            var sections = new ArrayList<TooltipSection>();
+            var memberRow = 2;
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(CellTooltipEntry
+                    .createEntry(CellTooltipEntryLine.createLine(null, "Rebel Pact", "1,200"))
+                    .nesting(List.of(
+                        CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900")))));
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Dominated by:", "Rebel Pact", "The Hegemony");
+
+            var member = (TooltipRow.TableRow) readRow(sections, memberRow);
+
+            assertThat(readLabelRun(member, LABEL_RUN))
+                .isEqualTo(new TextSpan("The Hegemony", TEXT));
+            assertThat(member.indent())
+                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+            assertThat(((TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW)).indent())
+                .isCloseTo(NO_INDENT, within(TOLERANCE));
+        }
+
+        @Test
+        void appendSectionOpensNoGutterForAnEntryCarryingNoMark() {
+            // A list of things that carry no mark - industries, conditions, hazards - lays through the
+            // same construct: the leading slot is left unfilled, and the box reserves a crest column
+            // only for the boxes that have one.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("None")));
+
+            assertThat(((TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW))
+                    .labelledRow()
+                    .leadingRowSlot())
+                .isEqualTo(RowSlot.EMPTY);
+        }
+
+        @Test
+        void appendSectionChargesNoValueColumnForAnEntryCountedInNothing() {
+            // A line with nothing to count fills its value slot with a run that draws nothing, so the
+            // column collapses for it rather than the line claiming a width it cannot use.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("None")));
+
+            assertThat(((TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW))
+                    .labelledRow()
+                    .trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
+        }
+
+        @Test
+        void appendSectionContinuesAQualifiedLineIntoWhatItCallsOut() {
+            // A status is stated on the line it is about rather than on a line of its own, in the shade
+            // every line calls things out in - so what is being called out is picked out from what is
+            // merely named.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Claim:",
+                List.of(CellTooltipEntry.createEntry(CellTooltipEntryLine
+                    .createLine(CREST, "The Hegemony", "1,200")
+                    .qualifiedWith("(core)"))));
+
+            var entry = readRow(sections, FIRST_ENTRY_ROW);
+
+            assertThat(readLabelRun(entry, LABEL_RUN))
+                .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
+            assertThat(readLabelRun(entry, QUALIFIER_RUN))
+                .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
         }
     }
 
@@ -189,10 +285,10 @@ final class CellTooltipSectionsTest {
 
         @Test
         void appendBannerSectionAddsItsBlockBeneathWhateverTheBodyAlreadyHolds() {
-            
+
             var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntryRow("Pirates")));
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")));
             CellTooltipSections.appendBannerSection(
                 sections,
                 Optional.of(CellTooltipRows.buildBannerRow(null, "Decivilised")));
@@ -202,10 +298,11 @@ final class CellTooltipSectionsTest {
         }
     }
 
-    // One line of a block, told apart from its siblings by its label alone - what the block holds is
-    // the caller's business, so any line the vocabulary can build serves.
-    private static TooltipRow createEntryRow(String text) {
-        return CellTooltipRows.buildNestedRow(null, text, CellTooltipRows.NO_SCORE);
+    // One thing a block lists, told apart from its siblings by its name alone - what it carries beyond
+    // that is stated by the cases that are about it.
+    private static CellTooltipEntry createEntry(String labelText) {
+        return CellTooltipEntry.createEntry(
+            CellTooltipEntryLine.createLine(null, labelText, CellTooltipRows.NO_SCORE));
     }
 
     // One line of the body, by its place in the flat run the box draws - the cases below are about which

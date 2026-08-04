@@ -23,10 +23,11 @@ import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins the shapes a cell-tooltip body is written in, since what separates them is exactly what a reader
- * of the box sees: a top-tier line opens a block flush in the bright colour, a nested one belongs to the
- * line above it by its indent and plainer colour, a banner leaves the table altogether to be set across
- * the box with its crest carried inside its own words, and a qualifier run picks a fact out in gold on
- * the line it qualifies. Two layers writing content through these cannot drift on any of it.
+ * of the box sees: a heading stands clear of the crest gutter in gold to name a block, a top-tier line
+ * enters something in it flush in the bright colour, a nested one belongs to the line above it by its
+ * indent and plainer colour, a banner leaves the table altogether to be set across the box with its
+ * crest carried inside its own words, and a qualifier run picks a fact out in gold on the line it
+ * qualifies. Two layers writing content through these cannot drift on any of it.
  */
 final class CellTooltipRowsTest {
 
@@ -51,10 +52,40 @@ final class CellTooltipRowsTest {
     }
 
     @Nested
+    class BuildSectionHeadingRow {
+
+        @Test
+        void buildSectionHeadingRowNamesItsBlockInGoldClearOfTheCrestGutter() {
+            // The two things that tell a heading from its own entries. Inside the gutter it starts
+            // where their labels start and so reads as indented under nothing; in their own bright it
+            // is told apart only by lacking a crest.
+            var row = CellTooltipRows.buildSectionHeadingRow("Contested by:");
+
+            assertThat(readLabelTextRun(row, LABEL_RUN))
+                .isEqualTo(new TextSpan("Contested by:", HIGHLIGHT));
+            assertThat(row.labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
+        }
+
+        @Test
+        void buildSectionHeadingRowCarriesNeitherCrestNorValue() {
+            // A heading names a block rather than being one of the things in it, so it fills neither
+            // column - and charging the value column for a number it will never carry would widen the
+            // box around an empty slot.
+            var row = CellTooltipRows.buildSectionHeadingRow("Contested by:");
+
+            assertThat(row.labelledRow().leadingRowSlot())
+                .isEqualTo(RowSlot.EMPTY);
+            assertThat(row.labelledRow().trailingRowSlot())
+                .isEqualTo(RowSlot.EMPTY);
+        }
+    }
+
+    @Nested
     class BuildTopTierRow {
 
         @Test
-        void buildTopTierRowOpensABlockFlushWithItsCrestAndValue() {
+        void buildTopTierRowListsSomethingFlushWithItsCrestAndValue() {
 
             var row = CellTooltipRows.buildTopTierRow(CREST, "Ion Storm", "42");
 
@@ -74,7 +105,7 @@ final class CellTooltipRowsTest {
 
         @Test
         void buildTopTierRowStaysInTheCrestColumnWithoutACrest() {
-            // A crestless header still aligns with the crested lines around it, so a body mixing the
+            // A crestless entry still aligns with the crested lines around it, so a block mixing the
             // two does not read as two staggered columns.
             var row = CellTooltipRows.buildTopTierRow(null, "Independent", CellTooltipRows.NO_SCORE);
 
