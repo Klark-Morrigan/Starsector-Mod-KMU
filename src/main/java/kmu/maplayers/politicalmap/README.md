@@ -128,8 +128,8 @@ ANDed with the framework's, plus whether either kind of feedback still needs the
 mechanic its own fills were painted by into the framework's hover box: `SystemDominationTooltip` -
 the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim
 contest behind a claims fill, its claimant over the rivals who could have taken the system and the
-factions present that never could - plus the standing, territory, and status lines both are written
-from),
+factions present that never could - plus the faction, standing, territory, and status lines both are
+written from),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 [the sidebar](../base/sidebar/README.md) one level up. What stays here is what that picker refuses

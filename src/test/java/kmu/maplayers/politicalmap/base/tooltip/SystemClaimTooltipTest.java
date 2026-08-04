@@ -26,8 +26,12 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
@@ -199,6 +203,60 @@ final class SystemClaimTooltipTest {
                 .isTrue();
             assertThat(rows.get(CLAIM_ROW).hasSectionBreak())
                 .isFalse();
+        }
+
+        @Test
+        void buildBodyRowsKeepsRivalsInTheOrderTheContestRankedThem() {
+            // The breakdown hands its standings over strongest first, which is the order a contest is
+            // read in - a section that re-ordered or reversed them would put the nearest challenger
+            // last while every other assertion in this suite still passed.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
+                    new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true),
+                    new FactionClaimScore(PIRATES, OUTSIDER_SCORE, true))));
+
+            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Contested by:",
+                    "Tri-Tachyon",
+                    "Pirates");
+        }
+
+        @Test
+        void buildBodyRowsSetsHeadingsApartFromTheEntriesBeneathThem() {
+            // The block shape the box is read by: a heading opens flush in the bright colour and its
+            // entries indent under it. Swapping the two tiers would leave every other case in this
+            // suite green while the box drew as a flat list of equals.
+            var contestedHeadingRow = 2;
+            var contestedEntryRow = 3;
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
+                    new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true))));
+
+            var rows = tooltip.buildBodyRows(sectorMock, systemMock);
+
+            assertThat(readLabelRun(rows.get(contestedHeadingRow), LABEL_RUN))
+                .isEqualTo(new TextSpan("Contested by:", BRIGHT));
+            assertThat(readTableRow(rows, contestedHeadingRow).indent())
+                .isCloseTo(NO_INDENT, within(TOLERANCE));
+            assertThat(readTableRow(rows, contestedHeadingRow).labelledRow().leadingRowSlot())
+                .isEqualTo(RowSlot.EMPTY);
+
+            assertThat(readTableRow(rows, CLAIM_ROW).indent())
+                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+            assertThat(readTableRow(rows, contestedEntryRow).indent())
+                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
         }
 
         @Test

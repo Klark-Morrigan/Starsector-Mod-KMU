@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -122,7 +121,7 @@ public final class SystemClaimTooltip extends SystemCellTooltip {
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
                 CellTooltipRows.NO_SCORE);
         }
-        var row = buildFactionRow(
+        var row = FactionTooltipRow.buildFactionRow(
             sector,
             claimantFactionId,
             resolveScoreText(breakdown, claimantFactionId));
@@ -169,27 +168,12 @@ public final class SystemClaimTooltip extends SystemCellTooltip {
         var rows = new ArrayList<TooltipRow>(scores.size());
 
         for (var score : scores) {
-            rows.add(buildFactionRow(
+            rows.add(FactionTooltipRow.buildFactionRow(
                 sector,
                 score.factionId(),
                 KmlibNumbers.formatGroupedInteger(score.score())));
         }
         return rows;
-    }
-
-    // One faction's line: its crest, its name, and whatever the caller has to say about it in the
-    // value column. Nested, since every line here belongs to the section heading above it.
-    private static TooltipRow.TableRow buildFactionRow(
-            SectorAPI sector,
-            String factionId,
-            String valueText) {
-
-        var faction = sector.getFaction(factionId);
-
-        return CellTooltipRows.buildNestedRow(
-            FactionCrests.resolveCrestPath(faction),
-            TooltipFactionNames.resolveLongName(faction, factionId),
-            valueText);
     }
 
     // The claimant's own market standing, or no number at all when it holds none there: a core imposed

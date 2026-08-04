@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.widgets.TooltipRow;
 import kmlib.text.KmlibStrings;
 
@@ -40,16 +39,11 @@ public final class CoreTerritoryRow {
         if (!KmlibStrings.hasText(coreFactionId)) {
             return Optional.empty();
         }
-        var faction = sector.getFaction(coreFactionId);
-
-        // The faction named plainly, then the decree called out beside it as the point of the line -
-        // the qualifier run, so the shade it reads in stays the vocabulary's decision rather than this
-        // row's.
-        return Optional.of(CellTooltipRows
-            .buildNestedRow(
-                FactionCrests.resolveCrestPath(faction),
-                TooltipFactionNames.resolveLongName(faction, coreFactionId),
-                CellTooltipRows.NO_SCORE)
+        // The faction named as any other line names one, then the decree called out beside it as the
+        // point of this line - the qualifier run, so the shade it reads in stays the vocabulary's
+        // decision rather than this row's.
+        return Optional.of(FactionTooltipRow
+            .buildFactionRow(sector, coreFactionId, CellTooltipRows.NO_SCORE)
             .continuesWith(CellTooltipRows.buildQualifierSpan(
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY))));
     }

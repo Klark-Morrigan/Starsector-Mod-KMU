@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
+import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.Nested;
@@ -37,7 +38,8 @@ final class ClaimsViewTest {
 
         @Test
         void getIdIsTheSaveStableClaimsId() {
-            assertThat(ClaimsView.INSTANCE.getId()).isEqualTo("claims");
+            assertThat(ClaimsView.INSTANCE.getId())
+                .isEqualTo("claims");
         }
     }
 
@@ -47,7 +49,7 @@ final class ClaimsViewTest {
         @Test
         void getSegmentLabelKeyIsTheClaimsRadioLabel() {
             assertThat(ClaimsView.INSTANCE.getSegmentLabelKey())
-                    .isEqualTo(KmuStrings.POLITICAL_MAP_CTL_CLAIMS);
+                .isEqualTo(KmuStrings.POLITICAL_MAP_CTL_CLAIMS);
         }
     }
 
@@ -59,7 +61,7 @@ final class ClaimsViewTest {
             // Claims group strictly by claiming faction with no alliance rollup, so the pipeline
             // resolves plain faction holding.
             assertThat(ClaimsView.INSTANCE.resolveGrouping())
-                    .isSameAs(HolderGrouping.identity());
+                .isSameAs(HolderGrouping.identity());
         }
     }
 
@@ -71,7 +73,7 @@ final class ClaimsViewTest {
             // Holder is the claim mechanic itself, so the view supplies the claims-only provider
             // rather than inheriting the held-plus-claims default.
             assertThat(ClaimsView.INSTANCE.resolveHolderProvider())
-                    .isSameAs(ClaimsHolderProvider.INSTANCE);
+                .isSameAs(ClaimsHolderProvider.INSTANCE);
         }
     }
 
@@ -84,9 +86,11 @@ final class ClaimsViewTest {
             // the shared economy revision, not here - so an alliance forming or dissolving (which the
             // alliances view renders) must leave its contribution fixed and never churn this view.
             var before = ClaimsView.INSTANCE.getContentRevision();
+
             MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
-            assertThat(ClaimsView.INSTANCE.getContentRevision()).isEqualTo(before);
+            assertThat(ClaimsView.INSTANCE.getContentRevision())
+                .isEqualTo(before);
         }
     }
 
@@ -98,7 +102,10 @@ final class ClaimsViewTest {
             // Delegated to the faction view: an independent claimant recedes to the muted style like
             // independent ground.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT, ANY_GROUPING, ElementStyleAdjustment.NONE)).isTrue();
+                    Factions.INDEPENDENT,
+                    ANY_GROUPING,
+                    ElementStyleAdjustment.NONE))
+                .isTrue();
         }
 
         @Test
@@ -106,7 +113,10 @@ final class ClaimsViewTest {
             // A held claimant faction paints in full faction style, exactly as the faction view draws
             // it.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, ElementStyleAdjustment.NONE)).isFalse();
+                    "hegemony",
+                    ANY_GROUPING,
+                    ElementStyleAdjustment.NONE))
+                .isFalse();
         }
 
         @Test
@@ -115,7 +125,10 @@ final class ClaimsViewTest {
             // desaturated takes the independent style, so passing a desaturating adjustment (rather
             // than NONE) flips the result - pinning that the arg is forwarded, not dropped.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, new ElementStyleAdjustment(0.3, true))).isTrue();
+                    "hegemony",
+                    ANY_GROUPING,
+                    new ElementStyleAdjustment(0.3, true)))
+                .isTrue();
         }
     }
 
@@ -127,9 +140,11 @@ final class ClaimsViewTest {
             // The claims view adjusts no bloc, delegating the faction view's decision that a claimant
             // and independent space alike draw exactly as classified.
             assertThat(ClaimsView.INSTANCE.resolveBlocStyleAdjustment("hegemony", ANY_GROUPING))
-                    .isEqualTo(ElementStyleAdjustment.NONE);
+                .isEqualTo(ElementStyleAdjustment.NONE);
             assertThat(ClaimsView.INSTANCE.resolveBlocStyleAdjustment(
-                    Factions.INDEPENDENT, ANY_GROUPING)).isEqualTo(ElementStyleAdjustment.NONE);
+                    Factions.INDEPENDENT,
+                    ANY_GROUPING))
+                .isEqualTo(ElementStyleAdjustment.NONE);
         }
     }
 
@@ -142,11 +157,19 @@ final class ClaimsViewTest {
             // the player's chosen form - resolved through the faction view.
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction("hegemony")).thenReturn(factionMock);
-            when(factionMock.getDisplayNameLong()).thenReturn("The Hegemony");
 
-            assertThat(ClaimsView.INSTANCE.resolveName("hegemony", ANY_GROUPING, sectorMock,
-                    FactionNameFormatChoice.FULL)).isEqualTo("The Hegemony");
+            when(sectorMock.getFaction("hegemony"))
+                .thenReturn(factionMock);
+
+            when(factionMock.getDisplayNameLong())
+                .thenReturn("The Hegemony");
+
+            assertThat(ClaimsView.INSTANCE.resolveName(
+                    "hegemony",
+                    ANY_GROUPING,
+                    sectorMock,
+                    FactionNameFormatChoice.FULL))
+                .isEqualTo("The Hegemony");
         }
 
         @Test
@@ -156,20 +179,48 @@ final class ClaimsViewTest {
             // forwarded rather than defaulted.
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction("hegemony")).thenReturn(factionMock);
-            when(factionMock.getDisplayName()).thenReturn("Hegemony");
 
-            assertThat(ClaimsView.INSTANCE.resolveName("hegemony", ANY_GROUPING, sectorMock,
-                    FactionNameFormatChoice.SHORT)).isEqualTo("Hegemony");
+            when(sectorMock.getFaction("hegemony"))
+                .thenReturn(factionMock);
+
+            when(factionMock.getDisplayName())
+                .thenReturn("Hegemony");
+
+            assertThat(ClaimsView.INSTANCE.resolveName(
+                    "hegemony",
+                    ANY_GROUPING,
+                    sectorMock,
+                    FactionNameFormatChoice.SHORT))
+                .isEqualTo("Hegemony");
         }
 
         @Test
         void resolveNameIsNullWhenTheFactionDoesNotResolve() {
-            var sectorMock = mock(SectorAPI.class);
-            when(sectorMock.getFaction("ghost")).thenReturn(null);
 
-            assertThat(ClaimsView.INSTANCE.resolveName("ghost", ANY_GROUPING, sectorMock,
-                    FactionNameFormatChoice.FULL)).isNull();
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getFaction("ghost"))
+                .thenReturn(null);
+
+            assertThat(ClaimsView.INSTANCE.resolveName(
+                    "ghost",
+                    ANY_GROUPING,
+                    sectorMock,
+                    FactionNameFormatChoice.FULL))
+                .isNull();
+        }
+    }
+
+    @Nested
+    class ResolveHoverTooltip {
+
+        @Test
+        void resolveHoverTooltipIsTheClaimBreakdownRatherThanTheDominationOne() {
+            // This layer paints by the claim mechanic, so its hover has to explain that contest: the
+            // domination breakdown the other two views inject describes standings this view never
+            // painted by, and would read as an account of a border it did not draw.
+            assertThat(ClaimsView.INSTANCE.resolveHoverTooltip())
+                .contains(SystemClaimTooltip.INSTANCE);
         }
     }
 
@@ -182,7 +233,8 @@ final class ClaimsViewTest {
             // from, so the claims view inherits the interface's no-spotlight default: the picker draws
             // nothing and a stale saved selection heals to none. It reads none of its arguments, so
             // this guards against a future accidental override reintroducing a spotlight.
-            assertThat(ClaimsView.INSTANCE.resolveSelectableBlocs(null, null, false)).isEmpty();
+            assertThat(ClaimsView.INSTANCE.resolveSelectableBlocs(null, null, false))
+                .isEmpty();
         }
     }
 }
