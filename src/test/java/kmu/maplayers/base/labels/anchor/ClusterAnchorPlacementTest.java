@@ -163,7 +163,7 @@ final class ClusterAnchorPlacementTest {
 
         // Sites at the cell centres: a square point cloud with no preferred axis, used
         // where the winner should be decided purely by length.
-        private static final Map<String, double[]> SQUARE_GRID_CENTERED_SITES = Map.of(
+        private static final Map<String, double[]> SQUARE_GRID_CENTRED_SITES = Map.of(
             "A", new double[] {500, 500}, "B", new double[] {1500, 500},
             "C", new double[] {500, 1500}, "D", new double[] {1500, 1500});
 
@@ -233,11 +233,11 @@ final class ClusterAnchorPlacementTest {
                 SQUARE_GRID_VERTICAL_SITES,
                 SQUARE_GRID_GROUPING);
 
-        private static final ClusterPartition SQUARE_GRID_CENTERED_PARTITION =
+        private static final ClusterPartition SQUARE_GRID_CENTRED_PARTITION =
             new ClusterPartition(
                 List.of(List.of("A", "B", "C", "D")),
                 SQUARE_GRID_EDGES,
-                SQUARE_GRID_CENTERED_SITES,
+                SQUARE_GRID_CENTRED_SITES,
                 SQUARE_GRID_GROUPING);
 
         private static final ClusterPartition BOOT_PARTITION = new ClusterPartition(
@@ -392,7 +392,7 @@ final class ClusterAnchorPlacementTest {
             // square cluster that is a diagonal through the centre (1700 / sin 60 ~ 1963),
             // longer than either axis-aligned 1700 chord, so a slanted line wins.
             var anchors = computeAnchors(
-                SQUARE_GRID_CENTERED_PARTITION,
+                SQUARE_GRID_CENTRED_PARTITION,
                 spec(0.0, 0.0, 3, 3, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -880,7 +880,7 @@ final class ClusterAnchorPlacementTest {
                 1.15);
                 
             var standing = computeAnchors(
-                SQUARE_GRID_CENTERED_PARTITION,
+                SQUARE_GRID_CENTRED_PARTITION,
                 tuning,
                 createLabelResolvers(aspectNameEstimators(6.0)));
 
@@ -890,7 +890,7 @@ final class ClusterAnchorPlacementTest {
                 .isEmpty();
 
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                SQUARE_GRID_CENTERED_PARTITION,
+                SQUARE_GRID_CENTRED_PARTITION,
                 tuning,
                 createLabelResolvers(owner -> new LabelLengthEstimatorFake(6.0, "Line", ONE_LINE)),
                 indexByIdentity(standing));
@@ -1078,7 +1078,7 @@ final class ClusterAnchorPlacementTest {
             // chooses it over one line and over three (which the cluster's girth cannot make
             // taller).
             var anchors = computeAnchors(
-                SQUARE_GRID_CENTERED_PARTITION,
+                SQUARE_GRID_CENTRED_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
@@ -1107,7 +1107,7 @@ final class ClusterAnchorPlacementTest {
             // so the label draws exactly the block the fit sized.
             var nameEstimatorFake = new LabelLengthEstimatorFake(6.0, "Line", MAX_FILLABLE_LINES);
             var anchors = computeAnchors(
-                SQUARE_GRID_CENTERED_PARTITION,
+                SQUARE_GRID_CENTRED_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
@@ -1137,7 +1137,7 @@ final class ClusterAnchorPlacementTest {
             // is one, so the name stays a single line at the smaller font the cap forces -
             // the knob that lets a caller forbid stacking.
             var anchors = computeAnchors(
-                SQUARE_GRID_CENTERED_PARTITION,
+                SQUARE_GRID_CENTRED_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
@@ -1163,7 +1163,7 @@ final class ClusterAnchorPlacementTest {
             // - no placement can prove even the thinnest required band interior - so the fit
             // collapses to the site-centroid dot, the same fallback a no-room line takes.
             var anchors = computeAnchors(
-                SQUARE_GRID_CENTERED_PARTITION,
+                SQUARE_GRID_CENTRED_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
