@@ -10,7 +10,7 @@ import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
-import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -42,6 +42,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -61,10 +62,10 @@ import static org.mockito.Mockito.when;
  * rebuilds that ride along. Each is pinned by its own suite; what belongs here is only the
  * decision about which of them to call and with what.
  *
- * <p>The same "only what moved" claim is pinned on what the fold answers: a frame that
- * re-fitted the placements reports what they were fitted under, and a frame that left them
- * alone reports nothing, so the caller's record of its standing list is only ever replaced
- * when the list itself was.
+ * <p>The same "only what moved" claim is pinned on the placements the fold carries along: a
+ * frame that re-fits them hands the caller's own pair down for the fit to replace, and a frame
+ * that leaves them alone calls no fit at all - so what the caller holds is only ever relabelled
+ * when the placements it labels were themselves rebuilt.
  */
 final class IncrementalPoliticsRefreshTest {
 
@@ -81,16 +82,9 @@ final class IncrementalPoliticsRefreshTest {
     // them, so it fits against the geometry it was handed and reports that same revision back.
     private static final int GEOMETRY_REVISION = 7;
 
-    // What the re-fit answers when it runs. Opaque here - the tuning inside is the fit's own
-    // business and no case reads it; what is pinned is that the caller is handed back exactly
-    // what the fit reported, rather than something this fold assembled for itself.
-    private static final AnchorFitFingerprint REFITTED_UNDER =
-        new AnchorFitFingerprint(null, GEOMETRY_REVISION);
-
-    // What the caller's standing placements were fitted under, handed in so the re-fit can
-    // carry over the clusters this fold did not move. Distinct from what the re-fit answers,
-    // so a fold that passed its own output on - or nothing at all - reads as the mistake it is
-    // rather than agreeing with itself.
+    // What the caller's standing placements were fitted under, standing in the pair so the
+    // re-fit can carry over the clusters this fold did not move. Opaque here - the tuning
+    // inside is the fit's own business and no case reads it.
     private static final AnchorFitFingerprint STANDING_FIT =
         new AnchorFitFingerprint(null, GEOMETRY_REVISION - 1);
 
@@ -100,6 +94,12 @@ final class IncrementalPoliticsRefreshTest {
         // Closed in reverse on the way out, so a seam opened over another is never left
         // standing when the inner one is already gone.
         private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
+
+        // The placements the caller holds across frames, standing at what a previous pass
+        // fitted them under. Empty of placements because the re-fit is neutralised here and
+        // would leave none: what a case reads off it is the label, which is the half this fold
+        // can leave wrong.
+        private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
 
         private MockedStatic<Global> globalMock;
         private MockedStatic<SectorPolitics> politicsMock;
@@ -155,18 +155,9 @@ final class IncrementalPoliticsRefreshTest {
 
             // Both ride along after a flip and are pinned by their own suites; opening them
             // leaves each a no-op, so a case here asserts the fold and not their output. The
-            // re-fit still has to answer something, since what it reports is what this fold
-            // hands back to the caller.
+            // re-fit writes the pair it is handed, which is exactly what a neutralised seam does
+            // not do - so a case reads whether the fold called it, not what it left behind.
             anchorsMock = openSeam(ClusterAnchorsBuilder.class);
-            anchorsMock
-                .when(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
-                    anyList(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    anyInt()))
-                .thenReturn(REFITTED_UNDER);
 
             openSeam(LabelsBuilder.class);
 
@@ -175,6 +166,11 @@ final class IncrementalPoliticsRefreshTest {
             openSeam(NameFormatPreference.class)
                 .when(NameFormatPreference::getSelectedNameFormat)
                 .thenReturn(FactionNameFormatChoice.NONE);
+
+            // The pair arrives labelled by a pass that ran before this frame, which is what
+            // every case here folds into: a fold that overwrote the label without re-fitting
+            // would read as agreeing with itself if the pair started blank.
+            standingAnchors.replaceAnchors(List.of(), STANDING_FIT);
 
             // The stale set is static and shared, so a residue from another suite would
             // read here as a system this one never marked.
@@ -327,42 +323,11 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesReportsTheRefitAgainstTheCallersGeometry() {
-            // The placements were re-fitted, so what they were fitted under has moved and the
-            // caller has to be told - it holds that record beside the list. The revision goes
-            // out as it came in because this path re-shapes cells within a partition it never
-            // recut, so the fit ran against the very geometry the caller named.
-            var territories = ownedBy(Map.of(
-                FLIPPED_SYSTEM,
-                HEGEMONY,
-                NEIGHBOUR_SYSTEM,
-                HEGEMONY));
-
-            resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
-
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
-
-            var refittedUnder = applyTo(territories);
-
-            assertThat(refittedUnder)
-                .isEqualTo(REFITTED_UNDER);
-                
-            anchorsMock.verify(
-                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
-                    anyList(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    eq(GEOMETRY_REVISION)));
-        }
-
-        @Test
-        void applyStalePoliticsUpdatesRefitsAgainstWhatTheStandingPlacementsWereFittedUnder() {
-            // The re-fit here is partial for the same reason a full rebuild's is: a flip
-            // re-partitions the clusters it touches and leaves the rest alone, so the record of
-            // what the standing list was fitted under has to reach the fit or every cluster is
-            // searched again. Passing the caller's record on is this fold's whole part in that.
+        void applyStalePoliticsUpdatesRefitsAgainstTheCallersGeometry() {
+            // The revision goes out as it came in because this path re-shapes cells within a
+            // partition it never recut, so the fit ran against the very geometry the caller
+            // named - and a re-fit reported against any other one would offer its placements
+            // to a later rebuild standing somewhere else.
             var territories = ownedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
@@ -376,8 +341,35 @@ final class IncrementalPoliticsRefreshTest {
 
             anchorsMock.verify(
                 () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
-                    anyList(),
-                    eq(STANDING_FIT),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    eq(GEOMETRY_REVISION)));
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesRefitsIntoTheCallersOwnStandingPair() {
+            // The re-fit here is partial for the same reason a full rebuild's is: a flip
+            // re-partitions the clusters it touches and leaves the rest alone, so what the
+            // standing placements were fitted under has to reach the fit or every cluster is
+            // searched again. That record and the placements are one value, and it is the
+            // caller's own - handing a copy down would carry over correctly and still leave
+            // the caller holding placements labelled by the pass before this one.
+            var territories = ownedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY));
+
+            resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            anchorsMock.verify(
+                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    same(standingAnchors),
                     any(),
                     any(),
                     any(),
@@ -385,27 +377,32 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesReportsNoRefitWhenNothingIsStale() {
-            // Nothing was re-fitted, so the caller's record of what its standing placements
-            // were fitted under still describes them and must not be overwritten.
+        void applyStalePoliticsUpdatesLeavesTheStandingPairAloneWhenNothingIsStale() {
+            // Nothing was re-fitted, so the standing placements and the rules recorded for them
+            // still describe each other and neither half may move.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertThat(applyTo(territories))
-                .isNull();
+            applyTo(territories);
+
+            anchorsMock.verifyNoInteractions();
+            assertThat(standingAnchors.getFitFingerprint())
+                .isEqualTo(STANDING_FIT);
         }
 
         @Test
-        void applyStalePoliticsUpdatesReportsNoRefitWhenTheHolderDidNotChange() {
+        void applyStalePoliticsUpdatesLeavesTheStandingPairAloneWhenTheHolderDidNotChange() {
             // The same claim on the other early return: a resize that leaves the winner alone
-            // leaves the placements alone, so there is nothing new to report about them.
+            // leaves the placements alone, so there is nothing about them to restate.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             resolvesTo(FLIPPED_SYSTEM, ownerOf(HEGEMONY));
 
             MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
 
-            assertThat(applyTo(territories))
-                .isNull();
+            anchorsMock.verifyNoInteractions();
+            assertThat(standingAnchors.getFitFingerprint())
+                .isEqualTo(STANDING_FIT);
         }
 
         // Opens a static seam and registers it for closing, so a case names what it needs
@@ -430,15 +427,13 @@ final class IncrementalPoliticsRefreshTest {
                 .thenReturn(holder);
         }
 
-        // Runs the refresh over the two-cell geometry every case shares, with the anchor and
-        // label lists the plugin owns standing in as empty ones, and answers what it reported
-        // the placements were re-fitted under. The placements go in with the record of what
-        // they were fitted under, as the caller holds the two.
-        private AnchorFitFingerprint applyTo(PoliticalMapTerritories territories) {
-            return IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
+        // Runs the refresh over the two-cell geometry every case shares, handing it the pair
+        // the caller holds across frames and an empty stand-in for the label list the plugin
+        // owns beside it.
+        private void applyTo(PoliticalMapTerritories territories) {
+            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
                 territories,
-                new ArrayList<ClusterAnchor>(),
-                STANDING_FIT,
+                standingAnchors,
                 new ArrayList<Label>(),
                 twoAdjacentCells(),
                 GEOMETRY_REVISION);

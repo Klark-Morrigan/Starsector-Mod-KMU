@@ -10,8 +10,7 @@ import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
-import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
-import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -57,27 +56,25 @@ final class IncrementalPoliticsRefresh {
     // plugin's own overlays, not part of the territories, yet must track the same holding
     // the cells do.
     //
-    // Answers what the placements it re-fitted were made under, or null on the frames where
-    // it re-fitted none - the standing placements and whatever the caller already recorded
-    // for them still describe each other, so there is nothing for it to overwrite. That same
-    // record goes in with them, since a re-fit here is partial the same way a full rebuild's
-    // is: the placements of every cluster a flip left alone are carried rather than searched
-    // again. The geometry revision is handed in because this path only ever re-shapes cells
-    // within a partition it did not recut, so the fit runs against the geometry the caller
-    // already holds a revision for.
-    static AnchorFitFingerprint applyStalePoliticsUpdates(
+    // The placements arrive paired with what they were fitted under and are left that way: a
+    // re-fit here is partial the same way a full rebuild's is - the placements of every cluster
+    // a flip left alone are carried rather than searched again - so the record has to reach the
+    // fit, and the fit leaves its own in the same pair. A frame that re-fits none touches
+    // neither half, which is what makes the early returns below safe to take. The geometry
+    // revision is handed in because this path only ever re-shapes cells within a partition it
+    // did not recut, so the fit runs against the geometry the caller already holds a revision for.
+    static void applyStalePoliticsUpdates(
             PoliticalMapTerritories territories,
-            List<ClusterAnchor> clusterAnchors,
-            AnchorFitFingerprint lastAnchorFitFingerprint,
+            StandingClusterAnchors standingAnchors,
             List<Label> factionLabels,
             CellGeometryCache geometryCache,
             int geometryRevision) {
 
         var staleSystemIds = MapLayerRefresh.drainStaleGroupingSystemIds();
         if (staleSystemIds.isEmpty()) {
-            return null;
+            return;
         }
-        return KmuProfiling.getProfiler().measure("politicalMap.applyPoliticsUpdates", () -> {
+        KmuProfiling.getProfiler().measure("politicalMap.applyPoliticsUpdates", () -> {
             var sector = Global.getSector();
             var systemById = indexSystemsById(sector);
             var cellsToReshape = new LinkedHashSet<String>();
@@ -101,7 +98,7 @@ final class IncrementalPoliticsRefresh {
                 // rather than a missed event.
                 LOG.debug("Political map politics update: no holder changed; stale="
                     + staleSystemIds.size());
-                return null;
+                return;
             }
             for (var cellId : cellsToReshape) {
                 reshapeCellInPlace(territories, geometryCache, cellId);
@@ -141,9 +138,8 @@ final class IncrementalPoliticsRefresh {
             // consumers are off. Runs only on a real flip - the early return above already left.
             // The name labels then rebuild from the placements so a renamed or relocated
             // cluster's name follows.
-            var refittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
-                clusterAnchors,
-                lastAnchorFitFingerprint,
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
                 geometryCache,
                 sector,
                 ClusterLabelStylingSnapshot.resolveFrom(territories),
@@ -151,15 +147,13 @@ final class IncrementalPoliticsRefresh {
 
             LabelsBuilder.rebuildLabels(
                 factionLabels,
-                clusterAnchors,
+                standingAnchors.getAnchors(),
                 NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
 
             LOG.debug("Political map politics updated incrementally; stale="
                 + staleSystemIds.size()
                 + " reshapedCells=" + cellsToReshape.size()
                 + " rebuiltFactions=" + affectedFactionIds.size());
-
-            return refittedUnder;
         });
     }
 

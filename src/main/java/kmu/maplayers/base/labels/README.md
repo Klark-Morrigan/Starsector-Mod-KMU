@@ -50,9 +50,15 @@ re-fits by construction.
 A whole pass carries the other half of that question as an
 [`AnchorFitFingerprint`](anchor/AnchorFitFingerprint.java): the tuning it ran with and the geometry
 revision it ran against, the two things that invalidate every placement at once rather than any
-cluster's in particular. The layer's rebuild is what reads the live tuning, so it hands the
-fingerprint back to whoever owns the placement list, on every path - including the ones that fit
-nothing, since an unlabelled list is indistinguishable from one made under rules that still hold.
+cluster's in particular. The layer's rebuild is what reads the live tuning, so it is what labels
+the list, on every path - including the ones that fit nothing, since an unlabelled list is
+indistinguishable from one made under rules that still hold.
+
+The list and that label are one value, [`StandingClusterAnchors`](anchor/StandingClusterAnchors.java),
+which the layer owns across rebuilds and hands to the rebuild whole: the rebuild reads the previous
+pass off it and leaves its own in it. Nothing can move one half without the other, which is the
+state every reuse decision below assumes cannot arise - a list that outran its label offers a later
+rebuild placements it has no business carrying over.
 
 Together those two make a rebuild **partial**. The standing placements go back into
 `computeClusterAnchors` filed under the cluster each names, and a matched one is carried over

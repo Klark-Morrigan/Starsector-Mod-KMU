@@ -13,6 +13,7 @@ import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
@@ -40,7 +41,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,10 +67,11 @@ import static org.mockito.Mockito.when;
  * label drifting from the territory beneath it would first show: a bloc's own shade off filter, and
  * the pass's shared desaturation palette for a bloc a filter recedes.
  *
- * <p>What each path reports back is pinned alongside, on every path rather than only the fitting
- * one: the rebuild is the only place the live tuning is read, so a list left behind without the
- * rules it was made under can never be labelled afterwards - including the lists the two gates
- * leave empty, which are otherwise indistinguishable from lists still made under current rules.
+ * <p>What each path leaves labelling its list is pinned alongside, on every path rather than only
+ * the fitting one: the rebuild is the only place the live tuning is read, so a list left behind
+ * without the rules it was made under can never be labelled afterwards - including the lists the
+ * two gates leave empty, which are otherwise indistinguishable from lists still made under
+ * current rules.
  *
  * <p>What the search does with that wiring is pinned by
  * {@link kmu.maplayers.base.labels.anchor.ClusterAnchorPlacementTest} and the colour rules by
@@ -158,17 +159,18 @@ final class ClusterAnchorsBuilderTest {
     private static final AnchorFitFingerprint FITTED_UNDER =
         new AnchorFitFingerprint(ANCHOR_SPECIFICATION, GEOMETRY_REVISION);
 
-    // What a caller holds before its first rebuild of a session, and after a discard: no
-    // previous pass, so nothing is offered for reuse and the fit is total. It is the default
-    // every case that is not about reuse runs under, so those cases read as the whole searches
-    // they were written as.
-    private static final AnchorFitFingerprint NOTHING_FITTED_YET = null;
-
     // A rebuild standing at a different geometry revision, so the placements a pass left behind
     // were made under rules that no longer hold. One int apart from FITTED_UNDER, since the
     // claim is that any difference at all drops the whole carry-over rather than that this
     // particular input is special.
     private static final int MOVED_GEOMETRY_REVISION = GEOMETRY_REVISION + 1;
+
+    // What a caller's pair says while the placements standing in it were fitted under rules
+    // this rebuild no longer runs under. Seeded by the cases that ask what a rebuild leaves
+    // behind, so what they read back is this pass's answer rather than a reading that was
+    // already there before they called.
+    private static final AnchorFitFingerprint FITTED_UNDER_MOVED_RULES =
+        new AnchorFitFingerprint(ANCHOR_SPECIFICATION, MOVED_GEOMETRY_REVISION);
 
     private static final Map<String, List<CellEdge>> EDGES = orderedEdges();
     private static final Map<String, double[]> SITES = Map.of(
@@ -182,7 +184,13 @@ final class ClusterAnchorsBuilderTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final CellGeometryCache geometryCacheMock = mock(CellGeometryCache.class);
     private final PoliticalMapView viewMock = mock(PoliticalMapView.class);
-    private final List<ClusterAnchor> anchors = new ArrayList<>();
+
+    // The pair the caller owns across rebuilds, standing at its never-fitted reading: no
+    // placements and no rules recorded for them, which is what a session's first rebuild and one
+    // after a discard both start from. Nothing is offered for reuse from that reading, so a case
+    // that does not seed it reads as the whole search it was written as.
+    private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
+    
     private MockedStatic<KmuLunaSettings> settingsMock;
     private MockedStatic<NameFormatPreference> nameFormatMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
@@ -259,8 +267,7 @@ final class ClusterAnchorsBuilderTest {
         @Test
         void rebuildClusterAnchorsFitsOneLabelPerContiguousCluster() {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(
@@ -274,15 +281,14 @@ final class ClusterAnchorsBuilderTest {
 
             // Two labels, not three: the two touching cells of one bloc are named once between
             // them, which is what makes a label read as naming a territory rather than a system.
-            assertThat(anchors)
+            assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
         }
 
         @Test
         void rebuildClusterAnchorsDrawsEachClusterInItsOwnBlocsShade() {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(
@@ -297,9 +303,9 @@ final class ClusterAnchorsBuilderTest {
             // The clusters come back in first-seen cell order, so the fused pair leads and the
             // rival follows - each carrying the shade its own holder resolved to rather than one
             // shared pick, which is the whole point of resolving colour per bloc.
-            assertThat(anchors.get(0).colour())
+            assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
-            assertThat(anchors.get(1).colour())
+            assertThat(standingAnchors.getAnchors().get(1).colour())
                 .isEqualTo(TRITACHYON_PRIMARY);
         }
 
@@ -309,8 +315,7 @@ final class ClusterAnchorsBuilderTest {
             // with its fill: the shared palette this pass recoloured that fill to is the one the
             // name draws in, so the two cannot drift apart while a spotlight is up.
             ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 new ClusterLabelStylingSnapshot(
@@ -323,7 +328,7 @@ final class ClusterAnchorsBuilderTest {
                         Set.of())),
                 GEOMETRY_REVISION);
 
-            assertThat(anchors.get(0).colour())
+            assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(Color.GREEN);
         }
 
@@ -336,14 +341,13 @@ final class ClusterAnchorsBuilderTest {
             stubAnchorOverlay(true);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
                 GEOMETRY_REVISION);
 
-            assertThat(anchors)
+            assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
         }
 
@@ -354,77 +358,74 @@ final class ClusterAnchorsBuilderTest {
             stubNameFormat(FactionNameFormatChoice.NONE);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
                 GEOMETRY_REVISION);
 
-            assertThat(anchors)
+            assertThat(standingAnchors.getAnchors())
                 .isEmpty();
         }
 
         @Test
         void rebuildClusterAnchorsDropsStandingLabelsEvenWhenItFitsNone() {
-            // The list is the overlay's own, so clearing it has to happen ahead of the gate:
-            // switching the names off has to take the fitted labels off the map, not freeze the
-            // last pass's on it.
+            // The list is the overlay's own, so the gate has to empty it rather than leave it
+            // alone: switching the names off has to take the fitted labels off the map, not
+            // freeze the last pass's on it.
             stubNameFormat(FactionNameFormatChoice.NONE);
-            anchors.add(staleAnchor());
+            standingAnchors.replaceAnchors(List.of(staleAnchor()), FITTED_UNDER_MOVED_RULES);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
                 GEOMETRY_REVISION);
 
-            assertThat(anchors)
+            assertThat(standingAnchors.getAnchors())
                 .isEmpty();
         }
 
         @Test
-        void rebuildClusterAnchorsReportsTheTuningAndGeometryItFittedUnder() {
+        void rebuildClusterAnchorsRecordsTheTuningAndGeometryItFittedUnder() {
             // The placements it leaves behind are only reusable if something states the rules
-            // they were sized under, and only this rebuild read them - so the fingerprint has
-            // to name the tuning it fitted with and the geometry it fitted against, not some
-            // later re-read of either.
-            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+            // they were sized under, and only this rebuild read them - so the pair it leaves
+            // has to name the tuning it fitted with and the geometry it fitted against, not
+            // some later re-read of either.
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
                 GEOMETRY_REVISION);
 
-            assertThat(fittedUnder)
+            assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
         }
 
         @Test
         void rebuildClusterAnchorsCarriesStandingPlacementsItFittedUnderTheSameRules() {
             // The rebuild is the only place that knows both what it is about to fit under and
-            // what the list in front of it was fitted under, so it is where the carry-over is
-            // decided. Handed back its own previous answer over an unchanged sector, it must
-            // hand the placements themselves on rather than searching the same clusters again -
-            // the accepted line being the very object the first pass produced is what says so.
+            // what the pair in front of it was fitted under, so it is where the carry-over is
+            // decided. Run twice over an unchanged sector, with its own previous answer standing
+            // in the pair, it must hand the placements themselves on rather than searching the
+            // same clusters again - the accepted line being the very object the first pass
+            // produced is what says so.
             var styling = unfilteredStyling(Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_HOLDER,
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY_HOLDER));
 
-            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 styling,
                 GEOMETRY_REVISION);
 
-            var firstPassAxis = anchors.get(0).acceptedAxis();
+            var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
             // Guarded, because two collapsed passes would both carry a null line and the
             // identity assertion below would hold without anything having been carried.
@@ -432,14 +433,13 @@ final class ClusterAnchorsBuilderTest {
                 .isNotNull();
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                fittedUnder,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 styling,
                 GEOMETRY_REVISION);
 
-            assertThat(anchors.get(0).acceptedAxis())
+            assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
         }
 
@@ -456,44 +456,46 @@ final class ClusterAnchorsBuilderTest {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY_HOLDER));
 
-            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 styling,
                 GEOMETRY_REVISION);
 
-            var firstPassAxis = anchors.get(0).acceptedAxis();
+            var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                fittedUnder,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 styling,
                 MOVED_GEOMETRY_REVISION);
 
-            assertThat(anchors.get(0).acceptedAxis())
+            assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isNotSameAs(firstPassAxis);
         }
 
         @Test
-        void rebuildClusterAnchorsReportsWhatTheSkippedFitWouldHaveRunUnder() {
+        void rebuildClusterAnchorsLabelsTheListTheSkippedFitEmpties() {
             // The gate empties the list rather than leaving it alone, so the list it leaves
             // needs labelling exactly as a fitted one does: an unlabelled list is
-            // indistinguishable from one made under rules that still hold.
+            // indistinguishable from one made under rules that still hold. The two move
+            // together, so a gate that emptied the list and left the previous pass's rules
+            // standing beside it would offer those placements to a later rebuild that has none.
             stubNameFormat(FactionNameFormatChoice.NONE);
+            standingAnchors.replaceAnchors(List.of(staleAnchor()), FITTED_UNDER_MOVED_RULES);
 
-            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
-                anchors,
-                NOTHING_FITTED_YET,
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
                 GEOMETRY_REVISION);
 
-            assertThat(fittedUnder)
+            assertThat(standingAnchors.getAnchors())
+                .isEmpty();
+            assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
         }
     }
@@ -516,16 +518,15 @@ final class ClusterAnchorsBuilderTest {
                 TRITACHYON_HOLDER));
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                anchors,
-                NOTHING_FITTED_YET,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
                 GEOMETRY_REVISION);
 
-            assertThat(anchors)
+            assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
-            assertThat(anchors.get(0).colour())
+            assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
         }
 
@@ -538,43 +539,41 @@ final class ClusterAnchorsBuilderTest {
             stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                anchors,
-                NOTHING_FITTED_YET,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
                 GEOMETRY_REVISION);
 
-            assertThat(anchors)
+            assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
         }
 
         @Test
-        void rebuildClusterAnchorsFromSectorReportsWhatItFittedUnder() {
-            // This path delegates the fit, so it must also hand the delegate's answer on rather
-            // than stopping at it: the caller of the debug view holds the same pair of list and
-            // fingerprint the production caller does.
+        void rebuildClusterAnchorsFromSectorRecordsWhatItFittedUnder() {
+            // This path delegates the fit, so it must hand its own caller's pair down rather
+            // than fitting into something of its own: the caller of the debug view is left
+            // holding the same labelled placements the production caller is.
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
 
-            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                anchors,
-                NOTHING_FITTED_YET,
+            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
                 GEOMETRY_REVISION);
 
-            assertThat(fittedUnder)
+            assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
         }
 
         @Test
         void rebuildClusterAnchorsFromSectorCarriesStandingPlacementsThroughToTheSharedFit() {
-            // This path delegates the fit, so it has to hand the caller's record down as well as
-            // hand the fit's answer back up. Dropping it on the way would leave the diagnostic
-            // view re-searching every cluster on every rebuild while the production view reuses -
-            // a difference nothing but the frame time would show.
+            // This path delegates the fit, so it has to hand the caller's pair down whole.
+            // Dropping the standing half on the way would leave the diagnostic view re-searching
+            // every cluster on every rebuild while the production view reuses - a difference
+            // nothing but the frame time would show.
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(
                 HELD_SYSTEM,
@@ -582,15 +581,14 @@ final class ClusterAnchorsBuilderTest {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY_HOLDER));
 
-            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                anchors,
-                NOTHING_FITTED_YET,
+            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
                 GEOMETRY_REVISION);
 
-            var firstPassAxis = anchors.get(0).acceptedAxis();
+            var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
             // Guarded, because two collapsed passes would both carry a null line and the
             // assertion below would hold without anything having been carried.
@@ -598,14 +596,13 @@ final class ClusterAnchorsBuilderTest {
                 .isNotNull();
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                anchors,
-                fittedUnder,
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
                 GEOMETRY_REVISION);
 
-            assertThat(anchors.get(0).acceptedAxis())
+            assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
         }
 
@@ -614,24 +611,23 @@ final class ClusterAnchorsBuilderTest {
             // Resolving holders walks the whole economy, so the toggle gates the read itself and
             // not just the drawing - the cost is only paid while someone is looking at the
             // overlay. The standing labels still go, as on every other path.
-            anchors.add(staleAnchor());
+            standingAnchors.replaceAnchors(List.of(staleAnchor()), FITTED_UNDER_MOVED_RULES);
 
-            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                anchors,
-                NOTHING_FITTED_YET,
+            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                standingAnchors,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
                 GEOMETRY_REVISION);
 
-            assertThat(anchors)
+            assertThat(standingAnchors.getAnchors())
                 .isEmpty();
 
             politicsMock.verifyNoInteractions();
 
             // Skipping the scan does not excuse the list from being labelled: this path's
-            // caller holds the same pair of list and fingerprint the shared path's does.
-            assertThat(fittedUnder)
+            // caller is left holding the same labelled placements the shared path's is.
+            assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
         }
     }

@@ -13,6 +13,7 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -54,18 +55,17 @@ import java.util.Map;
  * palette, view, grouping and filter one by one, so the two paths differ only in where that
  * snapshot came from and a label can never be styled from two passes at once.
  *
- * <p>Both also hand back the {@link AnchorFitFingerprint} the list they left behind was made
- * under, and take the one its standing contents were made under. It is returned rather than kept
- * here because the list itself is the caller's, and the two are only useful as a pair: a
- * fingerprint parked in a static would describe whichever path ran last, which is exactly the
- * disagreement a second entry point can cause.
+ * <p>Both also take the caller's {@link StandingClusterAnchors} and leave their own pass in it,
+ * rather than reading a list and answering an {@link AnchorFitFingerprint} for it. The pair is
+ * the caller's and not kept here, because a fingerprint parked in a static would describe
+ * whichever path ran last - exactly the disagreement a second entry point can cause.
  *
- * <p>That pair is what makes a rebuild partial. The standing list is this rebuild's only record
- * of the previous pass, so it is indexed by the cluster each placement names before it is
- * cleared, and the search carries a placement over rather than searching its cluster again. The
- * gate on that reuse is the fingerprint, decided here rather than per cluster: the tuning and the
- * cell geometry each move every fit at once - the keep-out sites the boxes are trimmed clear of
- * are the whole sector's, so a system appearing anywhere moves fits no membership change would
+ * <p>That pair is what makes a rebuild partial. The standing pair is this rebuild's only record
+ * of the previous pass, so it is indexed by the cluster each placement names before this pass
+ * replaces it, and the search carries a placement over rather than searching its cluster again.
+ * The gate on that reuse is the fingerprint, decided here rather than per cluster: the tuning and
+ * the cell geometry each move every fit at once - the keep-out sites the boxes are trimmed clear
+ * of are the whole sector's, so a system appearing anywhere moves fits no membership change would
  * touch - and neither shows up in any one cluster's identity. When the two do not match, nothing
  * is offered and the rebuild is total, which is what it was before the reuse existed.
  */
@@ -81,9 +81,9 @@ public final class ClusterAnchorsBuilder {
     private ClusterAnchorsBuilder() {
     }
 
-    // Rebuilds the cluster-label placements in place: clears the standing list, then -
-    // only when the placements are needed - splits the owned systems into contiguous
-    // clusters and fits one anchor to each. The placements feed two consumers: the
+    // Rebuilds the cluster-label placements in place: replaces the standing pair with this
+    // pass's, having - only when the placements are needed - split the owned systems into
+    // contiguous clusters and fitted one anchor to each. The placements feed two consumers: the
     // faction-name labels and the debug anchor overlay. Building whenever either is on
     // keeps them a single computation (an SSOT the labels and the overlay share), so the
     // search never runs twice; each consumer then draws only under its own toggle. Shared
@@ -95,34 +95,34 @@ public final class ClusterAnchorsBuilder {
     // colour follows, over the grouping snapshot the holder map was resolved under. Under a
     // filter the label styling follows the same shared decision the fills do - receding every
     // non-spotlit bloc, leaving the spotlit one full - and the synthetic spotlight keys resolve
-    // to the selected bloc's name, since the view cannot name a synthetic id. Reports back what
-    // the placements it leaves behind were made under, which the caller holds beside the list
-    // itself: a placement list nothing states the rules of cannot be compared against a later
-    // rebuild's, and only this build knows the tuning it read. The same pair comes back in, so
-    // the placements already in the list can be carried over for the clusters they still name
-    // rather than every one of them being searched again. The geometry the fit clips and trims
-    // against is the caller's, so the revision naming it is handed in rather than sampled.
-    public static AnchorFitFingerprint rebuildClusterAnchors(
-            List<ClusterAnchor> anchors,
-            AnchorFitFingerprint lastFitFingerprint,
+    // to the selected bloc's name, since the view cannot name a synthetic id. Leaves in the
+    // caller's pair what the placements it just fitted were made under: a placement list nothing
+    // states the rules of cannot be compared against a later rebuild's, and only this build knows
+    // the tuning it read. That same pair is what came in, so the placements already standing can
+    // be carried over for the clusters they still name rather than every one of them being
+    // searched again. The geometry the fit clips and trims against is the caller's, so the
+    // revision naming it is handed in rather than sampled.
+    public static void rebuildClusterAnchors(
+            StandingClusterAnchors standingAnchors,
             CellGeometryCache geometryCache,
             SectorAPI sector,
             ClusterLabelStylingSnapshot styling,
             int geometryRevision) {
 
-        // Read ahead of the gate rather than inside it, because the standing list needs
+        // Read ahead of the gate rather than inside it, because the standing pair needs
         // labelling either way: a rebuild that fits nothing still leaves a list behind, and an
         // unlabelled one is indistinguishable from one fitted under rules that still hold.
         var fitFingerprint = readFitFingerprint(geometryRevision);
 
-        // Indexed before the clear below, because the standing list is where the previous pass
-        // survives - once it is emptied there is nothing left to carry anything over from.
-        var reusableAnchors = indexReusableAnchors(anchors, fitFingerprint, lastFitFingerprint);
+        // Indexed before this pass replaces the pair, since that is where the previous one
+        // survives - the two move together, so there is no window where the list is emptied
+        // ahead of the fit that fills it.
+        var reusableAnchors = indexReusableAnchors(standingAnchors, fitFingerprint);
 
-        anchors.clear();
         if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
-            return fitFingerprint;
+            standingAnchors.replaceAnchors(List.of(), fitFingerprint);
+            return;
         }
         // Timed from here, past the gate: the skipped path does no work worth reporting, and the
         // fit is the rebuild's dominant cost, so it needs a duration of its own beside the
@@ -184,7 +184,7 @@ public final class ClusterAnchorsBuilder {
                     filter.isFiltering(),
                     filter.selectedBlocId())),
             reusableAnchors);
-        anchors.addAll(fit.anchors());
+        standingAnchors.replaceAnchors(fit.anchors(), fitFingerprint);
 
         // The search's cost is the product of its inputs, so the sweep knobs and the keep-out
         // count are reported beside the duration - a slow fit is read off which multiplicand
@@ -196,7 +196,7 @@ public final class ClusterAnchorsBuilder {
         // than recomputed from the knobs here, so a sweep that bailed out early reads as cheap.
         LOG.debug("Political map cluster anchors fitted; clusters="
             + clusters.size()
-            + " anchors=" + anchors.size()
+            + " anchors=" + fit.anchors().size()
             + " directions="
             + ClusterAnchorPlacement.countCandidateDirections(spec.search().directionCount())
             + "/" + spec.search().directionCount()
@@ -205,19 +205,16 @@ public final class ClusterAnchorsBuilder {
             + " bandFits=" + fit.bandFitCount()
             + " keepOuts=" + geometryCache.getSiteBySystemId().size()
             + " took=" + Timings.formatMillis(System.nanoTime() - fitStart));
-
-        return fitFingerprint;
     }
 
     // The rebuild for a path with no holder map at hand - the debug border-tracing view,
     // which builds no production draw lists to borrow one from. Resolves holding from
     // the sector itself, gated behind the toggle so the economy scan only runs while
-    // someone is actually looking at the anchors. Reports what the placements were made
-    // under exactly as the shared path does, so the caller holds one fact about its list
-    // whichever view built it.
-    public static AnchorFitFingerprint rebuildClusterAnchorsFromSector(
-            List<ClusterAnchor> anchors,
-            AnchorFitFingerprint lastFitFingerprint,
+    // someone is actually looking at the anchors. Leaves the caller's pair labelled with what
+    // produced it exactly as the shared path does, so the caller holds one fact about its
+    // placements whichever view built them.
+    public static void rebuildClusterAnchorsFromSector(
+            StandingClusterAnchors standingAnchors,
             CellGeometryCache geometryCache,
             SectorAPI sector,
             PoliticalMapView view,
@@ -225,12 +222,11 @@ public final class ClusterAnchorsBuilder {
 
         if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
             // The economy scan is what the toggle is guarding, so it is skipped - but the
-            // list it leaves empty still has to say what produced it, which costs a
-            // settings read and no sector work at all. The clear is this path's own here,
-            // since the shared path below - which does it for every other case - is the one
-            // that first reads the standing list.
-            anchors.clear();
-            return readFitFingerprint(geometryRevision);
+            // list it leaves empty still has to say what produced it, which costs a settings
+            // read and no sector work at all. Emptying it and labelling it is the one write
+            // the pair takes, so this path's skip cannot leave the two disagreeing.
+            standingAnchors.replaceAnchors(List.of(), readFitFingerprint(geometryRevision));
+            return;
         }
 
         // Sample the view's grouping once and resolve holding under it, so the anchors
@@ -246,9 +242,8 @@ public final class ClusterAnchorsBuilder {
                 
         // The debug border-tracing path never filters - it resolves real dominant holders from the
         // sector - so it recedes nothing and names no synthetic spotlight key.
-        return rebuildClusterAnchors(
-            anchors,
-            lastFitFingerprint,
+        rebuildClusterAnchors(
+            standingAnchors,
             geometryCache,
             sector,
             new ClusterLabelStylingSnapshot(
@@ -260,22 +255,21 @@ public final class ClusterAnchorsBuilder {
     }
 
     // The standing placements a fit made now may carry over, filed under the cluster each of
-    // them names. Empty unless this rebuild would run under exactly what the standing list was
-    // fitted under: the tuning and the geometry each invalidate every placement at once rather
-    // than any one of them in particular, so the whole map is dropped on a mismatch instead of
-    // any cluster being asked to notice a change it cannot see. That is also what keeps a
-    // rebuild the caller has no record for - the first of a session, or one after a discard -
-    // total, since a null fingerprint matches nothing.
+    // them names. Empty unless this rebuild would run under exactly what the standing pair says
+    // its list was fitted under: the tuning and the geometry each invalidate every placement at
+    // once rather than any one of them in particular, so the whole map is dropped on a mismatch
+    // instead of any cluster being asked to notice a change it cannot see. That is also what
+    // keeps a rebuild the caller has no record for - the first of a session, or one after a
+    // discard - total, since a null fingerprint matches nothing.
     private static Map<ClusterIdentity, ClusterAnchor> indexReusableAnchors(
-            List<ClusterAnchor> anchors,
-            AnchorFitFingerprint fitFingerprint,
-            AnchorFitFingerprint lastFitFingerprint) {
+            StandingClusterAnchors standingAnchors,
+            AnchorFitFingerprint fitFingerprint) {
 
-        if (!fitFingerprint.equals(lastFitFingerprint)) {
+        if (!fitFingerprint.equals(standingAnchors.getFitFingerprint())) {
             return Map.of();
         }
         var anchorByIdentity = new HashMap<ClusterIdentity, ClusterAnchor>();
-        for (var anchor : anchors) {
+        for (var anchor : standingAnchors.getAnchors()) {
             anchorByIdentity.put(anchor.identity(), anchor);
         }
         return anchorByIdentity;
