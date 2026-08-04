@@ -11,7 +11,6 @@ import kmlib.starsector.ui.label.LabelBoxFitter;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.base.geometry.CellEdge;
-import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 
 import java.util.ArrayList;
@@ -89,11 +88,7 @@ public final class ClusterAnchorPlacement {
      * particular, so a pass made under different rules hands in nothing and every cluster is
      * fitted afresh.
      *
-     * @param clusters         each contiguous cluster's member system ids
-     * @param edgesByCellId    each cell's raw edges - the geometry lines are clipped against
-     * @param siteBySystemId   each system's world position, for the axis fit and the icon
-     *                         keep-outs
-     * @param grouping         which system each cell draws as and each system's owner
+     * @param partition        the clusters to place a name in and the cells they were cut from
      * @param spec             the search's whole tuning surface
      * @param labelResolvers   the shade and the name measurement, both by owner
      * @param reusableAnchors  the standing placements a match may be carried over from, by the
@@ -102,24 +97,22 @@ public final class ClusterAnchorPlacement {
      *         sweep cost to produce them
      */
     public static ClusterAnchorFit computeClusterAnchors(
-            List<List<String>> clusters,
-            Map<String, List<CellEdge>> edgesByCellId,
-            Map<String, double[]> siteBySystemId,
-            CellGrouping grouping,
+            ClusterPartition partition,
             LabelAnchorSpecification spec,
             ClusterLabelResolvers labelResolvers,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
 
+        var clusters = partition.clusterMemberSystemIds();
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         var candidateCount = 0;
         var bandFitCount = 0;
 
         for (var memberSystemIds : clusters) {
-            var sites = collectClusterSites(memberSystemIds, siteBySystemId);
+            var sites = collectClusterSites(memberSystemIds, partition.siteBySystemId());
             if (sites.isEmpty()) {
                 continue;
             }
-            var owner = grouping.ownerBySystemId().get(memberSystemIds.get(0));
+            var owner = partition.grouping().ownerBySystemId().get(memberSystemIds.get(0));
             var subject = labelResolvers.resolveLabelSubjectFor(
                 // Set.copyOf here is where the member list stops being ordered: the sweep
                 // walks the members in whatever order the grouping gave them, and that
@@ -133,13 +126,18 @@ public final class ClusterAnchorPlacement {
                 anchors.add(carried);
                 continue;
             }
-            var axis = resolveClusterAxis(memberSystemIds, edgesByCellId, sites);
+            var axis = resolveClusterAxis(memberSystemIds, partition.edgesByCellId(), sites);
             var rings = spec.search().borderTrace().traceRings(
                 memberSystemIds,
-                edgesByCellId,
-                grouping);
+                partition.edgesByCellId(),
+                partition.grouping());
 
-            var search = searchClusterAnchor(subject, rings, siteBySystemId, axis, spec);
+            var search = searchClusterAnchor(
+                subject,
+                rings,
+                partition.siteBySystemId(),
+                axis,
+                spec);
 
             // Accumulated over the clusters actually swept, so a cluster the search bailed
             // out of early contributes the nothing it cost rather than its share of a

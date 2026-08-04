@@ -96,6 +96,12 @@ drawn-set change touched, and the cache discards what it holds instead of diffin
 They travel as one value because that consequence is shared, and because the reach
 doubles as the distance the diff above scans.
 
+[`RevisedCellGeometry`](RevisedCellGeometry.java) pairs the cells with the revision they stand at.
+Work derived from them and kept across rebuilds holds only while the cells behind it are the ones
+it was derived from, and the revision is how a later pass asks that without having kept the cells
+to compare. The two travel as one value because a pair handed over disagreeing reads as permission
+to reuse rather than as a fault.
+
 Systems that move are the exception: a system that rewrites its own position has no
 stable cell, and letting it clip its neighbours would drag their borders with it,
 so it is dropped from the site set rather than chased.

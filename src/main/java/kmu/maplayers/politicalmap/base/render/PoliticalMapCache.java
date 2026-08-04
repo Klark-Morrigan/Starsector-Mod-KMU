@@ -7,6 +7,7 @@ import kmlib.profiling.Timings;
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
+import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
@@ -58,10 +59,19 @@ import java.util.Objects;
 final class PoliticalMapCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapCache.class);
 
+    // The revision seed every half starts at, below any revision a live signal can report, so
+    // the first refresh of a session finds both halves stale and builds them from scratch.
+    private static final int UNBUILT_REVISION = -1;
+
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or lose
-    // access. Final because this whole cache is recreated per session, so it is never null once
-    // the cache exists - no lazy re-init as the old save-restored plugin needed.
-    private final CellGeometryCache geometryCache = new CellGeometryCache();
+    // access, paired with the revision it stands at. The cells themselves are the same object
+    // for the life of the cache - it is recreated per session, so they are never null once the
+    // cache exists - and only the revision beside them moves, which is why the pair is replaced
+    // rather than the cells. Held as the pair because the revision names those very cells:
+    // anything derived from them and reused across rebuilds is only sound while the two agree,
+    // so nothing may advance one and leave the other.
+    private RevisedCellGeometry cellGeometry =
+        new RevisedCellGeometry(new CellGeometryCache(), UNBUILT_REVISION);
 
     // The built draw lists plus the holding and style inputs an incremental re-shape needs.
     // Null until the first build this session; exactly one of this and borderStageOverlay is
@@ -85,13 +95,11 @@ final class PoliticalMapCache {
     // "show faction names" toggle is on.
     private final List<Label> factionLabels = new ArrayList<>();
 
-    // The revisions each half of the cache was built against. Geometry rebuilds when the
-    // reachable-system set changes or the seed inputs change (either reseeds every cell); the
-    // territories rebuild on a content change (settings) or whenever the geometry itself was
-    // rebuilt. The revisions start at -1 and the value fields at null, so the first refresh
-    // builds both halves.
-    private int lastGeometryRevision = -1;
-    private int lastContentRevision = -1;
+    // The revision the territories were built against. They rebuild on a content change
+    // (settings) or whenever the geometry itself was rebuilt; the geometry's own revision rides
+    // with the cells above. This starts at the unbuilt seed and the value fields at null, so the
+    // first refresh builds both halves.
+    private int lastContentRevision = UNBUILT_REVISION;
 
     // The seed inputs the cached cells were cut at, held as the pair for the same reason as the
     // toggles below: one value compare, and neither half can be advanced without the other.
@@ -150,9 +158,11 @@ final class PoliticalMapCache {
         standingAnchors.discardAnchors();
         territories = null;
         borderStageOverlay = null;
-        geometryCache.clearCachedCells();
-        lastGeometryRevision = -1;
-        lastContentRevision = -1;
+        // The cells are emptied and their revision returned to the unbuilt seed together, since
+        // cells nothing was cut into must not keep answering for the revision they were cut at.
+        cellGeometry.cells().clearCachedCells();
+        cellGeometry = new RevisedCellGeometry(cellGeometry.cells(), UNBUILT_REVISION);
+        lastContentRevision = UNBUILT_REVISION;
         lastSeedInputs = null;
         lastDevToggles = null;
         // Per-system staleness names systems of the sector being left, so it is dropped rather than
@@ -202,19 +212,21 @@ final class PoliticalMapCache {
         // systems seed a cell, so a flip must reseed the partition here rather than only restyle it
         // through the content revision below.
         var devToggles = PoliticalMapDevToggles.readFromLunaSettings();
-        if (geometryRevision != lastGeometryRevision
+        if (geometryRevision != cellGeometry.revision()
                 || !seedInputs.equals(lastSeedInputs)
                 || !devToggles.equals(lastDevToggles)) {
 
             // Transition trace: a stale cell or one left behind after an access change can be tied
             // to the revision step - or the seed inputs or toggle flip - that drove it.
             LOG.debug("Political map geometry stale; rebuilding from revision "
-                + lastGeometryRevision + " to " + geometryRevision
+                + cellGeometry.revision() + " to " + geometryRevision
                 + ", seedInputs " + lastSeedInputs + " to " + seedInputs
                 + ", devToggles " + lastDevToggles + " to " + devToggles);
 
             rebuildGeometry(seedInputs, devToggles);
-            lastGeometryRevision = geometryRevision;
+            // Re-paired the moment the cells are recut, so the revision handed to anything that
+            // reuses derived work always names the cells actually in hand.
+            cellGeometry = new RevisedCellGeometry(cellGeometry.cells(), geometryRevision);
             lastSeedInputs = seedInputs;
             lastDevToggles = devToggles;
             rebuiltCells = true;
@@ -227,7 +239,7 @@ final class PoliticalMapCache {
         // applyStalePoliticsUpdates.
 
         // Both views null means neither has been built this session, so the first frame forces the
-        // build even if the content revision happens to match its -1 seed.
+        // build even if the content revision happens to match its unbuilt seed.
         var contentRevision = computeContentRevision(view);
         if (rebuiltCells
                 || (territories == null && borderStageOverlay == null)
@@ -243,32 +255,29 @@ final class PoliticalMapCache {
             // none behind.
             if (KmuPoliticalMapSettings.shouldTraceBordersForDebug()) {
                 borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
-                    geometryCache,
+                    cellGeometry.cells(),
                     Global.getSector());
                 territories = null;
                 ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                     standingAnchors,
-                    geometryCache,
+                    cellGeometry,
                     Global.getSector(),
-                    view,
-                    lastGeometryRevision);
+                    view);
             } else {
                 territories = TerritoryBuilder.buildTerritories(
-                    geometryCache,
+                    cellGeometry.cells(),
                     Global.getSector(),
                     view);
                 borderStageOverlay = null;
-                // The revision the cached cells stand at is what the fit ran against, so it is
-                // the field that is handed over rather than the live signal read at the top -
-                // the two agree here, and only the field is true of the geometry in hand. The
-                // standing pair goes in whole, which is what lets the rebuild keep the
-                // placements whose clusters this pass has not moved.
+                // The cells go over carrying the revision they stand at rather than the live
+                // signal read at the top - the two agree here, and only the pair is true of the
+                // geometry in hand. The standing placements go in whole beside it, which is what
+                // lets the rebuild keep the ones whose clusters this pass has not moved.
                 ClusterAnchorsBuilder.rebuildClusterAnchors(
                     standingAnchors,
-                    geometryCache,
+                    cellGeometry,
                     Global.getSector(),
-                    ClusterLabelStylingSnapshot.resolveFrom(territories),
-                    lastGeometryRevision);
+                    ClusterLabelStylingSnapshot.resolveFrom(territories));
             }
 
             // The name labels are minted from the placements just rebuilt (empty when the names
@@ -306,8 +315,7 @@ final class PoliticalMapCache {
                 territories,
                 standingAnchors,
                 factionLabels,
-                geometryCache,
-                lastGeometryRevision);
+                cellGeometry);
         } else {
             MapLayerRefresh.drainStaleGroupingSystemIds();
         }
@@ -388,7 +396,7 @@ final class PoliticalMapCache {
             .getProfiler()
             .measure(
                 "politicalMap.updateGeometry",
-                () -> geometryCache.updateFromSector(
+                () -> cellGeometry.cells().updateFromSector(
                     Global.getSector(),
                     movingSystemIds,
                     seedInputs,

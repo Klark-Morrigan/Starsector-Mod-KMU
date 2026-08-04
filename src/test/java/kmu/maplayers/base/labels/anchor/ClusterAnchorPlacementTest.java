@@ -69,8 +69,10 @@ final class ClusterAnchorPlacementTest {
 
     // The anchors alone, for the geometry tests: they assert on where a label landed, not
     // on what finding it cost, so they read past the sweep's counts here rather than each
-    // unwrapping the fit. Offered nothing to carry over, so every case here fits for real -
-    // the reuse cases hand in a previous sweep's anchors themselves.
+    // unwrapping the fit. The partition is assembled here from the pieces each fixture spells
+    // out, so a case names its geometry rather than the value the sweep takes it as. Offered
+    // nothing to carry over, so every case here fits for real - the reuse cases hand in a
+    // previous sweep's anchors themselves.
     private static List<ClusterAnchor> computeAnchors(
             List<List<String>> clusters,
             Map<String, List<CellEdge>> edgesByCellId,
@@ -80,10 +82,7 @@ final class ClusterAnchorPlacementTest {
             ClusterLabelResolvers labelResolvers) {
 
         return ClusterAnchorPlacement.computeClusterAnchors(
-            clusters,
-            edgesByCellId,
-            siteBySystemId,
-            grouping,
+            new ClusterPartition(clusters, edgesByCellId, siteBySystemId, grouping),
             spec,
             labelResolvers,
             Map.of()).anchors();
@@ -825,10 +824,11 @@ final class ClusterAnchorPlacementTest {
             var standing = fitTheHorizontalPair(createLabelResolvers(slenderNameEstimators()));
 
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                List.of(List.of("A"), List.of("B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)),
+                new ClusterPartition(
+                    List.of(List.of("A"), List.of("B")),
+                    HORIZONTAL_PAIR_EDGES,
+                    HORIZONTAL_PAIR_SITES,
+                    grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY))),
                 createPairTuning(),
                 createLabelResolvers(slenderNameEstimators()),
                 indexByIdentity(standing));
@@ -902,10 +902,11 @@ final class ClusterAnchorPlacementTest {
                 .isEmpty();
 
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                List.of(List.of("A", "B", "C", "D")),
-                SQUARE_GRID_EDGES,
-                SQUARE_GRID_CENTERED_SITES,
-                SQUARE_GRID_GROUPING,
+                new ClusterPartition(
+                    List.of(List.of("A", "B", "C", "D")),
+                    SQUARE_GRID_EDGES,
+                    SQUARE_GRID_CENTERED_SITES,
+                    SQUARE_GRID_GROUPING),
                 tuning,
                 createLabelResolvers(owner -> new LabelLengthEstimatorFake(6.0, "Line", ONE_LINE)),
                 indexByIdentity(standing));
@@ -935,10 +936,11 @@ final class ClusterAnchorPlacementTest {
                 .isNull();
 
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                new ClusterPartition(
+                    List.of(List.of("A", "B")),
+                    HORIZONTAL_PAIR_EDGES,
+                    HORIZONTAL_PAIR_SITES,
+                    HORIZONTAL_PAIR_GROUPING),
                 tuning,
                 createLabelResolvers(slenderNameEstimators()),
                 indexByIdentity(standing));
@@ -967,10 +969,11 @@ final class ClusterAnchorPlacementTest {
             // was tuned with: a 3-wide fan resolves to 5 directions once the cluster's own
             // axis and the preferred slant join it, and each is swept at all 4 offsets.
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                new ClusterPartition(
+                    List.of(List.of("A", "B")),
+                    HORIZONTAL_PAIR_EDGES,
+                    HORIZONTAL_PAIR_SITES,
+                    HORIZONTAL_PAIR_GROUPING),
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()),
                 Map.of());
@@ -984,9 +987,11 @@ final class ClusterAnchorPlacementTest {
             // A skipped cluster costs nothing, so it must not carry a share of the tuning's
             // product either - the counts are what the sweep spent, not what it was sized for.
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                List.of(List.of("A")), Map.of(),
-                Map.of(),
-                SINGLE_SYSTEM_GROUPING,
+                new ClusterPartition(
+                    List.of(List.of("A")),
+                    Map.of(),
+                    Map.of(),
+                    SINGLE_SYSTEM_GROUPING),
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()),
                 Map.of());
@@ -1002,10 +1007,11 @@ final class ClusterAnchorPlacementTest {
             // fits outnumber the candidates. This is the level the fit's duration tracks,
             // and the reason the candidate count alone understates the cost.
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                new ClusterPartition(
+                    List.of(List.of("A", "B")),
+                    HORIZONTAL_PAIR_EDGES,
+                    HORIZONTAL_PAIR_SITES,
+                    HORIZONTAL_PAIR_GROUPING),
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()),
                 Map.of());
@@ -1327,10 +1333,11 @@ final class ClusterAnchorPlacementTest {
                 ClusterLabelResolvers labelResolvers) {
 
             return ClusterAnchorPlacement.computeClusterAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                new ClusterPartition(
+                    List.of(List.of("A", "B")),
+                    HORIZONTAL_PAIR_EDGES,
+                    HORIZONTAL_PAIR_SITES,
+                    HORIZONTAL_PAIR_GROUPING),
                 createPairTuning(),
                 labelResolvers,
                 indexByIdentity(standingAnchors));

@@ -71,9 +71,16 @@ collapsed placement fitted no box and so recorded no name to compare, and is alw
 What may be offered at all is the caller's decision, taken on the fingerprint: a mismatch offers
 nothing and the rebuild is total.
 
+What a layer has to cut before any name can be placed is one value as well:
+[`ClusterPartition`](anchor/ClusterPartition.java) - the contiguous clusters, plus the cell edges,
+sites and grouping they were cut from. The sweep reads all four against each other on every
+cluster, so a partition assembled from two passes would fit a name inside a border traced from
+cells that no longer group that way; as one value it cannot be handed over in halves.
+
 The search takes each cluster's name measurement and colour as one `ClusterLabelResolvers`, keyed
-off the key its members carry. That is the whole seam between a layer and this overlay: the layer
-decides who a key is and what it looks like, the search decides where its name goes. Both are
+off the key its members carry. Those two values are the whole seam between a layer and this
+overlay: the layer decides what it partitions on and who a key is, the search decides where its
+name goes. Both resolvers are
 resolved in one step into a [`ClusterLabelSubject`](anchor/ClusterLabelSubject.java) bound to the
 cluster's identity, so neither can be taken for a different owner than the other - and restyling a
 carried placement is a substitution rather than three parallel values to keep in step.

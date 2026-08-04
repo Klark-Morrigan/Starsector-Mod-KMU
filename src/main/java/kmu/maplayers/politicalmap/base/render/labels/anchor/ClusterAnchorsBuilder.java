@@ -6,13 +6,14 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.math.solving.Bisection;
 import kmlib.profiling.Timings;
 
-import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
+import kmu.maplayers.base.labels.anchor.ClusterPartition;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -100,19 +101,19 @@ public final class ClusterAnchorsBuilder {
     // states the rules of cannot be compared against a later rebuild's, and only this build knows
     // the tuning it read. That same pair is what came in, so the placements already standing can
     // be carried over for the clusters they still name rather than every one of them being
-    // searched again. The geometry the fit clips and trims against is the caller's, so the
-    // revision naming it is handed in rather than sampled.
+    // searched again. The cells the fit clips and trims against are the caller's, and they arrive
+    // carrying the revision that names them, so no path can fit against one reading of the
+    // geometry and label its placements with another.
     public static void rebuildClusterAnchors(
             StandingClusterAnchors standingAnchors,
-            CellGeometryCache geometryCache,
+            RevisedCellGeometry cellGeometry,
             SectorAPI sector,
-            ClusterLabelStylingSnapshot styling,
-            int geometryRevision) {
+            ClusterLabelStylingSnapshot styling) {
 
         // Read ahead of the gate rather than inside it, because the standing pair needs
         // labelling either way: a rebuild that fits nothing still leaves a list behind, and an
         // unlabelled one is indistinguishable from one fitted under rules that still hold.
-        var fitFingerprint = readFitFingerprint(geometryRevision);
+        var fitFingerprint = readFitFingerprint(cellGeometry.revision());
 
         // Indexed before this pass replaces the pair, since that is where the previous one
         // survives - the two move together, so there is no window where the list is emptied
@@ -134,12 +135,19 @@ public final class ClusterAnchorsBuilder {
         // carried for the per-holder colour. Under a filter that key is a synthetic spotlight
         // key, so the solid and contested clusters trace as their own territories exactly as
         // the fills do.
+        var cells = cellGeometry.cells();
         var ownerBySystemId = styling.holderBySystemId();
         var cellGrouping = DominantHolder.mapCellGrouping(
-            geometryCache.getSystemIdByCellId(),
+            cells.getSystemIdByCellId(),
             ownerBySystemId);
-        var clusters = SystemClusters.findClusters(
-            geometryCache.getCellEdgesByCellId(),
+
+        // The clusters and the cells they were cut from travel on as one value: the sweep reads
+        // all of it against itself per cluster, so a partition assembled from two passes would
+        // fit a name inside a border traced from cells that no longer group that way.
+        var partition = new ClusterPartition(
+            SystemClusters.findClusters(cells.getCellEdgesByCellId(), cellGrouping),
+            cells.getCellEdgesByCellId(),
+            cells.getSiteBySystemId(),
             cellGrouping);
 
         // The desaturation palette is handed in already resolved - off the production build's
@@ -166,10 +174,7 @@ public final class ClusterAnchorsBuilder {
         logFontToleranceChange(spec);
 
         var fit = ClusterAnchorPlacement.computeClusterAnchors(
-            clusters,
-            geometryCache.getCellEdgesByCellId(),
-            geometryCache.getSiteBySystemId(),
-            cellGrouping,
+            partition,
             spec,
             new ClusterLabelResolvers(
                 ClusterLabelStyling.newLabelColourResolver(
@@ -195,7 +200,7 @@ public final class ClusterAnchorsBuilder {
         // actually spent, many apiece, which is the level the duration tracks. Measured rather
         // than recomputed from the knobs here, so a sweep that bailed out early reads as cheap.
         LOG.debug("Political map cluster anchors fitted; clusters="
-            + clusters.size()
+            + partition.clusterMemberSystemIds().size()
             + " anchors=" + fit.anchors().size()
             + " directions="
             + ClusterAnchorPlacement.countCandidateDirections(spec.search().directionCount())
@@ -203,7 +208,7 @@ public final class ClusterAnchorsBuilder {
             + " offsets=" + spec.search().offsetCount()
             + " candidates=" + fit.candidateCount()
             + " bandFits=" + fit.bandFitCount()
-            + " keepOuts=" + geometryCache.getSiteBySystemId().size()
+            + " keepOuts=" + partition.siteBySystemId().size()
             + " took=" + Timings.formatMillis(System.nanoTime() - fitStart));
     }
 
@@ -215,17 +220,18 @@ public final class ClusterAnchorsBuilder {
     // placements whichever view built them.
     public static void rebuildClusterAnchorsFromSector(
             StandingClusterAnchors standingAnchors,
-            CellGeometryCache geometryCache,
+            RevisedCellGeometry cellGeometry,
             SectorAPI sector,
-            PoliticalMapView view,
-            int geometryRevision) {
+            PoliticalMapView view) {
 
         if (!KmuPoliticalMapSettings.getPoliticalMapShowClusterAnchors()) {
             // The economy scan is what the toggle is guarding, so it is skipped - but the
             // list it leaves empty still has to say what produced it, which costs a settings
             // read and no sector work at all. Emptying it and labelling it is the one write
             // the pair takes, so this path's skip cannot leave the two disagreeing.
-            standingAnchors.replaceAnchors(List.of(), readFitFingerprint(geometryRevision));
+            standingAnchors.replaceAnchors(
+                List.of(),
+                readFitFingerprint(cellGeometry.revision()));
             return;
         }
 
@@ -244,14 +250,13 @@ public final class ClusterAnchorsBuilder {
         // sector - so it recedes nothing and names no synthetic spotlight key.
         rebuildClusterAnchors(
             standingAnchors,
-            geometryCache,
+            cellGeometry,
             sector,
             new ClusterLabelStylingSnapshot(
                 SectorPolitics.resolveDominantHolderBySystemId(sector, grouping),
                 desaturationPalette,
                 new ViewGrouping(view, grouping),
-                FilterSnapshot.unfiltered()),
-            geometryRevision);
+                FilterSnapshot.unfiltered()));
     }
 
     // The standing placements a fit made now may carry over, filed under the cluster each of

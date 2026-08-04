@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
+import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
@@ -38,7 +39,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -100,6 +100,12 @@ final class IncrementalPoliticsRefreshTest {
         // would leave none: what a case reads off it is the label, which is the half this fold
         // can leave wrong.
         private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
+
+        // The cells the caller holds, paired with the revision they stand at. Built once per
+        // case so what a re-fit is handed can be read back as the caller's own pair rather than
+        // as a value that merely compares equal to it.
+        private final RevisedCellGeometry cellGeometry =
+            new RevisedCellGeometry(twoAdjacentCells(), GEOMETRY_REVISION);
 
         private MockedStatic<Global> globalMock;
         private MockedStatic<SectorPolitics> politicsMock;
@@ -324,10 +330,10 @@ final class IncrementalPoliticsRefreshTest {
 
         @Test
         void applyStalePoliticsUpdatesRefitsAgainstTheCallersGeometry() {
-            // The revision goes out as it came in because this path re-shapes cells within a
-            // partition it never recut, so the fit ran against the very geometry the caller
-            // named - and a re-fit reported against any other one would offer its placements
-            // to a later rebuild standing somewhere else.
+            // The caller's own cells-and-revision pair goes out as it came in, because this path
+            // re-shapes cells within a partition it never recut - so the fit ran against the very
+            // geometry the caller named, and a re-fit reported against any other one would offer
+            // its placements to a later rebuild standing somewhere else.
             var territories = ownedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
@@ -342,10 +348,9 @@ final class IncrementalPoliticsRefreshTest {
             anchorsMock.verify(
                 () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     any(),
+                    same(cellGeometry),
                     any(),
-                    any(),
-                    any(),
-                    eq(GEOMETRY_REVISION)));
+                    any()));
         }
 
         @Test
@@ -372,8 +377,7 @@ final class IncrementalPoliticsRefreshTest {
                     same(standingAnchors),
                     any(),
                     any(),
-                    any(),
-                    anyInt()));
+                    any()));
         }
 
         @Test
@@ -435,8 +439,7 @@ final class IncrementalPoliticsRefreshTest {
                 territories,
                 standingAnchors,
                 new ArrayList<Label>(),
-                twoAdjacentCells(),
-                GEOMETRY_REVISION);
+                cellGeometry);
         }
     }
 

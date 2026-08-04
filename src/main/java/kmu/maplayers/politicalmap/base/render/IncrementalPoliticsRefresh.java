@@ -8,6 +8,7 @@ import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeTarget;
+import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
@@ -61,14 +62,14 @@ final class IncrementalPoliticsRefresh {
     // a flip left alone are carried rather than searched again - so the record has to reach the
     // fit, and the fit leaves its own in the same pair. A frame that re-fits none touches
     // neither half, which is what makes the early returns below safe to take. The geometry
-    // revision is handed in because this path only ever re-shapes cells within a partition it
-    // did not recut, so the fit runs against the geometry the caller already holds a revision for.
+    // revision arrives paired with the cells it names, and goes back out to the fit that way,
+    // because this path only ever re-shapes cells within a partition it never recut - so what it
+    // re-fits is sound against the very geometry that revision speaks for.
     static void applyStalePoliticsUpdates(
             PoliticalMapTerritories territories,
             StandingClusterAnchors standingAnchors,
             List<Label> factionLabels,
-            CellGeometryCache geometryCache,
-            int geometryRevision) {
+            RevisedCellGeometry cellGeometry) {
 
         var staleSystemIds = MapLayerRefresh.drainStaleGroupingSystemIds();
         if (staleSystemIds.isEmpty()) {
@@ -76,9 +77,13 @@ final class IncrementalPoliticsRefresh {
         }
         KmuProfiling.getProfiler().measure("politicalMap.applyPoliticsUpdates", () -> {
             var sector = Global.getSector();
+            var geometryCache = cellGeometry.cells();
             var systemById = indexSystemsById(sector);
-            var cellsToReshape = new LinkedHashSet<String>();
-            var affectedFactionIds = new LinkedHashSet<String>();
+
+            // What the batch disturbed is accumulated as one value rather than two sets filled
+            // side by side: every flip owes both a re-shape and a territory rebuild, so recording
+            // one without the other is exactly the half-done redraw this fold has to avoid.
+            var disturbance = new HolderFlipDisturbance();
 
             // Re-derive every marked system first, so re-shaping below reads a fully
             // updated holder map even when two adjacent systems flipped in one batch.
@@ -89,10 +94,9 @@ final class IncrementalPoliticsRefresh {
                     sector,
                     systemById,
                     systemId,
-                    cellsToReshape,
-                    affectedFactionIds);
+                    disturbance);
             }
-            if (affectedFactionIds.isEmpty()) {
+            if (!disturbance.hasFlips()) {
                 // Every marked system resized without flipping its holder - nothing to
                 // redraw. Logged so an un-updated colour can be confirmed a no-op flip
                 // rather than a missed event.
@@ -100,7 +104,7 @@ final class IncrementalPoliticsRefresh {
                     + staleSystemIds.size());
                 return;
             }
-            for (var cellId : cellsToReshape) {
+            for (var cellId : disturbance.getCellIdsToReshape()) {
                 reshapeCellInPlace(territories, geometryCache, cellId);
             }
 
@@ -120,7 +124,7 @@ final class IncrementalPoliticsRefresh {
                     territories.getHolderBySystemId())
                 .groupCellIdsByOwner();
 
-            for (var factionId : affectedFactionIds) {
+            for (var factionId : disturbance.getAffectedFactionIds()) {
                 rebuildFactionTerritoryInPlace(
                     territories,
                     geometryCache,
@@ -140,10 +144,9 @@ final class IncrementalPoliticsRefresh {
             // cluster's name follows.
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCache,
+                cellGeometry,
                 sector,
-                ClusterLabelStylingSnapshot.resolveFrom(territories),
-                geometryRevision);
+                ClusterLabelStylingSnapshot.resolveFrom(territories));
 
             LabelsBuilder.rebuildLabels(
                 factionLabels,
@@ -152,24 +155,24 @@ final class IncrementalPoliticsRefresh {
 
             LOG.debug("Political map politics updated incrementally; stale="
                 + staleSystemIds.size()
-                + " reshapedCells=" + cellsToReshape.size()
-                + " rebuiltFactions=" + affectedFactionIds.size());
+                + " reshapedCells=" + disturbance.getCellIdsToReshape().size()
+                + " rebuiltFactions=" + disturbance.getAffectedFactionIds().size());
         });
     }
 
-    // Re-derives one system's holder and, when it actually changed, records the cells to
-    // re-shape (the system and its neighbours, whose edge against it flips between a
-    // same-faction seam and a national border) and the factions whose territory must
-    // rebuild (the old and new holder). A system with no cell seeds no drawing, so it is
-    // skipped: a resize changes holding over existing cells, never map membership.
+    // Re-derives one system's holder and, when it actually changed, records the flip against
+    // what this batch disturbed: the cells to re-shape (the system and its neighbours, whose
+    // edge against it flips between a same-faction seam and a national border) and the factions
+    // whose territory must rebuild (the old and the new holder). A system with no cell seeds no
+    // drawing, so it is skipped: a resize changes holding over existing cells, never map
+    // membership.
     private static void rederiveSystemHolder(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             SectorAPI sector,
             Map<String, StarSystemAPI> systemById,
             String systemId,
-            Set<String> cellsToReshape,
-            Set<String> affectedFactionIds) {
+            HolderFlipDisturbance disturbance) {
 
         if (!geometryCache.getCellEdgesByCellId().containsKey(systemId)) {
             return;
@@ -194,14 +197,11 @@ final class IncrementalPoliticsRefresh {
         } else {
             territories.getHolderBySystemId().put(systemId, newHolder);
         }
-        if (oldHolder != null) {
-            affectedFactionIds.add(oldHolder.factionId());
-        }
-        if (newHolder != null) {
-            affectedFactionIds.add(newHolder.factionId());
-        }
-        cellsToReshape.add(systemId);
-        cellsToReshape.addAll(neighbourSystemIdsOf(geometryCache, systemId));
+        disturbance.recordFlip(
+            systemId,
+            neighbourSystemIdsOf(geometryCache, systemId),
+            oldHolder,
+            newHolder);
     }
 
     // Indexes the sector's systems by id, so a stale system id resolves to its

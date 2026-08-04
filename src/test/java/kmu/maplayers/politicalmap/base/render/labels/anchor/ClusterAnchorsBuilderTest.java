@@ -9,6 +9,7 @@ import kmlib.starsector.ui.label.NameFitSpecification;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
+import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
@@ -185,6 +186,12 @@ final class ClusterAnchorsBuilderTest {
     private final CellGeometryCache geometryCacheMock = mock(CellGeometryCache.class);
     private final PoliticalMapView viewMock = mock(PoliticalMapView.class);
 
+    // The cells every case hands over, carrying the revision they stand at. Paired once because
+    // the two travel as one fact: a case that means to fit against geometry standing somewhere
+    // else builds its own pair, which is what makes that difference the thing the case is about.
+    private final RevisedCellGeometry cellGeometry =
+        new RevisedCellGeometry(geometryCacheMock, GEOMETRY_REVISION);
+
     // The pair the caller owns across rebuilds, standing at its never-fitted reading: no
     // placements and no rules recorded for them, which is what a session's first rebuild and one
     // after a discard both start from. Nothing is offered for reuse from that reading, so a case
@@ -268,7 +275,7 @@ final class ClusterAnchorsBuilderTest {
         void rebuildClusterAnchorsFitsOneLabelPerContiguousCluster() {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
                 unfilteredStyling(Map.of(
                     HELD_SYSTEM,
@@ -276,8 +283,7 @@ final class ClusterAnchorsBuilderTest {
                     NEIGHBOUR_SYSTEM,
                     HEGEMONY_HOLDER,
                     RIVAL_SYSTEM,
-                    TRITACHYON_HOLDER)),
-                GEOMETRY_REVISION);
+                    TRITACHYON_HOLDER)));
 
             // Two labels, not three: the two touching cells of one bloc are named once between
             // them, which is what makes a label read as naming a territory rather than a system.
@@ -289,7 +295,7 @@ final class ClusterAnchorsBuilderTest {
         void rebuildClusterAnchorsDrawsEachClusterInItsOwnBlocsShade() {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
                 unfilteredStyling(Map.of(
                     HELD_SYSTEM,
@@ -297,8 +303,7 @@ final class ClusterAnchorsBuilderTest {
                     NEIGHBOUR_SYSTEM,
                     HEGEMONY_HOLDER,
                     RIVAL_SYSTEM,
-                    TRITACHYON_HOLDER)),
-                GEOMETRY_REVISION);
+                    TRITACHYON_HOLDER)));
 
             // The clusters come back in first-seen cell order, so the fused pair leads and the
             // rival follows - each carrying the shade its own holder resolved to rather than one
@@ -316,7 +321,7 @@ final class ClusterAnchorsBuilderTest {
             // name draws in, so the two cannot drift apart while a spotlight is up.
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
                 new ClusterLabelStylingSnapshot(
                     Map.of(RIVAL_SYSTEM, TRITACHYON_HOLDER),
@@ -325,8 +330,7 @@ final class ClusterAnchorsBuilderTest {
                     new FilterSnapshot(
                         HEGEMONY,
                         new ElementStyleAdjustment(FULL_OPACITY, true),
-                        Set.of())),
-                GEOMETRY_REVISION);
+                        Set.of())));
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(Color.GREEN);
@@ -342,10 +346,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
-                GEOMETRY_REVISION);
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -359,10 +362,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
-                GEOMETRY_REVISION);
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -378,10 +380,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
-                GEOMETRY_REVISION);
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -395,10 +396,9 @@ final class ClusterAnchorsBuilderTest {
             // some later re-read of either.
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
-                GEOMETRY_REVISION);
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -420,10 +420,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                styling,
-                GEOMETRY_REVISION);
+                styling);
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
@@ -434,10 +433,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                styling,
-                GEOMETRY_REVISION);
+                styling);
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
@@ -458,19 +456,17 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                styling,
-                GEOMETRY_REVISION);
+                styling);
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                new RevisedCellGeometry(geometryCacheMock, MOVED_GEOMETRY_REVISION),
                 sectorMock,
-                styling,
-                MOVED_GEOMETRY_REVISION);
+                styling);
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isNotSameAs(firstPassAxis);
@@ -488,10 +484,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
-                GEOMETRY_REVISION);
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -519,10 +514,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                viewMock,
-                GEOMETRY_REVISION);
+                viewMock);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
@@ -540,10 +534,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                viewMock,
-                GEOMETRY_REVISION);
+                viewMock);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -559,10 +552,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                viewMock,
-                GEOMETRY_REVISION);
+                viewMock);
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -583,10 +575,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                viewMock,
-                GEOMETRY_REVISION);
+                viewMock);
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
@@ -597,10 +588,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                viewMock,
-                GEOMETRY_REVISION);
+                viewMock);
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
@@ -615,10 +605,9 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 standingAnchors,
-                geometryCacheMock,
+                cellGeometry,
                 sectorMock,
-                viewMock,
-                GEOMETRY_REVISION);
+                viewMock);
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
