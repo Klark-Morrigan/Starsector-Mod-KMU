@@ -95,12 +95,21 @@ painted in UI coordinates and its input claimed ahead of the screen.
 `SidebarRenderer` is a `CampaignUIRenderingListener` drawing in `renderInUICoordsAboveUIAndTooltips`
 - the only pass composited after the opaque core-UI screen, so the earlier passes are covered by the
 screen itself. It gates on the host, advances the collapse, offers the settled fold, resolves the
-placement, and hands off to KMLib's `TabPanelRenderer`.
+placement, steps the hover fades against it, and hands off to KMLib's `TabPanelRenderer`.
 
-The collapse advances off `System.nanoTime()`, not campaign time: these screens are open on a paused
-game where `advance()` does not tick, so a game-time delta would freeze a half-folded panel. The
-frame clock is zeroed whenever the panel is hidden, so a re-open advances by nothing rather than by
-the whole interval the screen was shut.
+The two animations run either side of the layout, which is why the frame's elapsed time is read once
+and spent on both: the fold has to advance *before* the placement, since it sizes it, and the hovers
+*after* it, since what the pointer is on - a tab, or the collapse handle - is resolved against the
+very placement being drawn rather than latched from the last pointer event. A latched hover goes
+stale whenever the panel moves under a still cursor, which the handle feels most: the panel folds out
+from under a still pointer and the notch stays lit for a handle no longer beneath it.
+
+Both advance off `System.nanoTime()`, not campaign time: these screens are open on a paused game
+where `advance()` does not tick, so a game-time delta would freeze a half-folded panel and a
+half-lit tab alike. The frame clock is zeroed whenever the panel is hidden, so a re-open advances by
+nothing rather than by the whole interval the screen was shut - and the hover fades are dropped with
+it, since a fade left part-way up has no elapsed time to wind down on and would open the next session
+showing the tail of a hover the player never saw begin.
 
 `SidebarInput` is a `CampaignInputListener` acting in `processCampaignInputPreCore` at priority
 1000, because a render pass cannot consume events; consuming pre-core stops a click reaching the
@@ -210,7 +219,9 @@ of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, ho
 `TabWash` per `TabWashState` (clicked, hotkeyed), the pulse lifting whichever look the tab has settled
 on. Hovering is a look rather than a lift because the resting and the selected tab meet at one shade
 under the pointer - the hovered shade is derived once from the selected look, so it cannot drift from
-it - and the selected tab's underline is what still marks the selection while it is hovered. The two
+it - and the selected tab's underline is what still marks the selection while it is hovered. A tab
+travels onto that shade rather than switching to it, over `HoverFade.DEFAULT_DURATION_SECONDS`; the
+fade itself is the controller's, so the paint pass is handed a look already blended. The two
 screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the
 paint pass does not read. Both faces are named through KMLib's `StarsectorFont` enum rather than by
 atlas basename.
@@ -220,9 +231,11 @@ sits below draw a line under the bracketed key, so a bare key reads as a mismatc
 above. The line is a quad the style places under the key's drawn box, not part of the measured
 display string, so adding it moves no tab.
 
-`style/SidebarPalettes` maps the player's `NotchChevronColourChoice` to the chevron's resting and
-hovered shades. It is kept out of the renderer so the "which colour does this choice mean" rules
-stay a pure lookup a test can pin, with no live GL or screen needed.
+`style/SidebarPalettes` maps the player's `NotchChevronColourChoice` to the chevron's resting and lit
+shades. It is kept out of the renderer so the "which colour does this choice mean" rules stay a pure
+lookup a test can pin, with no live GL or screen needed. The handle travels between those shades on
+the same fade the tabs use, so the gold choice - one colour passed twice - answers a hover by its
+accent wash alone while the panel-accent choice brightens the glyph with it.
 
 The border width, opacity, chevron colour, collapse seconds, and both anchors' paddings are LunaLib
 fields read through `kmu.settings.KmuMapLayerSettings`.
