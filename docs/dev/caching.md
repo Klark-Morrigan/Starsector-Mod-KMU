@@ -20,6 +20,7 @@ through.
   - [The overlay cache](#the-overlay-cache)
   - [Cell geometry](#cell-geometry)
   - [Territories and draw lists](#territories-and-draw-lists)
+  - [Cluster-label placements](#cluster-label-placements)
   - [Hover lookups](#hover-lookups)
   - [Sidebar picker lists](#sidebar-picker-lists)
   - [Per-rebuild memos](#per-rebuild-memos)
@@ -179,6 +180,28 @@ re-classifies a handful of cells against exactly the ownership and styles the fu
 build used, through the same builder primitives, so an incrementally-updated map is
 indistinguishable from a rebuilt one.
 
+### Cluster-label placements
+
+The one cache here that survives a rebuild rather than being replaced by it. Fitting a
+label box is a search over hundreds of candidate placements per cluster and dominates
+the rebuild, so a pass hands the standing placements back into the next one and each is
+carried over for the cluster it still names instead of being searched again.
+
+What makes that safe is two facts travelling with the list rather than any cluster being
+asked to notice a change:
+[`ClusterIdentity`](../../src/main/java/kmu/maplayers/base/labels/anchor/ClusterIdentity.java)
+on each placement says which cluster it was fitted to, so a split or a merge matches
+nothing and re-fits by construction, and
+[`AnchorFitFingerprint`](../../src/main/java/kmu/maplayers/base/labels/anchor/AnchorFitFingerprint.java)
+beside the list says what the whole pass ran under. The second is the one to keep in
+mind when adding an input: the keep-out sites every box is trimmed clear of are the
+*whole sector's*, so a change no membership reflects still moves every fit, and only the
+fingerprint can catch it. A mismatch discards the carry-over whole and the rebuild is
+total, which is what it was before any of this existed.
+
+The mechanics - what is re-resolved on a carried placement, and why a collapsed one is
+never carried - are [the overlay's own README](../../src/main/java/kmu/maplayers/base/labels/README.md).
+
 ### Hover lookups
 
 [`SystemClusterIndex`](../../src/main/java/kmu/maplayers/base/geometry/SystemClusterIndex.java)
@@ -217,7 +240,8 @@ with each other even when both lag the economy slightly.
 
 ### Per-rebuild memos
 
-Smaller memos live for one rebuild and die with it. `ClusterLabelStyling` resolves
+Smaller memos live for one rebuild and die with it - unlike the placements above,
+which are the one derived thing deliberately handed forward. `ClusterLabelStyling` resolves
 each bloc's style decision, label colour, and name estimator once per bloc id rather
 than once per cluster, since every cluster of a bloc shares one name, one shade, and
 one style - a bloc with a homeland and three colonies is asked four times and answers
@@ -244,7 +268,10 @@ Per frame, in increasing cost:
    territories rebuilt.
 3. **Content changed** (a setting, a sidebar toggle, a view's own live input) - the
    territories are rebuilt in full over the standing geometry. The cells are
-   untouched, since ownership and styling do not move a border.
+   untouched, since ownership and styling do not move a border. The label placements
+   are the exception to the "in full": they are matched against the standing ones and
+   only the clusters that actually moved are re-fitted, which is what keeps a filter
+   switch off the whole search.
 4. **Geometry changed** (the drawn set, a seed input, a reveal override) - the
    partition is reconciled, which forces a full territories rebuild after it.
 

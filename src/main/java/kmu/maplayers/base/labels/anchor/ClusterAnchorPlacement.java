@@ -14,7 +14,6 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -81,13 +80,24 @@ public final class ClusterAnchorPlacement {
      * the search rather than stamped on afterwards, so every path out - including the two that
      * collapse to a dot - names its cluster by construction.
      *
-     * @param clusters        each contiguous cluster's member system ids
-     * @param edgesByCellId   each cell's raw edges - the geometry lines are clipped against
-     * @param siteBySystemId  each system's world position, for the axis fit and the icon
-     *                        keep-outs
-     * @param grouping        which system each cell draws as and each system's owner
-     * @param spec            the search's whole tuning surface
-     * @param labelResolvers  the shade and the name measurement, both by owner
+     * <p>That naming is what lets a pass skip the search entirely for a cluster it has already
+     * been run for. Standing placements handed in under their identities are matched against
+     * this pass's clusters, and a match is carried over rather than re-searched - restyled to
+     * the shade its owner resolves to now, and only while the name it was sized against still
+     * wraps the same way. The caller decides what may be offered here at all: the tuning and
+     * the cell geometry each invalidate every placement at once rather than any one in
+     * particular, so a pass made under different rules hands in nothing and every cluster is
+     * fitted afresh.
+     *
+     * @param clusters         each contiguous cluster's member system ids
+     * @param edgesByCellId    each cell's raw edges - the geometry lines are clipped against
+     * @param siteBySystemId   each system's world position, for the axis fit and the icon
+     *                         keep-outs
+     * @param grouping         which system each cell draws as and each system's owner
+     * @param spec             the search's whole tuning surface
+     * @param labelResolvers   the shade and the name measurement, both by owner
+     * @param reusableAnchors  the standing placements a match may be carried over from, by the
+     *                         cluster each was fitted to; empty to fit every cluster afresh
      * @return one anchor per cluster with a site to fit, in cluster order, with what the
      *         sweep cost to produce them
      */
@@ -97,7 +107,8 @@ public final class ClusterAnchorPlacement {
             Map<String, double[]> siteBySystemId,
             CellGrouping grouping,
             LabelAnchorSpecification spec,
-            ClusterLabelResolvers labelResolvers) {
+            ClusterLabelResolvers labelResolvers,
+            Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
 
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         var candidateCount = 0;
@@ -109,23 +120,26 @@ public final class ClusterAnchorPlacement {
                 continue;
             }
             var owner = grouping.ownerBySystemId().get(memberSystemIds.get(0));
+            var subject = labelResolvers.resolveLabelSubjectFor(
+                // Set.copyOf here is where the member list stops being ordered: the sweep
+                // walks the members in whatever order the grouping gave them, and that
+                // order is not part of which cluster this is.
+                new ClusterIdentity(owner, Set.copyOf(memberSystemIds)));
+
+            var carried = carryOverAnchor(reusableAnchors.get(subject.identity()), subject);
+            if (carried != null) {
+                // A carried placement is the saving itself, so it contributes to neither
+                // count: no candidate was generated for it and no band was fitted.
+                anchors.add(carried);
+                continue;
+            }
             var axis = resolveClusterAxis(memberSystemIds, edgesByCellId, sites);
             var rings = spec.search().borderTrace().traceRings(
                 memberSystemIds,
                 edgesByCellId,
                 grouping);
 
-            var search = searchClusterAnchor(
-                // Set.copyOf here is where the member list stops being ordered: the sweep
-                // walks the members in whatever order the grouping gave them, and that
-                // order is not part of which cluster this is.
-                new ClusterIdentity(owner, Set.copyOf(memberSystemIds)),
-                rings,
-                siteBySystemId,
-                axis,
-                labelResolvers.resolveLabelColourOf(owner),
-                spec,
-                labelResolvers.resolveNameEstimatorOf(owner));
+            var search = searchClusterAnchor(subject, rings, siteBySystemId, axis, spec);
 
             // Accumulated over the clusters actually swept, so a cluster the search bailed
             // out of early contributes the nothing it cost rather than its share of a
@@ -135,6 +149,47 @@ public final class ClusterAnchorPlacement {
             bandFitCount += search.bandFitCount();
         }
         return new ClusterAnchorFit(anchors, candidateCount, bandFitCount);
+    }
+
+    // The standing placement for a cluster when it can stand as this pass's, restyled to the
+    // shade its owner resolves to now - or null when the cluster has to be searched again.
+    //
+    // Matching on identity has already settled the geometry: the same members over the same
+    // cells trace the same border rings and fit inside the same keep-outs, and everything that
+    // could move those without any membership changing is the caller's to rule out before
+    // offering a placement here at all. What is left is the one per-cluster input that is not
+    // geometry. The box was sized against the measured name at the line count that won, so it
+    // holds exactly while that wrap is unchanged - which is what stops a renamed bloc from
+    // drawing a box cut for the name it used to have.
+    //
+    // A collapsed placement is never carried. It fitted no box, so it recorded no measured
+    // name to check the current one against, and a name that has since grown shorter is
+    // precisely the case where a cluster that had no room now does.
+    private static ClusterAnchor carryOverAnchor(
+            ClusterAnchor standing,
+            ClusterLabelSubject subject) {
+
+        if (standing == null || standing.lineCount() == 0) {
+            return null;
+        }
+        var nameEstimator = subject.nameEstimator();
+
+        // Asked first because an empty wrap is ambiguous on its own: it is what a stand-in
+        // with no text behind it answers at every line count, and equally what a real name
+        // answers at a line count it has too few words to fill. The first is a measurement
+        // that has not moved, the second is a different measurement entirely, and comparing
+        // the wraps alone would read them alike - carrying a stand-in's box onto a name that
+        // cannot fill it. Whether the box's line count is still fillable at all separates
+        // them, and can only fail where the estimator changed, since a placement proved its
+        // own line count fillable by winning it.
+        if (!Double.isFinite(
+                nameEstimator.requiredLengthFor(standing.fontHeight(), standing.lineCount()))) {
+            return null;
+        }
+        if (!standing.nameLines().equals(nameEstimator.wrapIntoLines(standing.lineCount()))) {
+            return null;
+        }
+        return standing.copyWithColour(subject.colour());
     }
 
     // Searches one cluster's candidate lines and assembles its anchor as a fitted label
@@ -152,13 +207,11 @@ public final class ClusterAnchorPlacement {
     // With the unbiased toggle on, the box that wins on raw font height (no slope
     // penalty) rides along as the yellow diagnostic whenever the penalty moved the pick.
     private static ClusterSearch searchClusterAnchor(
-            ClusterIdentity identity,
+            ClusterLabelSubject subject,
             List<List<double[]>> rings,
             Map<String, double[]> siteBySystemId,
             PrincipalAxis axis,
-            Color colour,
-            LabelAnchorSpecification spec,
-            LabelLengthEstimator nameEstimator) {
+            LabelAnchorSpecification spec) {
 
         var centroidX = (float) axis.centroidX();
         var centroidY = (float) axis.centroidY();
@@ -168,10 +221,10 @@ public final class ClusterAnchorPlacement {
             // one dead end the search cannot work around, so only the dot can show.
             return new ClusterSearch(
                 new ClusterAnchor(
-                    identity,
+                    subject.identity(),
                     centroidX,
                     centroidY,
-                    colour,
+                    subject.colour(),
                     List.of(),
                     0f,
                     null,
@@ -183,7 +236,7 @@ public final class ClusterAnchorPlacement {
                 0);
         }
 
-        var fitter = newBoxFitter(spec, nameEstimator);
+        var fitter = newBoxFitter(spec, subject.nameEstimator());
         var icons = siteBySystemId.values();
         var slant = LabelSlantPreference.resolveFrom(axis, spec.scoring().maxSlantDegrees());
         var directions = buildCandidateDirections(axis, slant, spec.search().directionCount());
@@ -256,11 +309,11 @@ public final class ClusterAnchorPlacement {
 
             return new ClusterSearch(
                 new ClusterAnchor(
-                    identity,
+                    subject.identity(),
                     midX,
                     midY,
-                    colour,
-                    nameEstimator.wrapIntoLines(bestAccepted.lineCount()),
+                    subject.colour(),
+                    subject.nameEstimator().wrapIntoLines(bestAccepted.lineCount()),
                     (float) bestAccepted.fontHeight(),
                     accepted,
                     null, // Rejected axis.
@@ -277,10 +330,10 @@ public final class ClusterAnchorPlacement {
 
         return new ClusterSearch(
             new ClusterAnchor(
-                identity,
+                subject.identity(),
                 centroidX,
                 centroidY,
-                colour,
+                subject.colour(),
                 List.of(),
                 0f,
                 null,

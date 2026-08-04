@@ -84,4 +84,30 @@ public record ClusterAnchor(
     Segment unbiasedAxis,
     float thickness,
     int lineCount) {
+
+    /**
+     * This placement in a different shade, every fitted component left exactly as it was.
+     *
+     * <p>The shade is resolved afresh each pass and is no input to the fit - the search
+     * only carries it - so a placement that still describes its cluster can take a new one
+     * without its box being searched again. That is what a bloc which only changed
+     * appearance costs: one component replaced, and the geometry it already has.
+     *
+     * @param restyledColour the shade the name and its debug dot should draw in now
+     * @return a copy carrying that shade in place of this one's
+     */
+    public ClusterAnchor copyWithColour(Color restyledColour) {
+        return new ClusterAnchor(
+            identity,
+            anchorX,
+            anchorY,
+            restyledColour,
+            nameLines,
+            fontHeight,
+            acceptedAxis,
+            rejectedAxis,
+            unbiasedAxis,
+            thickness,
+            lineCount);
+    }
 }

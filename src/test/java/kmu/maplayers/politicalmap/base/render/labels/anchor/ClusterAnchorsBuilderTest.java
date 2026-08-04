@@ -158,6 +158,18 @@ final class ClusterAnchorsBuilderTest {
     private static final AnchorFitFingerprint FITTED_UNDER =
         new AnchorFitFingerprint(ANCHOR_SPECIFICATION, GEOMETRY_REVISION);
 
+    // What a caller holds before its first rebuild of a session, and after a discard: no
+    // previous pass, so nothing is offered for reuse and the fit is total. It is the default
+    // every case that is not about reuse runs under, so those cases read as the whole searches
+    // they were written as.
+    private static final AnchorFitFingerprint NOTHING_FITTED_YET = null;
+
+    // A rebuild standing at a different geometry revision, so the placements a pass left behind
+    // were made under rules that no longer hold. One int apart from FITTED_UNDER, since the
+    // claim is that any difference at all drops the whole carry-over rather than that this
+    // particular input is special.
+    private static final int MOVED_GEOMETRY_REVISION = GEOMETRY_REVISION + 1;
+
     private static final Map<String, List<CellEdge>> EDGES = orderedEdges();
     private static final Map<String, double[]> SITES = Map.of(
         HELD_SYSTEM, new double[] {1000, 1000},
@@ -248,6 +260,7 @@ final class ClusterAnchorsBuilderTest {
         void rebuildClusterAnchorsFitsOneLabelPerContiguousCluster() {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(
@@ -269,6 +282,7 @@ final class ClusterAnchorsBuilderTest {
         void rebuildClusterAnchorsDrawsEachClusterInItsOwnBlocsShade() {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(
@@ -296,6 +310,7 @@ final class ClusterAnchorsBuilderTest {
             // name draws in, so the two cannot drift apart while a spotlight is up.
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 new ClusterLabelStylingSnapshot(
@@ -322,6 +337,7 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
@@ -339,6 +355,7 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
@@ -358,6 +375,7 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
@@ -375,6 +393,7 @@ final class ClusterAnchorsBuilderTest {
             // later re-read of either.
             var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
@@ -382,6 +401,81 @@ final class ClusterAnchorsBuilderTest {
 
             assertThat(fittedUnder)
                 .isEqualTo(FITTED_UNDER);
+        }
+
+        @Test
+        void rebuildClusterAnchorsCarriesStandingPlacementsItFittedUnderTheSameRules() {
+            // The rebuild is the only place that knows both what it is about to fit under and
+            // what the list in front of it was fitted under, so it is where the carry-over is
+            // decided. Handed back its own previous answer over an unchanged sector, it must
+            // hand the placements themselves on rather than searching the same clusters again -
+            // the accepted line being the very object the first pass produced is what says so.
+            var styling = unfilteredStyling(Map.of(
+                HELD_SYSTEM,
+                HEGEMONY_HOLDER,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY_HOLDER));
+
+            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
+                anchors,
+                NOTHING_FITTED_YET,
+                geometryCacheMock,
+                sectorMock,
+                styling,
+                GEOMETRY_REVISION);
+
+            var firstPassAxis = anchors.get(0).acceptedAxis();
+
+            // Guarded, because two collapsed passes would both carry a null line and the
+            // identity assertion below would hold without anything having been carried.
+            assertThat(firstPassAxis)
+                .isNotNull();
+
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                anchors,
+                fittedUnder,
+                geometryCacheMock,
+                sectorMock,
+                styling,
+                GEOMETRY_REVISION);
+
+            assertThat(anchors.get(0).acceptedAxis())
+                .isSameAs(firstPassAxis);
+        }
+
+        @Test
+        void rebuildClusterAnchorsRefitsEveryClusterWhenTheRulesItFittedUnderMoved() {
+            // The keep-out sites every box is trimmed clear of are the whole sector's, so a
+            // recut of the cells moves fits no membership change would touch - and no cluster's
+            // identity can see that. The fingerprint is what catches it, and it drops the whole
+            // carry-over rather than any part of it, so a moved rule leaves the rebuild exactly
+            // as total as it was before reuse existed.
+            var styling = unfilteredStyling(Map.of(
+                HELD_SYSTEM,
+                HEGEMONY_HOLDER,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY_HOLDER));
+
+            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
+                anchors,
+                NOTHING_FITTED_YET,
+                geometryCacheMock,
+                sectorMock,
+                styling,
+                GEOMETRY_REVISION);
+
+            var firstPassAxis = anchors.get(0).acceptedAxis();
+
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                anchors,
+                fittedUnder,
+                geometryCacheMock,
+                sectorMock,
+                styling,
+                MOVED_GEOMETRY_REVISION);
+
+            assertThat(anchors.get(0).acceptedAxis())
+                .isNotSameAs(firstPassAxis);
         }
 
         @Test
@@ -393,6 +487,7 @@ final class ClusterAnchorsBuilderTest {
 
             var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
@@ -422,6 +517,7 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
@@ -443,6 +539,7 @@ final class ClusterAnchorsBuilderTest {
 
             ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
@@ -462,6 +559,7 @@ final class ClusterAnchorsBuilderTest {
 
             var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,
@@ -469,6 +567,46 @@ final class ClusterAnchorsBuilderTest {
 
             assertThat(fittedUnder)
                 .isEqualTo(FITTED_UNDER);
+        }
+
+        @Test
+        void rebuildClusterAnchorsFromSectorCarriesStandingPlacementsThroughToTheSharedFit() {
+            // This path delegates the fit, so it has to hand the caller's record down as well as
+            // hand the fit's answer back up. Dropping it on the way would leave the diagnostic
+            // view re-searching every cluster on every rebuild while the production view reuses -
+            // a difference nothing but the frame time would show.
+            stubAnchorOverlay(true);
+            stubSectorHolders(Map.of(
+                HELD_SYSTEM,
+                HEGEMONY_HOLDER,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY_HOLDER));
+
+            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                anchors,
+                NOTHING_FITTED_YET,
+                geometryCacheMock,
+                sectorMock,
+                viewMock,
+                GEOMETRY_REVISION);
+
+            var firstPassAxis = anchors.get(0).acceptedAxis();
+
+            // Guarded, because two collapsed passes would both carry a null line and the
+            // assertion below would hold without anything having been carried.
+            assertThat(firstPassAxis)
+                .isNotNull();
+
+            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                anchors,
+                fittedUnder,
+                geometryCacheMock,
+                sectorMock,
+                viewMock,
+                GEOMETRY_REVISION);
+
+            assertThat(anchors.get(0).acceptedAxis())
+                .isSameAs(firstPassAxis);
         }
 
         @Test
@@ -480,6 +618,7 @@ final class ClusterAnchorsBuilderTest {
 
             var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 anchors,
+                NOTHING_FITTED_YET,
                 geometryCacheMock,
                 sectorMock,
                 viewMock,

@@ -54,10 +54,23 @@ cluster's in particular. The layer's rebuild is what reads the live tuning, so i
 fingerprint back to whoever owns the placement list, on every path - including the ones that fit
 nothing, since an unlabelled list is indistinguishable from one made under rules that still hold.
 
+Together those two make a rebuild **partial**. The standing placements go back into
+`computeClusterAnchors` filed under the cluster each names, and a matched one is carried over
+instead of its cluster being searched again - so it costs no candidates and no band fits, which is
+the whole saving. Two things are re-checked on the way through, both of them per-cluster inputs
+that are not geometry: the shade is re-resolved (it is no input to the fit, so a bloc that only
+receded keeps its box and takes the new colour), and the wrap is compared against the name the box
+was measured for, so a renamed bloc re-fits rather than drawing a box cut for the old name. A
+collapsed placement fitted no box and so recorded no name to compare, and is always searched again.
+What may be offered at all is the caller's decision, taken on the fingerprint: a mismatch offers
+nothing and the rebuild is total.
+
 The search takes each cluster's name measurement and colour as one `ClusterLabelResolvers`, keyed
 off the key its members carry. That is the whole seam between a layer and this overlay: the layer
-decides who a key is and what it looks like, the search decides where its name goes. The two
-travel as one value because the placement resolves both for the same owner at the same point.
+decides who a key is and what it looks like, the search decides where its name goes. Both are
+resolved in one step into a [`ClusterLabelSubject`](anchor/ClusterLabelSubject.java) bound to the
+cluster's identity, so neither can be taken for a different owner than the other - and restyling a
+carried placement is a substitution rather than three parallel values to keep in step.
 
 ## Rendering: the name and its overlay
 

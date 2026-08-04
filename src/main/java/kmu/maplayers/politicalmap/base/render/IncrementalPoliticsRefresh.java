@@ -59,13 +59,16 @@ final class IncrementalPoliticsRefresh {
     //
     // Answers what the placements it re-fitted were made under, or null on the frames where
     // it re-fitted none - the standing placements and whatever the caller already recorded
-    // for them still describe each other, so there is nothing for it to overwrite. The
-    // geometry revision is handed in because this path only ever re-shapes cells within a
-    // partition it did not recut, so the fit runs against the geometry the caller already
-    // holds a revision for.
+    // for them still describe each other, so there is nothing for it to overwrite. That same
+    // record goes in with them, since a re-fit here is partial the same way a full rebuild's
+    // is: the placements of every cluster a flip left alone are carried rather than searched
+    // again. The geometry revision is handed in because this path only ever re-shapes cells
+    // within a partition it did not recut, so the fit runs against the geometry the caller
+    // already holds a revision for.
     static AnchorFitFingerprint applyStalePoliticsUpdates(
             PoliticalMapTerritories territories,
             List<ClusterAnchor> clusterAnchors,
+            AnchorFitFingerprint lastAnchorFitFingerprint,
             List<Label> factionLabels,
             CellGeometryCache geometryCache,
             int geometryRevision) {
@@ -129,13 +132,18 @@ final class IncrementalPoliticsRefresh {
             }
 
             // A flip can split or merge clusters (a lost system severs one, a gained
-            // one bridges two), so re-fit every placement off the updated holders rather than
-            // patching the touched factions' anchors alone. A no-op while both consumers are
-            // off. Runs only on a real flip - the early return above already left. The name
-            // labels then rebuild from the re-fitted placements so a renamed or relocated
+            // one bridges two), so the whole placement list is re-derived off the updated
+            // holders rather than the touched factions' anchors being patched alone. What that
+            // costs is settled by the matching inside the rebuild, not here: a cluster the flip
+            // re-partitioned no longer matches any standing placement and is searched again,
+            // while every cluster it left alone is carried over - which is why naming the
+            // affected factions would buy nothing this does not already get. A no-op while both
+            // consumers are off. Runs only on a real flip - the early return above already left.
+            // The name labels then rebuild from the placements so a renamed or relocated
             // cluster's name follows.
             var refittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
                 clusterAnchors,
+                lastAnchorFitFingerprint,
                 geometryCache,
                 sector,
                 ClusterLabelStylingSnapshot.resolveFrom(territories),

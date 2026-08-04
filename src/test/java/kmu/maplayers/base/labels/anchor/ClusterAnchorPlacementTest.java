@@ -69,7 +69,8 @@ final class ClusterAnchorPlacementTest {
 
     // The anchors alone, for the geometry tests: they assert on where a label landed, not
     // on what finding it cost, so they read past the sweep's counts here rather than each
-    // unwrapping the fit.
+    // unwrapping the fit. Offered nothing to carry over, so every case here fits for real -
+    // the reuse cases hand in a previous sweep's anchors themselves.
     private static List<ClusterAnchor> computeAnchors(
             List<List<String>> clusters,
             Map<String, List<CellEdge>> edgesByCellId,
@@ -84,7 +85,22 @@ final class ClusterAnchorPlacementTest {
             siteBySystemId,
             grouping,
             spec,
-            labelResolvers).anchors();
+            labelResolvers,
+            Map.of()).anchors();
+    }
+
+    // A previous sweep's anchors as the standing placements a later one is offered - filed
+    // under the cluster each of them names, which is the form the rebuild hands them in. Built
+    // from a real sweep rather than from hand-made anchors so the carried components are ones
+    // the search actually produced.
+    private static Map<ClusterIdentity, ClusterAnchor> indexByIdentity(
+            List<ClusterAnchor> anchors) {
+
+        var anchorByIdentity = new LinkedHashMap<ClusterIdentity, ClusterAnchor>();
+        for (var anchor : anchors) {
+            anchorByIdentity.put(anchor.identity(), anchor);
+        }
+        return anchorByIdentity;
     }
 
     @Nested
@@ -724,6 +740,214 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
+        void computeClusterAnchorsCarriesAStandingPlacementRatherThanSearchingItsClusterAgain() {
+            // The saving the partial re-fit exists for. A cluster a standing placement already
+            // names costs no candidates and no band fits at all - a search that happened to
+            // land in the same place would still have spent both, so the counts are what says
+            // the sweep skipped it rather than repeated it.
+            var standing = fitTheHorizontalPair(createLabelResolvers(slenderNameEstimators()));
+
+            var fit = refitTheHorizontalPairOffering(
+                standing,
+                createLabelResolvers(slenderNameEstimators()));
+
+            assertThat(fit.candidateCount())
+                .isEqualTo(0);
+            assertThat(fit.bandFitCount())
+                .isEqualTo(0);
+            assertThat(fit.anchors().get(0).acceptedAxis())
+                .isSameAs(standing.get(0).acceptedAxis());
+        }
+
+        @Test
+        void computeClusterAnchorsTakesTheFreshShadeOntoACarriedPlacement() {
+            // A bloc that only changed appearance - the recede a filter switch applies to every
+            // bloc but the spotlit one - keeps its geometry and takes the shade this pass
+            // resolved. Colour is no input to the fit, so it is the one component a carried
+            // placement is allowed to differ in, and the one it must.
+            var standing = fitTheHorizontalPair(createLabelResolvers(slenderNameEstimators()));
+
+            var fit = refitTheHorizontalPairOffering(
+                standing,
+                new ClusterLabelResolvers(owner -> Color.MAGENTA, slenderNameEstimators()));
+
+            assertThat(fit.anchors().get(0).colour())
+                .isEqualTo(Color.MAGENTA);
+            assertThat(fit.anchors().get(0).acceptedAxis())
+                .isSameAs(standing.get(0).acceptedAxis());
+            assertThat(fit.bandFitCount())
+                .isEqualTo(0);
+        }
+
+        @Test
+        void computeClusterAnchorsCarriesAPlacementWhoseNameStillWrapsTheSameWay() {
+            // The positive half of the wrap guard, run against a name with real lines rather
+            // than the stand-in: an unchanged name resolves to the lines the box was measured
+            // for, so the guard lets the placement through rather than making every named
+            // cluster re-fit.
+            var standing = fitTheHorizontalPair(
+                createLabelResolvers(namedSingleLineEstimators("Line")));
+
+            var fit = refitTheHorizontalPairOffering(
+                standing,
+                createLabelResolvers(namedSingleLineEstimators("Line")));
+
+            assertThat(fit.bandFitCount())
+                .isEqualTo(0);
+            assertThat(fit.anchors().get(0).nameLines())
+                .containsExactly("Line 1");
+        }
+
+        @Test
+        void computeClusterAnchorsRefitsARenamedClusterRatherThanCarryingItsOldBox() {
+            // Same owner, same members, different name: the identity matches, so nothing but
+            // the wrap can catch this. The box was sized against the name it was measured
+            // with, so carrying it would draw the new name in a box cut for the old one.
+            var standing = fitTheHorizontalPair(
+                createLabelResolvers(namedSingleLineEstimators("Line")));
+
+            var fit = refitTheHorizontalPairOffering(
+                standing,
+                createLabelResolvers(namedSingleLineEstimators("Renamed")));
+
+            assertThat(fit.bandFitCount())
+                .isGreaterThan(0);
+            assertThat(fit.anchors().get(0).nameLines())
+                .containsExactly("Renamed 1");
+        }
+
+        @Test
+        void computeClusterAnchorsRefitsAClusterThatSplitInTwo() {
+            // The fused pair's placement names both members, so neither half of the split
+            // matches it and both are searched afresh. Nothing here had to notice the split:
+            // the member set did, which is what makes the hazard structural rather than a
+            // check somebody has to remember.
+            var standing = fitTheHorizontalPair(createLabelResolvers(slenderNameEstimators()));
+
+            var fit = ClusterAnchorPlacement.computeClusterAnchors(
+                List.of(List.of("A"), List.of("B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)),
+                createPairTuning(),
+                createLabelResolvers(slenderNameEstimators()),
+                indexByIdentity(standing));
+
+            assertThat(fit.bandFitCount())
+                .isGreaterThan(0);
+            assertThat(fit.anchors())
+                .extracting(ClusterAnchor::identity)
+                .containsExactly(
+                    new ClusterIdentity("F", Set.of("A")),
+                    new ClusterIdentity("G", Set.of("B")));
+        }
+
+        @Test
+        void computeClusterAnchorsRefitsAClusterThatMergedIntoOne() {
+            // The other direction: two standing placements, each naming one cell, and a cluster
+            // that now spans both. A merged cluster's member set matches neither, so the pair
+            // it came from cannot be carried onto it - a box fitted inside one cell would sit
+            // in a corner of the territory it now names.
+            var standing = computeAnchors(
+                List.of(List.of("A"), List.of("B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)),
+                createPairTuning(),
+                createLabelResolvers(slenderNameEstimators()));
+
+            var fit = refitTheHorizontalPairOffering(
+                standing,
+                createLabelResolvers(slenderNameEstimators()));
+
+            assertThat(fit.bandFitCount())
+                .isGreaterThan(0);
+            assertThat(fit.anchors())
+                .extracting(ClusterAnchor::identity)
+                .containsExactly(HORIZONTAL_PAIR_IDENTITY);
+        }
+
+        @Test
+        void computeClusterAnchorsRefitsWhenTheNameCanNoLongerFillTheCarriedLineCount() {
+            // A stand-in has no text, so it wraps to nothing at every line count - and so does a
+            // real name at a line count it has too few words to fill. Comparing the wraps alone
+            // reads the two alike, which would carry a two-line stand-in box onto a name that
+            // can only make one line and then draw no name in it. The box's line count still
+            // being fillable is what tells them apart.
+            var tuning = bandSpec(
+                0.0,
+                0.0,
+                3,
+                3,
+                0.0,
+                2.0,
+                false,
+                false,
+                100.0,
+                1700.0,
+                2,
+                1.15);
+                
+            var standing = computeAnchors(
+                List.of(List.of("A", "B", "C", "D")),
+                SQUARE_GRID_EDGES,
+                SQUARE_GRID_CENTERED_SITES,
+                SQUARE_GRID_GROUPING,
+                tuning,
+                createLabelResolvers(aspectNameEstimators(6.0)));
+
+            assertThat(standing.get(0).lineCount())
+                .isEqualTo(2);
+            assertThat(standing.get(0).nameLines())
+                .isEmpty();
+
+            var fit = ClusterAnchorPlacement.computeClusterAnchors(
+                List.of(List.of("A", "B", "C", "D")),
+                SQUARE_GRID_EDGES,
+                SQUARE_GRID_CENTERED_SITES,
+                SQUARE_GRID_GROUPING,
+                tuning,
+                createLabelResolvers(owner -> new LabelLengthEstimatorFake(6.0, "Line", ONE_LINE)),
+                indexByIdentity(standing));
+
+            assertThat(fit.bandFitCount())
+                .isGreaterThan(0);
+            assertThat(fit.anchors().get(0).nameLines())
+                .containsExactly("Line 1");
+        }
+
+        @Test
+        void computeClusterAnchorsRefitsACollapsedPlacementRatherThanCarryingIt() {
+            // A collapse fitted no box, so it recorded no measured name for the wrap guard to
+            // read - and a name that has since grown shorter is exactly the case where a
+            // cluster that had no room now has some. Re-proving it is cheap; assuming it is
+            // unsound, so the dot is searched again like anything else that cannot be checked.
+            var tuning = spec(1000.0, 0.0, 3, 3, 0.0, 2.0);
+            var standing = computeAnchors(
+                List.of(List.of("A", "B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                tuning,
+                createLabelResolvers(slenderNameEstimators()));
+
+            assertThat(standing.get(0).acceptedAxis())
+                .isNull();
+
+            var fit = ClusterAnchorPlacement.computeClusterAnchors(
+                List.of(List.of("A", "B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                tuning,
+                createLabelResolvers(slenderNameEstimators()),
+                indexByIdentity(standing));
+
+            assertThat(fit.bandFitCount())
+                .isGreaterThan(0);
+        }
+
+        @Test
         void computeClusterAnchorsSkipsAClusterWhoseSitesAreAllMissing() {
             // A cluster whose members have no site (none in the site map) has no point
             // cloud to fit, so it contributes no anchor rather than an empty fit.
@@ -748,7 +972,8 @@ final class ClusterAnchorPlacementTest {
                 HORIZONTAL_PAIR_SITES,
                 HORIZONTAL_PAIR_GROUPING,
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
-                createLabelResolvers(slenderNameEstimators()));
+                createLabelResolvers(slenderNameEstimators()),
+                Map.of());
 
             assertThat(fit.candidateCount())
                 .isEqualTo(20);
@@ -763,7 +988,8 @@ final class ClusterAnchorPlacementTest {
                 Map.of(),
                 SINGLE_SYSTEM_GROUPING,
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
-                createLabelResolvers(slenderNameEstimators()));
+                createLabelResolvers(slenderNameEstimators()),
+                Map.of());
 
             assertThat(fit.candidateCount()).isEqualTo(0);
             assertThat(fit.bandFitCount()).isEqualTo(0);
@@ -781,7 +1007,8 @@ final class ClusterAnchorPlacementTest {
                 HORIZONTAL_PAIR_SITES,
                 HORIZONTAL_PAIR_GROUPING,
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
-                createLabelResolvers(slenderNameEstimators()));
+                createLabelResolvers(slenderNameEstimators()),
+                Map.of());
 
             assertThat(fit.bandFitCount())
                 .isGreaterThan(fit.candidateCount());
@@ -921,7 +1148,7 @@ final class ClusterAnchorPlacementTest {
             // font height behind the band - girth = fontHeight * (1 + spacing) for two
             // lines -
             // so the label draws exactly the block the fit sized.
-            var nameEstimatorFake = new LabelLengthEstimatorFake(6.0);
+            var nameEstimatorFake = new LabelLengthEstimatorFake(6.0, "Line", MAX_FILLABLE_LINES);
             var anchors = computeAnchors(
                 List.of(List.of("A", "B", "C", "D")),
                 SQUARE_GRID_EDGES,
@@ -1031,6 +1258,10 @@ final class ClusterAnchorPlacementTest {
         private static final double AMPLE_MAX_FONT_SIZE = 2000.0;
         private static final int ONE_LINE = 1;
         private static final double FLUSH_LINES = 1.0;
+
+        // Enough words behind the named fake to fill every line count these fixtures allow, so
+        // a case that is not about the unfillable answer never trips over it.
+        private static final int MAX_FILLABLE_LINES = 3;
         
         // A font-height tolerance far below the world units these fixtures assert their
         // geometry in, so how finely the sizing searched is never what a failure is about.
@@ -1054,6 +1285,55 @@ final class ClusterAnchorPlacementTest {
                 Function<String, LabelLengthEstimator> nameEstimators) {
 
             return new ClusterLabelResolvers(FIXED_LABEL_COLOURS, nameEstimators);
+        }
+
+        // A per-key resolver handing every cluster a one-line name under the given label, for
+        // the cases that turn on the wrap rather than on the geometry: two of these differing
+        // only in the label are two blocs differing only in what they are called.
+        private static Function<String, LabelLengthEstimator> namedSingleLineEstimators(
+                String lineLabel) {
+
+            return owner -> new LabelLengthEstimatorFake(SLENDER_ASPECT, lineLabel, ONE_LINE);
+        }
+
+        // The tuning both passes of a reuse case run under - the same slender single-line band
+        // the line-fit cases use, at one offset. A method rather than a constant because the
+        // knobs it reads are declared below it, where a field initialiser would capture them
+        // still unset.
+        private static LabelAnchorSpecification createPairTuning() {
+            return spec(0.0, 0.0, 3, 1, 0.0, 2.0);
+        }
+
+        // The horizontal pair fitted from scratch - the standing placements a reuse case then
+        // offers back. Named because every one of those cases runs the same fixture twice, and
+        // spelling the geometry out on both passes buries the one thing each case varies.
+        private static List<ClusterAnchor> fitTheHorizontalPair(
+                ClusterLabelResolvers labelResolvers) {
+
+            return computeAnchors(
+                List.of(List.of("A", "B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                createPairTuning(),
+                labelResolvers);
+        }
+
+        // The same pair swept again, offered what a previous pass left. The whole fit comes
+        // back rather than the anchors alone, since what a reuse case reads first is the cost:
+        // a carried placement is one the counts say was never searched.
+        private static ClusterAnchorPlacement.ClusterAnchorFit refitTheHorizontalPairOffering(
+                List<ClusterAnchor> standingAnchors,
+                ClusterLabelResolvers labelResolvers) {
+
+            return ClusterAnchorPlacement.computeClusterAnchors(
+                List.of(List.of("A", "B")),
+                HORIZONTAL_PAIR_EDGES,
+                HORIZONTAL_PAIR_SITES,
+                HORIZONTAL_PAIR_GROUPING,
+                createPairTuning(),
+                labelResolvers,
+                indexByIdentity(standingAnchors));
         }
 
         // A tuning with the fixture's border-trace pair baked in, sized for the slender
@@ -1244,20 +1524,36 @@ final class ClusterAnchorPlacementTest {
     /**
      * A name estimator with the aspect stand-in's arithmetic but real lines behind it,
      * so a test can pin that the anchor carries exactly the wrap the fit sized: line count
-     * {@code n} wraps to {@code "Line 1".."Line n"}.
+     * {@code n} wraps to {@code "<lineLabel> 1".."<lineLabel> n"}.
+     *
+     * <p>The label is a parameter because the wrap is also what a carried placement is
+     * re-checked against, so a case needs two of these that differ in nothing but the name
+     * they resolve to - the aspect being shared is what makes the name the only variable.
+     *
+     * <p>{@code maxFillableLineCount} reproduces the real measurement's answer for a name with
+     * fewer words than the lines asked for: an infinite required length and an empty wrap,
+     * which is the one shape a stand-in's empty wrap can be mistaken for.
      */
-    private record LabelLengthEstimatorFake(double aspect) implements LabelLengthEstimator {
+    private record LabelLengthEstimatorFake(
+        double aspect,
+        String lineLabel,
+        int maxFillableLineCount) implements LabelLengthEstimator {
 
         @Override
         public double requiredLengthFor(double lineHeight, int lineCount) {
-            return aspect * lineHeight / lineCount;
+            return lineCount > maxFillableLineCount
+                ? Double.POSITIVE_INFINITY
+                : aspect * lineHeight / lineCount;
         }
 
         @Override
         public List<String> wrapIntoLines(int lineCount) {
+            if (lineCount > maxFillableLineCount) {
+                return List.of();
+            }
             var lines = new ArrayList<String>(lineCount);
             for (var lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
-                lines.add("Line " + lineNumber);
+                lines.add(lineLabel + " " + lineNumber);
             }
             return lines;
         }

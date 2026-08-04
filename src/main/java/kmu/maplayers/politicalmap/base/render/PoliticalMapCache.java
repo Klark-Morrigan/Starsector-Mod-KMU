@@ -253,6 +253,7 @@ final class PoliticalMapCache {
                 territories = null;
                 lastAnchorFitFingerprint = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                     clusterAnchors,
+                    lastAnchorFitFingerprint,
                     geometryCache,
                     Global.getSector(),
                     view,
@@ -265,9 +266,12 @@ final class PoliticalMapCache {
                 borderStageOverlay = null;
                 // The revision the cached cells stand at is what the fit ran against, so it is
                 // the field that is handed over rather than the live signal read at the top -
-                // the two agree here, and only the field is true of the geometry in hand.
+                // the two agree here, and only the field is true of the geometry in hand. The
+                // standing record goes in beside the list it describes, which is what lets the
+                // rebuild keep the placements whose clusters this pass has not moved.
                 lastAnchorFitFingerprint = ClusterAnchorsBuilder.rebuildClusterAnchors(
                     clusterAnchors,
+                    lastAnchorFitFingerprint,
                     geometryCache,
                     Global.getSector(),
                     ClusterLabelStylingSnapshot.resolveFrom(territories),
@@ -308,6 +312,7 @@ final class PoliticalMapCache {
             var refittedUnder = IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
                 territories,
                 clusterAnchors,
+                lastAnchorFitFingerprint,
                 factionLabels,
                 geometryCache,
                 lastGeometryRevision);

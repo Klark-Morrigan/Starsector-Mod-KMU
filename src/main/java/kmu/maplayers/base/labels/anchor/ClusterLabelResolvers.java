@@ -24,13 +24,18 @@ public record ClusterLabelResolvers(
     Function<String, Color> labelColourByOwner,
     Function<String, LabelLengthEstimator> nameEstimatorByOwner) {
 
-    /** @return the shade the owner's name and debug dot draw in. */
-    public Color resolveLabelColourOf(String owner) {
-        return labelColourByOwner.apply(owner);
-    }
-
-    /** @return the name measurement the owner's label boxes are sized against. */
-    public LabelLengthEstimator resolveNameEstimatorOf(String owner) {
-        return nameEstimatorByOwner.apply(owner);
+    /**
+     * Resolves both answers for one cluster in a single step, off the owner its identity
+     * already names. Handing back the pair bound to that identity is what stops a caller
+     * from advancing one lookup without the other.
+     *
+     * @param identity the cluster whose owner both answers are looked up under
+     * @return the cluster with its shade and its name measurement attached
+     */
+    public ClusterLabelSubject resolveLabelSubjectFor(ClusterIdentity identity) {
+        return new ClusterLabelSubject(
+            identity,
+            labelColourByOwner.apply(identity.ownerKey()),
+            nameEstimatorByOwner.apply(identity.ownerKey()));
     }
 }

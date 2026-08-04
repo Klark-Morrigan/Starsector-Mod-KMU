@@ -87,6 +87,13 @@ final class IncrementalPoliticsRefreshTest {
     private static final AnchorFitFingerprint REFITTED_UNDER =
         new AnchorFitFingerprint(null, GEOMETRY_REVISION);
 
+    // What the caller's standing placements were fitted under, handed in so the re-fit can
+    // carry over the clusters this fold did not move. Distinct from what the re-fit answers,
+    // so a fold that passed its own output on - or nothing at all - reads as the mistake it is
+    // rather than agreeing with itself.
+    private static final AnchorFitFingerprint STANDING_FIT =
+        new AnchorFitFingerprint(null, GEOMETRY_REVISION - 1);
+
     @Nested
     class ApplyStalePoliticsUpdates {
 
@@ -154,6 +161,7 @@ final class IncrementalPoliticsRefreshTest {
             anchorsMock
                 .when(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     anyList(),
+                    any(),
                     any(),
                     any(),
                     any(),
@@ -345,7 +353,35 @@ final class IncrementalPoliticsRefreshTest {
                     any(),
                     any(),
                     any(),
+                    any(),
                     eq(GEOMETRY_REVISION)));
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesRefitsAgainstWhatTheStandingPlacementsWereFittedUnder() {
+            // The re-fit here is partial for the same reason a full rebuild's is: a flip
+            // re-partitions the clusters it touches and leaves the rest alone, so the record of
+            // what the standing list was fitted under has to reach the fit or every cluster is
+            // searched again. Passing the caller's record on is this fold's whole part in that.
+            var territories = ownedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY));
+
+            resolvesTo(FLIPPED_SYSTEM, ownerOf(TRITACHYON));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            anchorsMock.verify(
+                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    anyList(),
+                    eq(STANDING_FIT),
+                    any(),
+                    any(),
+                    any(),
+                    anyInt()));
         }
 
         @Test
@@ -396,11 +432,13 @@ final class IncrementalPoliticsRefreshTest {
 
         // Runs the refresh over the two-cell geometry every case shares, with the anchor and
         // label lists the plugin owns standing in as empty ones, and answers what it reported
-        // the placements were re-fitted under.
+        // the placements were re-fitted under. The placements go in with the record of what
+        // they were fitted under, as the caller holds the two.
         private AnchorFitFingerprint applyTo(PoliticalMapTerritories territories) {
             return IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
                 territories,
                 new ArrayList<ClusterAnchor>(),
+                STANDING_FIT,
                 new ArrayList<Label>(),
                 twoAdjacentCells(),
                 GEOMETRY_REVISION);
