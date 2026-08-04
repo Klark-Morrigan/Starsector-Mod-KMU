@@ -14,6 +14,7 @@ Part of Klark Morrigan's Utilities; see the
 ## Index
 
 - [The layers](#the-layers)
+- [The one-way arrow](#the-one-way-arrow)
 - [The vocabulary](#the-vocabulary)
 - [Two screens, two picks](#two-screens-two-picks)
 - [What is per screen](#what-is-per-screen)
@@ -31,6 +32,19 @@ what is and is not drawn and an empty map reads as a choice. The political map i
 untouched save resolves to, so the overlay is up the first time the sector map opens. Each tab also
 answers a LunaLib-rebindable shortcut, printed on the tab, on both screens the box draws; since the
 picks are per-screen, a shortcut moves only the tab of the screen it was pressed on.
+
+## The one-way arrow
+
+Nothing under `kmu.maplayers.base` may import `kmu.maplayers.politicalmap`. `base` is the
+substrate every layer sits on, so an import in that direction would make the framework depend on
+one of its own layers - and a second layer could then only be written by reaching into the first
+one's drawer, which is the state this tree was carved out of.
+
+The compiler is happy either way round, so the rule is a build gate rather than a review
+question: `enforcePackageLayering`, declared in [build.gradle](../../../../../build.gradle) and
+implemented in Common-Java. It reads `src/test` as well as `src/main`, since a suite reaching
+across for a real political type is the shortest way to make it compile and inverts the same
+arrow.
 
 ## The vocabulary
 

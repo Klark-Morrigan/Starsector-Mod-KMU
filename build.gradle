@@ -41,6 +41,17 @@ sourceSets {
     }
 }
 
+// The map-layer framework's headline rule, and the only convention in this mod a
+// reviewer could break by accident and still get a green build: `maplayers.base`
+// is the substrate every layer sits on, so an import pointing at the political
+// map inverts the dependency arrow the whole framework is defined by. It held for
+// the length of the carve because the people writing the code knew it; a gate is
+// what keeps it holding once someone who does not adds a file. The mechanism is
+// Common-Java's - see its README for the declaration's shape.
+enforcePackageLayering {
+    forbidImport under: 'kmu.maplayers.base', of: 'kmu.maplayers.politicalmap'
+}
+
 // On-demand Java formatting (`gradlew spotlessApply`). Applied after the source
 // sets above because the shared script formats
 // whichever ones exist when it runs; utils is KMU's own code, so it is styled
