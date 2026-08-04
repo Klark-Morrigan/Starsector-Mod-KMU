@@ -19,12 +19,17 @@ import java.util.List;
 /**
  * The shared shape of a map-layer cell tooltip: the hovered system's name on top, the layer's own
  * content below it, one look and one render call for both. A layer tooltip extends this and supplies
- * only its body, so the header, the box style, and the economy precondition are settled in one place
+ * only its content, so the header, the box style, and the economy precondition are settled in one place
  * and no two layers can drift on them - the difference between two layers' hovers is what they say
- * about the system, never how the box is framed or named. Which lines a body may be written in is
+ * about the system, never how the box is framed or named. Which lines that content may be written in is
  * {@link CellTooltipRows}.
  *
- * <p>Naming the system in the header is what makes the hover read as landing on a real system: a body
+ * <p>That content comes in two blocks parted by one break: the {@linkplain #buildTitleRows title
+ * lines}, drawn tight under the name as more of the heading, and the {@linkplain #buildBodyRows body}
+ * below the parting. A layer that has nothing to head its box with supplies only the body and gets the
+ * plain title-over-body box, which is the ordinary case.
+ *
+ * <p>Naming the system in the header is what makes the hover read as landing on a real system: content
  * that resolves to nothing at all draws no box, since a lone name repeats what the cursor already sits
  * on.
  *
@@ -52,23 +57,52 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         if (sector.getEconomy() == null) {
             return;
         }
+        var titleRows = buildTitleRows(sector, system);
         var bodyRows = buildBodyRows(sector, system);
         // Nothing to say about the system - drawing the name alone would only echo the cursor.
-        if (bodyRows.isEmpty()) {
+        if (titleRows.isEmpty() && bodyRows.isEmpty()) {
             return;
         }
         var rows = new ArrayList<TooltipRow>();
         rows.add(buildHeaderRow(system));
 
-        // The body opens a section under the title, so the name is parted from what follows it rather
-        // than reading as the first entry of the list. Set here, not by each layer: every cell tooltip
-        // is a title over a body, so the parting belongs to that shape rather than to any one body.
-        rows.add(bodyRows
-            .get(0)
-            .opensSection());
+        // Title lines follow the name at the plain inter-line gap, so they read as continuing the
+        // heading rather than opening anything.
+        rows.addAll(titleRows);
 
-        rows.addAll(bodyRows.subList(1, bodyRows.size()));
+        // The body opens a section under the title block, so the heading is parted from what follows it
+        // rather than reading as the first entry of the list. Set here, not by each layer: every cell
+        // tooltip is a title over a body, so the parting belongs to that shape rather than to any one
+        // body - and it lands on the body's first line wherever the title block happened to end, which
+        // is what keeps one parting in the box however many lines head it.
+        if (!bodyRows.isEmpty()) {
+            rows.add(bodyRows
+                .get(0)
+                .opensSection());
+
+            rows.addAll(bodyRows.subList(1, bodyRows.size()));
+        }
         CursorTooltipRenderer.render(rows, buildStyle());
+    }
+
+    /**
+     * Builds the lines belonging to this layer's title block, drawn tight under the system name and
+     * above the parting that opens the body. Called once per paint with the live sector, after the
+     * economy precondition holds; a layer with nothing to head its box with supplies none, which is the
+     * ordinary case.
+     *
+     * <p>Held apart from the body because the two are parted differently, and that parting is what a
+     * reader takes the shape of the box from: a title line is read off the system name as more of the
+     * heading, while the body below the break is the layer's findings about it. A verdict that settles
+     * the whole system - who holds it by decree - belongs above that break; a status, a score, or an
+     * entry of any list belongs below it.
+     *
+     * @param sector the live sector, whose economy the content may read
+     * @param system the star system under the cursor
+     * @return the title lines, or an empty list when the layer heads its box with the name alone
+     */
+    protected List<TooltipRow> buildTitleRows(SectorAPI sector, StarSystemAPI system) {
+        return List.of();
     }
 
     /**

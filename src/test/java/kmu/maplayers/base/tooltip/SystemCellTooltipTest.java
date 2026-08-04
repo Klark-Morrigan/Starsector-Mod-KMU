@@ -31,11 +31,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the shape this class settles for every layer that extends it - the part a body has no say in: the
- * hovered system is named above whatever the body says, that name reads as the box's heading and is drawn
- * in the game's heading face, the body's own opening line is parted from the name, and a body with nothing
- * to say draws no box at all rather than one echoing the cursor. Also that a sector with no live economy
- * is not read, since bodies assume one.
+ * Pins the shape this class settles for every layer that extends it - the part a layer has no say in: the
+ * hovered system is named above whatever the layer says, that name reads as the box's heading and is drawn
+ * in the game's heading face, any title lines follow the name unparted, the body's own opening line is
+ * parted from the heading above it wherever that heading ended, and a layer with nothing to say draws no
+ * box at all rather than one echoing the cursor. Also that a sector with no live economy is not read,
+ * since content assumes one.
  */
 final class SystemCellTooltipTest {
     
@@ -54,6 +55,14 @@ final class SystemCellTooltipTest {
     private static final int HEADER_ROW = 0;
     private static final int FIRST_BODY_ROW = 1;
     private static final int SECOND_BODY_ROW = 2;
+
+    // Where the lines sit once a title line heads the box: the name, that title line, then the body
+    // beneath the parting.
+    private static final int TITLE_ROW = 1;
+    private static final int TITLED_FIRST_BODY_ROW = 2;
+
+    // The whole of a box headed by a name and one title line, with no body under it.
+    private static final int HEADED_BOX_ROW_COUNT = 2;
 
     private MockedStatic<Misc> miscMock;
 
@@ -119,8 +128,8 @@ final class SystemCellTooltipTest {
         void renderForPartsTheBodysOpeningLineFromTheTitle() {
             // The parting is the shared shape's decision, not a body's: every cell tooltip is a title
             // over a body, so a layer cannot forget it and cannot double it on later lines.
-            var openingRow = buildBodyRow("The Hegemony");
-            var followingRow = buildBodyRow("Independent");
+            var openingRow = buildRow("The Hegemony");
+            var followingRow = buildRow("Independent");
             var tooltipFake = new SystemCellTooltipFake(List.of(openingRow, followingRow));
             var rows = captureDrawnBox(tooltipFake).rows();
 
@@ -128,6 +137,45 @@ final class SystemCellTooltipTest {
                 .isEqualTo(openingRow.opensSection());
             assertThat(rows.get(SECOND_BODY_ROW))
                 .isEqualTo(followingRow);
+        }
+
+        @Test
+        void renderForFollowsTheNameWithATitleLineUnparted() {
+            // A title line continues the heading, so nothing parts it from the name - which is the whole
+            // difference between heading the box with a line and opening the body with one.
+            var titleRow = buildRow("The Hegemony");
+            var tooltipFake = new SystemCellTooltipFake(
+                List.of(titleRow),
+                List.of(buildRow("Unpopulated")));
+
+            assertThat(captureDrawnBox(tooltipFake).rows().get(TITLE_ROW))
+                .isEqualTo(titleRow);
+        }
+
+        @Test
+        void renderForPartsTheBodyFromTheTitleLinesAboveIt() {
+            // The box's one parting falls under the whole heading block rather than at a fixed row, so a
+            // line added to the heading pushes the break down with it instead of being cut off above it.
+            var bodyRow = buildRow("Unpopulated");
+            var tooltipFake = new SystemCellTooltipFake(
+                List.of(buildRow("The Hegemony")),
+                List.of(bodyRow));
+
+            assertThat(captureDrawnBox(tooltipFake).rows().get(TITLED_FIRST_BODY_ROW))
+                .isEqualTo(bodyRow.opensSection());
+        }
+
+        @Test
+        void renderForDrawsATitleLineWithNoBodyUnderIt() {
+            // A heading line is content in its own right, so a layer with one and nothing else still
+            // draws - and with no body there is nothing for the parting to fall on.
+            var titleRow = buildRow("The Hegemony");
+            var tooltipFake = new SystemCellTooltipFake(List.of(titleRow), List.of());
+
+            var rows = captureDrawnBox(tooltipFake).rows();
+
+            assertThat(rows).hasSize(HEADED_BOX_ROW_COUNT);
+            assertThat(rows.get(TITLE_ROW)).isEqualTo(titleRow);
         }
 
         @Test
@@ -186,12 +234,12 @@ final class SystemCellTooltipTest {
     // rather than on what its body holds. Which line the body carries is this class's business only where
     // a test names its rows, so the ones that do not are spared inventing one.
     private static SystemCellTooltipFake buildTooltipSayingSomething() {
-        return new SystemCellTooltipFake(List.of(buildBodyRow("The Hegemony")));
+        return new SystemCellTooltipFake(List.of(buildRow("The Hegemony")));
     }
 
-    // A body line stated with its own colour, so the test's rows carry no dependency on which shade a
-    // row builder would resolve - what this class does with a body row is the subject, not how one reads.
-    private static TooltipRow buildBodyRow(String text) {
+    // A line stated with its own colour, so the test's rows carry no dependency on which shade a row
+    // builder would resolve - what this class does with a line is the subject, not how one reads.
+    private static TooltipRow buildRow(String text) {
         return TooltipRow.createRow(new TextSpan(text, Color.LIGHT_GRAY));
     }
 
@@ -222,15 +270,28 @@ final class SystemCellTooltipTest {
         CursorTooltipStyle style) {
     }
 
-    // A layer's tooltip standing in for any concrete one: it contributes the body it was handed and
-    // records whether it was asked for it, which is what the economy gate is observed through.
+    // A layer's tooltip standing in for any concrete one: it contributes the two blocks it was handed
+    // and records whether it was asked for the body, which is what the economy gate is observed through.
     private static final class SystemCellTooltipFake extends SystemCellTooltip {
         
+        private final List<TooltipRow> titleRows;
         private final List<TooltipRow> bodyRows;
         private boolean hasBuiltBodyRows;
 
+        // A layer heading its box with nothing, which is the ordinary case and the one most cases here
+        // are about - so only a case actually about the heading block names one.
         private SystemCellTooltipFake(List<TooltipRow> bodyRows) {
+            this(List.of(), bodyRows);
+        }
+
+        private SystemCellTooltipFake(List<TooltipRow> titleRows, List<TooltipRow> bodyRows) {
+            this.titleRows = titleRows;
             this.bodyRows = bodyRows;
+        }
+
+        @Override
+        protected List<TooltipRow> buildTitleRows(SectorAPI sector, StarSystemAPI system) {
+            return titleRows;
         }
 
         @Override

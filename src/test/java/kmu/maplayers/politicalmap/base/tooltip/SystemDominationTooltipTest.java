@@ -195,6 +195,72 @@ final class SystemDominationTooltipTest {
     }
 
     @Nested
+    class BuildTitleRows {
+
+        @Test
+        void buildTitleRowsHeadsTheBoxWithTheDecree() {
+            // Why the decree is a title line at all: it settles the system outright, so it is read off
+            // the system name rather than found among the findings - and the box's one parting falls
+            // beneath it rather than above it, which is what the two blocks being separate buys.
+            stubCoreFaction(CORE_FACTION);
+
+            assertThat(readLabelTexts(tooltip.buildTitleRows(sectorMock, systemMock)))
+                .containsExactly("The Hegemony");
+        }
+
+        @Test
+        void buildTitleRowsHeadsALivingSystemWithADecreeToo() {
+            // A decree holds whatever it is laid over, colony or not, so the line does not hang off a
+            // status line: a populated system under one is headed exactly as an empty one is.
+            stubCoreFaction(CORE_FACTION);
+            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+
+            assertThat(readLabelTexts(tooltip.buildTitleRows(sectorMock, systemMock)))
+                .containsExactly("The Hegemony");
+        }
+
+        @Test
+        void buildTitleRowsHeadsTheBoxWithNothingForASystemUnderNoDecree() {
+            // The ordinary case: no decree holds the system, so nothing heads the box - a line naming a
+            // core that does not exist would read as a claim the map never painted.
+            assertThat(tooltip.buildTitleRows(sectorMock, systemMock))
+                .isEmpty();
+        }
+
+        @Test
+        void buildTitleRowsAsksOnlyForTheDecreeRatherThanScoringEveryMarket() {
+            // Why the port carries two reads at all: this box never shows a claim score, so answering
+            // "is there a decree" through the full breakdown would charge the scoring of every market
+            // in the system to every faction and alliance hover. The fake derives one read from the
+            // other, so only a case watching the calls can hold this.
+            var claimBreakdownReaderMock = mock(ClaimBreakdownReader.class);
+
+            new SystemDominationTooltip(claimBreakdownReaderMock)
+                .buildTitleRows(sectorMock, systemMock);
+
+            verify(claimBreakdownReaderMock)
+                .readCoreFactionId(systemMock);
+            verify(claimBreakdownReaderMock, never())
+                .readBreakdown(any());
+        }
+
+        @Test
+        void buildTitleRowsHeadsTheBoxWithoutAskingTheActiveView() {
+            // A decree is a fact about the system rather than about how this layer is grouping it, so
+            // the line stands whether or not a view has been registered - unlike the ranking, which has
+            // nothing to rank under without one.
+            viewRegistryMock
+                .when(PoliticalMapViewRegistry::getActiveView)
+                .thenReturn(null);
+                
+            stubCoreFaction(CORE_FACTION);
+
+            assertThat(readLabelTexts(tooltip.buildTitleRows(sectorMock, systemMock)))
+                .containsExactly("The Hegemony");
+        }
+    }
+
+    @Nested
     class BuildBodyRows {
 
         @Test
@@ -391,73 +457,18 @@ final class SystemDominationTooltipTest {
 
         @Test
         void buildBodyRowsNamesWhatTheSystemIsBeforeWhoHoldsIt() {
-            // Whose space it is first, then what the ground itself is, then the contest over it. The
-            // decree leads because it settles the system outright: it is read straight off the system
-            // name above it rather than found under a status line that only says the place is empty.
+            // The ground first, then the contest over it, so the standings read as a contest over known
+            // ground rather than as the whole of what the box has to say. The decree is not among them:
+            // it heads the box instead, which the title cases above cover.
             stubStatusRow("Decivilised");
             stubCoreFaction(CORE_FACTION);
             stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
 
             assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
                 .containsExactly(
-                    "The Hegemony",
                     "Decivilised",
                     "Dominated by:",
                     "Rebel Pact");
-        }
-
-        @Test
-        void buildBodyRowsShowsTheCoreLineOnALivingSystemWithNoStatusToState() {
-            // A decree holds whatever it is laid over, colony or not, so the line does not hang off a
-            // status line above it: with nothing to say about the ground, the decree is simply the
-            // first thing under the system name.
-            stubCoreFaction(CORE_FACTION);
-            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
-
-            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
-                .containsExactly(
-                    "The Hegemony",
-                    "Dominated by:",
-                    "Rebel Pact");
-        }
-
-        @Test
-        void buildBodyRowsAsksOnlyForTheDecreeRatherThanScoringEveryMarket() {
-            // Why the port carries two reads at all: this box never shows a claim score, so answering
-            // "is there a decree" through the full breakdown would charge the scoring of every market
-            // in the system to every faction and alliance hover. The fake derives one read from the
-            // other, so only a case watching the calls can hold this.
-            var claimBreakdownReaderMock = mock(ClaimBreakdownReader.class);
-
-            new SystemDominationTooltip(claimBreakdownReaderMock)
-                .buildBodyRows(sectorMock, systemMock);
-
-            verify(claimBreakdownReaderMock)
-                .readCoreFactionId(systemMock);
-            verify(claimBreakdownReaderMock, never())
-                .readBreakdown(any());
-        }
-
-        @Test
-        void buildBodyRowsOmitsTheCoreLineForASystemUnderNoDecree() {
-            // The ordinary case: no decree holds the system, so nothing is said about one - a line
-            // naming a core that does not exist would read as a claim the map never painted.
-            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
-
-            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
-                .containsExactly("Dominated by:", "Rebel Pact");
-        }
-
-        @Test
-        void buildBodyRowsShowsTheCoreLineForASystemThatRanksEmpty() {
-            // What the decree line is for: a dead system a faction still holds by decree reads as
-            // claimed rather than as merely abandoned, which no ranking of its (absent) markets could
-            // ever have said.
-            stubStatusRow("Decivilised");
-            stubCoreFaction(CORE_FACTION);
-
-            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
-                .containsExactly("The Hegemony", "Decivilised");
         }
 
         @Test

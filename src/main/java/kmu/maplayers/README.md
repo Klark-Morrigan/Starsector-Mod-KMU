@@ -169,12 +169,15 @@ about what the overlay means.
   the box draws wherever the layer paints - the sector map and the intel screen's map visor alike -
   which is what the listener needs, being called for the whole campaign UI and never told which
   screen is up. `SystemCellTooltip` is
-  the shape a layer's box takes - the hovered system's name over the layer's own body, one look and
+  the shape a layer's box takes - the hovered system's name over the layer's own content, one look and
   one draw for both, the name set in the game's own title face over body-face rows so a KM hover
-  reads as part of the interface rather than as text laid over it. `CellTooltipRows` is the line
-  vocabulary a body is written in - a top-tier row, a nested one, a standalone one, a banner centred
-  under the title for a verdict about the whole system (its crest set among the words as a label run,
-  so crest and words centre as one), and the qualifier run any of them may end on - and
+  reads as part of the interface rather than as text laid over it. That content comes in two blocks
+  parted by the box's one break: title lines drawn tight under the name as more of the heading, and
+  the body below the parting - so a verdict that settles the whole system heads the box while a status
+  or an entry sits in it. `CellTooltipRows` is the line
+  vocabulary that content is written in - a top-tier row, a nested one, a standalone one, a banner
+  centred under the title (its crest set among the words as a label run, so crest and words centre as
+  one), and the qualifier run any of them may end on - and
   `CellTooltipSections` the heading that drops itself when the block under it resolves empty. So two
   layers' boxes differ only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
