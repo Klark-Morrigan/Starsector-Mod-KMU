@@ -39,6 +39,11 @@ reaching the same draw while the map's Starscape filter is on - that filter hard
 terrain, so the overlay needs a terrain the filter admits. Both halves dispatch to the same
 renderer over one set of draw lists, so nothing is built or held twice.
 
+`MapLayerTerrainInstaller` is what puts either of them into a loaded save and keeps exactly one of
+each there, and it owns the save-facing constants that go with that: the type ids the entities are
+built under, and the XStream aliases that let a save written under a former plugin name still load.
+The mod's entry point calls it and holds none of that knowledge itself.
+
 Both terrain rows are declared in `data/campaign/terrain.json`. Two class names from this package
 reach a save: the terrain plugin's, serialised with the entity holding it, and
 `SectorMapLayerStarscapeTerrain`'s - the starscape half is a mod-owned entity where the base half
