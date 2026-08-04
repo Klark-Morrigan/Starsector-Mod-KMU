@@ -99,7 +99,7 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         var rows = new ArrayList<TooltipRow>();
 
         // What the system is comes before who holds it, so the standings below read as a contest over
-        // known ground. The status resolves under this pass's reveal, the same filter the standings
+        // a known system. The status resolves under this pass's reveal, the same filter the standings
         // were ranked through, so the system counts as empty here exactly when the ranking found
         // nothing to show - the two can never describe different systems.
         SystemStatusRow

@@ -193,8 +193,8 @@ final class ClusterAnchorPlacementTest {
         // The partitions the sweeps run over, each composing one fixture's clusters with the
         // cells they were cut from. Named here rather than assembled at every case, so a case
         // states which geometry it is about instead of restating four pieces that only mean
-        // anything together - and two cases meaning to run over the same ground cannot drift
-        // into running over slightly different ground.
+        // anything together - and two cases meaning to run over the same layout cannot drift
+        // into running over a slightly different one.
 
         // The pair fused under one owner: the wide, short cluster most line-fit cases sweep.
         private static final ClusterPartition FUSED_PAIR_PARTITION = new ClusterPartition(
@@ -204,7 +204,7 @@ final class ClusterAnchorPlacementTest {
             HORIZONTAL_PAIR_GROUPING);
 
         // The same two cells split between two owners, so one sweep fits two clusters. Read
-        // against the fused pair above it is also the same ground before and after a split or a
+        // against the fused pair above it is also the same layout before and after a split or a
         // merge, which is what the carry-over cases turn on.
         private static final ClusterPartition SPLIT_PAIR_PARTITION = new ClusterPartition(
             List.of(List.of("A"), List.of("B")),

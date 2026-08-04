@@ -192,7 +192,7 @@ final class RecedePreferencesTest {
         @Test
         void allianceSetWritesItsOwnFrozenMuteKey() {
             // The alliance non-allied set writes a key distinct from the filter set's, so a flip in
-            // one never moves the other - the two grounds are tuned independently.
+            // one never moves the other - the two backdrops are tuned independently.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                     mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);

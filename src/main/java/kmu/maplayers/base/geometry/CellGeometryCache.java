@@ -50,7 +50,7 @@ import java.util.Set;
  * across it, which the render layer classifies into interior seams and cluster
  * boundaries once it knows each cell's owner, then shapes into merged cell clusters.
  * The cells are keyed by cell id and paired with the system each draws as: here every
- * cell is one star's own ground, so the two coincide, but the cells are a partition of
+ * cell is one star's own, so the two coincide, but the cells are a partition of
  * space rather than a list of stars and a consumer must not assume a cell's key names a
  * system. The cache holds the
  * raw cells rather than any shaped outline: the inset that leaves a cluster its
@@ -200,7 +200,7 @@ public final class CellGeometryCache {
             var edges = buildCellEdges(cell, allSiteIds);
             cellEdgesByCellId.put(id, edges);
 
-            // Every cell here is one star's own ground, so it is keyed by that star and
+            // Every cell here is one star's own, so it is keyed by that star and
             // draws as it.
             systemIdByCellId.put(id, id);
             recomputedCellEdges += edges.size();
@@ -236,7 +236,7 @@ public final class CellGeometryCache {
     /**
      * @return the system each cell draws as, keyed by cell id - the map a consumer resolves a
      *         cell's owner, palette, and name through. Every cell here is one star's own
-     *         ground, so each maps to the star it was seeded from. An unmodifiable live view.
+     *         cell, so each maps to the star it was seeded from. An unmodifiable live view.
      */
     public Map<String, String> getSystemIdByCellId() {
         return Collections.unmodifiableMap(systemIdByCellId);

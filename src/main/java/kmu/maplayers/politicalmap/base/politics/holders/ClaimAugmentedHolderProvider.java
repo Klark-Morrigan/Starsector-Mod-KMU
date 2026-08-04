@@ -22,7 +22,7 @@ import java.util.Map;
  * <p>Wraps the held-dominance {@link DefaultHolderProvider} rather than replacing it, so
  * the held resolve stays one concern and claims layer on top as a second. A system a bloc
  * claims but does not hold joins that bloc's holder map under the same key its held systems
- * carry - so the agnostic geometry fuses claimed and held ground into one bordered territory -
+ * carry - so the agnostic geometry fuses claimed and held cells into one bordered territory -
  * and is marked unfilled, so the fill split paints the held systems solid and leaves the
  * claimed ones empty inside that one frontier. On the alliances view the claimant folds to its
  * alliance bloc through the grouping exactly as a held system does, so an allied claimant's
@@ -32,7 +32,7 @@ import java.util.Map;
  * claims take its spotlight holder, so they fuse into its one territory and draw at full strength -
  * unfilled - beside its solid and hatched held systems; every other bloc's claims keep their plain
  * bloc holder, which the style layer mutes into the receded background exactly as it mutes that
- * bloc's held ground. So a claim always shares the fate of the territory it belongs to.
+ * bloc's held cells. So a claim always shares the fate of the territory it belongs to.
  */
 public final class ClaimAugmentedHolderProvider implements HolderProvider {
 
@@ -83,7 +83,7 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
     }
 
     // Adds each claimed system the held resolve left unowned to the holder map - so held and claimed
-    // ground of one bloc fuse into a single territory - and records it unfilled, so the fill split
+    // cells of one bloc fuse into a single territory - and records it unfilled, so the fill split
     // leaves it empty inside that shared border. A system already held keeps its held holder and
     // solid fill: the held signal is the stronger one. Pure over its inputs; the spotlight holder it
     // rekeys the selected bloc's own claims onto is resolved by the caller.

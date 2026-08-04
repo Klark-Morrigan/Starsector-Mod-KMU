@@ -104,7 +104,7 @@ public final class KmuPoliticalMapSettings {
         "kmu_politicalMapIndependentNameOpacity";
 
     // Decivilised and uninhabited (factionless) style fields. Neither has a colour choice:
-    // factionless ground has no faction palette to pick from, so it always paints in the
+    // a factionless cell has no faction palette to pick from, so it always paints in the
     // shared neutral colour and the opacity knobs alone decide what shows.
     private static final String DECIVILISED_BORDER_OPACITY_FIELD =
         "kmu_politicalMapDecivilisedBorderOpacity";
@@ -119,10 +119,10 @@ public final class KmuPoliticalMapSettings {
 
     // Recede styling settings (Map - Politics - Visuals tab): the two settings-screen knobs
     // supplementary to the sidebar recede toggles, shared across both recede sets (the spotlight
-    // filter's faded background and the alliances view's non-allied ground). The muted-opacity
+    // filter's faded backdrop and the alliances view's non-allied blocs). The muted-opacity
     // modifier is how far Mute dims a receded bloc's borders, fills, and name as a fraction of
     // normal opacity; the desaturation darkening is how far a desaturated bloc's uniform
-    // Independent-based grey is sunk toward black, so the receded ground reads behind genuine
+    // Independent-based grey is sunk toward black, so the receded fills read behind genuine
     // independent-held space. The toggles themselves are sidebar-only per-save choices (sector
     // memory), not LunaLib fields, since every LunaLib field would render on a settings tab.
     private static final String ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD =
@@ -141,7 +141,7 @@ public final class KmuPoliticalMapSettings {
 
     // Hover highlight styling (Map - Politics - Visuals tab): what the halo around the hovered
     // territory's frontier and the wash over the one hovered cell look like, both drawn in the
-    // hovered ground's own palette colour. Whether they draw at all is the hover tiers above; these
+    // hovered cell's own palette colour. Whether they draw at all is the hover tiers above; these
     // shape them. The halo is a stack of strokes, so it takes a widest-layer width, an
     // innermost-layer opacity, a layer count, and a pulse (strength plus period); the wash
     // takes a fill opacity and its own outline opacity and width, since an interior cell reads
@@ -338,7 +338,7 @@ public final class KmuPoliticalMapSettings {
     private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.35;
     private static final double DEFAULT_DECIVILISED_BORDER_WIDTH = 3.0;
 
-    // A faint wash by default: a dead colony is real ground, so it fills rather than reading
+    // A faint wash by default: a dead colony was really settled, so it fills rather than reading
     // as a bare ring, but stays well behind a living faction's fill (0.4) and independent
     // space's (0.2 at full colour) since nothing holds it. Mirrors the CSV row's defaultValue.
     private static final double DEFAULT_DECIVILISED_FILL_OPACITY = 0.2;
@@ -359,7 +359,7 @@ public final class KmuPoliticalMapSettings {
     private static final boolean DEFAULT_LAYER_HOVER_EFFECTS_ENABLED = true;
     private static final boolean DEFAULT_LAYER_HOVER_TOOLTIP_ENABLED = true;
 
-    // Hover-highlight knobs, mirroring the CSV defaults: the hovered ground's own bright
+    // Hover-highlight knobs, mirroring the CSV defaults: the hovered cell's own bright
     // shade, a four-layer halo peaking at half alpha and fading out by 14 pixels with a slow
     // quarter-depth breath, and a cell wash of a little over a third alpha under a crisp
     // near-opaque trace. Tuned to sit over the fills without swamping them - the fills
@@ -664,7 +664,7 @@ public final class KmuPoliticalMapSettings {
 
     /**
      * @return the outline opacity for decivilised systems, 0..1; 0 hides the outline,
-     *         since the neutral colour is the only shade factionless ground has
+     *         since the neutral colour is the only shade a factionless cell has
      */
     public static double getDecivilisedBorderOpacity() {
         return KmuLunaSettings.readDouble(
@@ -1044,7 +1044,7 @@ public final class KmuPoliticalMapSettings {
     }
 
     /**
-     * @return which palette colour of the ground under the cursor the hover halo and cell wash
+     * @return which palette colour of the cell under the cursor the hover halo and cell wash
      *         both draw in; the primary (bright) colour by default. Turning the highlight off is
      *         the enable toggle's job, not a colour choice
      */

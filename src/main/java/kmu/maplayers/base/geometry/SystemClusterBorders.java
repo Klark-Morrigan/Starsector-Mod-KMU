@@ -169,7 +169,7 @@ public final class SystemClusterBorders {
         // A coincident neighbour's edge stays on the raw cell border, so the cluster traced
         // from the other side lands on the same line and the two abut with no channel
         // between them. Only an edge naming a system can be coincident: a reach bound has
-        // no neighbour to be carved away from, and a same-ground cut is no boundary at
+        // no neighbour to be carved away from, and a same-cell cut is no boundary at
         // all.
         if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
                 && coincidentNeighbourSystemIds.contains(acrossSystem.systemId())) {

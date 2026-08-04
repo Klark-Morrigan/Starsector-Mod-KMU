@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mockStatic;
  * Pins how the political-map settings fold into one theme: each owned category threads its
  * eight settings into the matching {@link CategoryStyle} slots (a swapped fill/outer/inner or
  * opacity/width would show here), a factionless category collapses to neutral-colour elements
- * with no colour choice - decivilised ground a fill plus an outline, uninhabited ground an
+ * with no colour choice - a decivilised cell a fill plus an outline, an uninhabited cell an
  * outline whose on/off is the sidebar toggle - the {@link GlobalStyle} global tier gathers the
  * hatch, smoothing, and desaturation knobs, and {@code readRenderStyle} carries all four
  * categories plus the global tier as one snapshot.
@@ -159,7 +159,7 @@ final class RenderStyleReaderTest {
                 var style = RenderStyleReader.readDecivilisedStyle();
 
                 // Both drawn elements route through a PRIMARY palette slot (which resolves to
-                // the neutral colour for factionless ground), with only the inner seam off -
+                // the neutral colour for a factionless cell), with only the inner seam off -
                 // and each takes its own opacity, so a swapped pair would show as a value swap.
                 assertThat(style).isEqualTo(new CategoryStyle(
                     new ElementStyle(
@@ -190,7 +190,7 @@ final class RenderStyleReaderTest {
 
                 var style = RenderStyleReader.readDecivilisedStyle();
 
-                // The fill opacity is the fill's only on/off - factionless ground has no colour
+                // The fill opacity is the fill's only on/off - a factionless cell has no colour
                 // choice to turn off - so zero has to read as "not drawn" all the way down.
                 assertThat(style.fill().isDrawn()).isFalse();
                 assertThat(style.outer().isDrawn()).isTrue();

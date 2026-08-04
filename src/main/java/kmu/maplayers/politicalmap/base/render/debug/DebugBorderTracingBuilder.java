@@ -147,7 +147,7 @@ public final class DebugBorderTracingBuilder {
                 continue;
             }
             // A factionless cell resolves its decivilised/uninhabited style through the system
-            // it draws as; a cell with no system of its own is uninhabited ground.
+            // it draws as; a cell with no system of its own is uninhabited.
             var drawnSystemId = cellGrouping.resolveDrawnSystemIdOf(entry.getKey());
             var style = renderStyle.categoryStyle(FactionlessStyleResolver.resolveCategoryOf(
                 decivilisedSystemIds,

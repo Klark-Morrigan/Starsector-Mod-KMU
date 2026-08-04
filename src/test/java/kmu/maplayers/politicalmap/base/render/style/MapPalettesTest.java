@@ -23,8 +23,8 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the shared palette resolution both the fills and the cluster-name labels read: the
  * palette-colour pick that maps a player's colour choice to a palette shade, the holder-shade
- * pick that falls back to neutral for unowned ground, the neutral pair ownerless ground draws
- * in, the effective-palette swap a receding piece of ground takes, and the desaturation-palette
+ * pick that falls back to neutral for an unowned cell, the neutral pair an ownerless cell draws
+ * in, the effective-palette swap a receding cell takes, and the desaturation-palette
  * resolver it recolours through.
  */
 final class MapPalettesTest {
@@ -85,7 +85,7 @@ final class MapPalettesTest {
 
         @Test
         void resolveNeutralPaletteFillsBothSlotsWithTheOneColour() {
-            // Ownerless ground has no palette to pick a slot from, so both slots answer the
+            // An ownerless cell has no palette to pick a slot from, so both slots answer the
             // same colour and whichever slot an element names paints neutral.
             var neutral = MapPalettes.resolveNeutralPalette(Color.GRAY);
 
@@ -118,7 +118,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void pickHolderPaletteColourFallsBackToTheNeutralShadeForUnownedGround() {
+        void pickHolderPaletteColourFallsBackToTheNeutralShadeForAnUnownedCell() {
             // A factionless system has no palette, so both shades resolve neutral - the same
             // substitution its own cell outline draws under.
             assertThat(MapPalettes.pickHolderPaletteColour(
@@ -134,7 +134,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void pickHolderPaletteColourReturnsNullForNoColourWhoeverHoldsTheGround() {
+        void pickHolderPaletteColourReturnsNullForNoColourWhoeverHoldsTheCell() {
             assertThat(MapPalettes.pickHolderPaletteColour(
                     null,
                     OWNER,
@@ -187,7 +187,7 @@ final class MapPalettesTest {
 
         @Test
         void resolveEffectivePaletteSwapsUnownedNeutralShadesForThePassPaletteWhenItDesaturates() {
-            // Ground with no holder recolours by the same rule: a receding decivilised cell leaves
+            // A cell with no holder recolours by the same rule: a receding decivilised cell leaves
             // its neutral pair for the desaturation palette rather than staying neutral.
             var palette = MapPalettes.resolveEffectivePalette(
                 new ElementStyleAdjustment(1.0, true),
@@ -232,7 +232,7 @@ final class MapPalettesTest {
 
             var palette = MapPalettes.resolveDesaturationPalette(sectorMock, DARKENING_STRENGTH);
 
-            // The Independent pair, sunk toward black by the strength so the receded ground reads
+            // The Independent pair, sunk toward black by the strength so the receded fills read
             // behind genuine independent-held space rather than as it.
             assertThat(palette)
                 .isEqualTo(new FactionPalette(

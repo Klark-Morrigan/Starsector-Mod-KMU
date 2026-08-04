@@ -75,10 +75,10 @@ public sealed interface TracedFill {
     }
 
     /**
-     * The fill of an owner whose ground does not all fill solid: the solid and hatched states
+     * The fill of an owner whose members do not all fill solid: the solid and hatched states
      * traced as their own clusters across the whole holding, cut to a body when one is named.
      *
-     * <p>The unfilled state is deliberately absent - it holds ground for a boundary and a label
+     * <p>The unfilled state is deliberately absent - it holds its place for a boundary and a label
      * and paints nothing, so there is no geometry to carry for it.
      *
      * @param solidRings        the solid state's traced rings, empty when no member is solid
@@ -97,7 +97,7 @@ public sealed interface TracedFill {
         public ClusterFill buildFillFor(RingRegion clusterRegion) {
             var clusterRings = clusterRegion.toRings();
 
-            // The hatched ground is tessellated before the clock starts, so what is timed is the
+            // The hatched fill is tessellated before the clock starts, so what is timed is the
             // clip and merge alone - the part a joining or a tolerance changes. Tessellating costs
             // the same either way, and is much the larger of the two.
             var hatchedTriangles = clipToCluster(hatchedRings, clusterRings);

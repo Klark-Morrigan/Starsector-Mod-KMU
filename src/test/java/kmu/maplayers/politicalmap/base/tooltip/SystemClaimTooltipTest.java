@@ -359,7 +359,7 @@ final class SystemClaimTooltipTest {
 
         @Test
         void buildBodyRowsStatesTheClaimEvenForASystemNobodyIsPresentIn() {
-            // The claim section is unconditional: a hover over dead ground still answers the question
+            // The claim section is unconditional: a hover over a dead system still answers the question
             // the layer poses, rather than drawing a box the player has to interpret the absence of.
             stubBreakdown(SystemClaimBreakdown.NONE);
 
@@ -370,7 +370,7 @@ final class SystemClaimTooltipTest {
         @Test
         void buildBodyRowsNamesTheSystemsStatusBeforeItsClaim() {
             // A dead system names its state first, so the claim below reads as a hold over empty
-            // ground rather than over a colony.
+            // system rather than over a colony.
             var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
 
             statusRowMock

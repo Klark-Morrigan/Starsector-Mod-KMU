@@ -3,7 +3,7 @@ package kmu.maplayers.base.refresh;
 /**
  * One coarse thing that can go stale under a map layer, and the key {@link MapLayerRefresh}
  * holds its revision counter under. The board declares only that a layer raises <em>some</em>
- * named set: what the changes actually are - the ground moved, the styling moved, who is allied
+ * named set: what the changes actually are - the cells moved, the styling moved, who is allied
  * with whom moved - is the vocabulary of the layer watching them, so a signal only one layer
  * could raise is declared alongside that layer rather than here. An enum may implement this,
  * which is what lets a layer keep a closed set the compiler checks its lookups against while the

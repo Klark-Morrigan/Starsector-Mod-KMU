@@ -47,7 +47,7 @@ public sealed interface StyledCell {
      * and its own outline, and has no seam. The fill is triangulated from the same ring the
      * outline strokes, so a rounded outline and its fill cannot drift apart at the corners.
      *
-     * <p>Either element may still be hidden by the player's own choice - ground that is
+     * <p>Either element may still be hidden by the player's own choice - a cell that is
      * outlined but not filled is the ordinary case - which is what its paint reports, while
      * the geometry stays baked to shape the cells around it.
      *

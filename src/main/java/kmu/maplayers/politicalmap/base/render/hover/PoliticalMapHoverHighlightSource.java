@@ -11,12 +11,12 @@ import java.util.Map;
 
 /**
  * The political map's answers about the cell under the cursor: read straight off the draw
- * lists this frame painted, so a highlight can only ever trace ground the map is showing.
+ * lists this frame painted, so a highlight can only ever trace what the map is showing.
  *
  * <p>Both derived answers turn on who holds the hovered system. The loops it might sit inside
  * are its holder's traced borders, which carry one ring per disjoint cluster and per enclave;
  * and the shade is the holder's own palette, or the shared neutral colour where nothing owns
- * the ground. The cell's painted extent is not derived at all - the frame's shapes pass
+ * the cell. The cell's painted extent is not derived at all - the frame's shapes pass
  * straight through, which is how the halo and the cursor read agree by construction rather
  * than by two lookups happening to land alike.
  *
@@ -43,7 +43,7 @@ public record PoliticalMapHoverHighlightSource(
     @Override
     public List<float[]> resolveCandidateFrontierLoopsOf(String cellId) {
 
-        // Factionless ground (decivilised, or uninhabited while its outline is drawn) fuses into
+        // A factionless cell (decivilised, or uninhabited while its outline is drawn) fuses into
         // no territory, so it has no frontier at all and offers no candidates - its cell still
         // washes, just without a halo.
         var holder = territories.getHolderBySystemId().get(cellId);

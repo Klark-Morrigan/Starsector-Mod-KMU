@@ -11,11 +11,11 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.settings.KmuPoliticalMapSettings;
 
 /**
- * One receding context's per-save state: whether its background ground is muted (dimmed) and whether
+ * One receding context's per-save state: whether its backdrop is muted (dimmed) and whether
  * it is desaturated (recoloured to the desaturation profile), plus how those two toggles resolve into
- * a receded bloc's {@link ElementStyleAdjustment}. It is instantiable so each context that recedes ground
+ * a receded bloc's {@link ElementStyleAdjustment}. It is instantiable so each context that recedes
  * owns its own toggle set rather than sharing one - the filter recede (the "rest of the sector" behind
- * a spotlight) and the alliances view's non-allied recede are separate grounds a player tunes
+ * a spotlight) and the alliances view's non-allied recede are separate backdrops a player tunes
  * independently, so each holds its own instance over its own memory keys. Within one instance the two
  * toggles still resolve through a single rule, so a receded bloc reads the same everywhere that
  * instance is applied.
@@ -32,7 +32,7 @@ import kmu.settings.KmuPoliticalMapSettings;
 public final class RecedePreferences {
 
     // The filter recede: the "rest of the sector" that fades behind a spotlighted bloc, one set shared
-    // across both views while a filter is active since the receded ground is the same concept under
+    // across both views while a filter is active since the receded backdrop is the same concept under
     // either. The pre-split save's un-prefixed shared choice carries into these keys once on load.
     public static final RecedePreferences FILTER = new RecedePreferences(
         "$kmu_political_filter_recede_mute",
@@ -59,7 +59,7 @@ public final class RecedePreferences {
         "$kmu_political_alliance_desaturate_non_allied";
 
     // This set's two frozen memory keys and the flags over them, defaulting off so an untouched save
-    // reads un-receded. Instance fields, not statics, so each set backs a distinct ground; renaming a
+    // reads un-receded. Instance fields, not statics, so each set backs a distinct backdrop; renaming a
     // key silently resets every existing save's choice for that set, so they stay stable once shipped.
     private final String muteKey;
     private final String desaturateKey;
@@ -76,7 +76,7 @@ public final class RecedePreferences {
     }
 
     /**
-     * @return whether this set's receded ground dims by the muted-opacity modifier; false before a
+     * @return whether this set's receded backdrop dims by the muted-opacity modifier; false before a
      *         save exists or when the toggle was never set
      */
     public boolean isMuted() {
@@ -84,7 +84,7 @@ public final class RecedePreferences {
     }
 
     /**
-     * @return whether this set's receded ground recolours to the desaturation profile; false before a
+     * @return whether this set's receded backdrop recolours to the desaturation profile; false before a
      *         save exists or when the toggle was never set
      */
     public boolean isDesaturated() {
@@ -92,7 +92,7 @@ public final class RecedePreferences {
     }
 
     /**
-     * Sets whether this set's receded ground dims, persisting the choice in this save and repainting
+     * Sets whether this set's receded backdrop dims, persisting the choice in this save and repainting
      * the overlay so the flip shows at once.
      *
      * @param isMuted the new Mute state, as the sidebar checkbox reads it
@@ -102,14 +102,14 @@ public final class RecedePreferences {
         // write, so nothing bumps a revision no overlay would read. The refresh stands in for
         // settingsRevision, which these sidebar-only toggles never move since they are not LunaLib
         // fields. The revision is one coarse signal every set shares, so a consumer only draws the
-        // ground it owns even though any set's flip advances it.
+        // backdrop it owns even though any set's flip advances it.
         if (muteFlag.set(isMuted)) {
             MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }
     }
 
     /**
-     * Sets whether this set's receded ground recolours to the desaturation profile, persisting the
+     * Sets whether this set's receded backdrop recolours to the desaturation profile, persisting the
      * choice in this save and repainting the overlay so the flip shows at once.
      *
      * @param shouldDesaturate the new Desaturate state, as the sidebar checkbox reads it

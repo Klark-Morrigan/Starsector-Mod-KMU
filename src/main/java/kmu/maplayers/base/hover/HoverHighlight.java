@@ -23,7 +23,7 @@ import java.util.List;
  *
  * <p>A triangle soup rather than a fan over the cell's vertices: a cell is not reliably
  * convex - a keep-out pocket bitten out of a frontier cell leaves a concave notch, and a fan
- * would paint straight across it, washing ground the cell does not cover.
+ * would paint straight across it, washing map the cell does not cover.
  */
 public record HoverHighlight(
     List<float[]> glowLoops,

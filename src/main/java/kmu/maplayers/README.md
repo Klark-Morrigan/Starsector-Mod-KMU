@@ -63,7 +63,7 @@ the thing it hands over".
 | **cluster group** (`StyledClusterGroup`) | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
 | **cluster border** | national border, frontier | the inset ring around a cluster. `base` never calls it national - nothing about a border is political |
 | **interior seam** | province line | the fused edge between two same-owner cells, drawn faint or not at all |
-| **fill state** | held / contested / drawn-empty | how ground inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
+| **fill state** | held / contested / drawn-empty | how a cell inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
 | **`ElementPaintSelection`** | `FactionPaletteSlot` | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every bloc. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
 | **shade** | **shade** | the concrete `Color` a selection resolves to once a bloc's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
 
@@ -153,7 +153,7 @@ about what the overlay means.
   underneath is KMLib's. `HoverHighlightGeometry` resolves the highlight geometry and
   `HoverHighlightRenderer` burns the halo and the wash, both over a `HoverHighlightSource` - the
   two questions only the layer that owns the clusters can answer: the loops the hovered cell might
-  sit inside, and the shade its ground draws in. Both seams extend `PaintedCellShapes`, the frame's
+  sit inside, and the shade its fill draws in. Both seams extend `PaintedCellShapes`, the frame's
   cell shapes themselves, so the halo can only trace an outline the cursor was actually hit-tested
   against - one supplier, not two that must agree. `MapHoverGates` is the settings side:
   hovering is switched at three tiers - a master over the whole map, a pair under it for the

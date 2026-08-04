@@ -361,7 +361,7 @@ public final class PoliticalMapTerritories implements
     }
 
     // The styling every non-spotlighted bloc recedes to this pass - and, through
-    // FactionlessStyleResolver, decivilised ground with it; ElementStyleAdjustment.NONE off filter,
+    // FactionlessStyleResolver, a decivilised cell with it; ElementStyleAdjustment.NONE off filter,
     // so anything no filter recedes draws untouched.
     public ElementStyleAdjustment getRecedeAdjustment() {
         return filter.recedeAdjustment();

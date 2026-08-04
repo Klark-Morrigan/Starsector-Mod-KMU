@@ -33,12 +33,12 @@ A cell is kept as a list of [`CellEdge`](CellEdge.java) rather than a bare polyg
 because the edge list is also the adjacency graph. Each edge is tagged with an
 [`EdgeTarget`](EdgeTarget.java) naming what is across it, of which there are
 exactly three: another system's cell, the cell's own outer reach bound, or more of
-the same ground (a cut interior to one owner's ground with no star beyond it).
+the same cell (a cut interior to one owner's cells with no star beyond it).
 Naming all three keeps the far side a stated fact instead of something inferred
 from a null.
 
-A cell is not a system. Most cells are one star's own ground, but a cell can be
-ground an owner holds without a star in it, or space no owner holds - so
+A cell is not a system. Most cells are one star's own, but a cell can be one
+an owner holds without a star in it, or space no owner holds - so
 [`CellGrouping`](CellGrouping.java) makes "who owns this cell" two lookups: the
 cell resolves to the system it draws as, and that system resolves to an
 owner.
@@ -48,7 +48,7 @@ owner.
 [`EdgeClassifier`](EdgeClassifier.java) turns an edge into an
 [`EdgeClass`](EdgeClass.java) by comparing the owners on its two sides:
 the same non-null owner on both makes an interior seam; an owner on exactly one side
-makes an open frontier (owned ground facing unowned
+makes an open frontier (an owned cell facing unowned
 space); anything else is a boundary.
 
 [`CellShaper`](CellShaper.java) then shapes each raw cell into what is actually

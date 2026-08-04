@@ -133,9 +133,9 @@ final class EdgeClassifierTest {
         }
 
         @Test
-        void classifyAcrossReturnsInteriorSeamForSameGroundUnderAKey() {
+        void classifyAcrossReturnsInteriorSeamForTheSameCellUnderAKey() {
             // A cut interior to one key's absorbed cluster: the far side is that key's own
-            // ground, so it fuses whatever key sits either side, with no system to look up.
+            // cell, so it fuses whatever key sits either side, with no system to look up.
             var edge = edgeFacing(EdgeTarget.SAME_OWNER);
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
@@ -143,7 +143,7 @@ final class EdgeClassifierTest {
         }
 
         @Test
-        void classifyAcrossReturnsInteriorSeamForSameGroundWhenUnowned() {
+        void classifyAcrossReturnsInteriorSeamForTheSameCellWhenUnowned() {
             // Same-owner fuses even an unowned cell's own cut - a null-keyed shard of one
             // dead star's leftover space - which "the same owner both sides" could not express for a
             // null key, and which must not read a null system out of the map.

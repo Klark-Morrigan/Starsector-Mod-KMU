@@ -698,7 +698,7 @@ final class ClusterAnchorsBuilderTest {
     }
 
     // Every cell drawing as its own star - the partition the cluster walk runs over when no system
-    // holds ground beyond its own cell.
+    // holds cells beyond its own.
     private static Map<String, String> identityCellsFor(Iterable<String> cellIds) {
         var systemIdByCellId = new LinkedHashMap<String, String>();
         for (var cellId : cellIds) {

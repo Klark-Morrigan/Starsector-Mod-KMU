@@ -48,7 +48,7 @@ final class TracedFillTest {
                 .hasSize(1);
 
             // The run offered is the one that went on to be drawn, not a second cut of the same
-            // ground - so a reading taken off it describes what the frame actually shows.
+            // fill - so a reading taken off it describes what the frame actually shows.
             assertThat(observed.get(0).hatchRun().segments())
                 .isSameAs(fill.hatchSegments());
         }
@@ -67,7 +67,7 @@ final class TracedFillTest {
         }
 
         @Test
-        void buildFillForOffersNothingForABodyThatHatchesNoGround() {
+        void buildFillForOffersNothingForABodyThatHatchesNothing() {
             var observed = new ArrayList<TimedHatchRun>();
 
             // A splitting owner whose members are all solid still cuts every body, and an observer

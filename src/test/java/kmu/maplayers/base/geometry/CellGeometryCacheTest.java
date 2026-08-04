@@ -222,7 +222,7 @@ final class CellGeometryCacheTest {
         void updateKeysEachCellByTheSystemItDrawsAs() {
             var cache = new CellGeometryCache();
 
-            // Every cell here is one star's own ground, so it draws as that star: the
+            // Every cell here is one star's own, so it draws as that star: the
             // draws-as map is the identity a cell-keyed consumer resolves a key through.
             updateAtDefaultResolution(cache,
                     accessibleSystem("a", 0, 0),

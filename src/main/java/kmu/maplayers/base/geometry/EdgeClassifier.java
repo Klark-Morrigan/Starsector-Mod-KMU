@@ -60,15 +60,15 @@ public final class EdgeClassifier {
      *
      * <p>Each target decides on its own terms: a system across the edge has its owner looked up
      * and handed to {@link #classify}; the cell's reach bound is a plain boundary, since with
-     * no star across it there is nothing to reach toward; and more of the same ground is an
-     * interior seam outright - the far side is this cell's own ground, so no owner can differ.
+     * no star across it there is nothing to reach toward; and more of the same cell is an
+     * interior seam outright - the far side is this same cell, so no owner can differ.
      *
      * @param edge            the cell edge, tagged with what lies across it
      * @param cellOwner       the owner of the cell this edge belongs to, or null if
      *                        that cell is unowned
      * @param ownerBySystemId the owner per system, to look up the owner of a system
      *                        across the edge
-     * @return INTERIOR_SEAM for a shared non-null owner or for same-ground, OPEN_FRONTIER for
+     * @return INTERIOR_SEAM for a shared non-null owner or for the same cell, OPEN_FRONTIER for
      *         a owned cell facing an unowned star, else BOUNDARY; the reach bound is always
      *         BOUNDARY
      */
@@ -81,7 +81,7 @@ public final class EdgeClassifier {
         if (target instanceof EdgeTarget.AcrossSystem acrossSystem) {
             return classify(cellOwner, ownerBySystemId.get(acrossSystem.systemId()));
         }
-        // Same ground on both sides, so the edge fuses whatever this cell's owner is - an
+        // The same cell on both sides, so the edge fuses whatever that cell's owner is - an
         // unowned cell's own cut included, which "the same owner both sides" could not express
         // for a null owner.
         if (EdgeTarget.SAME_OWNER.equals(target)) {

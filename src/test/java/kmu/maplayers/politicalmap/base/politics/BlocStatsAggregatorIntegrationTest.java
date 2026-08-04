@@ -101,7 +101,7 @@ class BlocStatsAggregatorIntegrationTest {
             // A size-0 colony marks presence and, unopposed, dominates its system while carrying no
             // weight - so the bloc appears with a domination and a presence but a zero score. Presence,
             // not weight, is the selectable gate: a bloc holding paintable territory is offered even
-            // when spotlighting it highlights ground worth nothing.
+            // when spotlighting it highlights cells worth nothing.
             var hegemony = faction("hegemony", HEGEMONY_BRIGHT);
             var sector = sectorWithSystems(List.of(hegemony),
                     systemMarkets("weightless-system", visibleMarket(hegemony, 0)));

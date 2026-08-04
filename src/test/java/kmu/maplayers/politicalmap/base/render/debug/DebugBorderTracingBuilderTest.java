@@ -144,7 +144,7 @@ final class DebugBorderTracingBuilderTest {
         decivilisedMarketsMock = mockStatic(DecivilisedMarkets.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
 
-        // An empty sector by default, so a case names only the ground it is about.
+        // An empty sector by default, so a case names only the cells it is about.
         stubHolders(Map.of());
         stubDecivilisedSystems();
         stubTheme(noSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);

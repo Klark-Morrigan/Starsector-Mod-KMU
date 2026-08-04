@@ -1,10 +1,10 @@
 package kmu.maplayers.base.theme;
 
 /**
- * One named division of a map's ground, and the key a {@link RenderStyle} looks its
- * per-category {@link CategoryStyle} bundle up by. The theme declares only that the ground
- * divides into <em>some</em> named set: what the divisions actually are - who holds the
- * ground, how hazardous it is, what it trades - is the vocabulary of the layer painting it,
+ * One named division of a map's cells, and the key a {@link RenderStyle} looks its
+ * per-category {@link CategoryStyle} bundle up by. The theme declares only that the cells
+ * divide into <em>some</em> named set: what the divisions actually are - who holds a cell,
+ * how hazardous it is, what it trades - is the vocabulary of the layer painting it,
  * so the constants are declared alongside that layer rather than here. An enum may implement
  * this, which is what lets a layer keep a closed set the compiler checks its switches against
  * while the theme stays open to any set.

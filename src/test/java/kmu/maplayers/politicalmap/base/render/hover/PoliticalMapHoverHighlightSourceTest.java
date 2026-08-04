@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins how the political map answers what the framework asks about a hovered cell: whose loops
- * are the candidates and what shade the ground burns in, both derived from who holds the system,
+ * are the candidates and what shade the highlight burns in, both derived from who holds the system,
  * plus the frame's painted shapes handed straight over.
  *
  * <p>Also pins the identity contract the highlight's memoisation depends on: the same instances
@@ -52,7 +52,7 @@ final class PoliticalMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveCandidateFrontierLoopsOfReturnsNothingForFactionlessGround() {
+        void resolveCandidateFrontierLoopsOfReturnsNothingForAFactionlessCell() {
             // A decivilised or uninhabited cell fuses into no territory, so it has no frontier
             // to offer at all.
             var source = sourceOf(territoriesWith(
@@ -66,7 +66,7 @@ final class PoliticalMapHoverHighlightSourceTest {
 
         @Test
         void resolveCandidateFrontierLoopsOfReturnsNothingWhenTheHolderBakedNoBorder() {
-            // The holder's border is "No color", so its territory carries no loops - owned ground
+            // The holder's border is "No color", so its territory carries no loops - an owned cell
             // that still has nothing to halo.
             var source = sourceOf(territoriesWith(
                 Map.of("A", OWNER),
@@ -95,7 +95,7 @@ final class PoliticalMapHoverHighlightSourceTest {
     class ResolveHighlightColourOf {
 
         @Test
-        void resolveHighlightColourOfPaintsOwnedGroundInItsHoldersShade() {
+        void resolveHighlightColourOfPaintsAnOwnedCellInItsHoldersShade() {
             var source = sourceOf(territoriesWith(
                 Map.of("A", OWNER),
                 Map.of("A", square(10, 10, 80)),
@@ -106,8 +106,8 @@ final class PoliticalMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveHighlightColourOfPaintsFactionlessGroundInTheNeutralShade() {
-            // Unowned ground has no palette of its own, so the highlight says so in the same
+        void resolveHighlightColourOfPaintsAFactionlessCellInTheNeutralShade() {
+            // An unowned cell has no palette of its own, so the highlight says so in the same
             // neutral the cell's own outline draws in.
             var source = sourceOf(territoriesWith(
                 Map.of(),

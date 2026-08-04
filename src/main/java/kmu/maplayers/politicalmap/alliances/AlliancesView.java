@@ -35,8 +35,8 @@ import java.util.Optional;
  * own border and name. Two orthogonal knobs recede a non-allied faction: Mute dims its opacity
  * by the muted modifier while leaving its faction style and colours intact, and Desaturate makes
  * it adopt the independent style - the independent borders and seams plus the desaturation
- * palette - so it reads as independent ground. Its fill holds the faction fill opacity, since
- * desaturated ground reads as one uniform surface separated by colour alone. With both off it
+ * palette - so it reads as independent territory. Its fill holds the faction fill opacity, since
+ * a desaturated territory reads as one uniform surface separated by colour alone. With both off it
  * paints exactly as the faction view draws it, so a lone
  * faction reads identically in both views and only the allied factions differ between the two. It
  * exists so the shared pipeline can paint alliances without knowing anything about them - the view
@@ -76,7 +76,7 @@ public final class AlliancesView implements PoliticalMapView {
         // setter bumps the recede-style revision on a Mute/Desaturate flip, since those sidebar-only
         // toggles never move settingsRevision). The recede-style revision is one coarse signal every
         // recede set shares, so a filter-recede flip advances it too; harmless here, since this view
-        // only draws the non-allied ground and simply rebuilds. Composing the two means a third live
+        // only recedes the non-allied blocs and simply rebuilds. Composing the two means a third live
         // input later is one more source here, not a wider contract; a change to either forces a
         // rebuild.
         return Fingerprints.compute(
@@ -99,7 +99,7 @@ public final class AlliancesView implements PoliticalMapView {
 
         // Genuine independent space always takes the independent style, exactly as the faction view
         // classifies it. A non-allied faction takes it too once it desaturates: desaturation means
-        // "read as independent ground", so the bloc adopts the independent borders and seams, paired
+        // "read as independent territory", so the bloc adopts the independent borders and seams, paired
         // with the desaturation palette the same adjustment carries - not a bare independent recolour
         // painted over the faction style. Its fill is the exception: a desaturated bloc fills at the
         // faction opacity, so the desaturated background stays one uniform surface rather than

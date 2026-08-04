@@ -101,7 +101,7 @@ final class FactionsViewTest {
 
         @Test
         void shouldUseIndependentStyleIsTrueForACoreFactionWhenDesaturated() {
-            // A faction the filter recede has desaturated reads as background ground, so it takes
+            // A faction the filter recede has desaturated reads as backdrop, so it takes
             // the independent borders and seams paired with the desaturation palette - the same
             // classification the alliances view makes for a desaturated non-allied bloc.
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(

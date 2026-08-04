@@ -9,8 +9,8 @@ import java.util.Map;
  * How the drawn cells group: which system each cell draws as, and the owner each
  * system carries.
  *
- * <p>A cell is not a system. Most cells are one star's own ground and draw as that star,
- * but a cell can also be ground one owner holds without a star of its own in it, or a
+ * <p>A cell is not a system. Most cells are one star's own and draw as that star,
+ * but a cell can also be one an owner holds without a star of its own in it, or a
  * leftover piece of space no owner holds. So "who owns this cell" is two
  * lookups, not one: the cell resolves to the system it draws as, and that system resolves
  * to an owner. Pairing the two maps here keeps that resolution in one place rather
@@ -25,7 +25,7 @@ import java.util.Map;
  * <p>Pure lookups over opaque owners, so any layer can group by whatever it clusters on.
  *
  * @param systemIdByCellId the system each cell draws as; a cell absent here has no system
- *                         of its own and so no owner, whatever ground it sits on
+ *                         of its own and so no owner, wherever on the map it sits
  * @param ownerBySystemId  the owner per system; a system absent here is unowned
  */
 public record CellGrouping(
@@ -59,7 +59,7 @@ public record CellGrouping(
     /**
      * Inverts the grouping into each owner's member cells, so an owner's cluster can be traced
      * from the cells that actually draw it rather than from the systems behind them - the
-     * two differ wherever an owner holds ground no star of its own sits in.
+     * two differ wherever an owner holds a cell no star of its own sits in.
      *
      * @return each owner mapped to its member cell ids, in cell iteration order;
      *         unowned cells appear under no owner

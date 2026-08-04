@@ -13,7 +13,7 @@ import java.util.List;
  * non-allied recede set and placed under the caption {@code Non-allied factions are}, so the view
  * recedes every faction outside an alliance through its own Mute/Desaturate toggles - independent of
  * the filter recede the picker drives. It lives in the alliances package, beside the view that owns
- * it, because both the set and the caption - which ground this view recedes - are the view's own
+ * it, because both the set and the caption - what this view recedes - are the view's own
  * choice; the checkbox shape and its wiring belong to the shared control.
  */
 public final class AllianceBodyControls {

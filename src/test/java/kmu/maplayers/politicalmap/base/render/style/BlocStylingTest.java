@@ -60,7 +60,7 @@ final class BlocStylingTest {
         @Test
         void resolveFromKeepsTheIndependentFillOpacityWhenTheBlocRecedesInFullColour() {
             // In full colour the independent bundle keeps its own lighter fill, so independent
-            // space still recedes behind faction ground.
+            // space still recedes behind a faction's fill.
             var styling = BlocStyling.resolveFrom(
                 theme(),
                 new BlocStyleDecision(true, ElementStyleAdjustment.NONE));
@@ -71,7 +71,7 @@ final class BlocStylingTest {
 
         @Test
         void resolveFromHoldsADesaturatedBlocAtTheFactionFillOpacity() {
-            // Desaturated ground holds the one faction fill opacity, so the whole desaturated
+            // A desaturated fill holds the one faction fill opacity, so the whole desaturated
             // surface reads uniform rather than splitting into two weights of grey.
             var styling = BlocStyling.resolveFrom(
                 theme(),
@@ -97,7 +97,7 @@ final class BlocStylingTest {
 
         @Test
         void resolveFromKeepsTheRestOfTheIndependentBundleWhenDesaturated() {
-            // The borders and widths distinguish independent ground without breaking the fill's
+            // The borders and widths distinguish independent territory without breaking the fill's
             // uniformity, so they survive the crossover untouched.
             var styling = BlocStyling.resolveFrom(
                 theme(),

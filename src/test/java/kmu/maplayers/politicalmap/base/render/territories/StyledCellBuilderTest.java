@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
  * Pins how one shaped cell is baked into its draw record: an owned cell threading its bloc's
  * palette and adjustment into the interior seam it contributes, and a factionless cell resolving
  * both palette slots to the neutral colour for the fill and outline it keeps for itself - with
- * decivilised ground alone taking the pass's recede over that neutral, and uninhabited ground
+ * a decivilised cell alone taking the pass's recede over that neutral, and an uninhabited cell
  * never doing so.
  *
  * <p>The style cascade these read through is pinned by
@@ -192,10 +192,10 @@ final class StyledCellBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemDrawsACellWithNoStarAsUninhabitedGround() {
+        void buildStyledCellForSystemDrawsACellWithNoStarAsUninhabited() {
             // A cell that draws as no system - a shard of a dead star's leftover space the
             // redistribution pass leaves behind - has no holder and no market to have died, so it
-            // paints as plain uninhabited ground. The null star must resolve through the draws-as
+            // paints as plain uninhabited. The null star must resolve through the draws-as
             // map without being taken for decivilised: the decivilised category is "No color"
             // here, so had the null id been routed there the cell would have dropped to null.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
@@ -211,7 +211,7 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemFillsADecivilisedCellInTheNeutralColour() {
-            // Dead colonies carry a fill of their own - factionless ground fills per cell, since
+            // Dead colonies carry a fill of their own - a factionless cell fills on its own, since
             // it never fuses into a cluster with a tessellated cluster to fill from - so both the
             // paint and the baked triangles have to come back off the cell itself.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
@@ -268,8 +268,8 @@ final class StyledCellBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemLeavesUninhabitedGroundUntouchedByTheFiltersRecede() {
-            // Uninhabited ground is the backdrop the map is drawn over rather than something the
+        void buildStyledCellForSystemLeavesAnUninhabitedCellUntouchedByTheFiltersRecede() {
+            // An uninhabited cell is the backdrop the map is drawn over rather than something the
             // spotlight competes with, so the same receding pass leaves its outline at full
             // neutral strength - the sector keeps its shape.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
@@ -319,7 +319,7 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemBakesNoFillTrianglesForAnOutlineOnlyFactionlessCell() {
-            // Uninhabited ground covers everything nothing else holds, so triangulating a fill it
+            // Uninhabited cells cover everything nothing else holds, so triangulating a fill they
             // never paints would be the rebuild's largest wasted cost - the geometry stays unbuilt.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 factionlessDrawablesWith(filledOutlineStyle(), drawnOutlineStyle()),
@@ -595,7 +595,7 @@ final class StyledCellBuilderTest {
 
     // Narrows a built cell to the lone form - a cell that is its own cluster, carrying its fill and
     // outline. As above, the narrowing doubles as the assertion that the builder read the cell as
-    // factionless ground rather than as part of a cluster.
+    // a factionless cell rather than as part of a cluster.
     private static StyledCell.LoneCell requireLoneCell(StyledCell styled) {
         assertThat(styled).isInstanceOf(StyledCell.LoneCell.class);
         return (StyledCell.LoneCell) styled;

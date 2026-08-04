@@ -73,7 +73,7 @@ public final class FactionsView implements PoliticalMapView {
             HolderGrouping grouping,
             ElementStyleAdjustment adjustment) {
         // Genuine independent space always takes the independent style. A faction the recede has
-        // desaturated takes it too: desaturation means "read as background ground", so the bloc
+        // desaturated takes it too: desaturation means "read as backdrop", so the bloc
         // adopts the independent borders and seams paired with the desaturation palette the same
         // adjustment carries, rather than sitting at full faction border weight and slot with only
         // its colour greyed. The grouping is identity here, so no bloc is an alliance and every

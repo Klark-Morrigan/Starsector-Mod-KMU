@@ -4,17 +4,17 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 
 /**
- * The four territory categories the political map divides the ground into, and the keys its
+ * The four territory categories the political map divides its cells into, and the keys its
  * per-category {@link CategoryStyle} bundles are held under. Two are owned (a coloured fill,
  * national border, and interior seams) and two are factionless (a neutral-coloured outline, and
- * a fill where the ground was once settled): a bloc paints in {@link #FACTION} or, where it
+ * a fill where a cell was once settled): a bloc paints in {@link #FACTION} or, where it
  * recedes to independent-held space, {@link #INDEPENDENT}; a system with no holder draws in
  * {@link #DECIVILISED} when a revealed dead world sits there and {@link #UNINHABITED}
  * otherwise. Making the category a type (rather than four hardcoded reader methods and
  * four fields) lets the theme carry the four styles as one keyed map the builders index.
  *
  * <p>Declared beside the layer that paints them rather than in the framework's theme: how the
- * ground divides is the vocabulary of whoever is painting it, and the theme keys on the open
+ * a map divides into is the vocabulary of whoever is painting it, and the theme keys on the open
  * {@link MapStyleCategory} so a layer dividing the sector some other way brings its own set
  * instead of inheriting these four. An enum, so the political side's own lookups over the
  * category stay a closed set the compiler checks.

@@ -101,9 +101,9 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsLightsTheMuteCheckboxWhenGroundIsMuted() {
+        void buildControlsLightsTheMuteCheckboxWhenTheBackdropIsMuted() {
             // The checkbox reflects the passed set's live toggle, so a set that muted its receded
-            // ground shows the box ticked (its one cell, index 0, lit) on the next rebuild.
+            // backdrop shows the box ticked (its one cell, index 0, lit) on the next rebuild.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
@@ -114,7 +114,7 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsLeavesTheMuteCheckboxOffWhenGroundIsNotMuted() {
+        void buildControlsLeavesTheMuteCheckboxOffWhenTheBackdropIsNotMuted() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
@@ -126,7 +126,7 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsLightsTheDesaturateCheckboxWhenGroundIsDesaturated() {
+        void buildControlsLightsTheDesaturateCheckboxWhenTheBackdropIsDesaturated() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
@@ -138,7 +138,7 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsLeavesTheDesaturateCheckboxOffWhenGroundIsNotDesaturated() {
+        void buildControlsLeavesTheDesaturateCheckboxOffWhenTheBackdropIsNotDesaturated() {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);

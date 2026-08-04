@@ -248,7 +248,7 @@ final class IncrementalPoliticsRefresh {
             return;
         }
         // The system the cell draws as, whose holder colours and keys it. Every cell here is a
-        // star's own ground, so it resolves to that star, but the resolve is explicit so an
+        // star's own, so it resolves to that star, but the resolve is explicit so an
         // absorbed cell would key by its holder rather than its own missing star.
         var drawnSystemId = geometryCache.getSystemIdByCellId().get(cellId);
         var holder = territories.getHolderBySystemId().get(drawnSystemId);

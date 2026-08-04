@@ -118,7 +118,7 @@ final class HoverHighlightGeometryTest {
 
         @Test
         void a_cell_with_no_candidate_loops_washes_with_no_halo() {
-            // Ground that fuses into no cluster, or whose cluster traced no border at all: there is
+            // A cell that fuses into no cluster, or whose cluster traced no border at all: there is
             // no frontier to bloom - but the cell itself is still what the cursor is on.
             var sourceFake = sourceOf(
                 square(10, 10, 80),

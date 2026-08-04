@@ -193,7 +193,7 @@ final class AlliancesViewTest {
         private static final ElementStyleAdjustment RECEDED = new ElementStyleAdjustment(MUTED_MODIFIER, true);
 
         @Test
-        void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocEvenWhenGroundRecedes() {
+        void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocEvenWhenTheBackdropRecedes() {
             // An alliance keeps its full colour: the view gates it to NONE before its non-allied
             // recede set is consulted, so recede can never dim or desaturate an alliance - and no
             // memory is touched.
@@ -203,7 +203,7 @@ final class AlliancesViewTest {
 
         @Test
         void resolveBlocStyleAdjustmentTakesTheNonAlliedRecedeForANonAllianceBloc() {
-            // A non-allied faction is background ground, so the view returns exactly what its own
+            // A non-allied faction is backdrop, so the view returns exactly what its own
             // non-allied recede set resolves - the one adjustment every faction outside an alliance
             // takes, driven here through that set's mute and desaturate keys.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =

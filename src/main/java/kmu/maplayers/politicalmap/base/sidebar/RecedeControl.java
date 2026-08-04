@@ -12,10 +12,10 @@ import java.util.List;
 /**
  * The reusable recede control: a caption line and the Mute and Desaturate checkboxes that drive a
  * {@link RecedePreferences} set, laid out as {@code <caption>  [ ] Muted  [ ] Desaturated}. Every
- * context that recedes background ground contributes this same control - the filter picker and the
+ * context that recedes a backdrop contributes this same control - the filter picker and the
  * alliances view each build it - so one control shape and one toggle-wiring live in one place.
  *
- * <p>The caller supplies the target preferences set - which ground its context recedes - and the
+ * <p>The caller supplies the target preferences set - what its context recedes - and the
  * caption naming it, while the two checkbox labels and their toggle wiring are fixed here, so the
  * recede reads and behaves identically wherever it is placed and only the set it drives differs. Each
  * checkbox reads its lit state live from the passed set when the spec is built (specs are rebuilt each
@@ -29,10 +29,10 @@ public final class RecedeControl {
     /**
      * @param preferences  the recede set this control drives - the filter recede or the alliances
      *                     view's non-allied recede - read for its lit state and written on a click
-     * @param captionLabel the resolved caption naming the ground this context recedes, shown ahead of
+     * @param captionLabel the resolved caption naming what this context recedes, shown ahead of
      *                     the two checkboxes
      * @return the recede control, top to bottom: the caption, the Mute checkbox (lit when the set's
-     *         receded ground is dimmed), and the Desaturate checkbox (lit when it is recoloured)
+     *         receded backdrop is dimmed), and the Desaturate checkbox (lit when it is recoloured)
      */
     public static List<ControlSpec> buildControls(RecedePreferences preferences, String captionLabel) {
         // The caption and both boxes read in the engine's plain text tone - the control block calls

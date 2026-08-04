@@ -43,7 +43,7 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
 
     /**
      * The one shared instance, explaining vanilla claims - the same mechanic the layer's fills are
-     * resolved through, so the box and the ground under it can never name different claimants.
+     * resolved through, so the box and the cell under it can never name different claimants.
      */
     public static final SystemClaimTooltip INSTANCE =
         new SystemClaimTooltip(VANILLA_CLAIM_BREAKDOWN_READER);
@@ -61,7 +61,7 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         var rows = new ArrayList<TooltipRow>();
 
         // Why the system holds nobody comes before who claims it, so a dead system names its state
-        // first and the claim below reads as a hold over empty ground rather than over a colony.
+        // first and the claim below reads as a hold over an empty system rather than over a colony.
         SystemStatusRow
             .resolveStatusRow(sector, system, ADMITS_UNDISCOVERED_MARKETS)
             .ifPresent(rows::add);

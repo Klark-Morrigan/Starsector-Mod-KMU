@@ -457,8 +457,9 @@ final class SystemDominationTooltipTest {
 
         @Test
         void buildBodyRowsNamesWhatTheSystemIsBeforeWhoHoldsIt() {
-            // The ground first, then the contest over it, so the standings read as a contest over known
-            // ground rather than as the whole of what the box has to say. The decree is not among them:
+            // What the system is first, then the contest over it, so the standings read as a contest
+            // over a known system rather than as the whole of what the box has to say. The decree is not
+            // among them:
             // it heads the box instead, which the title cases above cover.
             stubStatusRow("Decivilised");
             stubCoreFaction(CORE_FACTION);

@@ -33,7 +33,7 @@ import java.util.Map;
  * <p>The two owned categories - core factions and independent space - carry a full
  * fill/outer/inner style. The two factionless categories - decivilised and uninhabited -
  * have no faction palette, so both paint in the shared neutral colour and neither carries a
- * colour choice: decivilised ground draws a fill and an outline, uninhabited ground an
+ * colour choice: a decivilised cell draws a fill and an outline, an uninhabited cell an
  * outline alone, and both set their inner seam to "No color" since factionless cells never
  * fuse into clusters. Whether the uninhabited outline draws at all is the player's sidebar
  * checkbox rather than a settings field, so that one input is read from the per-save
@@ -151,9 +151,9 @@ public final class RenderStyleReader {
             KmuPoliticalMapSettings.getIndependentInnerBorderWidth());
     }
 
-    // Dead colonies keep both a neutral fill and a neutral outline: the ground was settled
+    // Dead colonies keep both a neutral fill and a neutral outline: the system was settled
     // once, so it reads as occupied space rather than a bare ring around nothing. Neither
-    // element has a colour choice - factionless ground has no palette to pick from - so the
+    // element has a colour choice - a factionless cell has no palette to pick from - so the
     // outline is unconditionally drawn and each opacity is its element's own on/off.
     public static CategoryStyle readDecivilisedStyle() {
         return neutralStyle(

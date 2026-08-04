@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins that the theme's per-category tier is keyed on the open {@link MapStyleCategory} rather
- * than on any one layer's names: a layer whose ground divides some way the political map never
+ * than on any one layer's names: a layer whose cells divide some way the political map never
  * heard of populates a theme and reads bundles back out of it exactly as the political map does.
  *
  * <p>Worth pinning because nothing else in the tree can show it. Every other caller of

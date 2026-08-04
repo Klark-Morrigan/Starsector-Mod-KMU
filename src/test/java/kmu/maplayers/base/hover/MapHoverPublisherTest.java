@@ -56,7 +56,7 @@ final class MapHoverPublisherTest {
     private static final Vector2f POINT_ON_CELL = new Vector2f(200f, 150f);
 
     // Outside the cell: empty space beyond the map, or the channel between two cells, where the
-    // map draws nobody's territory.
+    // map draws nobody's cell.
     private static final Vector2f POINT_OFF_CELL = new Vector2f(0f, 0f);
 
     // The frame's targets with one drawn cell, clustered with a neighbour so a published hover

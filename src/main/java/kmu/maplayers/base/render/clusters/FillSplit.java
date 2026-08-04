@@ -8,7 +8,7 @@ import java.util.Set;
 
 /**
  * A cluster's members partitioned into the three {@link FillState}s its fill paints apart, so
- * one frontier can enclose ground that does not all fill the same way.
+ * one frontier can enclose cells that do not all fill the same way.
  *
  * <p>Each state carries its members at both levels the fill needs them - the cells a cluster
  * is traced from, and the systems its keys and coincident set are addressed by. The two
@@ -60,8 +60,8 @@ public record FillSplit(
      *
      * <p>Unfilled takes precedence over hatched, since a system drawn empty is empty whatever
      * else the layer says about it. A cell with no star of its own has no per-system fill
-     * state, so it fills solid with the cluster's ground rather than probing either set with a
-     * null key.
+     * state, so it fills solid with the rest of the cluster rather than probing either set
+     * with a null key.
      */
     public static FillState classifyFillState(
             String systemId,
@@ -83,7 +83,7 @@ public record FillSplit(
     /**
      * @return whether any member draws as something other than solid, so a cluster that is
      *         not spotlit still takes the per-state split when it holds hatched or unfilled
-     *         ground
+     *         members
      */
     public boolean hasNonSolidMembers() {
         return !hatched.systemIds().isEmpty()
@@ -108,7 +108,7 @@ public record FillSplit(
      * edge rather than opening a channel between them.
      *
      * <p>Includes the unfilled state's systems even though it paints nothing: a drawn fill
-     * must still stop flush against held-but-empty ground instead of receding from it.
+     * must still stop flush against a held-but-empty member instead of receding from it.
      *
      * @param state the state whose neighbours are wanted
      * @return the systems the other two states hold, as a membership test
@@ -134,7 +134,7 @@ public record FillSplit(
 
     /**
      * The three ways a system inside one cluster can draw its fill, and the vocabulary the rest
-     * of the framework states a fill outcome in. Purely how the ground paints - which systems
+     * of the framework states a fill outcome in. Purely how a member paints - which systems
      * fall in which state is the layer's call, made before the split is handed over, so the
      * geometry below never has to know what the layer means by the distinction.
      */
@@ -143,7 +143,7 @@ public record FillSplit(
         SOLID,
         /** Painted in the cluster's colour, cut with the sector-wide hatch pattern. */
         HATCHED,
-        /** Painted with no fill: the ground still carries the cluster's border and label. */
+        /** Painted with no fill: the member still carries the cluster's border and label. */
         UNFILLED
     }
 

@@ -85,9 +85,9 @@ path, so a view that never contests or unfills pays nothing for the split.
 - **`ClaimAugmentedHolderProvider`** - the faction and alliance default. It takes held territory
   from the source above, then folds in each claimed-but-unheld system as an *unfilled* extension of
   its claimant. The claim carries the same bloc key as that faction's held systems, so the geometry
-  fuses held and claimed ground into one bordered territory. A system already held keeps its solid
+  fuses held and claimed cells into one bordered territory. A system already held keeps its solid
   fill: the held signal wins. Under a spotlight, a claim shares the fate of its bloc - the spotlit
-  bloc's claims stay at full strength, every other bloc's claims fade with its held ground.
+  bloc's claims stay at full strength, every other bloc's claims fade with its held cells.
 - **`ClaimsHolderProvider`** - the Claims view's source. Every claimed system is painted *solid*
   in its claimant's colours, with nothing held-derived. It reads no filter, so the resolution has no
   exceptions and takes the solid fast path.
@@ -102,7 +102,7 @@ and a held one of the same bloc end up equal, and fuse downstream.
 The claimant comes from KMLib's `ClaimReader` port - the usual way KM code inverts a third-party
 read that only answers inside a running game. Its vanilla binding mirrors `Misc.getClaimingFaction`
 step for step rather than calling it, because one computation has to answer *who* claims a system
-for the fills here and *why* for the claims layer's hover box. Sharing it is what stops the ground
+for the fills here and *why* for the claims layer's hover box. Sharing it is what stops the fill
 and the box over it naming different claimants - on the memory-flag override, and on the
 iteration-order tie the mechanic settles equal scores by.
 

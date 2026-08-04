@@ -83,14 +83,14 @@ public final class ClusterRenderer {
             });
     }
 
-    // All the solid ground first, then the hatch over it. A cluster whose ground does
+    // All the solid fills first, then the hatch over them. A cluster whose fill does
     // not all fill solid carries both runs at once - solid triangles where it fills and
     // pre-clipped diagonal hatch lines where the layer marked it hatched, in the same colour and
     // opacity - so a partly-filled body still reads as one inside its boundary.
     //
     // Hoisting every hatch run above every solid fill covers nothing that was visible before:
     // cells are disjoint, so no owner's solid triangles can land on another owner's hatched
-    // ground, and typically only one owner (the filter's spotlit one) carries a non-empty hatch
+    // fill, and typically only one owner (the filter's spotlit one) carries a non-empty hatch
     // run at all. What the split buys is that the line state the hatch strokes under is set once
     // for the whole map rather than pushed and popped around every solid fill.
     private static void drawFills(ClusterMapFrame frame) {
@@ -110,7 +110,7 @@ public final class ClusterRenderer {
             StyledCluster::fillTriangles);
 
         // Then the lone cells' own fills. They fill per cell rather than per cluster because
-        // unowned ground never fuses into one, and they cover no cluster, so drawing them after
+        // an unowned cell never fuses into one, and they cover no cluster, so drawing them after
         // the cluster fills is a matter of grouping the fill pass rather than of layering. A
         // fused cell is not reached at all: its fill is its cluster's, drawn above, so this pass
         // sees only the cells that have one.
@@ -126,7 +126,7 @@ public final class ClusterRenderer {
                     frame.factor())));
     }
 
-    // Lays the hatch over the solid ground, in whichever way the theme's stroke says. The stroke
+    // Lays the hatch over the solid fill, in whichever way the theme's stroke says. The stroke
     // is the sector-wide choice of substrate, so it is resolved once for the whole pass rather
     // than per owner - the geometry underneath is the same runs either way, and only how they are
     // turned into pixels differs.

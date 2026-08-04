@@ -243,7 +243,7 @@ public final class KmuMapLayerSettings {
     }
 
     /**
-     * @return whether hover effects - the halo over the hovered ground and the wash on its cell -
+     * @return whether hover effects - the halo over the hovered cluster and the wash on its cell -
      *         are on across every map layer; on by default. Under the hovering master, and over
      *         each layer's own effects switch
      */

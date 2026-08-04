@@ -34,7 +34,7 @@ public final class SystemClusters {
      * <p>Contiguity is a property of the cells - they are what share borders - so the walk
      * runs over cells and each component's members are then resolved back to the systems
      * they draw as. A cluster is therefore reported as the stars in it, which is what a
-     * label names; ground held without a star of its own adds no member of its own but
+     * label names; a cell held without a star of its own adds no member of its own but
      * still connects the cells on either side of it.
      *
      * @param edgesByCellId each cell's raw edges, tagged with what lies across them - the
@@ -82,8 +82,8 @@ public final class SystemClusters {
             CellEdge edge) {
 
         // A system's own cell is keyed by that system's id, so the system an edge names
-        // across it is also the cell across it. Same-ground needs no fusing - it is one
-        // the cell's own ground either side, already the same component.
+        // across it is also the cell across it. A same-cell cut needs no fusing - it is
+        // the one cell either side, already the same component.
         if (!(edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem)
                 || !parentByCellId.containsKey(acrossSystem.systemId())) {
             return;

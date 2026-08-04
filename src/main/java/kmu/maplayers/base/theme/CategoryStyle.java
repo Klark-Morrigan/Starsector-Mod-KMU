@@ -5,7 +5,7 @@ package kmu.maplayers.base.theme;
  * of that category: the fill, outer-border, and inner-seam elements, plus the width each
  * border strokes at. An unowned category always leaves its inner seam not drawn - its
  * cells never fuse into clusters, so there are no interior seams to stroke - and draws
- * its fill only where the ground was once settled.
+ * its fill only where a cell was once settled.
  *
  * <p>The per-category tier of the {@link RenderStyle} theme, keyed by
  * {@link MapStyleCategory}.

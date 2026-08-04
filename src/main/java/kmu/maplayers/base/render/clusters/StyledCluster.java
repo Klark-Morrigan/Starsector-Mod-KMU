@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One connected cluster ready to draw: the ground it fills, and the loops bounding it.
+ * One connected cluster ready to draw: the fill it paints, and the loops bounding it.
  *
  * <p>The cluster-level sibling of {@link StyledCell}. A cell that fused into a cluster keeps
  * only the seam it contributes to its neighbours; everything drawn once for the whole fused
@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @param fillTriangles the solid fill as a GL_TRIANGLES soup; empty when nothing fills
  * @param hatchSegments the hatched fill as a GL_LINES run of diagonals, pre-clipped to the
- *                      hatched ground at build time; empty when this cluster hatches nothing
+ *                      hatched members at build time; empty when this cluster hatches nothing
  * @param outerLoop     the ring enclosing the cluster, as a GL_LINE_LOOP run; empty when
  *                      nothing strokes
  * @param enclaveLoops  the rings cut out of its interior, each its own GL_LINE_LOOP run;

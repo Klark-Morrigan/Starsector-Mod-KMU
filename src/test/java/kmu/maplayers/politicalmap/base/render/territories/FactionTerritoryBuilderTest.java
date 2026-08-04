@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  * continuous border rather than two squares drawn over each other; two that do not touch must
  * stay two bodies; and a rival a bloc has surrounded must come back as an enclave of the one body
  * around it. Each of those goes wrong silently - every ring still strokes, in the right colour,
- * with only the filled ground wrong.
+ * with only the filled cells wrong.
  *
  * <p>The geometry underneath is pinned elsewhere and only wired here: the ring trace by
  * {@link kmu.maplayers.base.render.clusters.ClusterBorderTraceIntegrationTest}, the fill's carve by
@@ -190,7 +190,7 @@ final class FactionTerritoryBuilderTest {
                 listGridRingCellIds());
 
             // A ring of cells is connected, so it is one body - and the rival it encloses is a
-            // hole in that body rather than ground outside it. The three ways this goes wrong all
+            // hole in that body rather than area outside it. The three ways this goes wrong all
             // still draw: two clusters (the ring read as split), one cluster with no enclave (the
             // hole lost, so the fill covers the rival), or the enclave promoted to a body of its
             // own (the rival painted in the bloc's own colour).

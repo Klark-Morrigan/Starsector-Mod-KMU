@@ -145,7 +145,7 @@ final class ClaimAugmentedHolderProviderTest {
 
                 // A bloc other than the spotlighted one keeps its plain bloc holder, so the style
                 // layer recedes its claim into the muted background just as it recedes that bloc's
-                // held ground - the claim shares its bloc's fate.
+                // held cells - the claim shares its bloc's fate.
                 assertThat(resolution.ownerBySystemId().get("rival-claimed"))
                         .isSameAs(rivalClaimHolder);
                 assertThat(resolution.unfilledSystemIds()).containsExactly("rival-claimed");

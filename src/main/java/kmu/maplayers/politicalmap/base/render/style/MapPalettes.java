@@ -44,11 +44,11 @@ public final class MapPalettes {
     }
 
     /**
-     * The two shades any piece of ground paints in under its style adjustment, stated over the
-     * shades themselves rather than over whoever holds them: the ground's own pair normally, the
+     * The two shades any cell paints in under its style adjustment, stated over the
+     * shades themselves rather than over whoever holds them: the cell's own pair normally, the
      * pass's shared desaturation palette once the adjustment desaturates it.
      *
-     * <p>Ground with no holder has shades all the same - a factionless cell's two neutral slots -
+     * <p>A cell with no holder has shades all the same - two neutral slots -
      * yet still recolours by the same rule, so the swap is expressed over a palette and the
      * holder-keyed form above resolves to this one. That keeps "desaturate swaps the palette" a
      * single rule no matter what the un-desaturated shades came from.
@@ -63,9 +63,9 @@ public final class MapPalettes {
     }
 
     /**
-     * The palette a piece of ownerless ground draws in: the shared neutral colour in both
+     * The palette an ownerless cell draws in: the shared neutral colour in both
      * slots, so whichever slot an element names it paints neutral. Stated once here because
-     * "factionless ground has no palette of its own" is one rule, and a caller spelling the
+     * "a factionless cell has no palette of its own" is one rule, and a caller spelling the
      * colour twice is stating it again rather than reading it.
      */
     public static FactionPalette resolveNeutralPalette(Color neutralColour) {
@@ -101,14 +101,14 @@ public final class MapPalettes {
     }
 
     /**
-     * Picks the palette shade of a piece of ground itself: its holder's, or the shared neutral
+     * Picks the palette shade of a cell itself: its holder's, or the shared neutral
      * colour when nothing owns it - a factionless system (decivilised, or uninhabited) has no
      * palette of its own, so both shades resolve neutral, exactly as its cell's own outline
      * draws. Null for a NONE ("No color") choice, so the caller skips the element.
      *
      * <p>Reads the holder's authored shades untouched, with no per-bloc adjustment folded in,
-     * so this answers "whose ground is this" rather than "how is this ground painted right
-     * now". The two diverge under a recede: ground the map has sunk to grey still belongs to
+     * so this answers "whose cell is this" rather than "how is this cell painted right
+     * now". The two diverge under a recede: a cell the map has sunk to grey still belongs to
      * its holder, and an element whose whole job is to name that holder should say so.
      */
     public static Color pickHolderPaletteColour(
@@ -127,7 +127,7 @@ public final class MapPalettes {
      * faction's own two shades, each scaled toward black by {@code darkeningStrength}. Independent's
      * authored colour and the mid-grey genuine independent space paints in are the same grey, so
      * painting a desaturated faction in Independent's shades unchanged would make it read as
-     * independent-held space; darkening sinks the receded ground to a distinctly darker grey that
+     * independent-held space; darkening sinks the receded fills to a distinctly darker grey that
      * sits behind it, separated by value rather than a hue neither grey has. The strength is the
      * fraction of brightness removed - 0 leaves the Independent shades untouched, 0.3 draws them
      * 30% darker, 1 goes to black. Takes the sector and strength as parameters (rather than reading

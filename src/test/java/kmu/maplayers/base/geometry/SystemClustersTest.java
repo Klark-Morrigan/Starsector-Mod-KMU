@@ -133,7 +133,7 @@ final class SystemClustersTest {
 
         @Test
         void a_cell_drawing_as_another_systems_star_reports_that_star_not_its_own_id() {
-            // Cell "wedge" is absorbed ground drawing as key F's star A - it has no star of
+            // Cell "wedge" is an absorbed cell drawing as key F's star A - it has no star of
             // its own. It borders A's own cell, so it fuses into A's cluster, but the cluster's
             // members are the systems the cells draw as, so it reports A once, never "wedge".
             var edges = Map.of(

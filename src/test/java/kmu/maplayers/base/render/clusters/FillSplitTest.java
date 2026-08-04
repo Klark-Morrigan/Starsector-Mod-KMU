@@ -22,7 +22,7 @@ final class FillSplitTest {
     private static final String SOLID_SYSTEM = "solid-system";
     private static final String HATCHED_SYSTEM = "hatched-system";
     private static final String UNFILLED_SYSTEM = "unfilled-system";
-    // A cell holding ground its cluster covers without a star of its own in it - present among the
+    // A cell its cluster covers without a star of its own in it - present among the
     // members' cells, absent from their systems.
     private static final String STARLESS_CELL = "starless-cell";
 
@@ -60,7 +60,7 @@ final class FillSplitTest {
         @Test
         void classifyFillStateReturnsSolidForACellWithNoStarOfItsOwn() {
             // A null system id has no per-system fill state, so it fills solid with the cluster's
-            // ground rather than probing either exception set with a null key.
+            // rest of the cluster rather than probing either exception set with a null key.
             assertThat(FillSplit.classifyFillState(null, Set.of("other"), Set.of("other")))
                     .isEqualTo(FillState.SOLID);
         }
@@ -80,7 +80,7 @@ final class FillSplitTest {
 
         @Test
         void splitMembersByFillStateKeepsAStarlessCellAmongTheCellsButNotTheSystems() {
-            // A cell with no star of its own is real ground to trace a cluster from, so it joins
+            // A cell with no star of its own is still real area to trace a cluster from, so it joins
             // the solid state's cells - but it names no system, so nothing may key or mark it.
             var split = splitFootprint();
 
@@ -93,7 +93,7 @@ final class FillSplitTest {
     class HasNonSolidMembers {
 
         @Test
-        void hasNonSolidMembersIsTrueWhenTheFootprintHoldsHatchedGround() {
+        void hasNonSolidMembersIsTrueWhenTheFootprintHoldsAHatchedMember() {
             assertThat(splitFootprint().hasNonSolidMembers()).isTrue();
         }
 

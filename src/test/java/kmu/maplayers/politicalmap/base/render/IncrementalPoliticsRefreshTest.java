@@ -208,7 +208,7 @@ final class IncrementalPoliticsRefreshTest {
 
         @Test
         void applyStalePoliticsUpdatesSkipsAStaleSystemThatSeedsNoCell() {
-            // A resize changes holding over ground already drawn; it never admits a
+            // A resize changes holding over cells already drawn; it never admits a
             // system to the map, so one with no cell has nothing to re-shape and must not
             // reach the re-derive at all.
             var territories = ownedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));

@@ -44,8 +44,8 @@ final class CellGroupingTest {
 
         @Test
         void resolveGroupKeyOfReturnsTheKeyOfTheStarACellDrawsAs() {
-            // The wedge takes A's key through the two lookups, so it paints as A's ground
-            // rather than as neutral ground.
+            // The wedge takes A's key through the two lookups, so it paints as A's
+            // rather than as unowned.
             var grouping = new CellGrouping(Map.of("wedge", "A"), Map.of("A", "F"));
 
             assertThat(grouping.resolveOwnerOf("wedge")).isEqualTo("F");
@@ -88,7 +88,7 @@ final class CellGroupingTest {
         @Test
         void groupCellIdsByKeyOmitsCellsWithNoResolvedKey() {
             // A shard (no star) and a cell drawing as an unowned star both resolve no key, so
-            // neither joins any bucket - they stay neutral ground, grouped under nobody.
+            // neither joins any bucket - they stay unowned, grouped under nobody.
             var grouping = new CellGrouping(
                     Map.of("A", "A", "unowned", "U"),
                     Map.of("A", "F"));

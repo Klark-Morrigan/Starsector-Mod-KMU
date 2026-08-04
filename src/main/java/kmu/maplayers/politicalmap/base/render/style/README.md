@@ -11,7 +11,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 ## Index
 
 - [Layout](#layout)
-- [The categories: how this map divides the ground](#the-categories-how-this-map-divides-the-ground)
+- [The categories: how this map divides its cells](#the-categories-how-this-map-divides-its-cells)
 - [The selections: which slot an element is pointed at](#the-selections-which-slot-an-element-is-pointed-at)
 - [The reader: the one seam](#the-reader-the-one-seam)
 - [The resolvers: choices into colours](#the-resolvers-choices-into-colours)
@@ -29,20 +29,20 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
   at. One category set, one selection set, one reader that populates the theme, and the resolvers
   that turn a selection plus a bloc's recede into concrete shades.
 
-## The categories: how this map divides the ground
+## The categories: how this map divides its cells
 
 `PoliticalMapCategory` is the four ways this map divides the sector - `FACTION`, `INDEPENDENT`,
 `DECIVILISED`, `UNINHABITED` - and the keys the theme's per-category bundles are held under. It
-lives here rather than in `base.theme` because dividing ground by *who holds it* is this layer's
+lives here rather than in `base.theme` because dividing cells by *who holds them* is this layer's
 reading of the sector: the theme keys on the open `MapStyleCategory`, so a hazard or trade layer
 would declare its own set alongside its own painting code. An enum, so this side's own lookups
 stay a closed set the compiler checks.
 
 Two of the four are owned and carry a full fill/border/seam style. The other two have no owner and
 so no faction palette to choose a shade from: both paint in the shared neutral colour and expose no
-colour field at all, leaving each element's opacity as its only on/off. Decivilised ground draws a
-fill and an outline (a dead colony is settled ground, so it reads as occupied rather than as a bare
-ring); uninhabited ground draws an outline alone, since filling it would wash every corner of the
+colour field at all, leaving each element's opacity as its only on/off. A decivilised cell draws a
+fill and an outline (a dead colony was settled, so it reads as occupied rather than as a bare
+ring); an uninhabited cell draws an outline alone, since filling it would wash every corner of the
 sector nothing else holds. Neither has an inner seam: factionless cells never fuse into clusters,
 so there are no province divisions to stroke.
 
@@ -86,14 +86,14 @@ the space it labels:
 
 - `MapPalettes` - resolves a paint selection plus a recede into concrete shades: which palette,
   which slot, and what a desaturated subject recolours to. Stated over a palette rather than over
-  an owner, so ownerless ground recolours by the same rule a bloc does - and ownerless ground gets
+  an owner, so an ownerless cell recolours by the same rule a bloc does - and an ownerless cell gets
   that palette from `resolveNeutralPalette`, the one statement of "no holder means the neutral
   colour in both slots".
 - `BlocStyleResolver` - resolves the shared per-bloc decision (independent-vs-faction style and
   the adjustment a bloc draws under) into a `BlocStyleDecision`.
-- `FactionlessStyleResolver` - the counterpart for ground with no owner, which has no bloc to carry
+- `FactionlessStyleResolver` - the counterpart for a cell with no owner, which has no bloc to carry
   a decision: which factionless category it draws in, and whether the pass's recede reaches it
-  (decivilised ground yes, uninhabited ground no).
+  (a decivilised cell yes, an uninhabited one no).
 - `BlocStyling` - maps that decision onto the pass's actual theme, giving the concrete bundle
   plus adjustment a bloc draws under. It owns the one field that crosses between bundles: a
   desaturated bloc's fill is held at the *faction* opacity, so a desaturated surface reads as
@@ -107,10 +107,10 @@ which composes both off one retained snapshot.
 ## What is not here
 
 *Muting and desaturation* are a separate, dynamic axis: an `ElementStyleAdjustment` applied on top
-of the resolved style, per bloc or per piece of ownerless ground. The adjustment itself - the pair
+of the resolved style, per bloc or per ownerless cell. The adjustment itself - the pair
 of knobs and the rule for unioning two of them - is the framework's, in
 [`base.theme`](../../../../base/theme/README.md); this layer owns the desaturation *mechanism* (the
-palette swap in `MapPalettes`) and the rule for which factionless ground it reaches
+palette swap in `MapPalettes`) and the rule for which factionless cells it reaches
 (`FactionlessStyleResolver`); the *policy* of which bloc recedes and by how much lives one package
 up in `politicalmap.base` (`RecedePreferences` and the views). *Baking* the resolved style into the draw
 packets is [`render.territories`](../territories/README.md) - its `StyledCellBuilder` and

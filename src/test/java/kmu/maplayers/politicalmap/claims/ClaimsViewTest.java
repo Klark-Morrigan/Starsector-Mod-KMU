@@ -100,7 +100,7 @@ final class ClaimsViewTest {
         @Test
         void shouldUseIndependentStyleIsTrueForIndependentSpace() {
             // Delegated to the faction view: an independent claimant recedes to the muted style like
-            // independent ground.
+            // independent territory.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
                     Factions.INDEPENDENT,
                     ANY_GROUPING,

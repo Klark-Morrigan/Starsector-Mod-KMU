@@ -6,7 +6,7 @@ import java.util.List;
  * The cluster-border smoothing pipeline captured one stage at a time: each pass's border loops
  * as flattened GL_LINE_LOOP runs, kept apart so a renderer can colour and layer them and what
  * each pass did to the geometry reads against the stage before it. Built in place of a layer's
- * normal ground while its border-tracing diagnostic is on.
+ * normal fills while its border-tracing diagnostic is on.
  *
  * <p>{@code baseLoops} is the traced border before smoothing (the resolved inset envelope);
  * {@code despikedLoops} the same after spike sanding, and {@code roundedLoops} after corner

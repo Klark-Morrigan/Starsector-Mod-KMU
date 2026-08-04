@@ -41,7 +41,7 @@ import static org.mockito.Mockito.mock;
  */
 public final class PoliticalMapTerritoryFixtures {
 
-    /** The shared neutral shade unowned ground resolves to, wherever a test asserts against it. */
+    /** The shared neutral shade an unowned cell resolves to, wherever a test asserts against it. */
     public static final Color NEUTRAL_COLOUR = Color.GRAY;
 
     // Fixtures only; never instantiated.
@@ -82,7 +82,7 @@ public final class PoliticalMapTerritoryFixtures {
      * A theme painting every one of this map's categories in the same bundle, over the shared
      * inert global tier.
      *
-     * <p>For the suites whose subject is which ground a builder draws rather than what it draws
+     * <p>For the suites whose subject is which cells a builder draws rather than what it draws
      * it in: with all four categories identical, a difference in the output can only have come
      * from the geometry or the holding, never from a category the fixture happened to style
      * differently.

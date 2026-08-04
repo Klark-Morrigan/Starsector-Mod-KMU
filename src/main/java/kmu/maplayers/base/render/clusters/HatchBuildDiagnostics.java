@@ -61,7 +61,7 @@ public final class HatchBuildDiagnostics {
             + GAP_UNITS_NOTE;
     }
 
-    // One body's row: how many primitives its ground came back as, what cutting them cost, and the
+    // One body's row: how many primitives its fill came back as, what cutting them cost, and the
     // readings that settle whether the join tolerance is load-bearing. The widest gap it closed is
     // the reach it had to have; the narrowest one left open is what the next notch up would start
     // joining, and is the only reading a run at zero tolerance can give, since nothing can be

@@ -14,12 +14,12 @@ import java.awt.Color;
 import java.util.List;
 
 /**
- * Paints the cluster-border smoothing pipeline in place of a layer's normal ground: the stages
+ * Paints the cluster-border smoothing pipeline in place of a layer's normal fills: the stages
  * stacked so each pass's effect reads against the one before it. Bottom to top - the base traced
  * border in red, the despiked border in yellow, and the rounded border in green - each stage
  * present only when its pass ran, so the layering mirrors the two smoothing gates.
  *
- * <p>Static because the overlay has no incremental path: any change to the ground it traces
+ * <p>Static because the overlay has no incremental path: any change to the cells it traces
  * rebuilds the whole of it, so nothing here updates a subset of one between rebuilds.
  *
  * <p>Pure GL emission over an already-built {@link ClusterBorderStageOverlay}, the debug analogue

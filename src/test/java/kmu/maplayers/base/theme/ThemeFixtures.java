@@ -11,7 +11,7 @@ import kmlib.opengl.GlLineQuality;
  * get at the one tier it actually asserts on. A placeholder that drifts between suites is the kind
  * of difference that makes two tests of the same behaviour quietly disagree.
  *
- * <p>The categories are deliberately absent: what the ground divides into belongs to the layer
+ * <p>The categories are deliberately absent: what the cells divide into belongs to the layer
  * painting it, so a layer's own fixtures seed those against its own category set.
  */
 public final class ThemeFixtures {
@@ -27,7 +27,7 @@ public final class ThemeFixtures {
     private static final double DESATURATION_DARKENING = 0.3;
 
     // The join tolerance a fixture hatches under. Zero merges only crossings that coincide
-    // exactly, which is the reading with no epsilon in it: a suite about which ground hatches gets
+    // exactly, which is the reading with no epsilon in it: a suite about which cells hatch gets
     // the same segments either way, and one whose subject is the merge names a tolerance of its
     // own rather than inheriting a number chosen here.
     private static final double FIXTURE_HATCH_JOIN_TOLERANCE = 0;

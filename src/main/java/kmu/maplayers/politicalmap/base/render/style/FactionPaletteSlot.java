@@ -16,7 +16,7 @@ import kmu.settings.FactionPaletteChoice;
  * third option for ("No color"). A style expresses "paints nothing" by holding no selection at
  * all, so a value meaning that must not exist here: were the settings enum itself the paint, an
  * element could be built holding an explicit no-colour value, which reads as drawable to every
- * caller that tests for a selection and silently paints ground meant to stay bare. Splitting the
+ * caller that tests for a selection and silently paints a cell meant to stay bare. Splitting the
  * two makes that state unconstructible rather than merely discouraged.
  *
  * <p>The settings enum stays the wire format the player's pick is read and stored in; this is

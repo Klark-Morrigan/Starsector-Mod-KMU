@@ -43,14 +43,14 @@ public record BlocStyling(
             decision.adjustment());
     }
 
-    // Holds every desaturated bloc's ground at the one faction fill opacity, so a sector drawn
+    // Holds every desaturated bloc's fill at the one faction fill opacity, so a sector drawn
     // under desaturation reads as a single uniform surface separated by colour alone rather than
     // by two fill weights. Independent space carries a lighter fill of its own so it recedes
-    // behind faction ground when the map paints in full colour, but once desaturation has already
+    // behind a faction's fill when the map paints in full colour, but once desaturation has already
     // sunk a bloc to the shared grey that second cue only fractures the background: neighbouring
     // greys at different weights read as two kinds of empty. The rest of the independent bundle -
     // both border opacities and both widths - still applies, since those distinguish independent
-    // ground without breaking the fill's uniformity.
+    // territory without breaking the fill's uniformity.
     private static CategoryStyle applyDesaturatedFillOpacity(
             CategoryStyle independentStyle,
             CategoryStyle factionStyle,

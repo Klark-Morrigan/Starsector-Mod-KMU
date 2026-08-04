@@ -32,7 +32,7 @@ identical to a full rebuild.
   border belong to the cluster it fuses into - the form has no slot for either. A **factionless**
   cell (decivilised, or uninhabited) does not fuse, so it becomes a `LoneCell` carrying its own fill
   and outline, and resolves both palette slots to the shared neutral colour. Of the two, only
-  decivilised ground takes the pass's recede - see [what recedes](#what-recedes) below.
+  a decivilised cell takes the pass's recede - see [what recedes](#what-recedes) below.
 - `FactionTerritoryBuilder` bakes one bloc into a `StyledClusterGroup`: every body it holds, each
   with its national border traced across the systems in it, and each body's fill - which it hands
   to the framework's `SplitFillBuilder`, see
@@ -50,18 +50,18 @@ part of a bloc resolves from one read.
 ## What recedes
 
 The Mute and Desaturate toggles sink the background behind a spotlighted bloc. Every non-spotlit
-**bloc** recedes through `resolveBlocStyling`, and so does **decivilised** ground: a dead colony
+**bloc** recedes through `resolveBlocStyling`, and so does a **decivilised** cell: a dead colony
 carries a fill of its own, so leaving it at full strength lets it out-read the bloc the spotlight
 is meant to isolate. Muting dims it; desaturating recolours it off the same desaturation palette a
 receded bloc uses, rather than the neutral colour it paints in normally.
 
-**Uninhabited** ground is the exception. It is the empty backdrop the whole map is drawn over
+An **uninhabited** cell is the exception. It is the empty backdrop the whole map is drawn over
 rather than something the spotlight competes with, and its faint outline is what gives the sector
 its shape, so it stays at full strength under every recede.
 
-Only the *filter* recede reaches decivilised ground - it is the one whose receded ground is "the
+Only the *filter* recede reaches a decivilised cell - it is the one whose backdrop is "the
 rest of the sector". The alliances view's non-allied recede describes factions, which decivilised
-ground is not, so it leaves it alone. Off filter the pass's recede is the identity, so an
+cell is not, so it leaves it alone. Off filter the pass's recede is the identity, so an
 unfiltered map draws its dead worlds untouched.
 
 The rule itself is not here: `StyledCellBuilder` asks
@@ -79,7 +79,7 @@ halfway to a dead star exactly as it does halfway to a rival, and the dead star'
 own cell draws its inset outline - and, for a decivilised system, its neutral fill -
 in the neutral style on the far side of that channel.
 
-Those factionless fills are per cell rather than per cluster: factionless ground never fuses into
+Those factionless fills are per cell rather than per cluster: a factionless cell never fuses into
 a cluster, so it has no traced cluster to fill from and each cell tessellates its own outline
 instead. Which is why a `LoneCell` carries fill triangles at all, where an owned cell has no fill of
 its own to carry and takes it from the `StyledCluster` it fused into.

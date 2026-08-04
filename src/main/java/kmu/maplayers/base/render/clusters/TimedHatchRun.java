@@ -10,7 +10,7 @@ import kmlib.opengl.hatch.HatchRun;
  * duration arriving on its own could not be attributed to either.
  *
  * <p>Measured around the clip and merge alone, not around the tessellation that hands them their
- * ground. That tessellation costs the same whichever joining is in force, so including it would
+ * fill. That tessellation costs the same whichever joining is in force, so including it would
  * add a constant to both sides of every comparison the timing exists to support - and, being much
  * the larger of the two, would swamp the difference being looked for.
  *

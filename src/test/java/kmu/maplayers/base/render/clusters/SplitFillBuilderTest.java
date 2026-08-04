@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.within;
 /**
  * Pins which of the three fills a cluster actually pays for: nothing at all for a "No color"
  * fill, one tessellation of the frontier when every member fills solid, and a per-state carve
- * only when the cluster is spotlit or genuinely holds non-solid ground.
+ * only when the cluster is spotlit or genuinely holds non-solid members.
  *
  * <p>That fast path is the point - the common case is an owner that only fills solid, and it
  * must come out of the same smoothed loops the border strokes rather than out of a trace of
@@ -63,12 +63,12 @@ final class SplitFillBuilderTest {
         Map.of(HELD_SYSTEM, REGION_KEY, HATCHED_SYSTEM, REGION_KEY));
 
     // The body the fill is clipped to: the square [0, 1000] x [0, 1000], area 1e6, overlapping
-    // the members' own ground.
+    // the members' own cells.
     private static final RingRegion HOME_BODY = new RingRegion(
         square(0, 0, 1000),
         List.of());
 
-    // A second body of the same owner, clear of the members' ground and half the size - so a
+    // A second body of the same owner, clear of the members' cells and half the size - so a
     // fill that leaked from one body into the other, or that was built against the two together,
     // is caught by area rather than by mere presence. Area 25e4.
     private static final RingRegion DISTANT_BODY =
@@ -128,9 +128,9 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillCarvesPerStateWhenTheOwnerHoldsHatchedGround() {
+        void traceFillCarvesPerStateWhenTheOwnerHoldsAHatchedMember() {
             // Non-solid members force the carve even off the spotlight, so solid and hatched
-            // ground read apart inside the one frontier.
+            // fills read apart inside the one frontier.
             var fill = builder()
                 .traceFill(false, hatchedSplit(), REGION_KEY, Color.RED)
                 .buildFillFor(HOME_BODY);
@@ -140,9 +140,9 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillConfinesACarvedStateToTheBodyItsGroundSitsIn() {
+        void traceFillConfinesACarvedStateToTheBodyItsMembersSitIn() {
             // The states are traced once across the whole owner, so nothing but the per-body clip
-            // keeps the distant body from being painted with ground it does not contain. Its fill
+            // keeps the distant body from being painted over area it does not contain. Its fill
             // has to come back empty: its own loops enclose none of the members.
             var tracedFill = builder().traceFill(
                 false, // Is not spotlit.
@@ -186,7 +186,7 @@ final class SplitFillBuilderTest {
         }
     }
 
-    // Reads nothing off the hatches it cuts: this suite's subject is which ground each state
+    // Reads nothing off the hatches it cuts: this suite's subject is which cells each state
     // fills, so a case asserts on the geometry that comes back rather than on anything observed
     // along the way.
     private static SplitFillBuilder builder() {

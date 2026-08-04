@@ -21,7 +21,7 @@ import java.util.Set;
  * pass that resolves it: a system's holder and how its fill is drawn are decided together.
  *
  * @param ownerBySystemId the bloc painting each owned system, keyed by system id; a system
- *                        with no holder is absent, so it draws as uninhabited ground
+ *                        with no holder is absent, so it draws as an uninhabited cell
  * @param contestedSystemIds the owned systems drawn hatched rather than solid - the spotlit
  *                        bloc's present-but-dominated systems under a filter; empty when the
  *                        whole resolution fills solid

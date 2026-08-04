@@ -25,7 +25,7 @@ import java.util.Optional;
  * border and name.
  *
  * <p>A bloc's styling and label are the faction view's exactly - an independent claimant recedes like
- * independent ground, and a bloc is named by its claiming faction's own display name - so those three
+ * independent territory, and a bloc is named by its claiming faction's own display name - so those three
  * seams delegate to {@link FactionsView} rather than restating them, which keeps the two views from
  * drifting on how a plain faction bloc paints and reads.
  *
@@ -84,7 +84,7 @@ public final class ClaimsView implements PoliticalMapView {
             HolderGrouping grouping,
             ElementStyleAdjustment adjustment) {
         // A claimant bloc styles exactly as the faction view styles a held one, so an independent
-        // claimant recedes to the muted style like independent ground; delegated so the two views
+        // claimant recedes to the muted style like independent territory; delegated so the two views
         // can never diverge on the classification.
         return FactionsView.INSTANCE.shouldUseIndependentStyle(blocId, grouping, adjustment);
     }

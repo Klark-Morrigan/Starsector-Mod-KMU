@@ -1,4 +1,4 @@
-# Clusters: cells into drawable ground (`base.render.clusters`)
+# Clusters: cells into drawable fills (`base.render.clusters`)
 
 The shape work every painting layer needs: turning shaped cells and opaque owner ids into the
 borders, fills, and GL-ready runs a renderer emits. Same-owner cells fuse into one cluster, and a
@@ -23,7 +23,7 @@ Part of [the render surface](../README.md), in Klark Morrigan's Utilities; see t
 [the framework vocabulary](../../../README.md#the-vocabulary), along with what each political-map
 term maps to. Only the term this package owns outright is settled here: `FillSplit.FillState` is
 the single definition of the three **fill states** (solid, hatched, unfilled), and everything that
-hatches, tessellates, or styles ground refers to it rather than restating what a state means.
+hatches, tessellates, or styles a fill refers to it rather than restating what a state means.
 
 One term is worth repeating because the geometry below turns on it: a **coincident** neighbour is
 one whose shared edge insets by nothing, so two clusters traced against each other abut flush.
@@ -65,7 +65,7 @@ without a gap opening between them.
   haloes out from under the one drawn over it. A stage is filled only when its gate was on, so an
   empty one reads as "that pass did not run" rather than "it ran and changed nothing" - which is
   why the collector takes a named call per stage rather than three lists to append into. Which
-  ground is traced at all stays the layer's own call; only the shape of the capture is here.
+  cells are traced at all stays the layer's own call; only the shape of the capture is here.
 - `VertexRuns` - flattens one shaped cell's edges of a single class (cluster border, or interior
   seam) into a GL_LINES run. The generic packing is `kmlib.opengl.GlVertexRuns`; what lives here is
   the one conversion that has to know a `ShapedCell`.
@@ -134,7 +134,7 @@ edge back by different amounts - opening an unfilled wedge on the more-receded s
 
 Both drawn states are then clipped to the smoothed loops, so neither keeps the mitered corner the
 rounding cut and pokes out past the line the border strokes. The unfilled state is never
-tessellated at all: it holds ground for the border and the name and paints nothing.
+tessellated at all: it holds its place for the border and the name and paints nothing.
 
 ## Painting: the draw-list seam
 
@@ -149,7 +149,7 @@ as the baseline nothing inherits by accident.
 
 The fills go down in two sweeps, all the solid triangle soups and then every hatch run, rather than
 both runs per owner. Hoisting the hatch above every solid fill covers nothing that was visible
-before - cells are disjoint, so no owner's triangles can land on another's hatched ground - and it
+before - cells are disjoint, so no owner's triangles can land on another's hatched fill - and it
 buys the hatch a pass of its own, so the line state it strokes under is set once for the whole map
 instead of being pushed and popped around each owner. That pass is where `HatchStroke` is
 dispatched on: the theme decides which substrate the hatch reaches the screen through, and the

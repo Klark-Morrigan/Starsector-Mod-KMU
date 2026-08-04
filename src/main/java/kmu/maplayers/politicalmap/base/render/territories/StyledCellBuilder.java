@@ -32,7 +32,7 @@ import java.util.List;
  * <p>A <em>factionless</em> cell (decivilised, or uninhabited) does not fuse, so it has no
  * cluster to inherit from and keeps its own fill and outline. It names no faction palette
  * either, so both its palette slots hold the shared neutral colour - until the pass recedes it,
- * which decivilised ground takes as readily as a bloc does.
+ * which a decivilised cell takes as readily as a bloc does.
  *
  * <p>Shared by the full rebuild and the incremental re-shape, so both classify and style a
  * cell identically.
@@ -48,12 +48,12 @@ public final class StyledCellBuilder {
      * inset-collapsed cell, or a factionless cell with neither its fill nor its outline drawn.
      *
      * <p>Takes the system the cell draws as rather than the cell itself, since everything read
-     * here - the holder, the palette, whether the ground is decivilised - is known per system
+     * here - the holder, the palette, whether the cell is decivilised - is known per system
      * and not per cell.
      *
      * @param territories this pass's retained holding, theme, and filter state
      * @param systemId    the system the cell draws as, or null for a cell with no star of its
-     *                    own, which draws as plain uninhabited ground - it has no holder to
+     *                    own, which draws as plain uninhabited - it has no holder to
      *                    colour it and no market to have died
      * @param shaped      the cell's inset shape
      * @return the cell's draw record, or null when it puts no ink on the map
@@ -105,7 +105,7 @@ public final class StyledCellBuilder {
             (float) style.innerWidth());
     }
 
-    // A lone cell: its own fill and outline, and no seam - factionless ground fuses with nothing,
+    // A lone cell: its own fill and outline, and no seam - a factionless cell fuses with nothing,
     // so it has no sibling to divide from. Its outline's corners are rounded with the same corner
     // settings and gate the cluster borders use, so a lone dead system reads as smoothly as a
     // cluster when rounding is on and stays a sharp Voronoi cell when it is off; the fill is
@@ -127,7 +127,7 @@ public final class StyledCellBuilder {
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
-        // Factionless ground has no holder palette, so both slots hold the shared neutral colour:
+        // A factionless cell has no holder palette, so both slots hold the shared neutral colour:
         // whichever slot an element names, it paints neutral - unless the recede desaturates the
         // cell, in which case it recolours off the pass's desaturation palette exactly as a
         // receded bloc does.
@@ -146,7 +146,7 @@ public final class StyledCellBuilder {
             shaped,
             territories.getGlobalStyle().borderSmoothing().cornerRounding());
 
-        // Tessellate the fill only when it will actually be painted: uninhabited ground is
+        // Tessellate the fill only when it will actually be painted: an uninhabited cell is
         // outline-only and covers most of the sector, so triangulating every one of its cells
         // for a fill no pass emits would be the map's largest wasted rebuild cost.
         return new StyledCell.LoneCell(

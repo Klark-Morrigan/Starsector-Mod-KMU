@@ -33,7 +33,7 @@ import java.util.TreeMap;
  *
  * @param cellEdgesByCellId  each cell, as its adjacency-tagged edges
  * @param ownerByCellId      the owner per cell; a cell absent from the map is
- *                           unowned, which is what makes it neutral ground
+ *                           unowned, which is what makes it a neutral cell
  * @param shapedCellByCellId each cell after the border channel is cut inward
  * @param ringsByOwner       each owner's traced cluster rings
  */

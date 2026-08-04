@@ -1,7 +1,7 @@
 package kmu.maplayers.base.theme;
 
 /**
- * The sector-wide hatch pattern that ground in the
+ * The sector-wide hatch pattern that a fill in the
  * {@link kmu.maplayers.base.render.clusters.FillSplit.FillState#HATCHED} state is cut with, so
  * it reads apart from the solid fill beside it while staying the same colour. One pattern for
  * the whole sector, so this is a global-tier value (part of {@link GlobalStyle}) rather than

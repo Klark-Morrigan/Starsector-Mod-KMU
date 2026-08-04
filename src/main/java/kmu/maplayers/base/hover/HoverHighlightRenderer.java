@@ -22,7 +22,7 @@ import java.awt.Color;
  * <p>Both burn additively rather than blending over the map. A halo is layers of the same
  * loop stacked on each other - only additive blending lets those layers accumulate into a
  * soft outward falloff instead of the topmost one simply replacing the rest - and the wash
- * brightens ground already painted, so adding light to the fill under it reads as the cell
+ * brightens what is already painted, so adding light to the fill under it reads as the cell
  * lighting up rather than as a second, flatter fill laid over it.
  *
  * <p>Pure GL emission over the geometry {@link HoverHighlightGeometry} resolved and the style
@@ -36,7 +36,7 @@ public final class HoverHighlightRenderer {
      * cell.
      *
      * @param source    the active layer's answers about the frame it painted - the hovered
-     *                  extent, the loops around it, and the shade its ground draws in
+     *                  extent, the loops around it, and the shade its fill draws in
      * @param style     the theme's highlight tier, which owns the shape of the halo and the
      *                  weight of the wash
      * @param hover     what the cursor is over this frame
@@ -76,8 +76,8 @@ public final class HoverHighlightRenderer {
             });
     }
 
-    // The colour the whole highlight paints in: the shade of the ground under the cursor, which
-    // only the layer that owns the ground can name. Null when the cursor is over nothing (a
+    // The colour the whole highlight paints in: the shade of the cell under the cursor, which
+    // only the layer that owns that cell can name. Null when the cursor is over nothing (a
     // parked hover, including when the highlight is disabled) or the selection paints nothing,
     // so the caller skips the pass.
     private static Color resolveHighlightColour(

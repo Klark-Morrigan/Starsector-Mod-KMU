@@ -1,8 +1,8 @@
 package kmu.maplayers.base.refresh;
 
 /**
- * The coarse changes any painting map layer could raise, whatever it paints: its ground moved,
- * its background receded, its filter moved, its styling moved. Declared in the framework rather
+ * The coarse changes any painting map layer could raise, whatever it paints: its cells moved,
+ * what it recedes changed, its filter moved, its styling moved. Declared in the framework rather
  * than beside one layer because none of them names anything a layer holds - a hazard overlay
  * would mean by each of these exactly what a political one does.
  */
@@ -16,7 +16,7 @@ public enum MapLayerCommonRefreshSignal implements MapLayerRefreshSignal {
     GEOMETRY,
 
     /**
-     * A toggle governing how receded ground draws flipped, so whatever paints receded ground
+     * A toggle governing how a receded cluster draws flipped, so whatever recedes one
      * rebuilds. Such toggles are sidebar-only per-save state rather than LunaLib fields, so a
      * flip moves no settings revision and this is the seam that repaints the overlay live
      * instead. A layer that recedes nothing does not read it, exactly as it ignores any change

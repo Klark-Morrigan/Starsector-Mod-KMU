@@ -33,7 +33,7 @@ import java.util.List;
  *
  * <p>What it produces is a framework draw record, but what it decides is political throughout -
  * whose palette the fill resolves against, which systems the filter has left contested, which
- * ground the spotlight recedes. So it keeps its own vocabulary and stays on this side of the
+ * cells the spotlight recedes. So it keeps its own vocabulary and stays on this side of the
  * seam, handing over a record that says nothing about factions.
  *
  * <p>Fill and border come from the same loops - triangulated for the one, flattened for the
@@ -43,7 +43,7 @@ import java.util.List;
  * bodies when the incremental refresh gains or loses one.
  *
  * <p>Membership is the cells a bloc draws, not the systems it holds: those differ wherever a
- * bloc's ground includes a cell no star of its own sits in, and it is the cells that carry the
+ * bloc's territory includes a cell no star of its own sits in, and it is the cells that carry the
  * edges a border is traced from.
  */
 public final class FactionTerritoryBuilder {
@@ -115,7 +115,7 @@ public final class FactionTerritoryBuilder {
             insetRings,
             territories.getGlobalStyle().borderSmoothing());
 
-        // The bloc's loops sorted back into the bodies they bound: a bloc holding ground in two
+        // The bloc's loops sorted back into the bodies they bound: a bloc holding cells in two
         // places traces two outer rings plus whatever enclaves each encloses, and which enclave
         // belongs to which body is what decides where its fill stops.
         var clusterRegions = PolygonRegions.groupRingsIntoRegions(borderLoops);

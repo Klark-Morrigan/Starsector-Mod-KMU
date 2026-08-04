@@ -59,7 +59,7 @@ Notes on each:
   fades to the muted style. A bloc is named after its faction.
 - **Alliances.** Allied factions merge into one coloured, named cluster per alliance. Unaligned
   factions keep their own border and name. Two toggles fade a non-allied faction: *Mute* dims it,
-  *Desaturate* makes it read as background ground. With both off, a lone faction looks exactly as
+  *Desaturate* makes it read as backdrop. With both off, a lone faction looks exactly as
   it does on the Factions view.
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.
@@ -69,7 +69,7 @@ Notes on each:
 
 ## Claim extensions
 
-The Factions and Alliances views do not only paint held ground. A system a faction *claims* but
+The Factions and Alliances views do not only paint held cells. A system a faction *claims* but
 does not *hold* joins that faction's territory drawn empty: inside the border and under the
 faction's name, but with no fill. The Claims view instead paints those same claims solid. Why a
 claim resolves this way is [ownership resolution](base/politics/holders/README.md); how the empty
@@ -103,7 +103,7 @@ fill states are [ownership resolution](base/politics/holders/README.md).
 - **[Territory fills and borders](base/render/territories/README.md)** - how cells become each
   bloc's coloured cluster, border, seams, and split fill.
 - **[Render style layer](base/render/style/README.md)** - the four categories this map divides the
-  ground into, and how player settings become each territory's colours, widths, and opacities.
+  cells into, and how player settings become each territory's colours, widths, and opacities.
 - **`base/render/labels/anchor`** - what a cluster's name reads and what shade it draws in: the
   active view's name for the bloc, and the outer border its group inherits. Both are resolved here
   and handed to the framework's overlay, which places and draws them.
@@ -121,7 +121,7 @@ as a change the engine fired no event for, answered into the framework's poll - 
 `PoliticalMapRefreshSignal`, the coarse changes only this layer can raise on the shared board,
 alliance membership being the one),
 `render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers about the cell under
-the cursor: the owner's border loops it might sit inside and the shade its ground draws in, over
+the cursor: the owner's border loops it might sit inside and the shade its fill draws in, over
 the frame's painted shapes it hands the framework unchanged;
 and `PoliticalMapHoverGates` - whether this layer answers the cursor at all, its own two switches
 ANDed with the framework's, plus whether either kind of feedback still needs the cursor read),

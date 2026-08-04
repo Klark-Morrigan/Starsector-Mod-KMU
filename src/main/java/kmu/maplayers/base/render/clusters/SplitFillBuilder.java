@@ -102,7 +102,7 @@ public final class SplitFillBuilder {
             return TracedFill.WHOLE_CLUSTER;
         }
         // Both drawn states traced as their own clusters across the whole holding. The unfilled
-        // state is deliberately not traced - it holds ground for a boundary and a label and
+        // state is deliberately not traced - it holds its place for a boundary and a label and
         // paints nothing, so there is no geometry for it to carry.
         var subClusterOwners = mapSubClusterOwnerBySystemId(split, owner);
         return new TracedFill.PerFillState(

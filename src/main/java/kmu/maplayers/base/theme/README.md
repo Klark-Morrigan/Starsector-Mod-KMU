@@ -20,8 +20,8 @@ here. `MapStyleCategory` is the open key - memberless, since a category is only 
 and each layer declares its own constants of it beside the code that paints them; the political
 map's four are `PoliticalMapCategory` in
 [`politicalmap.base.render.style`](../../politicalmap/base/render/style/README.md). `RenderStyle`
-keys on the interface, so a layer whose ground divides some other way brings its own set rather
-than inheriting a vocabulary of who holds the ground.
+keys on the interface, so a layer whose cells divide some other way brings its own set rather
+than inheriting a vocabulary of who holds them.
 
 Part of [the map-layer framework](../../README.md); see the
 [mod README](../../../../../../../README.md) for project context.
@@ -98,7 +98,7 @@ Nothing here reads a setting, resolves a colour, or names a category. *The categ
 are `PoliticalMapCategory`, *populating* these records from LunaLib is `RenderStyleReader`, and
 *turning a selection into a concrete shade* is `MapPalettes`, all three in the political map's own
 [`render.style`](../../politicalmap/base/render/style/README.md). All three stay there because all
-three name factions: the four categories are a division of the ground by who holds it, the
+three name factions: the four categories are a division of the cells by who holds them, the
 reader's knobs and its per-save uninhabited-outline preference are the political map's, and the
 palettes resolve a bloc's recede. A second layer populating these records would bring its own
 categories and its own reader rather than share those.
