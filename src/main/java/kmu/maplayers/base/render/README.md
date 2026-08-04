@@ -39,9 +39,17 @@ reaching the same draw while the map's Starscape filter is on - that filter hard
 terrain, so the overlay needs a terrain the filter admits. Both halves dispatch to the same
 renderer over one set of draw lists, so nothing is built or held twice.
 
-Both terrain rows are declared in `data/campaign/terrain.json`. The plugin's class name is the one
-thing in this package that reaches a save, so every former name of it needs a `configureXStream`
-alias or an existing save fails to load.
+Both terrain rows are declared in `data/campaign/terrain.json`. Two class names from this package
+reach a save: the terrain plugin's, serialised with the entity holding it, and
+`SectorMapLayerStarscapeTerrain`'s - the starscape half is a mod-owned entity where the base half
+uses a vanilla one. Every former name of either needs a `configureXStream` alias or an existing
+save fails to load.
+
+The starscape half carries one further constraint the base half does not. Its entity resolves its
+spec from the row id it is constructed with and then reports the whitelisted map type in the
+getter's place, so the id cannot be read back off a loaded entity: a sweep by type id can neither
+recognise nor retire one left behind by a renamed row. Renaming that row needs a bridge on the
+entity itself.
 
 ## What is not here
 

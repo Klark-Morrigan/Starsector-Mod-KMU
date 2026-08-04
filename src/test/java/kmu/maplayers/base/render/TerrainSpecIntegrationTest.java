@@ -18,19 +18,27 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the shipped terrain spec against the classes it names. The spec reaches its plugin by
- * fully-qualified class name in a data file, which no compiler ever checks, so a class that moves
- * package or changes name leaves the row pointing at nothing - and the mod still builds green. The
- * failure surfaces only in play, as a terrain that never installs and therefore a map that draws no
- * layer at all. This reads the real file for that reason rather than a fixture.
+ * Pins the shipped terrain spec against the classes it names and the ids it declares. The spec
+ * reaches its plugin by fully-qualified class name in a data file, which no compiler ever checks, so
+ * a class that moves package or changes name leaves the row pointing at nothing - and the mod still
+ * builds green. Its row ids are unchecked from the other side for the same reason: the mod names
+ * them as strings to install under. Either failure surfaces only in play, as a terrain that never
+ * installs and therefore a map that draws no layer at all. This reads the real file for that reason
+ * rather than a fixture.
  */
 final class TerrainSpecIntegrationTest {
+
     private static final Path TERRAIN_SPEC = Path.of("data", "campaign", "terrain.json");
 
     // The spec is Starsector's JSON dialect - hash comments and trailing commas - which a strict
     // parser rejects, so the one field this test is about is read out directly rather than the file
     // being parsed as JSON.
     private static final Pattern PLUGIN_FIELD = Pattern.compile("\"plugin\"\\s*:\\s*\"([^\"]+)\"");
+
+    // A row id: the terrain type the mod constructs its entity with and the game resolves the spec
+    // from. Matched by the object that opens after it, so a quoted id inside a comment or a field
+    // value does not count as a declared row.
+    private static final Pattern ROW_ID = Pattern.compile("\"(kmu_[A-Za-z0-9_]+)\"\\s*:\\s*\\{");
 
     @Nested
     class PluginRows {
@@ -41,22 +49,51 @@ final class TerrainSpecIntegrationTest {
             // The engine instantiates whatever the row names and casts it to this interface, so a
             // row naming a real class of the wrong type fails just as hard as one naming nothing.
             assertThat(CampaignTerrainPlugin.class)
-                    .as("supertype of %s", pluginClassName)
-                    .isAssignableFrom(loadClass(pluginClassName));
+                .as("supertype of %s", pluginClassName)
+                .isAssignableFrom(loadClass(pluginClassName));
         }
 
         @Test
         void thePluginRowsNameExactlyTheTerrainSurfacePair() {
             // Named through the classes themselves, so a rename that misses the spec file breaks
             // this test at compile time on one side and at assertion time on the other.
-            assertThat(readPluginClassNames()).containsExactlyInAnyOrder(
+            assertThat(readPluginClassNames())
+                .containsExactlyInAnyOrder(
                     SectorMapLayerTerrainPlugin.class.getName(),
                     SectorMapLayerStarscapeTerrainPlugin.class.getName());
         }
     }
 
+    @Nested
+    class RowIds {
+
+        @Test
+        void theDeclaredRowIdsAreTheOnesTheModInstallsUnder() {
+            // Literals rather than a read of the mod's install constants, which sit in another
+            // package and would agree with themselves after a rename anyway. The constants are pinned
+            // to these same strings from the other side in KMU_ModPluginTest, which is what makes the
+            // data file and the installer agree without either reading the other.
+            //
+            // The starscape row is the one that cannot be repaired after the fact: its entity reports
+            // the engine's whitelisted map type in place of the id it was built with, so an id that
+            // drifts from this file resolves to no spec at game load and leaves behind an entity no
+            // later sweep can even recognise.
+            assertThat(readRowIds())
+                .containsExactlyInAnyOrder(
+                    "kmu_sector_map_layer_terrain",
+                    "kmu_sector_map_layer_starscape_terrain");
+        }
+    }
+
     private static List<String> providePluginClassNames() {
         return readPluginClassNames();
+    }
+
+    private static List<String> readRowIds() {
+        return ROW_ID.matcher(readTerrainSpec())
+            .results()
+            .map(match -> match.group(1))
+            .toList();
     }
 
     // Fails the test rather than erroring out: a name the classloader cannot find is exactly the
@@ -74,9 +111,9 @@ final class TerrainSpecIntegrationTest {
 
     private static List<String> readPluginClassNames() {
         return PLUGIN_FIELD.matcher(readTerrainSpec())
-                .results()
-                .map(match -> match.group(1))
-                .toList();
+            .results()
+            .map(match -> match.group(1))
+            .toList();
     }
 
     private static String readTerrainSpec() {

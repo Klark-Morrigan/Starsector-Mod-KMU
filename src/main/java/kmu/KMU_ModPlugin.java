@@ -84,7 +84,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // the map-layer carve lifted it into the framework and dropped the feature from its name.
         "kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin");
 
-    // The starscape half's entity and plugin class names are frozen into saves from their first
+    // The starscape variant's entity and plugin class names are frozen into saves from their first
     // install too, but neither has a former name to bridge, so no lineage exists for them yet. A
     // rename of either needs the same treatment this list gives the base plugin: the old name kept
     // as a read-only alias, and the live name aliased to itself last.
@@ -114,19 +114,24 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // Terrain type registered in data/campaign/terrain.json whose plugin paints the same layers over
     // the Starscape starfield - the mode the map widget suppresses the type above in. Its entity
     // resolves spec and plugin from this id at construction and then reports the engine's whitelisted
-    // map type in the getter's place, so unlike the base half the id cannot be read back off a loaded
-    // entity. The sweep below therefore cannot recognise one left under a former id; a later rename
-    // needs a bridge on the entity itself instead.
+    // map type in the getter's place, so unlike the base variant the id cannot be read back off a
+    // loaded entity. The sweep below therefore cannot recognise one left under a former id; a later
+    // rename needs a bridge on the entity itself instead.
     static final String SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE =
         "kmu_sector_map_layer_starscape_terrain";
 
-    // The reported-type test for the starscape half: whatever such an entity reports counts as
-    // current, because it answers with the engine's whitelisted map type rather than with the id it
-    // was installed under. Its plugin class alone is what marks it as ours.
-    // Package-private alongside the type ids for the same reason they are: the presence guard is
-    // exercised directly, and it has to be handed the wiring the install path uses rather than a
-    // restatement of it.
-    static final Predicate<String> IS_ANY_REPORTED_TYPE_CURRENT = reportedType -> true;
+    // The base variant. Its entity reports the id it was installed under, so one read back off a save
+    // under any other id was written by a former version of the mod and is stale.
+    private static final MapLayerTerrainVariant BASE_TERRAIN = new MapLayerTerrainVariant(
+        SectorMapLayerTerrainPlugin.class, SECTOR_MAP_LAYER_TERRAIN_TYPE::equals);
+
+    // The starscape variant. Whatever its entity reports counts as current, because it answers with
+    // the engine's whitelisted map type rather than with the id it was installed under - so nothing
+    // it reports can mark it stale, and its plugin class alone is what marks it as ours.
+    // Package-private alongside the type ids for the reason they are: the presence guard is exercised
+    // directly, and has to be handed the wiring the install path uses rather than a restatement of it.
+    static final MapLayerTerrainVariant STARSCAPE_TERRAIN = new MapLayerTerrainVariant(
+        SectorMapLayerStarscapeTerrainPlugin.class, reportedType -> true);
 
     @Override
     public void onGameLoad(boolean newGame) {
@@ -153,9 +158,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
 
         try {
-            // The second half of the render pair, installed in its own try so a failure to build the
-            // starscape entity - the half reaching concrete core classes - cannot take the base half
-            // down with it and leave the map painting nothing in either mode.
+            // The second terrain of the render pair, installed in its own try so a failure to build
+            // the starscape entity - the variant reaching concrete core classes - cannot take the
+            // base one down with it and leave the map painting nothing in either mode.
             installSectorMapLayerStarscapeTerrain(Global.getSector());
         } catch (RuntimeException exception) {
             LOG.error("Failed to install KMU sector map layer starscape terrain", exception);
@@ -234,6 +239,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     }
 
     static void installMarketUiContextTracker(SectorAPI sector) {
+        
         if (sector == null) {
             return;
         }
@@ -251,6 +257,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // the overlay updates live rather than only on reload. Idempotent: a
     // reloaded save already carries it.
     static void installPoliticalMapDiscoveryListener(SectorAPI sector) {
+
         if (sector == null) {
             return;
         }
@@ -269,6 +276,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // faction repaints live rather than only on reload. Idempotent: a reloaded
     // save already carries it.
     static void installPoliticalMapColonySizeListener(SectorAPI sector) {
+
         if (sector == null) {
             return;
         }
@@ -287,6 +295,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // colour and repaints neutral live rather than only on reload. Idempotent: a
     // reloaded save already carries it.
     static void installPoliticalMapDecivListener(SectorAPI sector) {
+
         if (sector == null) {
             return;
         }
@@ -305,6 +314,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // a colony repaints its system live rather than only on reload. Idempotent: a
     // reloaded save already carries it.
     static void installPoliticalMapColonisationListener(SectorAPI sector) {
+
         if (sector == null) {
             return;
         }
@@ -352,6 +362,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // persistent registration an older save captured and re-adds every host, so exactly one of each
     // renders per screen.
     static void installPoliticalMapSidebar(SectorAPI sector) {
+
         if (sector == null) {
             return;
         }
@@ -402,58 +413,54 @@ public class KMU_ModPlugin extends BaseModPlugin {
     static void installSectorMapLayerTerrain(SectorAPI sector) {
         installMapLayerTerrain(
             sector,
-            SectorMapLayerTerrainPlugin.class,
-            // This half's entity reports the id it was installed under, so one read back off a save
-            // under any other id was written by a former version of the mod and is stale.
-            SECTOR_MAP_LAYER_TERRAIN_TYPE::equals,
+            BASE_TERRAIN,
             // No params: the plugin is purely a map drawer and reads system positions itself, so it
-            // needs nothing passed in. addTerrain builds the plain entity, which is all this half
+            // needs nothing passed in. addTerrain builds the plain entity, which is all this variant
             // needs - the type it is registered under is the type it reports.
             hyperspace -> hyperspace.addTerrain(SECTOR_MAP_LAYER_TERRAIN_TYPE, null));
     }
 
-    // Installs the starscape half beside the base one, so one of the pair is always the one drawing.
-    // The entity is built by hand because addTerrain always constructs a plain CampaignTerrain and so
-    // could never produce the subclass whose reported type is what gets this half past the map
-    // widget's starscape filter; addEntity reaches the same registration addTerrain would have.
+    // Installs the starscape variant beside the base one, so one of the pair is always the one
+    // drawing. The entity is built by hand because addTerrain always constructs a plain
+    // CampaignTerrain and so could never produce the subclass whose reported type is what gets this
+    // variant past the map widget's starscape filter; addEntity reaches the same registration
+    // addTerrain would have.
     static void installSectorMapLayerStarscapeTerrain(SectorAPI sector) {
         installMapLayerTerrain(
             sector,
-            SectorMapLayerStarscapeTerrainPlugin.class,
-            IS_ANY_REPORTED_TYPE_CURRENT,
+            STARSCAPE_TERRAIN,
             hyperspace -> hyperspace.addEntity(
                 new SectorMapLayerStarscapeTerrain(SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE)));
     }
 
-    // Whether this location already carries the half of the pair identified by the given plugin
-    // class. Takes the terrain list rather than the location so the decision can be exercised on its
-    // own: the starscape half's install cannot be driven from a test at all, its add step
-    // constructing an entity whose obfuscated supertype chain a verifying JVM refuses to load, which
-    // leaves this the one decision on that path a test can reach.
+    // Whether this location already carries the given variant's terrain. Takes the terrain list
+    // rather than the location so the decision can be exercised on its own: the starscape variant's
+    // install cannot be driven from a test at all, its add step constructing an entity whose
+    // obfuscated supertype chain a verifying JVM refuses to load, which leaves this the one decision
+    // on that path a test can reach.
     static boolean hasMapLayerTerrain(
             List<CampaignTerrainAPI> locationTerrain,
-            Class<? extends CampaignTerrainPlugin> pluginClass,
-            Predicate<String> isReportedTypeCurrent) {
+            MapLayerTerrainVariant variant) {
+
         for (var terrain : locationTerrain) {
-            if (isOwnTerrain(terrain, pluginClass)
-                    && isReportedTypeCurrent.test(terrain.getType())) {
+            if (variant.isCurrentTerrain(terrain)) {
                 return true;
             }
         }
         return false;
     }
 
-    // The install shape both halves of the render pair share: retire anything of ours left under a
-    // type id this mod no longer installs, then add one only if none is already present. The halves
-    // differ in three points - which plugin class marks an entity as theirs, what a live one of
-    // theirs reports as its type, and how the entity is built - so those three arrive as parameters.
-    // Copying the block instead would leave two sweeps differing only in a class literal, of which
-    // one goes stale at the first rename nobody remembers to apply twice.
+    // The install shape both variants of the render pair share: retire anything of ours left under a
+    // type id this mod no longer installs, then add one only if none is already present. The variants
+    // differ in how they identify their own and in how the entity is built, so the first arrives as
+    // the variant itself and the second as the add. Copying the block instead would leave two sweeps
+    // differing only in a class literal, of which one goes stale at the first rename nobody
+    // remembers to apply twice.
     private static void installMapLayerTerrain(
             SectorAPI sector,
-            Class<? extends CampaignTerrainPlugin> pluginClass,
-            Predicate<String> isReportedTypeCurrent,
+            MapLayerTerrainVariant variant,
             Consumer<LocationAPI> addTerrainToLocation) {
+
         if (sector == null) {
             return;
         }
@@ -466,20 +473,20 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // Retire anything left under a former type id before counting what is present, so a save
         // written before a rename ends up with one live entity rather than the stale one plus a
         // freshly added replacement.
-        removeStaleMapLayerTerrain(hyperspace, pluginClass, isReportedTypeCurrent);
+        removeStaleMapLayerTerrain(hyperspace, variant);
 
         // One terrain instance per save: a reloaded save already carries it
         // (terrain persists), so skip if a copy is present to avoid stacking.
-        if (hasMapLayerTerrain(hyperspace.getTerrainCopy(), pluginClass, isReportedTypeCurrent)) {
+        if (hasMapLayerTerrain(hyperspace.getTerrainCopy(), variant)) {
             return;
         }
 
         addTerrainToLocation.accept(hyperspace);
 
-        // One-shot install diagnostic, naming the half so the pair is distinguishable in a log.
+        // One-shot install diagnostic, naming the variant so the pair is distinguishable in a log.
         // DEBUG so it stays silent at the WARN default; set KMU log verbosity to DEBUG in LunaLib
         // to see it.
-        LOG.debug("Map layer terrain installed for " + pluginClass.getSimpleName()
+        LOG.debug("Map layer terrain installed for " + variant.pluginClass().getSimpleName()
             + "; star systems=" + sector.getStarSystems().size());
     }
 
@@ -489,27 +496,48 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // and stack a second overlay on top of it, painting every fill at doubled alpha.
     private static void removeStaleMapLayerTerrain(
             LocationAPI hyperspace,
-            Class<? extends CampaignTerrainPlugin> pluginClass,
-            Predicate<String> isReportedTypeCurrent) {
+            MapLayerTerrainVariant variant) {
+
         // getTerrainCopy hands back a copy, so removing while walking it is safe.
         for (var terrain : hyperspace.getTerrainCopy()) {
-            if (isOwnTerrain(terrain, pluginClass)
-                    && !isReportedTypeCurrent.test(terrain.getType())) {
+            if (variant.isStaleTerrain(terrain)) {
                 hyperspace.removeEntity(terrain);
                 LOG.debug("Retired map layer terrain under former type id " + terrain.getType());
             }
         }
     }
 
-    // Whether this terrain is the given half's own, identified by its plugin rather than by its
-    // type id: the id is the thing a rename changes, so matching on it would make the sweep blind
-    // to exactly the entities it exists to find - and the starscape half reports no id of its own
-    // at all. The class is compared exactly rather than with instanceof because the starscape
-    // half's plugin is a subclass of the base one, and each half owns and installs its own entity.
-    private static boolean isOwnTerrain(
-            CampaignTerrainAPI terrain, Class<? extends CampaignTerrainPlugin> pluginClass) {
-        return terrain != null
-            && terrain.getPlugin() != null
-            && terrain.getPlugin().getClass() == pluginClass;
+    // One of the two terrains the sector map's render pair installs, as the install has to tell them
+    // apart: the plugin class that marks an entity as this variant's, and the test for whether a
+    // reported type is what a live one of them carries. The two are never useful apart - every step
+    // of the install needs both - so they are one value rather than a pair of parameters threaded
+    // through the sweep, the presence check and the log line alike.
+    record MapLayerTerrainVariant(
+        Class<? extends CampaignTerrainPlugin> pluginClass,
+        Predicate<String> isReportedTypeCurrent) {
+
+        // Whether this terrain is a live one of this variant's - ours, and reporting what a live one
+        // reports.
+        private boolean isCurrentTerrain(CampaignTerrainAPI terrain) {
+            return isOwnTerrain(terrain) && isReportedTypeCurrent.test(terrain.getType());
+        }
+
+        // Whether this terrain is one of ours left behind under a type id this mod no longer
+        // installs. Only the base variant can ever answer true: the starscape one reports no id of
+        // its own, so nothing it reports can date it.
+        private boolean isStaleTerrain(CampaignTerrainAPI terrain) {
+            return isOwnTerrain(terrain) && !isReportedTypeCurrent.test(terrain.getType());
+        }
+
+        // Whether this terrain is this variant's own, identified by its plugin rather than by its
+        // type id: the id is the thing a rename changes, so matching on it would make the sweep blind
+        // to exactly the entities it exists to find - and the starscape variant has no id to match on
+        // at all. The class is compared exactly rather than with instanceof because the starscape
+        // variant's plugin is a subclass of the base one, and each installs its own entity.
+        private boolean isOwnTerrain(CampaignTerrainAPI terrain) {
+            return terrain != null
+                && terrain.getPlugin() != null
+                && terrain.getPlugin().getClass() == pluginClass;
+        }
     }
 }

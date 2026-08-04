@@ -38,6 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class KMU_ModPluginTest {
+
     // The live terrain type id, pinned as a literal: it is written into every save, so a rename
     // must break this test rather than ship and quietly strand the entity existing saves hold.
     private static final String CURRENT_TERRAIN_TYPE = "kmu_sector_map_layer_terrain";
@@ -46,7 +47,13 @@ class KMU_ModPluginTest {
     // the other side: this is the string the load-time sweep has to recognise as stale.
     private static final String LEGACY_TERRAIN_TYPE = "kmu_political_terrain";
 
-    // What the starscape half's entity reports in place of the id it was installed under - the one
+    // The live type id of the starscape variant, pinned as a literal for the reason the base variant's is,
+    // and read back off the production constant below because that variant's install cannot be driven
+    // far enough to observe the id it adds under.
+    private static final String CURRENT_STARSCAPE_TERRAIN_TYPE =
+        "kmu_sector_map_layer_starscape_terrain";
+
+    // What the starscape variant's entity reports in place of the id it was installed under - the one
     // terrain type the map widget draws over the starfield. A literal here rather than a read of the
     // production constant because it is the engine's string, not the mod's: the mod cannot rename it
     // and a test agreeing with a changed copy of it would be agreeing with a broken feature.
@@ -57,17 +64,18 @@ class KMU_ModPluginTest {
     // renamed alongside it and go on agreeing with itself, while these are what a save file on disk
     // actually holds and so cannot be allowed to move.
     private static final List<String> FORMER_TERRAIN_PLUGIN_CLASSES = List.of(
-            "kmu.politicalmap.render.PoliticalMapTerrainPlugin",
-            "kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin",
-            "kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin",
-            "kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin");
+        "kmu.politicalmap.render.PoliticalMapTerrainPlugin",
+        "kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin",
+        "kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin",
+        "kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin");
 
     @Nested
     class ModIdentity {
 
         @Test
         void extendsStarsectorBaseModPlugin() {
-            assertThat(new KMU_ModPlugin()).isInstanceOf(BaseModPlugin.class);
+            assertThat(new KMU_ModPlugin())
+                .isInstanceOf(BaseModPlugin.class);
         }
     }
 
@@ -91,7 +99,8 @@ class KMU_ModPluginTest {
             new KMU_ModPlugin().configureXStream(xstreamMock);
 
             for (var formerClass : FORMER_TERRAIN_PLUGIN_CLASSES) {
-                verify(xstreamMock).alias(formerClass, SectorMapLayerTerrainPlugin.class);
+                verify(xstreamMock)
+                    .alias(formerClass, SectorMapLayerTerrainPlugin.class);
             }
         }
 
@@ -106,11 +115,17 @@ class KMU_ModPluginTest {
             new KMU_ModPlugin().configureXStream(xstreamMock);
 
             var aliasOrder = inOrder(xstreamMock);
-            aliasOrder.verify(xstreamMock).alias(
+
+            aliasOrder
+                .verify(xstreamMock)
+                .alias(
                     FORMER_TERRAIN_PLUGIN_CLASSES.get(FORMER_TERRAIN_PLUGIN_CLASSES.size() - 1),
                     SectorMapLayerTerrainPlugin.class);
-            aliasOrder.verify(xstreamMock).alias(
-                    SectorMapLayerTerrainPlugin.class.getName(), SectorMapLayerTerrainPlugin.class);
+            aliasOrder
+                .verify(xstreamMock)
+                .alias(
+                    SectorMapLayerTerrainPlugin.class.getName(),
+                    SectorMapLayerTerrainPlugin.class);
         }
     }
 
@@ -119,23 +134,28 @@ class KMU_ModPluginTest {
 
         @Test
         void installsMarketUiContextTrackerWhenMissing() {
+
             var listenerManager = new RecordingListenerManager(false);
 
             KMU_ModPlugin.installMarketUiContextTracker(buildSector(listenerManager));
 
             assertThat(listenerManager.addedListeners)
-                    .singleElement()
-                    .isInstanceOf(StarsectorMarketUiContextTracker.class);
-            assertThat(listenerManager.addedTransientFlags).containsExactly(true);
+                .singleElement()
+                .isInstanceOf(StarsectorMarketUiContextTracker.class);
+
+            assertThat(listenerManager.addedTransientFlags)
+                .containsExactly(true);
         }
 
         @Test
         void doesNotInstallDuplicateMarketUiContextTracker() {
+
             var listenerManager = new RecordingListenerManager(true);
 
             KMU_ModPlugin.installMarketUiContextTracker(buildSector(listenerManager));
 
-            assertThat(listenerManager.addedListeners).isEmpty();
+            assertThat(listenerManager.addedListeners)
+                .isEmpty();
         }
     }
 
@@ -144,6 +164,7 @@ class KMU_ModPluginTest {
 
         @Test
         void reinstallsEverySidebarListenerFreshAsTransient() {
+
             var listenerManager = new RecordingListenerManager(false);
 
             KMU_ModPlugin.installPoliticalMapSidebar(buildSector(listenerManager));
@@ -153,20 +174,24 @@ class KMU_ModPluginTest {
             // the two hosts (sector map and intel screen) transiently, so none enters the save and exactly
             // one of each renders per screen.
             assertThat(listenerManager.removedListenerClasses)
-                    .containsExactly(SidebarRenderer.class, SidebarInput.class);
+                .containsExactly(SidebarRenderer.class, SidebarInput.class);
+
             assertThat(listenerManager.addedListeners)
-                    .hasSize(4)
-                    .hasAtLeastOneElementOfType(SidebarRenderer.class)
-                    .hasAtLeastOneElementOfType(SidebarInput.class);
-            assertThat(listenerManager.addedTransientFlags).containsExactly(true, true, true, true);
+                .hasSize(4)
+                .hasAtLeastOneElementOfType(SidebarRenderer.class)
+                .hasAtLeastOneElementOfType(SidebarInput.class);
+
+            assertThat(listenerManager.addedTransientFlags)
+                .containsExactly(true, true, true, true);
         }
 
         @Test
         void toleratesAMissingListenerManager() {
             var sidebarInstallOnNullManager = (Runnable) () ->
-                    KMU_ModPlugin.installPoliticalMapSidebar(buildSector(null));
+                KMU_ModPlugin.installPoliticalMapSidebar(buildSector(null));
 
-            assertThatCode(sidebarInstallOnNullManager::run).doesNotThrowAnyException();
+            assertThatCode(sidebarInstallOnNullManager::run)
+                .doesNotThrowAnyException();
         }
     }
 
@@ -182,19 +207,23 @@ class KMU_ModPluginTest {
             KMU_ModPlugin.installMapLayerHoverTooltip(buildSector(listenerManager));
 
             assertThat(listenerManager.removedListenerClasses)
-                    .containsExactly(MapLayerCellTooltip.class);
+                .containsExactly(MapLayerCellTooltip.class);
+
             assertThat(listenerManager.addedListeners)
-                    .singleElement()
-                    .isInstanceOf(MapLayerCellTooltip.class);
-            assertThat(listenerManager.addedTransientFlags).containsExactly(true);
+                .singleElement()
+                .isInstanceOf(MapLayerCellTooltip.class);
+
+            assertThat(listenerManager.addedTransientFlags)
+                .containsExactly(true);
         }
 
         @Test
         void toleratesAMissingListenerManager() {
             var tooltipInstallOnNullManager = (Runnable) () ->
-                    KMU_ModPlugin.installMapLayerHoverTooltip(buildSector(null));
+                KMU_ModPlugin.installMapLayerHoverTooltip(buildSector(null));
 
-            assertThatCode(tooltipInstallOnNullManager::run).doesNotThrowAnyException();
+            assertThatCode(tooltipInstallOnNullManager::run)
+                .doesNotThrowAnyException();
         }
     }
 
@@ -210,8 +239,10 @@ class KMU_ModPluginTest {
 
             KMU_ModPlugin.installMapLayerSectorWatcher(sectorMock);
 
-            verify(sectorMock).addTransientScript(any(MapLayerSectorWatcher.class));
-            verify(sectorMock, never()).addScript(any());
+            verify(sectorMock)
+                .addTransientScript(any(MapLayerSectorWatcher.class));
+            verify(sectorMock, never())
+                .addScript(any());
         }
 
         @Test
@@ -227,9 +258,14 @@ class KMU_ModPluginTest {
 
             var firstWatcher = ArgumentCaptor.forClass(MapLayerSectorWatcher.class);
             var secondWatcher = ArgumentCaptor.forClass(MapLayerSectorWatcher.class);
-            verify(firstLoadSectorMock).addTransientScript(firstWatcher.capture());
-            verify(secondLoadSectorMock).addTransientScript(secondWatcher.capture());
-            assertThat(secondWatcher.getValue()).isNotSameAs(firstWatcher.getValue());
+
+            verify(firstLoadSectorMock)
+                .addTransientScript(firstWatcher.capture());
+            verify(secondLoadSectorMock)
+                .addTransientScript(secondWatcher.capture());
+
+            assertThat(secondWatcher.getValue())
+                .isNotSameAs(firstWatcher.getValue());
         }
 
         @Test
@@ -239,20 +275,25 @@ class KMU_ModPluginTest {
             // position and reads as having teleported.
             try (MockedStatic<MovingSystems> movingStaticMock = mockStatic(MovingSystems.class)) {
                 var movingSystemsMock = mock(MovingSystems.class);
-                movingStaticMock.when(MovingSystems::getInstance).thenReturn(movingSystemsMock);
+
+                movingStaticMock
+                    .when(MovingSystems::getInstance)
+                    .thenReturn(movingSystemsMock);
 
                 KMU_ModPlugin.installMapLayerSectorWatcher(mock(SectorAPI.class));
 
-                verify(movingSystemsMock).reset();
+                verify(movingSystemsMock)
+                    .reset();
             }
         }
 
         @Test
         void toleratesANullSector() {
             var watcherInstallOnNullSector = (Runnable) () ->
-                    KMU_ModPlugin.installMapLayerSectorWatcher(null);
+                KMU_ModPlugin.installMapLayerSectorWatcher(null);
 
-            assertThatCode(watcherInstallOnNullSector::run).doesNotThrowAnyException();
+            assertThatCode(watcherInstallOnNullSector::run)
+                .doesNotThrowAnyException();
         }
     }
 
@@ -265,7 +306,8 @@ class KMU_ModPluginTest {
 
             KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
-            verify(hyperspaceMock).addTerrain(CURRENT_TERRAIN_TYPE, null);
+            verify(hyperspaceMock)
+                .addTerrain(CURRENT_TERRAIN_TYPE, null);
         }
 
         @Test
@@ -273,12 +315,14 @@ class KMU_ModPluginTest {
             // Terrain persists, so a reloaded save already carries it; adding another would paint
             // the same overlay twice and double the alpha of every fill.
             var hyperspaceMock = buildHyperspaceCarrying(
-                    buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin()));
+                buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin()));
 
             KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
-            verify(hyperspaceMock, never()).addTerrain(any(), any());
-            verify(hyperspaceMock, never()).removeEntity(any());
+            verify(hyperspaceMock, never())
+                .addTerrain(any(), any());
+            verify(hyperspaceMock, never())
+                .removeEntity(any());
         }
 
         @Test
@@ -291,8 +335,10 @@ class KMU_ModPluginTest {
 
             KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
-            verify(hyperspaceMock).removeEntity(staleTerrainMock);
-            verify(hyperspaceMock).addTerrain(CURRENT_TERRAIN_TYPE, null);
+            verify(hyperspaceMock)
+                .removeEntity(staleTerrainMock);
+            verify(hyperspaceMock)
+                .addTerrain(CURRENT_TERRAIN_TYPE, null);
         }
 
         @Test
@@ -300,27 +346,32 @@ class KMU_ModPluginTest {
             // The sweep identifies its own by plugin class, so a third-party terrain is neither
             // retired nor counted as the map layer already being present.
             var otherModTerrainMock =
-                    buildTerrainMock("some_other_terrain", mock(CampaignTerrainPlugin.class));
+                buildTerrainMock("some_other_terrain", mock(CampaignTerrainPlugin.class));
+
             var hyperspaceMock = buildHyperspaceCarrying(otherModTerrainMock);
 
             KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
-            verify(hyperspaceMock, never()).removeEntity(any());
-            verify(hyperspaceMock).addTerrain(CURRENT_TERRAIN_TYPE, null);
+            verify(hyperspaceMock, never())
+                .removeEntity(any());
+            verify(hyperspaceMock)
+                .addTerrain(CURRENT_TERRAIN_TYPE, null);
         }
 
         @Test
-        void retiresTheStaleTerrainWithoutTouchingTheStarscapeHalf() {
+        void retiresTheStaleTerrainWithoutTouchingTheStarscapeVariant() {
             // The starscape plugin subclasses the base one, so an instanceof match here would let
-            // this sweep retire the other half's entity - which reports a type id this one never
+            // this sweep retire the other variant's entity - which reports a type id this one never
             // installs, and so looks stale to any test that is not exact about the class.
             var starscapeTerrainMock =
-                    buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
+                buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
+
             var hyperspaceMock = buildHyperspaceCarrying(starscapeTerrainMock);
 
             KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
-            verify(hyperspaceMock, never()).removeEntity(any());
+            verify(hyperspaceMock, never())
+                .removeEntity(any());
         }
     }
 
@@ -329,71 +380,105 @@ class KMU_ModPluginTest {
 
         @Test
         void doesNotStackASecondStarscapeTerrainOnAReloadedSave() {
-            // Terrain persists, so a reloaded save already carries this half too; a second one would
+            // Terrain persists, so a reloaded save already carries this variant too; a second one would
             // paint the starscape overlay twice and double the alpha of every fill. Only the
             // already-present path is driven here - the absent path builds the entity, whose
             // obfuscated supertype chain a verifying JVM refuses to load, which is why the decision
             // itself is pinned through hasMapLayerTerrain below.
             var hyperspaceMock = buildHyperspaceCarrying(
-                    buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin()));
+                buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin()));
 
             KMU_ModPlugin.installSectorMapLayerStarscapeTerrain(
-                    buildSectorWithHyperspace(hyperspaceMock));
+                buildSectorWithHyperspace(hyperspaceMock));
 
-            verify(hyperspaceMock, never()).addEntity(any());
-            verify(hyperspaceMock, never()).removeEntity(any());
+            verify(hyperspaceMock, never())
+                .addEntity(any());
+            verify(hyperspaceMock, never())
+                .removeEntity(any());
+        }
+
+        @Test
+        void neverRetiresTheStarscapeVariantOverWhatItReports() {
+            // Nothing this variant reports can date it: its entity answers with the engine's whitelisted
+            // map type rather than with the id it was installed under, so a reported type the sweep
+            // does not recognise is the ordinary case and not a former id. Sweeping on it would retire
+            // the live entity on every load and leave the starfield painting nothing.
+            var starscapeTerrainMock = buildTerrainMock(
+                "some_other_reported_type", new SectorMapLayerStarscapeTerrainPlugin());
+
+            var hyperspaceMock = buildHyperspaceCarrying(starscapeTerrainMock);
+
+            KMU_ModPlugin.installSectorMapLayerStarscapeTerrain(
+                buildSectorWithHyperspace(hyperspaceMock));
+
+            verify(hyperspaceMock, never())
+                .removeEntity(any());
+        }
+
+        @Test
+        void installsUnderTheTypeIdTheShippedTerrainSpecDeclares() {
+            // Pinned on the constant rather than through the add, which cannot be driven from a test:
+            // building the entity loads a chain of obfuscated core classes a verifying JVM refuses.
+            // The id is a terrain.json row key, and a constant that drifts from it resolves to no
+            // spec at game load - with no way back, since this variant's entity cannot report the id it
+            // was built with and so cannot be recognised as stale on a later load.
+            assertThat(KMU_ModPlugin.SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE)
+                .isEqualTo(CURRENT_STARSCAPE_TERRAIN_TYPE);
         }
 
         @Test
         void toleratesANullSector() {
-            var starscapeInstallOnNullSector = (Runnable) () ->
-                    KMU_ModPlugin.installSectorMapLayerStarscapeTerrain(null);
 
-            assertThatCode(starscapeInstallOnNullSector::run).doesNotThrowAnyException();
+            var starscapeInstallOnNullSector = (Runnable) () ->
+                KMU_ModPlugin.installSectorMapLayerStarscapeTerrain(null);
+
+            assertThatCode(starscapeInstallOnNullSector::run)
+                .doesNotThrowAnyException();
         }
     }
 
-    // Exercised with the starscape half's wiring: it is the half whose install cannot be driven end
-    // to end from a test, so this is where its presence decision is pinned. The base half's is
+    // Exercised with the starscape variant's wiring: it is the variant whose install cannot be driven end
+    // to end from a test, so this is where its presence decision is pinned. The base variant's is
     // covered through its own install above.
     @Nested
     class HasMapLayerTerrain {
 
         @Test
-        void findsTheStarscapeHalfByItsPluginClass() {
+        void findsTheStarscapeVariantByItsPluginClass() {
+
             var starscapeTerrainMock =
-                    buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
+                buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
 
             assertThat(KMU_ModPlugin.hasMapLayerTerrain(
                     List.of(starscapeTerrainMock),
-                    SectorMapLayerStarscapeTerrainPlugin.class,
-                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isTrue();
+                    KMU_ModPlugin.STARSCAPE_TERRAIN))
+                .isTrue();
         }
 
         @Test
-        void doesNotMistakeTheBaseHalfForTheStarscapeOne() {
+        void doesNotMistakeTheBaseVariantForTheStarscapeOne() {
             // The exact-class compare is the whole guard: the starscape plugin subclasses the base
-            // one, so an instanceof would answer true here and the starscape half would never install.
+            // one, so an instanceof would answer true here and the starscape variant would never install.
             var baseTerrainMock =
-                    buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
+                buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
 
             assertThat(KMU_ModPlugin.hasMapLayerTerrain(
                     List.of(baseTerrainMock),
-                    SectorMapLayerStarscapeTerrainPlugin.class,
-                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isFalse();
+                    KMU_ModPlugin.STARSCAPE_TERRAIN))
+                .isFalse();
         }
 
         @Test
-        void doesNotMistakeARealSlipstreamForTheStarscapeHalf() {
-            // Hyperspace's own slipstreams report the very type this half's entity reports, so the
+        void doesNotMistakeARealSlipstreamForTheStarscapeVariant() {
+            // Hyperspace's own slipstreams report the very type this variant's entity reports, so the
             // reported type cannot take part in the decision at all - only the plugin class can.
             var slipstreamTerrainMock =
-                    buildTerrainMock(WHITELISTED_MAP_TYPE, mock(CampaignTerrainPlugin.class));
+                buildTerrainMock(WHITELISTED_MAP_TYPE, mock(CampaignTerrainPlugin.class));
 
             assertThat(KMU_ModPlugin.hasMapLayerTerrain(
                     List.of(slipstreamTerrainMock),
-                    SectorMapLayerStarscapeTerrainPlugin.class,
-                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isFalse();
+                    KMU_ModPlugin.STARSCAPE_TERRAIN))
+                .isFalse();
         }
 
         @Test
@@ -404,35 +489,48 @@ class KMU_ModPluginTest {
 
             assertThat(KMU_ModPlugin.hasMapLayerTerrain(
                     List.of(pluginlessTerrainMock),
-                    SectorMapLayerStarscapeTerrainPlugin.class,
-                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isFalse();
+                    KMU_ModPlugin.STARSCAPE_TERRAIN))
+                .isFalse();
         }
 
         @Test
         void reportsAbsentForALocationCarryingNoTerrain() {
             assertThat(KMU_ModPlugin.hasMapLayerTerrain(
                     List.of(),
-                    SectorMapLayerStarscapeTerrainPlugin.class,
-                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isFalse();
+                    KMU_ModPlugin.STARSCAPE_TERRAIN))
+                .isFalse();
         }
     }
 
     private static LocationAPI buildHyperspaceCarrying(CampaignTerrainAPI... terrain) {
+
         var hyperspaceMock = mock(LocationAPI.class);
-        when(hyperspaceMock.getTerrainCopy()).thenReturn(List.of(terrain));
+
+        when(hyperspaceMock.getTerrainCopy())
+            .thenReturn(List.of(terrain));
+
         return hyperspaceMock;
     }
 
     private static CampaignTerrainAPI buildTerrainMock(String type, CampaignTerrainPlugin plugin) {
+
         var terrainMock = mock(CampaignTerrainAPI.class);
-        when(terrainMock.getType()).thenReturn(type);
-        when(terrainMock.getPlugin()).thenReturn(plugin);
+
+        when(terrainMock.getType())
+            .thenReturn(type);
+        when(terrainMock.getPlugin())
+            .thenReturn(plugin);
+
         return terrainMock;
     }
 
     private static SectorAPI buildSectorWithHyperspace(LocationAPI hyperspace) {
+
         var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getHyperspace()).thenReturn(hyperspace);
+
+        when(sectorMock.getHyperspace())
+            .thenReturn(hyperspace);
+
         return sectorMock;
     }
 
@@ -464,14 +562,16 @@ class KMU_ModPluginTest {
     @SuppressWarnings("unchecked")
     private static <T> T proxy(Class<T> type, InvocationHandler handler) {
         return (T) Proxy.newProxyInstance(
-                type.getClassLoader(),
-                new Class<?>[]{type},
-                handler);
+            type.getClassLoader(),
+            new Class<?>[]{type},
+            handler);
     }
 
     private static final class RecordingListenerManager implements ListenerManagerAPI {
+
         private final boolean hasTracker;
         private final List<Object> addedListeners = new ArrayList<>();
+        
         // Parallel to addedListeners: the engine's second addListener parameter means
         // transient (true keeps the listener out of the save), so the recording mirrors that
         // vocabulary. One install can add several listeners, so these are lists, not scalars.
