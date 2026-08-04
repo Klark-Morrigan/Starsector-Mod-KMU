@@ -63,7 +63,8 @@ Notes on each:
   it does on the Factions view.
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.
-  There is no alliance grouping here, and no spotlight.
+  There is no alliance grouping here, and no spotlight. Hovering a system explains its claim: who
+  holds it, who contests it, and who is present but can never claim it.
 
 ## Claim extensions
 
@@ -123,9 +124,12 @@ the cursor: the owner's border loops it might sit inside and the shade its groun
 the frame's painted shapes it hands the framework unchanged;
 and `PoliticalMapHoverGates` - whether this layer answers the cursor at all, its own two switches
 ANDed with the framework's, plus whether either kind of feedback still needs the cursor read),
-`tooltip` (`SystemDominationTooltip` - what this layer says about the hovered system, the ranked
-standings behind the fills, which the faction and alliance views inject into the framework's hover
-box and the claims view does not, plus the standing, territory, and status lines it is written from),
+`tooltip` (what this layer says about the hovered system, each view injecting the explanation of the
+mechanic its own fills were painted by into the framework's hover box: `SystemDominationTooltip` -
+the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim
+contest behind a claims fill, its claimant over the rivals who could have taken the system and the
+factions present that never could - plus the standing, territory, and status lines both are written
+from),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 [the sidebar](../base/sidebar/README.md) one level up. What stays here is what that picker refuses

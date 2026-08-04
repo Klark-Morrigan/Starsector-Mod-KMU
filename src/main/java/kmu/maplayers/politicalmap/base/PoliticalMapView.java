@@ -218,8 +218,9 @@ public interface PoliticalMapView {
      * none. The layer renderer answers the framework's tooltip seam with whatever the active view
      * supplies here, and the shared dispatcher draws it - nothing when it supplies nothing - so a view
      * opts into a tooltip by injecting one rather than flipping a flag:
-     * the faction and alliance views inject the domination breakdown, and the claims view - whose
-     * whose holders that breakdown does not describe - injects none and gets its own surface later.
+     * the faction and alliance views inject the domination breakdown, while the claims view - whose
+     * holders that breakdown does not describe - injects the claim breakdown instead, so each view's
+     * box explains the same mechanic its fills were painted by.
      * Defaulting to empty makes "no tooltip" the base case, the same shape as
      * {@link #resolveSelectableBlocs} defaulting to no spotlight, so a new view opts in only when it
      * has a tooltip to show.

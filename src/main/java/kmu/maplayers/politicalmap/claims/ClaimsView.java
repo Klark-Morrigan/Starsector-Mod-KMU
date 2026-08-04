@@ -5,13 +5,17 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.math.hashing.Fingerprints;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
+import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.util.KmuStrings;
+
+import java.util.Optional;
 
 /**
  * The claims view's render rules: every star system a faction claims shows here as solid territory
@@ -103,6 +107,14 @@ public final class ClaimsView implements PoliticalMapView {
         // A claim bloc id is a plain faction id under identity grouping, so the label is the claiming
         // faction's own name - resolved by the faction view so the two never drift on a faction label.
         return FactionsView.INSTANCE.resolveName(blocId, grouping, sector, nameFormat);
+    }
+
+    @Override
+    public Optional<MapHoverTooltip> resolveHoverTooltip() {
+        // The claim breakdown, not the domination one the other two views inject: this layer paints by
+        // the claim mechanic, so what a hover has to explain is the claim contest rather than the
+        // market standings - the same read the fills are resolved through.
+        return Optional.of(SystemClaimTooltip.INSTANCE);
     }
 
     // resolveSelectableBlocs is left to the interface default (no selectable blocs): claim presence is
