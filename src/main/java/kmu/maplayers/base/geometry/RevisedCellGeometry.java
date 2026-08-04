@@ -22,4 +22,19 @@ package kmu.maplayers.base.geometry;
 public record RevisedCellGeometry(
     CellGeometryCache cells,
     int revision) {
+
+    /**
+     * The same cells, now standing at a different revision.
+     *
+     * <p>The cells are updated in place, so a recut leaves the very same object holding
+     * different geometry and only the revision beside them has moved. Naming that as one
+     * operation is what keeps "these cells are now at revision N" from being written out as a
+     * fresh pair each time, where the cells could quietly be swapped for another set.
+     *
+     * @param cutAtRevision the revision the cells now stand at
+     * @return a copy naming that revision in place of this one's
+     */
+    public RevisedCellGeometry copyWithRevision(int cutAtRevision) {
+        return new RevisedCellGeometry(cells, cutAtRevision);
+    }
 }

@@ -161,7 +161,7 @@ final class PoliticalMapCache {
         // The cells are emptied and their revision returned to the unbuilt seed together, since
         // cells nothing was cut into must not keep answering for the revision they were cut at.
         cellGeometry.cells().clearCachedCells();
-        cellGeometry = new RevisedCellGeometry(cellGeometry.cells(), UNBUILT_REVISION);
+        cellGeometry = cellGeometry.copyWithRevision(UNBUILT_REVISION);
         lastContentRevision = UNBUILT_REVISION;
         lastSeedInputs = null;
         lastDevToggles = null;
@@ -226,7 +226,7 @@ final class PoliticalMapCache {
             rebuildGeometry(seedInputs, devToggles);
             // Re-paired the moment the cells are recut, so the revision handed to anything that
             // reuses derived work always names the cells actually in hand.
-            cellGeometry = new RevisedCellGeometry(cellGeometry.cells(), geometryRevision);
+            cellGeometry = cellGeometry.copyWithRevision(geometryRevision);
             lastSeedInputs = seedInputs;
             lastDevToggles = devToggles;
             rebuiltCells = true;

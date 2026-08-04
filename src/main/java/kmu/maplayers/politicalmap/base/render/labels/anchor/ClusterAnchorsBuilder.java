@@ -136,6 +136,7 @@ public final class ClusterAnchorsBuilder {
         // key, so the solid and contested clusters trace as their own territories exactly as
         // the fills do.
         var cells = cellGeometry.cells();
+        var edgesByCellId = cells.getCellEdgesByCellId();
         var ownerBySystemId = styling.holderBySystemId();
         var cellGrouping = DominantHolder.mapCellGrouping(
             cells.getSystemIdByCellId(),
@@ -143,10 +144,12 @@ public final class ClusterAnchorsBuilder {
 
         // The clusters and the cells they were cut from travel on as one value: the sweep reads
         // all of it against itself per cluster, so a partition assembled from two passes would
-        // fit a name inside a border traced from cells that no longer group that way.
+        // fit a name inside a border traced from cells that no longer group that way. The edges
+        // are read once for both halves, so the clustering and the geometry the fit clips
+        // against cannot be two readings of the cache.
         var partition = new ClusterPartition(
-            SystemClusters.findClusters(cells.getCellEdgesByCellId(), cellGrouping),
-            cells.getCellEdgesByCellId(),
+            SystemClusters.findClusters(edgesByCellId, cellGrouping),
+            edgesByCellId,
             cells.getSiteBySystemId(),
             cellGrouping);
 

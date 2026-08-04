@@ -142,8 +142,11 @@ samples nothing live - returns a constant and never forces a rebuild on its own.
 
 [`PoliticalMapCache`](../../src/main/java/kmu/maplayers/politicalmap/base/render/PoliticalMapCache.java)
 is the owner: the political map's painter holds one and asks it to `refresh` each
-frame the map is open. It holds both halves (geometry and built draw lists) plus the
-revisions each half was built against, and rebuilds only the stale half.
+frame the map is open. It holds both halves (geometry and built draw lists) plus what each
+half was built against, and rebuilds only the stale half. The geometry's revision is not a
+field beside the cells but rides with them, for the same reason the placements ride with
+their fingerprint below: a revision naming cells other than the ones in hand reads as
+permission to reuse work fitted inside a partition that has since been recut.
 
 It is also where rebuild faults are contained: a failing rebuild is logged once
 rather than per frame, leaves the cached revisions un-advanced so the next frame
@@ -165,6 +168,12 @@ which change *which* systems seed a cell at all.
 The cache holds raw cells, not shaped outlines. The inset that gives a cluster its
 border channel is ownership-dependent, so it belongs to the render pass - which is
 what lets ownership change without touching this cache at all.
+
+What travels to a consumer is
+[`RevisedCellGeometry`](../../src/main/java/kmu/maplayers/base/geometry/RevisedCellGeometry.java):
+the cells together with the revision they were cut at. The cells are the live cache rather
+than a copy, so a consumer reads whatever they hold now; the revision fixes which reading
+anything derived and cached downstream is answerable to.
 
 ### Territories and draw lists
 
