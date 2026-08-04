@@ -242,12 +242,9 @@ list several times a frame. It is KMLib's (`kmlib.starsector.ui.widgets.lists`),
 the picker it feeds; [KMLib's caching
 notes](https://github.com/<owner>/KMLib/blob/main/docs/dev/caching.md) file it as an
 invalidation primitive rather than a cache, since what it holds and when it goes stale
-are entirely the consumer's declaration.
-
-Its key is unusual in one way worth knowing: it includes the **sector identity**,
-held through a `WeakReference`, so a save reloaded in the same session recomputes
-against the loaded state instead of serving the previous save's list - and a cached
-sector never outlives its unload.
+are entirely the consumer's declaration. How its key handles a save reloaded in the
+same session is documented there too, and is the one part of the memo KMU does not
+decide.
 
 [`SelectableBlocCache`](../../src/main/java/kmu/maplayers/politicalmap/base/sidebar/SelectableBlocCache.java)
 is the political map's use of it: what it adds is the revision, the one thing the
