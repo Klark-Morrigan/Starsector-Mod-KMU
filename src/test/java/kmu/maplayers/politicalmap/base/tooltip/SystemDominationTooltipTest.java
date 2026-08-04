@@ -8,8 +8,8 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
-import kmlib.starsector.ui.widgets.TooltipRow;
-import kmlib.starsector.ui.widgets.TooltipSection;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;

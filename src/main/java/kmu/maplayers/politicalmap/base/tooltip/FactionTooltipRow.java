@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 

@@ -2,7 +2,7 @@ package kmu.maplayers.base.tooltip;
 
 import kmlib.starsector.ui.text.LabelRun;
 import kmlib.starsector.ui.text.TextSpan;
-import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 /**
  * How a test reads one line of a cell tooltip, and the tier values the vocabulary lays lines out at.

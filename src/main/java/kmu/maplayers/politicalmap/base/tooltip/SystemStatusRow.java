@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.util.KmuStrings;

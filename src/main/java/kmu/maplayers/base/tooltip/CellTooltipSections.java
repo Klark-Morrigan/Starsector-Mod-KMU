@@ -1,7 +1,7 @@
 package kmu.maplayers.base.tooltip;
 
-import kmlib.starsector.ui.widgets.TooltipRow;
-import kmlib.starsector.ui.widgets.TooltipSection;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import java.util.ArrayList;
 import java.util.List;

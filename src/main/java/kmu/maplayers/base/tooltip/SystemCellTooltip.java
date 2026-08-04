@@ -9,10 +9,10 @@ import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.text.TextStyle;
-import kmlib.starsector.ui.widgets.TooltipLineStyle;
-import kmlib.starsector.ui.widgets.TooltipRow;
-import kmlib.starsector.ui.widgets.TooltipSection;
-import kmlib.starsector.ui.widgets.TooltipStyle;
+import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
+import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
 import java.util.ArrayList;
 import java.util.List;

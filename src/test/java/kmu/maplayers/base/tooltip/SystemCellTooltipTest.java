@@ -9,9 +9,9 @@ import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
 import kmlib.starsector.ui.text.TextSpan;
-import kmlib.starsector.ui.widgets.TooltipLineStyle;
-import kmlib.starsector.ui.widgets.TooltipRow;
-import kmlib.starsector.ui.widgets.TooltipSection;
+import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

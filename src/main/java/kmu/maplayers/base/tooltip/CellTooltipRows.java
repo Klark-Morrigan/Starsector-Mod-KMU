@@ -3,7 +3,7 @@ package kmu.maplayers.base.tooltip;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
-import kmlib.starsector.ui.widgets.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 /**
  * The line vocabulary a cell tooltip's content is written in: a top-tier row that opens a block, a
