@@ -1,5 +1,6 @@
 package kmu.maplayers.base.tooltip;
 
+import kmlib.starsector.ui.text.LabelRun;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.TooltipRow;
 
@@ -34,9 +35,23 @@ public final class CellTooltipRowReads {
      *
      * @param row      the line to read
      * @param runIndex the run's position in the label, in reading order
+     * @return that run - a stretch of text and the colour it draws in, or an image set among the words
+     */
+    public static LabelRun readLabelRun(TooltipRow row, int runIndex) {
+        return row.labelRuns().get(runIndex);
+    }
+
+    /**
+     * Reads one of a line's label runs as a stretch of text, for a test asserting on what a run says or
+     * the colour it draws in rather than on the run as a whole. A run that turns out to be an image
+     * fails the cast, which is the right answer: a test reaching for words found a line that does not
+     * say them where it expected.
+     *
+     * @param row      the line to read
+     * @param runIndex the run's position in the label, in reading order
      * @return that run's text and the colour it draws in
      */
-    public static TextSpan readLabelRun(TooltipRow row, int runIndex) {
-        return row.labelTextSpans().get(runIndex);
+    public static TextSpan readLabelTextRun(TooltipRow row, int runIndex) {
+        return (TextSpan) readLabelRun(row, runIndex);
     }
 }

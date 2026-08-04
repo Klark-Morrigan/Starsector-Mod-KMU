@@ -172,9 +172,11 @@ about what the overlay means.
   the shape a layer's box takes - the hovered system's name over the layer's own body, one look and
   one draw for both, the name set in the game's own title face over body-face rows so a KM hover
   reads as part of the interface rather than as text laid over it. `CellTooltipRows` is the line
-  vocabulary a body is written in - a top-tier row, a nested one, a standalone one, and the qualifier
-  run any of them may end on - and `CellTooltipSections` the heading that drops itself when the block
-  under it resolves empty. So two layers' boxes differ only in what they say.
+  vocabulary a body is written in - a top-tier row, a nested one, a standalone one, a banner centred
+  under the title for a verdict about the whole system (its crest set among the words as a label run,
+  so crest and words centre as one), and the qualifier run any of them may end on - and
+  `CellTooltipSections` the heading that drops itself when the block under it resolves empty. So two
+  layers' boxes differ only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
   finds the changes the engine announces to nobody. `MapLayerSectorWatcher` owns the loop
   alone and asks a `MapLayerStalenessSource` what moved since it last asked, so which changes

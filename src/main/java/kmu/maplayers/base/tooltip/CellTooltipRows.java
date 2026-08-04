@@ -1,14 +1,16 @@
 package kmu.maplayers.base.tooltip;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
+import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.TooltipRow;
 
 /**
  * The line vocabulary a cell tooltip's body is written in: a top-tier row that opens a block, a nested
  * row that belongs to the one above it, a standalone row stating something about the hovered system as
- * a whole, and the qualifier run any of them may end on. Each shape fixes its own indent and colours, so
- * what a body says is the only thing that varies between two layers' hover boxes.
+ * a whole, a banner row doing the same centred under the box's title, and the qualifier run any of them
+ * may end on. Each shape fixes its own indent and colours, so what a body says is the only thing that
+ * varies between two layers' hover boxes.
  *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
@@ -100,5 +102,36 @@ public final class CellTooltipRows {
         return TooltipRow
             .createRow(new TextSpan(text, StarsectorUiColour.VANILLA_TEXT.resolve()))
             .clearsCrestColumn();
+    }
+
+    /**
+     * Builds a banner row: a line centred in the box's content region, led by a small image where one
+     * was resolved, in the plain text colour - for a verdict about the hovered system that is meant to
+     * be read straight off the title rather than looked up in the breakdown below it.
+     *
+     * <p>Centred rather than laid in the columns because the line qualifies the whole box: a line
+     * indented under the title, or aligned to a crest gutter the entries below reserve, reads as the
+     * first entry of a list it is not part of. The crest travels as a run of the line rather than in
+     * that gutter for the same reason - it belongs to the sentence, and centring is what a line clear of
+     * the table is free to do.
+     *
+     * <p>Its qualifier, where it has one, is the shared {@link #buildQualifierSpan} added by the caller,
+     * so a banner calls something out in the same shade every other line does.
+     *
+     * @param crestSpritePath the leading image's texture path, or null for a banner of words alone
+     * @param text            the line's words
+     * @return the row, ready to add to a body
+     */
+    public static TooltipRow.CentredRow buildBannerRow(String crestSpritePath, String text) {
+        var textSpan = new TextSpan(text, StarsectorUiColour.VANILLA_TEXT.resolve());
+
+        // A faction the game gives no crest resolves to no path at all, so the line is built from its
+        // words alone rather than from an image run with nothing to load.
+        if (crestSpritePath == null) {
+            return TooltipRow.createCentredRow(textSpan);
+        }
+        return TooltipRow
+            .createCentredRow(new ImageSpan(crestSpritePath))
+            .continuesWith(textSpan);
     }
 }

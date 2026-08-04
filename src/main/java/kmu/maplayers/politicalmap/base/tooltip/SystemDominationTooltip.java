@@ -36,11 +36,12 @@ import java.util.List;
  * flag keys on the group's kind, not its member count.
  *
  * <p>What the system is beyond its standings - dead or unpopulated, or held by decree as some
- * faction's core - is stated above the contest, in the same shared lines the claims layer states it in,
- * so a player crossing between the two layers reads one fact one way. A system that ranks empty is not
- * skipped: those lines are all it has, and they say why it holds no standing under the system name
- * {@link SystemCellTooltip} heads the box with, so the hover reads as landing on a real but unheld
- * system rather than on nothing.
+ * faction's core - is stated above the contest, so a player crossing between this layer and the claims
+ * layer reads one fact one way. A decree leads: it is the only line here that settles the system
+ * outright, so it is centred under the system name {@link SystemCellTooltip} heads the box with and
+ * reads as part of that heading, with whether the system holds anybody stated beneath it. A system that
+ * ranks empty is not skipped: those lines are all it has, and they say why it holds no standing, so the
+ * hover reads as landing on a real but unheld system rather than on nothing.
  *
  * <p>Stateless past the reader it is built around - the view, the live economy, and the settings are
  * read afresh each paint - so one shared instance serves both views.
@@ -74,19 +75,24 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         var groupRows = StandingRowResolver.resolveRows(sector, standings, grouping);
         var rows = new ArrayList<TooltipRow>();
 
+        // Whose space this is comes first of all - centred directly under the system's name, where it
+        // reads as part of the heading rather than as a finding buried under the standings. A decree is
+        // the one fact here that settles the system outright, so a player crossing the map reads it off
+        // the title without having to take in the breakdown below.
+        //
+        // The decree is read on its own rather than out of the full claim breakdown: this box only has
+        // to know whether one holds the system, and scoring every market in it to answer that would
+        // charge the whole claim computation to every faction and alliance hover.
+        CoreTerritoryRow
+            .resolveCoreTerritoryRow(sector, claimBreakdownReader.readCoreFactionId(system))
+            .ifPresent(rows::add);
+
         // What the system is comes before who holds it, so the standings below read as a contest over
         // known ground. The status resolves under this pass's reveal, the same filter the standings
         // were ranked through, so the system counts as empty here exactly when the ranking found
         // nothing to show - the two can never describe different systems.
         SystemStatusRow
             .resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets())
-            .ifPresent(rows::add);
-
-        // The decree is read on its own rather than out of the full claim breakdown: this box only has
-        // to know whether one holds the system, and scoring every market in it to answer that would
-        // charge the whole claim computation to every faction and alliance hover.
-        CoreTerritoryRow
-            .resolveCoreTerritoryRow(sector, claimBreakdownReader.readCoreFactionId(system))
             .ifPresent(rows::add);
 
         appendStandingSections(rows, groupRows);

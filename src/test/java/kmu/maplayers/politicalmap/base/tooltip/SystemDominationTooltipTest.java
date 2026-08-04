@@ -391,17 +391,17 @@ final class SystemDominationTooltipTest {
 
         @Test
         void buildBodyRowsNamesWhatTheSystemIsBeforeWhoHoldsIt() {
-            // The ground first, then the contest over it: a dead or decreed system states that much
-            // outright, so the standings below read as a contest over known ground rather than as the
-            // whole of what the box has to say.
+            // Whose space it is first, then what the ground itself is, then the contest over it. The
+            // decree leads because it settles the system outright: it is read straight off the system
+            // name above it rather than found under a status line that only says the place is empty.
             stubStatusRow("Decivilised");
             stubCoreFaction(CORE_FACTION);
             stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
 
             assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
                 .containsExactly(
-                    "Decivilised",
                     "The Hegemony",
+                    "Decivilised",
                     "Dominated by:",
                     "Rebel Pact");
         }
@@ -457,7 +457,7 @@ final class SystemDominationTooltipTest {
             stubCoreFaction(CORE_FACTION);
 
             assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
-                .containsExactly("Decivilised", "The Hegemony");
+                .containsExactly("The Hegemony", "Decivilised");
         }
 
         @Test
@@ -528,8 +528,22 @@ final class SystemDominationTooltipTest {
     private static List<String> readLabelTexts(List<TooltipRow> rows) {
         return rows
             .stream()
-            .map(row -> readLabelRun(row, LABEL_RUN).text())
+            .map(SystemDominationTooltipTest::readOpeningWords)
             .toList();
+    }
+
+    // What a line opens with in words: its first run that carries any. Runs that hold an image rather
+    // than text are stepped over, so a line led by a crest still reads as the name it goes on to say
+    // rather than as a sprite path - which is what makes one list of expected lines cover a box that
+    // mixes plain entries with a crested banner.
+    private static String readOpeningWords(TooltipRow row) {
+        return row
+            .labelRuns()
+            .stream()
+            .filter(TextSpan.class::isInstance)
+            .map(labelRun -> ((TextSpan) labelRun).text())
+            .findFirst()
+            .orElse("");
     }
 
     // Reads one body line as the table row it is. The body is typed on the row supertype, since a

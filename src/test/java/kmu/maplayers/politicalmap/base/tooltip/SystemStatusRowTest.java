@@ -28,7 +28,7 @@ import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
@@ -42,6 +42,7 @@ import static org.mockito.Mockito.when;
  * read as a standalone line under the system-name header rather than as an entry of a list.
  */
 final class SystemStatusRowTest {
+
     // The status line is one plain run, so its label is read at the first of them.
     private static final int STATUS_RUN = 0;
 
@@ -52,8 +53,11 @@ final class SystemStatusRowTest {
         // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
         // mocking it against an uninstalled settings proxy would fail on class load.
         StarsectorSettingsFake.installSettings();
+
         miscMock = Mockito.mockStatic(Misc.class);
-        miscMock.when(Misc::getTextColor).thenReturn(Color.LIGHT_GRAY);
+        miscMock
+            .when(Misc::getTextColor)
+            .thenReturn(Color.LIGHT_GRAY);
     }
 
     @AfterEach
@@ -67,46 +71,52 @@ final class SystemStatusRowTest {
 
         @Test
         void resolveStatusRowIsEmptyForAPopulatedSystem() {
-            var system = systemWithPlanets();
 
+            var system = systemWithPlanets();
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system, colony()), system, false);
 
-            assertThat(row).isEmpty();
+            assertThat(row)
+                .isEmpty();
         }
 
         @Test
         void resolveStatusRowNamesAnEmptySystemUnpopulated() {
-            var system = systemWithPlanets();
 
+            var system = systemWithPlanets();
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
 
-            assertThat(readLabelRun(row.orElseThrow(), STATUS_RUN).text())
-                    .isEqualTo("Unpopulated");
+            assertThat(readLabelTextRun(row.orElseThrow(), STATUS_RUN).text())
+                .isEqualTo("Unpopulated");
         }
 
         @Test
         void resolveStatusRowNamesASystemWithARevealedRuinDecivilised() {
+
             // The dead colony is gone from the economy, so the system is empty either way - what the
             // ruin changes is which status the player is told.
             var system = systemWithPlanets(revealedRuin());
-
             var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
 
-            assertThat(readLabelRun(row.orElseThrow(), STATUS_RUN).text())
-                    .isEqualTo("Decivilised");
+            assertThat(readLabelTextRun(row.orElseThrow(), STATUS_RUN).text())
+                .isEqualTo("Decivilised");
         }
 
         @Test
         void resolveStatusRowLaysTheStatusFlushWithoutAnIndentCrestOrScore() {
+
             var system = systemWithPlanets();
+            var row = SystemStatusRow
+                .resolveStatusRow(sectorHolding(system), system, false)
+                .orElseThrow();
 
-            var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false)
-                    .orElseThrow();
-
-            assertThat(row.indent()).isCloseTo(NO_INDENT, within(TOLERANCE));
-            assertThat(row.labelPlacement()).isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
-            assertThat(row.labelledRow().leadingRowSlot()).isEqualTo(RowSlot.EMPTY);
-            assertThat(row.labelledRow().trailingRowSlot()).isEqualTo(RowSlot.EMPTY);
+            assertThat(row.indent())
+                .isCloseTo(NO_INDENT, within(TOLERANCE));
+            assertThat(row.labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
+            assertThat(row.labelledRow().leadingRowSlot())
+                .isEqualTo(RowSlot.EMPTY);
+            assertThat(row.labelledRow().trailingRowSlot())
+                .isEqualTo(RowSlot.EMPTY);
         }
 
         @Test
@@ -116,29 +126,46 @@ final class SystemStatusRowTest {
             var system = systemWithPlanets();
             var sector = sectorHolding(system, undiscoveredColony());
 
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, true)).isEmpty();
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, false)).isPresent();
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, true))
+                .isEmpty();
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, false))
+                .isPresent();
         }
     }
 
     private static SectorAPI sectorHolding(StarSystemAPI system, MarketAPI... markets) {
+
         var economyMock = mock(EconomyAPI.class);
-        when(economyMock.getMarkets(system)).thenReturn(List.of(markets));
+
+        when(economyMock.getMarkets(system))
+            .thenReturn(List.of(markets));
+
         var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getEconomy()).thenReturn(economyMock);
+
+        when(sectorMock.getEconomy())
+            .thenReturn(economyMock);
+
         return sectorMock;
     }
 
     private static StarSystemAPI systemWithPlanets(PlanetAPI... planets) {
+
         var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getPlanets()).thenReturn(List.of(planets));
+
+        when(systemMock.getPlanets())
+            .thenReturn(List.of(planets));
+
         return systemMock;
     }
 
     // An owned colony on an already-discovered entity: the plain "this system is populated" case.
     private static MarketAPI colony() {
+
         var marketMock = mock(MarketAPI.class);
-        when(marketMock.getFaction()).thenReturn(mock(FactionAPI.class));
+
+        when(marketMock.getFaction())
+            .thenReturn(mock(FactionAPI.class));
+
         return marketMock;
     }
 
@@ -146,22 +173,38 @@ final class SystemStatusRowTest {
     // hidden, so it counts only when the reveal drops the visibility filter.
     private static MarketAPI undiscoveredColony() {
         var entityMock = mock(SectorEntityToken.class);
-        when(entityMock.isDiscoverable()).thenReturn(true);
+
+        when(entityMock.isDiscoverable())
+            .thenReturn(true);
+
         var marketMock = colony();
-        when(marketMock.getPrimaryEntity()).thenReturn(entityMock);
-        when(marketMock.isHidden()).thenReturn(true);
+
+        when(marketMock.getPrimaryEntity())
+            .thenReturn(entityMock);
+        when(marketMock.isHidden())
+            .thenReturn(true);
+
         return marketMock;
     }
 
     // A surveyed planet carrying a revealed decivilised condition - the ruin of a colony the player
     // has already seen die.
     private static PlanetAPI revealedRuin() {
+
         var conditionMock = mock(MarketConditionAPI.class);
         var ruinMock = mock(MarketAPI.class);
-        when(ruinMock.getSurveyLevel()).thenReturn(MarketAPI.SurveyLevel.FULL);
-        when(ruinMock.getFirstCondition(Conditions.DECIVILIZED)).thenReturn(conditionMock);
+        
+        when(ruinMock.getSurveyLevel())
+            .thenReturn(MarketAPI.SurveyLevel.FULL);
+
+        when(ruinMock.getFirstCondition(Conditions.DECIVILIZED))
+            .thenReturn(conditionMock);
+
         var planetMock = mock(PlanetAPI.class);
-        when(planetMock.getMarket()).thenReturn(ruinMock);
+
+        when(planetMock.getMarket())
+            .thenReturn(ruinMock);
+
         return planetMock;
     }
 }

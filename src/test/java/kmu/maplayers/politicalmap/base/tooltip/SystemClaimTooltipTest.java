@@ -30,6 +30,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
@@ -409,7 +410,7 @@ final class SystemClaimTooltipTest {
 
             var claimRow = readTableRow(tooltip.buildBodyRows(sectorMock, systemMock), CLAIM_ROW);
 
-            assertThat(readLabelRun(claimRow, LABEL_RUN).text())
+            assertThat(readLabelTextRun(claimRow, LABEL_RUN).text())
                 .isEqualTo("ghost_faction");
         }
     }
@@ -425,12 +426,12 @@ final class SystemClaimTooltipTest {
     private static List<String> readLabelTexts(List<TooltipRow> rows) {
         return rows
             .stream()
-            .map(row -> readLabelRun(row, LABEL_RUN).text())
+            .map(row -> readLabelTextRun(row, LABEL_RUN).text())
             .toList();
     }
 
     private static String readLabelText(List<TooltipRow> rows, int rowIndex) {
-        return readLabelRun(rows.get(rowIndex), LABEL_RUN).text();
+        return readLabelTextRun(rows.get(rowIndex), LABEL_RUN).text();
     }
 
     // Reads one body line as the table row it is. The body is typed on the row supertype, since a

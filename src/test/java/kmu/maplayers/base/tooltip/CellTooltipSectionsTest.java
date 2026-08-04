@@ -22,6 +22,7 @@ import java.util.List;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
@@ -164,7 +165,7 @@ final class CellTooltipSectionsTest {
     private static List<String> readLabelTexts(List<TooltipRow> rows) {
         return rows
             .stream()
-            .map(row -> readLabelRun(row, LABEL_RUN).text())
+            .map(row -> readLabelTextRun(row, LABEL_RUN).text())
             .toList();
     }
 }

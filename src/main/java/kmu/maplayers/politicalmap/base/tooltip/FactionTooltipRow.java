@@ -44,4 +44,26 @@ public final class FactionTooltipRow {
             TooltipFactionNames.resolveLongName(faction, factionId),
             valueText);
     }
+
+    /**
+     * Builds the banner naming a faction, centred under the box's title rather than laid as an entry in
+     * its table - for a verdict about the hovered system as a whole that happens to name a faction.
+     *
+     * <p>The same crest and the same name as the entry line above, resolved through the same reads, so a
+     * faction named in the banner and the same faction named in the breakdown below cannot appear as two
+     * different factions. What differs is only where the line sits, which is the point being made about
+     * it rather than anything about the faction.
+     *
+     * @param sector    the sector the faction's name and crest are read from
+     * @param factionId the id of the faction the banner names; an id the sector no longer knows is shown
+     *                  as itself rather than leaving the line nameless
+     * @return the row, ready to add to a body and to be qualified by the caller
+     */
+    public static TooltipRow.CentredRow buildFactionBannerRow(SectorAPI sector, String factionId) {
+        var faction = sector.getFaction(factionId);
+
+        return CellTooltipRows.buildBannerRow(
+            FactionCrests.resolveCrestPath(faction),
+            TooltipFactionNames.resolveLongName(faction, factionId));
+    }
 }

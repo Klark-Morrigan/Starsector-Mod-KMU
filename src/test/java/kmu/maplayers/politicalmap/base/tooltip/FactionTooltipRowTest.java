@@ -21,6 +21,7 @@ import java.awt.Color;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
@@ -111,7 +112,7 @@ final class FactionTooltipRowTest {
             var sectorMock = mock(SectorAPI.class);
             var row = FactionTooltipRow.buildFactionRow(sectorMock, "ghost_faction", "");
 
-            assertThat(readLabelRun(row, LABEL_RUN).text())
+            assertThat(readLabelTextRun(row, LABEL_RUN).text())
                 .isEqualTo("ghost_faction");
             assertThat(row.labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
