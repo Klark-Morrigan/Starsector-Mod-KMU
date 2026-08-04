@@ -69,20 +69,15 @@ final class ClusterAnchorPlacementTest {
 
     // The anchors alone, for the geometry tests: they assert on where a label landed, not
     // on what finding it cost, so they read past the sweep's counts here rather than each
-    // unwrapping the fit. The partition is assembled here from the pieces each fixture spells
-    // out, so a case names its geometry rather than the value the sweep takes it as. Offered
-    // nothing to carry over, so every case here fits for real - the reuse cases hand in a
-    // previous sweep's anchors themselves.
+    // unwrapping the fit. Offered nothing to carry over, so every case here fits for real -
+    // the reuse cases hand in a previous sweep's anchors themselves.
     private static List<ClusterAnchor> computeAnchors(
-            List<List<String>> clusters,
-            Map<String, List<CellEdge>> edgesByCellId,
-            Map<String, double[]> siteBySystemId,
-            CellGrouping grouping,
+            ClusterPartition partition,
             LabelAnchorSpecification spec,
             ClusterLabelResolvers labelResolvers) {
 
         return ClusterAnchorPlacement.computeClusterAnchors(
-            new ClusterPartition(clusters, edgesByCellId, siteBySystemId, grouping),
+            partition,
             spec,
             labelResolvers,
             Map.of()).anchors();
@@ -195,16 +190,86 @@ final class ClusterAnchorPlacementTest {
         private static final CellGrouping SINGLE_SYSTEM_GROUPING =
             grouping(Map.of("A", GROUP_KEY));
 
+        // The partitions the sweeps run over, each composing one fixture's clusters with the
+        // cells they were cut from. Named here rather than assembled at every case, so a case
+        // states which geometry it is about instead of restating four pieces that only mean
+        // anything together - and two cases meaning to run over the same ground cannot drift
+        // into running over slightly different ground.
+
+        // The pair fused under one owner: the wide, short cluster most line-fit cases sweep.
+        private static final ClusterPartition FUSED_PAIR_PARTITION = new ClusterPartition(
+            List.of(List.of("A", "B")),
+            HORIZONTAL_PAIR_EDGES,
+            HORIZONTAL_PAIR_SITES,
+            HORIZONTAL_PAIR_GROUPING);
+
+        // The same two cells split between two owners, so one sweep fits two clusters. Read
+        // against the fused pair above it is also the same ground before and after a split or a
+        // merge, which is what the carry-over cases turn on.
+        private static final ClusterPartition SPLIT_PAIR_PARTITION = new ClusterPartition(
+            List.of(List.of("A"), List.of("B")),
+            HORIZONTAL_PAIR_EDGES,
+            HORIZONTAL_PAIR_SITES,
+            grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)));
+
+        // The fused pair with no cell edges: nothing traces a border ring, so no candidate can
+        // be proven interior and only the dot can show.
+        private static final ClusterPartition UNTRACEABLE_PAIR_PARTITION = new ClusterPartition(
+            List.of(List.of("A", "B")),
+            Map.of(),
+            HORIZONTAL_PAIR_SITES,
+            HORIZONTAL_PAIR_GROUPING);
+
+        private static final ClusterPartition THIN_COLUMN_PARTITION = new ClusterPartition(
+            List.of(List.of("A", "B")),
+            THIN_COLUMN_EDGES,
+            THIN_COLUMN_SITES,
+            THIN_COLUMN_GROUPING);
+
+        private static final ClusterPartition SQUARE_GRID_VERTICAL_PARTITION =
+            new ClusterPartition(
+                List.of(List.of("A", "B", "C", "D")),
+                SQUARE_GRID_EDGES,
+                SQUARE_GRID_VERTICAL_SITES,
+                SQUARE_GRID_GROUPING);
+
+        private static final ClusterPartition SQUARE_GRID_CENTERED_PARTITION =
+            new ClusterPartition(
+                List.of(List.of("A", "B", "C", "D")),
+                SQUARE_GRID_EDGES,
+                SQUARE_GRID_CENTERED_SITES,
+                SQUARE_GRID_GROUPING);
+
+        private static final ClusterPartition BOOT_PARTITION = new ClusterPartition(
+            List.of(List.of("A", "B", "C", "D", "E")),
+            BOOT_EDGES,
+            BOOT_SITES,
+            BOOT_GROUPING);
+
+        // One system whose own 2000x1000 cell shape is the only thing carrying a direction to
+        // fit, its site cloud having none.
+        private static final ClusterPartition SINGLE_WIDE_CELL_PARTITION = new ClusterPartition(
+            List.of(List.of("A")),
+            Map.of(
+                "A",
+                rectangleCellEdges(0, 0, 2 * CELL_SIDE, CELL_SIDE, null, null, null, null)),
+            Map.of("A", new double[] {1000, 500}),
+            SINGLE_SYSTEM_GROUPING);
+
+        // A cluster whose members carry no site at all, so there is no point cloud to fit.
+        private static final ClusterPartition SITELESS_PARTITION = new ClusterPartition(
+            List.of(List.of("A")),
+            Map.of(),
+            Map.of(),
+            SINGLE_SYSTEM_GROUPING);
+
         @Test
         void computeClusterAnchorsClipsTheAcceptedLineInsideTheClusterBorder() {
             // No icon keep-out and no end margin, so the winning horizontal line is the
             // full interior span: it reaches the inset border rings (x 150..1850) - past
             // the sites, but never out of the border.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -229,10 +294,7 @@ final class ClusterAnchorPlacementTest {
             // shrink the centred line to a stub between the icons, the search slides the
             // whole line off-centre to the first clear offset and keeps its full length.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(0.0, 150.0, 3, 3, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -262,10 +324,7 @@ final class ClusterAnchorPlacementTest {
             // The 100-unit end inset pulls the winning horizontal span (x 150..1850) in
             // from both ends, leaving the border gap a name needs on each side.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(100.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -286,10 +345,7 @@ final class ClusterAnchorPlacementTest {
             // 1700-unit height. Even with the penalty docking the vertical line by half,
             // its length wins - a genuinely tall cluster stays vertical.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                THIN_COLUMN_EDGES,
-                THIN_COLUMN_SITES,
-                THIN_COLUMN_GROUPING,
+                THIN_COLUMN_PARTITION,
                 spec(0.0, 0.0, 3, 3, 0.5, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -314,10 +370,7 @@ final class ClusterAnchorPlacementTest {
             // docks the vertical line by half and leaves the horizontal one whole, so the
             // accepted line runs horizontal against the cloud's own axis.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B", "C", "D")),
-                SQUARE_GRID_EDGES,
-                SQUARE_GRID_VERTICAL_SITES,
-                SQUARE_GRID_GROUPING,
+                SQUARE_GRID_VERTICAL_PARTITION,
                 spec(0.0, 0.0, 3, 3, 0.5, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -339,10 +392,7 @@ final class ClusterAnchorPlacementTest {
             // square cluster that is a diagonal through the centre (1700 / sin 60 ~ 1963),
             // longer than either axis-aligned 1700 chord, so a slanted line wins.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B", "C", "D")),
-                SQUARE_GRID_EDGES,
-                SQUARE_GRID_CENTERED_SITES,
-                SQUARE_GRID_GROUPING,
+                SQUARE_GRID_CENTERED_PARTITION,
                 spec(0.0, 0.0, 3, 3, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -370,10 +420,7 @@ final class ClusterAnchorPlacementTest {
             // The centred horizontal winner spans x 150..1850 at y 500, so its midpoint -
             // the dot and the label's hang-point - is (1000, 500).
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -398,10 +445,7 @@ final class ClusterAnchorPlacementTest {
             // instead reaches the bottom arm and returns a chord nearly three cells long -
             // the payoff of freeing the line from the centroid.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B", "C", "D", "E")),
-                BOOT_EDGES,
-                BOOT_SITES,
-                BOOT_GROUPING,
+                BOOT_PARTITION,
                 spec(0.0, 0.0, 3, 5, 0.5, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -424,20 +468,7 @@ final class ClusterAnchorPlacementTest {
             // horizontal principal-axis candidate; the search lands the full interior span
             // (x 150..1850) - a single-system cluster still carries a real line.
             var anchors = computeAnchors(
-                List.of(List.of("A")),
-                Map.of(
-                    "A",
-                    rectangleCellEdges(
-                        0,
-                        0,
-                        2 * CELL_SIDE,
-                        CELL_SIDE,
-                        null,
-                        null,
-                        null,
-                        null)),
-                Map.of("A", new double[] {1000, 500}),
-                SINGLE_SYSTEM_GROUPING,
+                SINGLE_WIDE_CELL_PARTITION,
                 spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -465,10 +496,7 @@ final class ClusterAnchorPlacementTest {
             // centroid (1000, 500) - no lines, no name, no font. With the diagnostic
             // toggles off it carries no lines.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(1000.0, 0.0, 3, 3, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -492,10 +520,7 @@ final class ClusterAnchorPlacementTest {
             // candidate the search had - the full pre-inset clear span (x 150..1850) -
             // comes back for the red line, showing how close the cluster came.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(
                     1000.0,
                     0.0,
@@ -531,10 +556,7 @@ final class ClusterAnchorPlacementTest {
             // pure longest line is the ~1963 diagonal. With the unbiased toggle on, that
             // diagonal rides along for the yellow comparison.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B", "C", "D")),
-                SQUARE_GRID_EDGES,
-                SQUARE_GRID_VERTICAL_SITES,
-                SQUARE_GRID_GROUPING,
+                SQUARE_GRID_VERTICAL_PARTITION,
                 spec(
                     0.0,
                     0.0,
@@ -573,10 +595,7 @@ final class ClusterAnchorPlacementTest {
             // wins on length even penalised), so the pure-longest line coincides with the
             // accepted line and no separate yellow line is built.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                THIN_COLUMN_EDGES,
-                THIN_COLUMN_SITES,
-                THIN_COLUMN_GROUPING,
+                THIN_COLUMN_PARTITION,
                 spec(
                     0.0,
                     0.0,
@@ -597,10 +616,7 @@ final class ClusterAnchorPlacementTest {
             // Members with no cell edges yield no border ring to clip against, so there is
             // nothing to prove a line interior - the dot at the site centroid only.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                Map.of(),
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                UNTRACEABLE_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 3, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -625,10 +641,7 @@ final class ClusterAnchorPlacementTest {
                 return new AspectLabelLengthEstimator(SLENDER_ASPECT);
             };
             computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(recordingResolver));
 
@@ -647,10 +660,7 @@ final class ClusterAnchorPlacementTest {
                 return Color.MAGENTA;
             };
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 1, 0.0, 2.0), 
                 new ClusterLabelResolvers(recordingColours, slenderNameEstimators()));
 
@@ -667,10 +677,7 @@ final class ClusterAnchorPlacementTest {
             // rebuild's clusters - the owner its name and shade came from, and the members
             // whose cells bounded the search, are both part of that answer.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -686,10 +693,7 @@ final class ClusterAnchorPlacementTest {
             // members, which is exactly the mismatch that makes a placement reusable for a
             // cluster it was never fitted to.
             var anchors = computeAnchors(
-                List.of(List.of("A"), List.of("B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)),
+                SPLIT_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -706,10 +710,7 @@ final class ClusterAnchorPlacementTest {
             // re-fitted every rebuild, and re-proving that a cluster still has no room is
             // the one search there is least point repeating.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 spec(1000.0, 0.0, 3, 3, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -725,10 +726,7 @@ final class ClusterAnchorPlacementTest {
             // traces at all. It names its cluster like the other two, so no path out of
             // the search produces a placement that cannot be recognised.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                Map.of(),
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                UNTRACEABLE_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 3, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -824,11 +822,7 @@ final class ClusterAnchorPlacementTest {
             var standing = fitTheHorizontalPair(createLabelResolvers(slenderNameEstimators()));
 
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                new ClusterPartition(
-                    List.of(List.of("A"), List.of("B")),
-                    HORIZONTAL_PAIR_EDGES,
-                    HORIZONTAL_PAIR_SITES,
-                    grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY))),
+                SPLIT_PAIR_PARTITION,
                 createPairTuning(),
                 createLabelResolvers(slenderNameEstimators()),
                 indexByIdentity(standing));
@@ -849,10 +843,7 @@ final class ClusterAnchorPlacementTest {
             // it came from cannot be carried onto it - a box fitted inside one cell would sit
             // in a corner of the territory it now names.
             var standing = computeAnchors(
-                List.of(List.of("A"), List.of("B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                grouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)),
+                SPLIT_PAIR_PARTITION,
                 createPairTuning(),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -889,10 +880,7 @@ final class ClusterAnchorPlacementTest {
                 1.15);
                 
             var standing = computeAnchors(
-                List.of(List.of("A", "B", "C", "D")),
-                SQUARE_GRID_EDGES,
-                SQUARE_GRID_CENTERED_SITES,
-                SQUARE_GRID_GROUPING,
+                SQUARE_GRID_CENTERED_PARTITION,
                 tuning,
                 createLabelResolvers(aspectNameEstimators(6.0)));
 
@@ -902,11 +890,7 @@ final class ClusterAnchorPlacementTest {
                 .isEmpty();
 
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                new ClusterPartition(
-                    List.of(List.of("A", "B", "C", "D")),
-                    SQUARE_GRID_EDGES,
-                    SQUARE_GRID_CENTERED_SITES,
-                    SQUARE_GRID_GROUPING),
+                SQUARE_GRID_CENTERED_PARTITION,
                 tuning,
                 createLabelResolvers(owner -> new LabelLengthEstimatorFake(6.0, "Line", ONE_LINE)),
                 indexByIdentity(standing));
@@ -925,10 +909,7 @@ final class ClusterAnchorPlacementTest {
             // unsound, so the dot is searched again like anything else that cannot be checked.
             var tuning = spec(1000.0, 0.0, 3, 3, 0.0, 2.0);
             var standing = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 tuning,
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -936,11 +917,7 @@ final class ClusterAnchorPlacementTest {
                 .isNull();
 
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                new ClusterPartition(
-                    List.of(List.of("A", "B")),
-                    HORIZONTAL_PAIR_EDGES,
-                    HORIZONTAL_PAIR_SITES,
-                    HORIZONTAL_PAIR_GROUPING),
+                FUSED_PAIR_PARTITION,
                 tuning,
                 createLabelResolvers(slenderNameEstimators()),
                 indexByIdentity(standing));
@@ -954,9 +931,7 @@ final class ClusterAnchorPlacementTest {
             // A cluster whose members have no site (none in the site map) has no point
             // cloud to fit, so it contributes no anchor rather than an empty fit.
             var anchors = computeAnchors(
-                List.of(List.of("A")), Map.of(),
-                Map.of(),
-                SINGLE_SYSTEM_GROUPING,
+                SITELESS_PARTITION,
                 spec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()));
 
@@ -969,11 +944,7 @@ final class ClusterAnchorPlacementTest {
             // was tuned with: a 3-wide fan resolves to 5 directions once the cluster's own
             // axis and the preferred slant join it, and each is swept at all 4 offsets.
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                new ClusterPartition(
-                    List.of(List.of("A", "B")),
-                    HORIZONTAL_PAIR_EDGES,
-                    HORIZONTAL_PAIR_SITES,
-                    HORIZONTAL_PAIR_GROUPING),
+                FUSED_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()),
                 Map.of());
@@ -987,11 +958,7 @@ final class ClusterAnchorPlacementTest {
             // A skipped cluster costs nothing, so it must not carry a share of the tuning's
             // product either - the counts are what the sweep spent, not what it was sized for.
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                new ClusterPartition(
-                    List.of(List.of("A")),
-                    Map.of(),
-                    Map.of(),
-                    SINGLE_SYSTEM_GROUPING),
+                SITELESS_PARTITION,
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()),
                 Map.of());
@@ -1007,11 +974,7 @@ final class ClusterAnchorPlacementTest {
             // fits outnumber the candidates. This is the level the fit's duration tracks,
             // and the reason the candidate count alone understates the cost.
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
-                new ClusterPartition(
-                    List.of(List.of("A", "B")),
-                    HORIZONTAL_PAIR_EDGES,
-                    HORIZONTAL_PAIR_SITES,
-                    HORIZONTAL_PAIR_GROUPING),
+                FUSED_PAIR_PARTITION,
                 spec(0.0, 0.0, 3, 4, 0.0, 2.0),
                 createLabelResolvers(slenderNameEstimators()),
                 Map.of());
@@ -1029,10 +992,7 @@ final class ClusterAnchorPlacementTest {
             // y 150..850. The thin centreline of the line fit hid this; the band makes the
             // "too close to the border" case explicit and keeps it inside.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
@@ -1092,18 +1052,12 @@ final class ClusterAnchorPlacementTest {
             var coarseSpec = specWithFontTolerance(fineSpec, 1000.0);
             
             var fineAnchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 fineSpec,
                 createLabelResolvers(aspectNameEstimators(1.0)));
 
             var coarseAnchors = computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 coarseSpec,
                 createLabelResolvers(aspectNameEstimators(1.0)));
 
@@ -1124,10 +1078,7 @@ final class ClusterAnchorPlacementTest {
             // chooses it over one line and over three (which the cluster's girth cannot make
             // taller).
             var anchors = computeAnchors(
-                List.of(List.of("A", "B", "C", "D")),
-                SQUARE_GRID_EDGES,
-                SQUARE_GRID_CENTERED_SITES,
-                SQUARE_GRID_GROUPING,
+                SQUARE_GRID_CENTERED_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
@@ -1156,10 +1107,7 @@ final class ClusterAnchorPlacementTest {
             // so the label draws exactly the block the fit sized.
             var nameEstimatorFake = new LabelLengthEstimatorFake(6.0, "Line", MAX_FILLABLE_LINES);
             var anchors = computeAnchors(
-                List.of(List.of("A", "B", "C", "D")),
-                SQUARE_GRID_EDGES,
-                SQUARE_GRID_CENTERED_SITES,
-                SQUARE_GRID_GROUPING,
+                SQUARE_GRID_CENTERED_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
@@ -1189,10 +1137,7 @@ final class ClusterAnchorPlacementTest {
             // is one, so the name stays a single line at the smaller font the cap forces -
             // the knob that lets a caller forbid stacking.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B", "C", "D")),
-                SQUARE_GRID_EDGES,
-                SQUARE_GRID_CENTERED_SITES,
-                SQUARE_GRID_GROUPING,
+                SQUARE_GRID_CENTERED_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
@@ -1218,8 +1163,7 @@ final class ClusterAnchorPlacementTest {
             // - no placement can prove even the thinnest required band interior - so the fit
             // collapses to the site-centroid dot, the same fallback a no-room line takes.
             var anchors = computeAnchors(
-                List.of(List.of("A", "B", "C", "D")), SQUARE_GRID_EDGES,
-                SQUARE_GRID_CENTERED_SITES, SQUARE_GRID_GROUPING,
+                SQUARE_GRID_CENTERED_PARTITION,
                 bandSpec(
                     0.0,
                     0.0,
@@ -1317,10 +1261,7 @@ final class ClusterAnchorPlacementTest {
                 ClusterLabelResolvers labelResolvers) {
 
             return computeAnchors(
-                List.of(List.of("A", "B")),
-                HORIZONTAL_PAIR_EDGES,
-                HORIZONTAL_PAIR_SITES,
-                HORIZONTAL_PAIR_GROUPING,
+                FUSED_PAIR_PARTITION,
                 createPairTuning(),
                 labelResolvers);
         }
@@ -1333,11 +1274,7 @@ final class ClusterAnchorPlacementTest {
                 ClusterLabelResolvers labelResolvers) {
 
             return ClusterAnchorPlacement.computeClusterAnchors(
-                new ClusterPartition(
-                    List.of(List.of("A", "B")),
-                    HORIZONTAL_PAIR_EDGES,
-                    HORIZONTAL_PAIR_SITES,
-                    HORIZONTAL_PAIR_GROUPING),
+                FUSED_PAIR_PARTITION,
                 createPairTuning(),
                 labelResolvers,
                 indexByIdentity(standingAnchors));
