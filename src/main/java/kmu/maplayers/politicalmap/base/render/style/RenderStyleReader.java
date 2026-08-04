@@ -17,7 +17,7 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -68,15 +68,15 @@ public final class RenderStyleReader {
     public static GlobalStyle readGlobalStyle() {
         return new GlobalStyle(
             new HatchStyle(
-                KmuLunaSettings.getPoliticalMapHatchSpacing(),
-                KmuLunaSettings.getPoliticalMapHatchAngleRadians(),
-                KmuLunaSettings.getPoliticalMapHatchJoinToleranceFraction(),
+                KmuPoliticalMapSettings.getPoliticalMapHatchSpacing(),
+                KmuPoliticalMapSettings.getPoliticalMapHatchAngleRadians(),
+                KmuPoliticalMapSettings.getPoliticalMapHatchJoinToleranceFraction(),
                 new GlLineHatchStroke(
-                    resolveHatchLineQualityOf(KmuLunaSettings.shouldSmoothHatchLines()),
-                    KmuLunaSettings.getPoliticalMapHatchWidth())),
+                    resolveHatchLineQualityOf(KmuPoliticalMapSettings.shouldSmoothHatchLines()),
+                    KmuPoliticalMapSettings.getPoliticalMapHatchWidth())),
             readBorderSmoothingStyle(),
             readHoverHighlightStyle(),
-            KmuLunaSettings.getPoliticalMapDesaturationDarkening());
+            KmuPoliticalMapSettings.getPoliticalMapDesaturationDarkening());
     }
 
     /**
@@ -90,14 +90,14 @@ public final class RenderStyleReader {
     public static BorderSmoothingStyle readBorderSmoothingStyle() {
         return new BorderSmoothingStyle(
             new SpikeSandingStyle(
-                KmuLunaSettings.shouldSandBorderSpikes(),
-                KmuLunaSettings.getPoliticalMapBorderSpikeHeight(),
-                KmuLunaSettings.getPoliticalMapBorderSpikeAngleRadians()),
+                KmuPoliticalMapSettings.shouldSandBorderSpikes(),
+                KmuPoliticalMapSettings.getPoliticalMapBorderSpikeHeight(),
+                KmuPoliticalMapSettings.getPoliticalMapBorderSpikeAngleRadians()),
             new CornerRoundingStyle(
-                KmuLunaSettings.shouldRoundBorderCorners(),
-                KmuLunaSettings.getPoliticalMapBorderCornerRadius(),
-                KmuLunaSettings.getPoliticalMapBorderCornerSegments(),
-                KmuLunaSettings.getPoliticalMapBorderChamferAngleRadians()));
+                KmuPoliticalMapSettings.shouldRoundBorderCorners(),
+                KmuPoliticalMapSettings.getPoliticalMapBorderCornerRadius(),
+                KmuPoliticalMapSettings.getPoliticalMapBorderCornerSegments(),
+                KmuPoliticalMapSettings.getPoliticalMapBorderChamferAngleRadians()));
     }
 
     // Reads the cursor's feedback into one style: the shared palette choice both its elements
@@ -106,17 +106,17 @@ public final class RenderStyleReader {
     // mid-hover repaints through the same rebuild every other style change does.
     public static HoverHighlightStyle readHoverHighlightStyle() {
         return new HoverHighlightStyle(
-            FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getPoliticalMapHoverHighlightColour()),
+            FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getPoliticalMapHoverHighlightColour()),
             new HoverGlowStyle(
-                KmuLunaSettings.getPoliticalMapHoverGlowOpacity(),
-                KmuLunaSettings.getPoliticalMapHoverGlowWidth(),
-                KmuLunaSettings.getPoliticalMapHoverGlowLayers(),
-                KmuLunaSettings.getPoliticalMapHoverGlowPulseStrength(),
-                KmuLunaSettings.getPoliticalMapHoverGlowPulsePeriod()),
+                KmuPoliticalMapSettings.getPoliticalMapHoverGlowOpacity(),
+                KmuPoliticalMapSettings.getPoliticalMapHoverGlowWidth(),
+                KmuPoliticalMapSettings.getPoliticalMapHoverGlowLayers(),
+                KmuPoliticalMapSettings.getPoliticalMapHoverGlowPulseStrength(),
+                KmuPoliticalMapSettings.getPoliticalMapHoverGlowPulsePeriod()),
             new HoverWashStyle(
-                KmuLunaSettings.getPoliticalMapHoverWashOpacity(),
-                KmuLunaSettings.getPoliticalMapHoverWashOutlineOpacity(),
-                KmuLunaSettings.getPoliticalMapHoverWashOutlineWidth()));
+                KmuPoliticalMapSettings.getPoliticalMapHoverWashOpacity(),
+                KmuPoliticalMapSettings.getPoliticalMapHoverWashOutlineOpacity(),
+                KmuPoliticalMapSettings.getPoliticalMapHoverWashOutlineWidth()));
     }
 
     // Reads each owned category's eight style settings into one bundle, so the build
@@ -124,31 +124,31 @@ public final class RenderStyleReader {
     public static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getFactionFillColour()),
-                KmuLunaSettings.getFactionFillOpacity()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getFactionFillColour()),
+                KmuPoliticalMapSettings.getFactionFillOpacity()),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getFactionOuterBorderColour()),
-                KmuLunaSettings.getFactionOuterBorderOpacity()),
-            KmuLunaSettings.getFactionOuterBorderWidth(),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getFactionOuterBorderColour()),
+                KmuPoliticalMapSettings.getFactionOuterBorderOpacity()),
+            KmuPoliticalMapSettings.getFactionOuterBorderWidth(),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getFactionInnerBorderColour()),
-                KmuLunaSettings.getFactionInnerBorderOpacity()),
-            KmuLunaSettings.getFactionInnerBorderWidth());
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getFactionInnerBorderColour()),
+                KmuPoliticalMapSettings.getFactionInnerBorderOpacity()),
+            KmuPoliticalMapSettings.getFactionInnerBorderWidth());
     }
 
     public static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getIndependentFillColour()),
-                KmuLunaSettings.getIndependentFillOpacity()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getIndependentFillColour()),
+                KmuPoliticalMapSettings.getIndependentFillOpacity()),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getIndependentOuterBorderColour()),
-                KmuLunaSettings.getIndependentOuterBorderOpacity()),
-            KmuLunaSettings.getIndependentOuterBorderWidth(),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getIndependentOuterBorderColour()),
+                KmuPoliticalMapSettings.getIndependentOuterBorderOpacity()),
+            KmuPoliticalMapSettings.getIndependentOuterBorderWidth(),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuLunaSettings.getIndependentInnerBorderColour()),
-                KmuLunaSettings.getIndependentInnerBorderOpacity()),
-            KmuLunaSettings.getIndependentInnerBorderWidth());
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getIndependentInnerBorderColour()),
+                KmuPoliticalMapSettings.getIndependentInnerBorderOpacity()),
+            KmuPoliticalMapSettings.getIndependentInnerBorderWidth());
     }
 
     // Dead colonies keep both a neutral fill and a neutral outline: the ground was settled
@@ -159,10 +159,10 @@ public final class RenderStyleReader {
         return neutralStyle(
             new ElementStyle(
                 FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.PRIMARY),
-                KmuLunaSettings.getDecivilisedFillOpacity()),
+                KmuPoliticalMapSettings.getDecivilisedFillOpacity()),
             true, // Outline is drawn.
-            KmuLunaSettings.getDecivilisedBorderOpacity(),
-            KmuLunaSettings.getDecivilisedBorderWidth());
+            KmuPoliticalMapSettings.getDecivilisedBorderOpacity(),
+            KmuPoliticalMapSettings.getDecivilisedBorderWidth());
     }
 
     // Never-settled space stays outline-only: filling it would wash the whole sector, since
@@ -174,8 +174,8 @@ public final class RenderStyleReader {
         return neutralStyle(
             ElementStyle.NOT_DRAWN,
             UninhabitedOutlinePreference.isOutlineDrawn(),
-            KmuLunaSettings.getUninhabitedBorderOpacity(),
-            KmuLunaSettings.getUninhabitedBorderWidth());
+            KmuPoliticalMapSettings.getUninhabitedBorderOpacity(),
+            KmuPoliticalMapSettings.getUninhabitedBorderWidth());
     }
 
     // Turns the player's smoothing switch into the quality the hatch pass strokes at. Named here

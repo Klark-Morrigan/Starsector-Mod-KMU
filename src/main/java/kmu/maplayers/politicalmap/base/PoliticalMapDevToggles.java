@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 /**
  * The two "Dev" reveal toggles in force for one political-map resolution pass, read once
@@ -60,8 +60,8 @@ public record PoliticalMapDevToggles(
      */
     public static PoliticalMapDevToggles readFromLunaSettings() {
         return new PoliticalMapDevToggles(
-            KmuLunaSettings.getPoliticalMapShowAllFactions(),
-            KmuLunaSettings.shouldForceAllSystemsOnMap());
+            KmuPoliticalMapSettings.getPoliticalMapShowAllFactions(),
+            KmuPoliticalMapSettings.shouldForceAllSystemsOnMap());
     }
 
     /**

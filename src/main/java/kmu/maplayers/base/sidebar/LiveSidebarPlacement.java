@@ -24,7 +24,7 @@ import kmlib.starsector.ui.widgets.tabs.VanillaTabColours;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 import kmu.util.KmuStrings;
 
 import org.lwjgl.input.Keyboard;
@@ -188,7 +188,7 @@ public final class LiveSidebarPlacement {
             padding,
             // The player's border width over the edges the host frames; a dropped edge collapses its
             // reserved inset so the box sits flush against the neighbour the host meant to blend into.
-            new BoxBorder(KmuLunaSettings.getMapSidebarBorderWidth(), borderedEdges),
+            new BoxBorder(KmuMapLayerSettings.getMapSidebarBorderWidth(), borderedEdges),
             tabStyle,
             buildTabsSpec(layers, activeLayer, selection),
             activeLayer.getBodyControls(),
@@ -214,10 +214,10 @@ public final class LiveSidebarPlacement {
     // unused - the sidebar grows rightward to fit the widest content.
     private static Padding buildMapPadding() {
         return new Padding(
-            KmuLunaSettings.getMapSidebarPaddingTop(),
+            KmuMapLayerSettings.getMapSidebarPaddingTop(),
             0,
-            KmuLunaSettings.getMapSidebarPaddingBottom(),
-            KmuLunaSettings.getMapSidebarPaddingLeft());
+            KmuMapLayerSettings.getMapSidebarPaddingBottom(),
+            KmuMapLayerSettings.getMapSidebarPaddingLeft());
     }
 
     // The intel-screen anchor from the live screen height and the player's top padding; the anchor math
@@ -226,7 +226,7 @@ public final class LiveSidebarPlacement {
         return computeIntelPadding(
             mapVisorRect,
             Global.getSettings().getScreenHeight(),
-            KmuLunaSettings.getMapIntelSidebarPaddingTop());
+            KmuMapLayerSettings.getMapIntelSidebarPaddingTop());
     }
 
     // A tab style at the given band height, over the shared paint: the vanilla map-tab colour scheme,
@@ -273,7 +273,7 @@ public final class LiveSidebarPlacement {
     // shortcut leaves the tab label alone.
     private static String resolveShortcutName(MapLayer layer) {
 
-        var keycode = KmuLunaSettings.getMapLayerShortcut(
+        var keycode = KmuMapLayerSettings.getMapLayerShortcut(
             layer.getShortcutSettingKey(),
             layer.getDefaultShortcutKeycode());
 

@@ -21,7 +21,7 @@ import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -124,20 +124,20 @@ final class DebugBorderTracingBuilderTest {
     // The sector is never read: every question the builder asks of it is stubbed at the resolver
     // that would have walked it, so this stands only for the argument those stubs match on.
     private final SectorAPI sectorMock = mock(SectorAPI.class);
-    private MockedStatic<KmuLunaSettings> settingsMock;
+    private MockedStatic<KmuMapLayerSettings> settingsMock;
     private MockedStatic<SectorPolitics> politicsMock;
     private MockedStatic<DecivilisedMarkets> decivilisedMarketsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
 
     @BeforeEach
     void openTheSectorAndSettingsSeams() {
-        settingsMock = mockStatic(KmuLunaSettings.class);
+        settingsMock = mockStatic(KmuMapLayerSettings.class);
 
         settingsMock
-            .when(KmuLunaSettings::getMapBorderWeldTolerance)
+            .when(KmuMapLayerSettings::getMapBorderWeldTolerance)
             .thenReturn(WELD_TOLERANCE);
         settingsMock
-            .when(KmuLunaSettings::getMapBorderMiterLimit)
+            .when(KmuMapLayerSettings::getMapBorderMiterLimit)
             .thenReturn(MITER_SPIKE_LIMIT);
 
         politicsMock = mockStatic(SectorPolitics.class);

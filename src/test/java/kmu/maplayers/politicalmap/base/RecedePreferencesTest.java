@@ -7,7 +7,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -276,7 +276,7 @@ final class RecedePreferencesTest {
             // without a palette change.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                             mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
                 stubToggles(memoryAccessMock, settingsMock, true, MUTED_MODIFIER, false);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment())
@@ -289,7 +289,7 @@ final class RecedePreferencesTest {
             // Desaturate alone recolours at full opacity, so the modifier is left unread.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                             mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
                 stubToggles(memoryAccessMock, settingsMock, false, MUTED_MODIFIER, true);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment())
@@ -302,7 +302,7 @@ final class RecedePreferencesTest {
             // The two knobs combine: a receded bloc dims and recolours at once.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                             mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
                 stubToggles(memoryAccessMock, settingsMock, true, MUTED_MODIFIER, true);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment())
@@ -315,7 +315,7 @@ final class RecedePreferencesTest {
             // Both toggles off is the identity adjustment, so an un-receded look is preserved.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                             mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
                 stubToggles(memoryAccessMock, settingsMock, false, MUTED_MODIFIER, false);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment())
@@ -329,7 +329,7 @@ final class RecedePreferencesTest {
             // value flows straight through to the adjustment.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                             mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
                 stubToggles(memoryAccessMock, settingsMock, true, 0.72, false);
 
                 assertThat(TEST_SET.resolveRecedeAdjustment().opacityMultiplier())
@@ -561,7 +561,7 @@ final class RecedePreferencesTest {
     // Stubs the test set's two toggle reads through a memory mock and the muted modifier through the
     // settings mock, so resolveRecedeAdjustment runs its real composition over controlled inputs.
     private static void stubToggles(MockedStatic<SectorMemoryAccess> memoryAccessMock,
-            MockedStatic<KmuLunaSettings> settingsMock, boolean isMuted, double mutedModifier,
+            MockedStatic<KmuPoliticalMapSettings> settingsMock, boolean isMuted, double mutedModifier,
             boolean shouldDesaturate) {
         var memoryMock = mock(MemoryAPI.class);
         memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
@@ -571,7 +571,7 @@ final class RecedePreferencesTest {
         when(memoryMock.contains(TEST_DESATURATE_KEY)).thenReturn(true);
         when(memoryMock.getBoolean(TEST_MUTE_KEY)).thenReturn(isMuted);
         when(memoryMock.getBoolean(TEST_DESATURATE_KEY)).thenReturn(shouldDesaturate);
-        settingsMock.when(KmuLunaSettings::getPoliticalMapAllianceMutedOpacityModifier)
+        settingsMock.when(KmuPoliticalMapSettings::getPoliticalMapAllianceMutedOpacityModifier)
                 .thenReturn(mutedModifier);
     }
 }

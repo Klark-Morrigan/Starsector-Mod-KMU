@@ -24,15 +24,15 @@ record SectorGeometryParameters(
         double borderInset,
         double weldTolerance,
         double miterSpikeLimit) {
-    // KmuLunaSettings' DEFAULT_CELL_RADIUS. Duplicated rather than read, because reading it
-    // would drag LunaLib into a pipeline that is otherwise pure geometry.
+    // KmuPoliticalMapSettings' DEFAULT_CELL_RADIUS. Duplicated rather than read, because reading
+    // it would drag LunaLib into a pipeline that is otherwise pure geometry.
     static final double DEFAULT_CELL_RADIUS = 4000.0;
-    // KmuLunaSettings' DEFAULT_BORDER_WELD_TOLERANCE. Real cells need this: two neighbours
+    // KmuMapLayerSettings' DEFAULT_BORDER_WELD_TOLERANCE. Real cells need this: two neighbours
     // each carry their own polygonal radius bound, so a shared bisector meets those two arcs
     // about a chord's sagitta apart, and welding tighter than that leaves every multi-system
     // cluster's chain open.
     static final double DEFAULT_WELD_TOLERANCE = 100.0;
-    // KmuLunaSettings' DEFAULT_BORDER_MITER_LIMIT.
+    // KmuMapLayerSettings' DEFAULT_BORDER_MITER_LIMIT.
     static final double DEFAULT_MITER_SPIKE_LIMIT = 4.0;
 
     /**

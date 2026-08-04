@@ -8,7 +8,7 @@ import kmlib.starsector.memory.SectorMemoryFlag;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 /**
  * One receding context's per-save state: whether its background ground is muted (dimmed) and whether
@@ -134,7 +134,7 @@ public final class RecedePreferences {
         // keeps its shipped "alliance" spelling - a frozen LunaLib field id shared by every set, not a
         // claim about which set reads it.
         double opacityMultiplier = isMuted()
-            ? KmuLunaSettings.getPoliticalMapAllianceMutedOpacityModifier()
+            ? KmuPoliticalMapSettings.getPoliticalMapAllianceMutedOpacityModifier()
             : 1.0;
         return new ElementStyleAdjustment(opacityMultiplier, isDesaturated());
     }

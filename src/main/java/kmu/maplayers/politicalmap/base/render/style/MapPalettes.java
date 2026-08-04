@@ -131,8 +131,8 @@ public final class MapPalettes {
      * sits behind it, separated by value rather than a hue neither grey has. The strength is the
      * fraction of brightness removed - 0 leaves the Independent shades untouched, 0.3 draws them
      * 30% darker, 1 goes to black. Takes the sector and strength as parameters (rather than reading
-     * KmuLunaSettings itself) so the mapping is a pure lookup; the caller reads the live setting once
-     * per pass and hands it in.
+     * KmuPoliticalMapSettings itself) so the mapping is a pure lookup; the caller reads the live
+     * setting once per pass and hands it in.
      */
     public static FactionPalette resolveDesaturationPalette(
             SectorAPI sector,

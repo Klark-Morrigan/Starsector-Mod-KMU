@@ -12,7 +12,7 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -199,7 +199,7 @@ final class IntelSidebarHostTest {
             when(eventMock.getEventValue()).thenReturn(SHORTCUT_KEYCODE);
 
             try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
@@ -209,7 +209,7 @@ final class IntelSidebarHostTest {
                     when(Global::getSector)
                     .thenReturn(sectorMock);
                 settingsMock
-                    .when(() -> KmuLunaSettings.getMapLayerShortcut(SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE))
+                    .when(() -> KmuMapLayerSettings.getMapLayerShortcut(SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE))
                     .thenReturn(SHORTCUT_KEYCODE);
 
                 new IntelSidebarHost(new IntelScreenViewFake()).handleKeyPress(eventMock);

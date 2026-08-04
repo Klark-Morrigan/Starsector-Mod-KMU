@@ -10,7 +10,7 @@ import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -120,7 +120,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
     private static List<Integer> layerKeycodes(List<MapLayer> layers) {
         var keycodes = new ArrayList<Integer>(layers.size());
         for (var layer : layers) {
-            keycodes.add(KmuLunaSettings.getMapLayerShortcut(
+            keycodes.add(KmuMapLayerSettings.getMapLayerShortcut(
                 layer.getShortcutSettingKey(),
                 layer.getDefaultShortcutKeycode()));
         }

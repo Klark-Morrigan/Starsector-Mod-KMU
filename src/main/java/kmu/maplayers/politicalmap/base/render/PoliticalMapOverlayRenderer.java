@@ -10,7 +10,7 @@ import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
 
@@ -82,7 +82,7 @@ final class PoliticalMapOverlayRenderer {
         // above, so the two debug toggles compose. Gated on its own toggle here (not by the list
         // being empty): the placements are also built for the faction names, so the list can be
         // non-empty while the debug overlay is off.
-        if (KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
+        if (KmuPoliticalMapSettings.getPoliticalMapShowClusterAnchors()) {
             ClusterAnchorRenderer.renderOnMap(cache.getClusterAnchors(), factor, alphaMult);
         }
         // The faction names draw last of the map passes, so a name reads over its territory and the

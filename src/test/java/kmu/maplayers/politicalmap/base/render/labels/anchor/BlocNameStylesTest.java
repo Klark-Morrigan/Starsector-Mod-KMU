@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.settings.FactionPaletteChoice;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,19 +28,19 @@ final class BlocNameStylesTest {
 
         @Test
         void readFromLunaSettingsThreadsEachGroupsColourChoiceAndOpacityIntoItsOwnSlot() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::getFactionOuterBorderColour)
+                    .when(KmuPoliticalMapSettings::getFactionOuterBorderColour)
                     .thenReturn(FactionPaletteChoice.PRIMARY);
                 settingsMock
-                    .when(KmuLunaSettings::getFactionNameOpacity)
+                    .when(KmuPoliticalMapSettings::getFactionNameOpacity)
                     .thenReturn(FACTION_NAME_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentOuterBorderColour)
+                    .when(KmuPoliticalMapSettings::getIndependentOuterBorderColour)
                     .thenReturn(FactionPaletteChoice.SECONDARY);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentNameOpacity)
+                    .when(KmuPoliticalMapSettings::getIndependentNameOpacity)
                     .thenReturn(INDEPENDENT_NAME_OPACITY);
 
                 var nameStyles = BlocNameStyles.readFromLunaSettings();

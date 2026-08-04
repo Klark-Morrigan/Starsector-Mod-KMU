@@ -8,7 +8,7 @@ import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -44,31 +44,31 @@ final class RenderStyleReaderTest {
 
         @Test
         void readFactionStyleThreadsEachFactionSettingIntoItsMatchingSlot() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::getFactionFillColour)
+                    .when(KmuPoliticalMapSettings::getFactionFillColour)
                     .thenReturn(FactionPaletteChoice.PRIMARY);
                 settingsMock
-                    .when(KmuLunaSettings::getFactionFillOpacity)
+                    .when(KmuPoliticalMapSettings::getFactionFillOpacity)
                     .thenReturn(FILL_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getFactionOuterBorderColour)
+                    .when(KmuPoliticalMapSettings::getFactionOuterBorderColour)
                     .thenReturn(FactionPaletteChoice.SECONDARY);
                 settingsMock
-                    .when(KmuLunaSettings::getFactionOuterBorderOpacity)
+                    .when(KmuPoliticalMapSettings::getFactionOuterBorderOpacity)
                     .thenReturn(OUTER_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getFactionOuterBorderWidth)
+                    .when(KmuPoliticalMapSettings::getFactionOuterBorderWidth)
                     .thenReturn(OUTER_WIDTH);
                 settingsMock
-                    .when(KmuLunaSettings::getFactionInnerBorderColour)
+                    .when(KmuPoliticalMapSettings::getFactionInnerBorderColour)
                     .thenReturn(FactionPaletteChoice.NONE);
                 settingsMock
-                    .when(KmuLunaSettings::getFactionInnerBorderOpacity)
+                    .when(KmuPoliticalMapSettings::getFactionInnerBorderOpacity)
                     .thenReturn(INNER_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getFactionInnerBorderWidth)
+                    .when(KmuPoliticalMapSettings::getFactionInnerBorderWidth)
                     .thenReturn(INNER_WIDTH);
 
                 var style = RenderStyleReader.readFactionStyle();
@@ -94,31 +94,31 @@ final class RenderStyleReaderTest {
 
         @Test
         void readIndependentStyleThreadsEachIndependentSettingIntoItsMatchingSlot() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentFillColour)
+                    .when(KmuPoliticalMapSettings::getIndependentFillColour)
                     .thenReturn(FactionPaletteChoice.SECONDARY);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentFillOpacity)
+                    .when(KmuPoliticalMapSettings::getIndependentFillOpacity)
                     .thenReturn(FILL_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentOuterBorderColour)
+                    .when(KmuPoliticalMapSettings::getIndependentOuterBorderColour)
                     .thenReturn(FactionPaletteChoice.PRIMARY);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentOuterBorderOpacity)
+                    .when(KmuPoliticalMapSettings::getIndependentOuterBorderOpacity)
                     .thenReturn(OUTER_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentOuterBorderWidth)
+                    .when(KmuPoliticalMapSettings::getIndependentOuterBorderWidth)
                     .thenReturn(OUTER_WIDTH);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentInnerBorderColour)
+                    .when(KmuPoliticalMapSettings::getIndependentInnerBorderColour)
                     .thenReturn(FactionPaletteChoice.NONE);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentInnerBorderOpacity)
+                    .when(KmuPoliticalMapSettings::getIndependentInnerBorderOpacity)
                     .thenReturn(INNER_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getIndependentInnerBorderWidth)
+                    .when(KmuPoliticalMapSettings::getIndependentInnerBorderWidth)
                     .thenReturn(INNER_WIDTH);
 
                 var style = RenderStyleReader.readIndependentStyle();
@@ -144,16 +144,16 @@ final class RenderStyleReaderTest {
 
         @Test
         void readDecivilisedStyleDrawsTheFillAndOutlineInTheNeutralColour() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::getDecivilisedFillOpacity)
+                    .when(KmuPoliticalMapSettings::getDecivilisedFillOpacity)
                     .thenReturn(NEUTRAL_FILL_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getDecivilisedBorderOpacity)
+                    .when(KmuPoliticalMapSettings::getDecivilisedBorderOpacity)
                     .thenReturn(NEUTRAL_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getDecivilisedBorderWidth)
+                    .when(KmuPoliticalMapSettings::getDecivilisedBorderWidth)
                     .thenReturn(NEUTRAL_WIDTH);
 
                 var style = RenderStyleReader.readDecivilisedStyle();
@@ -176,16 +176,16 @@ final class RenderStyleReaderTest {
 
         @Test
         void readDecivilisedStyleLeavesTheFillUndrawnAtZeroOpacity() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::getDecivilisedFillOpacity)
+                    .when(KmuPoliticalMapSettings::getDecivilisedFillOpacity)
                     .thenReturn(0.0);
                 settingsMock
-                    .when(KmuLunaSettings::getDecivilisedBorderOpacity)
+                    .when(KmuPoliticalMapSettings::getDecivilisedBorderOpacity)
                     .thenReturn(NEUTRAL_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getDecivilisedBorderWidth)
+                    .when(KmuPoliticalMapSettings::getDecivilisedBorderWidth)
                     .thenReturn(NEUTRAL_WIDTH);
 
                 var style = RenderStyleReader.readDecivilisedStyle();
@@ -206,7 +206,7 @@ final class RenderStyleReaderTest {
             // The on/off comes from the sidebar preference rather than a settings field, so this
             // category reads two sources; both are stubbed so neither can satisfy the assertion
             // alone.
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class);
                     MockedStatic<UninhabitedOutlinePreference> preferenceMock =
                             mockStatic(UninhabitedOutlinePreference.class)) {
 
@@ -214,10 +214,10 @@ final class RenderStyleReaderTest {
                     .when(UninhabitedOutlinePreference::isOutlineDrawn)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuLunaSettings::getUninhabitedBorderOpacity)
+                    .when(KmuPoliticalMapSettings::getUninhabitedBorderOpacity)
                     .thenReturn(NEUTRAL_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getUninhabitedBorderWidth)
+                    .when(KmuPoliticalMapSettings::getUninhabitedBorderWidth)
                     .thenReturn(NEUTRAL_WIDTH);
 
                 var style = RenderStyleReader.readUninhabitedStyle();
@@ -236,7 +236,7 @@ final class RenderStyleReaderTest {
 
         @Test
         void readUninhabitedStyleHidesTheOutlineButKeepsItsGeometryWhenTheSidebarToggleIsOff() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class);
                     MockedStatic<UninhabitedOutlinePreference> preferenceMock =
                             mockStatic(UninhabitedOutlinePreference.class)) {
 
@@ -244,10 +244,10 @@ final class RenderStyleReaderTest {
                     .when(UninhabitedOutlinePreference::isOutlineDrawn)
                     .thenReturn(false);
                 settingsMock
-                    .when(KmuLunaSettings::getUninhabitedBorderOpacity)
+                    .when(KmuPoliticalMapSettings::getUninhabitedBorderOpacity)
                     .thenReturn(NEUTRAL_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getUninhabitedBorderWidth)
+                    .when(KmuPoliticalMapSettings::getUninhabitedBorderWidth)
                     .thenReturn(NEUTRAL_WIDTH);
 
                 var style = RenderStyleReader.readUninhabitedStyle();
@@ -284,43 +284,43 @@ final class RenderStyleReaderTest {
 
         @Test
         void readGlobalStyleGathersEverySectorWideKnobIntoOneTier() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverGlowOpacity)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverGlowOpacity)
                     .thenReturn(HOVER_GLOW_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHatchSpacing)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHatchSpacing)
                     .thenReturn(HATCH_SPACING);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHatchAngleRadians)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHatchAngleRadians)
                     .thenReturn(HATCH_ANGLE);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHatchWidth)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHatchWidth)
                     .thenReturn(HATCH_WIDTH);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHatchJoinToleranceFraction)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHatchJoinToleranceFraction)
                     .thenReturn(HATCH_JOIN_TOLERANCE);
                 settingsMock
-                    .when(KmuLunaSettings::shouldSmoothHatchLines)
+                    .when(KmuPoliticalMapSettings::shouldSmoothHatchLines)
                     .thenReturn(false);
                 settingsMock
-                    .when(KmuLunaSettings::shouldSandBorderSpikes)
+                    .when(KmuPoliticalMapSettings::shouldSandBorderSpikes)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuLunaSettings::shouldRoundBorderCorners)
+                    .when(KmuPoliticalMapSettings::shouldRoundBorderCorners)
                     .thenReturn(false);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapBorderCornerRadius)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapBorderCornerRadius)
                     .thenReturn(CORNER_RADIUS);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapBorderCornerSegments)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapBorderCornerSegments)
                     .thenReturn(CORNER_SEGMENTS);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapBorderChamferAngleRadians)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapBorderChamferAngleRadians)
                     .thenReturn(CHAMFER_ANGLE);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapDesaturationDarkening)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapDesaturationDarkening)
                     .thenReturn(DESATURATION_DARKENING);
 
                 var global = RenderStyleReader.readGlobalStyle();
@@ -364,13 +364,13 @@ final class RenderStyleReaderTest {
         // aliased whatever the player set would pass every other assertion in this class.
         @Test
         void readGlobalStyleStrokesTheHatchSmoothedWhenTheSmoothingKnobIsOn() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::shouldSmoothHatchLines)
+                    .when(KmuPoliticalMapSettings::shouldSmoothHatchLines)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHatchWidth)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHatchWidth)
                     .thenReturn(HATCH_WIDTH);
 
                 var global = RenderStyleReader.readGlobalStyle();
@@ -392,30 +392,30 @@ final class RenderStyleReaderTest {
 
         @Test
         void readBorderSmoothingStyleLandsEachKnobInTheSubRecordOfThePassThatReadsIt() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 // The two gates differ, so a gate threaded into the other pass's sub-record reads
                 // as a swap rather than as two switches that happen to agree.
                 settingsMock
-                    .when(KmuLunaSettings::shouldSandBorderSpikes)
+                    .when(KmuPoliticalMapSettings::shouldSandBorderSpikes)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuLunaSettings::shouldRoundBorderCorners)
+                    .when(KmuPoliticalMapSettings::shouldRoundBorderCorners)
                     .thenReturn(false);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapBorderSpikeHeight)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapBorderSpikeHeight)
                     .thenReturn(SPIKE_HEIGHT);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapBorderSpikeAngleRadians)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapBorderSpikeAngleRadians)
                     .thenReturn(SPIKE_ANGLE);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapBorderCornerRadius)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapBorderCornerRadius)
                     .thenReturn(CORNER_RADIUS);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapBorderCornerSegments)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapBorderCornerSegments)
                     .thenReturn(CORNER_SEGMENTS);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapBorderChamferAngleRadians)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapBorderChamferAngleRadians)
                     .thenReturn(CHAMFER_ANGLE);
 
                 var smoothing = RenderStyleReader.readBorderSmoothingStyle();
@@ -459,34 +459,34 @@ final class RenderStyleReaderTest {
 
         @Test
         void readHoverHighlightStyleThreadsEachHoverSettingIntoItsMatchingSlot() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverHighlightColour)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverHighlightColour)
                     .thenReturn(FactionPaletteChoice.SECONDARY);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverGlowOpacity)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverGlowOpacity)
                     .thenReturn(GLOW_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverGlowWidth)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverGlowWidth)
                     .thenReturn(GLOW_WIDTH);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverGlowLayers)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverGlowLayers)
                     .thenReturn(GLOW_LAYERS);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverGlowPulseStrength)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverGlowPulseStrength)
                     .thenReturn(GLOW_PULSE_STRENGTH);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverGlowPulsePeriod)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverGlowPulsePeriod)
                     .thenReturn(GLOW_PULSE_PERIOD);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverWashOpacity)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverWashOpacity)
                     .thenReturn(WASH_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverWashOutlineOpacity)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverWashOutlineOpacity)
                     .thenReturn(WASH_OUTLINE_OPACITY);
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapHoverWashOutlineWidth)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapHoverWashOutlineWidth)
                     .thenReturn(WASH_OUTLINE_WIDTH);
 
                 var hover = RenderStyleReader.readHoverHighlightStyle();
@@ -520,10 +520,10 @@ final class RenderStyleReaderTest {
 
         @Test
         void readRenderStyleCarriesTheGlobalTierAndAllFourCategories() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 settingsMock
-                    .when(KmuLunaSettings::getPoliticalMapDesaturationDarkening)
+                    .when(KmuPoliticalMapSettings::getPoliticalMapDesaturationDarkening)
                     .thenReturn(0.3);
 
                 // Every category getter can default here: the assertions below only check that

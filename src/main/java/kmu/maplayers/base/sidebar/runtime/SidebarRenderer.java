@@ -15,7 +15,7 @@ import kmlib.starsector.ui.widgets.BoxBorder;
 
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.style.SidebarPalettes;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.apache.log4j.Logger;
 
@@ -97,7 +97,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // setting, with zero meaning an instant snap.
         host.getController().advanceCollapse(
             elapsedSinceLastFrame(),
-            KmuLunaSettings.getMapSidebarCollapseSeconds());
+            KmuMapLayerSettings.getMapSidebarCollapseSeconds());
 
         // Offer the freshly-advanced fold to the host's fold selection, which decides for itself whether
         // that end is worth storing. Here rather than in the input pass because a fold is only unambiguous
@@ -113,7 +113,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             return;
         }
         var settings = Global.getSettings();
-        var opacity = KmuLunaSettings.getMapSidebarBackgroundOpacity();
+        var opacity = KmuMapLayerSettings.getMapSidebarBackgroundOpacity();
 
         // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated in but
         // never seen is diagnosed from the numbers rather than another run.
@@ -212,7 +212,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             BODY_FONT,
             LiveSidebarPlacement.buildMapTabStyle(),
             SidebarPalettes.resolveNotchColours(
-                KmuLunaSettings.getMapSidebarChevronColour(),
+                KmuMapLayerSettings.getMapSidebarChevronColour(),
                 accent,
                 brightAccent));
     }

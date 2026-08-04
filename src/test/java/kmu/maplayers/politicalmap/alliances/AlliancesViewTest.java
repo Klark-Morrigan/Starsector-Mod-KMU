@@ -24,7 +24,7 @@ import kmu.maplayers.politicalmap.base.politics.BlocStats;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -208,14 +208,14 @@ final class AlliancesViewTest {
             // takes, driven here through that set's mute and desaturate keys.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
                             mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
                 when(memoryMock.contains(ALLIANCE_MUTE_KEY)).thenReturn(true);
                 when(memoryMock.getBoolean(ALLIANCE_MUTE_KEY)).thenReturn(true);
                 when(memoryMock.contains(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
                 when(memoryMock.getBoolean(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
-                settingsMock.when(KmuLunaSettings::getPoliticalMapAllianceMutedOpacityModifier)
+                settingsMock.when(KmuPoliticalMapSettings::getPoliticalMapAllianceMutedOpacityModifier)
                         .thenReturn(MUTED_MODIFIER);
 
                 assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(

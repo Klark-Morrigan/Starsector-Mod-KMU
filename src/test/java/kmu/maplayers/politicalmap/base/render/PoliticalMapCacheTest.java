@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,11 @@ final class PoliticalMapCacheTest {
             // list rather than dereference a null one, and the next frame retries.
             var cache = new PoliticalMapCache();
 
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            // Both settings classes the refresh reads are stubbed inert: the revision counter is the
+            // framework's, the seed inputs and the debug gate are this layer's.
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
+                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapSettings.class)) {
                 cache.refresh(viewMock);
             }
 
@@ -46,7 +51,9 @@ final class PoliticalMapCacheTest {
             // second load would paint the previous sector with nothing to mark them stale - the
             // revision counters are process-wide and do not move on load.
             var cache = new PoliticalMapCache();
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
+                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapSettings.class)) {
                 cache.refresh(viewMock);
             }
             assertThat(cache.getTerritories()).isNotNull();

@@ -1,6 +1,6 @@
 package kmu.maplayers.base.hover;
 
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 /**
  * The hover switches that answer for every map layer at once: whether the map answers the cursor at
@@ -31,8 +31,8 @@ public final class MapHoverGates {
      *         or a wash
      */
     public static boolean isHoverEffectsEnabled() {
-        return KmuLunaSettings.getMapHoveringEnabled()
-            && KmuLunaSettings.getMapHoverEffectsEnabled();
+        return KmuMapLayerSettings.getMapHoveringEnabled()
+            && KmuMapLayerSettings.getMapHoverEffectsEnabled();
     }
 
     /**
@@ -41,7 +41,7 @@ public final class MapHoverGates {
      *         a box
      */
     public static boolean isHoverTooltipEnabled() {
-        return KmuLunaSettings.getMapHoveringEnabled()
-            && KmuLunaSettings.getMapHoverTooltipEnabled();
+        return KmuMapLayerSettings.getMapHoveringEnabled()
+            && KmuMapLayerSettings.getMapHoverTooltipEnabled();
     }
 }

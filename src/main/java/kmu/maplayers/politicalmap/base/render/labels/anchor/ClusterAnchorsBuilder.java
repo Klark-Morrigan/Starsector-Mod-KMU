@@ -23,7 +23,7 @@ import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
 
@@ -120,7 +120,7 @@ public final class ClusterAnchorsBuilder {
         var reusableAnchors = indexReusableAnchors(standingAnchors, fitFingerprint);
 
         if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
-                && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
+                && !KmuPoliticalMapSettings.getPoliticalMapShowClusterAnchors()) {
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
             return;
         }
@@ -220,7 +220,7 @@ public final class ClusterAnchorsBuilder {
             PoliticalMapView view,
             int geometryRevision) {
 
-        if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
+        if (!KmuPoliticalMapSettings.getPoliticalMapShowClusterAnchors()) {
             // The economy scan is what the toggle is guarding, so it is skipped - but the
             // list it leaves empty still has to say what produced it, which costs a settings
             // read and no sector work at all. Emptying it and labelling it is the one write

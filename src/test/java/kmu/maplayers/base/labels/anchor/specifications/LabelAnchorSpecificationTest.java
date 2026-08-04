@@ -1,7 +1,7 @@
 package kmu.maplayers.base.labels.anchor.specifications;
 
 import kmu.maplayers.base.geometry.CellShaper;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,39 +40,39 @@ class LabelAnchorSpecificationTest {
 
     // Every knob the read touches, given a distinct value so a component wired to the wrong
     // getter shows up as the wrong number rather than as a coincidence.
-    private static void stubEveryAnchorSetting(MockedStatic<KmuLunaSettings> settingsMock) {
+    private static void stubEveryAnchorSetting(MockedStatic<KmuMapLayerSettings> settingsMock) {
 
-        settingsMock.when(KmuLunaSettings::getMapAnchorEndInsetMultiple)
+        settingsMock.when(KmuMapLayerSettings::getMapAnchorEndInsetMultiple)
             .thenReturn(END_INSET_MULTIPLE);
-        settingsMock.when(KmuLunaSettings::getMapAnchorIconClearance)
+        settingsMock.when(KmuMapLayerSettings::getMapAnchorIconClearance)
             .thenReturn(ICON_CLEARANCE);
-        settingsMock.when(KmuLunaSettings::getMapAnchorDirectionCount)
+        settingsMock.when(KmuMapLayerSettings::getMapAnchorDirectionCount)
             .thenReturn(DIRECTION_COUNT);
-        settingsMock.when(KmuLunaSettings::getMapAnchorOffsetCount)
+        settingsMock.when(KmuMapLayerSettings::getMapAnchorOffsetCount)
             .thenReturn(OFFSET_COUNT);
-        settingsMock.when(KmuLunaSettings::getMapAnchorFontHeightTolerance)
+        settingsMock.when(KmuMapLayerSettings::getMapAnchorFontHeightTolerance)
             .thenReturn(FONT_HEIGHT_TOLERANCE);
-        settingsMock.when(KmuLunaSettings::getMapAnchorVerticalPenaltyStrength)
+        settingsMock.when(KmuMapLayerSettings::getMapAnchorVerticalPenaltyStrength)
             .thenReturn(VERTICAL_PENALTY_STRENGTH);
-        settingsMock.when(KmuLunaSettings::getMapAnchorVerticalPenaltyExponent)
+        settingsMock.when(KmuMapLayerSettings::getMapAnchorVerticalPenaltyExponent)
             .thenReturn(VERTICAL_PENALTY_EXPONENT);
-        settingsMock.when(KmuLunaSettings::getMapAnchorMaxSlantDegrees)
+        settingsMock.when(KmuMapLayerSettings::getMapAnchorMaxSlantDegrees)
             .thenReturn(MAX_SLANT_DEGREES);
-        settingsMock.when(KmuLunaSettings::getMapShowRejectedAxes)
+        settingsMock.when(KmuMapLayerSettings::getMapShowRejectedAxes)
             .thenReturn(true);
-        settingsMock.when(KmuLunaSettings::getMapShowUnbiasedAxes)
+        settingsMock.when(KmuMapLayerSettings::getMapShowUnbiasedAxes)
             .thenReturn(false);
-        settingsMock.when(KmuLunaSettings::getMapNameMinFontSize)
+        settingsMock.when(KmuMapLayerSettings::getMapNameMinFontSize)
             .thenReturn(MIN_FONT_SIZE);
-        settingsMock.when(KmuLunaSettings::getMapNameMaxFontSize)
+        settingsMock.when(KmuMapLayerSettings::getMapNameMaxFontSize)
             .thenReturn(MAX_FONT_SIZE);
-        settingsMock.when(KmuLunaSettings::getMapNameMaxLines)
+        settingsMock.when(KmuMapLayerSettings::getMapNameMaxLines)
             .thenReturn(MAX_LINES);
-        settingsMock.when(KmuLunaSettings::getMapNameLineSpacing)
+        settingsMock.when(KmuMapLayerSettings::getMapNameLineSpacing)
             .thenReturn(LINE_SPACING);
-        settingsMock.when(KmuLunaSettings::getMapBorderWeldTolerance)
+        settingsMock.when(KmuMapLayerSettings::getMapBorderWeldTolerance)
             .thenReturn(WELD_TOLERANCE);
-        settingsMock.when(KmuLunaSettings::getMapBorderMiterLimit)
+        settingsMock.when(KmuMapLayerSettings::getMapBorderMiterLimit)
             .thenReturn(MITER_LIMIT);
     }
 
@@ -81,7 +81,7 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsResolvesTheEndInsetMultipleAgainstTheBorderChannel() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
                 var spec = LabelAnchorSpecification.readFromLunaSettings();
@@ -95,7 +95,7 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsPutsEachSearchKnobOnTheSearchRecord() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
                 var search = LabelAnchorSpecification.readFromLunaSettings().search();
@@ -109,7 +109,7 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsPutsEachMeasurementKnobOnTheBandFitRecord() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
                 var bandFit = LabelAnchorSpecification.readFromLunaSettings().bandFit();
@@ -127,11 +127,11 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsHoldsAStoredFontToleranceOfZeroToTheFloor() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
                 settingsMock
-                    .when(KmuLunaSettings::getMapAnchorFontHeightTolerance)
+                    .when(KmuMapLayerSettings::getMapAnchorFontHeightTolerance)
                     .thenReturn(0.0);
 
                 var bandFit = LabelAnchorSpecification.readFromLunaSettings().bandFit();
@@ -147,11 +147,11 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsHoldsAStoredFontToleranceThatIsNotANumberToTheFloor() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
                 
                 settingsMock
-                    .when(KmuLunaSettings::getMapAnchorFontHeightTolerance)
+                    .when(KmuMapLayerSettings::getMapAnchorFontHeightTolerance)
                     .thenReturn(Double.NaN);
 
                 var bandFit = LabelAnchorSpecification.readFromLunaSettings().bandFit();
@@ -165,7 +165,7 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsTakesItsBorderTraceFromTheDrawnBorderSettings() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
                 var borderTrace = LabelAnchorSpecification.readFromLunaSettings()
@@ -183,7 +183,7 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsPutsEachLeanKnobOnTheScoringRecord() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
                 var scoring = LabelAnchorSpecification.readFromLunaSettings().scoring();
@@ -199,7 +199,7 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsCarriesTheTwoDiagnosticTogglesSeparately() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
                 var diagnostics = LabelAnchorSpecification.readFromLunaSettings().diagnostics();
@@ -215,7 +215,7 @@ class LabelAnchorSpecificationTest {
 
         @Test
         void readFromLunaSettingsPutsEachNameKnobOnTheNameFitRecord() {
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
                 var nameFit = LabelAnchorSpecification.readFromLunaSettings().nameFit();

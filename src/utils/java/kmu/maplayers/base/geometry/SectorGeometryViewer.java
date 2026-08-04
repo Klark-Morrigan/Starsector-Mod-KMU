@@ -48,7 +48,7 @@ import javax.swing.SwingUtilities;
  *       per-edge miter. This is what {@code ClusterBorderTrace.traceRings} forwards to, at
  *       the same {@code CellShaper.BORDER_INSET_DISTANCE}; only the weld tolerance and
  *       miter limit arrive from {@link SectorGeometryParameters} instead of
- *       {@code KmuLunaSettings}.</li>
+ *       {@code KmuMapLayerSettings}.</li>
  * </ul>
  *
  * <p><b>Where it stops.</b> Everything below is production code the map runs and this window
@@ -73,7 +73,7 @@ import javax.swing.SwingUtilities;
  *       {@code PolygonTessellator.tessellateToBoundaryLoops}, {@code tessellateToTriangles},
  *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}.</li>
  *   <li><i>Painting it</i> - {@code RenderStyleReader.readRenderStyle}, {@code MapPalettes},
- *       {@code ClusterRenderer}, the label pass, and {@code KmuLunaSettings} entirely.
+ *       {@code ClusterRenderer}, the label pass, and {@code KmuPoliticalMapSettings} entirely.
  *       Nothing reads {@code Global}. Colours here are hash-derived hues for telling blocs
  *       apart, never the faction palette, and this is Java2D, so no blend mode, line
  *       smoothing, corner rounding, hatching, or layering against vanilla is exercised.</li>

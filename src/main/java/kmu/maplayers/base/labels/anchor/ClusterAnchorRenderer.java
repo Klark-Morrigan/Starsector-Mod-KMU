@@ -11,7 +11,7 @@ import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlQuads;
 
 import kmu.diagnostics.KmuProfiling;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.lwjgl.opengl.GL11;
 
@@ -99,8 +99,8 @@ public final class ClusterAnchorRenderer {
             float factor,
             float alphaMult) {
 
-        var bandAlpha = (float) KmuLunaSettings.getMapAnchorBandOpacity() * alphaMult;
-        var lineAlpha = (float) KmuLunaSettings.getMapAnchorBandLineOpacity() * alphaMult;
+        var bandAlpha = (float) KmuMapLayerSettings.getMapAnchorBandOpacity() * alphaMult;
+        var lineAlpha = (float) KmuMapLayerSettings.getMapAnchorBandLineOpacity() * alphaMult;
 
         for (var layer : VERDICT_LAYERS) {
             drawBandLayer(anchors, layer, factor, bandAlpha, lineAlpha);

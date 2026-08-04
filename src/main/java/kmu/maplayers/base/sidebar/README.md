@@ -236,7 +236,7 @@ hovered shades. It is kept out of the renderer so the "which colour does this ch
 stay a pure lookup a test can pin, with no live GL or screen needed.
 
 The border width, opacity, chevron colour, collapse seconds, and both anchors' paddings are LunaLib
-fields read through `kmu.settings.KmuLunaSettings`.
+fields read through `kmu.settings.KmuMapLayerSettings`.
 
 ## What is not here
 

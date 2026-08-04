@@ -32,7 +32,7 @@ import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -191,7 +191,7 @@ final class ClusterAnchorsBuilderTest {
     // that does not seed it reads as the whole search it was written as.
     private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
     
-    private MockedStatic<KmuLunaSettings> settingsMock;
+    private MockedStatic<KmuPoliticalMapSettings> settingsMock;
     private MockedStatic<NameFormatPreference> nameFormatMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
     private MockedStatic<BlocNameStyles> nameStylesMock;
@@ -202,7 +202,7 @@ final class ClusterAnchorsBuilderTest {
     @BeforeEach
     void openTheSettingsHolderAndFontSeams() {
 
-        settingsMock = mockStatic(KmuLunaSettings.class);
+        settingsMock = mockStatic(KmuPoliticalMapSettings.class);
         nameFormatMock = mockStatic(NameFormatPreference.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
         nameStylesMock = mockStatic(BlocNameStyles.class);
@@ -651,7 +651,7 @@ final class ClusterAnchorsBuilderTest {
 
     private void stubAnchorOverlay(boolean isOverlayShown) {
         settingsMock
-            .when(KmuLunaSettings::getPoliticalMapShowClusterAnchors)
+            .when(KmuPoliticalMapSettings::getPoliticalMapShowClusterAnchors)
             .thenReturn(isOverlayShown);
     }
 

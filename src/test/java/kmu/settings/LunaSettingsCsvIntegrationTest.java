@@ -266,8 +266,8 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     // The Radio fields whose stored label a LabeledChoice enum maps back to a choice. Listed here
-    // rather than read from KmuLunaSettings because the field ids are private there - a typo in this
-    // table fails loudly (no such row) rather than quietly skipping a field.
+    // rather than read from the settings classes because the field ids are private there - a typo
+    // in this table fails loudly (no such row) rather than quietly skipping a field.
     private static Stream<Arguments> provideChoiceBackedRadioFields() {
         return Stream.of(
             Arguments.of("kmu_politicalMapSidebarChevronColor", NotchChevronColourChoice.values()),

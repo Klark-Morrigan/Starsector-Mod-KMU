@@ -9,7 +9,7 @@ import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -66,7 +66,7 @@ final class BaseSidebarHostTest {
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(SECOND_KEYCODE);
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockDefaultBindings()) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
@@ -80,7 +80,7 @@ final class BaseSidebarHostTest {
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockDefaultBindings()) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
@@ -96,9 +96,9 @@ final class BaseSidebarHostTest {
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNBOUND);
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 settingsMock
-                    .when(() -> KmuLunaSettings.getMapLayerShortcut(anyString(), anyInt()))
+                    .when(() -> KmuMapLayerSettings.getMapLayerShortcut(anyString(), anyInt()))
                     .thenReturn(UNBOUND);
 
                 host.handleKeyPress(eventMock);
@@ -115,13 +115,13 @@ final class BaseSidebarHostTest {
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
                 settingsMock
-                    .when(() -> KmuLunaSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
+                    .when(() -> KmuMapLayerSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
                     .thenReturn(UNBOUND);
                 settingsMock
-                    .when(() -> KmuLunaSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
+                    .when(() -> KmuMapLayerSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
                     .thenReturn(UNRELATED_KEYCODE);
 
                 host.handleKeyPress(eventMock);
@@ -141,7 +141,7 @@ final class BaseSidebarHostTest {
             createHost(otherScreenSelectionMock);
 
             var eventMock = mockKeyPress(FIRST_KEYCODE);
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockDefaultBindings()) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
@@ -159,14 +159,14 @@ final class BaseSidebarHostTest {
     }
 
     // Each layer bound to its own default, the state before the player rebinds anything.
-    private static MockedStatic<KmuLunaSettings> mockDefaultBindings() {
-        MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
+    private static MockedStatic<KmuMapLayerSettings> mockDefaultBindings() {
+        MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class);
 
         settingsMock
-            .when(() -> KmuLunaSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
+            .when(() -> KmuMapLayerSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
             .thenReturn(FIRST_KEYCODE);
         settingsMock
-            .when(() -> KmuLunaSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
+            .when(() -> KmuMapLayerSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
             .thenReturn(SECOND_KEYCODE);
 
         return settingsMock;

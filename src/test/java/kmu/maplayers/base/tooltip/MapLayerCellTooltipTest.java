@@ -12,7 +12,7 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,13 +84,13 @@ final class MapLayerCellTooltipTest {
                 .getInstance()
                 .publishHover(new MapHover("system", List.of("system")));
 
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 
                 settingsMock
-                    .when(KmuLunaSettings::getMapHoveringEnabled)
+                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuLunaSettings::getMapHoverTooltipEnabled)
+                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
                     .thenReturn(true);
 
                 new MapLayerCellTooltip(vanillaMapTooltipMock, () -> true)
@@ -113,13 +113,13 @@ final class MapLayerCellTooltipTest {
                 .getInstance()
                 .publishHover(new MapHover("system", List.of("system")));
 
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 
                 settingsMock
-                    .when(KmuLunaSettings::getMapHoveringEnabled)
+                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuLunaSettings::getMapHoverTooltipEnabled)
+                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
                     .thenReturn(true);
 
                 new MapLayerCellTooltip(vanillaMapTooltipMock, () -> false)

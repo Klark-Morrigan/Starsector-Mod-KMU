@@ -4,7 +4,7 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import java.util.Collection;
 import java.util.List;
@@ -30,8 +30,8 @@ public record ClusterBorderTrace(
     // Reads the live trace parameters from the Dev "Border tracing" section.
     public static ClusterBorderTrace readFromLunaSettings() {
         return new ClusterBorderTrace(
-            KmuLunaSettings.getMapBorderWeldTolerance(),
-            KmuLunaSettings.getMapBorderMiterLimit());
+            KmuMapLayerSettings.getMapBorderWeldTolerance(),
+            KmuMapLayerSettings.getMapBorderMiterLimit());
     }
 
     // Traces one cluster's inset border rings with these parameters and the fixed

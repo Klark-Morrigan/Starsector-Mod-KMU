@@ -24,6 +24,7 @@ import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingS
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
 
@@ -194,8 +195,8 @@ final class PoliticalMapCache {
         // reseeds every cell, so a change makes the geometry stale the same way an access change
         // does. Read once here and let updateFromSector do the reseed.
         var seedInputs = new CellSeedInputs(
-            KmuLunaSettings.getPoliticalMapCellBoundSegments(),
-            KmuLunaSettings.getPoliticalMapCellRadius());
+            KmuPoliticalMapSettings.getPoliticalMapCellBoundSegments(),
+            KmuPoliticalMapSettings.getPoliticalMapCellRadius());
 
         // The two dev reveal toggles are geometry inputs for the same reason: each changes which
         // systems seed a cell, so a flip must reseed the partition here rather than only restyle it
@@ -240,7 +241,7 @@ final class PoliticalMapCache {
             // rebuilds either way - it draws over both views - borrowing the normal build's holder
             // map when there is one, resolving its own from the sector when the debug build left
             // none behind.
-            if (KmuLunaSettings.shouldTraceBordersForDebug()) {
+            if (KmuPoliticalMapSettings.shouldTraceBordersForDebug()) {
                 borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
                     geometryCache,
                     Global.getSector());

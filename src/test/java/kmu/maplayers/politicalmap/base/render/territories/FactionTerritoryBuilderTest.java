@@ -12,7 +12,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,16 +117,16 @@ final class FactionTerritoryBuilderTest {
 
     // The trace reads its parameters off the live settings, so the seam stands for every case
     // here; without it the two Dev-tab reads would fault outside the game.
-    private MockedStatic<KmuLunaSettings> settingsMock;
+    private MockedStatic<KmuMapLayerSettings> settingsMock;
 
     @BeforeEach
     void openTheBorderTraceSeam() {
-        settingsMock = mockStatic(KmuLunaSettings.class);
+        settingsMock = mockStatic(KmuMapLayerSettings.class);
         settingsMock
-            .when(KmuLunaSettings::getMapBorderWeldTolerance)
+            .when(KmuMapLayerSettings::getMapBorderWeldTolerance)
             .thenReturn(WELD_TOLERANCE);
         settingsMock
-            .when(KmuLunaSettings::getMapBorderMiterLimit)
+            .when(KmuMapLayerSettings::getMapBorderMiterLimit)
             .thenReturn(MITER_SPIKE_LIMIT);
     }
 

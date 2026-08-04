@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * stale or not, once per refresh). Several producers can feed the same set - a per-event signal
  * and a periodic diff, say - so a system one already marked and another re-discovers collapses to
  * a single reshape. The whole-map restyle a settings change needs is a separate signal the plugin
- * reads straight from {@code KmuLunaSettings}, not this class.
+ * reads straight from {@code KmuLunaSettings.getSettingsRevision}, not this class.
  *
  * <p>Counters and a set rather than direct calls because the producers (a
  * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)

@@ -3,7 +3,8 @@ package kmu.maplayers.politicalmap.base.render;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,13 +41,17 @@ final class PoliticalMapLayerRendererTest {
             // hover toggle that gates the cheapest of the work below it.
             try (MockedStatic<PoliticalMapViewRegistry> viewRegistryMock =
                         mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
+                        mockStatic(KmuMapLayerSettings.class);
+                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapSettings.class)) {
 
                 viewRegistryMock.when(PoliticalMapViewRegistry::getActiveView).thenReturn(null);
 
                 PoliticalMapLayerRenderer.INSTANCE.renderOnMap(FACTOR, ALPHA_MULT);
 
-                settingsMock.verifyNoInteractions();
+                frameworkSettingsMock.verifyNoInteractions();
+                layerSettingsMock.verifyNoInteractions();
             }
         }
     }
@@ -64,9 +69,12 @@ final class PoliticalMapLayerRendererTest {
 
             try (MockedStatic<PoliticalMapViewRegistry> viewRegistryMock =
                         mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
+                        mockStatic(KmuMapLayerSettings.class);
+                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapSettings.class)) {
 
-                stubTooltipSwitches(settingsMock, true);
+                stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(viewMock);
@@ -83,9 +91,12 @@ final class PoliticalMapLayerRendererTest {
             var viewMock = mock(PoliticalMapView.class);
             try (MockedStatic<PoliticalMapViewRegistry> viewRegistryMock =
                         mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
+                        mockStatic(KmuMapLayerSettings.class);
+                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapSettings.class)) {
 
-                stubTooltipSwitches(settingsMock, false);
+                stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, false);
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(viewMock);
@@ -105,9 +116,12 @@ final class PoliticalMapLayerRendererTest {
             // hover to describe either.
             try (MockedStatic<PoliticalMapViewRegistry> viewRegistryMock =
                         mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class)) {
+                    MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
+                        mockStatic(KmuMapLayerSettings.class);
+                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapSettings.class)) {
 
-                stubTooltipSwitches(settingsMock, true);
+                stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(null);
@@ -134,19 +148,20 @@ final class PoliticalMapLayerRendererTest {
     // and the layer's own set to what the test is about. Each tier's own arithmetic is
     // PoliticalMapHoverGatesTest's; what is pinned here is which of them this renderer obeys.
     private static void stubTooltipSwitches(
-            MockedStatic<KmuLunaSettings> settingsMock,
+            MockedStatic<KmuMapLayerSettings> frameworkSettingsMock,
+            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock,
             boolean isPoliticalTooltipEnabled) {
-                
-        settingsMock
-            .when(KmuLunaSettings::getMapHoveringEnabled)
+
+        frameworkSettingsMock
+            .when(KmuMapLayerSettings::getMapHoveringEnabled)
             .thenReturn(true);
 
-        settingsMock
-            .when(KmuLunaSettings::getMapHoverTooltipEnabled)
+        frameworkSettingsMock
+            .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
             .thenReturn(true);
 
-        settingsMock
-            .when(KmuLunaSettings::getPoliticalMapHoverTooltipEnabled)
+        layerSettingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapHoverTooltipEnabled)
             .thenReturn(isPoliticalTooltipEnabled);
     }
 }
