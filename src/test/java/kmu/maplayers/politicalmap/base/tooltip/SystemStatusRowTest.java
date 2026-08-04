@@ -11,8 +11,7 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.util.Misc;
 
-import kmlib.starsector.ui.widgets.RowSlot;
-import kmlib.starsector.ui.widgets.TooltipLabelPlacement;
+import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -26,11 +25,8 @@ import org.mockito.Mockito;
 import java.awt.Color;
 import java.util.List;
 
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,8 +34,8 @@ import static org.mockito.Mockito.when;
  * Pins {@link SystemStatusRow}: a populated system yields no status at all, an empty one names itself
  * Decivilised or Unpopulated depending on whether the player has seen a dead colony there, and the
  * reveal decides whether an undiscovered colony already counts as populating the system. The row's
- * shape is pinned too - crestless, scoreless, and flush at no indent - since that is what lets it
- * read as a standalone line under the system-name header rather than as an entry of a list.
+ * shape is pinned too - a banner set across the box, carrying its words and nothing else - since that
+ * is what lets it read as a statement about the whole system rather than as an entry of a list.
  */
 final class SystemStatusRowTest {
 
@@ -102,21 +98,17 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowLaysTheStatusFlushWithoutAnIndentCrestOrScore() {
-
+        void resolveStatusRowSetsTheStatusAcrossTheBoxAsWordsAlone() {
+            // Centred and crestless: the status holds over everything the box goes on to say, so it
+            // speaks for the box rather than aligning to the crest gutter and value column the entries
+            // below it share. Being a centred line is what makes it carry no such columns at all.
             var system = systemWithPlanets();
             var row = SystemStatusRow
                 .resolveStatusRow(sectorHolding(system), system, false)
                 .orElseThrow();
 
-            assertThat(row.indent())
-                .isCloseTo(NO_INDENT, within(TOLERANCE));
-            assertThat(row.labelPlacement())
-                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
-            assertThat(row.labelledRow().leadingRowSlot())
-                .isEqualTo(RowSlot.EMPTY);
-            assertThat(row.labelledRow().trailingRowSlot())
-                .isEqualTo(RowSlot.EMPTY);
+            assertThat(row.labelRuns())
+                .containsExactly(new TextSpan("Unpopulated", Color.LIGHT_GRAY));
         }
 
         @Test

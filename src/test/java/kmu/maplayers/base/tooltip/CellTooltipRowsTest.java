@@ -29,17 +29,16 @@ import static org.assertj.core.api.Assertions.within;
 /**
  * Pins the shapes a cell-tooltip body is written in, since what separates them is exactly what a reader
  * of the box sees: a top-tier line opens a block flush in the bright colour, a nested one belongs to the
- * line above it by its indent and plainer colour, a standalone line steps out of the crest column
- * altogether, a banner leaves the table entirely to be set across the box with its crest carried inside
- * its own words, and a qualifier run picks a fact out in gold on the line it qualifies. Two layers
- * writing bodies through these cannot drift on any of it.
+ * line above it by its indent and plainer colour, a banner leaves the table altogether to be set across
+ * the box with its crest carried inside its own words, and a qualifier run picks a fact out in gold on
+ * the line it qualifies. Two layers writing content through these cannot drift on any of it.
  */
 final class CellTooltipRowsTest {
 
     private static final Color BRIGHT = new Color(200, 230, 255);
     private static final Color TEXT = Color.LIGHT_GRAY;
     private static final Color GOLD = new Color(255, 200, 100);
-    private static final String CREST = "graphics/hegemony_crest.png";
+    private static final String CREST = "graphics/ion_storm_icon.png";
 
     // The runs a line reads as, in order: what it names, then any qualifier picked out beside it. A
     // banner led by a crest opens on that image instead, so its words sit one run later.
@@ -81,10 +80,10 @@ final class CellTooltipRowsTest {
         @Test
         void buildTopTierRowOpensABlockFlushWithItsCrestAndValue() {
 
-            var row = CellTooltipRows.buildTopTierRow(CREST, "The Hegemony", "42");
+            var row = CellTooltipRows.buildTopTierRow(CREST, "Ion Storm", "42");
 
             assertThat(readLabelTextRun(row, LABEL_RUN).text())
-                .isEqualTo("The Hegemony");
+                .isEqualTo("Ion Storm");
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(BRIGHT);
 
@@ -116,7 +115,7 @@ final class CellTooltipRowsTest {
         @Test
         void buildNestedRowIndentsUnderTheLineAboveItInThePlainColour() {
 
-            var row = CellTooltipRows.buildNestedRow(CREST, "The Hegemony", "17");
+            var row = CellTooltipRows.buildNestedRow(CREST, "Ion Storm", "17");
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(TEXT);
@@ -144,8 +143,8 @@ final class CellTooltipRowsTest {
         void buildQualifierSpanReadsGold() {
             // The one decision the run exists for: a line that continues into it reads in two colours,
             // with what is being called out picked out from what is merely named.
-            assertThat(CellTooltipRows.buildQualifierSpan("core territory"))
-                .isEqualTo(new TextSpan("core territory", GOLD));
+            assertThat(CellTooltipRows.buildQualifierSpan("worsening"))
+                .isEqualTo(new TextSpan("worsening", GOLD));
         }
 
         @Test
@@ -153,8 +152,8 @@ final class CellTooltipRowsTest {
             // Continuing a line does not promote it: a qualified nested line is still nested, which is
             // what keeps the tier a choice of row builder rather than a side effect of a second run.
             var row = CellTooltipRows
-                .buildNestedRow(CREST, "The Hegemony", CellTooltipRows.NO_SCORE)
-                .continuesWith(CellTooltipRows.buildQualifierSpan("core territory"));
+                .buildNestedRow(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
+                .continuesWith(CellTooltipRows.buildQualifierSpan("worsening"));
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(TEXT);
@@ -166,52 +165,37 @@ final class CellTooltipRowsTest {
     }
 
     @Nested
-    class BuildStandaloneRow {
+    class BuildBannerRow {
 
         @Test
-        void buildStandaloneRowStepsOutOfTheCrestColumnCarryingNeitherCrestNorValue() {
-            // A fact about the whole system, so it sits flush at the content edge: an indent would read
-            // as the line belonging to an entry above it, and there is no entry for it to belong to.
-            var row = CellTooltipRows.buildStandaloneRow("Unpopulated");
-
-            assertThat(readLabelTextRun(row, LABEL_RUN).colour())
-                .isEqualTo(TEXT);
-            assertThat(row.indent())
-                .isCloseTo(NO_INDENT, within(TOLERANCE));
-            assertThat(row.labelPlacement())
-                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
-                
-            assertThat(row.labelledRow().leadingRowSlot())
-                .isEqualTo(RowSlot.EMPTY);
-            assertThat(row.labelledRow().trailingRowSlot())
-                .isEqualTo(RowSlot.EMPTY);
+        void buildBannerRowReadsInThePlainTextColour() {
+            // A banner states a fact rather than calling one out, so it is spoken plainly - what it may
+            // call out is the qualifier it ends on, which reads gold.
+            assertThat(readLabelTextRun(CellTooltipRows.buildBannerRow(null, "Unpopulated"), LABEL_RUN))
+                .isEqualTo(new TextSpan("Unpopulated", TEXT));
         }
-    }
-
-    @Nested
-    class BuildBannerRow {
 
         @Test
         void buildBannerRowCarriesItsCrestAsARunOfTheLine() {
             // The whole point of the shape: the crest rides inside the label rather than in the gutter
             // the entries below align to, so the line centres crest and words together instead of
             // anchoring the image to a column a centred line has left.
-            var row = CellTooltipRows.buildBannerRow(CREST, "The Hegemony");
+            var row = CellTooltipRows.buildBannerRow(CREST, "Ion Storm");
 
             assertThat(readLabelRun(row, BANNER_CREST_RUN))
                 .isEqualTo(new ImageSpan(CREST));
             assertThat(readLabelRun(row, BANNER_LABEL_RUN))
-                .isEqualTo(new TextSpan("The Hegemony", TEXT));
+                .isEqualTo(new TextSpan("Ion Storm", TEXT));
         }
 
         @Test
         void buildBannerRowOpensAtItsWordsWithoutACrest() {
             // A caller resolving a crest that simply does not exist hands the absence straight over, so
             // the line is built from its words alone rather than from an image run with nothing to load.
-            var row = CellTooltipRows.buildBannerRow(null, "The Hegemony");
+            var row = CellTooltipRows.buildBannerRow(null, "Ion Storm");
 
             assertThat(row.labelRuns())
-                .containsExactly(new TextSpan("The Hegemony", TEXT));
+                .containsExactly(new TextSpan("Ion Storm", TEXT));
         }
 
         @Test
@@ -219,11 +203,11 @@ final class CellTooltipRowsTest {
             // A banner calls something out in the shade every line calls things out in, so leaving the
             // table costs it none of the vocabulary the lines below it are written in.
             var row = CellTooltipRows
-                .buildBannerRow(CREST, "The Hegemony")
-                .continuesWith(CellTooltipRows.buildQualifierSpan("core territory"));
+                .buildBannerRow(CREST, "Ion Storm")
+                .continuesWith(CellTooltipRows.buildQualifierSpan("worsening"));
 
             assertThat(readLabelRun(row, BANNER_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan("core territory", GOLD));
+                .isEqualTo(new TextSpan("worsening", GOLD));
         }
     }
 }

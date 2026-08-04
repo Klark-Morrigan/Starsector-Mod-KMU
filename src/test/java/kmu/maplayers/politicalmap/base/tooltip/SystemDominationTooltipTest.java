@@ -525,7 +525,7 @@ final class SystemDominationTooltipTest {
     // economy to decide. Returns the row so a case can assert the body carries that very line.
     private TooltipRow stubStatusRow(String statusText) {
 
-        var statusRow = CellTooltipRows.buildStandaloneRow(statusText);
+        var statusRow = CellTooltipRows.buildBannerRow(null, statusText);
 
         statusRowMock
             .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(Boolean.class)))

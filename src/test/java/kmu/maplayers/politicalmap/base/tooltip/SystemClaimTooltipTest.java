@@ -371,7 +371,7 @@ final class SystemClaimTooltipTest {
         void buildBodyRowsNamesTheSystemsStatusBeforeItsClaim() {
             // A dead system names its state first, so the claim below reads as a hold over empty
             // ground rather than over a colony.
-            var statusRow = CellTooltipRows.buildStandaloneRow("Unpopulated");
+            var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
 
             statusRowMock
                 .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))

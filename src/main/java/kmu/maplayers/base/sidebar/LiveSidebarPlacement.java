@@ -18,8 +18,8 @@ import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.tabs.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
+import kmlib.starsector.ui.widgets.tabs.TabPalette;
 import kmlib.starsector.ui.widgets.tabs.TabStyle;
-import kmlib.starsector.ui.widgets.tabs.VanillaTabColours;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;

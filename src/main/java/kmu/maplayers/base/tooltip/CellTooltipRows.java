@@ -6,11 +6,16 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.TooltipRow;
 
 /**
- * The line vocabulary a cell tooltip's body is written in: a top-tier row that opens a block, a nested
- * row that belongs to the one above it, a standalone row stating something about the hovered system as
- * a whole, a banner row doing the same centred under the box's title, and the qualifier run any of them
- * may end on. Each shape fixes its own indent and colours, so what a body says is the only thing that
- * varies between two layers' hover boxes.
+ * The line vocabulary a cell tooltip's content is written in: a top-tier row that opens a block, a
+ * nested row that belongs to the one above it, a banner row centred across the box to state something
+ * about the hovered system as a whole, and the qualifier run any of them may end on. Each shape fixes
+ * its own indent and colours, so what a layer says is the only thing that varies between two hover
+ * boxes.
+ *
+ * <p>The split that matters is the first two against the third: a top-tier and a nested row are entries
+ * in the box's table, lining up against the crest gutter and the value column, while a banner has left
+ * that table to speak for the box. So the choice of builder is a statement about whether a line is one
+ * of the findings or a verdict over all of them.
  *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
@@ -90,26 +95,12 @@ public final class CellTooltipRows {
     }
 
     /**
-     * Builds a standalone row: flush at the box's left content edge, outside the crest column, in the
-     * plain text colour and carrying neither crest nor value - for a line stating something about the
-     * hovered system as a whole. Flush rather than inset, since an indent would read as the line
-     * belonging to an entry above it, and there is no entry for it to belong to.
-     *
-     * @param text the row's label
-     * @return the row, ready to add to a body
-     */
-    public static TooltipRow.TableRow buildStandaloneRow(String text) {
-        return TooltipRow
-            .createRow(new TextSpan(text, StarsectorUiColour.VANILLA_TEXT.resolve()))
-            .clearsCrestColumn();
-    }
-
-    /**
      * Builds a banner row: a line centred in the box's content region, led by a small image where one
-     * was resolved, in the plain text colour - for a verdict about the hovered system that is meant to
-     * be read straight off the title rather than looked up in the breakdown below it.
+     * was resolved, in the plain text colour - for a line stating something about the hovered system as
+     * a whole rather than entering it in a list. Who holds the system by decree is one, and why it holds
+     * nobody is another.
      *
-     * <p>Centred rather than laid in the columns because the line qualifies the whole box: a line
+     * <p>Centred rather than laid in the columns because the line speaks for the whole box: a line
      * indented under the title, or aligned to a crest gutter the entries below reserve, reads as the
      * first entry of a list it is not part of. The crest travels as a run of the line rather than in
      * that gutter for the same reason - it belongs to the sentence, and centring is what a line clear of
