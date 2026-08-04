@@ -758,8 +758,8 @@ final class ClusterAnchorPlacementTest {
 
         @Test
         void computeClusterAnchorsTakesTheFreshShadeOntoACarriedPlacement() {
-            // A bloc that only changed appearance - the recede a filter switch applies to every
-            // bloc but the spotlit one - keeps its geometry and takes the shade this pass
+            // An owner that only changed appearance - the recede a filter switch applies to every
+            // owner but the spotlit one - keeps its geometry and takes the shade this pass
             // resolved. Colour is no input to the fit, so it is the one component a carried
             // placement is allowed to differ in, and the one it must.
             var standing = fitTheHorizontalPair(createLabelResolvers(slenderNameEstimators()));
@@ -841,7 +841,7 @@ final class ClusterAnchorPlacementTest {
             // The other direction: two standing placements, each naming one cell, and a cluster
             // that now spans both. A merged cluster's member set matches neither, so the pair
             // it came from cannot be carried onto it - a box fitted inside one cell would sit
-            // in a corner of the territory it now names.
+            // in a corner of the cluster it now names.
             var standing = computeAnchors(
                 SPLIT_PAIR_PARTITION,
                 createPairTuning(),
@@ -1239,7 +1239,7 @@ final class ClusterAnchorPlacementTest {
 
         // A per-key resolver handing every cluster a one-line name under the given label, for
         // the cases that turn on the wrap rather than on the geometry: two of these differing
-        // only in the label are two blocs differing only in what they are called.
+        // only in the label are two owners differing only in what they are called.
         private static Function<String, LabelLengthEstimator> namedSingleLineEstimators(
                 String lineLabel) {
 

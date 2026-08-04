@@ -83,14 +83,14 @@ public final class ClusterRenderer {
             });
     }
 
-    // All the solid ground first, then the contested hatch over it. A cluster whose ground does
+    // All the solid ground first, then the hatch over it. A cluster whose ground does
     // not all fill solid carries both runs at once - solid triangles where it fills and
     // pre-clipped diagonal hatch lines where the layer marked it hatched, in the same colour and
     // opacity - so a partly-filled body still reads as one inside its boundary.
     //
     // Hoisting every hatch run above every solid fill covers nothing that was visible before:
     // cells are disjoint, so no owner's solid triangles can land on another owner's hatched
-    // ground, and typically only one owner (the filter's spotlit bloc) carries a non-empty hatch
+    // ground, and typically only one owner (the filter's spotlit one) carries a non-empty hatch
     // run at all. What the split buys is that the line state the hatch strokes under is set once
     // for the whole map rather than pushed and popped around every solid fill.
     private static void drawFills(ClusterMapFrame frame) {

@@ -250,5 +250,5 @@ behind them, are `base/layer`'s (`MapLayerRegistry`), summarised in
 layer is active - for the political map, [`politicalmap`](../../politicalmap/README.md) and its
 `base/sidebar` controls - though the spotlight picker a body embeds is this package's, and it is
 here that KMLib's two selectors are bound to the save (see [Picker state](#picker-state)). What
-the political map keeps of its own there is what the picker refuses to know: which blocs are on
+the political map keeps of its own there is what the picker refuses to know: which items are on
 offer, what invalidates that list, and the recede toggles it pairs with the sort. Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.

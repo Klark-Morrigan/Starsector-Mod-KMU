@@ -64,9 +64,9 @@ Together those two make a rebuild **partial**. The standing placements go back i
 `computeClusterAnchors` filed under the cluster each names, and a matched one is carried over
 instead of its cluster being searched again - so it costs no candidates and no band fits, which is
 the whole saving. Two things are re-checked on the way through, both of them per-cluster inputs
-that are not geometry: the shade is re-resolved (it is no input to the fit, so a bloc that only
+that are not geometry: the shade is re-resolved (it is no input to the fit, so an owner that only
 receded keeps its box and takes the new colour), and the wrap is compared against the name the box
-was measured for, so a renamed bloc re-fits rather than drawing a box cut for the old name. A
+was measured for, so a renamed owner re-fits rather than drawing a box cut for the old name. A
 collapsed placement fitted no box and so recorded no name to compare, and is always searched again.
 What may be offered at all is the caller's decision, taken on the fingerprint: a mismatch offers
 nothing and the rebuild is total.

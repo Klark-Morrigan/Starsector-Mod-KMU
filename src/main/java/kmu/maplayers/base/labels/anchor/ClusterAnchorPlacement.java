@@ -157,7 +157,7 @@ public final class ClusterAnchorPlacement {
     // could move those without any membership changing is the caller's to rule out before
     // offering a placement here at all. What is left is the one per-cluster input that is not
     // geometry. The box was sized against the measured name at the line count that won, so it
-    // holds exactly while that wrap is unchanged - which is what stops a renamed bloc from
+    // holds exactly while that wrap is unchanged - which is what stops a renamed owner from
     // drawing a box cut for the name it used to have.
     //
     // A collapsed placement is never carried. It fitted no box, so it recorded no measured

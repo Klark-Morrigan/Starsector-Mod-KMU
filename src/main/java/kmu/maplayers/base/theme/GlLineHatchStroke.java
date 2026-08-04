@@ -8,7 +8,7 @@ import kmlib.opengl.GlLineQuality;
  *
  * <p>Screen pixels is not a choice this stroke makes - {@code glLineWidth} has no other unit - so a
  * hatch stroked this way keeps the same weight however far the map is zoomed, and thickens
- * relative to the territory under it as that territory shrinks.
+ * relative to the cluster under it as that cluster shrinks.
  *
  * @param quality     whether the lines are antialiased; a dense field of short strokes is the
  *                    case smoothing costs the most and flatters the least, so the hatch chooses
