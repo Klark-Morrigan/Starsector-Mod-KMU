@@ -4,21 +4,18 @@ package kmu.settings;
  * The map-layer framework's own LunaLib knobs: the chrome and the geometry every map
  * layer shares, whichever layer is drawing.
  *
- * <p>Split from {@link KmuLunaSettings} along the line the code reads rather than the
- * line the settings screen shows. Everything here is read by {@code kmu.maplayers.base}
- * and nothing else, so a knob one layer owns cannot arrive through this class - which is
- * what stops the framework depending on a feature for its own appearance. Registration,
- * the settings revision and the typed reads stay with {@link KmuLunaSettings}; this class
- * holds field ids, fallbacks and accessors only.
+ * <p>One of the knob classes {@link KmuLunaSettings} splits by reader. Everything here is
+ * read by {@code kmu.maplayers.base} and nothing else, so a knob one layer owns cannot
+ * arrive through this class - which is what stops the framework depending on a feature for
+ * its own appearance.
  *
  * <p>Many field ids read as the political map's - {@code kmu_politicalMapSidebar*},
  * {@code kmu_politicalMapAnchor*}, {@code kmu_politicalMapBorderWeldTolerance} - while the
  * getters over them are named for the framework that reads them. The ids predate the
- * framework and cannot follow it: a LunaLib field id is the key its value is stored under,
- * so renaming one resets that setting for every existing player, exactly as a persisted
- * class or memory key cannot be renamed. A getter is a Java name and costs nothing to
- * change, so the mismatch is parked where it does no harm - the Java side says which half
- * of the map code owns a knob, the stored key stays put.
+ * framework and cannot follow it, being frozen for the reason {@link KmuLunaSettings}
+ * gives. A getter is a Java name and costs nothing to change, so the mismatch is parked
+ * where it does no harm - the Java side says which half of the map code owns a knob, the
+ * stored key stays put.
  *
  * <p>The knobs lay out across three tabs. {@code Map - Visuals} carries the overlay
  * sidebar, the map labels and the two upper hover tiers - what every layer shares.

@@ -4,22 +4,15 @@ package kmu.settings;
  * The political map layer's own LunaLib knobs: how this one layer paints the sector and
  * how it decides who holds what.
  *
- * <p>Split from {@link KmuLunaSettings} along the line the code reads rather than the
- * line the settings screen shows. Everything here is read by
- * {@code kmu.maplayers.politicalmap} and nothing else, which is what lets the framework's
- * own settings class stay clear of a feature's vocabulary. Registration, the settings
- * revision and the typed reads stay with {@link KmuLunaSettings}; this class holds field
- * ids, fallbacks and accessors only.
+ * <p>One of the knob classes {@link KmuLunaSettings} splits by reader. Everything here is
+ * read by {@code kmu.maplayers.politicalmap} and nothing else, which is what lets the
+ * framework's own settings class stay clear of a feature's vocabulary.
  *
  * <p>Several knobs here shape geometry the framework owns - the cell partition, the
  * border smoothing passes, the hatch fill. They are the political map's all the same,
  * because the framework code takes those values as parameters and never reads a setting:
  * this layer resolves them and hands them down. A knob is filed by who reads it, not by
  * whose geometry it moves.
- *
- * <p>Field ids are frozen whatever their spelling. A LunaLib field id is the key its value
- * is stored under, so renaming one resets that setting for every existing player, exactly
- * as a persisted class or memory key cannot be renamed.
  *
  * <p>The value fields, matching data/config/LunaSettings.csv, style each category of system
  * on the sector map. Owned categories - core factions and independent space - each get a
@@ -135,9 +128,9 @@ public final class KmuPoliticalMapSettings {
     // of feedback the framework switches globally, scoped to this one layer's paint. Each ANDs
     // with the global switch of its kind, so a layer switch only takes away feedback the tiers
     // above already allow - which is what lets one layer keep its box while another's is off.
-    private static final String HOVER_EFFECTS_ENABLED_FIELD =
+    private static final String LAYER_HOVER_EFFECTS_ENABLED_FIELD =
         "kmu_mapPoliticsVisualsHoverEffectsEnabled";
-    private static final String HOVER_TOOLTIP_ENABLED_FIELD =
+    private static final String LAYER_HOVER_TOOLTIP_ENABLED_FIELD =
         "kmu_mapPoliticsVisualsHoverTooltipEnabled";
 
     // Hover highlight styling (Map - Politics - Visuals tab): what the halo around the hovered
@@ -357,8 +350,8 @@ public final class KmuPoliticalMapSettings {
     // Both of this layer's hover switches on by default, like the two tiers above them: a tiered
     // gate that shipped with any level off would read to a player as a feature that is broken
     // rather than switched off.
-    private static final boolean DEFAULT_HOVER_EFFECTS_ENABLED = true;
-    private static final boolean DEFAULT_HOVER_TOOLTIP_ENABLED = true;
+    private static final boolean DEFAULT_LAYER_HOVER_EFFECTS_ENABLED = true;
+    private static final boolean DEFAULT_LAYER_HOVER_TOOLTIP_ENABLED = true;
 
     // Hover-highlight knobs, mirroring the CSV defaults: the hovered ground's own bright
     // shade, a four-layer halo peaking at half alpha and fading out by 14 pixels with a slow
@@ -1029,8 +1022,8 @@ public final class KmuPoliticalMapSettings {
      */
     public static boolean getPoliticalMapHoverEffectsEnabled() {
         return KmuLunaSettings.readBoolean(
-            HOVER_EFFECTS_ENABLED_FIELD,
-            DEFAULT_HOVER_EFFECTS_ENABLED);
+            LAYER_HOVER_EFFECTS_ENABLED_FIELD,
+            DEFAULT_LAYER_HOVER_EFFECTS_ENABLED);
     }
 
     /**
@@ -1040,8 +1033,8 @@ public final class KmuPoliticalMapSettings {
      */
     public static boolean getPoliticalMapHoverTooltipEnabled() {
         return KmuLunaSettings.readBoolean(
-            HOVER_TOOLTIP_ENABLED_FIELD,
-            DEFAULT_HOVER_TOOLTIP_ENABLED);
+            LAYER_HOVER_TOOLTIP_ENABLED_FIELD,
+            DEFAULT_LAYER_HOVER_TOOLTIP_ENABLED);
     }
 
     /**

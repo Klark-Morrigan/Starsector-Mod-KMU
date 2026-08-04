@@ -3,10 +3,9 @@ package kmu.settings;
 /**
  * The market condition manager's own LunaLib knob.
  *
- * <p>Split from {@link KmuLunaSettings} along the line the code reads: the condition
- * manager is not a map feature, so its one switch sits apart from the map's rather than
- * among knobs no part of it reads. Registration, the settings revision and the typed reads
- * stay with {@link KmuLunaSettings}.
+ * <p>One of the knob classes {@link KmuLunaSettings} splits by reader, and the one whose
+ * reader is not a map layer at all: the condition manager's single switch sits apart from
+ * the map's rather than among knobs no part of it reads.
  *
  * <p>Its tab keeps the plain name "Market Condition Manager (MCM)". The map tabs carry a
  * {@code Map - } prefix to group them for a player hunting a knob, and leaving this one
