@@ -46,6 +46,12 @@ class KMU_ModPluginTest {
     // the other side: this is the string the load-time sweep has to recognise as stale.
     private static final String LEGACY_TERRAIN_TYPE = "kmu_political_terrain";
 
+    // What the starscape half's entity reports in place of the id it was installed under - the one
+    // terrain type the map widget draws over the starfield. A literal here rather than a read of the
+    // production constant because it is the engine's string, not the mod's: the mod cannot rename it
+    // and a test agreeing with a changed copy of it would be agreeing with a broken feature.
+    private static final String WHITELISTED_MAP_TYPE = "slipstream";
+
     // Every fully-qualified name the terrain plugin has been saved under. Restated here as literals
     // rather than read from the production list: a constant read from the class under test would be
     // renamed alongside it and go on agreeing with itself, while these are what a save file on disk
@@ -309,12 +315,105 @@ class KMU_ModPluginTest {
             // this sweep retire the other half's entity - which reports a type id this one never
             // installs, and so looks stale to any test that is not exact about the class.
             var starscapeTerrainMock =
-                    buildTerrainMock("slipstream", new SectorMapLayerStarscapeTerrainPlugin());
+                    buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
             var hyperspaceMock = buildHyperspaceCarrying(starscapeTerrainMock);
 
             KMU_ModPlugin.installSectorMapLayerTerrain(buildSectorWithHyperspace(hyperspaceMock));
 
             verify(hyperspaceMock, never()).removeEntity(any());
+        }
+    }
+
+    @Nested
+    class InstallSectorMapLayerStarscapeTerrain {
+
+        @Test
+        void doesNotStackASecondStarscapeTerrainOnAReloadedSave() {
+            // Terrain persists, so a reloaded save already carries this half too; a second one would
+            // paint the starscape overlay twice and double the alpha of every fill. Only the
+            // already-present path is driven here - the absent path builds the entity, whose
+            // obfuscated supertype chain a verifying JVM refuses to load, which is why the decision
+            // itself is pinned through hasMapLayerTerrain below.
+            var hyperspaceMock = buildHyperspaceCarrying(
+                    buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin()));
+
+            KMU_ModPlugin.installSectorMapLayerStarscapeTerrain(
+                    buildSectorWithHyperspace(hyperspaceMock));
+
+            verify(hyperspaceMock, never()).addEntity(any());
+            verify(hyperspaceMock, never()).removeEntity(any());
+        }
+
+        @Test
+        void toleratesANullSector() {
+            var starscapeInstallOnNullSector = (Runnable) () ->
+                    KMU_ModPlugin.installSectorMapLayerStarscapeTerrain(null);
+
+            assertThatCode(starscapeInstallOnNullSector::run).doesNotThrowAnyException();
+        }
+    }
+
+    // Exercised with the starscape half's wiring: it is the half whose install cannot be driven end
+    // to end from a test, so this is where its presence decision is pinned. The base half's is
+    // covered through its own install above.
+    @Nested
+    class HasMapLayerTerrain {
+
+        @Test
+        void findsTheStarscapeHalfByItsPluginClass() {
+            var starscapeTerrainMock =
+                    buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
+
+            assertThat(KMU_ModPlugin.hasMapLayerTerrain(
+                    List.of(starscapeTerrainMock),
+                    SectorMapLayerStarscapeTerrainPlugin.class,
+                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isTrue();
+        }
+
+        @Test
+        void doesNotMistakeTheBaseHalfForTheStarscapeOne() {
+            // The exact-class compare is the whole guard: the starscape plugin subclasses the base
+            // one, so an instanceof would answer true here and the starscape half would never install.
+            var baseTerrainMock =
+                    buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
+
+            assertThat(KMU_ModPlugin.hasMapLayerTerrain(
+                    List.of(baseTerrainMock),
+                    SectorMapLayerStarscapeTerrainPlugin.class,
+                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isFalse();
+        }
+
+        @Test
+        void doesNotMistakeARealSlipstreamForTheStarscapeHalf() {
+            // Hyperspace's own slipstreams report the very type this half's entity reports, so the
+            // reported type cannot take part in the decision at all - only the plugin class can.
+            var slipstreamTerrainMock =
+                    buildTerrainMock(WHITELISTED_MAP_TYPE, mock(CampaignTerrainPlugin.class));
+
+            assertThat(KMU_ModPlugin.hasMapLayerTerrain(
+                    List.of(slipstreamTerrainMock),
+                    SectorMapLayerStarscapeTerrainPlugin.class,
+                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isFalse();
+        }
+
+        @Test
+        void toleratesTerrainCarryingNoPlugin() {
+            // A terrain whose spec failed to resolve has no plugin to compare, and reading through
+            // the null would fail the whole load-time install rather than skip one entity.
+            var pluginlessTerrainMock = buildTerrainMock(WHITELISTED_MAP_TYPE, null);
+
+            assertThat(KMU_ModPlugin.hasMapLayerTerrain(
+                    List.of(pluginlessTerrainMock),
+                    SectorMapLayerStarscapeTerrainPlugin.class,
+                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isFalse();
+        }
+
+        @Test
+        void reportsAbsentForALocationCarryingNoTerrain() {
+            assertThat(KMU_ModPlugin.hasMapLayerTerrain(
+                    List.of(),
+                    SectorMapLayerStarscapeTerrainPlugin.class,
+                    KMU_ModPlugin.IS_ANY_REPORTED_TYPE_CURRENT)).isFalse();
         }
     }
 
