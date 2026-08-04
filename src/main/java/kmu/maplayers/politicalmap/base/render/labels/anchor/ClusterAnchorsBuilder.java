@@ -8,6 +8,7 @@ import kmlib.profiling.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.SystemClusters;
+import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
 import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
@@ -49,6 +50,11 @@ import java.util.List;
  * <p>Both entry points take a {@link ClusterLabelStylingSnapshot} rather than the holders,
  * palette, view, grouping and filter one by one, so the two paths differ only in where that
  * snapshot came from and a label can never be styled from two passes at once.
+ *
+ * <p>Both also hand back the {@link AnchorFitFingerprint} the list they left behind was made
+ * under. It is returned rather than kept here because the list itself is the caller's, and the
+ * two are only useful as a pair: a fingerprint parked in a static would describe whichever path
+ * ran last, which is exactly the disagreement a second entry point can cause.
  */
 public final class ClusterAnchorsBuilder {
     private static final Logger LOG = Global.getLogger(ClusterAnchorsBuilder.class);
@@ -76,17 +82,27 @@ public final class ClusterAnchorsBuilder {
     // colour follows, over the grouping snapshot the holder map was resolved under. Under a
     // filter the label styling follows the same shared decision the fills do - receding every
     // non-spotlit bloc, leaving the spotlit one full - and the synthetic spotlight keys resolve
-    // to the selected bloc's name, since the view cannot name a synthetic id.
-    public static void rebuildClusterAnchors(
+    // to the selected bloc's name, since the view cannot name a synthetic id. Reports back what
+    // the placements it leaves behind were made under, which the caller holds beside the list
+    // itself: a placement list nothing states the rules of cannot be compared against a later
+    // rebuild's, and only this build knows the tuning it read. The geometry the fit clips and
+    // trims against is the caller's, so the revision naming it is handed in rather than sampled.
+    public static AnchorFitFingerprint rebuildClusterAnchors(
             List<ClusterAnchor> anchors,
             CellGeometryCache geometryCache,
             SectorAPI sector,
-            ClusterLabelStylingSnapshot styling) {
+            ClusterLabelStylingSnapshot styling,
+            int geometryRevision) {
 
         anchors.clear();
+
+        // Read ahead of the gate rather than inside it, because the standing list needs
+        // labelling either way: a rebuild that fits nothing still leaves a list behind, and an
+        // unlabelled one is indistinguishable from one fitted under rules that still hold.
+        var fitFingerprint = readFitFingerprint(geometryRevision);
         if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
                 && !KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
-            return;
+            return fitFingerprint;
         }
         // Timed from here, past the gate: the skipped path does no work worth reporting, and the
         // fit is the rebuild's dominant cost, so it needs a duration of its own beside the
@@ -123,7 +139,10 @@ public final class ClusterAnchorsBuilder {
             viewGrouping.grouping(),
             filter.recedeAdjustment());
 
-        var spec = LabelAnchorSpecification.readFromLunaSettings();
+        // The tuning comes back off the fingerprint rather than from a second read of the
+        // settings, so what the fit ran under and what it reports having run under are one
+        // value and cannot drift apart on a rebuild that straddles a settings change.
+        var spec = fitFingerprint.specification();
         logFontToleranceChange(spec);
 
         var fit = ClusterAnchorPlacement.computeClusterAnchors(
@@ -165,21 +184,29 @@ public final class ClusterAnchorsBuilder {
             + " bandFits=" + fit.bandFitCount()
             + " keepOuts=" + geometryCache.getSiteBySystemId().size()
             + " took=" + Timings.formatMillis(System.nanoTime() - fitStart));
+
+        return fitFingerprint;
     }
 
     // The rebuild for a path with no holder map at hand - the debug border-tracing view,
     // which builds no production draw lists to borrow one from. Resolves holding from
     // the sector itself, gated behind the toggle so the economy scan only runs while
-    // someone is actually looking at the anchors.
-    public static void rebuildClusterAnchorsFromSector(
+    // someone is actually looking at the anchors. Reports what the placements were made
+    // under exactly as the shared path does, so the caller holds one fact about its list
+    // whichever view built it.
+    public static AnchorFitFingerprint rebuildClusterAnchorsFromSector(
             List<ClusterAnchor> anchors,
             CellGeometryCache geometryCache,
             SectorAPI sector,
-            PoliticalMapView view) {
+            PoliticalMapView view,
+            int geometryRevision) {
 
         anchors.clear();
         if (!KmuLunaSettings.getPoliticalMapShowClusterAnchors()) {
-            return;
+            // The economy scan is what the toggle is guarding, so it is skipped - but the
+            // list it leaves empty still has to say what produced it, which costs a
+            // settings read and no sector work at all.
+            return readFitFingerprint(geometryRevision);
         }
 
         // Sample the view's grouping once and resolve holding under it, so the anchors
@@ -195,7 +222,7 @@ public final class ClusterAnchorsBuilder {
                 
         // The debug border-tracing path never filters - it resolves real dominant holders from the
         // sector - so it recedes nothing and names no synthetic spotlight key.
-        rebuildClusterAnchors(
+        return rebuildClusterAnchors(
             anchors,
             geometryCache,
             sector,
@@ -203,7 +230,18 @@ public final class ClusterAnchorsBuilder {
                 SectorPolitics.resolveDominantHolderBySystemId(sector, grouping),
                 desaturationPalette,
                 new ViewGrouping(view, grouping),
-                FilterSnapshot.unfiltered()));
+                FilterSnapshot.unfiltered()),
+            geometryRevision);
+    }
+
+    // Mints the fingerprint a fit made now would run under: the live tuning read off the
+    // settings, against the revision the cells it clips and trims within stand at. One point
+    // reads the tuning for both the fit and its fingerprint, so no path can fit under one
+    // reading and report another.
+    private static AnchorFitFingerprint readFitFingerprint(int geometryRevision) {
+        return new AnchorFitFingerprint(
+            LabelAnchorSpecification.readFromLunaSettings(),
+            geometryRevision);
     }
 
     // Announces the font tolerance when it moves, not on every fit: it is a static setting,

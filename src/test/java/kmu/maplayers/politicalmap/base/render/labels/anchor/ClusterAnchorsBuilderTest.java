@@ -10,6 +10,7 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.labels.LabelFonts;
+import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
@@ -66,6 +67,11 @@ import static org.mockito.Mockito.when;
  * label drifting from the territory beneath it would first show: a bloc's own shade off filter, and
  * the pass's shared desaturation palette for a bloc a filter recedes.
  *
+ * <p>What each path reports back is pinned alongside, on every path rather than only the fitting
+ * one: the rebuild is the only place the live tuning is read, so a list left behind without the
+ * rules it was made under can never be labelled afterwards - including the lists the two gates
+ * leave empty, which are otherwise indistinguishable from lists still made under current rules.
+ *
  * <p>What the search does with that wiring is pinned by
  * {@link kmu.maplayers.base.labels.anchor.ClusterAnchorPlacementTest} and the colour rules by
  * {@link ClusterLabelStylingTest}, so both run for real here and are only ever counted or read back
@@ -85,6 +91,10 @@ final class ClusterAnchorsBuilderTest {
     private static final String HELD_SYSTEM = "held";
     private static final String NEIGHBOUR_SYSTEM = "neighbour";
     private static final String RIVAL_SYSTEM = "rival";
+
+    // The revision the fixture cells stand at. Opaque to the rebuild - it only travels onto the
+    // fingerprint - so one value serves every case, and a case that varies it says so.
+    private static final int GEOMETRY_REVISION = 7;
 
     // Each bloc's two shades, kept distinct between blocs so a label drawn in the wrong bloc's
     // colour names which lookup went astray.
@@ -140,6 +150,13 @@ final class ClusterAnchorsBuilderTest {
         new ElementStyle(
             FactionPaletteSlot.PRIMARY,
             FULL_OPACITY));
+
+    // What every path here has to report having produced its list under: the stubbed tuning and
+    // the revision it was handed. Named once because the claim is that all four paths answer the
+    // same thing - a case restating the pair would let one of them drift and still read as
+    // asserting the shared rule.
+    private static final AnchorFitFingerprint FITTED_UNDER =
+        new AnchorFitFingerprint(ANCHOR_SPECIFICATION, GEOMETRY_REVISION);
 
     private static final Map<String, List<CellEdge>> EDGES = orderedEdges();
     private static final Map<String, double[]> SITES = Map.of(
@@ -239,7 +256,8 @@ final class ClusterAnchorsBuilderTest {
                     NEIGHBOUR_SYSTEM,
                     HEGEMONY_HOLDER,
                     RIVAL_SYSTEM,
-                    TRITACHYON_HOLDER)));
+                    TRITACHYON_HOLDER)),
+                GEOMETRY_REVISION);
 
             // Two labels, not three: the two touching cells of one bloc are named once between
             // them, which is what makes a label read as naming a territory rather than a system.
@@ -259,7 +277,8 @@ final class ClusterAnchorsBuilderTest {
                     NEIGHBOUR_SYSTEM,
                     HEGEMONY_HOLDER,
                     RIVAL_SYSTEM,
-                    TRITACHYON_HOLDER)));
+                    TRITACHYON_HOLDER)),
+                GEOMETRY_REVISION);
 
             // The clusters come back in first-seen cell order, so the fused pair leads and the
             // rival follows - each carrying the shade its own holder resolved to rather than one
@@ -286,7 +305,8 @@ final class ClusterAnchorsBuilderTest {
                     new FilterSnapshot(
                         HEGEMONY,
                         new ElementStyleAdjustment(FULL_OPACITY, true),
-                        Set.of())));
+                        Set.of())),
+                GEOMETRY_REVISION);
 
             assertThat(anchors.get(0).colour())
                 .isEqualTo(Color.GREEN);
@@ -304,7 +324,8 @@ final class ClusterAnchorsBuilderTest {
                 anchors,
                 geometryCacheMock,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
+                GEOMETRY_REVISION);
 
             assertThat(anchors)
                 .hasSize(1);
@@ -320,7 +341,8 @@ final class ClusterAnchorsBuilderTest {
                 anchors,
                 geometryCacheMock,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
+                GEOMETRY_REVISION);
 
             assertThat(anchors)
                 .isEmpty();
@@ -338,10 +360,46 @@ final class ClusterAnchorsBuilderTest {
                 anchors,
                 geometryCacheMock,
                 sectorMock,
-                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
+                GEOMETRY_REVISION);
 
             assertThat(anchors)
                 .isEmpty();
+        }
+
+        @Test
+        void rebuildClusterAnchorsReportsTheTuningAndGeometryItFittedUnder() {
+            // The placements it leaves behind are only reusable if something states the rules
+            // they were sized under, and only this rebuild read them - so the fingerprint has
+            // to name the tuning it fitted with and the geometry it fitted against, not some
+            // later re-read of either.
+            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
+                anchors,
+                geometryCacheMock,
+                sectorMock,
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
+                GEOMETRY_REVISION);
+
+            assertThat(fittedUnder)
+                .isEqualTo(FITTED_UNDER);
+        }
+
+        @Test
+        void rebuildClusterAnchorsReportsWhatTheSkippedFitWouldHaveRunUnder() {
+            // The gate empties the list rather than leaving it alone, so the list it leaves
+            // needs labelling exactly as a fitted one does: an unlabelled list is
+            // indistinguishable from one made under rules that still hold.
+            stubNameFormat(FactionNameFormatChoice.NONE);
+
+            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchors(
+                anchors,
+                geometryCacheMock,
+                sectorMock,
+                unfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)),
+                GEOMETRY_REVISION);
+
+            assertThat(fittedUnder)
+                .isEqualTo(FITTED_UNDER);
         }
     }
 
@@ -366,7 +424,8 @@ final class ClusterAnchorsBuilderTest {
                 anchors,
                 geometryCacheMock,
                 sectorMock,
-                viewMock);
+                viewMock,
+                GEOMETRY_REVISION);
 
             assertThat(anchors)
                 .hasSize(2);
@@ -386,10 +445,30 @@ final class ClusterAnchorsBuilderTest {
                 anchors,
                 geometryCacheMock,
                 sectorMock,
-                viewMock);
+                viewMock,
+                GEOMETRY_REVISION);
 
             assertThat(anchors)
                 .hasSize(1);
+        }
+
+        @Test
+        void rebuildClusterAnchorsFromSectorReportsWhatItFittedUnder() {
+            // This path delegates the fit, so it must also hand the delegate's answer on rather
+            // than stopping at it: the caller of the debug view holds the same pair of list and
+            // fingerprint the production caller does.
+            stubAnchorOverlay(true);
+            stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
+
+            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                anchors,
+                geometryCacheMock,
+                sectorMock,
+                viewMock,
+                GEOMETRY_REVISION);
+
+            assertThat(fittedUnder)
+                .isEqualTo(FITTED_UNDER);
         }
 
         @Test
@@ -399,16 +478,22 @@ final class ClusterAnchorsBuilderTest {
             // overlay. The standing labels still go, as on every other path.
             anchors.add(staleAnchor());
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+            var fittedUnder = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                 anchors,
                 geometryCacheMock,
                 sectorMock,
-                viewMock);
+                viewMock,
+                GEOMETRY_REVISION);
 
             assertThat(anchors)
                 .isEmpty();
-                
+
             politicsMock.verifyNoInteractions();
+
+            // Skipping the scan does not excuse the list from being labelled: this path's
+            // caller holds the same pair of list and fingerprint the shared path's does.
+            assertThat(fittedUnder)
+                .isEqualTo(FITTED_UNDER);
         }
     }
 

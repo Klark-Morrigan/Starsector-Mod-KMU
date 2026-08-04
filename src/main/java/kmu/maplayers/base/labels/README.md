@@ -47,6 +47,13 @@ order-free. Nothing drawn reads it - it is what lets a standing placement be rec
 belonging to the cluster a later rebuild produced, where a split or a merge matches nothing and
 re-fits by construction.
 
+A whole pass carries the other half of that question as an
+[`AnchorFitFingerprint`](anchor/AnchorFitFingerprint.java): the tuning it ran with and the geometry
+revision it ran against, the two things that invalidate every placement at once rather than any
+cluster's in particular. The layer's rebuild is what reads the live tuning, so it hands the
+fingerprint back to whoever owns the placement list, on every path - including the ones that fit
+nothing, since an unlabelled list is indistinguishable from one made under rules that still hold.
+
 The search takes each cluster's name measurement and colour as one `ClusterLabelResolvers`, keyed
 off the key its members carry. That is the whole seam between a layer and this overlay: the layer
 decides who a key is and what it looks like, the search decides where its name goes. The two

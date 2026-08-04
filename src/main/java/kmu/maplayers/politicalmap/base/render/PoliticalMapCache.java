@@ -9,6 +9,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
@@ -100,6 +101,13 @@ final class PoliticalMapCache {
     // the never-seeded seed, since NONE is a reading the player can actually be under.
     private PoliticalMapDevToggles lastDevToggles;
 
+    // What the standing placements above were fitted under - the search tuning of the pass that
+    // produced them and the geometry revision it ran against. Held here beside the list rather
+    // than by the builder, because a placement is only reusable as a pair with the rules it was
+    // sized under, and this cache is what owns the list across rebuilds. Null only before the
+    // first build: every path that touches the list reports one back.
+    private AnchorFitFingerprint lastAnchorFitFingerprint;
+
     // One-shot guard for rebuild faults: refresh runs every frame the map is open, so a recurring
     // rebuild failure would flood the log. The first is recorded at ERROR, the rest silenced.
     private boolean hasLoggedRebuildError;
@@ -149,6 +157,9 @@ final class PoliticalMapCache {
         lastContentRevision = -1;
         lastSeedInputs = null;
         lastDevToggles = null;
+        // Dropped with the placements it describes: a record of what the previous sector's
+        // labels were fitted under must not outlive the labels themselves.
+        lastAnchorFitFingerprint = null;
         // Per-system staleness names systems of the sector being left, so it is dropped rather than
         // replayed against the next one - the rebuild this discard forces re-derives every system.
         MapLayerRefresh.drainStaleGroupingSystemIds();
@@ -240,22 +251,27 @@ final class PoliticalMapCache {
                     geometryCache,
                     Global.getSector());
                 territories = null;
-                ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                lastAnchorFitFingerprint = ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
                     clusterAnchors,
                     geometryCache,
                     Global.getSector(),
-                    view);
+                    view,
+                    lastGeometryRevision);
             } else {
                 territories = TerritoryBuilder.buildTerritories(
                     geometryCache,
                     Global.getSector(),
                     view);
                 borderStageOverlay = null;
-                ClusterAnchorsBuilder.rebuildClusterAnchors(
+                // The revision the cached cells stand at is what the fit ran against, so it is
+                // the field that is handed over rather than the live signal read at the top -
+                // the two agree here, and only the field is true of the geometry in hand.
+                lastAnchorFitFingerprint = ClusterAnchorsBuilder.rebuildClusterAnchors(
                     clusterAnchors,
                     geometryCache,
                     Global.getSector(),
-                    ClusterLabelStylingSnapshot.resolveFrom(territories));
+                    ClusterLabelStylingSnapshot.resolveFrom(territories),
+                    lastGeometryRevision);
             }
 
             // The name labels are minted from the placements just rebuilt (empty when the names
@@ -286,11 +302,19 @@ final class PoliticalMapCache {
         // and corrupt the spotlight, so a filtered map defers holder changes to the next full
         // rebuild instead.
         if (territories != null && !territories.isFiltering()) {
-            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
+            // A re-fit reports what it ran under; a frame that re-fitted nothing reports null,
+            // and the standing record is left alone because the placements it describes were
+            // left alone too.
+            var refittedUnder = IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
                 territories,
                 clusterAnchors,
                 factionLabels,
-                geometryCache);
+                geometryCache,
+                lastGeometryRevision);
+
+            if (refittedUnder != null) {
+                lastAnchorFitFingerprint = refittedUnder;
+            }
         } else {
             MapLayerRefresh.drainStaleGroupingSystemIds();
         }
