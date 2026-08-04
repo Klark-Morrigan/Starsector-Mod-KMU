@@ -41,13 +41,11 @@ package kmu.settings;
  * headers.
  *
  * <p>The rest sit under the two dev tabs, which are tuning surfaces rather than player-facing
- * appearance. Most land on "Map - Dev" beside the framework's own tuning, because what they
- * shape - the cell partition, the border's smoothing, the hatch, the label anchors - is a map's
- * geometry rather than a political verdict, and a second layer's author tuning it is reading
- * about their own map. Only the reveal overrides are political enough to take
- * "Map - Politics - Dev", since what they widen is who the map draws colonies for. A row on a
- * framework tab whose getter is here is the filing rule above showing on the settings screen,
- * not a misfiling: the tab answers to whose map a knob shapes, the class to who reads it.
+ * appearance. Most land on "Map - Dev", because a tab answers to whose map a knob shapes and
+ * what these shape is a map's geometry rather than a political verdict - their getters stay
+ * here for the reason above, which is why a framework tab and this class are no contradiction.
+ * Only the reveal overrides take "Map - Politics - Dev", since what they widen is who the map
+ * draws colonies for.
  *
  * <p>The cell reach and frontier resolution seed the partition itself, so they feed
  * the geometry rebuild rather than the drawables restyle. The border shaping is split into

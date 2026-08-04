@@ -22,9 +22,7 @@ package kmu.settings;
  * {@code Map - Keybinds} carries the layer shortcuts, which are controls rather than
  * appearance. {@code Map - Dev} carries the tuning surfaces a player does not browse:
  * the national border's tracing tolerances, the label-anchor search's modifiers, and the
- * band and axis diagnostics that draw the search's own workings on the map. Its
- * {@code Map - } prefix is what says those knobs shape every layer's map rather than one
- * layer's, which is the whole reason it is not the unprefixed mod-wide {@code Dev} tab.
+ * band and axis diagnostics that draw the search's own workings on the map.
  */
 public final class KmuMapLayerSettings {
 

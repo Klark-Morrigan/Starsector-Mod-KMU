@@ -15,7 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -65,6 +67,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * says why.
  */
 final class LunaSettingsCsvIntegrationTest {
+
     private static final Path SETTINGS_CSV = Path.of("data", "config", "LunaSettings.csv");
     
     // The CSV's own column order, as its header row declares it.
@@ -145,10 +148,13 @@ final class LunaSettingsCsvIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioFields")
         void radioOptionLabelsAllResolveToTheirChoiceEnum(String fieldId, LabeledChoice[] choices) {
+
             var expectedLabels = Arrays.stream(choices).map(LabeledChoice::getLabel).toList();
+
             // A subset is legitimate - a field may offer only some of its enum's options - but an
             // option the enum cannot name is dead: picking it reads back as the fallback.
-            assertThat(readOptions(fieldId)).isSubsetOf(expectedLabels);
+            assertThat(readOptions(fieldId))
+                .isSubsetOf(expectedLabels);
         }
 
         // Takes the id alone: the row's default is held against the row's own options, so the enum
@@ -156,6 +162,7 @@ final class LunaSettingsCsvIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioFieldIds")
         void radioOptionLabelsIncludeTheRowsOwnDefault(String fieldId) {
+
             assertThat(readOptions(fieldId))
                 .contains(readColumn(fieldId, DEFAULT_VALUE_COLUMN, RADIO_FIELD_TYPE));
         }
@@ -166,6 +173,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @Test
         void everyRadioFieldInTheFileIsClassifiedBySuite() {
+
             assertThat(readRadioFieldIds())
                 .as(
                     "Radio rows in %s not listed as choice-backed or as non-choice-backed,"
@@ -181,6 +189,7 @@ final class LunaSettingsCsvIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideHoverTierFieldIds")
         void hoverTierRowsAllShipSwitchedOn(String fieldId) {
+
             assertThat(readColumn(fieldId, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: every hover tier ships on, so the tiering is invisible"
@@ -196,6 +205,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @Test
         void everyValueFieldIdIsNamedBySomeSource() {
+
             var namedFieldIds = readFieldIdLiteralsInMainSources();
             assertThat(readValueFieldIds())
                 .as(
@@ -209,9 +219,11 @@ final class LunaSettingsCsvIntegrationTest {
 
         @Test
         void everyFieldIdNamedBySourceIsDeclaredInTheFile() {
+
             var declaredFieldIds = Stream
                 .concat(readDeclaredFieldIds().stream(), NON_SETTINGS_PREFIXED_IDS.stream())
                 .toList();
+
             assertThat(readFieldIdLiteralsInMainSources())
                 .as(
                     "prefixed ids named under %s that %s declares no row for, so a getter reads a"
@@ -228,6 +240,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @Test
         void everyRowIsPlacedOnAKnownTab() {
+
             assertThat(readDeclaredTabs())
                 .as(
                     "tab names declared in %s that the settings screen's layout does not know,"
@@ -241,6 +254,7 @@ final class LunaSettingsCsvIntegrationTest {
         // instead of failing.
         @Test
         void everyKnownTabHoldsAtLeastOneRow() {
+
             assertThat(readDeclaredTabs())
                 .as("tabs the layout names that %s places no row on", SETTINGS_CSV)
                 .containsAll(KNOWN_TABS);
@@ -248,10 +262,26 @@ final class LunaSettingsCsvIntegrationTest {
 
         @Test
         void everyValueRowSitsOnItsSectionTab() {
+
             assertThat(findRowsStrandedFromTheirSection())
                 .as(
                     "value rows in %s on a different tab from the section caption above them, so"
                         + " the section's heading and its knobs draw on different tabs",
+                    SETTINGS_CSV)
+                .isEmpty();
+        }
+
+        // The check above holds a row against its own caption, which a whole section moved
+        // together satisfies. This is what notices that move: three of the tabs differ from each
+        // other only by a prefix, so a section landing on the wrong one is a plausible slip that
+        // every other walk here reads as legitimate.
+        @Test
+        void everyTabsRowsSitInOneUnbrokenRun() {
+
+            assertThat(findTabsDeclaredInMoreThanOneRun())
+                .as(
+                    "tabs in %s whose rows are interrupted by another tab's, so the file no longer"
+                        + " reads as one block per tab",
                     SETTINGS_CSV)
                 .isEmpty();
         }
@@ -262,6 +292,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @Test
         void everyHeaderRowDrawsTheCaptionItNames() {
+            
             assertThat(findHeaderRowsWhoseCaptionColumnsDisagree())
                 .as(
                     "section captions in %s whose name and drawn columns differ: LunaLib draws a"
@@ -313,6 +344,32 @@ final class LunaSettingsCsvIntegrationTest {
     private static List<String> listClassifiedRadioFieldIds() {
         return Stream
             .concat(provideChoiceBackedRadioFieldIds(), NON_CHOICE_BACKED_RADIO_FIELDS.stream())
+            .toList();
+    }
+
+    // The tabs whose rows are split into more than one run by another tab's. LunaLib places a row
+    // by its tab column alone, so an interleaved file still draws the same screen - what breaks is
+    // reading it. The file is authored one unbroken block per tab, separated by a spacer row, and
+    // that is what makes a misplaced section show up as a stray run of its own rather than as a
+    // handful of cells among a hundred-odd identical-looking ones.
+    private static List<String> findTabsDeclaredInMoreThanOneRun() {
+        var runsPerTab = new LinkedHashMap<String, Integer>();
+
+        // Empty rather than any tab name, so the file's first row opens a run instead of joining
+        // one. No tab is named by the empty string, the spacer rows carrying no prefixed id.
+        var previousTab = "";
+
+        for (var tab : readDeclaredTabs()) {
+            if (!tab.equals(previousTab)) {
+                runsPerTab.merge(tab, 1, Integer::sum);
+                previousTab = tab;
+            }
+        }
+        return runsPerTab
+            .entrySet()
+            .stream()
+            .filter(tabRuns -> tabRuns.getValue() > 1)
+            .map(Map.Entry::getKey)
             .toList();
     }
 
