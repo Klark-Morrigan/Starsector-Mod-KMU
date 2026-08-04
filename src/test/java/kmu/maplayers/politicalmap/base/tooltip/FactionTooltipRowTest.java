@@ -52,7 +52,7 @@ final class FactionTooltipRowTest {
         @Test
         void buildFactionRowNamesTheFactionWithItsCrest() {
 
-            var row = FactionTooltipRow.buildFactionRow(sectorKnowing(), HEGEMONY, "1,200");
+            var row = FactionTooltipRow.buildFactionRow(buildSectorKnowingHegemony(), HEGEMONY, "1,200");
 
             assertThat(readLabelRun(row, LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
@@ -63,7 +63,7 @@ final class FactionTooltipRowTest {
         @Test
         void buildFactionRowCarriesTheValueItIsHanded() {
 
-            var row = FactionTooltipRow.buildFactionRow(sectorKnowing(), HEGEMONY, "1,200");
+            var row = FactionTooltipRow.buildFactionRow(buildSectorKnowingHegemony(), HEGEMONY, "1,200");
 
             assertThat(row.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("1,200", TEXT)));
@@ -73,7 +73,7 @@ final class FactionTooltipRowTest {
         void buildFactionRowLeavesTheValueBlankForALineCarryingNone() {
             // A line stating a fact rather than a number still fills the slot, so the value column
             // collapses for it instead of the row losing its shape.
-            var row = FactionTooltipRow.buildFactionRow(sectorKnowing(), HEGEMONY, "");
+            var row = FactionTooltipRow.buildFactionRow(buildSectorKnowingHegemony(), HEGEMONY, "");
 
             assertThat(row.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(TextSpan.createBlank(TEXT)));
@@ -83,7 +83,7 @@ final class FactionTooltipRowTest {
         void buildFactionRowIndentsTheLineAsAnEntry() {
             // Every line naming a faction belongs to a block above it - a section heading or a group
             // header - so it reads as an entry rather than as opening a block of its own.
-            var row = FactionTooltipRow.buildFactionRow(sectorKnowing(), HEGEMONY, "1,200");
+            var row = FactionTooltipRow.buildFactionRow(buildSectorKnowingHegemony(), HEGEMONY, "1,200");
 
             assertThat(row.indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
@@ -103,7 +103,7 @@ final class FactionTooltipRowTest {
         }
     }
 
-    private static SectorAPI sectorKnowing() {
+    private static SectorAPI buildSectorKnowingHegemony() {
 
         var factionMock = mock(FactionAPI.class);
 

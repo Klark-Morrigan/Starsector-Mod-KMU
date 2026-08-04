@@ -68,8 +68,8 @@ final class SystemStatusRowTest {
         @Test
         void resolveStatusRowIsEmptyForAPopulatedSystem() {
 
-            var system = systemWithPlanets();
-            var row = SystemStatusRow.resolveStatusRow(sectorHolding(system, colony()), system, false);
+            var system = buildSystemWithPlanets();
+            var row = SystemStatusRow.resolveStatusRow(buildSectorHoldingMarkets(system, buildColony()), system, false);
 
             assertThat(row)
                 .isEmpty();
@@ -78,8 +78,8 @@ final class SystemStatusRowTest {
         @Test
         void resolveStatusRowNamesAnEmptySystemUnpopulated() {
 
-            var system = systemWithPlanets();
-            var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
+            var system = buildSystemWithPlanets();
+            var row = SystemStatusRow.resolveStatusRow(buildSectorHoldingMarkets(system), system, false);
 
             assertThat(readLabelTextRun(row.orElseThrow(), STATUS_RUN).text())
                 .isEqualTo("Unpopulated");
@@ -90,8 +90,8 @@ final class SystemStatusRowTest {
 
             // The dead colony is gone from the economy, so the system is empty either way - what the
             // ruin changes is which status the player is told.
-            var system = systemWithPlanets(revealedRuin());
-            var row = SystemStatusRow.resolveStatusRow(sectorHolding(system), system, false);
+            var system = buildSystemWithPlanets(buildRevealedRuin());
+            var row = SystemStatusRow.resolveStatusRow(buildSectorHoldingMarkets(system), system, false);
 
             assertThat(readLabelTextRun(row.orElseThrow(), STATUS_RUN).text())
                 .isEqualTo("Decivilised");
@@ -102,9 +102,9 @@ final class SystemStatusRowTest {
             // Centred and crestless: the status holds over everything the box goes on to say, so it
             // speaks for the box rather than aligning to the crest gutter and value column the entries
             // below it share. Being a centred line is what makes it carry no such columns at all.
-            var system = systemWithPlanets();
+            var system = buildSystemWithPlanets();
             var row = SystemStatusRow
-                .resolveStatusRow(sectorHolding(system), system, false)
+                .resolveStatusRow(buildSectorHoldingMarkets(system), system, false)
                 .orElseThrow();
 
             assertThat(row.labelRuns())
@@ -115,8 +115,8 @@ final class SystemStatusRowTest {
         void resolveStatusRowCountsAnUndiscoveredColonyUnderTheReveal() {
             // The same system reads populated or empty purely on the reveal, so a body showing all
             // factions never contradicts itself with an "Unpopulated" line above the factions it lists.
-            var system = systemWithPlanets();
-            var sector = sectorHolding(system, undiscoveredColony());
+            var system = buildSystemWithPlanets();
+            var sector = buildSectorHoldingMarkets(system, buildUndiscoveredColony());
 
             assertThat(SystemStatusRow.resolveStatusRow(sector, system, true))
                 .isEmpty();
@@ -125,7 +125,7 @@ final class SystemStatusRowTest {
         }
     }
 
-    private static SectorAPI sectorHolding(StarSystemAPI system, MarketAPI... markets) {
+    private static SectorAPI buildSectorHoldingMarkets(StarSystemAPI system, MarketAPI... markets) {
 
         var economyMock = mock(EconomyAPI.class);
 
@@ -140,7 +140,7 @@ final class SystemStatusRowTest {
         return sectorMock;
     }
 
-    private static StarSystemAPI systemWithPlanets(PlanetAPI... planets) {
+    private static StarSystemAPI buildSystemWithPlanets(PlanetAPI... planets) {
 
         var systemMock = mock(StarSystemAPI.class);
 
@@ -151,7 +151,7 @@ final class SystemStatusRowTest {
     }
 
     // An owned colony on an already-discovered entity: the plain "this system is populated" case.
-    private static MarketAPI colony() {
+    private static MarketAPI buildColony() {
 
         var marketMock = mock(MarketAPI.class);
 
@@ -163,13 +163,13 @@ final class SystemStatusRowTest {
 
     // An owned colony the player has not found: its entity is still discoverable and the market is
     // hidden, so it counts only when the reveal drops the visibility filter.
-    private static MarketAPI undiscoveredColony() {
+    private static MarketAPI buildUndiscoveredColony() {
         var entityMock = mock(SectorEntityToken.class);
 
         when(entityMock.isDiscoverable())
             .thenReturn(true);
 
-        var marketMock = colony();
+        var marketMock = buildColony();
 
         when(marketMock.getPrimaryEntity())
             .thenReturn(entityMock);
@@ -181,7 +181,7 @@ final class SystemStatusRowTest {
 
     // A surveyed planet carrying a revealed decivilised condition - the ruin of a colony the player
     // has already seen die.
-    private static PlanetAPI revealedRuin() {
+    private static PlanetAPI buildRevealedRuin() {
 
         var conditionMock = mock(MarketConditionAPI.class);
         var ruinMock = mock(MarketAPI.class);

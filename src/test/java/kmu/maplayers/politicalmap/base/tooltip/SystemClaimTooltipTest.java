@@ -94,9 +94,9 @@ final class SystemClaimTooltipTest {
 
         // Each faction is built before the sector is told about it: stubbing one mock inside another
         // stub's argument leaves Mockito mid-stubbing and fails the whole fixture.
-        var hegemonyMock = factionNamed("The Hegemony", HEGEMONY_CREST);
-        var tritachyonMock = factionNamed("Tri-Tachyon", null);
-        var piratesMock = factionNamed("Pirates", null);
+        var hegemonyMock = buildNamedFaction("The Hegemony", HEGEMONY_CREST);
+        var tritachyonMock = buildNamedFaction("Tri-Tachyon", null);
+        var piratesMock = buildNamedFaction("Pirates", null);
 
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
@@ -423,7 +423,7 @@ final class SystemClaimTooltipTest {
         return (TooltipRow.TableRow) rows.get(rowIndex);
     }
 
-    private static FactionAPI factionNamed(String displayNameLong, String crestSpritePath) {
+    private static FactionAPI buildNamedFaction(String displayNameLong, String crestSpritePath) {
 
         var factionMock = mock(FactionAPI.class);
 

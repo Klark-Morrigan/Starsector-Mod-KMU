@@ -74,7 +74,7 @@ final class StandingRowResolverTest {
                     new FactionStanding("astral_armada", 3))));
 
             var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, allianceGrouping());
+                    sectorMock, standings, buildAllianceGrouping());
 
             // The header takes the bloc name and its lead (colour) member's crest, and the members
             // stay in the ranking order the standing placed them.
@@ -99,7 +99,7 @@ final class StandingRowResolverTest {
                     new FactionStanding("astral_armada", 3))));
 
             var rows = StandingRowResolver.resolveRows(
-                    sectorMock, standings, allianceGrouping());
+                    sectorMock, standings, buildAllianceGrouping());
 
             assertThat(rows).containsExactly(new StandingGroupRow(
                     "alliance-1", "Allied Powers", null, 11, true,
@@ -163,7 +163,7 @@ final class StandingRowResolverTest {
             var standings = List.of(new GroupStanding(
                     "alliance-1", 8, List.of(new FactionStanding("hegemony", 8))));
 
-            var rows = StandingRowResolver.resolveRows(sectorMock, standings, allianceGrouping());
+            var rows = StandingRowResolver.resolveRows(sectorMock, standings, buildAllianceGrouping());
 
             assertThat(rows).containsExactly(new StandingGroupRow(
                     "alliance-1", "Allied Powers", "graphics/heg.png", 8, true,
@@ -173,7 +173,7 @@ final class StandingRowResolverTest {
 
     // Two allied factions folded into one bloc coloured (and so crested) by its lead member hegemony,
     // matching the grouping the ranking step produces for an alliance.
-    private static HolderGrouping allianceGrouping() {
+    private static HolderGrouping buildAllianceGrouping() {
         return new HolderGrouping(
                 Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
                 Map.of("alliance-1", "hegemony"),

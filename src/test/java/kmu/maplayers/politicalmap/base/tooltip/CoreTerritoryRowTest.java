@@ -57,21 +57,21 @@ final class CoreTerritoryRowTest {
 
         @Test
         void resolveCoreTerritoryRowIsEmptyWithoutACoreFaction() {
-            assertThat(CoreTerritoryRow.resolveCoreTerritoryRow(sectorKnowing(), null))
+            assertThat(CoreTerritoryRow.resolveCoreTerritoryRow(buildSectorKnowingHegemony(), null))
                 .isEmpty();
         }
 
         @Test
         void resolveCoreTerritoryRowIsEmptyForABlankCoreFaction() {
             // A memory flag written empty is no decree, so it must not draw a nameless core line.
-            assertThat(CoreTerritoryRow.resolveCoreTerritoryRow(sectorKnowing(), " "))
+            assertThat(CoreTerritoryRow.resolveCoreTerritoryRow(buildSectorKnowingHegemony(), " "))
                 .isEmpty();
         }
 
         @Test
         void resolveCoreTerritoryRowNamesTheCoreFaction() {
             var row = CoreTerritoryRow
-                .resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
+                .resolveCoreTerritoryRow(buildSectorKnowingHegemony(), "hegemony")
                 .orElseThrow();
 
             assertThat(readLabelRun(row, FACTION_NAME_RUN))
@@ -83,7 +83,7 @@ final class CoreTerritoryRowTest {
             // The crest sits inside the label rather than in the gutter the entries below align to, so
             // it centres with the words it belongs to instead of anchoring to a column.
             var row = CoreTerritoryRow
-                .resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
+                .resolveCoreTerritoryRow(buildSectorKnowingHegemony(), "hegemony")
                 .orElseThrow();
 
             assertThat(readLabelRun(row, CREST_RUN))
@@ -95,7 +95,7 @@ final class CoreTerritoryRowTest {
             // The status is the point of the line, so it is picked out beside the plainly-coloured
             // faction name rather than blending into it - one line read in two colours.
             var row = CoreTerritoryRow
-                .resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
+                .resolveCoreTerritoryRow(buildSectorKnowingHegemony(), "hegemony")
                 .orElseThrow();
 
             assertThat(readLabelRun(row, CORE_STATUS_RUN))
@@ -108,7 +108,7 @@ final class CoreTerritoryRowTest {
             // which is what a centred row is, and what carrying no crest gutter and no value column
             // makes it. Asserted as the kind of row it is, since that is the whole of the decision.
             var row = CoreTerritoryRow
-                .resolveCoreTerritoryRow(sectorKnowing(), "hegemony")
+                .resolveCoreTerritoryRow(buildSectorKnowingHegemony(), "hegemony")
                 .orElseThrow();
 
             assertThat(row.labelRuns())
@@ -140,7 +140,7 @@ final class CoreTerritoryRowTest {
         }
     }
 
-    private static SectorAPI sectorKnowing() {
+    private static SectorAPI buildSectorKnowingHegemony() {
 
         var factionMock = mock(FactionAPI.class);
 
