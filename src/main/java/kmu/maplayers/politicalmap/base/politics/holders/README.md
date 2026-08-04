@@ -99,18 +99,26 @@ of `SectorPolitics`. Where `SectorPolitics` reads who *holds* a system, `SectorC
 *claims* it, then routes that claimant through the same grouping and palette. So a claimed system
 and a held one of the same bloc end up equal, and fuse downstream.
 
-The claimant comes from KMLib's `ClaimReader` port, an adapter over `Misc.getClaimingFaction` - the
-usual way KM code inverts an un-mockable third-party static. Vanilla resolves a claimant two ways:
-an explicit `$claimingFaction` memory flag, or the top territorial market in the system. The map
-shows exactly what that call reports and invents nothing. A marketless system (unpopulated or
-decivilised) only resolves through the flag, which is rare in practice. So claims mostly attach to
-inhabited systems.
+The claimant comes from KMLib's `ClaimReader` port - the usual way KM code inverts a third-party
+read that only answers inside a running game. Its vanilla binding mirrors `Misc.getClaimingFaction`
+step for step rather than calling it, because one computation has to answer *who* claims a system
+for the fills here and *why* for the claims layer's hover box. Sharing it is what stops the ground
+and the box over it naming different claimants - on the memory-flag override, and on the
+iteration-order tie the mechanic settles equal scores by.
+
+Vanilla resolves a claimant two ways: an explicit `$claimingFaction` memory flag, or the top
+territorial market in the system. The map shows exactly what the mechanic resolves and invents
+nothing. A marketless system (unpopulated or decivilised) only resolves through the flag, which is
+rare in practice. So claims mostly attach to inhabited systems.
 
 ## What is not here
 
 - The *render split* that turns the three states into triangles, hatch, and skipped fills is
   [`render.territories`](../../render/territories/README.md). This package decides the states; it
   does not draw them.
+- The *scored contest* behind a claim - the rivals who could have taken the system, and the factions
+  present that never could - is KMLib's claim breakdown, read by the claims layer's hover box rather
+  than by anything that paints. This package needs the winner alone.
 - The *grouping* that folds a faction into its alliance bloc is `base.dominance.HolderGrouping`,
   supplied by the view.
 - The *held resolve* and *filter resolve* the default source delegates to are `SectorPolitics` and

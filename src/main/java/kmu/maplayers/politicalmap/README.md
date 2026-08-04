@@ -64,7 +64,8 @@ Notes on each:
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.
   There is no alliance grouping here, and no spotlight. Hovering a system explains its claim: who
-  holds it, who contests it, and who is present but can never claim it.
+  holds it, who contests it, who is present but can never claim it, and whether the hold was won on
+  market strength or imposed by decree.
 
 ## Claim extensions
 
@@ -129,7 +130,9 @@ mechanic its own fills were painted by into the framework's hover box: `SystemDo
 the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim
 contest behind a claims fill, its claimant over the rivals who could have taken the system and the
 factions present that never could - plus the faction, standing, territory, and status lines both are
-written from),
+written from. Both sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer:
+either box may have to say a system is held by decree, and a decree resolved one way on one view and
+another way on the next would answer one hover two ways a keystroke apart),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 [the sidebar](../base/sidebar/README.md) one level up. What stays here is what that picker refuses
