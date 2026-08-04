@@ -219,9 +219,12 @@ anything paints, so they move values without raising it.
 fill faded by the opacity setting, the player faction's base and bright accents, the insignia body
 face, and `LiveSidebarPlacement.buildMapTabStyle()` for the tabs.
 
-That one `TabStyle` carries a strip end to end - band height, `VanillaTabColours` scheme,
-`HotkeyStyle`, and the orbitron face - so the value the layout snapped tabs against is the value the
-renderer paints them from and a snapped tab width cannot part from the text drawn into it. The two
+That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `HotkeyStyle`, and the
+orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
+from and a snapped tab width cannot part from the text drawn into it. The palette holds both flavours
+of tab look: an absolute `TabBaseLook` per `TabBaseState` (unselected, selected) and a relative
+`TabWash` per `TabWashState` (hovered, clicked, hotkeyed), the lift being layered over whichever base
+the tab is already in. The two
 screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the
 paint pass does not read. Both faces are named through KMLib's `StarsectorFont` enum rather than by
 atlas basename.
