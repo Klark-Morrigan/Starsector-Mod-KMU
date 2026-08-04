@@ -45,9 +45,9 @@ public record LabelAnchorSpecification(
     private static final double MIN_FONT_HEIGHT_TOLERANCE = 0.05;
 
     // Reads the live tuning into its sub-records: the candidate-fan and scoring knobs from
-    // the Dev "Label anchors" section, the diagnostic toggles that let the search skip the
-    // extra candidates while no one is looking, the band-fit clearances and precision from
-    // that same Dev section (the end-inset multiple resolved against the fixed border
+    // the "Map - Dev" tab's "Label anchors" section, the diagnostic toggles that let the search
+    // skip the extra candidates while no one is looking, the band-fit clearances and precision
+    // from that same section (the end-inset multiple resolved against the fixed border
     // channel here, so the fit works in plain distances), and the name-fit knobs from the
     // visuals "Map labels" section. The border trace comes from the same source the drawn
     // border renders with, so the anchor clips against the rings the player sees.

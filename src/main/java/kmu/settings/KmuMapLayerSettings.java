@@ -20,9 +20,11 @@ package kmu.settings;
  * <p>The knobs lay out across three tabs. {@code Map - Visuals} carries the overlay
  * sidebar, the map labels and the two upper hover tiers - what every layer shares.
  * {@code Map - Keybinds} carries the layer shortcuts, which are controls rather than
- * appearance. The {@code Dev} tab carries the tuning surfaces a player does not browse:
+ * appearance. {@code Map - Dev} carries the tuning surfaces a player does not browse:
  * the national border's tracing tolerances, the label-anchor search's modifiers, and the
- * band and axis diagnostics that draw the search's own workings on the map.
+ * band and axis diagnostics that draw the search's own workings on the map. Its
+ * {@code Map - } prefix is what says those knobs shape every layer's map rather than one
+ * layer's, which is the whole reason it is not the unprefixed mod-wide {@code Dev} tab.
  */
 public final class KmuMapLayerSettings {
 
@@ -78,7 +80,7 @@ public final class KmuMapLayerSettings {
     private static final String HOVER_TOOLTIP_ENABLED_FIELD =
         "kmu_politicalMapHoverTooltipEnabled";
 
-    // Border tracing (Dev tab): the raw ring chaining and miter inset that turn a cluster's
+    // Border tracing (Map - Dev tab): the raw ring chaining and miter inset that turn a cluster's
     // cell edges into one outline. Always applied - it is upstream of the smoothing passes a
     // layer may gate - so it has no switch of its own.
     private static final String BORDER_WELD_TOLERANCE_FIELD =
@@ -86,7 +88,7 @@ public final class KmuMapLayerSettings {
     private static final String BORDER_MITER_LIMIT_FIELD =
         "kmu_politicalMapBorderMiterLimit";
 
-    // Label anchors (Dev tab): the modifiers of the per-cluster label-anchor search -
+    // Label anchors (Map - Dev tab): the modifiers of the per-cluster label-anchor search -
     // the straight line a cluster's name will sit on, chosen by scoring many candidate
     // lines swept across the cluster (a fan of directions times a family of parallel
     // offsets), each fit inside the national border and clear of the system icons. Live
@@ -117,7 +119,7 @@ public final class KmuMapLayerSettings {
     private static final String ANCHOR_FONT_HEIGHT_TOLERANCE_FIELD =
         "kmu_politicalMapAnchorFontHeightTolerance";
 
-    // Debug band-quad knobs (Dev tab, Label anchors): the opacity is the band quad's
+    // Debug band-quad knobs (Map - Dev tab, Label anchors): the opacity is the band quad's
     // fill alpha, and the line opacity the separate alpha of that box's strokes so the
     // outline can read stronger than the fill it sits on.
     private static final String ANCHOR_BAND_OPACITY_FIELD =
@@ -127,7 +129,7 @@ public final class KmuMapLayerSettings {
 
     // Name-fit knobs (Map - Visuals tab, Map labels): a label is a box with
     // girth, sized to the space it sits in and to the owner's actual name - player-facing
-    // appearance, so they live beside the name toggle and format, not among the Dev
+    // appearance, so they live beside the name toggle and format, not among the Map - Dev
     // diagnostics. Min/max font size clamp the per-line height the fit searches (the
     // readability floor and the oversize ceiling); max lines and line spacing let a
     // length-poor cluster wrap the name into a taller-font block instead of shrinking it.
@@ -140,7 +142,7 @@ public final class KmuMapLayerSettings {
     private static final String NAME_LINE_SPACING_FIELD =
         "kmu_politicalMapNameLineSpacing";
 
-    // Diagnostics (Dev tab): the two extra anchor lines layered under the accepted one,
+    // Diagnostics (Map - Dev tab): the two extra anchor lines layered under the accepted one,
     // each behind its own toggle so the anchor overlay stays readable by default. The
     // rejected line (red) shows the best candidate a collapsed fit had before the
     // border, icon, or end-margin trim discarded it; the unbiased line (yellow) shows

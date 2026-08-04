@@ -39,7 +39,7 @@ The channel it insets every boundary edge by is not its own - it is
 `base.geometry.CellShaper.BORDER_INSET_DISTANCE`, the value the cells were shaped to. It is fixed
 rather than player-tunable because it is geometry and not look: the trace must inset by exactly
 what the shaper cut, or the border strokes somewhere the fills do not stop. The rounding shape on
-top of it *is* tunable, off the Dev tab.
+top of it *is* tunable, off the **Map - Dev** tab.
 
 The second `traceRings` overload opts a set of neighbours out of that channel. The edge shared with
 a *coincident* neighbour insets by nothing, so a cluster traced from either side lands on the same

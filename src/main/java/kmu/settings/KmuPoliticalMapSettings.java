@@ -40,8 +40,16 @@ package kmu.settings;
  * under Colony size, Hidden markets, Stability, Orbital stations, and Garrison patrols
  * headers.
  *
- * <p>The rest sit under the "Dev" tab, which is a tuning surface rather than player-facing
- * appearance. The cell reach and frontier resolution seed the partition itself, so they feed
+ * <p>The rest sit under the two dev tabs, which are tuning surfaces rather than player-facing
+ * appearance. Most land on "Map - Dev" beside the framework's own tuning, because what they
+ * shape - the cell partition, the border's smoothing, the hatch, the label anchors - is a map's
+ * geometry rather than a political verdict, and a second layer's author tuning it is reading
+ * about their own map. Only the reveal overrides are political enough to take
+ * "Map - Politics - Dev", since what they widen is who the map draws colonies for. A row on a
+ * framework tab whose getter is here is the filing rule above showing on the settings screen,
+ * not a misfiling: the tab answers to whose map a knob shapes, the class to who reads it.
+ *
+ * <p>The cell reach and frontier resolution seed the partition itself, so they feed
  * the geometry rebuild rather than the drawables restyle. The border shaping is split into
  * the operations that produce a border, in pipeline order after the framework's tracing -
  * spike sanding, then corner rounding - each its own section led by a boolean master switch
@@ -202,7 +210,7 @@ public final class KmuPoliticalMapSettings {
     private static final String PATROL_LOW_STABILITY_PENALTY_FIELD =
         "kmu_politicalMapPatrolLowStabilityPenalty";
 
-    // Cell geometry (Dev tab): the resolution of the raw Voronoi cells, upstream of
+    // Cell geometry (Map - Dev tab): the resolution of the raw Voronoi cells, upstream of
     // any border shaping. Unlike the border fields below - which restyle fixed
     // geometry through the drawables rebuild - this reseeds the cells themselves, so
     // it feeds the geometry rebuild. Every segment is a vertex on each frontier cell,
@@ -210,7 +218,7 @@ public final class KmuPoliticalMapSettings {
     private static final String CELL_BOUND_SEGMENTS_FIELD =
         "kmu_politicalMapCellBoundSegments";
 
-    // Cell reach (Dev tab, Cell geometry): how far each system's territory extends into empty
+    // Cell reach (Map - Dev tab, Cell geometry): how far each system's territory extends into empty
     // space before the frontier bound closes it off. Sits beside the resolution knob above
     // rather than with the palette because the two answer the same question - the shape of the
     // cells the map is partitioned into - and both reseed the cells, so it feeds the geometry
@@ -218,7 +226,7 @@ public final class KmuPoliticalMapSettings {
     private static final String CELL_RADIUS_FIELD =
         "kmu_politicalMapCellRadius";
 
-    // National-border geometry (Dev tab): the shape of the frontier stroked and filled
+    // National-border geometry (Map - Dev tab): the shape of the frontier stroked and filled
     // per cluster, exposed for live tuning rather than baked as constants. All feed the
     // drawables rebuild, so a change takes effect the moment it is applied. They follow the
     // framework's own tracing in pipeline order, and each gated operation leads with its
@@ -247,7 +255,7 @@ public final class KmuPoliticalMapSettings {
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
         "kmu_politicalMapBorderChamferAngle";
 
-    // Hatch fill (Dev tab): the diagonal line pattern that fills the filter's contested
+    // Hatch fill (Map - Dev tab): the diagonal line pattern that fills the filter's contested
     // cluster - the spotlighted bloc's present-but-dominated systems - so it reads as
     // "mine, but contested" against the solid cluster it holds outright. Only that one
     // territory hatches; spacing is the perpendicular gap between lines in world units,
@@ -267,13 +275,13 @@ public final class KmuPoliticalMapSettings {
     private static final String HATCH_SMOOTHING_FIELD =
         "kmu_politicalMapHatchSmoothing";
 
-    // Hatch fill - joining (Dev tab): how near two of one hatch line's crossings must be to
+    // Hatch fill - joining (Map - Dev tab): how near two of one hatch line's crossings must be to
     // count as the same stroke. Its own section because it tunes the merge that packs the
     // clipped crossings into segments, not the pattern those lines are laid out in.
     private static final String HATCH_JOIN_TOLERANCE_FIELD =
         "kmu_politicalMapHatchJoinTolerance";
 
-    // Reveal overrides (Dev tab): two toggles that widen what the map draws for
+    // Reveal overrides (Map - Politics - Dev tab): two toggles that widen what the map draws for
     // inspection, each bypassing a normal gate. Show-all-factions drops the
     // known-to-player footprint filter so undiscovered colonies count toward
     // dominance, inhabitation, and geometry; force-all-systems bypasses the map
@@ -286,13 +294,13 @@ public final class KmuPoliticalMapSettings {
     private static final String FORCE_ALL_SYSTEMS_ON_MAP_FIELD =
         "kmu_politicalMapForceAllSystemsOnMap";
 
-    // Diagnostics (Dev tab): draws the per-cluster label anchors (a centre dot and the
+    // Diagnostics (Map - Dev tab): draws the per-cluster label anchors (a centre dot and the
     // accepted label line in green) so the clustering and axis fit behind the map
     // labels can be eyeballed on the map. Off by default.
     private static final String SHOW_CLUSTER_ANCHORS_FIELD =
         "kmu_politicalMapShowClusterAnchors";
 
-    // Diagnostics (Dev tab): replaces the normal render with a border-tracing overlay that
+    // Diagnostics (Map - Dev tab): replaces the normal render with a border-tracing overlay that
     // layers the smoothing pipeline's stages (base, despiked, rounded) in distinct colours,
     // honouring the two smoothing gates. Off by default.
     private static final String DEBUG_BORDER_TRACING_FIELD =

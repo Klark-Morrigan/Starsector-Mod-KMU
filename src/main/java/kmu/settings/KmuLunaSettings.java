@@ -24,7 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * and {@link KmuMarketConditionSettings} for the condition picker. Splitting on the reader
  * rather than on the settings tab is what keeps a layer's knobs out of reach of the
  * framework: a class no framework code imports cannot leak a feature's vocabulary into it,
- * which a tab-shaped split could not promise for the shared {@code Dev} tab.
+ * which a tab-shaped split could not promise. {@code Map - Dev} is where the two part
+ * company - it carries the tuning of geometry every layer shares, but most of that tuning is
+ * read by the political layer that resolves it, so a class named for that tab would be
+ * imported by both halves and be the shared surface again under a new name.
  *
  * <p>Those three hold field ids, fallbacks and accessors only. The mod id, the revision and
  * the reads stay here because they are mod-wide - a second layer's settings would want the

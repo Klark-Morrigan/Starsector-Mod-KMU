@@ -27,7 +27,7 @@ public record ClusterBorderTrace(
     double weldTolerance,
     double miterSpikeLimit) {
 
-    // Reads the live trace parameters from the Dev "Border tracing" section.
+    // Reads the live trace parameters from the "Map - Dev" tab's "Border tracing" section.
     public static ClusterBorderTrace readFromLunaSettings() {
         return new ClusterBorderTrace(
             KmuMapLayerSettings.getMapBorderWeldTolerance(),

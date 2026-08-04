@@ -80,8 +80,8 @@ public final class RenderStyleReader {
     }
 
     /**
-     * Reads the border smoothing profile: each pass's Dev-tab gate alongside the shape that same
-     * pass works to, so a knob lands in the sub-record of the pass that reads it. Read as one
+     * Reads the border smoothing profile: each pass's "Map - Dev" gate alongside the shape that
+     * same pass works to, so a knob lands in the sub-record of the pass that reads it. Read as one
      * value so every pass over any loops - a cluster border, a lone cell's outline, the debug
      * capture of each stage - works to the same numbers.
      *
