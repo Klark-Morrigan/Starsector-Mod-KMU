@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
@@ -44,6 +45,8 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -401,6 +404,38 @@ final class SystemDominationTooltipTest {
                     "The Hegemony",
                     "Dominated by:",
                     "Rebel Pact");
+        }
+
+        @Test
+        void buildBodyRowsShowsTheCoreLineOnALivingSystemWithNoStatusToState() {
+            // A decree holds whatever it is laid over, colony or not, so the line does not hang off a
+            // status line above it: with nothing to say about the ground, the decree is simply the
+            // first thing under the system name.
+            stubCoreFaction(CORE_FACTION);
+            stubResolvedRows(createGroupRow(false, createMemberRow(MEMBER_SCORE)));
+
+            assertThat(readLabelTexts(tooltip.buildBodyRows(sectorMock, systemMock)))
+                .containsExactly(
+                    "The Hegemony",
+                    "Dominated by:",
+                    "Rebel Pact");
+        }
+
+        @Test
+        void buildBodyRowsAsksOnlyForTheDecreeRatherThanScoringEveryMarket() {
+            // Why the port carries two reads at all: this box never shows a claim score, so answering
+            // "is there a decree" through the full breakdown would charge the scoring of every market
+            // in the system to every faction and alliance hover. The fake derives one read from the
+            // other, so only a case watching the calls can hold this.
+            var claimBreakdownReaderMock = mock(ClaimBreakdownReader.class);
+
+            new SystemDominationTooltip(claimBreakdownReaderMock)
+                .buildBodyRows(sectorMock, systemMock);
+
+            verify(claimBreakdownReaderMock)
+                .readCoreFactionId(systemMock);
+            verify(claimBreakdownReaderMock, never())
+                .readBreakdown(any());
         }
 
         @Test

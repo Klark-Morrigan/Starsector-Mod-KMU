@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.TooltipRow;
 import kmlib.text.KmlibNumbers;
 
@@ -46,7 +45,7 @@ import java.util.List;
  * <p>Stateless past the reader it is built around - the view, the live economy, and the settings are
  * read afresh each paint - so one shared instance serves both views.
  */
-public final class SystemDominationTooltip extends SystemCellTooltip {
+public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
 
     // How many of the ranked groups the box names as dominating the system: the one whose colour the
     // map fills it in. Everything ranked below that contests the system rather than holding it.
@@ -54,12 +53,10 @@ public final class SystemDominationTooltip extends SystemCellTooltip {
 
     /** The one shared instance; stateless, so both views inject it. */
     public static final SystemDominationTooltip INSTANCE =
-        new SystemDominationTooltip(new VanillaClaimBreakdownReader());
-
-    private final ClaimBreakdownReader claimBreakdownReader;
+        new SystemDominationTooltip(VANILLA_CLAIM_BREAKDOWN_READER);
 
     SystemDominationTooltip(ClaimBreakdownReader claimBreakdownReader) {
-        this.claimBreakdownReader = claimBreakdownReader;
+        super(claimBreakdownReader);
     }
 
     @Override

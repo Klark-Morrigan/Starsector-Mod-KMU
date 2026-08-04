@@ -6,14 +6,12 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.TooltipRow;
 import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
-import kmu.maplayers.base.tooltip.SystemCellTooltip;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -35,7 +33,7 @@ import java.util.function.Predicate;
  *
  * <p>Stateless past the reader it is built around, so one shared instance serves the layer.
  */
-public final class SystemClaimTooltip extends SystemCellTooltip {
+public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
 
     // The breakdown scores every market present, found by the player or not, so the status line above
     // it has to count the same ones. Resolved under the narrower reveal, a system whose only colony
@@ -48,12 +46,10 @@ public final class SystemClaimTooltip extends SystemCellTooltip {
      * resolved through, so the box and the ground under it can never name different claimants.
      */
     public static final SystemClaimTooltip INSTANCE =
-        new SystemClaimTooltip(new VanillaClaimBreakdownReader());
-
-    private final ClaimBreakdownReader claimBreakdownReader;
+        new SystemClaimTooltip(VANILLA_CLAIM_BREAKDOWN_READER);
 
     SystemClaimTooltip(ClaimBreakdownReader claimBreakdownReader) {
-        this.claimBreakdownReader = claimBreakdownReader;
+        super(claimBreakdownReader);
     }
 
     @Override
