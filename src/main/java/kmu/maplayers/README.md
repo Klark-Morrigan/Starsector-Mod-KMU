@@ -42,9 +42,9 @@ one's drawer, which is the state this tree was carved out of.
 
 The compiler is happy either way round, so the rule is a build gate rather than a review
 question: `enforcePackageLayering`, declared in [build.gradle](../../../../../build.gradle) and
-implemented in Common-Java. It reads `src/test` as well as `src/main`, since a suite reaching
-across for a real political type is the shortest way to make it compile and inverts the same
-arrow.
+implemented in Common-Java. It reads every source set, not just `src/main` - a suite reaching
+across for a real political type is the shortest way to make it compile, and the sector-geometry
+viewer under `src/utils` sits in `base.geometry` itself.
 
 ## The vocabulary
 
