@@ -38,17 +38,17 @@ final class SectorSvgWriter {
     private static final double CELL_STROKE = 30.0;
     private static final double RING_STROKE = 90.0;
     private static final double SITE_RADIUS = 120.0;
-    // Spreads bloc colours around the hue circle by id hash, so neighbouring blocs are
-    // very unlikely to share one and the eye can separate territories at a glance.
+    // Spreads owner colours around the hue circle by id hash, so neighbouring owners are
+    // very unlikely to share one and the eye can separate clusters at a glance.
     private static final int HUE_RANGE = 360;
-    private static final String BLOC_FILL_OPACITY = "0.35";
+    private static final String OWNER_FILL_OPACITY = "0.35";
 
     private SectorSvgWriter() {
     }
 
     /**
      * Writes the sector's geometry: every raw cell, each unowned cell's shaped outline, and
-     * every bloc's traced cluster rings, over the sites they were built from.
+     * every owner's traced cluster rings, over the sites they were built from.
      *
      * @param target   file to write; parent directories are created
      * @param fixture  the sector the geometry was built from
@@ -63,7 +63,7 @@ final class SectorSvgWriter {
         // the cell edge it came from.
         appendRawCells(svg, geometry.cellEdgesByCellId());
         appendNeutralCells(svg, geometry);
-        appendBlocRings(svg, geometry.ringsByOwner());
+        appendOwnerRings(svg, geometry.ringsByOwner());
         appendSites(svg, fixture.getSites());
         svg.append("</g>\n</svg>\n");
         try {
@@ -106,7 +106,7 @@ final class SectorSvgWriter {
     }
 
     // Only unowned cells draw their own fill and outline on the real map; a owned cell
-    // contributes its fill through its bloc's traced cluster instead, so drawing it here
+    // contributes its fill through its owner's traced cluster instead, so drawing it here
     // too would show a border the game never paints. The key comes off the geometry rather
     // than the fixture, so a cell the build itself grouped - or unowned - is drawn as the
     // build left it, not as the sector was handed in.
@@ -119,14 +119,14 @@ final class SectorSvgWriter {
         }
     }
 
-    // Each bloc as ONE path of all its rings, filled under the even-odd rule, so a ring wound
-    // against the rest reads as a hole in it rather than as another island of colour. A bloc's
+    // Each owner as ONE path of all its rings, filled under the even-odd rule, so a ring wound
+    // against the rest reads as a hole in it rather than as another island of colour. An owner's
     // enclaves and the keep-out clearings punched into it are both carried that way, and drawing
     // each ring on its own would paint them solid - the exact opposite of what they mean.
-    private static void appendBlocRings(
-            StringBuilder svg, Map<String, List<List<double[]>>> ringsByBloc) {
-        for (var entry : ringsByBloc.entrySet()) {
-            var colour = pickBlocColour(entry.getKey());
+    private static void appendOwnerRings(
+            StringBuilder svg, Map<String, List<List<double[]>>> ringsByOwner) {
+        for (var entry : ringsByOwner.entrySet()) {
+            var colour = pickOwnerColour(entry.getKey());
             var subPaths = new StringBuilder();
             for (var ring : entry.getValue()) {
                 if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
@@ -144,7 +144,7 @@ final class SectorSvgWriter {
             }
             svg.append("<path fill-rule=\"evenodd\" d=\"").append(subPaths)
                     .append("\" fill=\"").append(colour)
-                    .append("\" fill-opacity=\"").append(BLOC_FILL_OPACITY)
+                    .append("\" fill-opacity=\"").append(OWNER_FILL_OPACITY)
                     .append("\" stroke=\"").append(colour)
                     .append("\" stroke-width=\"").append(fmt(RING_STROKE)).append("\"/>\n");
         }
@@ -169,14 +169,14 @@ final class SectorSvgWriter {
         }
         svg.append("\" fill=\"").append(fill).append('"');
         if (!"none".equals(fill)) {
-            svg.append(" fill-opacity=\"").append(BLOC_FILL_OPACITY).append('"');
+            svg.append(" fill-opacity=\"").append(OWNER_FILL_OPACITY).append('"');
         }
         svg.append(" stroke=\"").append(stroke).append("\" stroke-width=\"")
                 .append(fmt(strokeWidth)).append("\"/>\n");
     }
 
-    private static String pickBlocColour(String blocId) {
-        return "hsl(" + Math.floorMod(blocId.hashCode(), HUE_RANGE) + " 80% 55%)";
+    private static String pickOwnerColour(String ownerId) {
+        return "hsl(" + Math.floorMod(ownerId.hashCode(), HUE_RANGE) + " 80% 55%)";
     }
 
     private static Bounds computeBounds(List<double[]> sites) {

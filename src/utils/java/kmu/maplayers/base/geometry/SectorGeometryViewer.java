@@ -74,7 +74,7 @@ import javax.swing.SwingUtilities;
  *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}.</li>
  *   <li><i>Painting it</i> - {@code RenderStyleReader.readRenderStyle}, {@code MapPalettes},
  *       {@code ClusterRenderer}, the label pass, and {@code KmuPoliticalMapSettings} entirely.
- *       Nothing reads {@code Global}. Colours here are hash-derived hues for telling blocs
+ *       Nothing reads {@code Global}. Colours here are hash-derived hues for telling owners
  *       apart, never the faction palette, and this is Java2D, so no blend mode, line
  *       smoothing, corner rounding, hatching, or layering against vanilla is exercised.</li>
  * </ul>
@@ -103,9 +103,9 @@ final class SectorGeometryViewer {
     private static final float CELL_STROKE = 30f;
     private static final float RING_STROKE = 90f;
     private static final int HUE_RANGE = 360;
-    private static final float BLOC_SATURATION = 0.8f;
-    private static final float BLOC_BRIGHTNESS = 0.55f;
-    private static final int BLOC_FILL_ALPHA = 90;
+    private static final float OWNER_SATURATION = 0.8f;
+    private static final float OWNER_BRIGHTNESS = 0.55f;
+    private static final int OWNER_FILL_ALPHA = 90;
     private static final int OPAQUE_ALPHA = 255;
     private static final int PANEL_PADDING = 8;
     private static final int SLIDER_ROW_PADDING = 4;
@@ -172,7 +172,7 @@ final class SectorGeometryViewer {
         controls.setPreferredSize(new Dimension(CONTROL_WIDTH, 0));
         controls.setBorder(BorderFactory.createEmptyBorder(
                 PANEL_PADDING, PANEL_PADDING, PANEL_PADDING, PANEL_PADDING));
-        controls.add(buildSlider("Territory reach (cell radius)", REACH_MINIMUM, REACH_MAXIMUM,
+        controls.add(buildSlider("Cell reach (cell radius)", REACH_MINIMUM, REACH_MAXIMUM,
                 parameters.cellRadius(),
                 value -> parameters = new SectorGeometryParameters(value,
                         parameters.boundSegments(), parameters.borderInset(),
@@ -249,14 +249,14 @@ final class SectorGeometryViewer {
         geometry = SectorGeometry.buildSectorGeometry(fixture, parameters);
         lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
         canvas.statusLabel.setText(String.format(
-                "<html>%d systems, %d blocs<br>rebuilt in %d ms<br><br>"
+                "<html>%d systems, %d owners<br>rebuilt in %d ms<br><br>"
                         + "drag to pan, wheel to zoom</html>",
                 fixture.getSystemIds().size(), geometry.ringsByOwner().size(), lastBuildMillis));
     }
 
-    private static Color pickBlocColour(String blocId, int alpha) {
-        var hue = Math.floorMod(blocId.hashCode(), HUE_RANGE) / (float) HUE_RANGE;
-        var opaque = Color.getHSBColor(hue, BLOC_SATURATION, BLOC_BRIGHTNESS);
+    private static Color pickOwnerColour(String ownerId, int alpha) {
+        var hue = Math.floorMod(ownerId.hashCode(), HUE_RANGE) / (float) HUE_RANGE;
+        var opaque = Color.getHSBColor(hue, OWNER_SATURATION, OWNER_BRIGHTNESS);
         return new Color(opaque.getRed(), opaque.getGreen(), opaque.getBlue(), alpha);
     }
 
@@ -343,18 +343,18 @@ final class SectorGeometryViewer {
                 g2.setColor(NEUTRAL_COLOUR);
                 g2.draw(buildPath(entry.getValue().fillPolygon()));
             }
-            // One path per bloc, filled even-odd, so a ring wound against the rest cuts a hole in
+            // One path per owner, filled even-odd, so a ring wound against the rest cuts a hole in
             // it - an enclave - instead of painting over it solid. Filling each ring on its own
-            // paints an enclave as another island of the bloc's colour, which is the opposite of
+            // paints an enclave as another island of the owner's colour, which is the opposite of
             // what it means.
             for (var entry : geometry.ringsByOwner().entrySet()) {
                 var cluster = new Path2D.Double(Path2D.WIND_EVEN_ODD);
                 for (var ring : entry.getValue()) {
                     cluster.append(buildPath(ring), false);
                 }
-                g2.setColor(pickBlocColour(entry.getKey(), BLOC_FILL_ALPHA));
+                g2.setColor(pickOwnerColour(entry.getKey(), OWNER_FILL_ALPHA));
                 g2.fill(cluster);
-                g2.setColor(pickBlocColour(entry.getKey(), OPAQUE_ALPHA));
+                g2.setColor(pickOwnerColour(entry.getKey(), OPAQUE_ALPHA));
                 g2.draw(cluster);
             }
             g2.setColor(SITE_COLOUR);

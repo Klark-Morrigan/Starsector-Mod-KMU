@@ -17,12 +17,12 @@ import java.util.Map;
 import java.util.TreeSet;
 
 /**
- * A real sector's sites and blocs, so the map geometry can be exercised over a live layout
+ * A real sector's sites and owners, so the map geometry can be exercised over a live layout
  * instead of hand-built squares.
  *
  * <p>Hand-built cells answer "does this rule fire". They cannot produce what a real sector
  * does: near-collinear triples, a pair of systems 608 units apart, voids fourteen thousand
- * units wide, and seventy blocs whose cells meet at every angle. Those are the shapes an
+ * units wide, and seventy owners whose cells meet at every angle. Those are the shapes an
  * offset, a chainer, or a corner join actually breaks on, so they are worth running
  * against.
  *
@@ -31,7 +31,7 @@ import java.util.TreeSet;
  * and mod sets, so it is deliberately not part of the build: this fixture is the only
  * source, and no test reads a save.
  *
- * <p>Each system's score is a realistic spread of bloc strengths, not the real
+ * <p>Each system's score is a realistic spread of owner strengths, not the real
  * {@code DominanceRules} weight - the fixture's own header says so. It is here to shape
  * geometry, never to assert what dominance resolves to.
  */
@@ -62,7 +62,7 @@ final class SectorFixture {
      * over one favourite.
      *
      * <p>One sector only ever proves things about its own shape. A second with a different
-     * density, empty-space ratio, or bloc count produces triples, spacings, and cluster
+     * density, empty-space ratio, or owner count produces triples, spacings, and cluster
      * shapes the first never does - and those are what the geometry breaks on. Enumerating
      * the folder rather than listing names means dropping a new extract in is all it takes
      * to widen coverage.
@@ -128,7 +128,7 @@ final class SectorFixture {
 
     /**
      * The owner per system, in the shape every geometry consumer takes: an owned
-     * system maps to its bloc id, and an unowned one is absent from the map entirely -
+     * system maps to its owner id, and an unowned one is absent from the map entirely -
      * which is what makes it a frontier star to {@link EdgeClassifier}.
      *
      * @return the key map, keyed by system id
