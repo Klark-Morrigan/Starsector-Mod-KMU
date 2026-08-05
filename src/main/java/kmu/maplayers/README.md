@@ -191,9 +191,11 @@ about what the overlay means.
   a tooltip stating one amount of detail needs no case of its own. What writes that mode is
   `HoverTooltipDetailModeInput`, a campaign input listener claiming F1 pre-core: a render pass is
   handed no events and so can consume none, which is why reading the toggle and drawing its result
-  are two passes agreeing through the holder. It gates on the dispatcher's own pair, so the key is
-  claimed when and only when a box could be drawn and vanilla keeps it everywhere else, and it runs
-  below the sidebar's listener so a tab hotkey keeps the first claim on any key it is bound to. That
+  are two passes agreeing through the holder. Both read one gate seam, `HoverTooltipGates` - the
+  settings tiers above any layer, and a map on screen - rather than a copy each, so the key is
+  claimed when and only when a box could be drawn and a condition added later reaches both passes;
+  vanilla keeps F1 everywhere else, and the listener runs below the sidebar's so a tab hotkey keeps
+  the first claim on any key it is bound to. That
   map gate is host-blind and
   look-blind (KMLib's
   `MapPresence.isAnyMapShowing`), so the box draws wherever the layer paints: the sector map and the intel

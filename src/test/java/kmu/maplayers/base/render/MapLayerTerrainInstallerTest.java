@@ -203,7 +203,7 @@ class MapLayerTerrainInstallerTest {
             // would paint the starscape overlay twice and double the alpha of every fill. Only the
             // already-present path is driven here - the absent path builds the entity, whose
             // obfuscated supertype chain a verifying JVM refuses to load, which is why the decision
-            // itself is pinned through hasMapLayerTerrain below.
+            // itself is pinned through findMapLayerTerrain below.
             var hyperspaceMock = buildHyperspaceCarrying(
                 buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin()));
 
@@ -259,20 +259,21 @@ class MapLayerTerrainInstallerTest {
 
     // Exercised with the starscape variant's wiring: it is the variant whose install cannot be
     // driven end to end from a test, so this is where its presence decision is pinned. The
-    // schematic one's is covered through its own install above.
+    // schematic one's is covered through its own install above. The reseat reads through this same
+    // walk to get hold of the entity it moves, so a match loosened here would move a stranger's.
     @Nested
-    class HasMapLayerTerrain {
+    class FindMapLayerTerrain {
 
         @Test
         void findsTheStarscapeVariantByItsPluginClass() {
-            
+
             var starscapeTerrainMock =
                 buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
 
-            assertThat(MapLayerTerrainInstaller.hasMapLayerTerrain(
+            assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(starscapeTerrainMock),
                     MapLayerTerrainInstaller.STARSCAPE_TERRAIN))
-                .isTrue();
+                .isSameAs(starscapeTerrainMock);
         }
 
         @Test
@@ -283,10 +284,10 @@ class MapLayerTerrainInstallerTest {
             var schematicTerrainMock =
                 buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
 
-            assertThat(MapLayerTerrainInstaller.hasMapLayerTerrain(
+            assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(schematicTerrainMock),
                     MapLayerTerrainInstaller.STARSCAPE_TERRAIN))
-                .isFalse();
+                .isNull();
         }
 
         @Test
@@ -296,10 +297,10 @@ class MapLayerTerrainInstallerTest {
             var slipstreamTerrainMock =
                 buildTerrainMock(WHITELISTED_MAP_TYPE, mock(CampaignTerrainPlugin.class));
 
-            assertThat(MapLayerTerrainInstaller.hasMapLayerTerrain(
+            assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(slipstreamTerrainMock),
                     MapLayerTerrainInstaller.STARSCAPE_TERRAIN))
-                .isFalse();
+                .isNull();
         }
 
         @Test
@@ -308,18 +309,18 @@ class MapLayerTerrainInstallerTest {
             // the null would fail the whole load-time install rather than skip one entity.
             var pluginlessTerrainMock = buildTerrainMock(WHITELISTED_MAP_TYPE, null);
 
-            assertThat(MapLayerTerrainInstaller.hasMapLayerTerrain(
+            assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(pluginlessTerrainMock),
                     MapLayerTerrainInstaller.STARSCAPE_TERRAIN))
-                .isFalse();
+                .isNull();
         }
 
         @Test
         void reportsAbsentForALocationCarryingNoTerrain() {
-            assertThat(MapLayerTerrainInstaller.hasMapLayerTerrain(
+            assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(),
                     MapLayerTerrainInstaller.STARSCAPE_TERRAIN))
-                .isFalse();
+                .isNull();
         }
     }
 

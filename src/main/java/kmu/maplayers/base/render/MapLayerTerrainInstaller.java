@@ -108,6 +108,12 @@ public final class MapLayerTerrainInstaller {
      * {@code CampaignTerrain} and so could never produce the subclass whose reported type is what
      * gets this variant past the map widget's starscape filter; {@code addEntity} reaches the same
      * registration {@code addTerrain} would have.
+     *
+     * <p>A per-load sweep rather than a one-time seed, for a reason beyond the renames: this variant
+     * is briefly taken out of hyperspace and put back on the next advance every time a map opens
+     * onto the starfield, so a save written inside that one-advance window holds no starscape terrain
+     * at all. This is what such a save comes back with, which is why the window needs no recovery
+     * path of its own.
      */
     public static void installStarscapeTerrain(SectorAPI sector) {
         installMapLayerTerrain(
@@ -115,6 +121,27 @@ public final class MapLayerTerrainInstaller {
             STARSCAPE_TERRAIN,
             hyperspace -> hyperspace.addEntity(
                 new SectorMapLayerStarscapeTerrain(SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE)));
+    }
+
+    /**
+     * The starscape terrain this save is carrying, or null while hyperspace holds none - which is
+     * the ordinary state before {@link #installStarscapeTerrain} has run for the load, and during
+     * the advance the reseat holds it out.
+     *
+     * <p>Published because the entity has to be reachable from outside this package without the
+     * variant that identifies it being: what marks one as ours is the plugin class, and a caller
+     * given that would be holding a second copy of a rule that changes whenever the pair does. Each
+     * call resolves it afresh, so a caller holding the answer across a save load is holding a stale
+     * entity by its own choice rather than by this handing one out.
+     */
+    public static CampaignTerrainAPI findStarscapeTerrain(SectorAPI sector) {
+        if (sector == null) {
+            return null;
+        }
+        var hyperspace = sector.getHyperspace();
+        return hyperspace == null
+            ? null
+            : findMapLayerTerrain(hyperspace.getTerrainCopy(), STARSCAPE_TERRAIN);
     }
 
     /**
@@ -138,19 +165,25 @@ public final class MapLayerTerrainInstaller {
         x.alias(SectorMapLayerTerrainPlugin.class.getName(), SectorMapLayerTerrainPlugin.class);
     }
 
-    // Whether this location already carries the given variant's terrain. Takes the terrain list
-    // rather than the location so the decision can be exercised on its own: the starscape variant's
-    // install cannot be driven from a test at all, its add step constructing an entity whose
-    // obfuscated supertype chain a verifying JVM refuses to load, which leaves this the one decision
-    // on that path a test can reach.
-    static boolean hasMapLayerTerrain(
-            List<CampaignTerrainAPI> locationTerrain, MapLayerTerrainVariant variant) {
+    // The live terrain this location carries for the given variant, or null when it carries none.
+    // Takes the terrain list rather than the location so the decision can be exercised on its own:
+    // the starscape variant's install cannot be driven from a test at all, its add step constructing
+    // an entity whose obfuscated supertype chain a verifying JVM refuses to load, which leaves this
+    // the one decision on that path a test can reach.
+    //
+    // Answers with the entity rather than with a bare present/absent because the reseat needs the
+    // entity itself to move, and a second by-plugin walk beside this one would be the same guard
+    // written twice - of which one goes stale at the first change to how a variant is recognised.
+    static CampaignTerrainAPI findMapLayerTerrain(
+            List<CampaignTerrainAPI> locationTerrain,
+            MapLayerTerrainVariant variant) {
+
         for (var terrain : locationTerrain) {
             if (variant.isCurrentTerrain(terrain)) {
-                return true;
+                return terrain;
             }
         }
-        return false;
+        return null;
     }
 
     // The install shape both variants share: retire anything of ours left under a type id this mod
@@ -163,6 +196,7 @@ public final class MapLayerTerrainInstaller {
             SectorAPI sector,
             MapLayerTerrainVariant variant,
             Consumer<LocationAPI> addTerrainToLocation) {
+
         if (sector == null) {
             return;
         }
@@ -179,7 +213,7 @@ public final class MapLayerTerrainInstaller {
 
         // One terrain instance per save: a reloaded save already carries it
         // (terrain persists), so skip if a copy is present to avoid stacking.
-        if (hasMapLayerTerrain(hyperspace.getTerrainCopy(), variant)) {
+        if (findMapLayerTerrain(hyperspace.getTerrainCopy(), variant) != null) {
             return;
         }
 
@@ -197,7 +231,9 @@ public final class MapLayerTerrainInstaller {
     // old one, whose spec no longer resolves; leaving it would also slip past the presence check
     // and stack a second overlay on top of it, painting every fill at doubled alpha.
     private static void removeStaleMapLayerTerrain(
-            LocationAPI hyperspace, MapLayerTerrainVariant variant) {
+            LocationAPI hyperspace,
+            MapLayerTerrainVariant variant) {
+                
         // getTerrainCopy hands back a copy, so removing while walking it is safe.
         for (var terrain : hyperspace.getTerrainCopy()) {
             if (variant.isStaleTerrain(terrain)) {

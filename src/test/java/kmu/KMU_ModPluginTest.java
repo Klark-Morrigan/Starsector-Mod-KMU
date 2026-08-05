@@ -17,7 +17,6 @@ import kmu.ui.context.StarsectorMarketUiContextTracker;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

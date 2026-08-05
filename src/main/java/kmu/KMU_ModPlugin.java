@@ -244,26 +244,17 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // is re-added fresh each load and never duplicates. Mirrors the sidebar's contract so exactly one
     // renders.
     static void installMapLayerHoverTooltip(SectorAPI sector) {
-        if (sector == null) {
-            return;
-        }
-
-        var listenerManager = sector.getListenerManager();
-        if (listenerManager == null) {
-            return;
-        }
-
-        listenerManager.removeListenerOfClass(MapLayerCellTooltip.class);
         // Both live reads are supplied rather than built by the dispatcher, so a test can stand
         // stand-ins in their place and pin the step-aside and the on-screen gate. The map read is
         // host-blind: the box draws wherever the layer paints, which is the sector map and the intel
         // screen's map visor alike, and look-blind: the layers paint through a terrain pair, so the
         // Starscape filter changes what is under the box rather than whether there is a box.
-        listenerManager.addListener(
-            new MapLayerCellTooltip(
+        installTransientListener(
+            sector,
+            MapLayerCellTooltip.class,
+            () -> new MapLayerCellTooltip(
                 new VanillaMapTooltip(),
-                new MapPresence()::isAnyMapShowing),
-            true);
+                buildMapPresenceRead()));
     }
 
     // Registers the input listener that reads the hover box's detail-mode toggle key. A separate
@@ -283,13 +274,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
             return;
         }
 
-        listenerManager.removeListenerOfClass(HoverTooltipDetailModeInput.class);
-        // The same map read the dispatcher is handed, so the key is claimed on exactly the screens
-        // and looks the box it switches can draw on. Supplied rather than built by the listener for
-        // the reason the dispatcher takes it supplied: a test can then name the answer.
-        listenerManager.addListener(
-            new HoverTooltipDetailModeInput(new MapPresence()::isAnyMapShowing),
-            true);
+        listenerManager.removeListenerOfClass(listenerClass);
+        listenerManager.addListener(buildListener.get(), true);
     }
 
     // Adds one listener to the sector unless a listener of that class is already registered, which a
