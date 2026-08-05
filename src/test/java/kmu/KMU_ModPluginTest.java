@@ -4,9 +4,10 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmlib.starsector.ui.map.icons.MapIconReseater;
+
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.render.MapLayerStarscapeTerrainReseater;
 import kmu.maplayers.base.render.MapLayerTerrainInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
@@ -197,6 +198,59 @@ class KMU_ModPluginTest {
                 KMU_ModPlugin.installHoverTooltipDetailModeInput(buildSector(null));
 
             assertThatCode(detailModeInputInstallOnNullManager::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class InstallStarscapeTerrainReseater {
+
+        @Test
+        void installsTheReseaterAsATransientScript() {
+            // addTransientScript, never addScript: this script takes the starscape terrain out of
+            // hyperspace for one advance, so one restored from a save alongside the one added on
+            // load would have two latches racing to move and put back the same entity - and would
+            // bake a library class's name into the file.
+            var sectorMock = mock(SectorAPI.class);
+
+            KMU_ModPlugin.installStarscapeTerrainReseater(sectorMock);
+
+            verify(sectorMock)
+                .addTransientScript(any(MapIconReseater.class));
+            verify(sectorMock, never())
+                .addScript(any());
+        }
+
+        @Test
+        void installsAFreshReseaterPerLoadSoTheFirstMapOpenIsStillReseated() {
+            // The latch arms on the edge into "a starscape map is showing", so a script carried
+            // across loads would come back believing that edge had already passed and skip the
+            // reseat the newly loaded sector's first map open is owed.
+            var firstLoadSectorMock = mock(SectorAPI.class);
+            var secondLoadSectorMock = mock(SectorAPI.class);
+
+            KMU_ModPlugin.installStarscapeTerrainReseater(firstLoadSectorMock);
+            KMU_ModPlugin.installStarscapeTerrainReseater(secondLoadSectorMock);
+
+            var firstReseater = ArgumentCaptor.forClass(MapIconReseater.class);
+            var secondReseater = ArgumentCaptor.forClass(MapIconReseater.class);
+
+            verify(firstLoadSectorMock)
+                .addTransientScript(firstReseater.capture());
+            verify(secondLoadSectorMock)
+                .addTransientScript(secondReseater.capture());
+
+            assertThat(secondReseater.getValue())
+                .isNotSameAs(firstReseater.getValue());
+        }
+
+        @Test
+        void toleratesANullSector() {
+
+            var reseaterInstallOnNullSector = (Runnable) () ->
+                KMU_ModPlugin.installStarscapeTerrainReseater(null);
+
+            assertThatCode(reseaterInstallOnNullSector::run)
                 .doesNotThrowAnyException();
         }
     }

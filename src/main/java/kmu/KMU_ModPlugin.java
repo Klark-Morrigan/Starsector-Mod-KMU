@@ -4,6 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
@@ -30,6 +31,7 @@ import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.apache.log4j.Logger;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -92,6 +94,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // one down with it and leave the map painting nothing in either mode.
         runGuardedStep("Failed to install KMU sector map layer starscape terrain",
             () -> MapLayerTerrainInstaller.installStarscapeTerrain(Global.getSector()));
+
+        runGuardedStep("Failed to install KMU sector map layer starscape terrain reseater",
+            () -> installStarscapeTerrainReseater(Global.getSector()));
 
         runGuardedStep("Failed to install KMU political map discovery listener",
             () -> installPoliticalMapDiscoveryListener(Global.getSector()));
@@ -183,6 +188,26 @@ public class KMU_ModPlugin extends BaseModPlugin {
             sector, PoliticalMapColonisationListener.class, PoliticalMapColonisationListener::new);
     }
 
+    // Registers the per-frame script that lifts the starscape terrain over the starfield's nebulae
+    // each time a map opens onto them. Moving an icon to the end of the widget's draw order is
+    // KMLib's, and it is told only which map matters and which entity to move; that the entity is a
+    // terrain, and that the fog above it is what makes the move worth making, are KMU's side of it.
+    //
+    // Both ports are read afresh per call rather than resolved here, since a save load replaces the
+    // entity and the script outlives no load anyway. Transient: pure runtime logic that must not
+    // enter a save, so it is re-added fresh each load and never duplicates across reloads.
+    static void installStarscapeTerrainReseater(SectorAPI sector) {
+
+        if (sector == null) {
+            return;
+        }
+        // A fresh script per load, so the previous save's open-map latch cannot carry into this one
+        // and skip the first reseat this sector is owed.
+        sector.addTransientScript(new MapIconReseater(
+            new MapPresence()::isStarscapeMapShowing,
+            () -> MapLayerTerrainInstaller.findStarscapeTerrain(Global.getSector())));
+    }
+
     // Registers the per-frame watcher that refreshes the political map when a
     // change the engine fires no event for slips past the listeners - the set of
     // drawn systems shifting (a gate activating, a jump point established), a drawn
@@ -265,6 +290,33 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // save-relevant state, and a registration an older save carried would flip the mode twice per
     // press.
     static void installHoverTooltipDetailModeInput(SectorAPI sector) {
+        // Handed the same map read the dispatcher is, so the key is claimed on exactly the screens
+        // and looks the box it switches can draw on - which is the whole of what makes the toggle
+        // honest, and is pinned against this composition in MapLayerCellTooltipGateIntegrationTest.
+        installTransientListener(
+            sector,
+            HoverTooltipDetailModeInput.class,
+            () -> new HoverTooltipDetailModeInput(buildMapPresenceRead()));
+    }
+
+    // The live "is a map on screen" read the hover box and its toggle key both gate on. Built here
+    // rather than at each listener because the two must answer alike: a key claimed on a wider read
+    // than the box draws behind would be swallowed on a screen showing no box, and on a narrower one
+    // it would go dead exactly where the box is live.
+    private static BooleanSupplier buildMapPresenceRead() {
+        return new MapPresence()::isAnyMapShowing;
+    }
+
+    // Adds one listener to the sector, clearing any registration of that class first, which a
+    // reloaded save is what makes possible: a save that captured one persistently would restore it
+    // alongside the one added on load, and two of these do visible damage - two boxes over one cell,
+    // or a key flipped twice per press and so apparently dead. Transient by that same design: these
+    // hold cached GL text or live view state, neither of which belongs in a save.
+    //
+    // The has-check shape is the opposite call, and is installListenerOnce below: it is for the
+    // listeners meant to survive into the save, which must not be cleared out from under it.
+    private static void installTransientListener(
+            SectorAPI sector, Class<?> listenerClass, Supplier<?> buildListener) {
         if (sector == null) {
             return;
         }

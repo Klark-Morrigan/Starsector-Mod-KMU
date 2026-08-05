@@ -11,6 +11,7 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 
 - [Who gets the frame](#who-gets-the-frame)
 - [Two terrains, one draw](#two-terrains-one-draw)
+- [Where the starscape half sits in the starfield](#where-the-starscape-half-sits-in-the-starfield)
 - [What is not here](#what-is-not-here)
 
 ## Who gets the frame
@@ -55,6 +56,33 @@ spec from the row id it is constructed with and then reports the whitelisted map
 getter's place, so the id cannot be read back off a loaded entity: a sweep by type id can neither
 recognise nor retire one left behind by a renamed row. Renaming that row needs a bridge on the
 entity itself.
+
+## Where the starscape half sits in the starfield
+
+Being drawn at all and being drawn on top are separate questions. The map widget seeds one icon per
+entity in insertion order and appends the starfield's synthetic nebulae after everything the
+location holds, so the starscape half is drawn beneath them - and the one pass that runs after every
+terrain icon is the pass the widget skips in this mode.
+
+KMLib's `MapIconReseater` answers the second question, exploiting the same insertion order: an icon
+missing from one rendered frame is dropped, and a re-added entity re-enters at the tail. Each time a
+map opens onto the starfield, the terrain leaves hyperspace for a single advance and comes back -
+past the nebulae, and no further, star and fleet glyphs being walked in a later pass.
+
+Moving an icon is nobody's content, so none of it is here. The script is told which map matters and
+handed a way to find the entity; KMU supplies the starscape read and
+`MapLayerTerrainInstaller.findStarscapeTerrain`, which resolves it afresh per call through the same
+plugin-class guard the install uses, so the entity a load brought back is the one moved. That the
+entity is a terrain, and that the fog above it is what makes the move worth making, are the only
+parts of this KMU holds - and both live at the entry point that wires the two together.
+
+The one consequence worth knowing here: the terrain is out of hyperspace for one advance, so a save
+written inside that window carries none. `installStarscapeTerrain` is what brings it back, which is
+among the reasons it stays a per-load sweep.
+
+This is an artefact of how the widget seeds itself, not a promise the engine makes. A build that
+seeds differently leaves the overlay where it paints today, beneath the nebulae, with nothing else
+disturbed - and KMLib's `MapIconOrderTrace` is what says so from a running game.
 
 ## What is not here
 
