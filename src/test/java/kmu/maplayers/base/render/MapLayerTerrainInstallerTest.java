@@ -257,6 +257,68 @@ class MapLayerTerrainInstallerTest {
         }
     }
 
+    // The published read, as opposed to the walk below it. What is pinned here is the path down to
+    // that walk and the variant it is aimed at, since the caller is a per-frame script that asks on
+    // every advance it might act on - so every way a sector can decline to answer is an ordinary
+    // frame rather than an error.
+    @Nested
+    class FindStarscapeTerrain {
+
+        @Test
+        void findsTheStarscapeTerrainHyperspaceIsCarrying() {
+
+            var starscapeTerrainMock =
+                buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
+
+            var sectorMock =
+                buildSectorWithHyperspace(buildHyperspaceCarrying(starscapeTerrainMock));
+
+            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(sectorMock))
+                .isSameAs(starscapeTerrainMock);
+        }
+
+        @Test
+        void doesNotAnswerWithTheSchematicHalf() {
+            // Both variants are installed side by side, so a loaded save always carries both and
+            // this walk always has a wrong answer available. Handing back the schematic one would
+            // move the half the engine is already drawing and leave the starscape half exactly
+            // where it was - which looks like nothing happening rather than like a mix-up.
+            var schematicTerrainMock =
+                buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
+
+            var sectorMock =
+                buildSectorWithHyperspace(buildHyperspaceCarrying(schematicTerrainMock));
+
+            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(sectorMock))
+                .isNull();
+        }
+
+        @Test
+        void answersWithNothingWhileHyperspaceCarriesNoTerrain() {
+            // The state every load passes through before the install runs, and the state the reseat
+            // itself creates for one advance, so absent has to be an answer rather than a fault.
+            var sectorMock = buildSectorWithHyperspace(buildHyperspaceCarrying());
+
+            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(sectorMock))
+                .isNull();
+        }
+
+        @Test
+        void answersWithNothingWhenThereIsNoHyperspace() {
+
+            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(
+                    buildSectorWithHyperspace(null)))
+                .isNull();
+        }
+
+        @Test
+        void answersWithNothingWhenThereIsNoSector() {
+
+            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(null))
+                .isNull();
+        }
+    }
+
     // Exercised with the starscape variant's wiring: it is the variant whose install cannot be
     // driven end to end from a test, so this is where its presence decision is pinned. The
     // schematic one's is covered through its own install above. The reseat reads through this same
