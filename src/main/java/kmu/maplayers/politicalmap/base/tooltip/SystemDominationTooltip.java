@@ -4,13 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
-import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.base.tooltip.SystemCellTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
@@ -36,14 +34,12 @@ import java.util.List;
  * line over them, however few it holds. This box states only which groups it lists and under which
  * heading.
  *
- * <p>What the system is beyond its standings - dead or unpopulated, or held by decree as some
- * faction's core - is stated above the contest, so a player crossing between this layer and the claims
- * layer reads one fact one way. A decree is not merely first but heads the box: it is the only line
- * here that settles the system outright, so it is centred tight under the system name
- * {@link SystemCellTooltip} titles the box with and reads as part of that heading, with the box's one
- * parting falling beneath it. A system that ranks empty is not skipped: those lines are all it has, and
- * they say why it holds no standing, so the hover reads as landing on a real but unheld system rather
- * than on nothing.
+ * <p>What the system is beyond its standings - dead or unpopulated - is stated above the contest, so a
+ * player crossing between this layer and the claims layer reads one fact one way. A system that ranks
+ * empty is not skipped: that line is all it has, and it says why the system holds no standing, so the
+ * hover reads as landing on a real but unheld system rather than on nothing. A decree over the system
+ * is stated higher still, heading the box as it heads every one of this layer's
+ * ({@link PoliticalMapCellTooltip}).
  *
  * <p>Stateless past the reader it is built around - the view, the live economy, and the settings are
  * read afresh each paint - so one shared instance serves both views.
@@ -60,28 +56,6 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
 
     SystemDominationTooltip(ClaimBreakdownReader claimBreakdownReader) {
         super(claimBreakdownReader);
-    }
-
-    @Override
-    protected List<TooltipRow> buildTitleRows(SectorAPI sector, StarSystemAPI system) {
-        // Whose space this is heads the box rather than sitting in it: a decree settles the system
-        // outright, so it is read straight off the system name above it instead of being found among
-        // the findings below. Being a title line is also what parts it from the status beneath - the
-        // box's one break falls under it rather than above it.
-        //
-        // The decree is read on its own rather than out of the full claim breakdown: this box only has
-        // to know whether one holds the system, and scoring every market in it to answer that would
-        // charge the whole claim computation to every faction and alliance hover.
-        //
-        // No view is needed, unlike the ranking below: a decree is a fact about the system rather than
-        // about how this layer happens to be grouping it, so it reads the same under either view.
-        var rows = new ArrayList<TooltipRow>();
-
-        CoreTerritoryRow
-            .resolveCoreTerritoryRow(sector, claimBreakdownReader.readCoreFactionId(system))
-            .ifPresent(rows::add);
-
-        return rows;
     }
 
     @Override

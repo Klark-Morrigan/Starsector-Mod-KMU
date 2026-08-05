@@ -131,9 +131,11 @@ the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip
 contest behind a claims fill, its claimant over the rivals who could have taken the system and the
 factions present that never could - plus what both are written from: `FactionTooltipEntry` (a faction
 as something a block lists) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
-`StandingRowResolver` (the ranked groups as entries), and the territory and status lines. Both sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer:
-either box may have to say a system is held by decree, and a decree resolved one way on one view and
-another way on the next would answer one hover two ways a keystroke apart),
+`StandingRowResolver` (the ranked groups as entries), and the territory and status lines. Both sit on
+`PoliticalMapCellTooltip`, which binds the claim read for the whole layer and heads every one of its
+boxes with the decree holding the system: either box may have to say a system is held by decree, and a
+decree resolved - or drawn - one way on one view and another way on the next would answer one hover two
+ways a keystroke apart),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound
