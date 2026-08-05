@@ -8,7 +8,6 @@ import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.hover.MapHoverGates;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
@@ -27,12 +26,12 @@ import java.util.function.BooleanSupplier;
  * branch here, and a switch-only tab - which supplies no renderer at all - shows nothing for the same
  * reason it paints nothing.
  *
- * <p>The dispatcher owns only the gates every hover tooltip shares - the settings switches that
- * answer for every layer ({@link MapHoverGates}), a map on screen in either of its looks, a
- * hovered cell, stepping aside while the vanilla map draws its own tooltip - and resolves the hovered
- * system,
- * then hands it to the injected tooltip. A layer's own tooltip switch stays with the layer, which
- * withholds its box by injecting none. The pass is
+ * <p>The dispatcher owns only the gates every hover tooltip shares - the conditions under which any
+ * box could draw at all ({@link HoverTooltipGates}), which it shares with the pass claiming the
+ * detail-mode key, plus its own two: a hovered cell, and stepping aside while the vanilla map draws
+ * its own tooltip. It then resolves the hovered system and hands it to the injected tooltip. A
+ * layer's own tooltip switch stays with the layer, which withholds its box by injecting none. The
+ * pass is
  * read-only over the hover state and consumes no input, so the vanilla star-system tooltip keeps
  * drawing; the tooltip a layer injects owns its own content, look, and any further precondition.
  *
@@ -80,20 +79,12 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
-        // The two hover switches that answer for every layer - the hovering master and the global
-        // tooltip switch. With either off no layer's box draws, whatever the map state or hover.
-        // The layer's own tooltip switch is the layer's to read: it withholds the box by injecting
-        // none, the same way a layer with nothing to say about a cell does.
-        if (!MapHoverGates.isHoverTooltipEnabled()) {
-            return;
-        }
-        // A map has to be on screen for the overlay to be up, and only then is a hover meaningful.
-        // Either look counts: the layers paint through a terrain pair, one half of which draws over
-        // the Starscape starfield, so the box follows the picture into that mode rather than
-        // vanishing with the schematic. Asked host-blind because the box belongs on either host -
-        // the terrain pass runs on the sector map and on the intel screen's map visor alike, and the
-        // box is placed at the cursor rather than against a screen.
-        if (!isAnyMapShowing.getAsBoolean()) {
+        // The conditions shared with the pass that claims the detail-mode key, asked of the one seam
+        // both read so the key cannot come to be claimed on a frame this draws nothing in: the hover
+        // switches answering for every layer, and a map on screen to draw over. The layer's own
+        // tooltip switch is not among them - it is the layer's to read, withheld by injecting no box
+        // at all, the same way a layer with nothing to say about a cell does.
+        if (!HoverTooltipGates.canAnyBoxDraw(isAnyMapShowing)) {
             return;
         }
         var hover = MapHoverState.getInstance().getHover();

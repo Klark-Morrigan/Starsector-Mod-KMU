@@ -3,8 +3,6 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
-import kmu.maplayers.base.hover.MapHoverGates;
-
 import org.lwjgl.input.Keyboard;
 
 import java.util.List;
@@ -24,12 +22,12 @@ import java.util.function.BooleanSupplier;
  * global fact and the gate below is already host-blind - the box itself draws on the sector map and
  * on the intel screen's map visor alike.
  *
- * <p>The gate is exactly the pair {@link MapLayerCellTooltip} gates its box on, which is what keeps
- * the key honest: it is claimed when and only when a box could be drawn, so it is never swallowed
- * while hover tooltips are switched off or no map is up, and vanilla keeps it everywhere else. While
- * the gate holds the mode flips whatever is hovered - even over nothing at all - so the choice is
- * never decided by what happened to be under the cursor at the moment of the press, and the next
- * hover that does offer a richer box shows it.
+ * <p>The gate is {@link HoverTooltipGates}, the same seam {@link MapLayerCellTooltip} draws behind,
+ * which is what keeps the key honest: it is claimed when and only when a box could be drawn, so it
+ * is never swallowed while hover tooltips are switched off or no map is up, and vanilla keeps it
+ * everywhere else. While the gate holds the mode flips whatever is hovered - even over nothing at
+ * all - so the choice is never decided by what happened to be under the cursor at the moment of the
+ * press, and the next hover that does offer a richer box shows it.
  */
 public final class HoverTooltipDetailModeInput implements CampaignInputListener {
 
@@ -58,12 +56,10 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
 
     @Override
     public void processCampaignInputPreCore(List<InputEventAPI> events) {
-        // The same two shared gates the box itself draws behind. Off either of them no box can be
-        // showing, so there is nothing for the key to switch and it must fall through untouched.
-        if (!MapHoverGates.isHoverTooltipEnabled()) {
-            return;
-        }
-        if (!isAnyMapShowing.getAsBoolean()) {
+        // The one seam the drawing pass reads too, rather than a second copy of its conditions: off
+        // it no box can be showing, so there is nothing for the key to switch and it must fall
+        // through untouched.
+        if (!HoverTooltipGates.canAnyBoxDraw(isAnyMapShowing)) {
             return;
         }
         for (var event : events) {
