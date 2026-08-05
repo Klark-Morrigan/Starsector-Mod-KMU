@@ -37,18 +37,18 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the map gate the install site hands the hover-tooltip dispatcher: that it is the union of the
- * two map-presence reads and not either one alone. The dispatcher takes that read as a supplier and
- * so can say nothing about which map states open it; the presence seams each answer for one state and
- * know nothing of the other. The composition that joins them is a lambda at the install site, which
- * leaves this the only level where a gate quietly narrowed back to the schematic-only read - the state
- * that is false in exactly the mode the feature exists to reach - would be caught.
+ * Pins the map gate the install site hands the hover-tooltip dispatcher: that it is the look-blind
+ * read, and not one of the look-aware ones. Which read is wired in is a choice made at the install
+ * site alone - the dispatcher takes it as a supplier and so can say nothing about which map states
+ * open it, and each presence class answers only for itself - so a gate narrowed to the schematic
+ * read, which is false in exactly the mode this feature exists to reach, would otherwise pass every
+ * other test in the suite.
  *
- * <p>Integration by necessity rather than by preference: the union is one expression, so the only
- * way to exercise it is through everything it is made of - the mod plugin's install, both real
- * presence classes, their live intel-screen binding, and the dispatcher's own gate chain. Only the
- * sector map's view state is stood in for, being the one input with a seam to stand in at; the intel
- * half needs none, since off a running game it fails closed to "no visor" on its own.
+ * <p>Integration by necessity rather than by preference: the wiring is one expression, so the only
+ * way to exercise it is through everything it reaches - the mod plugin's install, the real presence
+ * class, its live intel-screen binding, and the dispatcher's own gate chain. Only the sector map's
+ * view state is stood in for, being the one input with a seam to stand in at; the intel half needs
+ * none, since off a running game it fails closed to "no visor" on its own.
  */
 class MapLayerCellTooltipGateIntegrationTest {
 
@@ -98,9 +98,9 @@ class MapLayerCellTooltipGateIntegrationTest {
         @Test
         void drawsWhileTheSectorMapIsInStarscapeMode() {
             // The mode the whole feature exists to reach, and the one the schematic read answers
-            // false in by design. A gate that kept that read alone would hide the box exactly where
-            // the starscape terrain half is painting the layers it belongs to.
-            renderInstalledDispatcher(false, true);
+            // false in by design. A gate narrowed to that read would hide the box exactly where the
+            // starscape terrain half is painting the layers it belongs to.
+            renderInstalledDispatcher(SectorMapState.SHOWING_STARSCAPE);
 
             verify(tooltipMock)
                 .renderFor(sectorMock, systemMock);
@@ -108,9 +108,9 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         @Test
         void drawsWhileTheSectorMapIsShowingTheOrdinarySchematic() {
-            // The half that already worked, kept honest: widening the gate must not have swapped one
-            // single read for another.
-            renderInstalledDispatcher(true, false);
+            // The look that already worked, kept honest: reaching the starscape one must not have
+            // cost the other.
+            renderInstalledDispatcher(SectorMapState.SHOWING_SCHEMATIC);
 
             verify(tooltipMock)
                 .renderFor(sectorMock, systemMock);
@@ -118,10 +118,10 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         @Test
         void drawsNothingWhileNeitherHostShowsAMap() {
-            // Both halves false - the ordinary state on every screen that is not a map, which this
-            // listener is called for all the same. Without this, a gate wired permanently open would
-            // pass the two cases above.
-            renderInstalledDispatcher(false, false);
+            // The ordinary state on every screen that is not a map, which this listener is called
+            // for all the same. Without this, a gate wired permanently open would pass both cases
+            // above.
+            renderInstalledDispatcher(SectorMapState.NOT_SHOWING);
 
             verifyNoInteractions(tooltipMock);
         }
@@ -130,12 +130,14 @@ class MapLayerCellTooltipGateIntegrationTest {
     // Installs the dispatcher the way the game does and renders one frame of it, with the sector
     // map's view state answering as told and the intel half left to fail closed.
     //
-    // The install happens outside the mocked statics on purpose: it is where the presence pair and
-    // their live intel-screen binding are built, and that binding takes its logger from Global at
+    // All three of the sector map's reads are answered, not just the one the live gate consults, so
+    // that a gate narrowed to a look-aware read is caught by drawing the wrong picture rather than
+    // missed by reading an unstubbed default.
+    //
+    // The install happens outside the mocked statics on purpose: it is where the presence class and
+    // its live intel-screen binding are built, and that binding takes its logger from Global at
     // class-init, which a mocked Global would answer null for once and for the rest of the JVM.
-    private void renderInstalledDispatcher(
-            boolean isSectorMapWithStarscapeOff,
-            boolean isSectorMapInStarscapeMode) {
+    private void renderInstalledDispatcher(SectorMapState sectorMapState) {
 
         var dispatcher = installDispatcher();
 
@@ -151,11 +153,14 @@ class MapLayerCellTooltipGateIntegrationTest {
                 .thenReturn(true);
 
             mapViewMock
+                .when(CampaignMapView::isSectorMapShowing)
+                .thenReturn(sectorMapState != SectorMapState.NOT_SHOWING);
+            mapViewMock
                 .when(CampaignMapView::isSectorMapWithStarscapeOff)
-                .thenReturn(isSectorMapWithStarscapeOff);
+                .thenReturn(sectorMapState == SectorMapState.SHOWING_SCHEMATIC);
             mapViewMock
                 .when(CampaignMapView::isSectorMapInStarscapeMode)
-                .thenReturn(isSectorMapInStarscapeMode);
+                .thenReturn(sectorMapState == SectorMapState.SHOWING_STARSCAPE);
 
             globalMock
                 .when(Global::getSector)
@@ -184,5 +189,14 @@ class MapLayerCellTooltipGateIntegrationTest {
             .addListener(installedListener.capture(), eq(true));
 
         return (MapLayerCellTooltip) installedListener.getValue();
+    }
+
+    // The three sector-map states this gate can meet, named rather than spelled as a row of booleans
+    // so a case reads as the screen it stands for. The map's reads are not independent - it cannot
+    // wear both looks, nor either while it is absent - so one state drives all three.
+    private enum SectorMapState {
+        SHOWING_SCHEMATIC,
+        SHOWING_STARSCAPE,
+        NOT_SHOWING
     }
 }
