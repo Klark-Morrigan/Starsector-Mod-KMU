@@ -40,6 +40,10 @@ import static org.mockito.Mockito.when;
  * is the composition root's business and the dispatcher must not know - a layer with no renderer and
  * no registered pick at all resolve alike to nothing to draw.
  *
+ * <p>Which of an injected tooltip's boxes the detail mode calls for is pinned the same way, over
+ * stand-in tooltips: the decision is a pure read of the mode against what a tooltip offers, so it is
+ * checkable without an engine even though drawing the chosen box is not.
+ *
  * <p>The map gate is pinned as the supplier it is, open and closed, which is the whole of what this
  * level can say about it: what the live read answers, and that the installed one is the union
  * covering starscape, belong to the seams themselves and to the install site's own test.
@@ -196,6 +200,53 @@ final class MapLayerCellTooltipTest {
         void shouldDrawTooltipForIsFalseWhenNothingIsHovered() {
             assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(MapHover.NONE))
                 .isFalse();
+        }
+    }
+
+    @Nested
+    class SelectVariantFor {
+
+        @Test
+        void selectVariantForAnswersTheBaseUnderTheNormalMode() {
+            // Over a tooltip that does define a richer box: the mode is what decides, so defining a
+            // counterpart must not be enough to draw it.
+            var expandedVariantFake = new MapHoverTooltipFake();
+            var baseFake = new ExpandedVariantMapHoverTooltipFake(expandedVariantFake);
+
+            assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.NORMAL))
+                .isSameAs(baseFake);
+        }
+
+        @Test
+        void selectVariantForAnswersTheBaseUnderTheNormalModeWithoutACounterpart() {
+            // The ordinary box in the ordinary mode - the path every layer takes today, which the
+            // seam must leave exactly where it was.
+            var baseFake = new MapHoverTooltipFake();
+
+            assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.NORMAL))
+                .isSameAs(baseFake);
+        }
+
+        @Test
+        void selectVariantForAnswersTheCounterpartUnderTheExpandedMode() {
+            // The one case the toggle exists for. Asserted on the instance rather than the type,
+            // since a tooltip may well offer a counterpart of the same shape as itself.
+            var expandedVariantFake = new MapHoverTooltipFake();
+            var baseFake = new ExpandedVariantMapHoverTooltipFake(expandedVariantFake);
+
+            assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.EXPANDED))
+                .isSameAs(expandedVariantFake);
+        }
+
+        @Test
+        void selectVariantForAnswersTheBaseUnderTheExpandedModeWithoutACounterpart() {
+            // The graceful-undefined path: the mode is on, and this tooltip has nothing richer to
+            // say, so the player keeps the normal box rather than losing it. The stand-in inherits
+            // the interface's own empty answer, so this pins the default an implementation gets.
+            var baseFake = new MapHoverTooltipFake();
+
+            assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.EXPANDED))
+                .isSameAs(baseFake);
         }
     }
 

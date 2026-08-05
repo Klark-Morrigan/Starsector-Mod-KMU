@@ -35,6 +35,12 @@ import java.util.function.BooleanSupplier;
  * withholds its box by injecting none. The pass is
  * read-only over the hover state and consumes no input, so the vanilla star-system tooltip keeps
  * drawing; the tooltip a layer injects owns its own content, look, and any further precondition.
+ *
+ * <p>How much detail the drawn box states is settled here too, and by one shared fact rather than
+ * per layer: the dispatcher reads {@link HoverTooltipDetailModeState} and draws the counterpart the
+ * injected tooltip offers for that mode, or the tooltip itself when it offers none. So the choice
+ * holds across hovers and layer switches, and a tooltip that states one amount of detail needs no
+ * case of its own.
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
@@ -117,7 +123,11 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (system == null) {
             return;
         }
-        tooltip.get().renderFor(sector, system);
+        // Which of an injected tooltip's boxes to draw is the shared detail mode's call rather than
+        // the layer's: one mode selects for whatever is hovered, so it holds across hovers and layer
+        // switches instead of each layer having to remember a choice made over another one's cell.
+        selectVariantFor(tooltip.get(), HoverTooltipDetailModeState.getInstance().getMode())
+            .renderFor(sector, system);
     }
 
     // The tooltip the frame draws, asked of whatever draws for the showing screen - the same read the
@@ -129,6 +139,18 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
             return Optional.empty();
         }
         return layerRenderer.resolveHoverTooltip();
+    }
+
+    // The box the current detail mode calls for: the tooltip's richer counterpart while the mode asks
+    // for one and the tooltip defines one, and the tooltip itself in every other case - so a tooltip
+    // that defines no counterpart draws the same box under either mode rather than nothing at all.
+    // Descends exactly one level: a counterpart is never asked for a counterpart of its own, so the
+    // model cannot recurse however deeply a layer nests its variants.
+    static MapHoverTooltip selectVariantFor(MapHoverTooltip base, HoverTooltipDetailMode mode) {
+        if (mode != HoverTooltipDetailMode.EXPANDED) {
+            return base;
+        }
+        return base.resolveExpandedVariant().orElse(base);
     }
 
     // Whether a tooltip should draw for this hover - the pure part of the gate: a cell must be

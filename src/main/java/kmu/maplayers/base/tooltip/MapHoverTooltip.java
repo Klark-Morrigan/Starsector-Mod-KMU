@@ -3,6 +3,8 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import java.util.Optional;
+
 /**
  * A map layer's hover tooltip: the box a layer draws for the star system under the cursor. A layer
  * injects one - or none - through {@code MapLayerRenderer.resolveHoverTooltip}, and the shared hover
@@ -26,4 +28,23 @@ public interface MapHoverTooltip {
      * @param system the star system under the cursor, already resolved by the dispatcher
      */
     void renderFor(SectorAPI sector, StarSystemAPI system);
+
+    /**
+     * This box's richer counterpart - the one drawn in its place while the shared detail mode reads
+     * {@link HoverTooltipDetailMode#EXPANDED} - or empty when this tooltip states one amount of
+     * detail only.
+     *
+     * <p>The counterpart is a second {@code MapHoverTooltip} rather than a mode argument on
+     * {@link #renderFor}, so a tooltip opts into the richer mode by supplying a second body, exactly
+     * as a layer opts into having a tooltip at all by injecting one - and an implementation with
+     * nothing richer to say carries no branch for a mode it does not support. Empty being the
+     * default is what makes the fallback graceful: the dispatcher draws the normal box, so the
+     * toggle simply shows nothing new over a tooltip that defines no counterpart.
+     *
+     * @return the box to draw instead of this one while the expanded mode holds, or empty when this
+     *         tooltip defines no richer counterpart
+     */
+    default Optional<MapHoverTooltip> resolveExpandedVariant() {
+        return Optional.empty();
+    }
 }
