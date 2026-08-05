@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.text.ImageSpan;
@@ -15,9 +14,9 @@ import org.junit.jupiter.api.Test;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins the faction as a verdict about the whole system rather than as an entry in its table: crest and
@@ -62,7 +61,7 @@ final class FactionTooltipBannerTest {
         @Test
         void buildFactionBannerFallsBackToTheIdForAnUnknownFaction() {
 
-            var row = FactionTooltipBanner.buildFactionBanner(mock(SectorAPI.class), "ghost_faction");
+            var row = FactionTooltipBanner.buildFactionBanner(buildEmptySector(), "ghost_faction");
 
             assertThat(row.labelRuns())
                 .containsExactly(new TextSpan("ghost_faction", TEXT));
@@ -71,17 +70,9 @@ final class FactionTooltipBannerTest {
 
     private static SectorAPI buildSectorKnowingHegemony() {
 
-        var factionMock = mock(FactionAPI.class);
+        var sectorMock = buildEmptySector();
 
-        when(factionMock.getDisplayNameLong())
-            .thenReturn("The Hegemony");
-        when(factionMock.getCrest())
-            .thenReturn(HEGEMONY_CREST);
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getFaction(HEGEMONY))
-            .thenReturn(factionMock);
+        stubFaction(sectorMock, HEGEMONY, "The Hegemony", HEGEMONY_CREST);
 
         return sectorMock;
     }

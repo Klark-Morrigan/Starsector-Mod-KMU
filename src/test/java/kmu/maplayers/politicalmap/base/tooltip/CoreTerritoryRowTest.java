@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.text.ImageSpan;
@@ -16,9 +15,9 @@ import org.junit.jupiter.api.Test;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link CoreTerritoryRow}: a system under no decree yields nothing, a decreed one shows its
@@ -118,9 +117,8 @@ final class CoreTerritoryRowTest {
         @Test
         void resolveCoreTerritoryRowFallsBackToTheIdForAnUnknownFaction() {
 
-            var sectorMock = mock(SectorAPI.class);
             var row = CoreTerritoryRow
-                .resolveCoreTerritoryRow(sectorMock, "ghost_faction")
+                .resolveCoreTerritoryRow(buildEmptySector(), "ghost_faction")
                 .orElseThrow();
 
             assertThat(readLabelRun(row, CRESTLESS_FACTION_NAME_RUN))
@@ -132,7 +130,7 @@ final class CoreTerritoryRowTest {
             // A faction the game gives no crest yields no path, so the line is built from its words
             // alone rather than from an image run with nothing to load.
             var row = CoreTerritoryRow
-                .resolveCoreTerritoryRow(mock(SectorAPI.class), "ghost_faction")
+                .resolveCoreTerritoryRow(buildEmptySector(), "ghost_faction")
                 .orElseThrow();
 
             assertThat(row.labelRuns())
@@ -142,17 +140,9 @@ final class CoreTerritoryRowTest {
 
     private static SectorAPI buildSectorKnowingHegemony() {
 
-        var factionMock = mock(FactionAPI.class);
+        var sectorMock = buildEmptySector();
 
-        when(factionMock.getDisplayNameLong())
-            .thenReturn("The Hegemony");
-        when(factionMock.getCrest())
-            .thenReturn(CREST);
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getFaction("hegemony"))
-            .thenReturn(factionMock);
+        stubFaction(sectorMock, "hegemony", "The Hegemony", CREST);
 
         return sectorMock;
     }

@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
@@ -9,9 +8,9 @@ import kmu.maplayers.base.tooltip.CellTooltipRows;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins how a faction appears wherever a hovered system's breakdown lists one: its long title beside its
@@ -47,7 +46,7 @@ final class FactionTooltipEntryTest {
             // A line naming one faction reads better as a bare id than as a blank where the name
             // belongs, and a faction with no crest simply draws its name alone.
             var line = FactionTooltipEntry.buildFactionLine(
-                mock(SectorAPI.class),
+                buildEmptySector(),
                 "ghost_faction",
                 CellTooltipRows.NO_SCORE);
 
@@ -82,17 +81,9 @@ final class FactionTooltipEntryTest {
 
     private static SectorAPI buildSectorKnowingHegemony() {
 
-        var factionMock = mock(FactionAPI.class);
+        var sectorMock = buildEmptySector();
 
-        when(factionMock.getDisplayNameLong())
-            .thenReturn("The Hegemony");
-        when(factionMock.getCrest())
-            .thenReturn(HEGEMONY_CREST);
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getFaction(HEGEMONY))
-            .thenReturn(factionMock);
+        stubFaction(sectorMock, HEGEMONY, "The Hegemony", HEGEMONY_CREST);
 
         return sectorMock;
     }

@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
@@ -45,6 +44,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
@@ -158,17 +158,10 @@ final class SystemDominationTooltipTest {
             .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(Boolean.class)))
             .thenReturn(Optional.empty());
 
-        var coreFactionMock = mock(FactionAPI.class);
-
-        when(coreFactionMock.getDisplayNameLong())
-            .thenReturn("The Hegemony");
-        when(coreFactionMock.getCrest())
-            .thenReturn(MEMBER_CREST);
-
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
-        when(sectorMock.getFaction(CORE_FACTION))
-            .thenReturn(coreFactionMock);
+
+        stubFaction(sectorMock, CORE_FACTION, "The Hegemony", MEMBER_CREST);
     }
 
     @AfterEach

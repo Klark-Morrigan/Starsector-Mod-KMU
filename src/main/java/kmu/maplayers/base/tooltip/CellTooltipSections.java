@@ -2,7 +2,6 @@ package kmu.maplayers.base.tooltip;
 
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
-import kmlib.text.KmlibStrings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,17 +13,17 @@ import java.util.Optional;
  *
  * <p>A block takes {@linkplain CellTooltipEntry entries} rather than built lines, which is the whole
  * point of it. <em>What</em> a block lists is the layer's - it is the only side that knows the subject
- * matter - while the heading's placement and colour, the two tiers, the crest gutter, and the value
- * column are this construct's. So two layers listing unrelated content still list it alike, and neither
- * can author a third look by reaching for the line vocabulary itself.
+ * matter - while which shape each of those things is laid in is settled here and drawn from the one
+ * vocabulary. So two layers listing unrelated content still list it alike, and neither can author a
+ * third look by choosing a tier of its own.
  *
  * <p>Whether a heading appears at all is likewise a rule about the block and not about the body holding
  * it: a heading left standing over no entries reads as a block whose contents failed to resolve, which
  * tells the player something untrue.
  *
  * <p>Held apart from {@link CellTooltipRows} because the two answer different questions - that decides
- * how one line reads, this how a run of them is grouped and tiered - so a body states only which blocks
- * it has, in what order, and what each lists.
+ * how one line reads, this which lines a block is and which shape each takes - so a body states only
+ * which blocks it has, in what order, and what each lists.
  */
 public final class CellTooltipSections {
 
@@ -53,10 +52,10 @@ public final class CellTooltipSections {
         rows.add(CellTooltipRows.buildSectionHeadingRow(headingText));
 
         for (var entry : entries) {
-            rows.add(buildEntryRow(entry.line()));
+            rows.add(CellTooltipRows.buildEntryRow(entry.line()));
 
             for (var memberLine : entry.memberLines()) {
-                rows.add(buildMemberRow(memberLine));
+                rows.add(CellTooltipRows.buildMemberRow(memberLine));
             }
         }
         sections.add(new TooltipSection(rows));
@@ -86,35 +85,5 @@ public final class CellTooltipSections {
             Optional<? extends TooltipRow> bannerRow) {
 
         bannerRow.ifPresent(row -> sections.add(new TooltipSection(List.of(row))));
-    }
-
-    // One of the things a block lists, laid at the block's own tier: the entries of a block are the
-    // things being listed, so they open flush rather than sitting inset under the heading that names
-    // them.
-    private static TooltipRow buildEntryRow(CellTooltipEntryLine line) {
-        return appendQualifier(
-            CellTooltipRows.buildTopTierRow(line.iconSpritePath(), line.labelText(), line.valueText()),
-            line);
-    }
-
-    // One of the things an entry is made up of, inset beneath it so the two tiers the box has are read
-    // off the indent rather than off any label saying which is which.
-    private static TooltipRow buildMemberRow(CellTooltipEntryLine line) {
-        return appendQualifier(
-            CellTooltipRows.buildNestedRow(line.iconSpritePath(), line.labelText(), line.valueText()),
-            line);
-    }
-
-    // Runs a line on into whatever it calls out, in the shade every line calls things out in. Applied at
-    // both tiers through one helper, so a status stated on a member reads exactly as one stated on the
-    // entry above it.
-    private static TooltipRow appendQualifier(
-            TooltipRow.TableRow row,
-            CellTooltipEntryLine line) {
-
-        if (!KmlibStrings.hasText(line.qualifierText())) {
-            return row;
-        }
-        return row.continuesWith(CellTooltipRows.buildQualifierSpan(line.qualifierText()));
     }
 }

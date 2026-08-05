@@ -1,8 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
@@ -15,9 +12,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link StandingRowResolver}'s id-to-presentation step against a mocked sector and grouping: a
@@ -37,7 +34,7 @@ final class StandingRowResolverTest {
         @Test
         void resolveRowsResolvesAFactionStandingToItsLongNameCrestAndScore() {
 
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/hegemony_crest.png");
 
@@ -62,7 +59,7 @@ final class StandingRowResolverTest {
         void resolveRowsGroupsTheThousandsOfALargeScore() {
             // The number reaches the box as the words it draws, so the grouping is settled here rather
             // than left to whichever body happens to list the entry.
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
@@ -84,7 +81,7 @@ final class StandingRowResolverTest {
         void resolveRowsCollapsesABlankCrestToANullPathKeepingNameAndScore() {
             // A faction with an empty crest string still resolves - the line just carries a null crest
             // path and the render layer shows the name and score alone, rather than a broken sprite.
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "");
 
@@ -104,7 +101,7 @@ final class StandingRowResolverTest {
         @Test
         void resolveRowsResolvesAnAllianceToItsNameAndOrderedMemberLines() {
 
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
@@ -142,7 +139,7 @@ final class StandingRowResolverTest {
             // The lead (colour) faction has no authored crest, so the bloc's sprite is absent - but a
             // non-lead member with its own crest keeps it, since a bloc's missing crest never reaches
             // down into the member lines.
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
@@ -171,7 +168,7 @@ final class StandingRowResolverTest {
         void resolveRowsIsEmptyForEmptyStandings() {
             // An uninhabited system ranks no groups, so the tooltip has nothing to list.
             assertThat(StandingRowResolver.resolveRows(
-                    mock(SectorAPI.class),
+                    buildEmptySector(),
                     List.of(),
                     HolderGrouping.identity()))
                 .isEmpty();
@@ -181,7 +178,7 @@ final class StandingRowResolverTest {
         void resolveRowsPreservesTheRankedOrderAcrossGroups() {
             // The resolver renders groups in the order the ranking handed them over rather than
             // re-sorting, so the tooltip draws top-to-bottom exactly as the standings ranked.
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "tritachyon", "Tri-Tachyon", "graphics/tt.png");
@@ -208,7 +205,7 @@ final class StandingRowResolverTest {
             // A footprint id the sector no longer knows still ranks, so the line shows the bare id
             // rather than a nameless line - a tooltip draws one faction per line and cannot fall back
             // to the stand-in band the picker uses for a null name. Its crest resolves absent.
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = buildEmptySector();
             var standings = List.of(
                 new GroupStanding("ghost", 5, List.of(new FactionStanding("ghost", 5))));
 
@@ -227,7 +224,7 @@ final class StandingRowResolverTest {
             // The regression this guards: keying on the member count instead of the group's kind would
             // silently flatten a one-member alliance into a lone faction, so the same bloc would read
             // as two different things depending on how many members it happens to hold.
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
@@ -261,24 +258,5 @@ final class StandingRowResolverTest {
             Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
             Map.of("alliance-1", "hegemony"),
             Map.of("alliance-1", "Allied Powers"));
-    }
-
-    // Stubs one faction's long name and crest on the sector, so a test states each faction's
-    // presentation in one line rather than three when-chains.
-    private static void stubFaction(
-            SectorAPI sectorMock,
-            String factionId,
-            String longName,
-            String crest) {
-
-        var factionMock = mock(FactionAPI.class);
-
-        when(sectorMock.getFaction(factionId))
-            .thenReturn(factionMock);
-
-        when(factionMock.getDisplayNameLong())
-            .thenReturn(longName);
-        when(factionMock.getCrest())
-            .thenReturn(crest);
     }
 }

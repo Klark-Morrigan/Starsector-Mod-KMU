@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
@@ -32,6 +31,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
@@ -100,20 +100,12 @@ final class SystemClaimTooltipTest {
             .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))
             .thenReturn(Optional.empty());
 
-        // Each faction is built before the sector is told about it: stubbing one mock inside another
-        // stub's argument leaves Mockito mid-stubbing and fails the whole fixture.
-        var hegemonyMock = buildNamedFaction("The Hegemony", HEGEMONY_CREST);
-        var tritachyonMock = buildNamedFaction("Tri-Tachyon", null);
-        var piratesMock = buildNamedFaction("Pirates", null);
-
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
-        when(sectorMock.getFaction(HEGEMONY))
-            .thenReturn(hegemonyMock);
-        when(sectorMock.getFaction(TRITACHYON))
-            .thenReturn(tritachyonMock);
-        when(sectorMock.getFaction(PIRATES))
-            .thenReturn(piratesMock);
+
+        stubFaction(sectorMock, HEGEMONY, "The Hegemony", HEGEMONY_CREST);
+        stubFaction(sectorMock, TRITACHYON, "Tri-Tachyon", null);
+        stubFaction(sectorMock, PIRATES, "Pirates", null);
     }
 
     @AfterEach
@@ -439,17 +431,5 @@ final class SystemClaimTooltipTest {
         return (TooltipRow.TableRow) TooltipSection
             .readRowsInOrder(sections)
             .get(rowIndex);
-    }
-
-    private static FactionAPI buildNamedFaction(String displayNameLong, String crestSpritePath) {
-
-        var factionMock = mock(FactionAPI.class);
-
-        when(factionMock.getDisplayNameLong())
-            .thenReturn(displayNameLong);
-        when(factionMock.getCrest())
-            .thenReturn(crestSpritePath);
-
-        return factionMock;
     }
 }

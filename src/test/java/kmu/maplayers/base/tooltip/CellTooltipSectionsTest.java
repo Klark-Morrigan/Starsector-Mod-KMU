@@ -40,9 +40,9 @@ final class CellTooltipSectionsTest {
 
     private static final String CREST = "graphics/hegemony_crest.png";
 
-    // The runs a line reads as: what it is called, then any status called out beside it.
+    // What a line is called, which is the run every case here reads it by; how a line calling something
+    // out ends is the vocabulary's and pinned there.
     private static final int LABEL_RUN = 0;
-    private static final int QUALIFIER_RUN = 1;
 
     // Where the heading sits inside the block it opens, and where the first entry it names follows.
     private static final int HEADING_ROW = 0;
@@ -230,27 +230,6 @@ final class CellTooltipSectionsTest {
                 .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
         }
 
-        @Test
-        void appendSectionContinuesAQualifiedLineIntoWhatItCallsOut() {
-            // A status is stated on the line it is about rather than on a line of its own, in the shade
-            // every line calls things out in - so what is being called out is picked out from what is
-            // merely named.
-            var sections = new ArrayList<TooltipSection>();
-
-            CellTooltipSections.appendSection(
-                sections,
-                "Claim:",
-                List.of(CellTooltipEntry.createEntry(CellTooltipEntryLine
-                    .createLine(CREST, "The Hegemony", "1,200")
-                    .qualifiedWith("(core)"))));
-
-            var entry = readRow(sections, FIRST_ENTRY_ROW);
-
-            assertThat(readLabelRun(entry, LABEL_RUN))
-                .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
-            assertThat(readLabelRun(entry, QUALIFIER_RUN))
-                .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
-        }
     }
 
     @Nested
