@@ -236,7 +236,14 @@ on. Hovering is a look rather than a lift because the resting and the selected t
 under the pointer - the hovered shade is derived once from the selected look, so it cannot drift from
 it - and the selected tab's underline is what still marks the selection while it is hovered. A tab
 travels onto that shade rather than switching to it, and a click rides the `clicked` wash out and
-back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATION_SECONDS`.
+back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATIONS`.
+
+That default is a pair rather than one value, and the two halves are not equal: a tab arrives at the
+shade it is heading for in half the time it takes to let go of one. A rise answers something the
+player just did and has to land under the gesture that asked for it, while a fall answers nothing and
+reads better unhurried - at equal paces the whole motion feels like the slower half. Every motion the
+panel makes in answer to input takes the same pair, so the tabs, the notch, and the click pulses
+cannot end up at different rhythms.
 
 A bound key's blink takes no wash of its own: it carries its tab onto that same hovered shade and
 back, so it rides the look channel with the hover and the two compose by the greater of them - which

@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.animation.TraverseDurations;
 import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
@@ -54,9 +55,10 @@ final class BaseSidebarHostTest {
     private static final int SECOND_LAYER_TAB_INDEX = 1;
 
     // A whole traverse in one step, so a started blink stands at its peak and an unstarted one at rest -
-    // telling the two apart in one number rather than by walking frames.
+    // telling the two apart in one number rather than by walking frames. The same pace each way, since
+    // only the rise is read here and the paces the panel actually runs at are KMLib's to pin.
     private static final float FULL_STEP_SECONDS = 1f;
-    private static final float DURATION_SECONDS = 1f;
+    private static final TraverseDurations DURATIONS = TraverseDurations.createSymmetric(1f);
     private static final float TOLERANCE = 0.0001f;
 
     // The pointer parked well off the panel, so nothing the frame advances can be a hover and a lit tab can
@@ -274,7 +276,7 @@ final class BaseSidebarHostTest {
             host.getController().advanceInputMotions(
                 SidebarPlacements.placeSidebarWithNoTabsLaid(),
                 FULL_STEP_SECONDS,
-                DURATION_SECONDS);
+                DURATIONS);
         }
     }
 

@@ -130,7 +130,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         host.getController().advanceInputMotions(
             placement,
             elapsedSeconds,
-            HoverFade.DEFAULT_DURATION_SECONDS);
+            HoverFade.DEFAULT_DURATIONS);
 
         var settings = Global.getSettings();
         var opacity = KmuMapLayerSettings.getMapSidebarBackgroundOpacity();
