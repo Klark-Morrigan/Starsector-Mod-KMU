@@ -46,9 +46,15 @@ public final class CellTooltipRows {
     // one indent no reader could tell apart.
     private static final float MEMBER_INDENT = 14f;
 
-    // The depth a line the block lists in its own right sits at - the tier that reads as being listed
-    // rather than as part of whatever is listed above it. Anything deeper belongs to the line above.
-    private static final int LISTED_DEPTH = 0;
+    /**
+     * The depth a line the block lists in its own right sits at - the tier that reads as being listed
+     * rather than as part of whatever is listed above it. Anything deeper belongs to the line above.
+     *
+     * <p>Offered to the block ({@link CellTooltipSections}) as the depth its own walk starts from, so
+     * where a listing begins and what that depth looks like are one value rather than two that agree
+     * until one of them is edited.
+     */
+    static final int LISTED_DEPTH = 0;
 
     private CellTooltipRows() {
     }

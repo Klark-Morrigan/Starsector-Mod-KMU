@@ -28,10 +28,6 @@ import java.util.Optional;
  */
 public final class CellTooltipSections {
 
-    // Where the block's own entries sit. The walk below counts up from here, and the vocabulary turns
-    // that count into the tier and the indent, so the block itself never names a tier.
-    private static final int TOP_ENTRY_DEPTH = 0;
-
     private CellTooltipSections() {
     }
 
@@ -55,7 +51,7 @@ public final class CellTooltipSections {
         }
         var rows = new ArrayList<TooltipRow>();
         rows.add(CellTooltipRows.buildSectionHeadingRow(headingText));
-        appendEntryRows(rows, entries, TOP_ENTRY_DEPTH);
+        appendEntryRows(rows, entries, CellTooltipRows.LISTED_DEPTH);
         sections.add(new TooltipSection(rows));
     }
 
