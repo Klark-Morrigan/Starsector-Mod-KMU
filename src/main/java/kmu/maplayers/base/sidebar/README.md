@@ -243,7 +243,7 @@ fields read through `kmu.settings.KmuMapLayerSettings`.
 ## What is not here
 
 The *panel widget itself* - frame, tab strip, scrollbar, collapse handle, control widgets, and the
-`TabPanelController` that holds scroll and collapse state - is KMLib
+`TabPanelController` that holds scroll, collapse, and hover state - is KMLib
 (`kmlib.starsector.ui.widgets`, `.input`, `.render.gl`), as is the *spotlight picker* with its item
 seam, its sort and column model, and the list memo behind it (`.widgets.lists`, see
 [Picker state](#picker-state)); this package supplies only the wiring KMLib cannot know. The *layer

@@ -28,8 +28,8 @@ import org.apache.log4j.Logger;
  * renderer's; this class owns only the wiring KMLib cannot: when to draw (the host's gate), which colours
  * and fonts to draw in (a {@link WidgetStyle} built from the live player colours and settings), advancing
  * the panel's animations off real time (the campaign is paused while these screens are open, so a game-time
- * delta would freeze the fold and the hover fades alike), and the view-state log. One instance per host, so
- * the sector map and the intel screen each get their own frame clock and log dedupe.
+ * delta would freeze the fold and every input motion alike), and the view-state log. One instance per
+ * host, so the sector map and the intel screen each get their own frame clock and log dedupe.
  *
  * <p>Both screens are vanilla core-UI surfaces with no seam to attach a mod panel, so the sidebar is drawn
  * in UI coordinates through {@link CampaignUIRenderingListener} - specifically the above-tooltips pass, the
@@ -90,15 +90,16 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // the screen was closed, which would otherwise snap a half-folded panel straight to its end.
             previousFrameNanos = 0L;
 
-            // The hover fades reset with that clock: a fade left part-way up has no elapsed time to wind it
-            // down on re-open, so it would paint as the tail of a hover the player never saw begin.
-            host.getController().resetHoverFades();
+            // The panel's input motions reset with that clock: a fade or a pulse left part-way through has
+            // no elapsed time to wind it down on re-open, so it would paint as the tail of an interaction
+            // the player never saw begin.
+            host.getController().resetInputMotions();
             logViewStateOnChange("hidden; " + host.describeViewState());
             return;
         }
 
         // Read once and spent on both of the panel's animations below, which run either side of the layout:
-        // a second read would charge the fold and the hover fades different slices of the same frame.
+        // a second read would charge the fold and the input motions different slices of the same frame.
         var elapsedSeconds = elapsedSinceLastFrame();
 
         // Step the collapse toward its target by this frame's real elapsed time before laying the panel out,
@@ -121,11 +122,12 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             logViewStateOnChange("hidden; placement unavailable; " + host.describeViewState());
             return;
         }
-        // Step the hover fades against the placement just resolved - the one this frame draws - so the tab
-        // and the handle that light are the ones the pointer is over now, not the ones it was over before
-        // the panel last moved. After the layout for exactly that reason, where the fold has to run before
-        // it.
-        host.getController().advanceHoverFades(
+        // Step the panel's input motions - the hover fades and the tabs' click pulses - against the
+        // placement just resolved, the one this frame draws, so the tab and the handle that light are the
+        // ones the pointer is over now rather than the ones it was over before the panel last moved. After
+        // the layout for exactly that reason, where the fold has to run before it. One pace for every one of
+        // them, so the panel answers input at a single rhythm.
+        host.getController().advanceInputMotions(
             placement,
             elapsedSeconds,
             HoverFade.DEFAULT_DURATION_SECONDS);
