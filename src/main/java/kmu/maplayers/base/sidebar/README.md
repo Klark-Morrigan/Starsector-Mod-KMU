@@ -108,7 +108,7 @@ rather than latched from the last pointer event. A latched hover goes stale when
 under a still cursor, which the handle feels most: the panel folds out from under a still pointer and
 the notch stays lit for a handle no longer beneath it. The triggered motions need no placement at all
 - a click and a keypress have been and gone - but ride the same call so one frame's time is charged
-to every motion, at one pace.
+to every motion, off one pair of paces.
 
 Both advance off `System.nanoTime()`, not campaign time: these screens are open on a paused game
 where `advance()` does not tick, so a game-time delta would freeze a half-folded panel and a

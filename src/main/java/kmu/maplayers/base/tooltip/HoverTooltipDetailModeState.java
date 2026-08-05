@@ -9,8 +9,9 @@ package kmu.maplayers.base.tooltip;
  * It sits here, in one place both resolve, so they can never disagree on which box is due.
  *
  * <p>It is a live view preference rather than save state - the same transience as the hover itself -
- * so it is a plain singleton reset to {@link HoverTooltipDetailMode#NORMAL} each session rather than
- * an object registered with the save.
+ * so it is a plain singleton never registered with the save, and nothing serialises it. Being a
+ * singleton it outlives the save that set it, which is what
+ * {@link #discardModeFromPreviousSave()} answers for on load.
  *
  * <p>It sits beside the tooltips rather than beside the hover state because it says nothing about
  * what is under the cursor: it selects which box a tooltip draws, which is a tooltip fact.
@@ -42,6 +43,18 @@ public final class HoverTooltipDetailModeState {
      */
     public HoverTooltipDetailMode getMode() {
         return mode;
+    }
+
+    /**
+     * Drops back to the normal box, so the mode the last save was left in does not decide what the
+     * one being loaded opens on.
+     *
+     * <p>The holder outlives any one save - it is a process-lifetime singleton, and the game keeps
+     * the process alive from one save straight into the next - so without this the mode would carry
+     * over silently, the one piece of this feature a player could not account for.
+     */
+    public void discardModeFromPreviousSave() {
+        mode = HoverTooltipDetailMode.NORMAL;
     }
 
     /**

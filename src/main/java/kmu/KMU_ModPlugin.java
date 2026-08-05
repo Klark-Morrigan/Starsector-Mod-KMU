@@ -14,6 +14,7 @@ import kmu.maplayers.base.render.MapLayerTerrainInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailModeState;
 import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapSaveMigrations;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
@@ -112,6 +113,13 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // the one being loaded.
         runGuardedStep("Failed to discard KMU political map state from the previous save",
             PoliticalMapLayerRenderer.INSTANCE::discardStateFromPreviousSave);
+
+        // Same reason again, for the hover box's detail mode: the holder is a process-lifetime
+        // singleton, so a save left showing the expanded box would otherwise open the next one on
+        // it. The mode is a live view preference and enters no save, so load is the only point it
+        // can be dropped.
+        runGuardedStep("Failed to discard KMU hover tooltip detail mode from the previous save",
+            HoverTooltipDetailModeState.getInstance()::discardModeFromPreviousSave);
 
         runGuardedStep("Failed to install KMU map layer hover tooltip",
             () -> installMapLayerHoverTooltip(Global.getSector()));
