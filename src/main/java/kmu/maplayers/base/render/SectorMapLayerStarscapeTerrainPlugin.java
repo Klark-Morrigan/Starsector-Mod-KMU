@@ -1,6 +1,6 @@
 package kmu.maplayers.base.render;
 
-import kmlib.starsector.ui.map.presence.StarscapeMapPresence;
+import kmlib.starsector.ui.map.presence.MapPresence;
 
 import java.util.function.BooleanSupplier;
 
@@ -55,7 +55,7 @@ public class SectorMapLayerStarscapeTerrainPlugin extends SectorMapLayerTerrainP
         // Recreated lazily: a save-restored plugin comes back with the field null (transient), so
         // the first render this session rebuilds it before the guard below reads it.
         if (isStarscapeMapShowing == null) {
-            isStarscapeMapShowing = new StarscapeMapPresence()::isStarscapeMapShowing;
+            isStarscapeMapShowing = new MapPresence()::isStarscapeMapShowing;
         }
         // Stand aside outside starscape. The engine lets this half through in both modes, and
         // outside starscape the base half is the one it is already calling, so drawing here as well

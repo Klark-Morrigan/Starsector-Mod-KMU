@@ -4,7 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.ui.map.presence.AnyMapPresence;
+import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
 import kmu.maplayers.MapLayers;
@@ -250,7 +250,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         listenerManager.addListener(
             new MapLayerCellTooltip(
                 new VanillaMapTooltip(),
-                new AnyMapPresence()::isAnyMapShowing),
+                new MapPresence()::isAnyMapShowing),
             true);
     }
 

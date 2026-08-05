@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.ui.map.presence.CampaignMapView;
+import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
@@ -100,7 +101,7 @@ class MapLayerCellTooltipGateIntegrationTest {
             // The mode the whole feature exists to reach, and the one the schematic read answers
             // false in by design. A gate narrowed to that read would hide the box exactly where the
             // starscape terrain half is painting the layers it belongs to.
-            renderInstalledDispatcher(SectorMapState.SHOWING_STARSCAPE);
+            renderInstalledDispatcher(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
 
             verify(tooltipMock)
                 .renderFor(sectorMock, systemMock);
@@ -110,7 +111,7 @@ class MapLayerCellTooltipGateIntegrationTest {
         void drawsWhileTheSectorMapIsShowingTheOrdinarySchematic() {
             // The look that already worked, kept honest: reaching the starscape one must not have
             // cost the other.
-            renderInstalledDispatcher(SectorMapState.SHOWING_SCHEMATIC);
+            renderInstalledDispatcher(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
 
             verify(tooltipMock)
                 .renderFor(sectorMock, systemMock);
@@ -130,9 +131,10 @@ class MapLayerCellTooltipGateIntegrationTest {
     // Installs the dispatcher the way the game does and renders one frame of it, with the sector
     // map's view state answering as told and the intel half left to fail closed.
     //
-    // All three of the sector map's reads are answered, not just the one the live gate consults, so
-    // that a gate narrowed to a look-aware read is caught by drawing the wrong picture rather than
-    // missed by reading an unstubbed default.
+    // The state is supplied whole rather than as the reads derived from it, so a case names the
+    // screen the player is on and every gate that could be wired in - look-aware or not - answers
+    // from the same one input. A gate narrowed to the wrong read is then caught by drawing the
+    // wrong picture rather than missed by reading an unstubbed default.
     //
     // The install happens outside the mocked statics on purpose: it is where the presence class and
     // its live intel-screen binding are built, and that binding takes its logger from Global at
@@ -153,14 +155,8 @@ class MapLayerCellTooltipGateIntegrationTest {
                 .thenReturn(true);
 
             mapViewMock
-                .when(CampaignMapView::isSectorMapShowing)
-                .thenReturn(sectorMapState != SectorMapState.NOT_SHOWING);
-            mapViewMock
-                .when(CampaignMapView::isSectorMapWithStarscapeOff)
-                .thenReturn(sectorMapState == SectorMapState.SHOWING_SCHEMATIC);
-            mapViewMock
-                .when(CampaignMapView::isSectorMapInStarscapeMode)
-                .thenReturn(sectorMapState == SectorMapState.SHOWING_STARSCAPE);
+                .when(CampaignMapView::resolveSectorMapState)
+                .thenReturn(sectorMapState);
 
             globalMock
                 .when(Global::getSector)
@@ -189,14 +185,5 @@ class MapLayerCellTooltipGateIntegrationTest {
             .addListener(installedListener.capture(), eq(true));
 
         return (MapLayerCellTooltip) installedListener.getValue();
-    }
-
-    // The three sector-map states this gate can meet, named rather than spelled as a row of booleans
-    // so a case reads as the screen it stands for. The map's reads are not independent - it cannot
-    // wear both looks, nor either while it is absent - so one state drives all three.
-    private enum SectorMapState {
-        SHOWING_SCHEMATIC,
-        SHOWING_STARSCAPE,
-        NOT_SHOWING
     }
 }

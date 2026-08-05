@@ -185,7 +185,7 @@ about what the overlay means.
   tooltip) and draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer
   with none, a layer whose own tooltip switch is off, and a switch-only tab with no renderer at all
   show nothing for the same reason. That map gate is host-blind and look-blind (KMLib's
-  `AnyMapPresence`), so the box draws wherever the layer paints: the sector map and the intel
+  `MapPresence.isAnyMapShowing`), so the box draws wherever the layer paints: the sector map and the intel
   screen's map visor, over the schematic and over the Starscape starfield alike. Which is what the
   listener needs, being called for the whole campaign UI and never told which
   screen is up. `SystemCellTooltip` is
