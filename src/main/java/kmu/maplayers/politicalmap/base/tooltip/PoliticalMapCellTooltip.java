@@ -57,9 +57,6 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
         // the findings below. Being a title line is also what parts it from the body - the box's break
         // under the heading falls beneath it rather than above it.
         //
-        // Fixed for the whole layer rather than left to each box, since a view that headed its box with
-        // the name alone would answer the same hover differently from the tab beside it.
-        //
         // The decree is read on its own rather than out of the full claim breakdown: a box may only
         // need to know whether one holds the system, and scoring every market in it to answer that
         // would charge the whole claim computation to every faction and alliance hover.

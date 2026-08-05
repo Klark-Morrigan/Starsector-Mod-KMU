@@ -95,21 +95,24 @@ painted in UI coordinates and its input claimed ahead of the screen.
 `SidebarRenderer` is a `CampaignUIRenderingListener` drawing in `renderInUICoordsAboveUIAndTooltips`
 - the only pass composited after the opaque core-UI screen, so the earlier passes are covered by the
 screen itself. It gates on the host, advances the collapse, offers the settled fold, resolves the
-placement, steps the hover fades against it, and hands off to KMLib's `TabPanelRenderer`.
+placement, steps the panel's input motions against it, and hands off to KMLib's `TabPanelRenderer`.
 
-The two animations run either side of the layout, which is why the frame's elapsed time is read once
-and spent on both: the fold has to advance *before* the placement, since it sizes it, and the hovers
-*after* it, since what the pointer is on - a tab, or the collapse handle - is resolved against the
-very placement being drawn rather than latched from the last pointer event. A latched hover goes
-stale whenever the panel moves under a still cursor, which the handle feels most: the panel folds out
-from under a still pointer and the notch stays lit for a handle no longer beneath it.
+The animations run either side of the layout, which is why the frame's elapsed time is read once and
+spent on both sides: the fold has to advance *before* the placement, since it sizes it, and the input
+motions - the hover fades and the tabs' click pulses - *after* it, since what the pointer is on (a
+tab, or the collapse handle) is resolved against the very placement being drawn rather than latched
+from the last pointer event. A latched hover goes stale whenever the panel moves under a still
+cursor, which the handle feels most: the panel folds out from under a still pointer and the notch
+stays lit for a handle no longer beneath it. The pulses need no placement at all - a click has been
+and gone - but ride the same call so one frame's time is charged to every motion, at one pace.
 
 Both advance off `System.nanoTime()`, not campaign time: these screens are open on a paused game
 where `advance()` does not tick, so a game-time delta would freeze a half-folded panel and a
 half-lit tab alike. The frame clock is zeroed whenever the panel is hidden, so a re-open advances by
-nothing rather than by the whole interval the screen was shut - and the hover fades are dropped with
-it, since a fade left part-way up has no elapsed time to wind down on and would open the next session
-showing the tail of a hover the player never saw begin.
+nothing rather than by the whole interval the screen was shut - and the input motions are dropped
+with it, since a fade left part-way up (or a pulse left part-way through its cycle) has no elapsed
+time to wind down on and would open the next session showing the tail of an interaction the player
+never saw begin.
 
 `SidebarInput` is a `CampaignInputListener` acting in `processCampaignInputPreCore` at priority
 1000, because a render pass cannot consume events; consuming pre-core stops a click reaching the
@@ -220,8 +223,11 @@ of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, ho
 on. Hovering is a look rather than a lift because the resting and the selected tab meet at one shade
 under the pointer - the hovered shade is derived once from the selected look, so it cannot drift from
 it - and the selected tab's underline is what still marks the selection while it is hovered. A tab
-travels onto that shade rather than switching to it, over `HoverFade.DEFAULT_DURATION_SECONDS`; the
-fade itself is the controller's, so the paint pass is handed a look already blended. The two
+travels onto that shade rather than switching to it, and a click rides the `clicked` wash out and
+back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATION_SECONDS`. Both
+animations are the controller's, which holds no colour: it reports two fractions per tab and the
+paint pass binds them to the palette, so it is handed a look already blended and a lift already
+scaled. Only the `hotkeyed` wash is still undriven, awaiting the bound key's blink. The two
 screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the
 paint pass does not read. Both faces are named through KMLib's `StarsectorFont` enum rather than by
 atlas basename.
@@ -243,7 +249,7 @@ fields read through `kmu.settings.KmuMapLayerSettings`.
 ## What is not here
 
 The *panel widget itself* - frame, tab strip, scrollbar, collapse handle, control widgets, and the
-`TabPanelController` that holds scroll, collapse, and hover state - is KMLib
+`TabPanelController` that holds scroll, collapse, hover, and click-pulse state - is KMLib
 (`kmlib.starsector.ui.widgets`, `.input`, `.render.gl`), as is the *spotlight picker* with its item
 seam, its sort and column model, and the list memo behind it (`.widgets.lists`, see
 [Picker state](#picker-state)); this package supplies only the wiring KMLib cannot know. The *layer

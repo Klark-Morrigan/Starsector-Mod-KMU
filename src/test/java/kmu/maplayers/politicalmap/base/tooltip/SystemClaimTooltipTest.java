@@ -27,7 +27,6 @@ import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
-import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
@@ -43,8 +42,11 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the shape a claim contest is read in: the claim is always stated, the rivals who could have
  * taken the system and the ones who never could are told apart into their own blocks, and a system
- * held by decree heads the box with that fact while still saying so on the claim line, without losing
- * the market standings behind it.
+ * held by decree says so on the claim line without losing the market standings behind it.
+ *
+ * <p>The banner heading a decreed box is the layer's rather than this box's, so it is pinned with the
+ * heading itself ({@link PoliticalMapCellTooltipTest}); the marker asserted here is what the banner
+ * does not answer - why this line outranks the higher-scoring one beneath it.
  *
  * <p>The breakdown itself is stood in for through the reader seam - it has its own suite in KMLib -
  * so what is left is the part this class alone decides: which lines are emitted, under which heading,
@@ -69,11 +71,6 @@ final class SystemClaimTooltipTest {
     // flat run the box draws.
     private static final int CLAIM_HEADING_ROW = 0;
     private static final int CLAIM_ROW = 1;
-
-    // The one line heading a decreed box, and the run of it naming the faction the decree hands the
-    // system to - the crest travels ahead of it as a run of the same line.
-    private static final int BANNER_ROW = 0;
-    private static final int BANNER_FACTION_NAME_RUN = 1;
 
     // The blocks a box with no status line holds, in draw order.
     private static final int CLAIM_SECTION = 0;
@@ -119,69 +116,6 @@ final class SystemClaimTooltipTest {
     void clearColoursAndTheSystemStatusSeam() {
         statusRowMock.close();
         CellTooltipPaletteFake.clearPalette();
-    }
-
-    @Nested
-    class BuildTitleRows {
-
-        @Test
-        void buildTitleRowsHeadsTheBoxWithTheFactionHoldingTheSystemByDecree() {
-            // A decree settles the system outright, so it is read off the system name rather than
-            // found among the standings - and the claims box heads with the very banner the faction
-            // and alliance boxes head with, so a player crossing between the tabs reads one fact one
-            // way instead of meeting it as a heading on one and as a note on a line on the next.
-            stubBreakdown(new SystemClaimBreakdown(
-                HEGEMONY,
-                HEGEMONY,
-                List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
-
-            var titleRows = tooltip.buildTitleRows(sectorMock, systemMock);
-
-            assertThat(titleRows)
-                .hasSize(1);
-            assertThat(titleRows.get(BANNER_ROW))
-                .isInstanceOf(TooltipRow.CentredRow.class);
-            assertThat(readLabelRun(titleRows.get(BANNER_ROW), BANNER_FACTION_NAME_RUN))
-                .isEqualTo(new TextSpan("The Hegemony", TEXT));
-        }
-
-        @Test
-        void buildTitleRowsHeadsTheBoxWithTheSystemNameAloneWhenNoDecreeHoldsIt() {
-            // The ordinary case: a claim won on market strength is the contest's answer rather than a
-            // verdict over the system, so it is stated in the block below and nothing heads the box.
-            // A banner here would name a core the map never painted.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                HEGEMONY,
-                List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
-
-            assertThat(tooltip.buildTitleRows(sectorMock, systemMock))
-                .isEmpty();
-        }
-
-        @Test
-        void buildTitleRowsHeadsTheBoxWithoutTakingTheMarkerOffTheClaimLine() {
-            // The banner and the marker answer different questions and are both needed: the banner
-            // says the system is held by decree, while the marker on the claim line says that this is
-            // why that line outranks the higher-scoring one beneath it. The claimant's own market
-            // standing stays beside the marker, since a decreed hold does not erase its presence.
-            stubBreakdown(new SystemClaimBreakdown(
-                HEGEMONY,
-                HEGEMONY,
-                List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
-
-            assertThat(readLabelRun(
-                    tooltip.buildTitleRows(sectorMock, systemMock).get(BANNER_ROW),
-                    BANNER_FACTION_NAME_RUN))
-                .isEqualTo(new TextSpan("The Hegemony", TEXT));
-
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
-
-            assertThat(readLabelRun(claimRow, MARKER_RUN))
-                .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
-            assertThat(claimRow.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
-        }
     }
 
     @Nested

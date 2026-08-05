@@ -33,12 +33,16 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the two decisions the dispatcher makes for itself, both separable from the in-engine draw, the
- * live vanilla-tooltip step-aside, and the injected tooltip's own content: a box shows for a hovered
- * cell and not for an unhovered one, and which box shows is whatever the active pick's renderer
- * injects. The second is pinned with a stand-in layer, since which concrete layers exist is the
- * composition root's business and the dispatcher must not know - a layer with no renderer and no
- * registered pick at all resolve alike to nothing to draw.
+ * Pins the decisions the dispatcher makes for itself, all separable from the in-engine draw and from
+ * the injected tooltip's own content: which of its shared gates let a frame through, that a box shows
+ * for a hovered cell and not for an unhovered one, and that which box shows is whatever the active
+ * pick's renderer injects. The last is pinned with a stand-in layer, since which concrete layers exist
+ * is the composition root's business and the dispatcher must not know - a layer with no renderer and
+ * no registered pick at all resolve alike to nothing to draw.
+ *
+ * <p>The map gate is pinned as the supplier it is, open and closed, which is the whole of what this
+ * level can say about it: what the live read answers, and that the installed one is the union
+ * covering starscape, belong to the seams themselves and to the install site's own test.
  */
 final class MapLayerCellTooltipTest {
 
@@ -73,6 +77,22 @@ final class MapLayerCellTooltipTest {
     @Nested
     class RenderInUICoordsAboveUIAndTooltips {
 
+        @BeforeEach
+        void hoverACell() {
+            // Every case here is about what the gates do around a live hover, so the hover is the
+            // group's fixture rather than each test's opening lines.
+            MapHoverState
+                .getInstance()
+                .publishHover(new MapHover("system", List.of("system")));
+        }
+
+        @AfterEach
+        void clearTheHover() {
+            // The hover state is a process-wide singleton, so one left published would reach the
+            // next test as a hover it never asked for.
+            MapHoverState.getInstance().clearHover();
+        }
+
         @Test
         void standsAsideWhileTheVanillaMapIsDrawingItsOwnTooltip() {
             // The cursor is over a star, so the map is already naming it. Both boxes would otherwise
@@ -83,25 +103,12 @@ final class MapLayerCellTooltipTest {
             when(vanillaMapTooltipMock.isShowing())
                 .thenReturn(true);
 
-            MapHoverState
-                .getInstance()
-                .publishHover(new MapHover("system", List.of("system")));
-
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
-                
-                settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
-                    .thenReturn(true);
-                settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
-                    .thenReturn(true);
-
+            runWithHoverSwitchesOn(() -> {
                 new MapLayerCellTooltip(vanillaMapTooltipMock, () -> true)
                     .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
                 verifyNoInteractions(tooltipMock);
-            }
-            MapHoverState.getInstance().clearHover();
+            });
         }
 
         @Test
@@ -112,34 +119,23 @@ final class MapLayerCellTooltipTest {
             // Every other gate is open, and the vanilla probe is never even asked.
             var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
 
-            MapHoverState
-                .getInstance()
-                .publishHover(new MapHover("system", List.of("system")));
-
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
-                
-                settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
-                    .thenReturn(true);
-                settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
-                    .thenReturn(true);
-
+            runWithHoverSwitchesOn(() -> {
                 new MapLayerCellTooltip(vanillaMapTooltipMock, () -> false)
                     .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
                 verifyNoInteractions(vanillaMapTooltipMock);
                 verifyNoInteractions(tooltipMock);
-            }
-            MapHoverState.getInstance().clearHover();
+            });
         }
 
         @Test
-        void drawsWhileTheMapOnScreenIsInStarscapeMode() {
-            // The starscape half of the gate the install site composes. The schematic read is false
-            // in that mode by design, so a gate asking only that would hide the box exactly where
-            // the layers do paint - the starscape terrain half draws the same overlay over the
-            // starfield, and the box has to follow it there.
+        void drawsWhileAMapIsOnScreen() {
+            // The open side of the same gate, all the way through to the injected box - the only
+            // case that proves the dispatcher reaches its tooltip rather than that it declines to.
+            // Which map states open the gate is not this test's to say: the read arrives as a
+            // supplier, so "showing" is all this level can express. That the supplied read is the
+            // union covering starscape is pinned against the real composition in
+            // MapLayerCellTooltipGateIntegrationTest.
             var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
             var sectorMock = mock(SectorAPI.class);
             var systemMock = mock(StarSystemAPI.class);
@@ -149,12 +145,28 @@ final class MapLayerCellTooltipTest {
             when(sectorMock.getStarSystems())
                 .thenReturn(List.of(systemMock));
 
-            MapHoverState
-                .getInstance()
-                .publishHover(new MapHover("system", List.of("system")));
+            runWithHoverSwitchesOn(() -> {
+                try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class);
-                 MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                    globalMock
+                        .when(Global::getSector)
+                        .thenReturn(sectorMock);
+
+                    new MapLayerCellTooltip(vanillaMapTooltipMock, () -> true)
+                        .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
+
+                    verify(tooltipMock)
+                        .renderFor(sectorMock, systemMock);
+                }
+            });
+        }
+
+        // Runs body with both hover switches on - the settings tier above every gate this group is
+        // about, and the one thing all three cases need identically. They are static reads, so they
+        // can only be answered for the length of a scope, which is what makes this a wrapper rather
+        // than a @BeforeEach like the hover.
+        private void runWithHoverSwitchesOn(Runnable body) {
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
                 settingsMock
                     .when(KmuMapLayerSettings::getMapHoveringEnabled)
@@ -163,17 +175,8 @@ final class MapLayerCellTooltipTest {
                     .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
                     .thenReturn(true);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
-                new MapLayerCellTooltip(vanillaMapTooltipMock, () -> true)
-                    .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
-
-                verify(tooltipMock)
-                    .renderFor(sectorMock, systemMock);
+                body.run();
             }
-            MapHoverState.getInstance().clearHover();
         }
     }
 

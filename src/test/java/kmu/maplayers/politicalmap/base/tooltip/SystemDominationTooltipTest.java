@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
@@ -50,17 +49,19 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins how the standings the map ranks become the lines the hover box draws: the strongest group is
  * named as dominating the system and the rest as contesting it, a group made up of nothing reads as one
  * flat line while one carrying members reads over them indented, and what the system is beyond its
- * standings - dead, or held by decree - is said above the contest. Also that the ranking runs under the
+ * standings - dead or unpopulated - is said above the contest. Also that the ranking runs under the
  * active view's own grouping, which is what makes the numbers in the box the ones the fills were painted
  * by.
+ *
+ * <p>The decree heading the box belongs to every view alike and is pinned with the heading itself
+ * ({@link PoliticalMapCellTooltipTest}); what is asserted here is only that it stays out of the
+ * standings.
  *
  * <p>The ranking, the resolution into entries, the status line and the claim read behind it are all
  * stood in for, since each is pinned by its own suite - which group breaks down at all is the resolver's
@@ -172,72 +173,6 @@ final class SystemDominationTooltipTest {
         dominancePassMock.close();
         viewRegistryMock.close();
         CellTooltipPaletteFake.clearPalette();
-    }
-
-    @Nested
-    class BuildTitleRows {
-
-        @Test
-        void buildTitleRowsHeadsTheBoxWithTheDecree() {
-            // Why the decree is a title line at all: it settles the system outright, so it is read off
-            // the system name rather than found among the findings - and the box's one parting falls
-            // beneath it rather than above it, which is what the two blocks being separate buys.
-            stubCoreFaction(CORE_FACTION);
-
-            assertThat(readLabelTexts(tooltip.buildTitleRows(sectorMock, systemMock)))
-                .containsExactly("The Hegemony");
-        }
-
-        @Test
-        void buildTitleRowsHeadsALivingSystemWithADecreeToo() {
-            // A decree holds whatever it is laid over, colony or not, so the line does not hang off a
-            // status line: a populated system under one is headed exactly as an empty one is.
-            stubCoreFaction(CORE_FACTION);
-            stubResolvedRows(createLoneGroupEntry());
-
-            assertThat(readLabelTexts(tooltip.buildTitleRows(sectorMock, systemMock)))
-                .containsExactly("The Hegemony");
-        }
-
-        @Test
-        void buildTitleRowsHeadsTheBoxWithNothingForASystemUnderNoDecree() {
-            // The ordinary case: no decree holds the system, so nothing heads the box - a line naming a
-            // core that does not exist would read as a claim the map never painted.
-            assertThat(tooltip.buildTitleRows(sectorMock, systemMock))
-                .isEmpty();
-        }
-
-        @Test
-        void buildTitleRowsAsksOnlyForTheDecreeRatherThanScoringEveryMarket() {
-            // Why the port carries two reads at all: this box never shows a claim score, so answering
-            // "is there a decree" through the full breakdown would charge the scoring of every market
-            // in the system to every faction and alliance hover. The fake derives one read from the
-            // other, so only a case watching the calls can hold this.
-            var claimBreakdownReaderMock = mock(ClaimBreakdownReader.class);
-
-            new SystemDominationTooltip(claimBreakdownReaderMock)
-                .buildTitleRows(sectorMock, systemMock);
-
-            verify(claimBreakdownReaderMock)
-                .readCoreFactionId(systemMock);
-            verify(claimBreakdownReaderMock, never())
-                .readBreakdown(any());
-        }
-
-        @Test
-        void buildTitleRowsHeadsTheBoxWithoutAskingTheActiveView() {
-            // A decree is a fact about the system rather than about how this layer is grouping it, so
-            // the line stands whether or not a view has been registered - unlike the ranking, which has
-            // nothing to rank under without one.
-            viewRegistryMock
-                .when(PoliticalMapViewRegistry::getActiveView)
-                .thenReturn(null);
-
-            stubCoreFaction(CORE_FACTION);
-
-            assertThat(readLabelTexts(tooltip.buildTitleRows(sectorMock, systemMock)))
-                .containsExactly("The Hegemony");
-        }
     }
 
     @Nested
@@ -424,9 +359,9 @@ final class SystemDominationTooltipTest {
         @Test
         void buildBodySectionsNamesWhatTheSystemIsBeforeWhoHoldsIt() {
             // What the system is first, then the contest over it, so the standings read as a contest
-            // over a known system rather than as the whole of what the box has to say. The decree is not
-            // among them:
-            // it heads the box instead, which the title cases above cover.
+            // over a known system rather than as the whole of what the box has to say. The decree is
+            // not among them at all - it heads the box instead - so a system under one lists exactly
+            // the lines a system without one does.
             stubStatusRow("Decivilised");
             stubCoreFaction(CORE_FACTION);
             stubResolvedRows(createLoneGroupEntry());

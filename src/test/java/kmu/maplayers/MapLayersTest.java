@@ -5,12 +5,16 @@ import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
 import kmu.maplayers.politicalmap.alliances.AlliancesView;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.tooltip.PoliticalMapCellTooltip;
 import kmu.maplayers.politicalmap.claims.ClaimsView;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -23,6 +27,10 @@ import static org.mockito.Mockito.when;
  * roster either way. This is the one place a Nex absence must keep the Alliances segment - and the
  * class behind it - off the radio without dropping the vanilla claims segment, so the gate is pinned
  * here rather than left to the in-game test alone.
+ *
+ * <p>The roster is also where what every view owes the player can be held over all of them at once,
+ * which is why the hover box each one injects is asserted here rather than view by view: a view added
+ * later joins this list, so it is held to the same terms without a case being written for it.
  */
 final class MapLayersTest {
     private static final String NEXERELIN_MOD_ID = "nexerelin";
@@ -39,6 +47,31 @@ final class MapLayersTest {
                 // alliances segment rather than displacing it.
                 assertThat(MapLayers.selectPoliticalMapViews()).containsExactly(
                         FactionsView.INSTANCE, AlliancesView.INSTANCE, ClaimsView.INSTANCE);
+            }
+        }
+
+        @Test
+        void selectPoliticalMapViewsOffersOnlyViewsWhoseHoverBoxSitsOnTheLayersOwnBase() {
+            // What no compiler catches: a view injects its hover box rather than inheriting one, so a
+            // view added later could inject a box built straight on the framework's shape. It would
+            // then head with the system name alone while the tab beside it names the faction holding
+            // the system by decree - one hover answered two ways, a keystroke apart. Read off the
+            // roster rather than off a list of views written here, so a view added tomorrow is held
+            // to this without anyone remembering to name it.
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                stubNexEnabled(globalMock, true);
+
+                var hoverBoxes = MapLayers.selectPoliticalMapViews()
+                    .stream()
+                    .map(PoliticalMapView::resolveHoverTooltip)
+                    .flatMap(Optional::stream)
+                    .toList();
+
+                // A view showing no box at all is legitimate - it heads nothing, so it cannot head it
+                // differently - but every box that does exist has to be one of the layer's.
+                assertThat(hoverBoxes)
+                    .isNotEmpty()
+                    .hasOnlyElementsOfType(PoliticalMapCellTooltip.class);
             }
         }
 
