@@ -46,7 +46,7 @@ Both gates ask the same question and nothing beyond it - is there a live canvas 
 visor rect is absent when the intel tab is not showing, when a sibling sub-tab (Planets, Factions)
 holds the column, or when a large-description item has blanked the preview, so it is both gate and
 anchor. Which look that canvas wears is not asked on either screen: the layers paint through
-[a terrain pair](../render/README.md) whose second half draws over the Starscape starfield, so the
+[a terrain pair](../render/README.md) whose second half draws in Starscape mode, so the
 overlay these controls drive is under them in either look.
 
 Both are per-screen reads rather than the host-blind `MapPresence` seam KMLib offers, because each

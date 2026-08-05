@@ -118,7 +118,7 @@ class MapLayerCellTooltipGateIntegrationTest {
         void drawsWhileTheSectorMapIsInStarscapeMode() {
             // The mode the whole feature exists to reach, and the one the schematic read answers
             // false in by design. A gate narrowed to that read would hide the box exactly where the
-            // starscape terrain half is painting the layers it belongs to.
+            // Starscape terrain half is painting the layers it belongs to.
             renderInstalledDispatcher(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
 
             verify(tooltipMock)
@@ -127,7 +127,7 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         @Test
         void drawsWhileTheSectorMapIsShowingTheOrdinarySchematic() {
-            // The look that already worked, kept honest: reaching the starscape one must not have
+            // The look that already worked, kept honest: reaching the Starscape one must not have
             // cost the other.
             renderInstalledDispatcher(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
 

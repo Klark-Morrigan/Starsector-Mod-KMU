@@ -207,7 +207,7 @@ class KMU_ModPluginTest {
 
         @Test
         void installsTheReseaterAsATransientScript() {
-            // addTransientScript, never addScript: this script takes the starscape terrain out of
+            // addTransientScript, never addScript: this script takes the Starscape terrain out of
             // hyperspace for one advance, so one restored from a save alongside the one added on
             // load would have two latches racing to move and put back the same entity - and would
             // bake a library class's name into the file.
@@ -223,7 +223,7 @@ class KMU_ModPluginTest {
 
         @Test
         void installsAFreshReseaterPerLoadSoTheFirstMapOpenIsStillReseated() {
-            // The latch arms on the edge into "a starscape map is showing", so a script carried
+            // The latch arms on the edge into "a Starscape map is showing", so a script carried
             // across loads would come back believing that edge had already passed and skip the
             // reseat the newly loaded sector's first map open is owed.
             var firstLoadSectorMock = mock(SectorAPI.class);

@@ -34,7 +34,7 @@ import java.util.Set;
  * the anchor. Gating on the rectangle rather than on {@link IntelScreenView#isIntelTabOpen()} is what keeps
  * the sidebar off those sibling sub-tabs, which are the same core tab but carry no visor. The visor's own
  * Starscape filter ({@link IntelScreenView#isMapStarscapeModeOn()}) is no part of that gate: the layers
- * paint through a terrain pair, one half of which draws over the starfield, so a lit visor has an overlay
+ * paint through a terrain pair, one half of which draws in Starscape mode, so a lit visor has an overlay
  * under these controls in either look. It stays a reported signal because the intel screen carries its own
  * filter, separate from the full campaign map's, and which look a visor is wearing is worth a diagnostic
  * line. Every read reaches the game's concrete intel panel through the KMLib seam, which fails closed, so a
@@ -116,11 +116,11 @@ public final class IntelSidebarHost extends BaseSidebarHost {
             return "intel tab; no visor (sub-tab or blanked preview)";
         }
         // A lit visor is the whole gate, so this last pair reports which look it is wearing rather than a
-        // reason for hiding: it is what says whether the starscape half of the terrain pair is the one
+        // reason for hiding: it is what says whether the Starscape half of the terrain pair is the one
         // that should be painting under the panel.
         return intelScreen.isMapStarscapeModeOn()
-            ? "intel tab; visor lit; starscape on"
-            : "intel tab; visor lit; starscape off";
+            ? "intel tab; visor lit; Starscape on"
+            : "intel tab; visor lit; Starscape off";
     }
 
     // Which frame edges the box reserves inset space for, decided before layout so a dropped edge collapses

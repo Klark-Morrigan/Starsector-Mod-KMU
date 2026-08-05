@@ -23,14 +23,41 @@ import java.util.Optional;
 public interface MapLayerRenderer {
 
     /**
-     * Emits this layer's overlay for one map frame. Called from inside the map's render pass, so an
-     * implementation may read the GL state that pass binds. Mirrors the engine's own
-     * {@code renderOnMap} signature, since that pass is what ultimately drives it.
+     * Brings whatever this layer draws from up to date for the frame about to be painted, and
+     * resolves anything the frame has to read from the live game rather than emit - the cursor, most
+     * of all. Called once per frame, before the first band is drawn.
+     *
+     * <p>It is a separate call because a frame can be painted in more than one pass: the map's own
+     * nebula icons sit between two of a layer's bands, so the parts either side of them are
+     * emitted by different surfaces. Preparation that ran per pass would resolve the cursor against
+     * a half-drawn frame and repeat every staleness check, so the contract says once rather than
+     * leaving each renderer to guard itself.
+     *
+     * <p>Defaulting to nothing makes "no preparation" the base case: a layer that emits fixed
+     * geometry has nothing to bring up to date.
+     *
+     * @param factor the per-vertex scale the map's render pass applies, folding in its zoom - the
+     *               same value the bands are drawn with, since a cursor read has to resolve against
+     *               the geometry the frame will actually paint
+     */
+    default void prepareFrame(float factor) {
+    }
+
+    /**
+     * Emits one band of this layer's overlay for the frame {@link #prepareFrame} has just made
+     * ready. Called from inside the map's render pass, so an implementation may read the GL state
+     * that pass binds. Mirrors the engine's own {@code renderOnMap} signature, since that pass is
+     * what ultimately drives it.
+     *
+     * <p>A band that a layer has nothing to put in is drawn as nothing, not refused: which sub-layers
+     * ride above the nebulae is the surface's question to ask and the layer's to answer with an
+     * empty pass.
      *
      * @param factor    the per-vertex scale the map's render pass applies, folding in its zoom
      * @param alphaMult the pass's alpha multiplier, which fades the whole overlay with the map
+     * @param band      which side of the map's nebula icons this pass is painting
      */
-    void renderOnMap(float factor, float alphaMult);
+    void renderOnMap(float factor, float alphaMult, MapOverlayBand band);
 
     /**
      * The hover box this layer shows for the star system under the cursor, or empty when it shows

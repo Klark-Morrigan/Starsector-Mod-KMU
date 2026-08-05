@@ -13,17 +13,18 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
- * Puts the render pair's two terrain entities into a loaded save and keeps exactly one of each
- * there. The pair only paints because hyperspace carries an entity per variant - the schematic one
- * the map draws normally, and the starscape one it draws over the starfield - and terrain persists,
- * so every load has to add what is missing without stacking a second copy on what is already there.
+ * Puts the render surfaces' terrain entities into a loaded save and keeps exactly one of each there.
+ * The overlay only paints because hyperspace carries an entity per variant - the schematic one the
+ * map draws normally, and the two it draws in Starscape mode, one either side of its nebula icons -
+ * and terrain persists, so every load has to add what is missing without stacking a second copy on
+ * what is already there.
  *
  * <p>It also owns the class-name lineage the save holds. Both concerns are the same one seen from
  * two sides: a terrain entity in a save names its plugin class and resolves its spec from a type id,
  * so the ids this installs under and the class names XStream can still read are what decide whether
  * an existing save comes back with a working overlay.
  *
- * <p>Kept out of the mod's entry point because none of it is wiring. The starscape trick, the sweep
+ * <p>Kept out of the mod's entry point because none of it is wiring. The Starscape trick, the sweep
  * that retires a renamed id, and the alias bridges are knowledge about this package's own classes,
  * and the entry point's job is to call two methods on the right load.
  */
@@ -61,7 +62,7 @@ public final class MapLayerTerrainInstaller {
     static final String SECTOR_MAP_LAYER_TERRAIN_TYPE = "kmu_sector_map_layer_terrain";
 
     // Terrain type registered in data/campaign/terrain.json whose plugin paints the same layers over
-    // the Starscape starfield - the mode the map widget suppresses the type above in. Its entity
+    // in Starscape mode - the mode the map widget suppresses the type above in. Its entity
     // resolves spec and plugin from this id at construction and then reports the engine's whitelisted
     // map type in the getter's place, so unlike the schematic variant the id cannot be read back off
     // a loaded entity. The sweep below therefore cannot recognise one left under a former id; a later
@@ -69,13 +70,21 @@ public final class MapLayerTerrainInstaller {
     static final String SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE =
         "kmu_sector_map_layer_starscape_terrain";
 
-    // The variant the map draws outside starscape. Its entity reports the id it was installed under,
+    // Terrain type registered in data/campaign/terrain.json whose plugin paints the upper band over
+    // the nebulae - the part of the overlay the map's own fog must not cover. Its entity is the
+    // same class the row above installs, differing only in the id it resolves its plugin from, and
+    // it carries the same caveat: nothing it reports can date it, so a rename of this id needs a
+    // bridge on the entity rather than the sweep below.
+    static final String SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE =
+        "kmu_sector_map_layer_above_starscape_nebulae_terrain";
+
+    // The variant the map draws outside Starscape. Its entity reports the id it was installed under,
     // so one read back off a save under any other id was written by a former version of the mod and
     // is stale.
     private static final MapLayerTerrainVariant SCHEMATIC_TERRAIN = new MapLayerTerrainVariant(
         SectorMapLayerTerrainPlugin.class, SECTOR_MAP_LAYER_TERRAIN_TYPE::equals);
 
-    // The variant the map draws over the starfield. Whatever its entity reports counts as current,
+    // The variant the map draws in Starscape mode. Whatever its entity reports counts as current,
     // because it answers with the engine's whitelisted map type rather than with the id it was
     // installed under - so nothing it reports can mark it stale, and its plugin class alone is what
     // marks it as ours. Package-private alongside the type ids for the reason they are: the presence
@@ -84,11 +93,18 @@ public final class MapLayerTerrainInstaller {
     static final MapLayerTerrainVariant STARSCAPE_TERRAIN = new MapLayerTerrainVariant(
         SectorMapLayerStarscapeTerrainPlugin.class, reportedType -> true);
 
+    // The variant that paints over the map's nebula icons. Told apart from the one above by its
+    // plugin class alone, exactly as that one is told apart from the schematic variant, and for the
+    // same reason: its entity reports the whitelisted map type too, so the two Starscape variants
+    // are indistinguishable by anything they say about themselves.
+    static final MapLayerTerrainVariant ABOVE_STARSCAPE_NEBULAE_TERRAIN = new MapLayerTerrainVariant(
+        SectorMapLayerAboveStarscapeNebulaeTerrainPlugin.class, reportedType -> true);
+
     private MapLayerTerrainInstaller() {
     }
 
     /**
-     * Adds the terrain the sector map draws outside starscape, unless the save already carries it.
+     * Adds the terrain the sector map draws outside Starscape, unless the save already carries it.
      */
     public static void installSchematicTerrain(SectorAPI sector) {
         installMapLayerTerrain(
@@ -101,19 +117,17 @@ public final class MapLayerTerrainInstaller {
     }
 
     /**
-     * Adds the terrain the sector map draws over the starfield, unless the save already carries it,
-     * so one of the pair is always the one drawing.
+     * Adds the terrain the sector map draws in Starscape mode, unless the save already carries it,
+     * so a map is never left with neither surface drawing.
      *
      * <p>The entity is built by hand because {@code addTerrain} always constructs a plain
      * {@code CampaignTerrain} and so could never produce the subclass whose reported type is what
-     * gets this variant past the map widget's starscape filter; {@code addEntity} reaches the same
+     * gets this variant past the map widget's Starscape filter; {@code addEntity} reaches the same
      * registration {@code addTerrain} would have.
      *
-     * <p>A per-load sweep rather than a one-time seed, for a reason beyond the renames: this variant
-     * is briefly taken out of hyperspace and put back on the next advance every time a map opens
-     * onto the starfield, so a save written inside that one-advance window holds no starscape terrain
-     * at all. This is what such a save comes back with, which is why the window needs no recovery
-     * path of its own.
+     * <p>It stays a per-load sweep even though this variant is never moved, because a renamed row id
+     * would otherwise strand the entity an existing save holds - and because the sweep is what the
+     * shared helper does for every variant regardless.
      */
     public static void installStarscapeTerrain(SectorAPI sector) {
         installMapLayerTerrain(
@@ -124,24 +138,52 @@ public final class MapLayerTerrainInstaller {
     }
 
     /**
-     * The starscape terrain this save is carrying, or null while hyperspace holds none - which is
-     * the ordinary state before {@link #installStarscapeTerrain} has run for the load, and during
-     * the advance the reseat holds it out.
+     * Adds the terrain the sector map draws over its own nebula icons, unless the save already
+     * carries it. Missing it costs the upper band rather than the whole overlay: the surface below
+     * paints its own band either way, and what would have ridden above the nebulae simply stops
+     * appearing.
+     *
+     * <p>The entity is the same class the surface below installs, differing only in the type id it
+     * resolves its spec and plugin from, since reporting the whitelisted map type is the whole of
+     * what that class does.
+     *
+     * <p>A per-load sweep rather than a one-time seed, for a reason beyond the renames: this variant
+     * is briefly taken out of hyperspace and put back on the next advance every time a map opens onto
+     * Starscape, which is how its icon is lifted past the nebulae. A save written inside that
+     * one-advance window holds no upper-band terrain at all, and this is what such a save comes back
+     * with - which is why the window needs no recovery path of its own.
+     */
+    public static void installAboveStarscapeNebulaeTerrain(SectorAPI sector) {
+        installMapLayerTerrain(
+            sector,
+            ABOVE_STARSCAPE_NEBULAE_TERRAIN,
+            hyperspace -> hyperspace.addEntity(new SectorMapLayerStarscapeTerrain(
+                SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE)));
+    }
+
+    /**
+     * The above-nebulae terrain this save is carrying, or null while hyperspace holds none - which is
+     * the ordinary state before {@link #installAboveStarscapeNebulaeTerrain} has run for the load, and
+     * during the advance the reseat holds it out.
+     *
+     * <p>This is the one variant that is ever moved, so it is the one variant with a published read.
+     * Moving either of the others would lift geometry the nebulae are meant to fog, or move an
+     * entity the engine is not drawing at all.
      *
      * <p>Published because the entity has to be reachable from outside this package without the
      * variant that identifies it being: what marks one as ours is the plugin class, and a caller
-     * given that would be holding a second copy of a rule that changes whenever the pair does. Each
+     * given that would be holding a second copy of a rule that changes whenever the surfaces do. Each
      * call resolves it afresh, so a caller holding the answer across a save load is holding a stale
      * entity by its own choice rather than by this handing one out.
      */
-    public static CampaignTerrainAPI findStarscapeTerrain(SectorAPI sector) {
+    public static CampaignTerrainAPI findAboveStarscapeNebulaeTerrain(SectorAPI sector) {
         if (sector == null) {
             return null;
         }
         var hyperspace = sector.getHyperspace();
         return hyperspace == null
             ? null
-            : findMapLayerTerrain(hyperspace.getTerrainCopy(), STARSCAPE_TERRAIN);
+            : findMapLayerTerrain(hyperspace.getTerrainCopy(), ABOVE_STARSCAPE_NEBULAE_TERRAIN);
     }
 
     /**
@@ -150,10 +192,10 @@ public final class MapLayerTerrainInstaller {
      * re-saved games under the real class name - a re-saved game sheds the historical names rather
      * than carrying a dead class reference forever.
      *
-     * <p>The starscape variant's entity and plugin class names are frozen into saves from their
-     * first install too, but neither has a former name to bridge, so no lineage exists for them yet.
-     * A rename of either needs the same treatment this gives the schematic plugin: the old name kept
-     * as a read-only alias, and the live name aliased to itself last.
+     * <p>The Starscape entity's class name and both Starscape plugins' are frozen into saves from
+     * their first install too, but none has a former name to bridge, so no lineage exists for them
+     * yet. A rename of any of them needs the same treatment this gives the schematic plugin: the old
+     * name kept as a read-only alias, and the live name aliased to itself last.
      *
      * <p>XStream is fully qualified because it belongs to no import group the checkstyle order
      * recognises, and this is the type's only use site.
@@ -167,7 +209,7 @@ public final class MapLayerTerrainInstaller {
 
     // The live terrain this location carries for the given variant, or null when it carries none.
     // Takes the terrain list rather than the location so the decision can be exercised on its own:
-    // the starscape variant's install cannot be driven from a test at all, its add step constructing
+    // the Starscape variant's install cannot be driven from a test at all, its add step constructing
     // an entity whose obfuscated supertype chain a verifying JVM refuses to load, which leaves this
     // the one decision on that path a test can reach.
     //
@@ -259,17 +301,18 @@ public final class MapLayerTerrainInstaller {
         }
 
         // Whether this terrain is one of ours left behind under a type id this mod no longer
-        // installs. Only the schematic variant can ever answer true: the starscape one reports no id
-        // of its own, so nothing it reports can date it.
+        // installs. Only the schematic variant can ever answer true: the Starscape ones report no id
+        // of their own, so nothing they report can date them.
         private boolean isStaleTerrain(CampaignTerrainAPI terrain) {
             return isOwnTerrain(terrain) && !isReportedTypeCurrent.test(terrain.getType());
         }
 
         // Whether this terrain is this variant's own, identified by its plugin rather than by its
         // type id: the id is the thing a rename changes, so matching on it would make the sweep blind
-        // to exactly the entities it exists to find - and the starscape variant has no id to match on
-        // at all. The class is compared exactly rather than with instanceof because the starscape
-        // variant's plugin is a subclass of the schematic one, and each installs its own entity.
+        // to exactly the entities it exists to find - and the Starscape variant has no id to match on
+        // at all. The class is compared exactly rather than with instanceof because the three plugins
+        // form a subclass chain - each Starscape variant extends the one before it - and each
+        // installs its own entity, so an instanceof match would let one variant answer for another's.
         private boolean isOwnTerrain(CampaignTerrainAPI terrain) {
             return terrain != null
                 && terrain.getPlugin() != null

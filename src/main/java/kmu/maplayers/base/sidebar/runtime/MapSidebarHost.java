@@ -17,7 +17,7 @@ import java.util.Set;
  * stroke, and both feed the shared {@link SidebarRenderer} / {@link SidebarInput}.
  *
  * <p>The Starscape filter is not part of the gate. The layers paint through a terrain pair, one half of
- * which draws over the starfield, so there is an overlay under these controls whichever look the map
+ * which draws in Starscape mode, so there is an overlay under these controls whichever look the map
  * wears and the filter says nothing about whether the sidebar has anything to drive.
  *
  * <p>Its panel reopens at the fold this save was left at, and a save that has never folded it opens out,

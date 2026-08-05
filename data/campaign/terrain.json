@@ -8,13 +8,22 @@
 	"kmu_sector_map_layer_terrain":{
 		"plugin":"kmu.maplayers.base.render.SectorMapLayerTerrainPlugin",
 	},
-	# The starscape half of the pair. The map widget skips every terrain while
+	# The Starscape half of the pair. The map widget skips every terrain while
 	# the Starscape filter is on except one whose entity reports the terrain
 	# type "slipstream", so a second entity reports that and resolves its
 	# plugin from this row; the plugin subclasses the one above and stands
-	# aside whenever no starscape map is on screen, leaving exactly one of the
+	# aside whenever no Starscape map is on screen, leaving exactly one of the
 	# two painting in any frame.
 	"kmu_sector_map_layer_starscape_terrain":{
 		"plugin":"kmu.maplayers.base.render.SectorMapLayerStarscapeTerrainPlugin",
+	},
+	# The upper half of the Starscape surface. The map's own per-system nebula
+	# icons are drawn between the terrain icons it holds, so the parts of the
+	# overlay that must not be fogged - the faction names - are emitted from a
+	# second Starscape entity whose icon is lifted past them. Same entity class and same
+	# whitelisted reported type as the row above; only the plugin differs, and all
+	# it differs in is which band it paints.
+	"kmu_sector_map_layer_above_starscape_nebulae_terrain":{
+		"plugin":"kmu.maplayers.base.render.SectorMapLayerAboveStarscapeNebulaeTerrainPlugin",
 	},
 }

@@ -199,7 +199,7 @@ about what the overlay means.
   map gate is host-blind and
   look-blind (KMLib's
   `MapPresence.isAnyMapShowing`), so the box draws wherever the layer paints: the sector map and the intel
-  screen's map visor, over the schematic and over the Starscape starfield alike. Which is what the
+  screen's map visor, in the schematic look and in Starscape alike. Which is what the
   listener needs, being called for the whole campaign UI and never told which
   screen is up. `SystemCellTooltip` is
   the shape a layer's box takes - the hovered system's name over the layer's own content, one look and

@@ -11,6 +11,7 @@ import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.render.MapLayerRenderer;
+import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
@@ -40,6 +41,11 @@ import java.util.Optional;
  * is over, and hands the draw lists to the overlay renderer. All the real work - keeping the draw
  * lists fresh with the least work per frame, reading the cursor, and composing the overlay layers -
  * lives in those three.
+ *
+ * <p>The first two of those run in {@code prepareFrame} and the third in {@code renderOnMap}, which
+ * is what lets one frame be painted by more than one surface: under Starscape the map draws its own
+ * nebulae between two of this layer's bands, so the bands are emitted from separate terrain passes
+ * while the refresh and the cursor read still happen once.
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
@@ -93,11 +99,11 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     }
 
     @Override
-    public void renderOnMap(float factor, float alphaMult) {
-        // Draws whichever political-map view is active, or nothing when none is - the tab is open
-        // with every view deselected. Gating the whole draw (and its refresh) on one view read keeps
-        // a dark overlay near-free per frame, and reading the view - not a named faction gate - is
-        // what lets any registered view draw here.
+    public void prepareFrame(float factor) {
+        // Stands down when no political-map view is active - the tab is open with every view
+        // deselected. Gating the refresh on one view read keeps a dark overlay near-free per frame,
+        // and reading the view - not a named faction gate - is what lets any registered view draw
+        // here.
         var view = PoliticalMapViewRegistry.getActiveView();
         if (view == null) {
             return;
@@ -105,7 +111,18 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         traceMapIconOrder();
         cache.refresh(view);
         publishHoverIfAnyFeedbackNeedsIt(factor);
-        overlayRenderer.renderOnMap(cache, factor, alphaMult);
+    }
+
+    @Override
+    public void renderOnMap(float factor, float alphaMult, MapOverlayBand band) {
+        // The same view read the preparation above stands down on, repeated rather than remembered:
+        // it is a registry lookup, and a field holding the frame's answer would be render state on a
+        // renderer that deliberately holds none.
+        var view = PoliticalMapViewRegistry.getActiveView();
+        if (view == null) {
+            return;
+        }
+        overlayRenderer.renderOnMap(cache, factor, alphaMult, band);
     }
 
     @Override
@@ -190,7 +207,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     // Diagnostic only, and silent unless KMU's log verbosity is DEBUG: names the terrain icons the
     // map widget holds, in the order it will draw them. This layer rides on a terrain, so where its
-    // icon was seeded is what decides whether the map's own starfield fog paints over the overlay
+    // icon was seeded is what decides whether the map's own nebula fog paints over the overlay
     // or under it - an insertion-order artefact of the live widget, not a contract, and one no
     // published call reports. A build that starts seeding its icons differently shows up here as a
     // moved position rather than as a picture nobody can account for.

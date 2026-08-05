@@ -29,14 +29,19 @@ class MapLayerTerrainInstallerTest {
     // the other side: this is the string the load-time sweep has to recognise as stale.
     private static final String LEGACY_TERRAIN_TYPE = "kmu_political_terrain";
 
-    // The live type id of the starscape variant, pinned as a literal for the reason the schematic
+    // The live type id of the Starscape variant, pinned as a literal for the reason the schematic
     // one is, and read back off the production constant below because that variant's install cannot
     // be driven far enough to observe the id it adds under.
     private static final String CURRENT_STARSCAPE_TERRAIN_TYPE =
         "kmu_sector_map_layer_starscape_terrain";
 
-    // What the starscape variant's entity reports in place of the id it was installed under - the
-    // one terrain type the map widget draws over the starfield. A literal here rather than a read of
+    // The live type id of the variant that paints above the map's nebulae, pinned as a literal
+    // for the reason the two above it are.
+    private static final String CURRENT_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE =
+        "kmu_sector_map_layer_above_starscape_nebulae_terrain";
+
+    // What the Starscape variant's entity reports in place of the id it was installed under - the
+    // one terrain type the map widget draws in Starscape mode. A literal here rather than a read of
     // the production constant because it is the engine's string, not the mod's: the mod cannot
     // rename it and a test agreeing with a changed copy of it would be agreeing with a broken
     // feature.
@@ -117,8 +122,9 @@ class MapLayerTerrainInstallerTest {
         void doesNotStackASecondTerrainOnAReloadedSave() {
             // Terrain persists, so a reloaded save already carries it; adding another would paint
             // the same overlay twice and double the alpha of every fill.
-            var hyperspaceMock = buildHyperspaceCarrying(
-                buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin()));
+            var hyperspaceMock = buildHyperspaceCarrying(buildTerrainMock(
+                CURRENT_TERRAIN_TYPE,
+                new SectorMapLayerTerrainPlugin()));
 
             MapLayerTerrainInstaller.installSchematicTerrain(
                 buildSectorWithHyperspace(hyperspaceMock));
@@ -134,8 +140,9 @@ class MapLayerTerrainInstallerTest {
             // The type id is serialised, so a save written before the rename holds an entity under
             // the old id whose spec no longer resolves. It has to go, or the save ends up with the
             // stale entity plus the freshly added one.
-            var staleTerrainMock =
-                buildTerrainMock(LEGACY_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
+            var staleTerrainMock = buildTerrainMock(
+                LEGACY_TERRAIN_TYPE,
+                new SectorMapLayerTerrainPlugin());
 
             var hyperspaceMock = buildHyperspaceCarrying(staleTerrainMock);
 
@@ -152,8 +159,9 @@ class MapLayerTerrainInstallerTest {
         void leavesTerrainBelongingToAnotherModAlone() {
             // The sweep identifies its own by plugin class, so a third-party terrain is neither
             // retired nor counted as the map layer already being present.
-            var otherModTerrainMock =
-                buildTerrainMock("some_other_terrain", mock(CampaignTerrainPlugin.class));
+            var otherModTerrainMock = buildTerrainMock(
+                "some_other_terrain",
+                mock(CampaignTerrainPlugin.class));
 
             var hyperspaceMock = buildHyperspaceCarrying(otherModTerrainMock);
 
@@ -168,11 +176,12 @@ class MapLayerTerrainInstallerTest {
 
         @Test
         void retiresTheStaleTerrainWithoutTouchingTheStarscapeVariant() {
-            // The starscape plugin subclasses the schematic one, so an instanceof match here would
+            // The Starscape plugin subclasses the schematic one, so an instanceof match here would
             // let this sweep retire the other variant's entity - which reports a type id this one
             // never installs, and so looks stale to any test that is not exact about the class.
-            var starscapeTerrainMock =
-                buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
+            var starscapeTerrainMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerStarscapeTerrainPlugin());
 
             var hyperspaceMock = buildHyperspaceCarrying(starscapeTerrainMock);
 
@@ -200,12 +209,13 @@ class MapLayerTerrainInstallerTest {
         @Test
         void doesNotStackASecondStarscapeTerrainOnAReloadedSave() {
             // Terrain persists, so a reloaded save already carries this variant too; a second one
-            // would paint the starscape overlay twice and double the alpha of every fill. Only the
+            // would paint the Starscape overlay twice and double the alpha of every fill. Only the
             // already-present path is driven here - the absent path builds the entity, whose
             // obfuscated supertype chain a verifying JVM refuses to load, which is why the decision
             // itself is pinned through findMapLayerTerrain below.
-            var hyperspaceMock = buildHyperspaceCarrying(
-                buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin()));
+            var hyperspaceMock = buildHyperspaceCarrying(buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerStarscapeTerrainPlugin()));
 
             MapLayerTerrainInstaller.installStarscapeTerrain(
                 buildSectorWithHyperspace(hyperspaceMock));
@@ -221,10 +231,11 @@ class MapLayerTerrainInstallerTest {
             // Nothing this variant reports can date it: its entity answers with the engine's
             // whitelisted map type rather than with the id it was installed under, so a reported
             // type the sweep does not recognise is the ordinary case and not a former id. Sweeping
-            // on it would retire the live entity on every load and leave the starfield painting
+            // on it would retire the live entity on every load and leave Starscape painting
             // nothing.
             var starscapeTerrainMock = buildTerrainMock(
-                "some_other_reported_type", new SectorMapLayerStarscapeTerrainPlugin());
+                "some_other_reported_type",
+                new SectorMapLayerStarscapeTerrainPlugin());
 
             var hyperspaceMock = buildHyperspaceCarrying(starscapeTerrainMock);
 
@@ -257,39 +268,124 @@ class MapLayerTerrainInstallerTest {
         }
     }
 
+    @Nested
+    class InstallAboveStarscapeNebulaeTerrain {
+
+        @Test
+        void doesNotStackASecondAboveNebulaeTerrainOnAReloadedSave() {
+            // Terrain persists, so a reloaded save already carries this variant too. A second one
+            // would draw the faction names twice, at doubled alpha and over the same cluster
+            // anchors - and would leave a spare entity behind for the reseat to pick between.
+            var hyperspaceMock = buildHyperspaceCarrying(buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin()));
+
+            MapLayerTerrainInstaller.installAboveStarscapeNebulaeTerrain(
+                buildSectorWithHyperspace(hyperspaceMock));
+
+            verify(hyperspaceMock, never())
+                .addEntity(any());
+            verify(hyperspaceMock, never())
+                .removeEntity(any());
+        }
+
+        @Test
+        void neverRetiresTheAboveNebulaeVariantOverWhatItReports() {
+            // Nothing this variant reports can date it either: it shares the entity class of the
+            // variant below, so it reports the engine's whitelisted map type rather than the id it
+            // was installed under.
+            var aboveNebulaeTerrainMock = buildTerrainMock(
+                "some_other_reported_type",
+                new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin());
+
+            var hyperspaceMock = buildHyperspaceCarrying(aboveNebulaeTerrainMock);
+
+            MapLayerTerrainInstaller.installAboveStarscapeNebulaeTerrain(
+                buildSectorWithHyperspace(hyperspaceMock));
+
+            verify(hyperspaceMock, never())
+                .removeEntity(any());
+        }
+
+        @Test
+        void installsUnderTheTypeIdTheShippedTerrainSpecDeclares() {
+            // Pinned on the constant for the reason the variant below it is: the add builds an
+            // entity whose obfuscated supertype chain a verifying JVM refuses to load, and this id
+            // is a terrain.json row key with no way back once a save is written under a wrong one.
+            assertThat(MapLayerTerrainInstaller.SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE)
+                .isEqualTo(CURRENT_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE);
+        }
+
+        @Test
+        void installsUnderAnIdOfItsOwn() {
+            // The two Starscape variants share an entity class and a reported type, so the row id
+            // handed to that class at construction is the only thing that decides which plugin an
+            // entity resolves to - and a shared id would give both surfaces the same one.
+            assertThat(MapLayerTerrainInstaller.SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE)
+                .isNotEqualTo(MapLayerTerrainInstaller.SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE);
+        }
+
+        @Test
+        void toleratesANullSector() {
+
+            var aboveNebulaeInstallOnNullSector = (Runnable) () ->
+                MapLayerTerrainInstaller.installAboveStarscapeNebulaeTerrain(null);
+
+            assertThatCode(aboveNebulaeInstallOnNullSector::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
     // The published read, as opposed to the walk below it. What is pinned here is the path down to
     // that walk and the variant it is aimed at, since the caller is a per-frame script that asks on
     // every advance it might act on - so every way a sector can decline to answer is an ordinary
     // frame rather than an error.
     @Nested
-    class FindStarscapeTerrain {
+    class FindAboveStarscapeNebulaeTerrain {
 
         @Test
-        void findsTheStarscapeTerrainHyperspaceIsCarrying() {
+        void findsTheAboveNebulaeTerrainHyperspaceIsCarrying() {
 
-            var starscapeTerrainMock =
-                buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
+            var aboveNebulaeTerrainMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin());
+
+            var sectorMock =
+                buildSectorWithHyperspace(buildHyperspaceCarrying(aboveNebulaeTerrainMock));
+
+            assertThat(MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(sectorMock))
+                .isSameAs(aboveNebulaeTerrainMock);
+        }
+
+        @Test
+        void doesNotAnswerWithTheSurfaceBeneathTheNebulae() {
+            // Every variant is installed side by side, so a loaded save always carries all of them
+            // and this walk always has a wrong answer available. Handing back the lower Starscape
+            // half would lift the fills clear of the fog they are meant to read through, and leave
+            // the text buried under it - the exact inversion of the split.
+            var starscapeTerrainMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerStarscapeTerrainPlugin());
 
             var sectorMock =
                 buildSectorWithHyperspace(buildHyperspaceCarrying(starscapeTerrainMock));
 
-            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(sectorMock))
-                .isSameAs(starscapeTerrainMock);
+            assertThat(MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(sectorMock))
+                .isNull();
         }
 
         @Test
         void doesNotAnswerWithTheSchematicHalf() {
-            // Both variants are installed side by side, so a loaded save always carries both and
-            // this walk always has a wrong answer available. Handing back the schematic one would
-            // move the half the engine is already drawing and leave the starscape half exactly
-            // where it was - which looks like nothing happening rather than like a mix-up.
-            var schematicTerrainMock =
-                buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
+            // Moving that one would move a surface the engine is not drawing in this mode at all,
+            // which looks like nothing happening rather than like a mix-up.
+            var schematicTerrainMock = buildTerrainMock(
+                CURRENT_TERRAIN_TYPE,
+                new SectorMapLayerTerrainPlugin());
 
             var sectorMock =
                 buildSectorWithHyperspace(buildHyperspaceCarrying(schematicTerrainMock));
 
-            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(sectorMock))
+            assertThat(MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(sectorMock))
                 .isNull();
         }
 
@@ -299,14 +395,14 @@ class MapLayerTerrainInstallerTest {
             // itself creates for one advance, so absent has to be an answer rather than a fault.
             var sectorMock = buildSectorWithHyperspace(buildHyperspaceCarrying());
 
-            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(sectorMock))
+            assertThat(MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(sectorMock))
                 .isNull();
         }
 
         @Test
         void answersWithNothingWhenThereIsNoHyperspace() {
 
-            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(
+            assertThat(MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(
                     buildSectorWithHyperspace(null)))
                 .isNull();
         }
@@ -314,12 +410,12 @@ class MapLayerTerrainInstallerTest {
         @Test
         void answersWithNothingWhenThereIsNoSector() {
 
-            assertThat(MapLayerTerrainInstaller.findStarscapeTerrain(null))
+            assertThat(MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null))
                 .isNull();
         }
     }
 
-    // Exercised with the starscape variant's wiring: it is the variant whose install cannot be
+    // Exercised with the Starscape variant's wiring: it is the variant whose install cannot be
     // driven end to end from a test, so this is where its presence decision is pinned. The
     // schematic one's is covered through its own install above. The reseat reads through this same
     // walk to get hold of the entity it moves, so a match loosened here would move a stranger's.
@@ -329,8 +425,9 @@ class MapLayerTerrainInstallerTest {
         @Test
         void findsTheStarscapeVariantByItsPluginClass() {
 
-            var starscapeTerrainMock =
-                buildTerrainMock(WHITELISTED_MAP_TYPE, new SectorMapLayerStarscapeTerrainPlugin());
+            var starscapeTerrainMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerStarscapeTerrainPlugin());
 
             assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(starscapeTerrainMock),
@@ -340,11 +437,12 @@ class MapLayerTerrainInstallerTest {
 
         @Test
         void doesNotMistakeTheSchematicVariantForTheStarscapeOne() {
-            // The exact-class compare is the whole guard: the starscape plugin subclasses the
-            // schematic one, so an instanceof would answer true here and the starscape variant would
+            // The exact-class compare is the whole guard: the Starscape plugin subclasses the
+            // schematic one, so an instanceof would answer true here and the Starscape variant would
             // never install.
-            var schematicTerrainMock =
-                buildTerrainMock(CURRENT_TERRAIN_TYPE, new SectorMapLayerTerrainPlugin());
+            var schematicTerrainMock = buildTerrainMock(
+                CURRENT_TERRAIN_TYPE,
+                new SectorMapLayerTerrainPlugin());
 
             assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(schematicTerrainMock),
@@ -353,11 +451,41 @@ class MapLayerTerrainInstallerTest {
         }
 
         @Test
+        void doesNotMistakeTheAboveNebulaeVariantForTheOneBeneathTheNebulae() {
+            // The two Starscape variants are indistinguishable by anything they report - same entity
+            // class, same whitelisted type - so the exact-class compare on the plugin is the only
+            // thing separating them. An instanceof would have the lower variant answer for the
+            // upper one, so the upper would never install and the names would stay under the fog.
+            var aboveNebulaeTerrainMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE, 
+                new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin());
+
+            assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
+                    List.of(aboveNebulaeTerrainMock),
+                    MapLayerTerrainInstaller.STARSCAPE_TERRAIN))
+                .isNull();
+        }
+
+        @Test
+        void findsTheAboveNebulaeVariantByItsPluginClass() {
+
+            var aboveNebulaeTerrainMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin());
+
+            assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
+                    List.of(aboveNebulaeTerrainMock),
+                    MapLayerTerrainInstaller.ABOVE_STARSCAPE_NEBULAE_TERRAIN))
+                .isSameAs(aboveNebulaeTerrainMock);
+        }
+
+        @Test
         void doesNotMistakeARealSlipstreamForTheStarscapeVariant() {
             // Hyperspace's own slipstreams report the very type this variant's entity reports, so
             // the reported type cannot take part in the decision at all - only the plugin class can.
-            var slipstreamTerrainMock =
-                buildTerrainMock(WHITELISTED_MAP_TYPE, mock(CampaignTerrainPlugin.class));
+            var slipstreamTerrainMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                mock(CampaignTerrainPlugin.class));
 
             assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(slipstreamTerrainMock),
@@ -369,7 +497,9 @@ class MapLayerTerrainInstallerTest {
         void toleratesTerrainCarryingNoPlugin() {
             // A terrain whose spec failed to resolve has no plugin to compare, and reading through
             // the null would fail the whole load-time install rather than skip one entity.
-            var pluginlessTerrainMock = buildTerrainMock(WHITELISTED_MAP_TYPE, null);
+            var pluginlessTerrainMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                null);
 
             assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(
                     List.of(pluginlessTerrainMock),

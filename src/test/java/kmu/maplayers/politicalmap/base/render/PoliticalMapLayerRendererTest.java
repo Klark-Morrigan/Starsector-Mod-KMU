@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
@@ -8,6 +9,8 @@ import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.MockedStatic;
 
 import java.util.Optional;
@@ -21,37 +24,67 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins what this renderer decides for itself before any drawing happens: that a deselected view
- * costs a frame nothing, that the hover box it answers the framework with is the active view's and
- * only while this layer's own tooltip switch is on, and that a game load leaves nothing of the
- * previous sector behind. What the discard actually empties is
+ * costs a frame nothing whichever of its passes is running, that the hover box it answers the
+ * framework with is the active view's and only while this layer's own tooltip switch is on, and that
+ * a game load leaves nothing of the previous sector behind. What the discard actually empties is
  * {@link PoliticalMapCacheTest}'s; the cache refresh, the cursor read and the GL emission run only
  * in-engine and are covered by their own collaborators.
  */
 final class PoliticalMapLayerRendererTest {
+
     private static final float FACTOR = 1f;
     private static final float ALPHA_MULT = 1f;
 
     @Nested
-    class RenderOnMap {
+    class PrepareFrame {
 
         @Test
-        void renderOnMapStandsDownWhileNoViewIsSelected() {
+        void prepareFrameStandsDownWhileNoViewIsSelected() {
             // The tab is open with every view deselected. Standing down on that one read is what
             // keeps a dark overlay near-free per frame: nothing downstream is consulted, not even the
             // hover toggle that gates the cheapest of the work below it.
-            try (MockedStatic<PoliticalMapViewRegistry> viewRegistryMock =
-                        mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
-                        mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                viewRegistryMock.when(PoliticalMapViewRegistry::getActiveView).thenReturn(null);
+                viewRegistryMock
+                    .when(PoliticalMapViewRegistry::getActiveView)
+                    .thenReturn(null);
 
-                PoliticalMapLayerRenderer.INSTANCE.renderOnMap(FACTOR, ALPHA_MULT);
+                PoliticalMapLayerRenderer.INSTANCE.prepareFrame(FACTOR);
 
-                frameworkSettingsMock.verifyNoInteractions();
-                layerSettingsMock.verifyNoInteractions();
+                frameworkSettingsMock
+                    .verifyNoInteractions();
+                layerSettingsMock
+                    .verifyNoInteractions();
+            }
+        }
+    }
+
+    @Nested
+    class RenderOnMap {
+
+        @ParameterizedTest
+        @EnumSource(MapOverlayBand.class)
+        void renderOnMapStandsDownWhileNoViewIsSelected(MapOverlayBand band) {
+            // Every band asks the same question and gets the same answer: a deselected view has
+            // nothing to say about either side of the map's nebulae. Driven per band because
+            // each is a separate pass from a separate surface, so a band that read the view
+            // differently would paint on a frame the others left alone.
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                viewRegistryMock
+                    .when(PoliticalMapViewRegistry::getActiveView)
+                    .thenReturn(null);
+
+                PoliticalMapLayerRenderer.INSTANCE.renderOnMap(FACTOR, ALPHA_MULT, band);
+
+                frameworkSettingsMock
+                    .verifyNoInteractions();
+                layerSettingsMock
+                    .verifyNoInteractions();
             }
         }
     }
@@ -65,16 +98,16 @@ final class PoliticalMapLayerRendererTest {
             // framework is whichever the active view injects - never a fixed one for the layer.
             var tooltipMock = mock(MapHoverTooltip.class);
             var viewMock = mock(PoliticalMapView.class);
-            when(viewMock.resolveHoverTooltip()).thenReturn(Optional.of(tooltipMock));
 
-            try (MockedStatic<PoliticalMapViewRegistry> viewRegistryMock =
-                        mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
-                        mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+            when(viewMock.resolveHoverTooltip())
+                .thenReturn(Optional.of(tooltipMock));
+
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
+
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(viewMock);
@@ -89,14 +122,13 @@ final class PoliticalMapLayerRendererTest {
             // The layer withholds its box by offering none, which is how one layer's box goes dark
             // while every other layer's stays up - the dispatcher above draws whatever it is offered.
             var viewMock = mock(PoliticalMapView.class);
-            try (MockedStatic<PoliticalMapViewRegistry> viewRegistryMock =
-                        mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
-                        mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, false);
+
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(viewMock);
@@ -114,14 +146,12 @@ final class PoliticalMapLayerRendererTest {
         void resolveHoverTooltipIsEmptyWhileNoViewIsSelected() {
             // The tab is open with every view deselected: nothing is painted, so there is nothing for a
             // hover to describe either.
-            try (MockedStatic<PoliticalMapViewRegistry> viewRegistryMock =
-                        mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
-                        mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
+                
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(null);

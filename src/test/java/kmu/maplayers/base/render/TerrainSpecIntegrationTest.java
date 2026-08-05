@@ -54,13 +54,17 @@ final class TerrainSpecIntegrationTest {
         }
 
         @Test
-        void thePluginRowsNameExactlyTheTerrainSurfacePair() {
+        void thePluginRowsNameExactlyTheTerrainSurfaces() {
             // Named through the classes themselves, so a rename that misses the spec file breaks
-            // this test at compile time on one side and at assertion time on the other.
+            // this test at compile time on one side and at assertion time on the other. Pinned as a
+            // set rather than a minimum: a surface added without a row is a band that never paints,
+            // and a row left behind by a surface that was removed instantiates a class that no
+            // longer exists at game load.
             assertThat(readPluginClassNames())
                 .containsExactlyInAnyOrder(
                     SectorMapLayerTerrainPlugin.class.getName(),
-                    SectorMapLayerStarscapeTerrainPlugin.class.getName());
+                    SectorMapLayerStarscapeTerrainPlugin.class.getName(),
+                    SectorMapLayerAboveStarscapeNebulaeTerrainPlugin.class.getName());
         }
     }
 
@@ -71,17 +75,18 @@ final class TerrainSpecIntegrationTest {
         void theDeclaredRowIdsAreTheOnesTheModInstallsUnder() {
             // Literals rather than a read of the mod's install constants, which sit in another
             // package and would agree with themselves after a rename anyway. The constants are pinned
-            // to these same strings from the other side in KMU_ModPluginTest, which is what makes the
-            // data file and the installer agree without either reading the other.
+            // to these same strings from the other side in MapLayerTerrainInstallerTest, which is
+            // what makes the data file and the installer agree without either reading the other.
             //
-            // The starscape row is the one that cannot be repaired after the fact: its entity reports
-            // the engine's whitelisted map type in place of the id it was built with, so an id that
-            // drifts from this file resolves to no spec at game load and leaves behind an entity no
-            // later sweep can even recognise.
+            // The two Starscape rows are the ones that cannot be repaired after the fact: their
+            // entities report the engine's whitelisted map type in place of the id they were built
+            // with, so an id that drifts from this file resolves to no spec at game load and leaves
+            // behind an entity no later sweep can even recognise.
             assertThat(readRowIds())
                 .containsExactlyInAnyOrder(
                     "kmu_sector_map_layer_terrain",
-                    "kmu_sector_map_layer_starscape_terrain");
+                    "kmu_sector_map_layer_starscape_terrain",
+                    "kmu_sector_map_layer_above_starscape_nebulae_terrain");
         }
     }
 

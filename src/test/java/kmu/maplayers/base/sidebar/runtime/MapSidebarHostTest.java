@@ -58,7 +58,7 @@ final class MapSidebarHostTest {
 
         @Test
         void isOverlayShowingIsTrueWhileTheSectorMapIsUpWhicheverLookItWears() {
-            // The starscape half of the terrain pair paints over the starfield, so the overlay these
+            // The Starscape half of the terrain pair paints in that mode, so the overlay these
             // controls drive is on screen in either look. Pinned by the filter read never being made:
             // a gate that consulted it would hide the panel over a map that is plainly painting.
             try (var mapViewMock = mockStatic(CampaignMapView.class)) {

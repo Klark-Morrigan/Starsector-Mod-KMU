@@ -6,6 +6,7 @@ import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
+import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
@@ -20,9 +21,13 @@ import org.apache.log4j.Logger;
  * overlay when it has replaced them), then the hover highlight, then the cluster-anchor debug
  * overlay, then the faction names. The two debug facilities compose rather than one hiding the
  * other - the anchor overlay layers over whichever base view drew - and each layer draws only
- * under its own toggle. The plugin holds one of these behind a transient field and delegates its
- * {@code renderOnMap} here, so the terrain adapter stays a thin surface over the render
- * sequencing.
+ * under its own toggle.
+ *
+ * <p>That stack is emitted one band at a time, because the map can put its own drawing between two
+ * of the layers: the map holds its own nebula icons, drawn over the sector as a large sprite under
+ * Starscape, and the faction names are the sub-layer that has to clear them. Which band a sub-layer belongs to is decided here
+ * and nowhere else - the surfaces above only say which band they are painting, and the geometry
+ * below is emitted the same way whichever band asks for it.
  */
 final class PoliticalMapOverlayRenderer {
     private static final Logger LOG = Global.getLogger(PoliticalMapOverlayRenderer.class);
@@ -35,16 +40,29 @@ final class PoliticalMapOverlayRenderer {
     private boolean hasLoggedFirstRender;
 
     /**
-     * Paints the whole overlay for one map frame from the cache's current draw lists, in the map's
-     * below-UI pass so the territory and bands stay beneath the vanilla star and constellation
-     * names.
+     * Paints one band of the overlay for one map frame from the cache's current draw lists, in the
+     * map's below-UI pass so every band stays beneath the vanilla star and constellation names.
      */
     public void renderOnMap(
             PoliticalMapCache cache,
             float factor,
-            float alphaMult) {
+            float alphaMult,
+            MapOverlayBand band) {
 
         logFirstRenderOnce(cache, factor, alphaMult);
+
+        switch (band) {
+            case BENEATH_STARSCAPE_NEBULAE -> renderTerritoryBand(cache, factor, alphaMult);
+            case ABOVE_STARSCAPE_NEBULAE -> renderFactionNameBand(cache, factor, alphaMult);
+        }
+    }
+
+    // Everything that reads as an area, and so survives the nebula fog being drawn over it: the
+    // territories themselves, the hover feedback that traces them, and the debug overlays that
+    // replace or annotate them. They travel together because they are one picture - a highlight
+    // lifted clear of the fill it brightens would light nothing, and a border trace read against a
+    // fill it no longer sits on top of.
+    private void renderTerritoryBand(PoliticalMapCache cache, float factor, float alphaMult) {
 
         // Swap production and debug base render on which view the cache built: the debug overlay
         // replaces the normal render, and the cache built exactly one of the two.
@@ -85,10 +103,14 @@ final class PoliticalMapOverlayRenderer {
         if (KmuPoliticalMapSettings.getPoliticalMapShowClusterAnchors()) {
             ClusterAnchorRenderer.renderOnMap(cache.getClusterAnchors(), factor, alphaMult);
         }
-        // The faction names draw last of the map passes, so a name reads over its territory and the
-        // debug band, but still beneath the vanilla star and constellation names (drawn after every
-        // terrain renderOnMap). The list is empty unless the name choice draws names, so this is an
-        // empty-list check when they are off.
+    }
+
+    // The faction names, which draw last of the map passes: a name reads over its territory and the
+    // debug band, and - where a surface exists to put it there - over the map's nebulae too,
+    // while still staying beneath the vanilla star and constellation names the map draws after every
+    // terrain pass. The list is empty unless the name choice draws names, so this is an empty-list
+    // check when they are off.
+    private void renderFactionNameBand(PoliticalMapCache cache, float factor, float alphaMult) {
         LabelRenderer.renderOnMap(cache.getFactionLabels(), factor, alphaMult);
     }
 

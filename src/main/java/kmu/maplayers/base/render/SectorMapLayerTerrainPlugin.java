@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
 import java.util.EnumSet;
+import java.util.List;
 
 /**
  * The map's render surface: the terrain plugin that owns the sector (M) map's overlay render pass
@@ -42,6 +43,14 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
         EnumSet.noneOf(CampaignEngineLayers.class);
 
+    // Both bands in one pass, bottom first. This surface owns one terrain icon, so it has no way to
+    // put anything above the nebulae the map appends after it - they are drawn on the schematic map
+    // too, just as ordinary nebula terrain rather than as the Starscape sprite. Splitting the pass
+    // here would move nothing; it would only cost a second entity to paint the same order.
+    private static final List<MapOverlayBand> BOTH_BANDS = List.of(
+        MapOverlayBand.BENEATH_STARSCAPE_NEBULAE,
+        MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
     @Override
     public EnumSet<CampaignEngineLayers> getActiveLayers() {
         return ACTIVE_LAYERS;
@@ -72,6 +81,30 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         if (layerRenderer == null) {
             return;
         }
-        layerRenderer.renderOnMap(factor, alphaMult);
+
+        var paintedBands = resolvePaintedBands();
+
+        // Preparation belongs to whichever surface paints the lower band. That band is the one
+        // every mode paints and the one the map always reaches first, so pinning the frame's single
+        // preparation to it is what stops the split surfaces preparing twice - or, in the mode where
+        // they are split, neither of them preparing at all.
+        if (paintedBands.contains(MapOverlayBand.BENEATH_STARSCAPE_NEBULAE)) {
+            layerRenderer.prepareFrame(factor);
+        }
+
+        for (var band : paintedBands) {
+            layerRenderer.renderOnMap(factor, alphaMult, band);
+        }
+    }
+
+    /**
+     * The bands this surface paints, in the order it paints them. Overridden by the surfaces that
+     * paint only one of them, which is the whole of what a split surface is: the entity it rides on
+     * decides where in the map's draw order the pass lands, and this decides what goes in it.
+     *
+     * @return this surface's bands, bottom first
+     */
+    protected List<MapOverlayBand> resolvePaintedBands() {
+        return BOTH_BANDS;
     }
 }

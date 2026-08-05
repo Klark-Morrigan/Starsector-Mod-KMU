@@ -153,9 +153,9 @@ def nexJars = findModJars('ExerelinCore.jar')
 // path.
 def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['xstream-*.jar'])
 // The obfuscated core, carrying the concrete campaign classes the published API only exposes as
-// interfaces. KMU compiles against one of them: CampaignTerrain, which the map layers' starscape
-// terrain entity subclasses so it can report the terrain type the sector map draws over
-// the starfield. The API side has nothing to subclass - LocationAPI.addTerrain always builds a
+// interfaces. KMU compiles against one of them: CampaignTerrain, which the map layers' Starscape
+// terrain entity subclasses so it can report the terrain type the sector map draws in Starscape
+// mode. The API side has nothing to subclass - LocationAPI.addTerrain always builds a
 // plain CampaignTerrain - so the concrete class is the only way in. compileOnly, like the API jar:
 // the game classloader supplies it at runtime.
 //

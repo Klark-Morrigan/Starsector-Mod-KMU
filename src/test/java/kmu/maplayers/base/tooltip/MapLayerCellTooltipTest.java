@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>The map gate is pinned as the supplier it is, open and closed, which is the whole of what this
  * level can say about it: what the live read answers, and that the installed one is the union
- * covering starscape, belong to the seams themselves and to the install site's own test.
+ * covering Starscape, belong to the seams themselves and to the install site's own test.
  */
 final class MapLayerCellTooltipTest {
 
@@ -146,7 +146,7 @@ final class MapLayerCellTooltipTest {
             // case that proves the dispatcher reaches its tooltip rather than that it declines to.
             // Which map states open the gate is not this test's to say: the read arrives as a
             // supplier, so "showing" is all this level can express. That the supplied read is the
-            // union covering starscape is pinned against the real composition in
+            // union covering Starscape is pinned against the real composition in
             // MapLayerCellTooltipGateIntegrationTest.
             var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
             var sectorMock = mock(SectorAPI.class);

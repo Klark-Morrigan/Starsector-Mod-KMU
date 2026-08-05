@@ -89,13 +89,19 @@ public class KMU_ModPlugin extends BaseModPlugin {
         runGuardedStep("Failed to install KMU sector map layer terrain",
             () -> MapLayerTerrainInstaller.installSchematicTerrain(Global.getSector()));
 
-        // The second terrain of the render pair, guarded separately so a failure to build the
-        // starscape entity - the variant reaching concrete core classes - cannot take the schematic
-        // one down with it and leave the map painting nothing in either mode.
-        runGuardedStep("Failed to install KMU sector map layer starscape terrain",
+        // The second render surface, guarded separately so a failure to build the Starscape entity -
+        // the variant reaching concrete core classes - cannot take the schematic one down with it and
+        // leave the map painting nothing in either mode.
+        runGuardedStep("Failed to install KMU sector map layer Starscape terrain",
             () -> MapLayerTerrainInstaller.installStarscapeTerrain(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU sector map layer starscape terrain reseater",
+        // The third surface, which paints over the map's own nebula icons. Guarded apart from the
+        // one above for the same reason it is guarded apart from the schematic one, and because
+        // losing it costs only the band that clears the fog rather than the whole Starscape overlay.
+        runGuardedStep("Failed to install KMU sector map layer Starscape above-nebulae terrain",
+            () -> MapLayerTerrainInstaller.installAboveStarscapeNebulaeTerrain(Global.getSector()));
+
+        runGuardedStep("Failed to install KMU sector map layer Starscape terrain reseater",
             () -> installStarscapeTerrainReseater(Global.getSector()));
 
         runGuardedStep("Failed to install KMU political map discovery listener",
@@ -188,16 +194,21 @@ public class KMU_ModPlugin extends BaseModPlugin {
             sector, PoliticalMapColonisationListener.class, PoliticalMapColonisationListener::new);
     }
 
-    // Registers the per-frame script that lifts the starscape terrain over the starfield's nebulae
-    // each time a map opens onto them. Moving an icon to the end of the widget's draw order is
-    // KMLib's, and it is told only which map matters and which entity to move; that the entity is a
-    // terrain, and that the fog above it is what makes the move worth making, are KMU's side of it.
+    // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
+    // icons each time a map opens onto them. Moving an icon to the end of the widget's draw order
+    // is KMLib's, and it is told only which map matters and which entity to move; that the entity is
+    // a terrain, and that the fog above it is what makes the move worth making, are KMU's side of it.
     //
-    // The map read is the starscape one and its sibling on MapPresence is the wrong one, which is
+    // Only the above-nebulae entity is moved. The surface beneath it is meant to be fogged - a fill
+    // reads as territory through the nebula sprite, where a name stops being legible - so lifting
+    // both would undo the split the two entities exist for and leave the overlay laid flat beneath
+    // the fog again.
+    //
+    // The map read is the Starscape one and its sibling on MapPresence is the wrong one, which is
     // worth stating because nothing catches the swap: both compile, both are on the same object,
-    // and the entity moved here is the half that stands aside entirely while a schematic map is up.
-    // Arming on a schematic open would move an entity that is not drawing, and skip the open that
-    // is.
+    // and the entity moved here is one of the halves that stand aside entirely while a schematic map
+    // is up. Arming on a schematic open would move an entity that is not drawing, and skip the open
+    // that is.
     //
     // Both ports are read afresh per call rather than resolved here, since a save load replaces the
     // entity and the script outlives no load anyway. Transient: pure runtime logic that must not
@@ -211,7 +222,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // and skip the first reseat this sector is owed.
         sector.addTransientScript(new MapIconReseater(
             new MapPresence()::isStarscapeMapShowing,
-            () -> MapLayerTerrainInstaller.findStarscapeTerrain(Global.getSector())));
+            () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(Global.getSector())));
     }
 
     // Registers the per-frame watcher that refreshes the political map when a

@@ -148,7 +148,7 @@ public final class LiveSidebarPlacement {
 
     // The intel-screen anchor, expressed as screen padding so the top-left-anchored layout lands the panel
     // over the lit visor: the box sits flush against the visor's left edge and hangs from the visor top,
-    // pushed down by topPadding so it clears the vanilla starscape / fuel-range toggles at the top of the
+    // pushed down by topPadding so it clears the vanilla Starscape / fuel-range toggles at the top of the
     // intel map, and its body caps to the visor's bottom edge so the sidebar never runs past the visor (a
     // longer list scrolls within). In UI coordinates (origin bottom-left) the visor's top edge is its y plus
     // its height. The right margin is unused - the sidebar grows rightward across the visor.

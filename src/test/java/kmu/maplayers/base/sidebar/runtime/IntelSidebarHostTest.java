@@ -89,7 +89,7 @@ final class IntelSidebarHostTest {
 
         @Test
         void isOverlayShowingIsTrueWhileTheLitVisorIsInStarscapeMode() {
-            // The starscape half of the terrain pair paints over the starfield, so a lit visor carries the
+            // The Starscape half of the terrain pair paints in that mode, so a lit visor carries the
             // overlay these controls drive in that look too and the filter must not close the gate.
             var intelScreenFake = new IntelScreenViewFake();
 

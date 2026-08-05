@@ -15,12 +15,13 @@ import java.util.List;
  * with its own hang point - the builder laid the stack out - so this pass just draws them
  * all alike.
  *
- * <p>Drawn in the same below-UI {@code renderOnMap} pass as the fills and the debug anchor
- * overlay, and last of the three, so a name reads on top of its cluster and over the
- * debug band that (when the anchor toggle is on) shows the box it will occupy - yet still
- * beneath the vanilla star and constellation names, which the map draws after every
- * terrain {@code renderOnMap}. ({@code renderOnMapAbove} would put the names over the star
- * labels instead.)
+ * <p>Drawn in a below-UI {@code renderOnMap} pass, after the fills and the debug anchor
+ * overlay, so a name reads on top of its cluster and over the debug band that (when the
+ * anchor toggle is on) shows the box it will occupy - yet still beneath the vanilla star
+ * and constellation names, which the map draws after every terrain {@code renderOnMap}.
+ * ({@code renderOnMapAbove} would put the names over the star labels instead.) Whether
+ * that pass is the same one the fills were emitted in, or a later one from a second
+ * terrain, is the composing caller's to decide; nothing here depends on the answer.
  *
  * <p>The names live in world space: the pass scales the GL matrix by the map factor once,
  * then hands each label its raw world coordinates, so a name grows and shrinks with the
