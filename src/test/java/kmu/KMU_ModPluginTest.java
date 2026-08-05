@@ -6,9 +6,11 @@ import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.render.MapLayerStarscapeTerrainReseater;
 import kmu.maplayers.base.render.MapLayerTerrainInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailModeInput;
 import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
@@ -56,8 +58,7 @@ class KMU_ModPluginTest {
             // com.thoughtworks belongs to no import group the checkstyle order recognises. The
             // instance is a stand-in because constructing a real one fails outright on a modern JVM,
             // its TreeMapConverter reflecting into java.util internals that are no longer open.
-            try (MockedStatic<MapLayerTerrainInstaller> installerStaticMock =
-                    mockStatic(MapLayerTerrainInstaller.class)) {
+            try (var installerStaticMock = mockStatic(MapLayerTerrainInstaller.class)) {
                         
                 var xstreamMock = mock(com.thoughtworks.xstream.XStream.class);
 
@@ -168,6 +169,40 @@ class KMU_ModPluginTest {
     }
 
     @Nested
+    class InstallHoverTooltipDetailModeInput {
+
+        @Test
+        void reinstallsTheDetailModeInputListenerFreshAsTransient() {
+            // Remove-then-add, transient: the toggle is a live view preference that enters no save,
+            // and a registration an older save carried would flip the mode twice per press - leaving
+            // it exactly where it started, so the key would look dead.
+            var listenerManager = new RecordingListenerManager(false);
+
+            KMU_ModPlugin.installHoverTooltipDetailModeInput(buildSector(listenerManager));
+
+            assertThat(listenerManager.removedListenerClasses)
+                .containsExactly(HoverTooltipDetailModeInput.class);
+
+            assertThat(listenerManager.addedListeners)
+                .singleElement()
+                .isInstanceOf(HoverTooltipDetailModeInput.class);
+
+            assertThat(listenerManager.addedTransientFlags)
+                .containsExactly(true);
+        }
+
+        @Test
+        void toleratesAMissingListenerManager() {
+
+            var detailModeInputInstallOnNullManager = (Runnable) () ->
+                KMU_ModPlugin.installHoverTooltipDetailModeInput(buildSector(null));
+
+            assertThatCode(detailModeInputInstallOnNullManager::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
     class InstallMapLayerSectorWatcher {
 
         @Test
@@ -213,7 +248,8 @@ class KMU_ModPluginTest {
             // The tracker is a process-lifetime singleton, so without this flush a system id
             // reused by the next save is measured against the previous save's last-seen
             // position and reads as having teleported.
-            try (MockedStatic<MovingSystems> movingStaticMock = mockStatic(MovingSystems.class)) {
+            try (var movingStaticMock = mockStatic(MovingSystems.class)) {
+
                 var movingSystemsMock = mock(MovingSystems.class);
 
                 movingStaticMock

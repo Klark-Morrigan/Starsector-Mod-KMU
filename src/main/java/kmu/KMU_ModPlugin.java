@@ -14,6 +14,7 @@ import kmu.maplayers.base.render.MapLayerTerrainInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailModeInput;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailModeState;
 import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapSaveMigrations;
@@ -123,6 +124,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         runGuardedStep("Failed to install KMU map layer hover tooltip",
             () -> installMapLayerHoverTooltip(Global.getSector()));
+
+        runGuardedStep("Failed to install KMU hover tooltip detail mode input",
+            () -> installHoverTooltipDetailModeInput(Global.getSector()));
 
         runGuardedStep("Failed to install KMU political map sector watcher",
             () -> installMapLayerSectorWatcher(Global.getSector()));
@@ -259,6 +263,32 @@ public class KMU_ModPlugin extends BaseModPlugin {
             new MapLayerCellTooltip(
                 new VanillaMapTooltip(),
                 new MapPresence()::isAnyMapShowing),
+            true);
+    }
+
+    // Registers the input listener that reads the hover box's detail-mode toggle key. A separate
+    // registration from the dispatcher above rather than a second listener added beside it: the two
+    // are different listener kinds claiming different halves of the same feature - a render pass gets
+    // no events to consume and an input pass gets no GL context - so a failure to install either must
+    // cost only its own half. Transient, remove-then-add, for the dispatcher's reasons: it holds no
+    // save-relevant state, and a registration an older save carried would flip the mode twice per
+    // press.
+    static void installHoverTooltipDetailModeInput(SectorAPI sector) {
+        if (sector == null) {
+            return;
+        }
+
+        var listenerManager = sector.getListenerManager();
+        if (listenerManager == null) {
+            return;
+        }
+
+        listenerManager.removeListenerOfClass(HoverTooltipDetailModeInput.class);
+        // The same map read the dispatcher is handed, so the key is claimed on exactly the screens
+        // and looks the box it switches can draw on. Supplied rather than built by the listener for
+        // the reason the dispatcher takes it supplied: a test can then name the answer.
+        listenerManager.addListener(
+            new HoverTooltipDetailModeInput(new MapPresence()::isAnyMapShowing),
             true);
     }
 
