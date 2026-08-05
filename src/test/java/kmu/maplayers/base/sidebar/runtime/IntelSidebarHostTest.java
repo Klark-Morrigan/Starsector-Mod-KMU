@@ -16,7 +16,6 @@ import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 

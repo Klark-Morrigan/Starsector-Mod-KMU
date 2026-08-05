@@ -3,11 +3,7 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
-import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.ui.controls.Control;
 import kmlib.starsector.ui.input.UiCursor;
-import kmlib.starsector.ui.widgets.BoxBorder;
-import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
@@ -276,7 +272,7 @@ final class BaseSidebarHostTest {
                 .thenReturn(OFF_PANEL_COORDINATE);
 
             host.getController().advanceInputMotions(
-                buildEmptyPlacement(),
+                SidebarPlacements.placeSidebarWithNoTabsLaid(),
                 FULL_STEP_SECONDS,
                 DURATION_SECONDS);
         }
@@ -291,19 +287,6 @@ final class BaseSidebarHostTest {
             .getTabInteractionSources()
             .hoverSource()
             .resolveHoverFractionAt(tabIndex);
-    }
-
-    // A panel with nothing laid in it: the advance hit-tests a placement, and a blink is the one motion here
-    // that needs no geometry at all, so the fixture supplies a shape rather than a layout.
-    private static TabPanelPlacement buildEmptyPlacement() {
-
-        var emptyBox = new Rectangle(0f, 0f, 0f, 0f);
-
-        return new TabPanelPlacement(
-            new Control(null, emptyBox, List.of()),
-            new PanelPlacement(emptyBox, emptyBox, List.of(), emptyBox, 0f, 0f),
-            new BoxBorder(0f),
-            null);
     }
 
     private static InputEventAPI mockKeyPress(int keycode) {

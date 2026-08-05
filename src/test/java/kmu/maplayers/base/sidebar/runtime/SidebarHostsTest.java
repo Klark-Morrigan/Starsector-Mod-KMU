@@ -1,8 +1,6 @@
 package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.ui.widgets.BoxBorder;
-import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import org.junit.jupiter.api.Nested;
@@ -36,10 +34,6 @@ final class SidebarHostsTest {
     private static final float INSIDE_NOTCH_Y = 320f;
     private static final float OUTSIDE_X = 900f;
     private static final float OUTSIDE_Y = 900f;
-
-    // The frame the placement was laid out around. The hit-test reads the body's box, which already
-    // spans the border, so the width only has to be a value a real placement could carry.
-    private static final float BORDER_WIDTH = 1f;
 
     private final SidebarHost hostMock = mock(SidebarHost.class);
 
@@ -165,12 +159,8 @@ final class SidebarHostsTest {
     }
 
     // A placement carrying only what the hit-test reads: the body's box and the notch. The controls,
-    // header, and scroll geometry play no part in it.
+    // header, and scroll geometry play no part in it, which is what the shared builder's shape says.
     private static TabPanelPlacement placeSidebar(Rectangle notch) {
-        return new TabPanelPlacement(
-            null,
-            new PanelPlacement(BODY_BOX, BODY_BOX, List.of(), BODY_BOX, 0f, 0f),
-            new BoxBorder(BORDER_WIDTH),
-            notch);
+        return SidebarPlacements.placeSidebarOverBody(BODY_BOX, notch);
     }
 }

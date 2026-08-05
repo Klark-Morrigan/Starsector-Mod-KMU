@@ -122,11 +122,11 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             logViewStateOnChange("hidden; placement unavailable; " + host.describeViewState());
             return;
         }
-        // Step the panel's input motions - the hover fades and the tabs' click pulses - against the
-        // placement just resolved, the one this frame draws, so the tab and the handle that light are the
-        // ones the pointer is over now rather than the ones it was over before the panel last moved. After
-        // the layout for exactly that reason, where the fold has to run before it. One pace for every one of
-        // them, so the panel answers input at a single rhythm.
+        // Step the panel's input motions - the hover fades, the tabs' click pulses, and their hotkey
+        // blinks - against the placement just resolved, the one this frame draws, so the tab and the handle
+        // that light are the ones the pointer is over now rather than the ones it was over before the panel
+        // last moved. After the layout for exactly that reason, where the fold has to run before it. One
+        // pace for every one of them, so the panel answers input at a single rhythm.
         host.getController().advanceInputMotions(
             placement,
             elapsedSeconds,
