@@ -124,14 +124,14 @@ final class StandingRowResolverTest {
                         "Allied Powers",
                         "11"))
                     .nesting(List.of(
-                        CellTooltipEntryLine.createLine(
+                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                             "graphics/heg.png",
                             "The Hegemony",
-                            "8"),
-                        CellTooltipEntryLine.createLine(
+                            "8")),
+                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                             "graphics/aa.png",
                             "Astral Armada",
-                            "3"))));
+                            "3")))));
         }
 
         @Test
@@ -157,11 +157,12 @@ final class StandingRowResolverTest {
                 .containsExactly(CellTooltipEntry
                     .createEntry(CellTooltipEntryLine.createLine(null, "Allied Powers", "11"))
                     .nesting(List.of(
-                        CellTooltipEntryLine.createLine(null, "The Hegemony", "8"),
-                        CellTooltipEntryLine.createLine(
+                        CellTooltipEntry.createEntry(
+                            CellTooltipEntryLine.createLine(null, "The Hegemony", "8")),
+                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                             "graphics/aa.png",
                             "Astral Armada",
-                            "3"))));
+                            "3")))));
         }
 
         @Test
@@ -244,10 +245,10 @@ final class StandingRowResolverTest {
                         "graphics/heg.png",
                         "Allied Powers",
                         "8"))
-                    .nesting(List.of(CellTooltipEntryLine.createLine(
+                    .nesting(List.of(CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                         "graphics/heg.png",
                         "The Hegemony",
-                        "8"))));
+                        "8")))));
         }
     }
 

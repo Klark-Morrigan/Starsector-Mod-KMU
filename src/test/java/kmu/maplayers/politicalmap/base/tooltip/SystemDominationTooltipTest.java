@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -482,11 +483,15 @@ final class SystemDominationTooltipTest {
 
     // One group as the resolver hands it over: a bloc carrying its crest and summed score, made up of
     // the factions in it. Whether a group is made up of anything is the resolver's decision, so a case
-    // here states it by handing over the members or none.
+    // here states it by handing over the members or none. A member faction breaks down no further, so
+    // each is entered as an entry carrying nothing.
     private static CellTooltipEntry createGroupEntry(CellTooltipEntryLine... memberLines) {
         return CellTooltipEntry
             .createEntry(CellTooltipEntryLine.createLine(BLOC_CREST, "Rebel Pact", BLOC_SCORE))
-            .nesting(List.of(memberLines));
+            .nesting(Arrays
+                .stream(memberLines)
+                .map(CellTooltipEntry::createEntry)
+                .toList());
     }
 
     // A group that breaks down no further - what a lone faction in the faction view resolves to.

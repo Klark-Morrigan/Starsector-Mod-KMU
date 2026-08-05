@@ -74,7 +74,7 @@ final class FactionTooltipEntryTest {
                     HEGEMONY_CREST,
                     "The Hegemony",
                     "1,200"));
-            assertThat(entry.memberLines())
+            assertThat(entry.children())
                 .isEmpty();
         }
     }

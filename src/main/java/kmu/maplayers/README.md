@@ -209,9 +209,11 @@ about what the overlay means.
   so a verdict that settles the whole system heads the box while a status or an entry sits in it. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
   one measurement, so the gap under the heading is the same gap as every gap below it. A layer states
-  only *what* each block lists, as `CellTooltipEntry` / `CellTooltipEntryLine` values - two types, so
-  the two tiers the box has are the only two representable. `CellTooltipSections` turns those into a
-  block, and drops one that resolved empty; `CellTooltipRows` is the line vocabulary it lays them in,
+  only *what* each block lists, as `CellTooltipEntry` / `CellTooltipEntryLine` values - an entry being
+  a line over the entries it breaks down into, so how deep a listing goes follows the subject matter
+  rather than the model. `CellTooltipSections` walks that depth-first into a block, and drops one that
+  resolved empty; `CellTooltipRows` is the line vocabulary it lays them in, which reads the tier and
+  the indent off how deep the line was found rather than off a choice the block makes,
   plus the banner centred under the title (its crest set among the words as a label run, so crest and
   words centre as one). Its table shapes are the block's alone, so a body cannot author a look of its
   own. So two layers' boxes differ only in what they say.

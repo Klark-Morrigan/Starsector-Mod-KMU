@@ -12,10 +12,11 @@ import java.util.Optional;
  * naming what follows it, over the entries it names and whatever those entries are made up of.
  *
  * <p>A block takes {@linkplain CellTooltipEntry entries} rather than built lines, which is the whole
- * point of it. <em>What</em> a block lists is the layer's - it is the only side that knows the subject
- * matter - while which shape each of those things is laid in is settled here and drawn from the one
- * vocabulary. So two layers listing unrelated content still list it alike, and neither can author a
- * third look by choosing a tier of its own.
+ * point of it. <em>What</em> a block lists, and how far each of those things breaks down, is the layer's -
+ * it is the only side that knows the subject matter - while which shape each line is laid in follows from
+ * how deep the walk here found it, drawn from the one vocabulary. So two layers listing unrelated content
+ * still list it alike, and neither can author a tier of its own by reaching past the entries it hands
+ * over.
  *
  * <p>Whether a heading appears at all is likewise a rule about the block and not about the body holding
  * it: a heading left standing over no entries reads as a block whose contents failed to resolve, which
@@ -26,6 +27,10 @@ import java.util.Optional;
  * which blocks it has, in what order, and what each lists.
  */
 public final class CellTooltipSections {
+
+    // Where the block's own entries sit. The walk below counts up from here, and the vocabulary turns
+    // that count into the tier and the indent, so the block itself never names a tier.
+    private static final int TOP_ENTRY_DEPTH = 0;
 
     private CellTooltipSections() {
     }
@@ -50,14 +55,7 @@ public final class CellTooltipSections {
         }
         var rows = new ArrayList<TooltipRow>();
         rows.add(CellTooltipRows.buildSectionHeadingRow(headingText));
-
-        for (var entry : entries) {
-            rows.add(CellTooltipRows.buildEntryRow(entry.line()));
-
-            for (var memberLine : entry.memberLines()) {
-                rows.add(CellTooltipRows.buildMemberRow(memberLine));
-            }
-        }
+        appendEntryRows(rows, entries, TOP_ENTRY_DEPTH);
         sections.add(new TooltipSection(rows));
     }
 
@@ -85,5 +83,21 @@ public final class CellTooltipSections {
             Optional<? extends TooltipRow> bannerRow) {
 
         bannerRow.ifPresent(row -> sections.add(new TooltipSection(List.of(row))));
+    }
+
+    // Lays a listing out in reading order: each entry's own line, then everything it is made up of
+    // directly beneath it, before the next entry at this level. Depth-first is what puts a breakdown
+    // where a reader looks for it - under the thing it breaks down - and the depth carried along is the
+    // only thing the vocabulary needs to lay each line at the right tier, so any shape of listing draws
+    // through this one walk.
+    private static void appendEntryRows(
+            List<TooltipRow> rows,
+            List<CellTooltipEntry> entries,
+            int depth) {
+
+        for (var entry : entries) {
+            rows.add(CellTooltipRows.buildListedRow(entry.line(), depth));
+            appendEntryRows(rows, entry.children(), depth + 1);
+        }
     }
 }

@@ -7,29 +7,30 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.text.KmlibStrings;
 
 /**
- * The line vocabulary a cell tooltip's content is written in: a heading that names a block, an entry
- * line listed inside it, a member line belonging to the entry above it, a banner row centred across the
- * box to state something about the hovered system as a whole, and the qualifier run any of them may end
- * on. Each shape fixes its own placement, indent, and colours, so what a layer says is the only thing
- * that varies between two hover boxes.
+ * The line vocabulary a cell tooltip's content is written in: a heading that names a block, a listed
+ * line inside it laid at the depth it was found at, a banner row centred across the box to state
+ * something about the hovered system as a whole, and the qualifier run any of them may end on. Each
+ * shape fixes its own placement, indent, and colours, so what a layer says is the only thing that varies
+ * between two hover boxes.
  *
- * <p>The split that matters is the table shapes against the banner: a heading, an entry, and a member
- * line all lay into the box's table, lining up against the crest gutter and the value column, while a
- * banner has left that table to speak for the box. So the choice of builder is a statement about whether
- * a line is one of the findings or a verdict over all of them.
+ * <p>The split that matters is the table shapes against the banner: a heading and every listed line lay
+ * into the box's table, lining up against the crest gutter and the value column, while a banner has left
+ * that table to speak for the box. So the choice of builder is a statement about whether a line is one of
+ * the findings or a verdict over all of them.
  *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
  * rarely built in one place: a resolver that contributes a single line reaches the same vocabulary as
  * the tooltip composing them, without either having to be the other's subclass.
  *
- * <p>The three table shapes take a whole {@link CellTooltipEntryLine} rather than its parts, so the
- * entirety of how a listed thing reads - its tier, its colours, its gutter, its value, and the status it
- * calls out - is settled here and a caller destructures nothing. They are the block's alone
+ * <p>The table shapes take a whole {@link CellTooltipEntryLine} rather than its parts, so the entirety of
+ * how a listed thing reads - its tier, its colours, its gutter, its value, and the status it calls out -
+ * is settled here and a caller destructures nothing. They are the block's alone
  * ({@link CellTooltipSections}), which is why they are not offered past this package: a body states what
- * its blocks list and the block lays those lines out, so a heading and an entry cannot drift into each
- * other by two bodies each choosing a tier. What stays open is what a line is composed from wherever one
- * is authored - the banner and the qualifier run.
+ * its blocks list and the block lays those lines out. Which tier a line takes is read off how deep it
+ * sits rather than chosen at the call site, so a heading and a listed line cannot drift into each other
+ * and no body can list something at a tier it authored itself. What stays open is what a line is
+ * composed from wherever one is authored - the banner and the qualifier run.
  */
 public final class CellTooltipRows {
 
@@ -39,10 +40,15 @@ public final class CellTooltipRows {
      */
     public static final String NO_SCORE = "";
 
-    // The inset a member line draws at, so it reads as belonging to the entry above it; an entry line
-    // sits flush at zero. Only the two line builders apply it, which is what keeps the two tiers a
-    // choice of builder at the call site rather than an indent every caller has to remember.
+    // The inset one level of nesting adds, so a line reads as belonging to the line above it; a line the
+    // block lists in its own right sits flush at zero. Applied per level rather than per tier, so a
+    // breakdown three deep steps in evenly instead of collapsing everything below the first level onto
+    // one indent no reader could tell apart.
     private static final float MEMBER_INDENT = 14f;
+
+    // The depth a line the block lists in its own right sits at - the tier that reads as being listed
+    // rather than as part of whatever is listed above it. Anything deeper belongs to the line above.
+    private static final int LISTED_DEPTH = 0;
 
     private CellTooltipRows() {
     }
@@ -111,6 +117,26 @@ public final class CellTooltipRows {
     }
 
     /**
+     * Builds the line for one listed thing, in the shape its depth calls for: a thing the block lists in
+     * its own right reads flush and bright, and anything found beneath one reads plainer and stepped in
+     * once per level, so how far a reader is inside a breakdown is legible from the line alone.
+     *
+     * <p>Taking the depth rather than a choice of tier is what keeps the two apart from the block's side
+     * too: the walk that found the line states only how deep it went, and this decides what that depth
+     * looks like, so a listing three levels deep needs no new shape and no new call.
+     *
+     * @param line  the thing being listed
+     * @param depth how far beneath the block the line was found; zero for one of the block's own
+     * @return the row, ready to add to a block
+     */
+    static TooltipRow buildListedRow(CellTooltipEntryLine line, int depth) {
+        if (depth <= LISTED_DEPTH) {
+            return buildEntryRow(line);
+        }
+        return buildMemberRow(line, depth);
+    }
+
+    /**
      * Builds an entry line: at no indent of its own, its label bright and its value in the highlight
      * colour, so one of the things a block lists reads as being listed rather than as part of whatever
      * is listed beneath it.
@@ -118,7 +144,7 @@ public final class CellTooltipRows {
      * @param line what the block lists there
      * @return the row, ready to add to a block
      */
-    static TooltipRow buildEntryRow(CellTooltipEntryLine line) {
+    private static TooltipRow buildEntryRow(CellTooltipEntryLine line) {
         var row = TooltipRow
             .createRow(new TextSpan(
                 line.labelText(),
@@ -132,25 +158,32 @@ public final class CellTooltipRows {
     }
 
     /**
-     * Builds a member line: indented under the entry line above it and drawn in the plain text colour,
-     * so one of the things an entry is made up of reads as belonging to that entry rather than as
-     * something the block lists in its own right.
+     * Builds a member line: indented once per level beneath the block and drawn in the plain text
+     * colour, so one of the things an entry is made up of reads as belonging to that entry rather than
+     * as something the block lists in its own right, and a level deeper again reads as belonging to
+     * that.
      *
-     * @param line one of the things the entry above is made up of
+     * <p>Every level below the first shares this one shape, differing only in how far it steps in. A
+     * tier of its own per level would mean a colour or a weight nobody has designed the moment a
+     * breakdown grows a level, whereas the indent already says the one thing the reader needs - what
+     * this line is part of.
+     *
+     * @param line  one of the things the line above is made up of
+     * @param depth how far beneath the block the line was found; at least one level
      * @return the row, ready to add to a block
      */
-    static TooltipRow buildMemberRow(CellTooltipEntryLine line) {
+    private static TooltipRow buildMemberRow(CellTooltipEntryLine line, int depth) {
         var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
         var row = TooltipRow
             .createRow(new TextSpan(line.labelText(), textColour))
             .carriesCrest(line.iconSpritePath())
             .carriesValue(new TextSpan(line.valueText(), textColour))
-            .indentsBy(MEMBER_INDENT);
+            .indentsBy(depth * MEMBER_INDENT);
 
         return appendQualifier(row, line);
     }
 
-    // Runs a line on into whatever it calls out. Applied at both tiers through one helper, so a status
+    // Runs a line on into whatever it calls out. Applied at every tier through one helper, so a status
     // stated on a member reads exactly as one stated on the entry it belongs to - and a line calling
     // nothing out is left as the single run it was, rather than ending on a run that draws nothing.
     private static TooltipRow appendQualifier(TooltipRow.TableRow row, CellTooltipEntryLine line) {

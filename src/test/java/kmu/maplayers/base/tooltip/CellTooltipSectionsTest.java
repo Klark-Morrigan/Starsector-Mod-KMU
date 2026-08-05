@@ -19,6 +19,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NESTED_MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
@@ -174,7 +175,7 @@ final class CellTooltipSectionsTest {
 
         @Test
         void appendSectionInsetsWhatAnEntryIsMadeUpOfBeneathIt() {
-            // The two tiers the box has, read off the indent and the plainer colour rather than off any
+            // The tiers the box has, read off the indent and the plainer colour rather than off any
             // label saying which is which - and the entries themselves stay flush, so a block of them
             // does not read as a list nested under its own heading.
             var sections = new ArrayList<TooltipSection>();
@@ -185,8 +186,8 @@ final class CellTooltipSectionsTest {
                 "Dominated by:",
                 List.of(CellTooltipEntry
                     .createEntry(CellTooltipEntryLine.createLine(null, "Rebel Pact", "1,200"))
-                    .nesting(List.of(
-                        CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900")))));
+                    .nesting(List.of(CellTooltipEntry.createEntry(
+                        CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900"))))));
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Dominated by:", "Rebel Pact", "The Hegemony");
@@ -199,6 +200,54 @@ final class CellTooltipSectionsTest {
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
             assertThat(((TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW)).indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
+        }
+
+        @Test
+        void appendSectionReadsEachBreakdownUnderTheThingItBreaksDown() {
+            // Depth-first is what makes a listing readable: a market's own factors follow that market
+            // rather than being gathered after every market in the block, so the reader never has to
+            // carry which line a run of factors belongs to.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(
+                    createEntry("Chicomoztoc").nesting(List.of(createEntry("Size"))),
+                    createEntry("Kazeron").nesting(List.of(createEntry("Patrols")))));
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly(
+                    "Dominated by:",
+                    "Chicomoztoc",
+                    "Size",
+                    "Kazeron",
+                    "Patrols");
+        }
+
+        @Test
+        void appendSectionStepsInAgainForEachLevelOfABreakdown() {
+            // The whole point of the entry being a tree: a listing goes as deep as its subject matter,
+            // and each level is legibly inside the one above rather than sharing its indent.
+            var sections = new ArrayList<TooltipSection>();
+            var childRow = 2;
+            var grandchildRow = 3;
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(createEntry("Chicomoztoc").nesting(List.of(
+                    createEntry("Patrols").nesting(List.of(createEntry("Light patrol")))))));
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Dominated by:", "Chicomoztoc", "Patrols", "Light patrol");
+
+            assertThat(((TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW)).indent())
+                .isCloseTo(NO_INDENT, within(TOLERANCE));
+            assertThat(((TooltipRow.TableRow) readRow(sections, childRow)).indent())
+                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+            assertThat(((TooltipRow.TableRow) readRow(sections, grandchildRow)).indent())
+                .isCloseTo(NESTED_MEMBER_INDENT, within(TOLERANCE));
         }
 
         @Test

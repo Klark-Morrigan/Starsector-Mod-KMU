@@ -77,7 +77,7 @@ public final class StandingRowResolver {
             GroupStanding standing,
             HolderGrouping grouping) {
 
-        var memberLines = resolveMemberLines(sector, standing.members());
+        var memberEntries = resolveMemberEntries(sector, standing.members());
         var blocId = standing.blocId();
         var aggregateScoreText = KmlibNumbers.formatGroupedInteger(standing.aggregateScore());
 
@@ -85,7 +85,7 @@ public final class StandingRowResolver {
             // A lone-faction group has one member, so the group is exactly that member: reuse the
             // resolved line rather than reading the faction a second time, and list nothing beneath it,
             // since a member repeating the line above says nothing the line did not.
-            var groupMemberLine = memberLines.get(0);
+            var groupMemberLine = memberEntries.get(0).line();
 
             return CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                 groupMemberLine.iconSpritePath(),
@@ -103,23 +103,25 @@ public final class StandingRowResolver {
 
         return CellTooltipEntry
             .createEntry(allianceLine)
-            .nesting(memberLines);
+            .nesting(memberEntries);
     }
 
-    // Resolves each ranked member standing into its line, preserving the ranking order, so a group's
-    // members read in the order the standing placed them.
-    private static List<CellTooltipEntryLine> resolveMemberLines(
+    // Resolves each ranked member standing into the entry it is listed as, preserving the ranking order,
+    // so a group's members read in the order the standing placed them. A member is a faction and a
+    // faction breaks down no further under a bloc, so each carries nothing beneath it - the depth this
+    // resolver produces is the two tiers the standings actually have.
+    private static List<CellTooltipEntry> resolveMemberEntries(
             SectorAPI sector,
             List<FactionStanding> members) {
 
-        var lines = new ArrayList<CellTooltipEntryLine>(members.size());
+        var entries = new ArrayList<CellTooltipEntry>(members.size());
 
         for (var member : members) {
-            lines.add(FactionTooltipEntry.buildFactionLine(
+            entries.add(FactionTooltipEntry.buildFactionEntry(
                 sector,
                 member.factionId(),
                 KmlibNumbers.formatGroupedInteger(member.score())));
         }
-        return lines;
+        return entries;
     }
 }

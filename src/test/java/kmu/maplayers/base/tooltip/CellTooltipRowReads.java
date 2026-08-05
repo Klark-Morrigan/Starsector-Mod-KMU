@@ -17,8 +17,15 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
  */
 public final class CellTooltipRowReads {
 
-    /** The inset a nested line draws at - what makes it read as belonging to the line above it. */
+    /** The inset a line one level down draws at - what makes it read as belonging to the line above. */
     public static final float MEMBER_INDENT = 14f;
+
+    /**
+     * The inset a line two levels down draws at. Stated as its own value rather than multiplied out of
+     * the one above, so a case about how far a breakdown steps in per level cannot pass by restating the
+     * arithmetic the layout does.
+     */
+    public static final float NESTED_MEMBER_INDENT = 28f;
 
     /** Where a top-tier line sits: at no indent of its own, before the crest gutter is reserved. */
     public static final float NO_INDENT = 0f;

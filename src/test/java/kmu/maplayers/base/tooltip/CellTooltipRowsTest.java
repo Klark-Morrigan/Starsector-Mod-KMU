@@ -15,6 +15,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NESTED_MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
@@ -24,15 +25,22 @@ import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins the shapes a cell-tooltip body is written in, since what separates them is exactly what a reader
- * of the box sees: a heading stands clear of the crest gutter in gold to name a block, an entry line
- * lists something in it flush in the bright colour, a member line belongs to the entry above it by its
- * indent and plainer colour, a banner leaves the table altogether to be set across the box with its
- * crest carried inside its own words, and a line calling something out ends on it in gold at whichever
- * tier it sits. Two layers writing content through these cannot drift on any of it.
+ * of the box sees: a heading stands clear of the crest gutter in gold to name a block, a line the block
+ * lists in its own right sits flush in the bright colour, a line found beneath one belongs to it by its
+ * indent and plainer colour and steps in again per level below that, a banner leaves the table altogether
+ * to be set across the box with its crest carried inside its own words, and a line calling something out
+ * ends on it in gold at whichever tier it sits. Two layers writing content through these cannot drift on
+ * any of it.
  */
 final class CellTooltipRowsTest {
 
     private static final String CREST = "graphics/ion_storm_icon.png";
+
+    // How deep a line was found: one of the block's own, one of the things that line is made up of, and
+    // one level deeper again - which is the shape a breakdown three levels down takes.
+    private static final int LISTED_DEPTH = 0;
+    private static final int MEMBER_DEPTH = 1;
+    private static final int NESTED_MEMBER_DEPTH = 2;
 
     // The runs a line reads as, in order: what it names, then any qualifier picked out beside it. A
     // banner led by a crest opens on that image instead, so its words sit one run later.
@@ -83,13 +91,14 @@ final class CellTooltipRowsTest {
     }
 
     @Nested
-    class BuildEntryRow {
+    class BuildListedRow {
 
         @Test
-        void buildEntryRowListsSomethingFlushWithItsMarkAndValue() {
+        void buildListedRowListsSomethingFlushWithItsMarkAndValue() {
 
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildEntryRow(
-                CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"));
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"),
+                LISTED_DEPTH);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).text())
                 .isEqualTo("Ion Storm");
@@ -106,11 +115,12 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildEntryRowStaysInTheCrestColumnWithoutAMark() {
+        void buildListedRowStaysInTheCrestColumnWithoutAMark() {
             // A markless entry still aligns with the crested lines around it, so a block mixing the
             // two does not read as two staggered columns.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildEntryRow(
-                CellTooltipEntryLine.createLine(null, "Independent", CellTooltipRows.NO_SCORE));
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(null, "Independent", CellTooltipRows.NO_SCORE),
+                LISTED_DEPTH);
 
             assertThat(row.labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
@@ -119,12 +129,15 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildEntryRowContinuesIntoWhatTheLineCallsOut() {
+        void buildListedRowContinuesIntoWhatTheLineCallsOut() {
             // Continuing a line does not promote it: a qualified entry is still an entry, which is what
-            // keeps the tier a choice of builder rather than a side effect of a second run.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildEntryRow(CellTooltipEntryLine
-                .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
-                .qualifiedWith("worsening"));
+            // keeps the tier a matter of how deep the line sits rather than a side effect of a second
+            // run.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
+                    .qualifiedWith("worsening"),
+                LISTED_DEPTH);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(PLAYER_BRIGHT);
@@ -135,25 +148,23 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildEntryRowSaysNothingMoreForALineCallingNothingOut() {
+        void buildListedRowSaysNothingMoreForALineCallingNothingOut() {
             // The absence is a line of one run rather than one ending on a run that draws nothing, so a
             // plain line measures as the words it actually says.
-            var row = CellTooltipRows.buildEntryRow(
-                CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"));
+            var row = CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"),
+                LISTED_DEPTH);
 
             assertThat(row.labelRuns())
                 .hasSize(1);
         }
-    }
-
-    @Nested
-    class BuildMemberRow {
 
         @Test
-        void buildMemberRowIndentsUnderTheLineAboveItInThePlainColour() {
+        void buildListedRowIndentsWhatWasFoundUnderALineInThePlainColour() {
 
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildMemberRow(
-                CellTooltipEntryLine.createLine(CREST, "Ion Storm", "17"));
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(CREST, "Ion Storm", "17"),
+                MEMBER_DEPTH);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(TEXT);
@@ -164,24 +175,42 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildMemberRowChargesNoColumnForAnAbsentScore() {
+        void buildListedRowStepsInAgainForEachLevelBelowTheFirst() {
+            // What lets a breakdown go as deep as its subject matter: the indent is charged per level,
+            // so a line under a line under an entry is legibly inside both rather than sharing one
+            // indent with the level above it.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(null, "Light patrol", "3"),
+                NESTED_MEMBER_DEPTH);
+
+            assertThat(readLabelTextRun(row, LABEL_RUN).colour())
+                .isEqualTo(TEXT);
+            assertThat(row.indent())
+                .isCloseTo(NESTED_MEMBER_INDENT, within(TOLERANCE));
+        }
+
+        @Test
+        void buildListedRowChargesNoColumnForAnAbsentScoreBeneathALine() {
             // A line with nothing to count fills its value slot with a run that draws nothing, so the
             // value column collapses for it rather than the line claiming a width it cannot use.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildMemberRow(
-                CellTooltipEntryLine.createLine(null, "Decivilised", CellTooltipRows.NO_SCORE));
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(null, "Decivilised", CellTooltipRows.NO_SCORE),
+                MEMBER_DEPTH);
 
             assertThat(row.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(TextSpan.createBlank(TEXT)));
         }
 
         @Test
-        void buildMemberRowContinuesIntoWhatTheLineCallsOutAtItsOwnTier() {
+        void buildListedRowContinuesIntoWhatTheLineCallsOutAtItsOwnTier() {
             // A status stated on a member reads exactly as one stated on the entry it belongs to, and
             // calling it out does not lift the member out of its indent - which is the whole reason
-            // both tiers qualify through one rule rather than each spelling it out.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildMemberRow(CellTooltipEntryLine
-                .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
-                .qualifiedWith("worsening"));
+            // every tier qualifies through one rule rather than each spelling it out.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
+                    .qualifiedWith("worsening"),
+                MEMBER_DEPTH);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(TEXT);
