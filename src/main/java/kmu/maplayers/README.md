@@ -181,12 +181,14 @@ about what the overlay means.
   stays up, and one row still silences them all.
 - **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
   `MapLayerCellTooltip` owns the gates every hover box shares (the settings tiers above any layer, a
-  map on screen drawing the ordinary schematic, a hovered cell, stepping aside for the vanilla star
+  map on screen, a hovered cell, stepping aside for the vanilla star
   tooltip) and draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer
   with none, a layer whose own tooltip switch is off, and a switch-only tab with no renderer at all
-  show nothing for the same reason. That map gate is host-blind (KMLib's `SchematicMapPresence`), so
-  the box draws wherever the layer paints - the sector map and the intel screen's map visor alike -
-  which is what the listener needs, being called for the whole campaign UI and never told which
+  show nothing for the same reason. That map gate is host-blind and look-blind - an OR over KMLib's
+  `SchematicMapPresence` and `StarscapeMapPresence`, composed at the install site because no other
+  caller wants the union - so the box draws wherever the layer paints: the sector map and the intel
+  screen's map visor, over the schematic and over the Starscape starfield alike. Which is what the
+  listener needs, being called for the whole campaign UI and never told which
   screen is up. `SystemCellTooltip` is
   the shape a layer's box takes - the hovered system's name over the layer's own content, one look and
   one draw for both, the name set in the game's own title face over body-face rows so a KM hover

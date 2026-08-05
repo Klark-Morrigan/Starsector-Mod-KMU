@@ -28,7 +28,7 @@ import java.util.function.BooleanSupplier;
  * reason it paints nothing.
  *
  * <p>The dispatcher owns only the gates every hover tooltip shares - the settings switches that
- * answer for every layer ({@link MapHoverGates}), a map on screen drawing the ordinary schematic, a
+ * answer for every layer ({@link MapHoverGates}), a map on screen in either of its looks, a
  * hovered cell, stepping aside while the vanilla map draws its own tooltip - and resolves the hovered
  * system,
  * then hands it to the injected tooltip. A layer's own tooltip switch stays with the layer, which
@@ -38,10 +38,10 @@ import java.util.function.BooleanSupplier;
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
-    // Whether a map is on screen at all this frame, on either host. Supplied rather than read here so
-    // a test can name the answer: the live read walks the running game's widget tree on the intel
-    // side, which no test can stand up.
-    private final BooleanSupplier isSchematicMapShowing;
+    // Whether a map is on screen at all this frame - either host, either look. Supplied rather than
+    // read here so a test can name the answer: the live read walks the running game's widget tree on
+    // the intel side, which no test can stand up.
+    private final BooleanSupplier isAnyMapShowing;
 
     // The live read this dispatcher steps aside for. Supplied rather than built here: it is the one
     // collaborator whose answer changes what this draws, so a caller that can hand over a stub is
@@ -49,17 +49,17 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     private final VanillaMapTooltip vanillaMapTooltip;
 
     /**
-     * @param vanillaMapTooltip     the probe answering whether the map is drawing its own tooltip,
-     *                              which this box stands aside for
-     * @param isSchematicMapShowing whether a map drawing the ordinary schematic is on screen, on
-     *                              either host - host-blind because this listener is called for the
-     *                              whole campaign UI and is never told which screen is up
+     * @param vanillaMapTooltip the probe answering whether the map is drawing its own tooltip,
+     *                          which this box stands aside for
+     * @param isAnyMapShowing   whether a map is on screen at all - either host, either look -
+     *                          host-blind because this listener is called for the whole campaign UI
+     *                          and is never told which screen is up
      */
     public MapLayerCellTooltip(
             VanillaMapTooltip vanillaMapTooltip,
-            BooleanSupplier isSchematicMapShowing) {
+            BooleanSupplier isAnyMapShowing) {
         this.vanillaMapTooltip = vanillaMapTooltip;
-        this.isSchematicMapShowing = isSchematicMapShowing;
+        this.isAnyMapShowing = isAnyMapShowing;
     }
 
     @Override
@@ -81,11 +81,13 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (!MapHoverGates.isHoverTooltipEnabled()) {
             return;
         }
-        // A map has to be on screen drawing the ordinary schematic for the overlay to be up, and only
-        // then is a hover meaningful. Asked host-blind because the box belongs on either host: the
-        // layer paints through the terrain pass, which runs on the sector map and on the intel
-        // screen's map visor alike, and the box is placed at the cursor rather than against a screen.
-        if (!isSchematicMapShowing.getAsBoolean()) {
+        // A map has to be on screen for the overlay to be up, and only then is a hover meaningful.
+        // Either look counts: the layers paint through a terrain pair, one half of which draws over
+        // the Starscape starfield, so the box follows the picture into that mode rather than
+        // vanishing with the schematic. Asked host-blind because the box belongs on either host -
+        // the terrain pass runs on the sector map and on the intel screen's map visor alike, and the
+        // box is placed at the cursor rather than against a screen.
+        if (!isAnyMapShowing.getAsBoolean()) {
             return;
         }
         var hover = MapHoverState.getInstance().getHover();

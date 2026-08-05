@@ -1,6 +1,8 @@
 package kmu.maplayers.base.tooltip;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
@@ -26,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -130,6 +133,48 @@ final class MapLayerCellTooltipTest {
             }
             MapHoverState.getInstance().clearHover();
         }
+
+        @Test
+        void drawsWhileTheMapOnScreenIsInStarscapeMode() {
+            // The starscape half of the gate the install site composes. The schematic read is false
+            // in that mode by design, so a gate asking only that would hide the box exactly where
+            // the layers do paint - the starscape terrain half draws the same overlay over the
+            // starfield, and the box has to follow it there.
+            var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
+            var sectorMock = mock(SectorAPI.class);
+            var systemMock = mock(StarSystemAPI.class);
+
+            when(systemMock.getId())
+                .thenReturn("system");
+            when(sectorMock.getStarSystems())
+                .thenReturn(List.of(systemMock));
+
+            MapHoverState
+                .getInstance()
+                .publishHover(new MapHover("system", List.of("system")));
+
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class);
+                 MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+                settingsMock
+                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .thenReturn(true);
+                settingsMock
+                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
+                    .thenReturn(true);
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                new MapLayerCellTooltip(vanillaMapTooltipMock, () -> true)
+                    .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
+
+                verify(tooltipMock)
+                    .renderFor(sectorMock, systemMock);
+            }
+            MapHoverState.getInstance().clearHover();
+        }
     }
 
     @Nested
@@ -137,6 +182,7 @@ final class MapLayerCellTooltipTest {
 
         @Test
         void shouldDrawTooltipForIsTrueForAHoveredCell() {
+
             var hover = new MapHover("system", List.of("system"));
 
             assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(hover))
@@ -202,6 +248,7 @@ final class MapLayerCellTooltipTest {
                 tooltipLayerMock);
 
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(null);

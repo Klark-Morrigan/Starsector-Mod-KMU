@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.map.presence.SchematicMapPresence;
+import kmlib.starsector.ui.map.presence.StarscapeMapPresence;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
 import kmu.maplayers.MapLayers;
@@ -246,10 +247,19 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // stand-ins in their place and pin the step-aside and the on-screen gate. The map read is
         // host-blind: the box draws wherever the layer paints, which is the sector map and the intel
         // screen's map visor alike.
+        //
+        // "A map is showing at all" is an OR over the two presence seams, composed here rather than
+        // asked of KMLib: neither seam is derivable from the other (a screen showing no map leaves
+        // both false), and this is the only caller wanting the union - the sidebar hosts each read
+        // their own screen, since "a map is up somewhere" cannot place a panel. A third seam would
+        // be a library concept invented ahead of its second use; it promotes cleanly if one appears.
+        var schematicMapPresence = new SchematicMapPresence();
+        var starscapeMapPresence = new StarscapeMapPresence();
         listenerManager.addListener(
             new MapLayerCellTooltip(
                 new VanillaMapTooltip(),
-                new SchematicMapPresence()::isSchematicMapShowing),
+                () -> schematicMapPresence.isSchematicMapShowing()
+                    || starscapeMapPresence.isStarscapeMapShowing()),
             true);
     }
 
