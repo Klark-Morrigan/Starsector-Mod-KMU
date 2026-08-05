@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.ui.input.UiCursor;
+import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapSurfaceBounds;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
@@ -60,6 +61,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // layer repeats itself is this layer's business.
     private String lastLoggedWidgetTrace;
 
+    // The last icon-order line logged, for the same reason and on the same terms: the order moves
+    // only when a map is opened or an entity is reseated, so an unchanging map reports once.
+    private String lastLoggedIconOrder;
+
     // The cursor read, created on the first frame the hover toggle is on. Deferred because the
     // matrix binding it holds is chosen from the renderer in force, which can only be read from a
     // running game - and because a player who leaves the hover off never needs one at all.
@@ -97,6 +102,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         if (view == null) {
             return;
         }
+        traceMapIconOrder();
         cache.refresh(view);
         publishHoverIfAnyFeedbackNeedsIt(factor);
         overlayRenderer.renderOnMap(cache, factor, alphaMult);
@@ -179,6 +185,28 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         if (widgetsUnderCursor != null && !widgetsUnderCursor.equals(lastLoggedWidgetTrace)) {
             lastLoggedWidgetTrace = widgetsUnderCursor;
             LOG.debug("Map-tab widget trace: " + widgetsUnderCursor);
+        }
+    }
+
+    // Diagnostic only, and silent unless KMU's log verbosity is DEBUG: names the terrain icons the
+    // map widget holds, in the order it will draw them. This layer rides on a terrain, so where its
+    // icon was seeded is what decides whether the map's own starfield fog paints over the overlay
+    // or under it - an insertion-order artefact of the live widget, not a contract, and one no
+    // published call reports. A build that starts seeding its icons differently shows up here as a
+    // moved position rather than as a picture nobody can account for.
+    //
+    // Read on the frames this layer actually paints, since the order only means anything while
+    // there is something of ours in it to be buried. Logged here rather than in the library that
+    // reads it, on the same terms as the widget trace above: the line answers to this mod's own
+    // verbosity, and is repeated only when the order changes.
+    private void traceMapIconOrder() {
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
+        var iconOrder = MapIconOrderTrace.describeTerrainIconOrder();
+        if (iconOrder != null && !iconOrder.equals(lastLoggedIconOrder)) {
+            lastLoggedIconOrder = iconOrder;
+            LOG.debug("Map icon order: " + iconOrder);
         }
     }
 
