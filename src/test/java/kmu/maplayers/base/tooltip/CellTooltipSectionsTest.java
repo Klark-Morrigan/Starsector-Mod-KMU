@@ -213,16 +213,21 @@ final class CellTooltipSectionsTest {
                 sections,
                 "Dominated by:",
                 List.of(
-                    createEntry("Chicomoztoc").nesting(List.of(createEntry("Size"))),
-                    createEntry("Kazeron").nesting(List.of(createEntry("Patrols")))));
+                    createEntry("Chicomoztoc")
+                        .nesting(List.of(createEntry("Size"), createEntry("Patrols"))),
+                    createEntry("Kazeron")
+                        .nesting(List.of(createEntry("Station")))));
 
+            // The first market's factors read in the order it lists them and are done before the next
+            // market opens, so the run under a line never spills past the thing it belongs to.
             assertThat(readLabelTexts(sections))
                 .containsExactly(
                     "Dominated by:",
                     "Chicomoztoc",
                     "Size",
+                    "Patrols",
                     "Kazeron",
-                    "Patrols");
+                    "Station");
         }
 
         @Test
@@ -236,8 +241,9 @@ final class CellTooltipSectionsTest {
             CellTooltipSections.appendSection(
                 sections,
                 "Dominated by:",
-                List.of(createEntry("Chicomoztoc").nesting(List.of(
-                    createEntry("Patrols").nesting(List.of(createEntry("Light patrol")))))));
+                List.of(createEntry("Chicomoztoc")
+                    .nesting(List.of(createEntry("Patrols")
+                        .nesting(List.of(createEntry("Light patrol")))))));
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Dominated by:", "Chicomoztoc", "Patrols", "Light patrol");
