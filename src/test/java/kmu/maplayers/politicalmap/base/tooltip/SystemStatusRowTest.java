@@ -192,55 +192,38 @@ final class SystemStatusRowTest {
     // An owned colony the player has not found: its entity is still discoverable and the market is
     // hidden, so it counts only when the reveal drops the visibility filter.
     private static MarketAPI buildUndiscoveredColony() {
-        var entityMock = mock(SectorEntityToken.class);
-
-        when(entityMock.isDiscoverable())
-            .thenReturn(true);
-
-        var marketMock = buildColony();
-
-        when(marketMock.getPrimaryEntity())
-            .thenReturn(entityMock);
-        when(marketMock.isHidden())
-            .thenReturn(true);
-
-        return marketMock;
+        return buildColonyOnEntity(true, true);
     }
 
     // A base the player has found and raided: its entity is discovered, yet the market stays hidden
     // for good, since hiddenness is not a discovery state that clears.
     private static MarketAPI buildFoundConcealedBase() {
-
-        var entityMock = mock(SectorEntityToken.class);
-
-        when(entityMock.isDiscoverable())
-            .thenReturn(false);
-
-        var marketMock = buildColony();
-
-        when(marketMock.getPrimaryEntity())
-            .thenReturn(entityMock);
-        when(marketMock.isHidden())
-            .thenReturn(true);
-
-        return marketMock;
+        return buildColonyOnEntity(false, true);
     }
 
     // A colony surfaced into the open ahead of being reached: publicly listed, its entity still
     // awaiting discovery - the other half of the pair hiddenness and discovery come apart on.
     private static MarketAPI buildUnfoundListedColony() {
+        return buildColonyOnEntity(true, false);
+    }
+
+    // The two-axis shape the three named colonies above are points on, kept private so no case is
+    // posed as a pair of bare booleans - which of the two is being varied is the whole point here.
+    private static MarketAPI buildColonyOnEntity(
+            boolean isEntityDiscoverable,
+            boolean isHidden) {
 
         var entityMock = mock(SectorEntityToken.class);
 
         when(entityMock.isDiscoverable())
-            .thenReturn(true);
+            .thenReturn(isEntityDiscoverable);
 
         var marketMock = buildColony();
 
         when(marketMock.getPrimaryEntity())
             .thenReturn(entityMock);
         when(marketMock.isHidden())
-            .thenReturn(false);
+            .thenReturn(isHidden);
 
         return marketMock;
     }
