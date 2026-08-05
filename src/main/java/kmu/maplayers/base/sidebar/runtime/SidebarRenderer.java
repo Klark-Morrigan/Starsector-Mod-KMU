@@ -211,9 +211,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     }
 
     // The sidebar's look, built each frame from the live player colours: a black body backdrop (faded
-    // by the opacity setting), the base and bright player accents, the map's own tab style (its colour
-    // scheme and orbitron face; the paint pass reads no band height, each screen having laid its own out),
-    // the insignia body face, and the collapse handle's chevron shades for the colour the player picked.
+    // by the opacity setting), the frame colour, the base and bright player accents, the map's own tab
+    // style (its colour scheme and orbitron face; the paint pass reads no band height, each screen having
+    // laid its own out), the insignia body face, and the collapse handle's chevron shades for the colour
+    // the player picked.
     private static WidgetStyle buildStyle() {
 
         var accent = StarsectorUiColour.VANILLA_PLAYER_BASE.resolve();
@@ -228,6 +229,11 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // The header also opts out of this opacity fade and paints opaque (see
             // TabPanelRenderer.HEADER_OPACITY), so the tabs read solid over the faded body.
             StarsectorUiColour.BLACK.resolve(), // Panel fill.
+
+            // The frame takes the same base player accent the controls do: on the map the sidebar has no
+            // neighbouring chrome to match, so the two colours coincide here even though the style keeps
+            // them apart.
+            accent, // Border colour.
             accent,
             brightAccent,
             BODY_FONT,

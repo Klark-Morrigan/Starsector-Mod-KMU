@@ -224,8 +224,13 @@ anything paints, so they move values without raising it.
 ## Styling
 
 `SidebarRenderer.buildStyle` composes the `WidgetStyle` each frame from live values: a black body
-fill faded by the opacity setting, the player faction's base and bright accents, the insignia body
-face, and `LiveSidebarPlacement.buildMapTabStyle()` for the tabs.
+fill faded by the opacity setting, the frame colour, the player faction's base and bright accents,
+the insignia body face, and `LiveSidebarPlacement.buildMapTabStyle()` for the tabs.
+
+The frame colour is a field of its own on `WidgetStyle`, separate from the accent the controls wash
+and label with, so a host whose surrounding chrome is drawn in another colour can match it without
+recolouring its controls. The map passes its base player accent for both, the sidebar having no
+neighbouring chrome to match.
 
 That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `HotkeyStyle`, and the
 orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
