@@ -184,7 +184,12 @@ about what the overlay means.
   map on screen, a hovered cell, stepping aside for the vanilla star
   tooltip) and draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer
   with none, a layer whose own tooltip switch is off, and a switch-only tab with no renderer at all
-  show nothing for the same reason. That map gate is host-blind and look-blind (KMLib's
+  show nothing for the same reason. How much detail the drawn box states is one shared fact rather
+  than a per-layer one: `HoverTooltipDetailModeState` carries the mode, and the dispatcher draws the
+  richer counterpart the injected tooltip offers for it (`MapHoverTooltip.resolveExpandedVariant`) or
+  that tooltip itself when it offers none - so the choice holds across hovers and layer switches, and
+  a tooltip stating one amount of detail needs no case of its own. That map gate is host-blind and
+  look-blind (KMLib's
   `MapPresence.isAnyMapShowing`), so the box draws wherever the layer paints: the sector map and the intel
   screen's map visor, over the schematic and over the Starscape starfield alike. Which is what the
   listener needs, being called for the whole campaign UI and never told which

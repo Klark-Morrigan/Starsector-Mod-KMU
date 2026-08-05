@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -97,6 +98,13 @@ final class MapLayerCellTooltipTest {
             MapHoverState.getInstance().clearHover();
         }
 
+        @AfterEach
+        void dropTheDetailModeBackToNormal() {
+            // The mode holder is a process-wide singleton for the same reason the hover is, so a
+            // flip left standing would reach the next test as a detail level it never asked for.
+            HoverTooltipDetailModeState.getInstance().discardModeFromPreviousSave();
+        }
+
         @Test
         void standsAsideWhileTheVanillaMapIsDrawingItsOwnTooltip() {
             // The cursor is over a star, so the map is already naming it. Both boxes would otherwise
@@ -160,6 +168,49 @@ final class MapLayerCellTooltipTest {
                         .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
                     verify(tooltipMock)
+                        .renderFor(sectorMock, systemMock);
+                }
+            });
+        }
+
+        @Test
+        void drawsTheCounterpartTheDetailModeCallsFor() {
+            // The dispatcher's one read of the shared mode. Selection itself is pure and knows no
+            // holder, so nothing else pins that the box drawn is the box the last toggle selected -
+            // a dispatcher that resolved the mode and then drew the base anyway would pass every
+            // other case here. The mode is set on the shared holder rather than injected, since the
+            // holder is what the live toggle writes and the dispatcher reads it the same way it
+            // reads the hover.
+            var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
+            var sectorMock = mock(SectorAPI.class);
+            var systemMock = mock(StarSystemAPI.class);
+            var expandedTooltipMock = mock(MapHoverTooltip.class);
+
+            when(systemMock.getId())
+                .thenReturn("system");
+            when(sectorMock.getStarSystems())
+                .thenReturn(List.of(systemMock));
+            when(tooltipMock.resolveExpandedVariant())
+                .thenReturn(Optional.of(expandedTooltipMock));
+
+            HoverTooltipDetailModeState.getInstance().toggleMode();
+
+            runWithHoverSwitchesOn(() -> {
+                try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+                    globalMock
+                        .when(Global::getSector)
+                        .thenReturn(sectorMock);
+
+                    new MapLayerCellTooltip(vanillaMapTooltipMock, () -> true)
+                        .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
+
+                    verify(expandedTooltipMock)
+                        .renderFor(sectorMock, systemMock);
+                        
+                    // Drawn instead of the injected box, not alongside it: two boxes over one cell
+                    // is the failure the swap exists to avoid.
+                    verify(tooltipMock, never())
                         .renderFor(sectorMock, systemMock);
                 }
             });
