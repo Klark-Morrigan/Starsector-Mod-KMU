@@ -67,9 +67,16 @@ public abstract class BaseSidebarHost implements SidebarHost {
     }
 
     /**
-     * Switches to the layer whose bound key was pressed and consumes the event, so the key does not also
-     * trigger a binding on the screen underneath sharing it. A key bound to no layer is left alone and
-     * falls through untouched.
+     * Switches to the layer whose bound key was pressed, blinks that layer's tab, and consumes the event, so
+     * the key does not also trigger a binding on the screen underneath sharing it. A key bound to no layer is
+     * left alone and falls through untouched.
+     *
+     * <p>The blink is what tells the player the press landed. A tab press has the pointer on the tab to say
+     * where the switch came from; a keypress has nothing on screen at all, so without it a shortcut that
+     * reached an already-shown layer would look like a key the panel ignored.
+     *
+     * <p>A layer's tab sits at its registry index - the tabs row is built from the same registry in the same
+     * order - so the index the binder matched is the index the panel blinks.
      *
      * @param event the key-down event
      */
@@ -84,6 +91,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
             return;
         }
         layerSelection.selectLayer(layers.get(tabIndex));
+        controller.startHotkeyBlinkAt(tabIndex);
         event.consume();
     }
 

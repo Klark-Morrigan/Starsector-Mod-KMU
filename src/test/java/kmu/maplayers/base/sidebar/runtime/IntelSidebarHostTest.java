@@ -30,13 +30,14 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the intel overlay's gate, the frame edges it strokes, and the fold it opens at. The gate is the map
  * visor's rectangle rather than the tab-open read, so the sidebar stays off the sub-tabs that share the
- * intel tab, and it drops again when that visor turns to the starscape, which leaves the controls no
- * visible overlay to drive. The edges drop the borders shared with the visor - the left always (flush against the visor's
+ * intel tab, and it is the whole of the gate, so the visor's Starscape filter moves it either way.
+ * The edges drop the borders shared with the visor - the left always (flush against the visor's
  * left edge) and the bottom only when the box reaches the visor's bottom - and keep the top and right,
  * which sit inside the visor. The frozen fold key is pinned as a literal, since renaming it silently
  * re-docks every existing save.
  */
 final class IntelSidebarHostTest {
+
     // A visor with its bottom edge at y = 50, so a box bottom at or within a pixel of 50 is flush with it.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
 
@@ -62,12 +63,15 @@ final class IntelSidebarHostTest {
 
         @Test
         void isOverlayShowingIsTrueWhileTheMapVisorIsLitAndOutOfStarscapeMode() {
+
             var intelScreenFake = new IntelScreenViewFake();
+
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(MAP_VISOR);
             intelScreenFake.setMapStarscapeModeOn(false);
 
-            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing()).isTrue();
+            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing())
+                .isTrue();
         }
 
         @Test
@@ -76,30 +80,36 @@ final class IntelSidebarHostTest {
             // read stays true while the rectangle goes away. Gating on the rectangle is what keeps the
             // sidebar off them; gating on the tab-open read would draw it over both.
             var intelScreenFake = new IntelScreenViewFake();
+
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(null);
 
-            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing()).isFalse();
+            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing())
+                .isFalse();
         }
 
         @Test
-        void isOverlayShowingIsFalseWhenTheLitVisorIsInStarscapeMode() {
-            // Starscape mode replaces the map with the starfield and suppresses the terrain layers the
-            // political overlay rides, so the visor is lit with nothing for the controls to drive.
+        void isOverlayShowingIsTrueWhileTheLitVisorIsInStarscapeMode() {
+            // The starscape half of the terrain pair paints over the starfield, so a lit visor carries the
+            // overlay these controls drive in that look too and the filter must not close the gate.
             var intelScreenFake = new IntelScreenViewFake();
+
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(MAP_VISOR);
             intelScreenFake.setMapStarscapeModeOn(true);
 
-            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing()).isFalse();
+            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing())
+                .isTrue();
         }
 
         @Test
         void isOverlayShowingIsFalseWhenTheIntelTabIsNotShowing() {
+
             var intelScreenFake = new IntelScreenViewFake();
             intelScreenFake.setIntelTabOpen(false);
 
-            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing()).isFalse();
+            assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing())
+                .isFalse();
         }
     }
 
@@ -108,25 +118,32 @@ final class IntelSidebarHostTest {
 
         @Test
         void decideBorderEdgesAlwaysDropsTheLeftEdge() {
+
             var floatingBox = IntelSidebarHost.decideBorderEdges(400f, MAP_VISOR);
             var flushBox = IntelSidebarHost.decideBorderEdges(MAP_VISOR.y(), MAP_VISOR);
 
-            assertThat(floatingBox).doesNotContain(BoxEdge.LEFT);
-            assertThat(flushBox).doesNotContain(BoxEdge.LEFT);
+            assertThat(floatingBox)
+                .doesNotContain(BoxEdge.LEFT);
+            assertThat(flushBox)
+                .doesNotContain(BoxEdge.LEFT);
         }
 
         @Test
         void decideBorderEdgesAlwaysKeepsTheTopAndRightEdges() {
+
             var edges = IntelSidebarHost.decideBorderEdges(400f, MAP_VISOR);
 
-            assertThat(edges).contains(BoxEdge.TOP, BoxEdge.RIGHT);
+            assertThat(edges)
+                .contains(BoxEdge.TOP, BoxEdge.RIGHT);
         }
 
         @Test
         void decideBorderEdgesDropsTheBottomEdgeWhenTheBoxSitsOnTheVisorBottom() {
+
             var edges = IntelSidebarHost.decideBorderEdges(MAP_VISOR.y(), MAP_VISOR);
 
-            assertThat(edges).doesNotContain(BoxEdge.BOTTOM);
+            assertThat(edges)
+                .doesNotContain(BoxEdge.BOTTOM);
         }
 
         @Test
@@ -134,7 +151,8 @@ final class IntelSidebarHostTest {
             // One pixel above the visor bottom still counts as flush, absorbing the padding's rounding.
             var edges = IntelSidebarHost.decideBorderEdges(MAP_VISOR.y() + 1f, MAP_VISOR);
 
-            assertThat(edges).doesNotContain(BoxEdge.BOTTOM);
+            assertThat(edges)
+                .doesNotContain(BoxEdge.BOTTOM);
         }
 
         @Test
@@ -142,14 +160,17 @@ final class IntelSidebarHostTest {
             // Ten pixels above the visor bottom: the box does not reach it, so the bottom border shows.
             var edges = IntelSidebarHost.decideBorderEdges(MAP_VISOR.y() + 10f, MAP_VISOR);
 
-            assertThat(edges).contains(BoxEdge.BOTTOM);
+            assertThat(edges)
+                .contains(BoxEdge.BOTTOM);
         }
 
         @Test
         void decideBorderEdgesKeepsTheBottomEdgeWhenThereIsNoVisor() {
+
             var edges = IntelSidebarHost.decideBorderEdges(400f, null);
 
-            assertThat(edges).contains(BoxEdge.BOTTOM);
+            assertThat(edges)
+                .contains(BoxEdge.BOTTOM);
         }
     }
 
@@ -160,7 +181,8 @@ final class IntelSidebarHostTest {
         void layoutBorderEdgesDropsTheLeftEdgeSoTheReservedStripCollapses() {
             // The box sits flush against the visor's left edge, so it reserves no left inset and the content
             // meets the visor rather than leaving a bare strip where the border would have been.
-            assertThat(IntelSidebarHost.layoutBorderEdges()).doesNotContain(BoxEdge.LEFT);
+            assertThat(IntelSidebarHost.layoutBorderEdges())
+                .doesNotContain(BoxEdge.LEFT);
         }
 
         @Test
@@ -191,19 +213,29 @@ final class IntelSidebarHostTest {
             // that makes a shortcut pressed on the intel screen move the intel tab: swapping the two hosts'
             // selections would leave every other test green while the key moved the sector map's tab.
             var layerMock = mock(MapLayer.class);
-            when(layerMock.getId()).thenReturn("political_map");
-            when(layerMock.getShortcutSettingKey()).thenReturn(SHORTCUT_SETTING_KEY);
-            when(layerMock.getDefaultShortcutKeycode()).thenReturn(SHORTCUT_KEYCODE);
-            MapLayerRegistry.registerLayers(List.of(layerMock), layerMock);
-            var eventMock = mock(InputEventAPI.class);
-            when(eventMock.getEventValue()).thenReturn(SHORTCUT_KEYCODE);
 
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            when(layerMock.getId())
+                .thenReturn("political_map");
+            when(layerMock.getShortcutSettingKey())
+                .thenReturn(SHORTCUT_SETTING_KEY);
+            when(layerMock.getDefaultShortcutKeycode())
+                .thenReturn(SHORTCUT_KEYCODE);
+
+            MapLayerRegistry.registerLayers(List.of(layerMock), layerMock);
+
+            var eventMock = mock(InputEventAPI.class);
+
+            when(eventMock.getEventValue())
+                .thenReturn(SHORTCUT_KEYCODE);
+
+            try (var globalMock = mockStatic(Global.class);
+                    var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
-                when(sectorMock.getMemoryWithoutUpdate()).thenReturn(memoryMock);
+
+                when(sectorMock.getMemoryWithoutUpdate())
+                    .thenReturn(memoryMock);
 
                 globalMock.
                     when(Global::getSector)
@@ -214,7 +246,8 @@ final class IntelSidebarHostTest {
 
                 new IntelSidebarHost(new IntelScreenViewFake()).handleKeyPress(eventMock);
 
-                verify(memoryMock).set(INTEL_ACTIVE_LAYER_KEY, "political_map");
+                verify(memoryMock)
+                    .set(INTEL_ACTIVE_LAYER_KEY, "political_map");
             }
         }
     }
@@ -226,12 +259,15 @@ final class IntelSidebarHostTest {
         void restoreFoldFromSaveOpensDockedWhenTheSaveHoldsNoChoiceYet() {
             // A fresh save has never written the key, so the default applies and the rail stays clear of
             // the visor until the player expands it.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(DOCKED_KEY)).thenReturn(false);
+
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(DOCKED_KEY))
+                    .thenReturn(false);
 
                 var host = new IntelSidebarHost(new IntelScreenViewFake());
                 host.restoreFoldFromSave();
@@ -243,13 +279,17 @@ final class IntelSidebarHostTest {
 
         @Test
         void restoreFoldFromSaveOpensExpandedWhenTheSaveWasLeftWithTheRailOpen() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
-                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(false);
+
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(DOCKED_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getBoolean(DOCKED_KEY))
+                    .thenReturn(false);
 
                 var host = new IntelSidebarHost(new IntelScreenViewFake());
                 host.restoreFoldFromSave();
@@ -263,13 +303,17 @@ final class IntelSidebarHostTest {
 
         @Test
         void restoreFoldFromSaveOpensDockedWhenTheSaveWasLeftDocked() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
-                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(true);
+
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(DOCKED_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getBoolean(DOCKED_KEY))
+                    .thenReturn(true);
 
                 var host = new IntelSidebarHost(new IntelScreenViewFake());
                 host.restoreFoldFromSave();
@@ -283,19 +327,27 @@ final class IntelSidebarHostTest {
         void restoreFoldFromSaveDropsTheFoldTheHostCarriedFromAPreviousSave() {
             // Loading a second save in one run must not inherit the first save's rail: the host is a
             // process-lifetime singleton, so the reseed is the only thing that clears the old fold.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
-                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(false);
+
+                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(DOCKED_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getBoolean(DOCKED_KEY))
+                    .thenReturn(false);
 
                 var host = new IntelSidebarHost(new IntelScreenViewFake());
                 host.restoreFoldFromSave();
-                assertThat(host.getController().isFullyExpanded()).isTrue();
 
-                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(true);
+                assertThat(host.getController().isFullyExpanded())
+                    .isTrue();
+
+                when(memoryMock.getBoolean(DOCKED_KEY))
+                    .thenReturn(true);
+
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().getCollapseFraction())
@@ -303,5 +355,4 @@ final class IntelSidebarHostTest {
             }
         }
     }
-
 }

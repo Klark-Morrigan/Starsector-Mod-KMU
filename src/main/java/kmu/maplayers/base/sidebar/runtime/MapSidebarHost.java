@@ -11,10 +11,14 @@ import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import java.util.Set;
 
 /**
- * The sector map's binding for the map-layer sidebar: it shows while the sector map is up with the
- * starscape filter off and hangs the panel from the screen top-left. This is the on-map sibling of
+ * The sector map's binding for the map-layer sidebar: it shows while the sector map is up in either of
+ * its looks, and hangs the panel from the screen top-left. This is the on-map sibling of
  * {@link IntelSidebarHost}; the two differ only in gate, anchor, controller, and which frame edges they
  * stroke, and both feed the shared {@link SidebarRenderer} / {@link SidebarInput}.
+ *
+ * <p>The Starscape filter is not part of the gate. The layers paint through a terrain pair, one half of
+ * which draws over the starfield, so there is an overlay under these controls whichever look the map
+ * wears and the filter says nothing about whether the sidebar has anything to drive.
  *
  * <p>Its panel reopens at the fold this save was left at, and a save that has never folded it opens out,
  * since the on-map sidebar is the player's primary way in to the map layers and has the screen width to
@@ -38,7 +42,9 @@ public final class MapSidebarHost extends BaseSidebarHost {
 
     @Override
     public boolean isOverlayShowing() {
-        return CampaignMapView.isSectorMapWithStarscapeOff();
+        // Per-host rather than a host-blind "a map is showing somewhere": this panel anchors to the
+        // sector map's own screen, so it needs that screen up and not merely a map on some other one.
+        return CampaignMapView.isSectorMapShowing();
     }
 
     @Override

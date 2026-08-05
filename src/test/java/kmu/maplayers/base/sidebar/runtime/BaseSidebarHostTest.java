@@ -3,6 +3,11 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
+import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.controls.Control;
+import kmlib.starsector.ui.input.UiCursor;
+import kmlib.starsector.ui.widgets.BoxBorder;
+import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
@@ -19,6 +24,8 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -36,6 +43,7 @@ import static org.mockito.Mockito.when;
  * it acted on, so every other key reaches the screen underneath.
  */
 final class BaseSidebarHostTest {
+
     private static final int UNBOUND = 0;
     private static final int FIRST_KEYCODE = 49;
     private static final int SECOND_KEYCODE = 25;
@@ -44,15 +52,35 @@ final class BaseSidebarHostTest {
     private static final String FIRST_SETTING_KEY = "kmu_testFirstLayerKey";
     private static final String SECOND_SETTING_KEY = "kmu_testSecondLayerKey";
 
+    // Where each registered layer's tab sits in the row, the panel building its tabs from the same registry
+    // in the same order - so these are the indices a blink has to land on.
+    private static final int FIRST_LAYER_TAB_INDEX = 0;
+    private static final int SECOND_LAYER_TAB_INDEX = 1;
+
+    // A whole traverse in one step, so a started blink stands at its peak and an unstarted one at rest -
+    // telling the two apart in one number rather than by walking frames.
+    private static final float FULL_STEP_SECONDS = 1f;
+    private static final float DURATION_SECONDS = 1f;
+    private static final float TOLERANCE = 0.0001f;
+
+    // The pointer parked well off the panel, so nothing the frame advances can be a hover and a lit tab can
+    // only have come from the blink.
+    private static final float OFF_PANEL_COORDINATE = 5000f;
+
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
 
     @BeforeEach
     void registerTwoBoundLayers() {
-        when(firstLayerMock.getShortcutSettingKey()).thenReturn(FIRST_SETTING_KEY);
-        when(firstLayerMock.getDefaultShortcutKeycode()).thenReturn(FIRST_KEYCODE);
-        when(secondLayerMock.getShortcutSettingKey()).thenReturn(SECOND_SETTING_KEY);
-        when(secondLayerMock.getDefaultShortcutKeycode()).thenReturn(SECOND_KEYCODE);
+
+        when(firstLayerMock.getShortcutSettingKey())
+            .thenReturn(FIRST_SETTING_KEY);
+        when(firstLayerMock.getDefaultShortcutKeycode())
+            .thenReturn(FIRST_KEYCODE);
+        when(secondLayerMock.getShortcutSettingKey())
+            .thenReturn(SECOND_SETTING_KEY);
+        when(secondLayerMock.getDefaultShortcutKeycode())
+            .thenReturn(SECOND_KEYCODE);
 
         // The registry is static, so a neighbour's layers would otherwise outlive their test.
         MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), firstLayerMock);
@@ -63,30 +91,39 @@ final class BaseSidebarHostTest {
 
         @Test
         void handleKeyPressJumpsToTheLayerBoundToThePressedKey() {
+
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(SECOND_KEYCODE);
+
             try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
-            verify(layerSelectionMock).selectLayer(secondLayerMock);
+            verify(layerSelectionMock)
+                .selectLayer(secondLayerMock);
+
             // Consumed so the key does not also trigger a binding on the screen underneath sharing it.
-            verify(eventMock).consume();
+            verify(eventMock)
+                .consume();
         }
 
         @Test
         void handleKeyPressLeavesAKeyBoundToNoLayerUntouched() {
+
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
+
             try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
             verifyNoInteractions(layerSelectionMock);
+
             // Unconsumed, so the screen underneath still receives its own key.
-            verify(eventMock, never()).consume();
+            verify(eventMock, never())
+                .consume();
         }
 
         @Test
@@ -96,6 +133,7 @@ final class BaseSidebarHostTest {
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNBOUND);
+
             try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 settingsMock
                     .when(() -> KmuMapLayerSettings.getMapLayerShortcut(anyString(), anyInt()))
@@ -105,7 +143,8 @@ final class BaseSidebarHostTest {
             }
 
             verifyNoInteractions(layerSelectionMock);
-            verify(eventMock, never()).consume();
+            verify(eventMock, never())
+                .consume();
         }
 
         @Test
@@ -115,6 +154,7 @@ final class BaseSidebarHostTest {
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
+
             try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
                 settingsMock
@@ -127,8 +167,49 @@ final class BaseSidebarHostTest {
                 host.handleKeyPress(eventMock);
             }
 
-            verify(layerSelectionMock).selectLayer(secondLayerMock);
-            verify(eventMock).consume();
+            verify(layerSelectionMock)
+                .selectLayer(secondLayerMock);
+            verify(eventMock)
+                .consume();
+        }
+
+        @Test
+        void handleKeyPressBlinksTheTabOfTheLayerItJumpedTo() {
+            // The only thing that tells the player a shortcut landed: a keyboard switch puts nothing under
+            // the pointer, so an unblinked tab would read as a key the panel ignored. Blinking the wrong tab
+            // would be worse than none, marking a switch that did not happen.
+            var host = createHost(mock(ActiveLayerSelection.class));
+            var eventMock = mockKeyPress(SECOND_KEYCODE);
+
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
+                host.handleKeyPress(eventMock);
+            }
+
+            advanceAWholeTraverse(host);
+
+            assertThat(hoverFractionAt(host, SECOND_LAYER_TAB_INDEX))
+                .isCloseTo(1f, within(TOLERANCE));
+            assertThat(hoverFractionAt(host, FIRST_LAYER_TAB_INDEX))
+                .isCloseTo(0f, within(TOLERANCE));
+        }
+
+        @Test
+        void handleKeyPressBlinksNoTabForAKeyBoundToNoLayer() {
+            // Nothing switched, so nothing may be marked - a blink here would confirm a press the panel in
+            // fact let through to the screen underneath.
+            var host = createHost(mock(ActiveLayerSelection.class));
+            var eventMock = mockKeyPress(UNRELATED_KEYCODE);
+
+            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
+                host.handleKeyPress(eventMock);
+            }
+
+            advanceAWholeTraverse(host);
+
+            assertThat(hoverFractionAt(host, FIRST_LAYER_TAB_INDEX))
+                .isCloseTo(0f, within(TOLERANCE));
+            assertThat(hoverFractionAt(host, SECOND_LAYER_TAB_INDEX))
+                .isCloseTo(0f, within(TOLERANCE));
         }
 
         @Test
@@ -141,11 +222,14 @@ final class BaseSidebarHostTest {
             createHost(otherScreenSelectionMock);
 
             var eventMock = mockKeyPress(FIRST_KEYCODE);
+
             try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
-            verify(layerSelectionMock).selectLayer(firstLayerMock);
+            verify(layerSelectionMock)
+                .selectLayer(firstLayerMock);
+
             verifyNoInteractions(otherScreenSelectionMock);
         }
     }
@@ -153,14 +237,19 @@ final class BaseSidebarHostTest {
     // A host carrying nothing but the plumbing under test: the shared key handling is the base's, so the
     // per-screen answers are stubbed out rather than bound to either live screen.
     private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
+
         var foldSelectionMock = mock(SidebarFoldSelection.class);
-        when(foldSelectionMock.isRailDocked()).thenReturn(false);
+
+        when(foldSelectionMock.isRailDocked())
+            .thenReturn(false);
+
         return new SidebarHostFake(foldSelectionMock, layerSelection);
     }
 
     // Each layer bound to its own default, the state before the player rebinds anything.
     private static MockedStatic<KmuMapLayerSettings> mockDefaultBindings() {
-        MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class);
+
+        var settingsMock = mockStatic(KmuMapLayerSettings.class);
 
         settingsMock
             .when(() -> KmuMapLayerSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
@@ -172,9 +261,58 @@ final class BaseSidebarHostTest {
         return settingsMock;
     }
 
+    // Charges the host's panel one whole traverse of animation with the pointer off it, which is all a
+    // blink needs to reach its peak. The cursor read the advance opens with is stubbed rather than left to
+    // LWJGL, there being no display under a unit test to point at; a placement with no tabs laid in it and
+    // no collapse handle then leaves the frame nothing to hover whatever the stub answers.
+    private static void advanceAWholeTraverse(SidebarHostFake host) {
+        try (var cursorMock = mockStatic(UiCursor.class)) {
+
+            cursorMock
+                .when(UiCursor::getUiX)
+                .thenReturn(OFF_PANEL_COORDINATE);
+            cursorMock
+                .when(UiCursor::getUiY)
+                .thenReturn(OFF_PANEL_COORDINATE);
+
+            host.getController().advanceInputMotions(
+                buildEmptyPlacement(),
+                FULL_STEP_SECONDS,
+                DURATION_SECONDS);
+        }
+    }
+
+    // How far onto the hovered shade one of the host's tabs stands, read the way the render pass reads it -
+    // through the interaction sources, which is where a blink and a hover are composed into the one value a
+    // strip paints from.
+    private static float hoverFractionAt(SidebarHostFake host, int tabIndex) {
+        return host
+            .getController()
+            .getTabInteractionSources()
+            .hoverSource()
+            .resolveHoverFractionAt(tabIndex);
+    }
+
+    // A panel with nothing laid in it: the advance hit-tests a placement, and a blink is the one motion here
+    // that needs no geometry at all, so the fixture supplies a shape rather than a layout.
+    private static TabPanelPlacement buildEmptyPlacement() {
+
+        var emptyBox = new Rectangle(0f, 0f, 0f, 0f);
+
+        return new TabPanelPlacement(
+            new Control(null, emptyBox, List.of()),
+            new PanelPlacement(emptyBox, emptyBox, List.of(), emptyBox, 0f, 0f),
+            new BoxBorder(0f),
+            null);
+    }
+
     private static InputEventAPI mockKeyPress(int keycode) {
+
         var eventMock = mock(InputEventAPI.class);
-        when(eventMock.getEventValue()).thenReturn(keycode);
+
+        when(eventMock.getEventValue())
+            .thenReturn(keycode);
+
         return eventMock;
     }
 

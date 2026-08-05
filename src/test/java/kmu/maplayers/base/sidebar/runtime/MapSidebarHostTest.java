@@ -7,6 +7,7 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.memory.SectorMemoryAccess;
+import kmlib.starsector.ui.map.presence.CampaignMapView;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -22,16 +23,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the on-map overlay's frame edges and the fold it opens at. Its frozen fold key and its opening
+ * Pins the on-map overlay's gate, its frame edges, and the fold it opens at. The gate is the sector map
+ * showing at all, in either of its looks, so the Starscape filter cannot hide a panel whose overlay is
+ * painting. Its frozen fold key and its opening
  * default are pinned as literals: the key because renaming it silently returns every existing save to the
  * default, and the default because opening out is what makes the sidebar the visible way in to the
  * political map on a save that has never folded it.
  */
 final class MapSidebarHostTest {
+
     // The live fold key, pinned as a literal: a rename must break this test rather than shipping and
     // quietly reopening every save's panel at the default.
     private static final String DOCKED_KEY = "$kmu_political_map_sidebar_docked";
@@ -50,12 +55,50 @@ final class MapSidebarHostTest {
     private static final float TOLERANCE = 0.0001f;
 
     @Nested
+    class IsOverlayShowing {
+
+        @Test
+        void isOverlayShowingIsTrueWhileTheSectorMapIsUpWhicheverLookItWears() {
+            // The starscape half of the terrain pair paints over the starfield, so the overlay these
+            // controls drive is on screen in either look. Pinned by the filter read never being made:
+            // a gate that consulted it would hide the panel over a map that is plainly painting.
+            try (var mapViewMock = mockStatic(CampaignMapView.class)) {
+
+                mapViewMock
+                    .when(CampaignMapView::isSectorMapShowing)
+                    .thenReturn(true);
+
+                assertThat(MapSidebarHost.INSTANCE.isOverlayShowing())
+                    .isTrue();
+
+                mapViewMock.verify(
+                    CampaignMapView::isSectorMapWithStarscapeOff,
+                    never());
+            }
+        }
+
+        @Test
+        void isOverlayShowingIsFalseWhenTheSectorMapIsNotShowing() {
+            try (var mapViewMock = mockStatic(CampaignMapView.class)) {
+
+                mapViewMock
+                    .when(CampaignMapView::isSectorMapShowing)
+                    .thenReturn(false);
+
+                assertThat(MapSidebarHost.INSTANCE.isOverlayShowing())
+                    .isFalse();
+            }
+        }
+    }
+
+    @Nested
     class ResolveBorderEdges {
 
         @Test
         void resolveBorderEdgesFramesAllFourSides() {
             // The on-map sidebar floats free on the screen, touching no other panel's edge.
-            assertThat(MapSidebarHost.INSTANCE.resolveBorderEdges(null)).isEqualTo(BoxEdge.ALL);
+            assertThat(MapSidebarHost.INSTANCE.resolveBorderEdges(null))
+                .isEqualTo(BoxEdge.ALL);
         }
     }
 
@@ -68,22 +111,32 @@ final class MapSidebarHostTest {
             // that keeps an on-map shortcut on the sector map's tab: swapping the two hosts' selections
             // would leave every other test green while the key moved the intel screen's tab.
             var layerMock = mock(MapLayer.class);
-            when(layerMock.getId()).thenReturn("political_map");
-            when(layerMock.getShortcutSettingKey()).thenReturn(SHORTCUT_SETTING_KEY);
-            when(layerMock.getDefaultShortcutKeycode()).thenReturn(SHORTCUT_KEYCODE);
-            MapLayerRegistry.registerLayers(List.of(layerMock), layerMock);
-            var eventMock = mock(InputEventAPI.class);
-            when(eventMock.getEventValue()).thenReturn(SHORTCUT_KEYCODE);
 
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            when(layerMock.getId())
+                .thenReturn("political_map");
+            when(layerMock.getShortcutSettingKey())
+                .thenReturn(SHORTCUT_SETTING_KEY);
+            when(layerMock.getDefaultShortcutKeycode())
+                .thenReturn(SHORTCUT_KEYCODE);
+
+            MapLayerRegistry.registerLayers(List.of(layerMock), layerMock);
+
+            var eventMock = mock(InputEventAPI.class);
+
+            when(eventMock.getEventValue())
+                .thenReturn(SHORTCUT_KEYCODE);
+
+            try (var globalMock = mockStatic(Global.class);
+                    var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
-                when(sectorMock.getMemoryWithoutUpdate()).thenReturn(memoryMock);
 
-                globalMock.
-                    when(Global::getSector)
+                when(sectorMock.getMemoryWithoutUpdate())
+                    .thenReturn(memoryMock);
+
+                globalMock
+                    .when(Global::getSector)
                     .thenReturn(sectorMock);
                 settingsMock
                     .when(() -> KmuMapLayerSettings.getMapLayerShortcut(
@@ -93,7 +146,8 @@ final class MapSidebarHostTest {
 
                 MapSidebarHost.INSTANCE.handleKeyPress(eventMock);
 
-                verify(memoryMock).set(MAP_ACTIVE_LAYER_KEY, "political_map");
+                verify(memoryMock)
+                    .set(MAP_ACTIVE_LAYER_KEY, "political_map");
             }
         }
     }
@@ -105,12 +159,16 @@ final class MapSidebarHostTest {
         void restoreFoldFromSaveOpensOutWhenTheSaveHoldsNoFoldYet() {
             // A save that has never folded this panel opens it out: it is the player's primary way in to
             // the political map and has the screen width to sit open.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(DOCKED_KEY)).thenReturn(false);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(DOCKED_KEY))
+                    .thenReturn(false);
 
                 MapSidebarHost.INSTANCE.restoreFoldFromSave();
 
@@ -123,13 +181,18 @@ final class MapSidebarHostTest {
 
         @Test
         void restoreFoldFromSaveOpensDockedWhenTheSaveWasLeftDocked() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(DOCKED_KEY)).thenReturn(true);
-                when(memoryMock.getBoolean(DOCKED_KEY)).thenReturn(true);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(DOCKED_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getBoolean(DOCKED_KEY))
+                    .thenReturn(true);
 
                 MapSidebarHost.INSTANCE.restoreFoldFromSave();
 
@@ -142,18 +205,25 @@ final class MapSidebarHostTest {
         void restoreFoldFromSaveReadsItsOwnKeyRatherThanTheIntelScreensFold() {
             // The two screens' folds are independent, so the on-map panel must not answer to the key the
             // intel panel stores under.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains("$kmu_political_intel_sidebar_docked")).thenReturn(true);
-                when(memoryMock.getBoolean("$kmu_political_intel_sidebar_docked")).thenReturn(true);
-                when(memoryMock.contains(DOCKED_KEY)).thenReturn(false);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains("$kmu_political_intel_sidebar_docked"))
+                    .thenReturn(true);
+                when(memoryMock.getBoolean("$kmu_political_intel_sidebar_docked"))
+                    .thenReturn(true);
+                when(memoryMock.contains(DOCKED_KEY))
+                    .thenReturn(false);
 
                 MapSidebarHost.INSTANCE.restoreFoldFromSave();
 
-                assertThat(MapSidebarHost.INSTANCE.getController().isFullyExpanded()).isTrue();
+                assertThat(MapSidebarHost.INSTANCE.getController().isFullyExpanded())
+                    .isTrue();
             }
         }
     }

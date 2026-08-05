@@ -26,7 +26,7 @@ shortcut jump), leaving each concrete host only the genuine differences.
 
 | | `MapSidebarHost` | `IntelSidebarHost` |
 | --- | --- | --- |
-| Gate | `CampaignMapView.isSectorMapWithStarscapeOff()` | non-null `getMapVisorRect()` and `!isMapStarscapeModeOn()` |
+| Gate | `CampaignMapView.isSectorMapShowing()` | non-null `getMapVisorRect()` |
 | Anchor | screen top-left, by the padding settings | the visor rect's top-left, flush left, below the top-padding setting |
 | Height cap | bottom padding setting | the visor's bottom edge |
 | Framed edges | `BoxEdge.ALL` | `TOP`, `RIGHT`, and `BOTTOM` until the box reaches the visor bottom |
@@ -42,12 +42,15 @@ binds to the same key. On the intel screen that matters: item action buttons bin
 and the tag filter uses `Q` and `Ctrl+S`. The defaults (`N`, `P`) avoid all of them, and the
 LunaLib Keycode fields are the way out of any clash a mod's intel item introduces.
 
-Both gates ask the same question - is there a live canvas under the panel. The visor rect is absent
-when the intel tab is not showing, when a sibling sub-tab (Planets, Factions) holds the column, or
-when a large-description item has blanked the preview, so it is both gate and anchor. Starscape
-mode is the second half on either screen: the game paints the starfield in place of the map and
-suppresses the terrain layers the political overlay rides. Each screen carries its own starscape
-flag, so the intel host reads the visor's, not the campaign map's.
+Both gates ask the same question and nothing beyond it - is there a live canvas under the panel. The
+visor rect is absent when the intel tab is not showing, when a sibling sub-tab (Planets, Factions)
+holds the column, or when a large-description item has blanked the preview, so it is both gate and
+anchor. Which look that canvas wears is not asked on either screen: the layers paint through
+[a terrain pair](../render/README.md) whose second half draws over the Starscape starfield, so the
+overlay these controls drive is under them in either look.
+
+Both are per-screen reads rather than the host-blind `MapPresence` seam KMLib offers, because each
+host anchors its panel to its own screen - "a map is up somewhere" cannot place a box.
 
 `IntelSidebarHost` reaches the concrete intel panel through KMLib's `IntelScreenView` seam, which
 fails closed - an unresolvable link hides the sidebar rather than throwing on a live screen.
@@ -99,12 +102,13 @@ placement, steps the panel's input motions against it, and hands off to KMLib's 
 
 The animations run either side of the layout, which is why the frame's elapsed time is read once and
 spent on both sides: the fold has to advance *before* the placement, since it sizes it, and the input
-motions - the hover fades and the tabs' click pulses - *after* it, since what the pointer is on (a
-tab, or the collapse handle) is resolved against the very placement being drawn rather than latched
-from the last pointer event. A latched hover goes stale whenever the panel moves under a still
-cursor, which the handle feels most: the panel folds out from under a still pointer and the notch
-stays lit for a handle no longer beneath it. The pulses need no placement at all - a click has been
-and gone - but ride the same call so one frame's time is charged to every motion, at one pace.
+motions - the hover fades, the tabs' click pulses, and their hotkey blinks - *after* it, since what
+the pointer is on (a tab, or the collapse handle) is resolved against the very placement being drawn
+rather than latched from the last pointer event. A latched hover goes stale whenever the panel moves
+under a still cursor, which the handle feels most: the panel folds out from under a still pointer and
+the notch stays lit for a handle no longer beneath it. The triggered motions need no placement at all
+- a click and a keypress have been and gone - but ride the same call so one frame's time is charged
+to every motion, at one pace.
 
 Both advance off `System.nanoTime()`, not campaign time: these screens are open on a paused game
 where `advance()` does not tick, so a game-time delta would freeze a half-folded panel and a
@@ -119,6 +123,14 @@ never saw begin.
 screen. Key events route to the host only while `isFullyExpanded()` - a docked or animating panel is
 not presenting its tabs, so its hotkeys stay inert and the key falls through. Off the gate it
 cancels any dangling drag, so a grab left over from an overlay closing mid-drag cannot persist.
+
+`BaseSidebarHost.handleKeyPress` matches the press to a layer through `TabPanelHotkeys`, selects it,
+and blinks that layer's tab. The blink is what tells the player the key landed: a tab press has the
+pointer on the tab to explain the switch, a keypress has nothing on screen at all. It therefore
+follows the press rather than the switch - a key pressed for the layer already shown still blinks -
+which is the opposite of the click pulse, whose inert tab explains itself. A layer's tab sits at its
+registry index, the tabs row being built from the same registry in the same order, so the index the
+binder matched is the index blinked.
 
 Neither pass has an error state: when a signal blocks the panel it is simply absent. That makes
 `SidebarRenderer`'s deduped view-state log (host state, screen size, resolved box, opacity) the only
@@ -219,15 +231,19 @@ That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `Hot
 orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
 from and a snapped tab width cannot part from the text drawn into it. The palette holds both flavours
 of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, hovered) and a relative
-`TabWash` per `TabWashState` (clicked, hotkeyed), the pulse lifting whichever look the tab has settled
+`TabWash` per `TabWashState` (clicked), the pulse lifting whichever look the tab has settled
 on. Hovering is a look rather than a lift because the resting and the selected tab meet at one shade
 under the pointer - the hovered shade is derived once from the selected look, so it cannot drift from
 it - and the selected tab's underline is what still marks the selection while it is hovered. A tab
 travels onto that shade rather than switching to it, and a click rides the `clicked` wash out and
-back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATION_SECONDS`. Both
-animations are the controller's, which holds no colour: it reports two fractions per tab and the
-paint pass binds them to the palette, so it is handed a look already blended and a lift already
-scaled. Only the `hotkeyed` wash is still undriven, awaiting the bound key's blink. The two
+back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATION_SECONDS`.
+
+A bound key's blink takes no wash of its own: it carries its tab onto that same hovered shade and
+back, so it rides the look channel with the hover and the two compose by the greater of them - which
+is why a key pressed for the tab already under the pointer shows nothing, the blink reaching only
+where the hover already stands. All three animations are the controller's, which holds no colour: it
+reports two fractions per tab - one look, one lift - and the paint pass binds them to the palette, so
+it is handed a look already blended and a lift already scaled. The two
 screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the
 paint pass does not read. Both faces are named through KMLib's `StarsectorFont` enum rather than by
 atlas basename.
