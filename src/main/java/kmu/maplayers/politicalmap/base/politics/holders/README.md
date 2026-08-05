@@ -106,6 +106,12 @@ for the fills here and *why* for the claims layer's hover box. Sharing it is wha
 and the box over it naming different claimants - on the memory-flag override, and on the
 iteration-order tie the mechanic settles equal scores by.
 
+Step for step describes the *claimant*, which is all this package takes. The standings the same read
+carries for the hover box go one market wider than vanilla scores - the player's colonies, forced
+non-territorial so they can never move the winner - because a box that dropped them would report a
+system the player holds a colony in as one they have no presence in. Nothing here can see that
+widening: a faction barred from claiming never becomes a claimant.
+
 Vanilla resolves a claimant two ways: an explicit `$claimingFaction` memory flag, or the top
 territorial market in the system. The map shows exactly what the mechanic resolves and invents
 nothing. A marketless system (unpopulated or decivilised) only resolves through the flag, which is
