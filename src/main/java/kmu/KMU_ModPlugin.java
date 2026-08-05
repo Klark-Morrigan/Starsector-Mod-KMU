@@ -193,6 +193,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // KMLib's, and it is told only which map matters and which entity to move; that the entity is a
     // terrain, and that the fog above it is what makes the move worth making, are KMU's side of it.
     //
+    // The map read is the starscape one and its sibling on MapPresence is the wrong one, which is
+    // worth stating because nothing catches the swap: both compile, both are on the same object,
+    // and the entity moved here is the half that stands aside entirely while a schematic map is up.
+    // Arming on a schematic open would move an entity that is not drawing, and skip the open that
+    // is.
+    //
     // Both ports are read afresh per call rather than resolved here, since a save load replaces the
     // entity and the script outlives no load anyway. Transient: pure runtime logic that must not
     // enter a save, so it is re-added fresh each load and never duplicates across reloads.

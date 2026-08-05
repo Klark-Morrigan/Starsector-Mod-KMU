@@ -59,30 +59,24 @@ entity itself.
 
 ## Where the starscape half sits in the starfield
 
-Being drawn at all and being drawn on top are separate questions. The map widget seeds one icon per
-entity in insertion order and appends the starfield's synthetic nebulae after everything the
-location holds, so the starscape half is drawn beneath them - and the one pass that runs after every
-terrain icon is the pass the widget skips in this mode.
+Being drawn at all and being drawn on top are separate questions, and the whitelisted type only
+answers the first. The starfield's synthetic nebulae are seeded after everything hyperspace holds,
+so the starscape half is painted beneath them - and the one pass that runs after every terrain icon
+is the pass the widget skips in this mode, which leaves no supported hook that paints over the fog.
 
-KMLib's `MapIconReseater` answers the second question, exploiting the same insertion order: an icon
-missing from one rendered frame is dropped, and a re-added entity re-enters at the tail. Each time a
-map opens onto the starfield, the terrain leaves hyperspace for a single advance and comes back -
-past the nebulae, and no further, star and fleet glyphs being walked in a later pass.
+Moving an icon up that order is nobody's content, so none of the mechanism is here. KMLib's
+`MapIconReseater` owns it, and `MapIconReseatDecision` states how it works and what it rests on.
 
-Moving an icon is nobody's content, so none of it is here. The script is told which map matters and
-handed a way to find the entity; KMU supplies the starscape read and
+What KMU supplies is the two ports. The map read is the starscape one - the entity being moved is
+the half that stands aside while a schematic map is up - and the entity read is
 `MapLayerTerrainInstaller.findStarscapeTerrain`, which resolves it afresh per call through the same
-plugin-class guard the install uses, so the entity a load brought back is the one moved. That the
-entity is a terrain, and that the fog above it is what makes the move worth making, are the only
-parts of this KMU holds - and both live at the entry point that wires the two together.
+plugin-class guard the install uses, so the entity a load brought back is the one moved. Both are
+wired at the mod's entry point: that the entity is a terrain, and that the fog above it is what
+makes the move worth making, is the whole of KMU's side.
 
-The one consequence worth knowing here: the terrain is out of hyperspace for one advance, so a save
-written inside that window carries none. `installStarscapeTerrain` is what brings it back, which is
-among the reasons it stays a per-load sweep.
-
-This is an artefact of how the widget seeds itself, not a promise the engine makes. A build that
-seeds differently leaves the overlay where it paints today, beneath the nebulae, with nothing else
-disturbed - and KMLib's `MapIconOrderTrace` is what says so from a running game.
+The move takes the terrain out of hyperspace for one advance, which is among the reasons
+`installStarscapeTerrain` stays a per-load sweep; its Javadoc has what that costs a save written
+inside the window.
 
 ## What is not here
 
