@@ -14,7 +14,6 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +24,7 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOn;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -115,7 +115,7 @@ final class MapLayerCellTooltipTest {
             when(vanillaMapTooltipMock.isShowing())
                 .thenReturn(true);
 
-            runWithHoverSwitchesOn(() -> {
+            runWithHoverTooltipSwitchOn(() -> {
                 new MapLayerCellTooltip(vanillaMapTooltipMock, () -> true)
                     .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
@@ -131,7 +131,7 @@ final class MapLayerCellTooltipTest {
             // Every other gate is open, and the vanilla probe is never even asked.
             var vanillaMapTooltipMock = mock(VanillaMapTooltip.class);
 
-            runWithHoverSwitchesOn(() -> {
+            runWithHoverTooltipSwitchOn(() -> {
                 new MapLayerCellTooltip(vanillaMapTooltipMock, () -> false)
                     .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
@@ -157,7 +157,7 @@ final class MapLayerCellTooltipTest {
             when(sectorMock.getStarSystems())
                 .thenReturn(List.of(systemMock));
 
-            runWithHoverSwitchesOn(() -> {
+            runWithHoverTooltipSwitchOn(() -> {
                 try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
 
                     globalMock
@@ -195,7 +195,7 @@ final class MapLayerCellTooltipTest {
 
             HoverTooltipDetailModeState.getInstance().toggleMode();
 
-            runWithHoverSwitchesOn(() -> {
+            runWithHoverTooltipSwitchOn(() -> {
                 try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
 
                     globalMock
@@ -216,23 +216,6 @@ final class MapLayerCellTooltipTest {
             });
         }
 
-        // Runs body with both hover switches on - the settings tier above every gate this group is
-        // about, and the one thing all three cases need identically. They are static reads, so they
-        // can only be answered for the length of a scope, which is what makes this a wrapper rather
-        // than a @BeforeEach like the hover.
-        private void runWithHoverSwitchesOn(Runnable body) {
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
-
-                settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
-                    .thenReturn(true);
-                settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
-                    .thenReturn(true);
-
-                body.run();
-            }
-        }
     }
 
     @Nested

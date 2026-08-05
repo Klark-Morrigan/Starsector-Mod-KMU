@@ -2,19 +2,17 @@ package kmu.maplayers.base.tooltip;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
-import kmu.settings.KmuMapLayerSettings;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.input.Keyboard;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 
+import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOff;
+import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOn;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,7 +65,7 @@ final class HoverTooltipDetailModeInputTest {
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
-            runWithHoverSwitchesOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
+            runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
                 .isEqualTo(HoverTooltipDetailMode.EXPANDED);
@@ -81,7 +79,7 @@ final class HoverTooltipDetailModeInputTest {
         void processCampaignInputPreCoreFlipsTheModeBackOnASecondPress() {
             // The toggle is its own inverse, which is what makes one key both the way in and the way
             // out rather than a mode the player cannot leave.
-            runWithHoverSwitchesOn(() -> {
+            runWithHoverTooltipSwitchOn(() -> {
                 input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1)));
                 input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1)));
             });
@@ -96,7 +94,7 @@ final class HoverTooltipDetailModeInputTest {
             // the press must fall through to whatever else claims it.
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
-            runWithHoverSwitchesOff(() -> input.processCampaignInputPreCore(List.of(eventMock)));
+            runWithHoverTooltipSwitchOff(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
                 .isEqualTo(HoverTooltipDetailMode.NORMAL);
@@ -112,7 +110,7 @@ final class HoverTooltipDetailModeInputTest {
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
             var inputWithNoMapShowing = new HoverTooltipDetailModeInput(() -> false);
 
-            runWithHoverSwitchesOn(
+            runWithHoverTooltipSwitchOn(
                 () -> inputWithNoMapShowing.processCampaignInputPreCore(List.of(eventMock)));
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
@@ -131,7 +129,7 @@ final class HoverTooltipDetailModeInputTest {
             when(eventMock.isConsumed())
                 .thenReturn(true);
 
-            runWithHoverSwitchesOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
+            runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
                 .isEqualTo(HoverTooltipDetailMode.NORMAL);
@@ -143,7 +141,7 @@ final class HoverTooltipDetailModeInputTest {
             // and the mode - which is every other binding the player has on the map.
             var eventMock = mockKeyDown(Keyboard.KEY_P);
 
-            runWithHoverSwitchesOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
+            runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
                 .isEqualTo(HoverTooltipDetailMode.NORMAL);
@@ -159,7 +157,7 @@ final class HoverTooltipDetailModeInputTest {
             var unrelatedEventMock = mockKeyDown(Keyboard.KEY_P);
             var toggleEventMock = mockKeyDown(Keyboard.KEY_F1);
 
-            runWithHoverSwitchesOn(() ->
+            runWithHoverTooltipSwitchOn(() ->
                 input.processCampaignInputPreCore(List.of(unrelatedEventMock, toggleEventMock)));
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
@@ -178,7 +176,7 @@ final class HoverTooltipDetailModeInputTest {
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
-            runWithHoverSwitchesOn(
+            runWithHoverTooltipSwitchOn(
                 () -> input.processCampaignInputPreFleetControl(List.of(eventMock)));
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
@@ -198,7 +196,7 @@ final class HoverTooltipDetailModeInputTest {
             // from seeing it.
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
-            runWithHoverSwitchesOn(() -> input.processCampaignInputPostCore(List.of(eventMock)));
+            runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPostCore(List.of(eventMock)));
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
                 .isEqualTo(HoverTooltipDetailMode.NORMAL);
@@ -262,30 +260,4 @@ final class HoverTooltipDetailModeInputTest {
         return eventMock;
     }
 
-    // Runs body with both hover switches on - the settings tier above every gate this listener reads.
-    // They are static reads, so they can only be answered for the length of a scope, which is what
-    // makes this a wrapper rather than a fixture.
-    private static void runWithHoverSwitchesOn(Runnable body) {
-        runWithHoverSwitches(true, body);
-    }
-
-    // The closed side of the same tier: the master is left on so the case is about the tooltip switch
-    // alone rather than about hovering being off altogether.
-    private static void runWithHoverSwitchesOff(Runnable body) {
-        runWithHoverSwitches(false, body);
-    }
-
-    private static void runWithHoverSwitches(boolean isTooltipEnabled, Runnable body) {
-        try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
-
-            settingsMock
-                .when(KmuMapLayerSettings::getMapHoveringEnabled)
-                .thenReturn(true);
-            settingsMock
-                .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
-                .thenReturn(isTooltipEnabled);
-
-            body.run();
-        }
-    }
 }
