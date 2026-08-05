@@ -14,6 +14,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -92,6 +93,7 @@ final class SystemClaimTooltipTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     private MockedStatic<SystemStatusRow> statusRowMock;
+    private MockedStatic<PoliticalMapDevToggles> devTogglesMock;
 
     @BeforeEach
     void installColoursAndTheSystemStatusSeam() {
@@ -104,6 +106,13 @@ final class SystemClaimTooltipTest {
             .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))
             .thenReturn(Optional.empty());
 
+        // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, the
+        // state every case but the reveal's own is posed under.
+        devTogglesMock = Mockito.mockStatic(PoliticalMapDevToggles.class);
+        devTogglesMock
+            .when(PoliticalMapDevToggles::readFromLunaSettings)
+            .thenReturn(PoliticalMapDevToggles.NONE);
+
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
 
@@ -114,6 +123,7 @@ final class SystemClaimTooltipTest {
 
     @AfterEach
     void clearColoursAndTheSystemStatusSeam() {
+        devTogglesMock.close();
         statusRowMock.close();
         CellTooltipPaletteFake.clearPalette();
     }
@@ -378,10 +388,25 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsCountsUndiscoveredColoniesWhenJudgingTheSystemEmpty() {
-            // The breakdown scores every market present, found or not, so the status above it has to
-            // admit the same ones - otherwise an unfound colony's system reads "Unpopulated" directly
-            // above the rows scoring the faction that holds it.
+        void buildBodySectionsJudgesTheSystemEmptyUnderTheNormalRevealWhileItIsOff() {
+            // An undiscovered colony must not count: suppressing the status line for one would make
+            // the missing line itself the tell that something is hiding in the system.
+            stubBreakdown(SystemClaimBreakdown.NONE);
+
+            tooltip.buildBodySections(sectorMock, systemMock);
+
+            statusRowMock.verify(
+                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, false));
+        }
+
+        @Test
+        void buildBodySectionsJudgesTheSystemEmptyUnderTheDevRevealWhileItIsOn() {
+            // The reveal is read live off the same toggle the faction layer samples, so a player who
+            // has turned it on is not told two different things by two layers about one system.
+            devTogglesMock
+                .when(PoliticalMapDevToggles::readFromLunaSettings)
+                .thenReturn(new PoliticalMapDevToggles(true, false));
+
             stubBreakdown(SystemClaimBreakdown.NONE);
 
             tooltip.buildBodySections(sectorMock, systemMock);

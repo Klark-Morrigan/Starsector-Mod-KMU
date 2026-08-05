@@ -14,6 +14,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -37,12 +38,6 @@ import java.util.function.Predicate;
  */
 public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
 
-    // The breakdown scores every market present, found by the player or not, so the status line above
-    // it has to count the same ones. Resolved under the narrower reveal, a system whose only colony
-    // the player has not yet found would be called unpopulated directly above the rows scoring the
-    // faction holding it.
-    private static final boolean ADMITS_UNDISCOVERED_MARKETS = true;
-
     /**
      * The one shared instance, explaining vanilla claims - the same mechanic the layer's fills are
      * resolved through, so the box and the cell under it can never name different claimants.
@@ -64,9 +59,14 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
 
         // Why the system holds nobody comes before who claims it, so a dead system names its state
         // first and the claim below reads as a hold over an empty system rather than over a colony.
+        // The reveal is read live off the same toggle the faction layer's pass samples, so crossing
+        // between the two layers cannot make one call a system empty that the other calls held.
         CellTooltipSections.appendBannerSection(
             sections,
-            SystemStatusRow.resolveStatusRow(sector, system, ADMITS_UNDISCOVERED_MARKETS));
+            SystemStatusRow.resolveStatusRow(
+                sector,
+                system,
+                PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions()));
 
         CellTooltipSections.appendSection(
             sections,

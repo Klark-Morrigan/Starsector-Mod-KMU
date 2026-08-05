@@ -37,23 +37,29 @@ public final class SystemStatusRow {
     }
 
     /**
-     * Resolves the status line for a system that holds no counted colony.
+     * Resolves the status line for a system the player has found nobody living in.
+     *
+     * <p>Gated on discovery rather than on a market being publicly listed. Emptiness is what the
+     * player has seen, so a base they have raided populates its system however concealed it
+     * stays - and, more importantly, one they have not found must not. Suppressing this line for
+     * an unfound colony would make its absence a reliable tell that something is hiding in the
+     * system, which is a spoiler drawn by not drawing anything.
      *
      * @param sector                           the sector whose economy is read
      * @param system                           the hovered system
-     * @param shouldIncludeUndiscoveredMarkets whether an undiscovered colony still counts as
-     *                                         populating the system (the "show all factions" dev
-     *                                         reveal); passed by the caller so the status agrees with
+     * @param shouldIncludeUndiscoveredMarkets whether an unfound colony still counts as populating
+     *                                         the system (the "show all factions" dev reveal);
+     *                                         passed by the caller so the status agrees with
      *                                         whatever that caller's own reads admit, rather than
      *                                         calling a system empty that the body below it fills
-     * @return the Decivilised or Unpopulated row, or empty when the system holds a counted colony
+     * @return the Decivilised or Unpopulated row, or empty when the player has found a colony here
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(
             SectorAPI sector,
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets) {
 
-        if (StarSystems.hasKnownOwnedMarket(sector, system, shouldIncludeUndiscoveredMarkets)) {
+        if (StarSystems.hasFoundOwnedMarket(sector, system, shouldIncludeUndiscoveredMarkets)) {
             return Optional.empty();
         }
         var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)

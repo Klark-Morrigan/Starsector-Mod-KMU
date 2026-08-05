@@ -33,7 +33,10 @@ import static org.mockito.Mockito.when;
 /**
  * Pins {@link SystemStatusRow}: a populated system yields no status at all, an empty one names itself
  * Decivilised or Unpopulated depending on whether the player has seen a dead colony there, and the
- * reveal decides whether an undiscovered colony already counts as populating the system. The row's
+ * reveal decides whether an unfound colony already counts as populating the system. Both sides of the
+ * discovery gate are pinned - a found base populates its system however concealed it stays, and a
+ * listed colony does not until it is reached - because a filter reading hiddenness instead would
+ * answer one of those two backwards. The row's
  * shape is pinned too - a banner set across the box, carrying its words and nothing else - since that
  * is what lets it read as a statement about the whole system rather than as an entry of a list.
  */
@@ -112,6 +115,31 @@ final class SystemStatusRowTest {
         }
 
         @Test
+        void resolveStatusRowTreatsAFoundConcealedBaseAsPopulatingTheSystem() {
+            // Raiding a base never un-hides its market, and the system plainly holds people either
+            // way - emptiness is about what the player has seen, not about what is publicly listed.
+            var system = buildSystemWithPlanets();
+            var sector = buildSectorHoldingMarkets(system, buildFoundConcealedBase());
+
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, false))
+                .isEmpty();
+        }
+
+        @Test
+        void resolveStatusRowNamesASystemEmptyWhileItsOnlyListedColonyIsUnfound() {
+            // The case parting a discovery gate from a known-to-player one, which would admit this
+            // colony on its un-hidden arm and quietly report a system the player has never reached.
+            var system = buildSystemWithPlanets();
+            var sector = buildSectorHoldingMarkets(system, buildUnfoundListedColony());
+
+            assertThat(readLabelTextRun(
+                    SystemStatusRow.resolveStatusRow(sector, system, false).orElseThrow(),
+                    STATUS_RUN)
+                    .text())
+                .isEqualTo("Unpopulated");
+        }
+
+        @Test
         void resolveStatusRowCountsAnUndiscoveredColonyUnderTheReveal() {
             // The same system reads populated or empty purely on the reveal, so a body showing all
             // factions never contradicts itself with an "Unpopulated" line above the factions it lists.
@@ -175,6 +203,44 @@ final class SystemStatusRowTest {
             .thenReturn(entityMock);
         when(marketMock.isHidden())
             .thenReturn(true);
+
+        return marketMock;
+    }
+
+    // A base the player has found and raided: its entity is discovered, yet the market stays hidden
+    // for good, since hiddenness is not a discovery state that clears.
+    private static MarketAPI buildFoundConcealedBase() {
+
+        var entityMock = mock(SectorEntityToken.class);
+
+        when(entityMock.isDiscoverable())
+            .thenReturn(false);
+
+        var marketMock = buildColony();
+
+        when(marketMock.getPrimaryEntity())
+            .thenReturn(entityMock);
+        when(marketMock.isHidden())
+            .thenReturn(true);
+
+        return marketMock;
+    }
+
+    // A colony surfaced into the open ahead of being reached: publicly listed, its entity still
+    // awaiting discovery - the other half of the pair hiddenness and discovery come apart on.
+    private static MarketAPI buildUnfoundListedColony() {
+
+        var entityMock = mock(SectorEntityToken.class);
+
+        when(entityMock.isDiscoverable())
+            .thenReturn(true);
+
+        var marketMock = buildColony();
+
+        when(marketMock.getPrimaryEntity())
+            .thenReturn(entityMock);
+        when(marketMock.isHidden())
+            .thenReturn(false);
 
         return marketMock;
     }
