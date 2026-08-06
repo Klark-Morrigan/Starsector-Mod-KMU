@@ -4,11 +4,14 @@ import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
+import kmlib.starsector.ui.render.gl.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
+import kmlib.starsector.ui.widgets.tabs.TabStyle;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
+import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -47,6 +50,13 @@ public final class IntelSidebarHost extends BaseSidebarHost {
      * This is where the live intel-screen binding is chosen, the host itself naming only the role.
      */
     public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(new VanillaIntelScreenView());
+
+    // How tall this screen's tab band stands. The intel sidebar overlays the visor under the vanilla map
+    // toggles and reads tighter than the on-map one, so it crowds the preview less. Content-space: the
+    // panel strokes its own top border above the band, so the drawn strip stands the border width taller.
+    // Package-private so the divergence the two screens depend on is checkable without a live sector,
+    // which the style built from it needs to resolve its colours.
+    static final float HEADER_BAND_HEIGHT = 17f;
 
     // How close the box's bottom must sit to the visor's bottom to count as flush, in pixels: the box lands
     // on round(visor.y) when its content fills the visor's height, so a one-pixel tolerance absorbs that
@@ -92,9 +102,17 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         }
         return LiveSidebarPlacement.resolveIntelPlacement(
             mapVisorRect,
+            buildTabStyle(),
             getController(),
             getLayerSelection(),
             layoutBorderEdges());
+    }
+
+    @Override
+    public WidgetStyle resolveWidgetStyle() {
+        // The map's look for now, band height apart: this host owning it is what makes the intel screen's
+        // own frame colour and chrome a change here rather than a branch in the shared render pass.
+        return SidebarStyles.buildPlayerAccentedStyle(buildTabStyle());
     }
 
     @Override
@@ -148,5 +166,12 @@ public final class IntelSidebarHost extends BaseSidebarHost {
             edges.remove(BoxEdge.BOTTOM);
         }
         return edges;
+    }
+
+    // The band the layout snaps this screen's tabs into and the paint pass draws them from - one value
+    // built twice a frame rather than held, since its colours resolve live. Both callers building it the
+    // same way is what keeps a drawn tab inside the band it was measured for.
+    private static TabStyle buildTabStyle() {
+        return SidebarStyles.buildTabStyle(HEADER_BAND_HEIGHT);
     }
 }

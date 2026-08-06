@@ -6,16 +6,12 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
-import kmlib.starsector.ui.colour.StarsectorUiColour;
-import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.input.HoverFade;
 import kmlib.starsector.ui.render.gl.NotchState;
 import kmlib.starsector.ui.render.gl.TabPanelRenderer;
 import kmlib.starsector.ui.render.gl.WidgetStyle;
 import kmlib.starsector.ui.widgets.BoxBorder;
 
-import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
-import kmu.maplayers.base.sidebar.style.SidebarPalettes;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.apache.log4j.Logger;
@@ -25,11 +21,15 @@ import org.apache.log4j.Logger;
  * host, advances the host's collapse handle off a wall clock, resolves the host's placement, and hands it
  * to the reusable KMLib {@link TabPanelRenderer} to paint. The panel's actual paint - the bordered frame,
  * the vanilla-styled tab header, the body controls, the scrollbar, and the collapse handle - is the
- * renderer's; this class owns only the wiring KMLib cannot: when to draw (the host's gate), which colours
- * and fonts to draw in (a {@link WidgetStyle} built from the live player colours and settings), advancing
- * the panel's animations off real time (the campaign is paused while these screens are open, so a game-time
+ * renderer's; this class owns only the wiring KMLib cannot: when to draw (the host's gate), advancing the
+ * panel's animations off real time (the campaign is paused while these screens are open, so a game-time
  * delta would freeze the fold and every input motion alike), and the view-state log. One instance per
  * host, so the sector map and the intel screen each get their own frame clock and log dedupe.
+ *
+ * <p>Which colours and fonts to draw in is the host's: it hands over a {@link WidgetStyle} resolved from
+ * the live player colours and settings, and this pass carries it through untouched. That is what lets two
+ * screens' panels read as part of the chrome each sits in without a screen test anywhere in here - the
+ * only per-screen readings left are the ones a host cannot make without the laid-out box.
  *
  * <p>Both screens are vanilla core-UI surfaces with no seam to attach a mod panel, so the sidebar is drawn
  * in UI coordinates through {@link CampaignUIRenderingListener} - specifically the above-tooltips pass, the
@@ -38,10 +38,6 @@ import org.apache.log4j.Logger;
  */
 public final class SidebarRenderer implements CampaignUIRenderingListener {
     private static final Logger LOG = Global.getLogger(SidebarRenderer.class);
-
-    // The body face: the insignia body font. The tab face is the resolver's, since it both measures
-    // and draws the tabs.
-    private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
 
     // The collapse fraction a fully docked body reports; the eased curve lands exactly on it at the end,
     // so an equality-or-above test reads "settled at the docked rail" rather than "still folding".
@@ -165,7 +161,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             host.resolveBorderEdges(placement));
         TabPanelRenderer.render(
             placement,
-            buildStyle(),
+            // The host's own look, asked for here rather than composed: this pass paints whichever
+            // screen's panel it was built for and has nothing to say about how that screen should read.
+            // Resolved after the layout, though the two agree on the tab style by both taking the host's.
+            host.resolveWidgetStyle(),
             border,
             host.getController().getTabInteractionSources(),
             notchState,
@@ -208,40 +207,6 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
 
         previousFrameNanos = now;
         return elapsed;
-    }
-
-    // The sidebar's look, built each frame from the live player colours: a black body backdrop (faded
-    // by the opacity setting), the frame colour, the base and bright player accents, the map's own tab
-    // style (its colour scheme and orbitron face; the paint pass reads no band height, each screen having
-    // laid its own out), the insignia body face, and the collapse handle's chevron shades for the colour
-    // the player picked.
-    private static WidgetStyle buildStyle() {
-
-        var accent = StarsectorUiColour.VANILLA_PLAYER_BASE.resolve();
-        var brightAccent = StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve();
-
-        return new WidgetStyle(
-            // The body backdrop is black; the opacity setting fades it, so the body reads as a
-            // translucent-black pane the map shows through rather than a solid block. Black, not the
-            // player-dark tint, so the body stays neutral - only the tabs header, accents, and the
-            // notch carry colour. This is the body fill alone; the tabs' own fills live in the
-            // TabStyle below, a separate field, so the body's colour never couples to the header's.
-            // The header also opts out of this opacity fade and paints opaque (see
-            // TabPanelRenderer.HEADER_OPACITY), so the tabs read solid over the faded body.
-            StarsectorUiColour.BLACK.resolve(), // Panel fill.
-
-            // The frame takes the same base player accent the controls do: on the map the sidebar has no
-            // neighbouring chrome to match, so the two colours coincide here even though the style keeps
-            // them apart.
-            accent, // Border colour.
-            accent,
-            brightAccent,
-            BODY_FONT,
-            LiveSidebarPlacement.buildMapTabStyle(),
-            SidebarPalettes.resolveNotchColours(
-                KmuMapLayerSettings.getMapSidebarChevronColour(),
-                accent,
-                brightAccent));
     }
 
     // Logs the composed view-state line once per change; the dedupe keeps a steady state to one line while

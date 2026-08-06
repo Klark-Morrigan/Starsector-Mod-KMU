@@ -5,6 +5,7 @@ import com.fs.starfarer.api.input.InputEventAPI;
 import kmlib.animation.TraverseDurations;
 import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.UiCursor;
+import kmlib.starsector.ui.render.gl.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
@@ -302,7 +303,8 @@ final class BaseSidebarHostTest {
     }
 
     // The base host with its per-screen questions answered as "nothing to draw": only the shared key
-    // handling is under test here, and each concrete host pins its own gate, anchor, and edges.
+    // handling is under test here, and each concrete host pins its own gate, anchor, edges, and look. A
+    // host resolving no placement is never asked to paint, so it has no look to give.
     private static final class SidebarHostFake extends BaseSidebarHost {
 
         private SidebarHostFake(SidebarFoldSelection foldSelection, ActiveLayerSelection layerSelection) {
@@ -316,6 +318,11 @@ final class BaseSidebarHostTest {
 
         @Override
         public TabPanelPlacement resolvePlacement() {
+            return null;
+        }
+
+        @Override
+        public WidgetStyle resolveWidgetStyle() {
             return null;
         }
 

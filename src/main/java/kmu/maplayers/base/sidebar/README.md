@@ -19,10 +19,10 @@ Part of [map layers](../../README.md); see the
 
 ## Hosts: what differs per screen
 
-`SidebarHost` is the per-screen role: the gate, the anchor, the framed edges, the panel controller,
-the fold selection, the layer selection, and the view-state text. `BaseSidebarHost` holds the
-plumbing common to both (controller, fold selection, layer selection, the per-load reseed, and the
-shortcut jump), leaving each concrete host only the genuine differences.
+`SidebarHost` is the per-screen role: the gate, the anchor, the look, the framed edges, the panel
+controller, the fold selection, the layer selection, and the view-state text. `BaseSidebarHost` holds
+the plumbing common to both (controller, fold selection, layer selection, the per-load reseed, and
+the shortcut jump), leaving each concrete host only the genuine differences.
 
 | | `MapSidebarHost` | `IntelSidebarHost` |
 | --- | --- | --- |
@@ -30,7 +30,16 @@ shortcut jump), leaving each concrete host only the genuine differences.
 | Anchor | screen top-left, by the padding settings | the visor rect's top-left, flush left, below the top-padding setting |
 | Height cap | bottom padding setting | the visor's bottom edge |
 | Framed edges | `BoxEdge.ALL` | `TOP`, `RIGHT`, and `BOTTOM` until the box reaches the visor bottom |
+| Tab band | `HEADER_BAND_HEIGHT` 19 | `HEADER_BAND_HEIGHT` 17 |
 | Fold default | expanded | docked |
+
+The look is in that table because it is the host's: `resolveWidgetStyle()` answers what the panel is
+painted in and `HEADER_BAND_HEIGHT` how tall its tab row stands, and the same tab style feeds both
+the layout and the paint pass. The two screens sit in different company - one floating free on the
+map, the other overlaid on the intel visor amid that screen's own chrome - so each should read as
+part of what surrounds it, which a shared renderer could only do by naming the screens. Both look
+alike today apart from the band; what makes them able to diverge is that neither `SidebarRenderer`
+nor `LiveSidebarPlacement` holds a screen test about it.
 
 Keys are not in that table because the panel offers the same tabs wherever it draws, so
 `BaseSidebarHost.handleKeyPress` serves both: a bound key jumps that host's own pick to its layer
@@ -81,10 +90,12 @@ rather than caching or each computing its own: a settings change landing between
 would otherwise move the drawn box out from under the hit-test.
 
 The two entry points (`resolveMapPlacement`, `resolveIntelPlacement`) differ only in the anchor
-padding and the `TabStyle` tab-band height; `computeIntelPadding` converts the visor rect into
-top-left-anchored padding, and is package-private so the anchor maths is testable without a live
-sector. Both return `null` when the tab font cannot load, since layout snaps tabs to measured text;
-callers then draw and consume nothing.
+padding; `computeIntelPadding` converts the visor rect into top-left-anchored padding, and is
+package-private so the anchor maths is testable without a live sector. The `TabStyle` is the host's
+and is injected, so the band a strip stands in stays with the rest of that host's look rather than
+being half here. Both return `null` when the tab font cannot load - the face taken off that injected
+style, so the tabs are snapped to the face they are painted in - since layout snaps tabs to measured
+text; callers then draw and consume nothing.
 
 The layer selector is a single `ControlSpec.Tabs` whose action selects the layer at the clicked
 index, so the switch rides on the control and no tab callback is threaded through the input pass.
@@ -233,9 +244,16 @@ anything paints, so they move values without raising it.
 
 ## Styling
 
-`SidebarRenderer.buildStyle` composes the `WidgetStyle` each frame from live values: a black body
-fill faded by the opacity setting, the frame colour, the player faction's base and bright accents,
-the insignia body face, and `LiveSidebarPlacement.buildMapTabStyle()` for the tabs.
+A host's `resolveWidgetStyle()` answers with the look each frame, built through
+`style/SidebarStyles` from live values: a black body fill faded by the opacity setting, the frame
+colour, the player faction's base and bright accents, the insignia body face, and the host's own tab
+style. Nothing of it is held between frames - every shade reads the running game's colours and the
+player's live settings - and nothing of it is persisted.
+
+Both hosts build through the one factory rather than each spelling the look out, so two screens
+meant to look alike cannot drift into two spellings of it; a host that wants to differ passes
+different arguments or composes its own. The factory sits beside `SidebarPalettes` and out of the
+render pass for the same reason: a look is a value, so building one needs no live GL context.
 
 That fill is the body's alone. The tab row stands *on* the framed box rather than inside it, the way
 a strip of tabs sits on the panel it selects, so nothing of the body reaches behind the tabs and a tab
@@ -283,9 +301,8 @@ moves. Paced with the travels it reads as one more thing moving at the speed eve
 at, which is the opposite of what a keypress needs to say. All three animations are the controller's, which holds no colour: it
 reports two fractions per tab - one look, one lift - and the paint pass binds them to the palette, so
 it is handed a look already blended and a lift already scaled. The two
-screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the
-paint pass does not read. Both faces are named through KMLib's `StarsectorFont` enum rather than by
-atlas basename.
+screens differ only in the band height each host holds, which the paint pass does not read. Both
+faces are named through KMLib's `StarsectorFont` enum rather than by atlas basename.
 
 Where a tab says which key it answers to is `TabShortcutText`'s call, following the engine's rule: a
 single-glyph key whose letter already stands in the label lights that letter where it is, and only a

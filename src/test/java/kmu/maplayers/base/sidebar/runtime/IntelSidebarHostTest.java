@@ -33,7 +33,8 @@ import static org.mockito.Mockito.when;
  * The edges drop the borders shared with the visor - the left always (flush against the visor's
  * left edge) and the bottom only when the box reaches the visor's bottom - and keep the top and right,
  * which sit inside the visor. The frozen fold key is pinned as a literal, since renaming it silently
- * re-docks every existing save.
+ * re-docks every existing save. Its tab band is pinned shorter than the on-map one, that being the whole
+ * of how the two screens' looks differ today and the one part of a look reachable without a live sector.
  */
 final class IntelSidebarHostTest {
 
@@ -109,6 +110,29 @@ final class IntelSidebarHostTest {
 
             assertThat(new IntelSidebarHost(intelScreenFake).isOverlayShowing())
                 .isFalse();
+        }
+    }
+
+    @Nested
+    class HeaderBandHeight {
+
+        @Test
+        void headerBandHeightStandsShorterThanTheOnMapBand() {
+            // This sidebar overlays the visor beneath the vanilla map toggles and reads tighter than the
+            // on-map one, which floats free beside the Sector/System tabs. Wiring both screens to one
+            // height would lay out and draw without complaint, so the divergence is pinned rather than
+            // left to be noticed on screen.
+            assertThat(IntelSidebarHost.HEADER_BAND_HEIGHT)
+                .isLessThan(MapSidebarHost.HEADER_BAND_HEIGHT);
+        }
+
+        @Test
+        void headerBandHeightStandsTallEnoughToDrawATabRow() {
+            // A band clamped to nothing leaves the panel with no tab row and no way to switch layer, and
+            // the style built from this height cannot be reached without a live sector - so the number is
+            // pinned here rather than caught on screen.
+            assertThat(IntelSidebarHost.HEADER_BAND_HEIGHT)
+                .isPositive();
         }
     }
 

@@ -4,6 +4,7 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.TabPanelController;
+import kmlib.starsector.ui.render.gl.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
@@ -12,10 +13,17 @@ import java.util.Set;
 
 /**
  * One screen's binding for the shared map-layer sidebar: it answers when the sidebar is live on that
- * screen, resolves the placement to draw there, owns the panel's transient scroll and collapse state, and
- * routes a key press. The generic {@link SidebarRenderer} and {@link SidebarInput} run against this role,
- * so the same panel draws and routes on the sector map and on the intel screen with only the host differing
- * - one gate, one anchor, one controller per screen.
+ * screen, resolves the placement to draw there, says what its panel looks like, owns the panel's transient
+ * scroll and collapse state, and routes a key press. The generic {@link SidebarRenderer} and
+ * {@link SidebarInput} run against this role, so the same panel draws and routes on the sector map and on
+ * the intel screen with only the host differing - one gate, one anchor, one look, one controller per
+ * screen.
+ *
+ * <p>The look is the host's rather than the renderer's because the two screens' panels sit in different
+ * company: one floats free on the map, the other overlays the intel screen's visor amid that screen's own
+ * chrome, and each should read as part of what surrounds it. A renderer holding both would have to name
+ * the screens to tell them apart, which is exactly the branch this role exists to remove - a third screen
+ * would then be a renderer change rather than a host.
  *
  * <p>Each host owns its own {@link TabPanelController} and its own {@link SidebarFoldSelection}, so the two
  * screens' panels keep separate scroll and collapse state - and reopen at their own folds - even though
@@ -37,6 +45,14 @@ public interface SidebarHost {
      *         (the tab font cannot load, or the anchor is gone); the caller then draws and consumes nothing
      */
     TabPanelPlacement resolvePlacement();
+
+    /**
+     * @return the look this host's panel is painted in - its fills, accents, frame colour, faces, and the
+     *         tab style its band was laid out with. Resolved fresh each frame rather than held, because
+     *         every shade in it reads the running game's colours and the player's live settings; nothing
+     *         of it is persisted
+     */
+    WidgetStyle resolveWidgetStyle();
 
     /**
      * @param placement the placement resolved this frame, so a host can decide the edges from the box's

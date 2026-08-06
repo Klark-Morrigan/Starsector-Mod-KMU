@@ -32,7 +32,8 @@ import static org.mockito.Mockito.when;
  * painting. Its frozen fold key and its opening
  * default are pinned as literals: the key because renaming it silently returns every existing save to the
  * default, and the default because opening out is what makes the sidebar the visible way in to the
- * political map on a save that has never folded it.
+ * political map on a save that has never folded it. Its tab band is pinned too, being the one part of a
+ * host's look reachable without a live sector to resolve colours against.
  */
 final class MapSidebarHostTest {
 
@@ -87,6 +88,19 @@ final class MapSidebarHostTest {
                 assertThat(MapSidebarHost.INSTANCE.isOverlayShowing())
                     .isFalse();
             }
+        }
+    }
+
+    @Nested
+    class HeaderBandHeight {
+
+        @Test
+        void headerBandHeightStandsTallEnoughToDrawATabRow() {
+            // A band clamped to nothing leaves the panel with no tab row and no way to switch layer, and
+            // the style built from this height cannot be reached without a live sector - so the number is
+            // pinned here rather than caught on screen.
+            assertThat(MapSidebarHost.HEADER_BAND_HEIGHT)
+                .isPositive();
         }
     }
 
