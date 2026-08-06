@@ -31,10 +31,17 @@ import org.apache.log4j.Logger;
  * screens' panels read as part of the chrome each sits in without a screen test anywhere in here - the
  * only per-screen readings left are the ones a host cannot make without the laid-out box.
  *
- * <p>Both screens are vanilla core-UI surfaces with no seam to attach a mod panel, so the sidebar is drawn
- * in UI coordinates through {@link CampaignUIRenderingListener} - specifically the above-tooltips pass, the
- * only one composited after the opaque core-UI screen, so nothing it draws occludes the panel. It draws the
- * placement the input listener also hit-tests, so what is drawn and what is clickable line up.
+ * <p>The panel is drawn in UI coordinates through {@link CampaignUIRenderingListener} - specifically the
+ * above-tooltips pass, the only one composited after the opaque core-UI screen, so nothing it draws
+ * occludes the panel. It draws the placement the input listener also hit-tests, so what is drawn and what
+ * is clickable line up.
+ *
+ * <p>Drawing it rather than composing it from vanilla widgets is not forced by the screens. Both map
+ * widgets are containers that adopt a mod-owned panel, render it over the map surface, and route input to
+ * the widgets inside it. What keeps this pass is that those containers are rebuilt each time their screen
+ * opens, so a composed panel would need re-attaching against a widget this mod does not own, and that
+ * several of the controls - the icon radios, the direction table, the glyph controls - have no vanilla
+ * widget to compose from.
  */
 public final class SidebarRenderer implements CampaignUIRenderingListener {
     private static final Logger LOG = Global.getLogger(SidebarRenderer.class);

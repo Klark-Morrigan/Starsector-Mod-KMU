@@ -28,6 +28,7 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListen
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.settings.KmuLunaSettings;
+import kmu.spike.VanillaMapPanelProbe;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
@@ -111,6 +112,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         runGuardedStep("Failed to install KMU political map sidebar",
             () -> installPoliticalMapSidebar(Global.getSector()));
+
+        // TODO: throwaway. Remove with the kmu.spike package once the probe has answered whether
+        // vanilla widgets can be composed onto the map widget instead of drawn in GL.
+        runGuardedStep("Failed to install KMU vanilla map panel probe",
+            () -> installTransientListener(
+                Global.getSector(), VanillaMapPanelProbe.class, VanillaMapPanelProbe::new));
 
         // Open every sidebar at the fold this save was left at. Per load rather than at construction:
         // the hosts are process-lifetime singletons built before any sector exists, so this is the only
