@@ -25,6 +25,7 @@ import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
 
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
@@ -41,7 +42,6 @@ import static org.mockito.Mockito.when;
  */
 class PoliticalMapSectorSnapshotTest {
 
-    private static final float FULL_STABILITY = 10.0f;
     // The scan is exercised through the explicit-rule signature: the shorter entry
     // point reads the live LunaLib settings, which only the running game provides.
     // Station and patrol weighting are off so the snapshot tests turn on the

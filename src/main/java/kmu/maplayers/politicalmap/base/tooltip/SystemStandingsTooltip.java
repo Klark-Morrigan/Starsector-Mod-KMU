@@ -36,10 +36,12 @@ import java.util.List;
  *
  * <p>Everything above is settled here rather than per box because two boxes over one system have
  * to be two amounts of detail about the same contest, not two contests. The pass is read once,
- * from the view that painted the fills, and the status is judged under that same pass's reveal -
- * so a box stating more detail cannot rank a system a shade differently, judge it populated where
- * the other called it empty, or answer a decree one way where the other answered it another. What
- * is left open is the one thing the detail is: what a ranked group is listed <em>as</em>.
+ * from the view that painted the fills, the status is judged under that same pass's reveal, and
+ * the groups are resolved into their lines by the one resolver - so a box stating more detail
+ * cannot rank a system a shade differently, judge it populated where the other called it empty,
+ * name a bloc by another crest, or answer a decree one way where the other answered it another.
+ * What is left open is the one thing the detail is: what, if anything, a listed group breaks down
+ * into.
  *
  * <p>Stateless past the reader it is built around - the view, the live economy, and the settings
  * are read afresh each paint - so one shared instance per box serves every view that injects it.
@@ -75,29 +77,62 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             sections,
             SystemStatusRow.resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets()));
 
-        appendStandingSections(sections, resolveGroupEntries(sector, system, standings, pass));
+        appendStandingSections(
+            sections,
+            resolveGroupEntries(sector, system, listGroups(sector, standings, pass), pass));
+
         return sections;
     }
 
     /**
-     * Resolves the system's ranked groups into the entries the two blocks list them as, in the
-     * ranked order they arrive in. The seam the whole class exists around: which groups are listed,
-     * under which heading, and above what is settled here, while what a group is listed as - a line,
-     * or a line over whatever it is made up of - is the box's own answer.
+     * Resolves what the two blocks list, from the groups already resolved into the lines naming
+     * them. The seam the whole class exists around: which groups are listed, under which heading,
+     * above what, and how each presents are all settled by the time this is called, so what is left
+     * to answer is only whether a listed group breaks down further and into what.
      *
-     * @param sector    the live sector, whose economy and factions the content may read
-     * @param system    the star system under the cursor
-     * @param standings the system's groups ranked descending by summed score, each with its members
-     *                  ranked within; empty when the system holds no counted colony
-     * @param pass      the weighting rule, dev reveal, and grouping the ranking resolved under, so a
-     *                  box reading further into the economy reads it under the same knobs
+     * <p>Listing each group as the line naming it is the ordinary answer and the default, so a box
+     * with nothing further to say overrides nothing.
+     *
+     * @param sector       the live sector, whose economy and factions the content may read
+     * @param system       the star system under the cursor
+     * @param listedGroups the system's groups in ranked order, each already resolved into the line
+     *                     naming it; empty when the system holds no counted colony
+     * @param pass         the weighting rule, dev reveal, and grouping the ranking resolved under,
+     *                     so a box reading further into the economy reads it under the same knobs
      * @return one entry per group in the order given; empty leaves the box its status line alone
      */
-    protected abstract List<CellTooltipEntry> resolveGroupEntries(
-        SectorAPI sector,
-        StarSystemAPI system,
-        List<GroupStanding> standings,
-        DominancePass pass);
+    protected List<CellTooltipEntry> resolveGroupEntries(
+            SectorAPI sector,
+            StarSystemAPI system,
+            List<ListedGroup> listedGroups,
+            DominancePass pass) {
+
+        return listedGroups
+            .stream()
+            .map(ListedGroup::entry)
+            .toList();
+    }
+
+    // Each ranked group paired with the line naming it. Resolved here rather than by the boxes so
+    // a bloc presents under one name and one crest however much detail is being stated, and paired
+    // rather than handed over as two lists in the same order, since a box walking them by index is
+    // one edit away from explaining one bloc's score under another's name.
+    private static List<ListedGroup> listGroups(
+            SectorAPI sector,
+            List<GroupStanding> standings,
+            DominancePass pass) {
+
+        var groupEntries = StandingRowResolver.resolveRows(sector, standings, pass.grouping());
+        var listedGroups = new ArrayList<ListedGroup>(groupEntries.size());
+
+        // The resolver answers one entry per group in the order the standings were given, which is
+        // what makes the two safe to pair off here - and pairing them here is what stops every box
+        // below having to rely on that.
+        for (var index = 0; index < groupEntries.size(); index++) {
+            listedGroups.add(new ListedGroup(groupEntries.get(index), standings.get(index)));
+        }
+        return List.copyOf(listedGroups);
+    }
 
     // The standings as the two blocks they are read in: whoever dominates the system, then whoever
     // else is present to contest it. Both are offered unconditionally - an uncontested system simply
@@ -122,5 +157,21 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
                 .stream()
                 .skip(DOMINATING_GROUP_COUNT)
                 .toList());
+    }
+
+    /**
+     * One ranked group as a box has it: the line naming it, and the standing that line was resolved
+     * from.
+     *
+     * <p>Carried as a pair rather than as two lists a box reads at the same index, because the only
+     * thing making that index meaningful is a contract two classes away - and a box that got it
+     * wrong would explain one bloc's score beneath another bloc's name, which reads as a fact
+     * rather than as a bug.
+     *
+     * @param entry    the line naming the group, as every box lists it
+     * @param standing the group's ranked place - its summed score and the member factions it is
+     *                 made up of - for a box with more to say about where that score came from
+     */
+    public record ListedGroup(CellTooltipEntry entry, GroupStanding standing) {
     }
 }

@@ -161,6 +161,7 @@ final class PoliticalMapCellTooltipTest {
     private static Stream<Arguments> provideEveryPoliticalMapBox() {
         return Stream.of(
             describeBox("the faction and alliance views' box", SystemDominationTooltip::new),
+            describeBox("that box's expanded counterpart", ExpandedSystemDominationTooltip::new),
             describeBox("the claims view's box", SystemClaimTooltip::new));
     }
 
@@ -171,12 +172,6 @@ final class PoliticalMapCellTooltipTest {
             Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
 
         return Arguments.of(viewName, buildBox);
-    }
-
-    // Names the box in a call verification's failure, which otherwise reports the mock alone and leaves
-    // it to the reader to work out which of the two boxes stopped asking.
-    private static org.mockito.verification.VerificationMode verificationsFor(String viewName) {
-        return org.mockito.internal.verification.VerificationModeFactory.times(1);
     }
 
     // Puts the system under a faction's decree, through the same single read the heading makes - the

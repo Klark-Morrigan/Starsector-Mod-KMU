@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -41,8 +42,6 @@ final class MarketWeightRowResolverTest {
     // A plain colony's parts: size four at full worth, no station, no garrison. The baseline the
     // cases below add one factor at a time to.
     private static final BaseSizeFactor PLAIN_SIZE = new BaseSizeFactor(4, 4.0, 4.0, 0.0);
-
-    private static final double FULL_STABILITY = 10.0;
 
     @BeforeEach
     void installStrings() {
@@ -69,6 +68,22 @@ final class MarketWeightRowResolverTest {
 
             assertThat(readLabels(rows))
                 .containsExactly("Jangala", "Culann");
+        }
+
+        @Test
+        void resolveMarketRowsBreaksATieByNameSoTheOrderNeverDependsOnTheEconomyWalk() {
+            // Two colonies of a bloc can weigh exactly the same, and left to the order the economy
+            // handed them over the box would list them one way on one hover and the other on the next.
+            var evenSize = new BaseSizeFactor(4, 4.0, 4.0, 0.0);
+
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(
+                    buildBreakdown("Jangala", evenSize),
+                    buildBreakdown("Culann", evenSize)),
+                buildRules());
+
+            assertThat(readLabels(rows))
+                .containsExactly("Culann", "Jangala");
         }
 
         @Test

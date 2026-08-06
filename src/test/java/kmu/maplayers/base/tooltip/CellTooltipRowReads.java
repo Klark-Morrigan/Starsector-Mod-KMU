@@ -4,6 +4,8 @@ import kmlib.starsector.ui.text.LabelRun;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
+import java.util.List;
+
 /**
  * How a test reads one line of a cell tooltip, and the tier values the vocabulary lays lines out at.
  * Shared because a row is authored in one place ({@link CellTooltipRows}) and asserted in several - the
@@ -60,5 +62,38 @@ public final class CellTooltipRowReads {
      */
     public static TextSpan readLabelTextRun(TooltipRow row, int runIndex) {
         return (TextSpan) readLabelRun(row, runIndex);
+    }
+
+    /**
+     * Reads what a line opens with in words: its first run that carries any. Runs holding an image
+     * rather than text are stepped over, so a line led by a crest reads as the name it goes on to say
+     * rather than as a sprite path - which is what lets one list of expected lines cover a box mixing
+     * plain entries with a crested banner.
+     *
+     * @param row the line to read
+     * @return the line's opening words, or empty when it says none
+     */
+    public static String readOpeningWords(TooltipRow row) {
+        return row
+            .labelRuns()
+            .stream()
+            .filter(TextSpan.class::isInstance)
+            .map(labelRun -> ((TextSpan) labelRun).text())
+            .findFirst()
+            .orElse("");
+    }
+
+    /**
+     * Reads one line as the table row it is, for the assertions that reach for an indent, a crest, or a
+     * value - which is where those live. A block's lines are typed on the row supertype, since a
+     * centred line is a legal shape for one, so a line that turns out not to lay into the box's columns
+     * fails the cast rather than the assertion.
+     *
+     * @param rows     the lines of a body, in draw order
+     * @param rowIndex the line's position among them
+     * @return that line as a table row
+     */
+    public static TooltipRow.TableRow readTableRow(List<TooltipRow> rows, int rowIndex) {
+        return (TooltipRow.TableRow) rows.get(rowIndex);
     }
 }

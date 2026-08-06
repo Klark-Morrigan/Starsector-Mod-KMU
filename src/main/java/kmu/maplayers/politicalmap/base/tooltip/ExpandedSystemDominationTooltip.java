@@ -23,11 +23,12 @@ import java.util.Map;
  * box answers who holds the system; this one answers why, which is a different question and a far
  * longer answer - so it is a box the player asks for rather than one they are always given.
  *
- * <p>It is the same contest either way. The ranking, the status line, the decree, and the two headings
- * are the shared shape's ({@link SystemStandingsTooltip}), read from the one pass, so the two boxes
- * cannot differ on anything but how far into a group they go. What differs is only that: a group is
- * listed here over its colonies rather than over its member factions, because the account being made is
- * of where the score came from, and a score comes from colonies whichever bloc they are flying for.
+ * <p>It is the same contest either way. The ranking, the status line, the decree, the two headings and
+ * the lines naming the blocs are all the shared shape's ({@link SystemStandingsTooltip}), read from the
+ * one pass, so the two boxes cannot differ on anything but how far into a group they go. What differs
+ * is only that: a group is listed here over its colonies rather than over its member factions, because
+ * the account being made is of where the score came from, and a score comes from colonies whichever
+ * bloc they are flying for.
  *
  * <p>The parts are read from the very arithmetic the scores above them were summed over
  * ({@link KnownMarketFootprints#readBreakdownByFaction}), so the lines always add up to the number the
@@ -46,31 +47,28 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
     protected List<CellTooltipEntry> resolveGroupEntries(
             SectorAPI sector,
             StarSystemAPI system,
-            List<GroupStanding> standings,
+            List<ListedGroup> listedGroups,
             DominancePass pass) {
 
-        // The group lines themselves are resolved exactly as the ordinary box resolves them, so a bloc
-        // presents under one name and one crest whichever detail mode drew it. Only what hangs beneath
-        // each is this box's own.
-        var groupEntries = StandingRowResolver.resolveRows(sector, standings, pass.grouping());
+        // Read once for the whole box rather than per group: every bloc's colonies come out of the one
+        // walk of the system's economy, which is also what guarantees no two blocs are explained from
+        // different reads of it.
         var breakdownsByFactionId = KnownMarketFootprints.readBreakdownByFaction(
             sector,
             system,
             pass.rules(),
             pass.shouldIncludeUndiscoveredMarkets());
 
-        var entries = new ArrayList<CellTooltipEntry>(groupEntries.size());
-
-        // The resolver answers one entry per group in the order the standings were given, so a group
-        // and the entry listing it are found at the one index.
-        for (var index = 0; index < groupEntries.size(); index++) {
-            entries.add(groupEntries
-                .get(index)
+        // The line naming the bloc is left exactly as it arrived - it is the ordinary box's line - and
+        // only what hangs beneath it is this box's own.
+        return listedGroups
+            .stream()
+            .map(listedGroup -> listedGroup
+                .entry()
                 .nesting(MarketWeightRowResolver.resolveMarketRows(
-                    collectGroupBreakdowns(standings.get(index), breakdownsByFactionId),
-                    pass.rules())));
-        }
-        return List.copyOf(entries);
+                    collectGroupBreakdowns(listedGroup.standing(), breakdownsByFactionId),
+                    pass.rules())))
+            .toList();
     }
 
     // Every colony behind one group's score, its member factions' gathered together. A bloc's score is

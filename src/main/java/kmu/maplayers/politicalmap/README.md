@@ -140,8 +140,11 @@ The domination box has a second, fuller version - `ExpandedSystemDominationToolt
 it offers the framework's detail mode - which lists a bloc over the colonies its score was summed
 from and each colony over the factors behind its weight, down to a garrison's patrol tiers. Both sit
 on `SystemStandingsTooltip`, which settles everything but that nesting - one pass read from the
-active view, the ranking, the status line, and the two headings - because two boxes over one system
-have to be two amounts of detail about the same contest rather than two contests. The parts come
+active view, the ranking, the status line, the two headings, and the lines naming the blocs, handed
+down as a standing already paired with its line so no box can explain one bloc's score beneath
+another's name - because two boxes over one system have to be two amounts of detail about the same
+contest rather than two contests. Listing a group as that line and nothing beneath is the shared
+default, so the ordinary box overrides nothing at all. The parts come
 from the very arithmetic the scores were summed over (`KnownMarketFootprints.readBreakdownByFaction`),
 so the lines always add up to the number the ordinary box and the fills show;
 `MarketWeightRowResolver` decides which lines a colony breaks into and `MarketFactorText` how one

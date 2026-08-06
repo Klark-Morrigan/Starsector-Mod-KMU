@@ -38,8 +38,20 @@ import static org.mockito.Mockito.when;
  * footprint read that never resolves colours and a palette form for the resolves that do.
  */
 public final class SectorPoliticsFixtures {
-    /** The full-stability value a visible colony carries unless a test varies it. */
+    /**
+     * The stability band vanilla scores a colony on, at the three points the weighting rule turns on:
+     * full worth, half, and a collapse. Named once for every suite that stands a colony up - the
+     * weight read's own, the snapshot's, and the boxes that explain a weight - because a suite
+     * carrying its own copy of "full stability is ten" is a value that can drift from the band the
+     * production read actually divides by while every copy goes on agreeing with itself.
+     */
     public static final float FULL_STABILITY = 10.0f;
+
+    /** Halfway up the band: what a factor keeps there is its penalty stated outright. */
+    public static final float HALF_STABILITY = 5.0f;
+
+    /** The bottom of the band, where a factor's full penalty applies. */
+    public static final float NO_STABILITY = 0.0f;
 
     // A small stable of authored faction shades, distinct enough that a test telling one palette
     // from another reads clearly. Bright is the fill/border colour; the dark seam shade is derived.

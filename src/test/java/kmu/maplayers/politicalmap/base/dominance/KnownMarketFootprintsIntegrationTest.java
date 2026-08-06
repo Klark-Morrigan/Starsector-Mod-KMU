@@ -24,6 +24,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints.DOMINANCE_WEIGHT_SCALE;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HALF_STABILITY;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NO_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildMarket;
@@ -61,10 +64,6 @@ import static org.mockito.Mockito.when;
  * {@link MarketWeightBreakdownTest}.
  */
 class KnownMarketFootprintsIntegrationTest {
-
-    private static final float FULL_STABILITY = 10.0f;
-    private static final float HALF_STABILITY = 5.0f;
-    private static final float NO_STABILITY = 0.0f;
 
     // The name every stubbed station answers to, so a breakdown asserting that it named the
     // right entity has something to name.
