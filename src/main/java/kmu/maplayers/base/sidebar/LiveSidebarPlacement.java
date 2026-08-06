@@ -230,14 +230,15 @@ public final class LiveSidebarPlacement {
     }
 
     // A tab style at the given band height, over the shared paint: the vanilla map-tab palette - its
-    // per-state resting looks and its interaction lifts - resolved live so it tracks a player-faction
-    // recolour, the underlined-key hotkey convention, and the orbitron face at the layout's tab size, the
-    // same face the measurer snaps tabs with. One helper rather than each screen naming the paint, so the
-    // two can only differ in the height they are asked for.
+    // per-state fills and its interaction lifts - resolved live so it tracks a restyled install, the
+    // underlined-key hotkey convention, and the orbitron face at the layout's tab size, the same face the
+    // measurer snaps tabs with. One helper rather than each screen naming the paint, so the two can only
+    // differ in the height they are asked for.
     // The underlined key is the sector map's own convention: our strip sits one tab-height below the
-    // vanilla Sector/System tabs, which draw a line under the bracketed letter, so a bare key reads as a
-    // mismatch against the row above it. The line costs no width - it is a quad under a glyph, not part
-    // of the measured display string - so no tab moves for it.
+    // vanilla Sector/System tabs, which mark their bound key wherever it falls - lit inside the label
+    // where its letter stands there, spelt out in brackets only where it does not - so a key marked by
+    // colour alone reads as a mismatch against the row above it. The line costs no width - it is a quad
+    // under a glyph, not part of the measured display string - so no tab moves for it.
     private static TabStyle buildTabStyle(float headerBandHeight) {
         return new TabStyle(
             headerBandHeight,
