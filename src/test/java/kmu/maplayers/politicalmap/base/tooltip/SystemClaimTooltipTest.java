@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
@@ -26,6 +25,7 @@ import org.mockito.Mockito;
 import java.util.List;
 import java.util.Optional;
 
+import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
@@ -137,7 +137,7 @@ final class SystemClaimTooltipTest {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
-                List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -163,9 +163,9 @@ final class SystemClaimTooltipTest {
                 null,
                 HEGEMONY,
                 List.of(
-                    new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
-                    new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true),
-                    new FactionClaimScore(PIRATES, OUTSIDER_SCORE, false))));
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -187,8 +187,8 @@ final class SystemClaimTooltipTest {
                 null,
                 HEGEMONY,
                 List.of(
-                    new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
-                    new FactionClaimScore(PIRATES, OUTSIDER_SCORE, false))));
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -209,9 +209,9 @@ final class SystemClaimTooltipTest {
                 null,
                 HEGEMONY,
                 List.of(
-                    new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
-                    new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true),
-                    new FactionClaimScore(PIRATES, OUTSIDER_SCORE, true))));
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, true))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -236,8 +236,8 @@ final class SystemClaimTooltipTest {
                 null,
                 HEGEMONY,
                 List.of(
-                    new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
-                    new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true))));
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -261,7 +261,7 @@ final class SystemClaimTooltipTest {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
-                List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony");
@@ -275,7 +275,7 @@ final class SystemClaimTooltipTest {
             stubBreakdown(new SystemClaimBreakdown(
                 HEGEMONY,
                 HEGEMONY,
-                List.of(new FactionClaimScore(HEGEMONY, TOP_SCORE, true))));
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
             var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
@@ -296,8 +296,8 @@ final class SystemClaimTooltipTest {
                 PIRATES,
                 PIRATES,
                 List.of(
-                    new FactionClaimScore(HEGEMONY, TOP_SCORE, true),
-                    new FactionClaimScore(PIRATES, OUTSIDER_SCORE, false))));
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -321,7 +321,7 @@ final class SystemClaimTooltipTest {
             stubBreakdown(new SystemClaimBreakdown(
                 HEGEMONY,
                 HEGEMONY,
-                List.of(new FactionClaimScore(TRITACHYON, RIVAL_SCORE, true))));
+                List.of(buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true))));
 
             var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
@@ -336,7 +336,7 @@ final class SystemClaimTooltipTest {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 null,
-                List.of(new FactionClaimScore(PIRATES, OUTSIDER_SCORE, false))));
+                List.of(buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -420,7 +420,7 @@ final class SystemClaimTooltipTest {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 "ghost_faction",
-                List.of(new FactionClaimScore("ghost_faction", TOP_SCORE, true))));
+                List.of(buildStandingOnOneMarket("ghost_faction", TOP_SCORE, true))));
 
             var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
