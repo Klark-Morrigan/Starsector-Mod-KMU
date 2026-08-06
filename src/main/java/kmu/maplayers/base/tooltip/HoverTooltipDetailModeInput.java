@@ -25,9 +25,15 @@ import java.util.function.BooleanSupplier;
  * <p>The gate is {@link HoverTooltipGates}, the same seam {@link MapLayerCellTooltip} draws behind,
  * which is what keeps the key honest: it is claimed when and only when a box could be drawn, so it
  * is never swallowed while hover tooltips are switched off or no map is up, and vanilla keeps it
- * everywhere else. While the gate holds the mode flips whatever is hovered - even over nothing at
- * all - so the choice is never decided by what happened to be under the cursor at the moment of the
- * press, and the next hover that does offer a richer box shows it.
+ * everywhere else.
+ *
+ * <p>Behind that gate the press is claimed only where it would do something the player can see - the
+ * box under the cursor has a second amount of detail to state ({@link HoveredBox}). A mode that flipped
+ * over anything at all would be the more forgiving rule if the mode were per hover, but it is not: it
+ * is one shared fact that holds across hovers and layer switches, so a press swallowed over a system
+ * with nothing to expand would silently decide how the next system that <em>does</em> differ opens.
+ * The player would meet a box in a state they never chose, having pressed the key somewhere it
+ * appeared to do nothing.
  */
 public final class HoverTooltipDetailModeInput implements CampaignInputListener {
 
@@ -83,6 +89,14 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
             if (!isDetailModeToggleKey(event)) {
                 continue;
             }
+            // Nothing under the cursor has a second amount of detail to state, so there is nothing
+            // for the key to switch. Left alone rather than flipped invisibly: the mode is shared and
+            // holds across hovers, so a press swallowed here would open the next system that does
+            // differ in a state the player never chose - the one place a press with no visible result
+            // is not harmless.
+            if (!isAnyBoxOfferingExpansion()) {
+                continue;
+            }
             HoverTooltipDetailModeState.getInstance().toggleMode();
             // Consumed only where it acted, so nothing else claims the key while the map is open
             // and the rest of the game keeps it.
@@ -106,5 +120,16 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
     // started.
     static boolean isDetailModeToggleKey(InputEventAPI event) {
         return event.isKeyDownEvent() && event.getEventValue() == TOGGLE_KEY;
+    }
+
+    // Whether the box under the cursor would show the player anything more under the other mode.
+    // Asked of the same chain the drawing pass resolves its box through, so the key is claimed on
+    // exactly the frames a box would answer it - and of the box itself, since only the layer knows
+    // whether its counterpart has anything to add for the system being hovered.
+    private static boolean isAnyBoxOfferingExpansion() {
+        return HoveredBox
+            .resolveHoveredBox()
+            .filter(HoveredBox::isOfferingExpansion)
+            .isPresent();
     }
 }

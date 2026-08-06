@@ -93,6 +93,15 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         CursorTooltipRenderer.render(sections, buildStyle());
     }
 
+    @Override
+    public final boolean isOfferingExpansionFor(SectorAPI sector, StarSystemAPI system) {
+        // The same answer the hint at the foot is drawn from, so the key acts exactly where the box
+        // says it would. Two reads of "is there more to show" could drift, and the shape that would
+        // take is the cruellest one: a box advertising a key that does nothing, or doing something
+        // where it advertised nothing.
+        return resolveExpandedDetailName(sector, system).isPresent();
+    }
+
     /**
      * Builds the lines belonging to this layer's title block, read together with the system name above
      * the parting that opens the body. Called once per paint with the live sector, after the economy

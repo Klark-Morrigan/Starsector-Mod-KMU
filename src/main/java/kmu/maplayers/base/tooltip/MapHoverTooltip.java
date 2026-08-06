@@ -47,4 +47,27 @@ public interface MapHoverTooltip {
     default Optional<MapHoverTooltip> resolveExpandedVariant() {
         return Optional.empty();
     }
+
+    /**
+     * Whether switching detail modes over {@code system} would show the player anything this box does
+     * not - the question the pass claiming the toggle key asks before acting on a press.
+     *
+     * <p>Asked of the box rather than inferred from {@link #resolveExpandedVariant} because a
+     * counterpart existing is not the same as it having something to say: a box may define a richer
+     * variant that, for this particular system, states exactly what this one already does. Pressing the
+     * key there would flip a mode the player sees no result from, and - since the mode is shared and
+     * holds across hovers - would leave the next system that <em>does</em> differ opening in a state they
+     * did not choose.
+     *
+     * <p>Asked per system for the same reason the counterpart's own subject is
+     * ({@code SystemCellTooltip.resolveExpandedDetailName}): whether there is anything more to show is a
+     * fact about what the cursor is over, not about the box.
+     *
+     * @param sector the live sector, whose economy the answer may read
+     * @param system the star system under the cursor
+     * @return true when the toggle would change what the player sees for this system
+     */
+    default boolean isOfferingExpansionFor(SectorAPI sector, StarSystemAPI system) {
+        return false;
+    }
 }

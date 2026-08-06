@@ -1,14 +1,11 @@
 package kmu.maplayers.base.tooltip;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
-import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
 import java.util.Optional;
@@ -87,38 +84,26 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (!HoverTooltipGates.canAnyBoxDraw(isAnyMapShowing)) {
             return;
         }
-        var hover = MapHoverState.getInstance().getHover();
-        if (!shouldDrawTooltipFor(hover)) {
-            return;
-        }
         // Step aside when the vanilla map screen is drawing its own tooltip (the player is over a
         // star icon), so only one box shows there. Read live from the map's UI tree; a read that
         // fails on some game build draws ours anyway rather than hiding it.
         if (vanillaMapTooltip.isShowing()) {
             return;
         }
-        // The active layer decides which tooltip to draw by injecting one; a layer with none leaves
-        // this empty, and nothing draws.
-        var tooltip = resolveActiveTooltip();
-        if (tooltip.isEmpty()) {
-            return;
-        }
-        var sector = Global.getSector();
-        if (sector == null) {
-            return;
-        }
-        // The hover carries a system id; resolve it to the live system, tolerating an id that no longer
-        // resolves (a system dropped between the publish and this paint). Matched by getId - vanilla's
-        // getStarSystem keys on the optional unique id first and would miss a base-name-keyed system.
-        var system = StarSystems.findById(sector, hover.hoveredSystemId());
-        if (system == null) {
+        // What the cursor is over and the box the active layer injected for it, resolved through the
+        // one chain the pass claiming the toggle key reads too - so the key cannot come to act on a
+        // frame this draws nothing in.
+        var hoveredBox = HoveredBox.resolveHoveredBox();
+        if (hoveredBox.isEmpty()) {
             return;
         }
         // Which of an injected tooltip's boxes to draw is the shared detail mode's call rather than
         // the layer's: one mode selects for whatever is hovered, so it holds across hovers and layer
         // switches instead of each layer having to remember a choice made over another one's cell.
-        selectVariantFor(tooltip.get(), HoverTooltipDetailModeState.getInstance().getMode())
-            .renderFor(sector, system);
+        selectVariantFor(
+                hoveredBox.get().tooltip(),
+                HoverTooltipDetailModeState.getInstance().getMode())
+            .renderFor(hoveredBox.get().sector(), hoveredBox.get().system());
     }
 
     // The tooltip the frame draws, asked of whatever draws for the showing screen - the same read the

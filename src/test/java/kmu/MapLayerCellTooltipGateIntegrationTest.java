@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 
 import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOn;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -82,6 +83,11 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         when(layerRendererMock.resolveHoverTooltip())
             .thenReturn(Optional.of(tooltipMock));
+
+        // The hovered box has a second amount of detail to state, so the key's own offer test is open
+        // and a case below turns on the map gate it is about rather than on what the box holds.
+        when(tooltipMock.isOfferingExpansionFor(any(), any()))
+            .thenReturn(true);
 
         when(systemMock.getId())
             .thenReturn("system");
