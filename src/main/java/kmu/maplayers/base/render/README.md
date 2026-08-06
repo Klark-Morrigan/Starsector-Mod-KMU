@@ -93,6 +93,8 @@ supported hook that paints over the fog.
 
 Moving an icon up that order is nobody's content, so none of the mechanism is here. KMLib's
 `MapIconReseater` owns it, and `MapIconReseatDecision` states how it works and what it rests on.
+It acts on where the icon is, read back from the widget, rather than on a map having opened - so a
+re-seeding it did not witness corrects itself on the next frame instead of lasting the session.
 
 What KMU supplies is the two ports. The map read is the Starscape one - the entity being moved is
 one of the surfaces that stand aside while a schematic map is up - and the entity read is

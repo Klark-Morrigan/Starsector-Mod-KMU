@@ -195,9 +195,11 @@ public class KMU_ModPlugin extends BaseModPlugin {
     }
 
     // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
-    // icons each time a map opens onto them. Moving an icon to the end of the widget's draw order
-    // is KMLib's, and it is told only which map matters and which entity to move; that the entity is
-    // a terrain, and that the fog above it is what makes the move worth making, are KMU's side of it.
+    // icons whenever the widget has seeded it underneath them. Moving an icon to the end of the
+    // widget's draw order is KMLib's, and it is told only which map matters and which entity to move;
+    // that the entity is a terrain, and that the fog above it is what makes the move worth making,
+    // are KMU's side of it. Where the icon currently sits is KMLib's too - it reads that itself
+    // rather than being told, the widget's ordering being its own subject.
     //
     // Only the above-nebulae entity is moved. The surface beneath it is meant to be fogged - a fill
     // reads as territory through the nebula sprite, where a name stops being legible - so lifting
@@ -207,8 +209,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // The map read is the Starscape one and its sibling on MapPresence is the wrong one, which is
     // worth stating because nothing catches the swap: both compile, both are on the same object,
     // and the entity moved here is one of the halves that stand aside entirely while a schematic map
-    // is up. Arming on a schematic open would move an entity that is not drawing, and skip the open
-    // that is.
+    // is up. It scopes the move rather than triggering it - moving on a schematic map would shift an
+    // entity that is not drawing, for a look with nothing of ours under the fog to rescue.
     //
     // Both ports are read afresh per call rather than resolved here, since a save load replaces the
     // entity and the script outlives no load anyway. Transient: pure runtime logic that must not
@@ -218,8 +220,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
         if (sector == null) {
             return;
         }
-        // A fresh script per load, so the previous save's open-map latch cannot carry into this one
-        // and skip the first reseat this sector is owed.
+        // A fresh script per load, so the previous save's spent lift attempts cannot carry into this
+        // one and stand the move down over a sector it never tried.
         sector.addTransientScript(new MapIconReseater(
             new MapPresence()::isStarscapeMapShowing,
             () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(Global.getSector())));
