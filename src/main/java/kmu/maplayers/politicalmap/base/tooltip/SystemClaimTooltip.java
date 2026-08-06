@@ -31,8 +31,11 @@ import java.util.function.Predicate;
  * from a colouring into something readable: a system reads as narrowly contested, uncontested, or
  * held by decree over rivals who out-score its holder.
  *
- * <p>The claim section is drawn whatever the system holds, so a hover always answers the question the
- * layer poses - an unclaimed or dead system says so rather than showing a box with no claim in it.
+ * <p>The claim section is drawn wherever there is an answer worth stating: a claimant, or a populated
+ * system nobody has taken - which is a real finding, since the factions listed below are present and yet
+ * none of them holds it. What it does not do is state "None" beneath a banner already saying the system
+ * holds nobody, which answers the same absence twice over. A decree stays either way: holding a system
+ * with nothing in it is the one thing that banner does not say.
  *
  * <p>Stateless past the reader it is built around, so one shared instance serves the layer.
  */
@@ -61,17 +64,21 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         // first and the claim below reads as a hold over an empty system rather than over a colony.
         // The reveal is read live off the same toggle the faction layer's pass samples, so crossing
         // between the two layers cannot make one call a system empty that the other calls held.
-        CellTooltipSections.appendBannerSection(
-            sections,
-            SystemStatusRow.resolveStatusRow(
-                sector,
-                system,
-                PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions()));
+        var statusRow = SystemStatusRow.resolveStatusRow(
+            sector,
+            system,
+            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions());
 
+        CellTooltipSections.appendBannerSection(sections, statusRow);
+
+        // The status is what the claim block is judged against, so the two are read from the one
+        // resolve: a banner that appeared and a claim that says nobody would otherwise be settled by
+        // two reads of the economy, one of which could call the system populated after the other had
+        // already told the player it was not.
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            List.of(buildClaimantEntry(sector, breakdown)));
+            buildClaimEntries(sector, breakdown, statusRow.isPresent()));
 
         CellTooltipSections.appendSection(
             sections,
@@ -90,8 +97,23 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         return sections;
     }
 
-    // The one entry the claim section always lists: whoever holds the system, or the plain word for
-    // nobody when no eligible faction scored and no decree imposed one.
+    // What the claim block lists: the one line naming whoever holds the system, and nothing at all
+    // where nobody does and the banner above has already said the system holds nobody. Answered as an
+    // empty listing rather than by skipping the call, so the block is dropped through the same rule that
+    // drops every other empty one and the box cannot grow a heading standing over nothing.
+    private static List<CellTooltipEntry> buildClaimEntries(
+            SectorAPI sector,
+            SystemClaimBreakdown breakdown,
+            boolean isSystemHoldingNobody) {
+
+        if (isSystemHoldingNobody && !KmlibStrings.hasText(breakdown.claimantFactionId())) {
+            return List.of();
+        }
+        return List.of(buildClaimantEntry(sector, breakdown));
+    }
+
+    // The one entry the claim section lists where it has one: whoever holds the system, or the plain
+    // word for nobody when no eligible faction scored and no decree imposed one.
     private static CellTooltipEntry buildClaimantEntry(
             SectorAPI sector,
             SystemClaimBreakdown breakdown) {

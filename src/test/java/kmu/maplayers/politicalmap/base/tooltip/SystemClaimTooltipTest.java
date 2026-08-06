@@ -68,10 +68,14 @@ final class SystemClaimTooltipTest {
     private static final int LABEL_RUN = 0;
     private static final int MARKER_RUN = 1;
 
-    // The two lines every box opens with, whatever the contest below them holds, by their place in the
-    // flat run the box draws.
+    // The two lines a box over a populated system opens with, whatever the contest below them holds, by
+    // their place in the flat run the box draws.
     private static final int CLAIM_HEADING_ROW = 0;
     private static final int CLAIM_ROW = 1;
+
+    // Where the claim lands in a box whose system holds nobody: one line later, under the banner saying
+    // so, which such a box always opens with.
+    private static final int DECREED_CLAIM_ROW = 2;
 
     // The blocks a box with no status line holds, in draw order.
     private static final int CLAIM_SECTION = 0;
@@ -375,9 +379,9 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsStatesTheClaimEvenForASystemNobodyIsPresentIn() {
-            // The claim section is unconditional: a hover over a dead system still answers the question
-            // the layer poses, rather than drawing a box the player has to interpret the absence of.
+        void buildBodySectionsStatesTheClaimAsNoneForAPopulatedSystemNobodyHasTaken() {
+            // Nobody holding a system that is nonetheless lived in is a finding rather than an absence,
+            // and the only line that states it - so the block stands whether or not anything scored.
             stubBreakdown(SystemClaimBreakdown.NONE);
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
@@ -385,17 +389,39 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
+        void buildBodySectionsDropsTheClaimBlockForAnUnclaimedSystemHoldingNobody() {
+            // "None" beneath a banner already saying the system holds nobody answers the same absence
+            // twice, so the block is dropped and the banner is left to say it once.
+            stubSystemHoldingNobody();
+            stubBreakdown(SystemClaimBreakdown.NONE);
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly("Unpopulated");
+        }
+
+        @Test
+        void buildBodySectionsNamesTheDecreeHoldingASystemThatHoldsNobody() {
+            // The half the banner does not answer: a decree over a system with nothing in it is a hold
+            // the player can read nowhere else in the box, so it survives the drop above.
+            stubSystemHoldingNobody();
+            stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Unpopulated", "Claim:", "The Hegemony");
+            assertThat(readLabelRun(readTableRow(sections, DECREED_CLAIM_ROW), MARKER_RUN))
+                .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
+        }
+
+        @Test
         void buildBodySectionsNamesTheSystemsStatusBeforeItsClaimAndInABlockOfItsOwn() {
             // A dead system names its state first, so the claim below reads as a hold over an empty
             // system rather than over a colony - and parted from it, since the two answer different
             // questions.
-            var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
+            var statusRow = stubSystemHoldingNobody();
 
-            statusRowMock
-                .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))
-                .thenReturn(Optional.of(statusRow));
-
-            stubBreakdown(SystemClaimBreakdown.NONE);
+            stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
             var statusSection = 0;
@@ -456,6 +482,19 @@ final class SystemClaimTooltipTest {
     // have to be driven through a live economy to produce it.
     private void stubBreakdown(SystemClaimBreakdown breakdown) {
         claimBreakdownReaderFake.setBreakdown(SYSTEM_ID, breakdown);
+    }
+
+    // Puts the hovered system among the ones holding nobody, the state the status seam answers with a
+    // banner. Returned so a case about where that banner sits can assert on the very row it stubbed.
+    private TooltipRow.CentredRow stubSystemHoldingNobody() {
+        
+        var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
+
+        statusRowMock
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))
+            .thenReturn(Optional.of(statusRow));
+
+        return statusRow;
     }
 
     // The box read top to bottom as the words a player sees, headings and entries alike - the shape
