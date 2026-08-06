@@ -8,7 +8,10 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmlib.starsector.markets.Markets;
 import kmlib.starsector.markets.PatrolCounts;
 
+import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import java.util.ArrayList;
@@ -60,6 +63,14 @@ public final class KnownMarketFootprints {
 
     // What low stability takes off a factor it cannot touch.
     private static final double NO_STABILITY_PENALTY = 0.0;
+
+    // The share of the station weight a colony held in the open earns: all of it, the
+    // hidden-market rate being the reduced share a concealed base earns instead.
+    private static final double FULL_STATION_RATE = 1.0;
+
+    // What a market's factors add up to when none of them holds anything - the reading
+    // below which stability has nothing left to cut.
+    private static final double NO_WORTH = 0.0;
 
     private KnownMarketFootprints() {
     }
@@ -252,97 +263,119 @@ public final class KnownMarketFootprints {
     // factor loses penalty * (1 - stabilityFraction) of it, so a factor with a penalty
     // of 1 is worth nothing at 0 stability, half at 5, and its full amount at 10, while
     // a factor with a smaller penalty keeps more of its worth as the colony destabilises.
-    // A colony that comes out to nothing on every factor still marks presence and paints
-    // its system when unopposed.
     private static MarketWeightBreakdown readBreakdown(MarketAPI market, DominanceRules rules) {
 
-        var sizeRating = computeBaseSize(market, rules);
-        var weightedBaseSize = sizeRating * rules.baseSize().colonySizeWeight();
-        var station = findWeighedStation(market, rules);
-        var stationBonus = station.isPresent() ? computeStationBonus(market, rules) : 0.0;
-        var patrolCounts = readWeighedPatrolCounts(market, rules);
-        var patrolStrength = patrolCounts
-            .map(counts -> computePatrolStrength(counts, rules))
-            .orElse(0.0);
+        var weighed = readWeighedMarket(market, rules);
 
-        // A market whose three factors are all zero is worth zero at any stability, so the
-        // stability read is skipped: there is nothing left for a penalty to cut, and the
-        // market still folds into the footprint at zero weight like any weightless colony.
-        var hasWorthToCut = weightedBaseSize > 0.0 || stationBonus > 0.0 || patrolStrength > 0.0;
-        // Binding the pass rules and this market's stability once leaves each factor
-        // stating only what differs between them: its raw worth and its own penalty.
-        var stabilityScaling = new StabilityScaling(
+        // What the factors are worth before stability is what decides whether stability is
+        // worth reading at all: a market whose factors are worth nothing weighs nothing at
+        // any stability, so this reading is already its answer. It still marks presence and
+        // paints its system when unopposed, like any weightless colony.
+        var atFullWorth = buildBreakdown(
+            weighed,
             rules,
-            hasWorthToCut
-                ? Markets.getStabilityFraction(market)
-                : UNWEIGHTED_STABILITY_FRACTION);
+            new StabilityScaling(rules, UNWEIGHTED_STABILITY_FRACTION));
 
-        return new MarketWeightBreakdown(
+        if (atFullWorth.computeTotalContribution() <= NO_WORTH) {
+            return atFullWorth;
+        }
+        return buildBreakdown(
+            weighed,
+            rules,
+            new StabilityScaling(rules, Markets.getStabilityFraction(market)));
+    }
+
+    // Everything the weight rules read off one market, gathered before any of them applies:
+    // its identity and size, plus the station and patrol tiers their factors admitted.
+    // Gathered once because the market's worth is worked out twice - at full worth, then
+    // under its own stability - and the connected-entity scan and the dynamic-stat lookup
+    // behind the two optional factors must not be paid for twice.
+    private static WeighedMarket readWeighedMarket(MarketAPI market, DominanceRules rules) {
+        return new WeighedMarket(
             market.getName(),
             market.isHidden(),
-            buildBaseSizeFactor(market, sizeRating, weightedBaseSize, rules, stabilityScaling),
-            station.map(entity ->
-                buildStationFactor(market, entity, stationBonus, rules, stabilityScaling)),
-            patrolCounts.map(counts -> buildPatrolFactor(counts, rules, stabilityScaling)));
+            market.getSize(),
+            findWeighedStation(market, rules.station()),
+            readWeighedPatrolCounts(market, rules.patrols()));
+    }
+
+    // One market's weight stated factor by factor under a given stability scaling. The same
+    // three factors are built whether the market is being read at full worth or under its
+    // own stability, so the two readings can differ only by what stability costs it.
+    private static MarketWeightBreakdown buildBreakdown(
+            WeighedMarket market,
+            DominanceRules rules,
+            StabilityScaling stabilityScaling) {
+
+        return new MarketWeightBreakdown(
+            market.name(),
+            market.isHidden(),
+            buildBaseSizeFactor(market, rules.baseSize(), stabilityScaling),
+            market.station().map(station ->
+                buildStationFactor(market, station, rules.station(), stabilityScaling)),
+            market.patrols().map(patrols ->
+                buildPatrolFactor(patrols, rules.patrols(), stabilityScaling)));
     }
 
     // The base-size factor as the breakdown states it: the colony's own size beside the
     // rating that actually entered the weight, and what that rating was worth once the
-    // stability cut had been taken.
+    // colony-size multiplier and the stability cut had their say.
     private static BaseSizeFactor buildBaseSizeFactor(
-            MarketAPI market,
-            double sizeRating,
-            double weightedBaseSize,
-            DominanceRules rules,
+            WeighedMarket market,
+            BaseSizeWeighting rules,
             StabilityScaling stabilityScaling) {
 
-        var penalty = rules.baseSize().lowStabilityPenalty();
+        var sizeRating = computeSizeRating(market, rules);
         return new BaseSizeFactor(
-            market.getSize(),
+            market.size(),
             sizeRating,
-            stabilityScaling.scaleFactor(weightedBaseSize, penalty),
-            stabilityScaling.computePenaltyFraction(penalty));
+            stabilityScaling.scaleFactor(
+                sizeRating * rules.colonySizeWeight(),
+                rules.lowStabilityPenalty()),
+            stabilityScaling.computePenaltyFraction(rules.lowStabilityPenalty()));
     }
 
-    // The station factor as the breakdown states it, naming the station that earned it.
-    // The hidden-market rate is restated as the share it removes rather than the share it
-    // keeps, so both of the factor's cuts read the same way round.
+    // The station factor as the breakdown states it, naming the station that earned it: the
+    // player-set station weight in size points for an openly held stationed colony, or a
+    // configured fraction of that weight for a hidden market, so a hidden fortress reads
+    // above a bare outpost without matching an open stationed colony. The rate that survives
+    // is what the bonus is built from, and the breakdown states its complement - the share
+    // the rate removes - so both of the factor's cuts read the same way round.
     private static StationFactor buildStationFactor(
-            MarketAPI market,
+            WeighedMarket market,
             SectorEntityToken station,
-            double stationBonus,
-            DominanceRules rules,
+            StationWeighting rules,
             StabilityScaling stabilityScaling) {
 
-        var penalty = rules.station().lowStabilityPenalty();
+        var hiddenMarketRate = market.isHidden() ? rules.hiddenMarketRate() : FULL_STATION_RATE;
         return new StationFactor(
             station.getName(),
-            rules.station().weight(),
-            market.isHidden() ? 1.0 - rules.station().hiddenMarketRate() : 0.0,
-            stabilityScaling.computePenaltyFraction(penalty),
-            stabilityScaling.scaleFactor(stationBonus, penalty));
+            rules.weight(),
+            1.0 - hiddenMarketRate,
+            stabilityScaling.computePenaltyFraction(rules.lowStabilityPenalty()),
+            stabilityScaling.scaleFactor(
+                rules.weight() * hiddenMarketRate,
+                rules.lowStabilityPenalty()));
     }
 
     // The patrol factor as the breakdown states it: each tier scaled on its own, so the
     // tiers add up to the garrison's worth rather than being derived back out of it.
     private static PatrolFactor buildPatrolFactor(
             PatrolCounts patrols,
-            DominanceRules rules,
+            PatrolWeighting rules,
             StabilityScaling stabilityScaling) {
 
-        var penalty = rules.patrols().lowStabilityPenalty();
+        var penalty = rules.lowStabilityPenalty();
         return new PatrolFactor(
-            buildPatrolTierFactor(
-                patrols.small(), rules.patrols().smallWeight(), penalty, stabilityScaling),
-            buildPatrolTierFactor(
-                patrols.medium(), rules.patrols().mediumWeight(), penalty, stabilityScaling),
-            buildPatrolTierFactor(
-                patrols.large(), rules.patrols().largeWeight(), penalty, stabilityScaling),
+            buildPatrolTierFactor(patrols.small(), rules.smallWeight(), penalty, stabilityScaling),
+            buildPatrolTierFactor(patrols.medium(), rules.mediumWeight(), penalty, stabilityScaling),
+            buildPatrolTierFactor(patrols.large(), rules.largeWeight(), penalty, stabilityScaling),
             stabilityScaling.computePenaltyFraction(penalty));
     }
 
     // One patrol tier of that factor: its headcount, what one patrol of the tier is worth,
-    // and what the tier folded in at.
+    // and what the tier folded in at. The only place a headcount meets a tier weight, so the
+    // garrison's worth and the tier lines that explain it cannot state the rule differently.
     private static PatrolTierFactor buildPatrolTierFactor(
             int count,
             double tierWeight,
@@ -359,12 +392,11 @@ public final class KnownMarketFootprints {
     // size, or - for a hidden market - its real size under Normal scaling or the fixed
     // weight under Fixed, so a hidden market can mark presence without its real size
     // swaying dominance when the player pins it to a token.
-    private static double computeBaseSize(MarketAPI market, DominanceRules rules) {
-        if (market.isHidden()
-                && rules.baseSize().hiddenMarketScaling() == HiddenMarketScalingChoice.FIXED) {
-            return rules.baseSize().hiddenMarketFixedWeight();
+    private static double computeSizeRating(WeighedMarket market, BaseSizeWeighting rules) {
+        if (market.isHidden() && rules.hiddenMarketScaling() == HiddenMarketScalingChoice.FIXED) {
+            return rules.hiddenMarketFixedWeight();
         }
-        return market.getSize();
+        return market.size();
     }
 
     // The market's own orbital station, when the station factor can earn anything for it:
@@ -373,9 +405,9 @@ public final class KnownMarketFootprints {
     // station whose bonus would be discarded.
     private static Optional<SectorEntityToken> findWeighedStation(
             MarketAPI market,
-            DominanceRules rules) {
+            StationWeighting rules) {
 
-        if (!rules.station().isWeighted() || rules.station().weight() <= 0.0) {
+        if (!rules.isWeighted() || rules.weight() <= 0.0) {
             return Optional.empty();
         }
         return Markets.findAttachedStation(market);
@@ -390,31 +422,12 @@ public final class KnownMarketFootprints {
     // the factor is off or the flag is absent, so neither costs a dynamic-stat lookup.
     private static Optional<PatrolCounts> readWeighedPatrolCounts(
             MarketAPI market,
-            DominanceRules rules) {
+            PatrolWeighting rules) {
 
-        if (!rules.patrols().isWeighted() || !Markets.fieldsPatrols(market)) {
+        if (!rules.isWeighted() || !Markets.fieldsPatrols(market)) {
             return Optional.empty();
         }
         return Optional.of(Markets.readPatrolCounts(market));
-    }
-
-    // The station size bonus a market earns before stability scaling: the player-set
-    // station weight in size points for an openly held stationed colony, or a configured
-    // fraction of that weight for a hidden market, so a hidden fortress reads above a bare
-    // outpost without matching an open stationed colony. Asked only of a market whose
-    // station the factor has already admitted.
-    private static double computeStationBonus(MarketAPI market, DominanceRules rules) {
-        return market.isHidden()
-            ? rules.station().weight() * rules.station().hiddenMarketRate()
-            : rules.station().weight();
-    }
-
-    // The patrol size bonus a garrison earns before stability scaling: its small, medium,
-    // and large counts each times the player-set weight for that tier.
-    private static double computePatrolStrength(PatrolCounts patrols, DominanceRules rules) {
-        return patrols.small() * rules.patrols().smallWeight()
-            + patrols.medium() * rules.patrols().mediumWeight()
-            + patrols.large() * rules.patrols().largeWeight();
     }
 
     /**
@@ -448,5 +461,28 @@ public final class KnownMarketFootprints {
         private double scaleFactor(double rawFactor, double lowStabilityPenalty) {
             return rawFactor * (1.0 - computePenaltyFraction(lowStabilityPenalty));
         }
+    }
+
+    /**
+     * One market as the weight rules see it: its identity and size, plus the subjects of the
+     * two optional factors - the station and the patrol tiers - each absent when its factor
+     * did not run for this market.
+     *
+     * <p>Read from the economy once and weighed as often as needed, so the connected-entity
+     * scan and the dynamic-stat lookup behind the two optional factors are paid for once
+     * however many times the market's worth is worked out.
+     *
+     * @param name     the colony's display name
+     * @param isHidden whether the colony is concealed rather than held in the open
+     * @param size     the colony's own size, as the economy reports it
+     * @param station  the market's orbital station, when the station factor admitted one
+     * @param patrols  the market's patrol-tier counts, when the patrol factor admitted them
+     */
+    private record WeighedMarket(
+        String name,
+        boolean isHidden,
+        int size,
+        Optional<SectorEntityToken> station,
+        Optional<PatrolCounts> patrols) {
     }
 }

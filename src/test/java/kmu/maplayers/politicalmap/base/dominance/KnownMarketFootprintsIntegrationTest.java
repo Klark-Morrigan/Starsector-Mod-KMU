@@ -49,6 +49,15 @@ import static org.mockito.Mockito.when;
  * per-factor low-stability penalties under the master stability toggle, and the
  * zero-factor short-circuits that skip the station scan, the patrol read, and the
  * stability read.
+ *
+ * <p>Both halves of that read are covered here, over one economy: the weights the map
+ * paints by, and the {@link MarketWeightBreakdown} they are summed over - each factor's
+ * rating, cut and contribution, the station it names, the tiers of the garrison behind it,
+ * and the absences that say a factor never ran. The two are asserted against the same
+ * figures where they meet, since a total that disagreed with its own parts is the failure
+ * the one-arithmetic read exists to make impossible. The arithmetic the economy cannot
+ * reach - rounding a fractional sum onto the grid - is pinned on hand-built parts in
+ * {@link MarketWeightBreakdownTest}.
  */
 class KnownMarketFootprintsIntegrationTest {
 
@@ -933,6 +942,77 @@ class KnownMarketFootprintsIntegrationTest {
                     buildRules().build(),
                     false))
                 .isEmpty();
+        }
+
+        @Test
+        void readBreakdownByFactionExplainsAnUndiscoveredMarketUnderTheDevReveal() {
+            // The reveal drops the known-to-player gate for the parts exactly as it does for
+            // the totals, so a revealed colony the box paints is a colony the box can explain.
+            var sector = buildSectorWith(
+                "undiscovered-system",
+                withName(
+                    buildUndiscoveredHiddenMarket(buildFaction("knights_of_selkie"), 5),
+                    "Selkie Station"));
+
+            var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().build(),
+                true);
+
+            assertThat(breakdowns)
+                .containsOnlyKeys("knights_of_selkie");
+            assertThat(breakdowns.get("knights_of_selkie"))
+                .singleElement()
+                .extracting(MarketWeightBreakdown::computeTotalWeight)
+                .isEqualTo(DOMINANCE_WEIGHT_SCALE);
+        }
+
+        @Test
+        void readBreakdownByFactionCutsNothingFromAMarketWhoseFactorsHoldNothing() {
+            // With every factor zeroed the market's stability is never read, so the parts
+            // report the nothing they hold and no penalty against it - the colony is still
+            // listed, marking presence.
+            var market = withName(
+                buildMarketAtStability(buildFaction("hegemony"), 5, NO_STABILITY),
+                "Jangala");
+            var sector = buildSectorWith("weightless-system", market);
+
+            var breakdown = readOnlyBreakdown(sector, buildRules().withColonyWeight(0.0).build());
+
+            assertThat(breakdown.baseSize().contribution())
+                .isZero();
+            assertThat(breakdown.baseSize().stabilityPenaltyFraction())
+                .isZero();
+            assertThat(breakdown.computeTotalWeight())
+                .isZero();
+
+            verify(market, never())
+                .getStabilityValue();
+        }
+
+        @Test
+        void readBreakdownByFactionReportsNoPenaltyWhenTheStabilityMasterIsOff() {
+            // With the master toggle off a collapsed colony keeps every factor whole, so the
+            // parts must report nothing taken rather than the penalty that was not applied.
+            var sector = buildSectorWith(
+                "shaky-fortress-system",
+                withName(
+                    buildStationedMarketAtStability(buildFaction("hegemony"), 4, NO_STABILITY),
+                    "Jangala"));
+
+            var breakdown = readOnlyBreakdown(
+                sector,
+                buildRules().withStabilityMaster(false).withStationWeighting().build());
+
+            assertThat(breakdown.baseSize().stabilityPenaltyFraction())
+                .isZero();
+            assertThat(breakdown.baseSize().contribution())
+                .isEqualTo(4.0);
+            assertThat(breakdown.station().get().stabilityPenaltyFraction())
+                .isZero();
+            assertThat(breakdown.station().get().contribution())
+                .isEqualTo(1.0);
         }
 
         // The rule the fortress assertions read under: the suite's defaults with both the
