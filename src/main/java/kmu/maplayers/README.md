@@ -215,7 +215,10 @@ about what the overlay means.
   resolved empty; `CellTooltipRows` is the line vocabulary it lays them in, which reads the tier and
   the indent off how deep the line was found rather than off a choice the block makes,
   plus the banner centred under the title (its crest set among the words as a label run, so crest and
-  words centre as one). Its table shapes are the block's alone, so a body cannot author a look of its
+  words centre as one). The one thing the block does answer is its crest gutter, because that column
+  is shared by everything it lists and the box measures a single one across every block at once: a
+  block listing nothing marked lays its lines flush rather than behind a gutter another block's
+  crests widened, which would read as an indent under its own heading. Its table shapes are the block's alone, so a body cannot author a look of its
   own. So two layers' boxes differ only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
   finds the changes the engine announces to nobody. `MapLayerSectorWatcher` owns the loop

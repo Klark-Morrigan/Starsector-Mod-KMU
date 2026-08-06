@@ -69,6 +69,18 @@ public record CellTooltipEntryLine(
     }
 
     /**
+     * Whether this line leads with a mark at all. The one place the absence is judged, so whatever reads
+     * a listing to decide something about its marks - whether a block reserves the crest gutter, say -
+     * and whatever lays the line out afterwards cannot disagree over a line neither of them can show a
+     * mark for.
+     *
+     * @return true where the line carries a mark to lead with
+     */
+    public boolean hasMark() {
+        return iconSpritePath != null;
+    }
+
+    /**
      * Returns a copy of this line calling {@code qualifierText} out at its end - a status stated on the
      * line it is about rather than on a line of its own, such as why this line outranks a higher-scoring
      * one beneath it.

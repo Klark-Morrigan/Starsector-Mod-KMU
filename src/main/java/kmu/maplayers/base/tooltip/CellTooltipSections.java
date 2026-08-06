@@ -107,10 +107,11 @@ public final class CellTooltipSections {
     // because the crest gutter is one column shared by all of its lines: reserved for a block where some
     // line carries a mark, so the markless ones stay aligned with it, and dropped for a block where none
     // does, since a gutter nothing fills is read as the block's lines being indented under their own
-    // heading rather than as an empty column.
+    // heading rather than as an empty column. The whole listing counts, not just its top level - a
+    // breakdown carrying the marks would otherwise open its gutter under lines laid clear of it.
     private static boolean hasAnyMark(List<CellTooltipEntry> entries) {
         for (var entry : entries) {
-            if (entry.line().iconSpritePath() != null || hasAnyMark(entry.children())) {
+            if (entry.line().hasMark() || hasAnyMark(entry.children())) {
                 return true;
             }
         }

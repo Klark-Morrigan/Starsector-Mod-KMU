@@ -10,8 +10,9 @@ import kmlib.text.KmlibStrings;
  * The line vocabulary a cell tooltip's content is written in: a heading that names a block, a listed
  * line inside it laid at the depth it was found at, a banner row centred across the box to state
  * something about the hovered system as a whole, and the qualifier run any of them may end on. Each
- * shape fixes its own placement, indent, and colours, so what a layer says is the only thing that varies
- * between two hover boxes.
+ * shape fixes its own indent and colours, and its placement bar the crest gutter - that one column being
+ * shared by everything a block lists, so whether it is reserved arrives as the block's answer rather than
+ * as this line's. What a layer says is otherwise the only thing that varies between two hover boxes.
  *
  * <p>The split that matters is the table shapes against the banner: a heading and every listed line lay
  * into the box's table, lining up against the crest gutter and the value column, while a banner has left
