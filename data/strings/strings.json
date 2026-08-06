@@ -52,6 +52,20 @@
     "political_map_tooltip_section_claim": "Claim:",
     "political_map_tooltip_section_contested": "Contested by:",
     "political_map_tooltip_section_non_territorial": "Non-territorial:",
-    "political_map_tooltip_section_dominated": "Dominated by:"
+    "political_map_tooltip_section_dominated": "Dominated by:",
+
+    "political_map_tooltip_factor_stability": "Stability",
+    "political_map_tooltip_factor_size": "Size",
+    "political_map_tooltip_factor_patrols": "Patrols",
+    "political_map_tooltip_factor_hidden": "hidden",
+    "political_map_tooltip_factor_fixed": "%s (fixed)",
+    "political_map_tooltip_factor_weighed": "%s :: %s",
+    "political_map_tooltip_factor_counted": "%s / %s",
+    "political_map_tooltip_factor_penalty": "%s (-%d%%)",
+
+    "political_map_tooltip_patrol_tier": "%s: %d",
+    "political_map_tooltip_patrol_small": "Small",
+    "political_map_tooltip_patrol_medium": "Medium",
+    "political_map_tooltip_patrol_large": "Large"
   }
 }

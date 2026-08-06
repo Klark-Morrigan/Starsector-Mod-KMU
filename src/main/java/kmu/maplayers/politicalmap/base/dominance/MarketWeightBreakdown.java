@@ -20,16 +20,21 @@ import java.util.Optional;
  * <p>Plain values with no Starsector types, so the whole breakdown is built and read on
  * hand-made inputs.
  *
- * @param marketName     the colony's display name
- * @param isHiddenMarket whether the colony is hidden - a concealed base rather than one held
- *                       in the open, which changes how two of the factors rate it
- * @param baseSize       the base-size part, which every counted market carries
- * @param station        the attached-station part, present only when the station rule ran
- * @param patrols        the fielded-patrol part, present only when the patrol rule ran
+ * @param marketName      the colony's display name
+ * @param isHiddenMarket  whether the colony is hidden - a concealed base rather than one held
+ *                        in the open, which changes how two of the factors rate it
+ * @param marketStability the colony's stability on its own 0..10 band. Carried whole rather
+ *                        than left implicit in the penalties, because it is the one reading
+ *                        all three of them are derived from: without it a reader is shown
+ *                        three cuts and no cause
+ * @param baseSize        the base-size part, which every counted market carries
+ * @param station         the attached-station part, present only when the station rule ran
+ * @param patrols         the fielded-patrol part, present only when the patrol rule ran
  */
 public record MarketWeightBreakdown(
     String marketName,
     boolean isHiddenMarket,
+    double marketStability,
     BaseSizeFactor baseSize,
     Optional<StationFactor> station,
     Optional<PatrolFactor> patrols) {
@@ -59,7 +64,6 @@ public record MarketWeightBreakdown(
      * @return the weight this market folds into its faction's footprint
      */
     public int computeTotalWeight() {
-        return (int) Math.round(
-            computeTotalContribution() * KnownMarketFootprints.DOMINANCE_WEIGHT_SCALE);
+        return KnownMarketFootprints.roundToWeight(computeTotalContribution());
     }
 }

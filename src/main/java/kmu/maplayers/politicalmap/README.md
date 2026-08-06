@@ -135,7 +135,18 @@ as something a block lists) and `FactionTooltipBanner` (a faction as a verdict o
 `PoliticalMapCellTooltip`, which binds the claim read for the whole layer and heads every one of its
 boxes with the decree holding the system: either box may have to say a system is held by decree, and a
 decree resolved - or drawn - one way on one view and another way on the next would answer one hover two
-ways a keystroke apart),
+ways a keystroke apart.
+The domination box has a second, fuller version - `ExpandedSystemDominationTooltip`, the counterpart
+it offers the framework's detail mode - which lists a bloc over the colonies its score was summed
+from and each colony over the factors behind its weight, down to a garrison's patrol tiers. Both sit
+on `SystemStandingsTooltip`, which settles everything but that nesting - one pass read from the
+active view, the ranking, the status line, and the two headings - because two boxes over one system
+have to be two amounts of detail about the same contest rather than two contests. The parts come
+from the very arithmetic the scores were summed over (`KnownMarketFootprints.readBreakdownByFaction`),
+so the lines always add up to the number the ordinary box and the fills show;
+`MarketWeightRowResolver` decides which lines a colony breaks into and `MarketFactorText` how one
+line's numbers read - a rating as the player set it, a weight on the grid the rest of the box counts
+in, and no cut that took nothing),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound

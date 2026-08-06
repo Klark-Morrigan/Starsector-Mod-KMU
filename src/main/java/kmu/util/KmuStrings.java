@@ -61,6 +61,18 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL =
         "political_map_tooltip_section_non_territorial";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED = "political_map_tooltip_section_dominated";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY = "political_map_tooltip_factor_stability";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_SIZE = "political_map_tooltip_factor_size";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS = "political_map_tooltip_factor_patrols";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_HIDDEN = "political_map_tooltip_factor_hidden";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_FIXED = "political_map_tooltip_factor_fixed";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_WEIGHED = "political_map_tooltip_factor_weighed";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED = "political_map_tooltip_factor_counted";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_PENALTY = "political_map_tooltip_factor_penalty";
+    public static final String POLITICAL_MAP_TOOLTIP_PATROL_TIER = "political_map_tooltip_patrol_tier";
+    public static final String POLITICAL_MAP_TOOLTIP_PATROL_SMALL = "political_map_tooltip_patrol_small";
+    public static final String POLITICAL_MAP_TOOLTIP_PATROL_MEDIUM = "political_map_tooltip_patrol_medium";
+    public static final String POLITICAL_MAP_TOOLTIP_PATROL_LARGE = "political_map_tooltip_patrol_large";
 
     private KmuStrings() {
     }

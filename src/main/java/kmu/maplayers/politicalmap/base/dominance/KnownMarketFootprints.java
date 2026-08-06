@@ -235,6 +235,22 @@ public final class KnownMarketFootprints {
         return breakdownsByFactionId;
     }
 
+    /**
+     * Rounds a worth in size points onto the dominance grid, which is the only place a
+     * weight is ever expressed as an integer.
+     *
+     * <p>Held here rather than repeated wherever a contribution has to read as a weight,
+     * because a second rounding written out by hand is free to round the other way at a
+     * half unit - and a breakdown whose factor weights did not add up to the market weight
+     * beside them would say the arithmetic it exists to explain is wrong.
+     *
+     * @param contribution the worth in size points
+     * @return that worth in weight units
+     */
+    public static int roundToWeight(double contribution) {
+        return (int) Math.round(contribution * DOMINANCE_WEIGHT_SCALE);
+    }
+
     // The system's markets that count, in the economy's own order. One definition of
     // "which markets are in play here" for both reads above, so the totals and the parts
     // can never be folded from different sets of markets.
@@ -295,6 +311,7 @@ public final class KnownMarketFootprints {
             market.getName(),
             market.isHidden(),
             market.getSize(),
+            market.getStabilityValue(),
             findWeighedStation(market, rules.station()),
             readWeighedPatrolCounts(market, rules.patrols()));
     }
@@ -310,6 +327,7 @@ public final class KnownMarketFootprints {
         return new MarketWeightBreakdown(
             market.name(),
             market.isHidden(),
+            market.stability(),
             buildBaseSizeFactor(market, rules.baseSize(), stabilityScaling),
             market.station().map(station ->
                 buildStationFactor(market, station, rules.station(), stabilityScaling)),
@@ -472,16 +490,20 @@ public final class KnownMarketFootprints {
      * scan and the dynamic-stat lookup behind the two optional factors are paid for once
      * however many times the market's worth is worked out.
      *
-     * @param name     the colony's display name
-     * @param isHidden whether the colony is concealed rather than held in the open
-     * @param size     the colony's own size, as the economy reports it
-     * @param station  the market's orbital station, when the station factor admitted one
-     * @param patrols  the market's patrol-tier counts, when the patrol factor admitted them
+     * @param name      the colony's display name
+     * @param isHidden  whether the colony is concealed rather than held in the open
+     * @param size      the colony's own size, as the economy reports it
+     * @param stability the colony's stability on its own 0..10 band - the reading behind
+     *                  every one of the penalties below, carried as the economy states it
+     *                  rather than as the fraction the scaling divides it down to
+     * @param station   the market's orbital station, when the station factor admitted one
+     * @param patrols   the market's patrol-tier counts, when the patrol factor admitted them
      */
     private record WeighedMarket(
         String name,
         boolean isHidden,
         int size,
+        double stability,
         Optional<SectorEntityToken> station,
         Optional<PatrolCounts> patrols) {
     }

@@ -104,9 +104,6 @@ final class SystemDominationTooltipTest {
         new StationWeighting(false, 1.0, 0.5, 0.5),
         new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
-    private static final DominancePass ANY_PASS =
-        new DominancePass(ANY_RULES, false, HolderGrouping.identity());
-
     // The grouping the active view answers with, and deliberately not the identity one: a grouping the
     // ranking could have reached for on its own would let a tooltip that ignored the view still pass
     // the case below. Asserted by identity, since what matters is that this instance is the one used.
@@ -114,6 +111,9 @@ final class SystemDominationTooltipTest {
         Map.of("hegemony", "rebel_pact"),
         Map.of("rebel_pact", "hegemony"),
         Map.of("rebel_pact", "Rebel Pact"));
+
+    private static final DominancePass ANY_PASS =
+        new DominancePass(ANY_RULES, false, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemDominationTooltip tooltip =
@@ -195,8 +195,13 @@ final class SystemDominationTooltipTest {
         @Test
         void buildBodySectionsRanksTheSystemUnderTheActiveViewsOwnGrouping() {
             // What keeps the box honest: the tooltip ranks through the same grouping the map painted
-            // its fills by, so the two can never disagree about who holds the system.
+            // its fills by, so the two can never disagree about who holds the system. The pass is
+            // built from that grouping and the entries resolved through the pass's own, so the one
+            // the view answered with is the one that reaches both.
             tooltip.buildBodySections(sectorMock, systemMock);
+
+            dominancePassMock.verify(
+                () -> DominancePass.readFromLunaSettings(same(VIEW_GROUPING)));
 
             rowResolverMock.verify(
                 () -> StandingRowResolver.resolveRows(
@@ -410,6 +415,30 @@ final class SystemDominationTooltipTest {
             // drawn - the one case where a hover over a real system shows nothing at all.
             assertThat(tooltip.buildBodySections(sectorMock, systemMock))
                 .isEmpty();
+        }
+    }
+
+    @Nested
+    class ResolveExpandedVariant {
+
+        @Test
+        void resolveExpandedVariantOffersTheAccountBehindTheScores() {
+            // The ordinary box answers who holds the system; the detail mode has a fuller answer to
+            // offer, so this box opts into it by naming a counterpart rather than by branching on a
+            // mode of its own.
+            assertThat(tooltip.resolveExpandedVariant())
+                .containsInstanceOf(ExpandedSystemDominationTooltip.class);
+        }
+
+        @Test
+        void resolveExpandedVariantAnswersADecreeThroughThisBoxsOwnReader() {
+            // A decree read one way on the glance and another on the detail would answer one hover two
+            // ways, an F1 apart, so the counterpart is built on this box's reader rather than reaching
+            // for the layer's shared one.
+            var expandedVariant = (PoliticalMapCellTooltip) tooltip.resolveExpandedVariant().get();
+
+            assertThat(expandedVariant.claimBreakdownReader)
+                .isSameAs(claimBreakdownReaderFake);
         }
     }
 

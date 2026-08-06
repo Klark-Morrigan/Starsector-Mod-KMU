@@ -27,6 +27,7 @@ class MarketWeightBreakdownTest {
             var breakdown = new MarketWeightBreakdown(
                 "Chicomoztoc",
                 false,
+                5.0,
                 new BaseSizeFactor(4, 4.0, 2.0, 0.5),
                 Optional.of(new StationFactor("Fort Ludd", 1.0, 0.0, 0.25, 0.75)),
                 Optional.of(new PatrolFactor(
@@ -80,6 +81,7 @@ class MarketWeightBreakdownTest {
             var breakdown = new MarketWeightBreakdown(
                 "Chicomoztoc",
                 false,
+                10.0,
                 new BaseSizeFactor(4, 4.0, third, 0.0),
                 Optional.of(new StationFactor("Fort Ludd", 1.0, 0.0, 0.0, third)),
                 Optional.of(new PatrolFactor(
@@ -108,6 +110,7 @@ class MarketWeightBreakdownTest {
         return new MarketWeightBreakdown(
             "Jangala",
             false,
+            10.0,
             new BaseSizeFactor(4, 4.0, contribution, 0.0),
             Optional.empty(),
             Optional.empty());

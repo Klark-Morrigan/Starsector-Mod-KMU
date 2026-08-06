@@ -35,6 +35,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -566,10 +567,11 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionSkipsTheStabilityReadWhenEveryFactorIsZero() {
+        void readByFactionSkipsTheStabilityScalingWhenEveryFactorIsZero() {
             // A zero colony-size weight with no station or patrol bonus zeroes every
-            // factor before stability, so the stability read is skipped; the market
-            // still folds into the footprint (marking presence) at no dominance weight.
+            // factor before stability, so the scaling is skipped and the one stability
+            // read is the one the breakdown records; the market still folds into the
+            // footprint (marking presence) at no dominance weight.
             var market = buildVisibleMarket(buildFaction("hegemony"), 5);
             var sector = buildSectorWith("weightless-system", market);
             var footprints = KnownMarketFootprints.readByFaction(
@@ -582,7 +584,7 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(footprints.get("hegemony").totalWeight())
                 .isZero();
 
-            verify(market, never())
+            verify(market, times(1))
                 .getStabilityValue();
         }
 
@@ -970,9 +972,10 @@ class KnownMarketFootprintsIntegrationTest {
 
         @Test
         void readBreakdownByFactionCutsNothingFromAMarketWhoseFactorsHoldNothing() {
-            // With every factor zeroed the market's stability is never read, so the parts
-            // report the nothing they hold and no penalty against it - the colony is still
-            // listed, marking presence.
+            // With every factor zeroed there is nothing for stability to scale, so the parts
+            // report the nothing they hold and no penalty against it - while still recording
+            // the stability itself, which the box states as a fact about the colony rather
+            // than only as the cause of a cut. The colony is still listed, marking presence.
             var market = withName(
                 buildMarketAtStability(buildFaction("hegemony"), 5, NO_STABILITY),
                 "Jangala");
@@ -986,9 +989,25 @@ class KnownMarketFootprintsIntegrationTest {
                 .isZero();
             assertThat(breakdown.computeTotalWeight())
                 .isZero();
+            assertThat(breakdown.marketStability())
+                .isZero();
 
-            verify(market, never())
+            verify(market, times(1))
                 .getStabilityValue();
+        }
+
+        @Test
+        void readBreakdownByFactionCarriesTheColonysOwnStabilityReading() {
+            // Every penalty in the breakdown is derived from this one reading, so it travels
+            // with them: a box showing three cuts and no cause explains nothing.
+            var sector = buildSectorWith(
+                "shaky-system",
+                withName(
+                    buildMarketAtStability(buildFaction("hegemony"), 4, HALF_STABILITY),
+                    "Jangala"));
+
+            assertThat(readOnlyBreakdown(sector, buildRules().build()).marketStability())
+                .isEqualTo(5.0);
         }
 
         @Test

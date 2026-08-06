@@ -68,6 +68,18 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED, "Contested by:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL, "Non-territorial:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED, "Dominated by:");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY, "Stability");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE, "Size");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS, "Patrols");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_HIDDEN, "hidden");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_FIXED, "%s (fixed)");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_WEIGHED, "%s :: %s");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED, "%s / %s");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PENALTY, "%s (-%d%%)");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_TIER, "%s: %d");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_SMALL, "Small");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_MEDIUM, "Medium");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_LARGE, "Large");
         return stringsByKey;
     }
 }
