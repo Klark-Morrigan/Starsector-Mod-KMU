@@ -22,6 +22,11 @@ import java.util.Optional;
  * it: a heading left standing over no entries reads as a block whose contents failed to resolve, which
  * tells the player something untrue.
  *
+ * <p>So is whether the crest gutter is reserved. The gutter is one column shared by everything a block
+ * lists, and the box measures it across every block at once, so a block listing nothing that carries a
+ * mark would open its lines behind a gutter another block's crests widened - an indent under its own
+ * heading, standing for a column none of its lines can fill.
+ *
  * <p>Held apart from {@link CellTooltipRows} because the two answer different questions - that decides
  * how one line reads, this which lines a block is and which shape each takes - so a body states only
  * which blocks it has, in what order, and what each lists.
@@ -51,7 +56,7 @@ public final class CellTooltipSections {
         }
         var rows = new ArrayList<TooltipRow>();
         rows.add(CellTooltipRows.buildSectionHeadingRow(headingText));
-        appendEntryRows(rows, entries, CellTooltipRows.LISTED_DEPTH);
+        appendEntryRows(rows, entries, CellTooltipRows.LISTED_DEPTH, hasAnyMark(entries));
         sections.add(new TooltipSection(rows));
     }
 
@@ -89,11 +94,26 @@ public final class CellTooltipSections {
     private static void appendEntryRows(
             List<TooltipRow> rows,
             List<CellTooltipEntry> entries,
-            int depth) {
+            int depth,
+            boolean isReservingCrestColumn) {
 
         for (var entry : entries) {
-            rows.add(CellTooltipRows.buildListedRow(entry.line(), depth));
-            appendEntryRows(rows, entry.children(), depth + 1);
+            rows.add(CellTooltipRows.buildListedRow(entry.line(), depth, isReservingCrestColumn));
+            appendEntryRows(rows, entry.children(), depth + 1, isReservingCrestColumn);
         }
+    }
+
+    // Whether anything the block lists, however deep, leads with a mark. Answered over the whole block
+    // because the crest gutter is one column shared by all of its lines: reserved for a block where some
+    // line carries a mark, so the markless ones stay aligned with it, and dropped for a block where none
+    // does, since a gutter nothing fills is read as the block's lines being indented under their own
+    // heading rather than as an empty column.
+    private static boolean hasAnyMark(List<CellTooltipEntry> entries) {
+        for (var entry : entries) {
+            if (entry.line().iconSpritePath() != null || hasAnyMark(entry.children())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

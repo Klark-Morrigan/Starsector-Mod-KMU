@@ -42,6 +42,11 @@ final class CellTooltipRowsTest {
     private static final int MEMBER_DEPTH = 1;
     private static final int NESTED_MEMBER_DEPTH = 2;
 
+    // What the block around a line answered about its crest gutter: reserved where something it lists
+    // leads with a mark, dropped where nothing does.
+    private static final boolean RESERVING_CREST_COLUMN = true;
+    private static final boolean NOT_RESERVING_CREST_COLUMN = false;
+
     // The runs a line reads as, in order: what it names, then any qualifier picked out beside it. A
     // banner led by a crest opens on that image instead, so its words sit one run later.
     private static final int LABEL_RUN = 0;
@@ -98,7 +103,8 @@ final class CellTooltipRowsTest {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"),
-                LISTED_DEPTH);
+                LISTED_DEPTH,
+                RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).text())
                 .isEqualTo("Ion Storm");
@@ -120,12 +126,42 @@ final class CellTooltipRowsTest {
             // two does not read as two staggered columns.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "Independent", CellTooltipRows.NO_SCORE),
-                LISTED_DEPTH);
+                LISTED_DEPTH,
+                RESERVING_CREST_COLUMN);
 
             assertThat(row.labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
             assertThat(row.labelPlacement())
                 .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+        }
+
+        @Test
+        void buildListedRowOpensAtTheContentEdgeWhereTheBlockReservesNoCrestColumn() {
+            // The gutter is the box's one column, so a block listing nothing marked would otherwise open
+            // behind a gutter another block's crests widened - which reads as its lines being indented
+            // under their own heading rather than as an empty column.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(null, "None", CellTooltipRows.NO_SCORE),
+                LISTED_DEPTH,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(row.labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
+        }
+
+        @Test
+        void buildListedRowOpensAMemberAtTheContentEdgeWhereTheBlockReservesNoCrestColumn() {
+            // A member follows its block's answer as its entry does, so a breakdown under an unmarked
+            // line steps in from the same column its parent opened at rather than from a gutter away.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(null, "Size", "8"),
+                MEMBER_DEPTH,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(row.labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
+            assertThat(row.indent())
+                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
         }
 
         @Test
@@ -137,7 +173,8 @@ final class CellTooltipRowsTest {
                 CellTooltipEntryLine
                     .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
                     .qualifiedWith("worsening"),
-                LISTED_DEPTH);
+                LISTED_DEPTH,
+                RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(PLAYER_BRIGHT);
@@ -153,7 +190,8 @@ final class CellTooltipRowsTest {
             // plain line measures as the words it actually says.
             var row = CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"),
-                LISTED_DEPTH);
+                LISTED_DEPTH,
+                RESERVING_CREST_COLUMN);
 
             assertThat(row.labelRuns())
                 .hasSize(1);
@@ -164,7 +202,8 @@ final class CellTooltipRowsTest {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(CREST, "Ion Storm", "17"),
-                MEMBER_DEPTH);
+                MEMBER_DEPTH,
+                RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(TEXT);
@@ -181,7 +220,8 @@ final class CellTooltipRowsTest {
             // indent with the level above it.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "Light patrol", "3"),
-                NESTED_MEMBER_DEPTH);
+                NESTED_MEMBER_DEPTH,
+                RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(TEXT);
@@ -195,7 +235,8 @@ final class CellTooltipRowsTest {
             // value column collapses for it rather than the line claiming a width it cannot use.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "Decivilised", CellTooltipRows.NO_SCORE),
-                MEMBER_DEPTH);
+                MEMBER_DEPTH,
+                RESERVING_CREST_COLUMN);
 
             assertThat(row.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(TextSpan.createBlank(TEXT)));
@@ -210,7 +251,8 @@ final class CellTooltipRowsTest {
                 CellTooltipEntryLine
                     .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
                     .qualifiedWith("worsening"),
-                MEMBER_DEPTH);
+                MEMBER_DEPTH,
+                RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
                 .isEqualTo(TEXT);

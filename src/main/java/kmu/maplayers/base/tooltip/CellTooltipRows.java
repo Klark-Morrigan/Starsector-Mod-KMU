@@ -131,15 +131,24 @@ public final class CellTooltipRows {
      * too: the walk that found the line states only how deep it went, and this decides what that depth
      * looks like, so a listing three levels deep needs no new shape and no new call.
      *
-     * @param line  the thing being listed
-     * @param depth how far beneath the block the line was found; zero for one of the block's own
+     * <p>Whether the crest gutter is reserved is the block's answer rather than this line's, since the
+     * gutter is one column shared by everything the block lists - which is why it arrives as a parameter.
+     *
+     * @param line                   the thing being listed
+     * @param depth                  how far beneath the block the line was found; zero for one of the
+     *                               block's own
+     * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
      * @return the row, ready to add to a block
      */
-    static TooltipRow buildListedRow(CellTooltipEntryLine line, int depth) {
+    static TooltipRow buildListedRow(
+            CellTooltipEntryLine line,
+            int depth,
+            boolean isReservingCrestColumn) {
+
         if (depth <= LISTED_DEPTH) {
-            return buildEntryRow(line);
+            return buildEntryRow(line, isReservingCrestColumn);
         }
-        return buildMemberRow(line, depth);
+        return buildMemberRow(line, depth, isReservingCrestColumn);
     }
 
     /**
@@ -147,10 +156,14 @@ public final class CellTooltipRows {
      * colour, so one of the things a block lists reads as being listed rather than as part of whatever
      * is listed beneath it.
      *
-     * @param line what the block lists there
+     * @param line                   what the block lists there
+     * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
      * @return the row, ready to add to a block
      */
-    private static TooltipRow buildEntryRow(CellTooltipEntryLine line) {
+    private static TooltipRow buildEntryRow(
+            CellTooltipEntryLine line,
+            boolean isReservingCrestColumn) {
+
         var row = TooltipRow
             .createRow(new TextSpan(
                 line.labelText(),
@@ -160,7 +173,7 @@ public final class CellTooltipRows {
                 line.valueText(),
                 StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()));
 
-        return appendQualifier(row, line);
+        return appendQualifier(placeLabel(row, isReservingCrestColumn), line);
     }
 
     /**
@@ -174,11 +187,16 @@ public final class CellTooltipRows {
      * breakdown grows a level, whereas the indent already says the one thing the reader needs - what
      * this line is part of.
      *
-     * @param line  one of the things the line above is made up of
-     * @param depth how far beneath the block the line was found; at least one level
+     * @param line                   one of the things the line above is made up of
+     * @param depth                  how far beneath the block the line was found; at least one level
+     * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
      * @return the row, ready to add to a block
      */
-    private static TooltipRow buildMemberRow(CellTooltipEntryLine line, int depth) {
+    private static TooltipRow buildMemberRow(
+            CellTooltipEntryLine line,
+            int depth,
+            boolean isReservingCrestColumn) {
+
         var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
         var row = TooltipRow
             .createRow(new TextSpan(line.labelText(), textColour))
@@ -186,7 +204,21 @@ public final class CellTooltipRows {
             .carriesValue(new TextSpan(line.valueText(), textColour))
             .indentsBy(depth * MEMBER_INDENT);
 
-        return appendQualifier(row, line);
+        return appendQualifier(placeLabel(row, isReservingCrestColumn), line);
+    }
+
+    // Where a line's label starts across the box: behind the crest gutter where the block reserves one,
+    // so a line carrying no mark still lines up with the crested lines around it, and at the content edge
+    // where the block reserves none - a gutter no line in the block fills has nothing to align to, and
+    // reads as the line being indented under the heading above it. Applied at every tier through one
+    // helper, so an entry and the members beneath it cannot start from different columns.
+    private static TooltipRow.TableRow placeLabel(
+            TooltipRow.TableRow row,
+            boolean isReservingCrestColumn) {
+
+        return isReservingCrestColumn
+            ? row
+            : row.clearsCrestColumn();
     }
 
     // Runs a line on into whatever it calls out. Applied at every tier through one helper, so a status

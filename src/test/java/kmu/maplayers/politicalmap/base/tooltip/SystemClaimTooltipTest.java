@@ -352,6 +352,29 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
+        void buildBodySectionsOpensAnUnclaimedSystemsClaimAtTheContentEdge() {
+            // The crest gutter is the box's one column, widened here by the crested line in the block
+            // below - so the claim block, listing only the word for nobody, has to open flush under its
+            // own heading rather than behind a gutter no line of it can fill.
+            var nonTerritorialEntryRow = 3;
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(buildStandingOnOneMarket(HEGEMONY, OUTSIDER_SCORE, false))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Claim:", "None", "Non-territorial:", "The Hegemony");
+
+            assertThat(readTableRow(sections, CLAIM_ROW).labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
+            assertThat(readTableRow(sections, nonTerritorialEntryRow).labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+        }
+
+        @Test
         void buildBodySectionsStatesTheClaimEvenForASystemNobodyIsPresentIn() {
             // The claim section is unconditional: a hover over a dead system still answers the question
             // the layer poses, rather than drawing a box the player has to interpret the absence of.

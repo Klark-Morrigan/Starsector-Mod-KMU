@@ -272,6 +272,43 @@ final class CellTooltipSectionsTest {
         }
 
         @Test
+        void appendSectionOpensABlockListingNothingMarkedAtTheContentEdge() {
+            // Where the fault showed: the crest gutter is the box's one column, widened by whichever
+            // block does carry crests, so a block listing nothing marked opened its lines behind a
+            // gutter none of them could fill - a claim of "None" reading as indented under the very
+            // heading naming it.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Claim:",
+                List.of(createEntry("None").nesting(List.of(createEntry("Uncontested")))));
+
+            assertThat(readLabelPlacements(sections))
+                .containsOnly(TooltipLabelPlacement.AT_CONTENT_EDGE);
+        }
+
+        @Test
+        void appendSectionHoldsAMarklessLineInTheGutterABlockDoesReserve() {
+            // The other half of the same rule: the gutter is answered for the block rather than per
+            // line, so a faction the game gives no crest stays aligned with the crested lines beside it
+            // instead of stepping out of the column they share.
+            var sections = new ArrayList<TooltipSection>();
+            var marklessEntryRow = 2;
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Contested by:",
+                List.of(
+                    CellTooltipEntry.createEntry(
+                        CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200")),
+                    createEntry("Independent")));
+
+            assertThat(((TooltipRow.TableRow) readRow(sections, marklessEntryRow)).labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+        }
+
+        @Test
         void appendSectionChargesNoValueColumnForAnEntryCountedInNothing() {
             // A line with nothing to count fills its value slot with a run that draws nothing, so the
             // column collapses for it rather than the line claiming a width it cannot use.
@@ -345,6 +382,17 @@ final class CellTooltipSectionsTest {
         return TooltipSection
             .readRowsInOrder(sections)
             .get(rowIndex);
+    }
+
+    // Where every line of a body starts across the box. Read over the whole body rather than row by row,
+    // since the rule under test is about the block agreeing with itself - one line asserted alone would
+    // pass while the lines around it opened from another column.
+    private static List<TooltipLabelPlacement> readLabelPlacements(List<TooltipSection> sections) {
+        return TooltipSection
+            .readRowsInOrder(sections)
+            .stream()
+            .map(row -> ((TooltipRow.TableRow) row).labelPlacement())
+            .toList();
     }
 
     private static List<String> readLabelTexts(List<TooltipSection> sections) {
