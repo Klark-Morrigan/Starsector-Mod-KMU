@@ -289,8 +289,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // Both live reads are supplied rather than built by the dispatcher, so a test can stand
         // stand-ins in their place and pin the step-aside and the on-screen gate. The map read is
         // host-blind: the box draws wherever the layer paints, which is the sector map and the intel
-        // screen's map visor alike, and look-blind: the layers paint through a terrain pair, so the
-        // Starscape filter changes what is under the box rather than whether there is a box.
+        // screen's map visor alike, and look-blind: some terrain surface paints the layers in either
+        // look, so the Starscape filter changes what is under the box rather than whether there is one.
         installTransientListener(
             sector,
             MapLayerCellTooltip.class,

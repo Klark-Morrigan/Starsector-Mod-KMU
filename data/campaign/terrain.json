@@ -8,12 +8,12 @@
 	"kmu_sector_map_layer_terrain":{
 		"plugin":"kmu.maplayers.base.render.SectorMapLayerTerrainPlugin",
 	},
-	# The Starscape half of the pair. The map widget skips every terrain while
+	# The lower Starscape surface. The map widget skips every terrain while
 	# the Starscape filter is on except one whose entity reports the terrain
 	# type "slipstream", so a second entity reports that and resolves its
 	# plugin from this row; the plugin subclasses the one above and stands
-	# aside whenever no Starscape map is on screen, leaving exactly one of the
-	# two painting in any frame.
+	# aside whenever no Starscape map is on screen, so the schematic surface
+	# and the Starscape ones never paint in the same frame.
 	"kmu_sector_map_layer_starscape_terrain":{
 		"plugin":"kmu.maplayers.base.render.SectorMapLayerStarscapeTerrainPlugin",
 	},

@@ -16,9 +16,9 @@ import java.util.Set;
  * {@link IntelSidebarHost}; the two differ only in gate, anchor, controller, and which frame edges they
  * stroke, and both feed the shared {@link SidebarRenderer} / {@link SidebarInput}.
  *
- * <p>The Starscape filter is not part of the gate. The layers paint through a terrain pair, one half of
- * which draws in Starscape mode, so there is an overlay under these controls whichever look the map
- * wears and the filter says nothing about whether the sidebar has anything to drive.
+ * <p>The Starscape filter is not part of the gate. The layers paint through several terrain surfaces,
+ * of which two draw in Starscape mode, so there is an overlay under these controls whichever look the
+ * map wears and the filter says nothing about whether the sidebar has anything to drive.
  *
  * <p>Its panel reopens at the fold this save was left at, and a save that has never folded it opens out,
  * since the on-map sidebar is the player's primary way in to the map layers and has the screen width to

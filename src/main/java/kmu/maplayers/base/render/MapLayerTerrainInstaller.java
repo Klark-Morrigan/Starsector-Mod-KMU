@@ -261,7 +261,7 @@ public final class MapLayerTerrainInstaller {
 
         addTerrainToLocation.accept(hyperspace);
 
-        // One-shot install diagnostic, naming the variant so the pair is distinguishable in a log.
+        // One-shot install diagnostic, naming the variant so the surfaces are told apart in a log.
         // DEBUG so it stays silent at the WARN default; set KMU log verbosity to DEBUG in LunaLib
         // to see it.
         LOG.debug("Map layer terrain installed for " + variant.pluginClass().getSimpleName()
@@ -285,7 +285,7 @@ public final class MapLayerTerrainInstaller {
         }
     }
 
-    // One of the two terrains the render pair installs, as the install has to tell them apart: the
+    // One of the terrains the render surfaces install, as the install has to tell them apart: the
     // plugin class that marks an entity as this variant's, and the test for whether a reported type
     // is what a live one of them carries. The two are never useful apart - every step of the install
     // needs both - so they are one value rather than a pair of parameters threaded through the

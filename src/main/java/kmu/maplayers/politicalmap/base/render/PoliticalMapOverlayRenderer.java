@@ -54,6 +54,12 @@ final class PoliticalMapOverlayRenderer {
         switch (band) {
             case BENEATH_STARSCAPE_NEBULAE -> renderTerritoryBand(cache, factor, alphaMult);
             case ABOVE_STARSCAPE_NEBULAE -> renderFactionNameBand(cache, factor, alphaMult);
+
+            // A switch statement over an enum is not checked for exhaustiveness, so a band added
+            // later would compile clean here and simply paint nothing - an overlay silently missing
+            // a layer, which is the one failure this class can produce that nothing else reports.
+            // Throwing turns that into a crash on the first frame the new band is asked for.
+            default -> throw new IllegalStateException("Unhandled map overlay band: " + band);
         }
     }
 
