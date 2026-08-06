@@ -206,7 +206,17 @@ about what the overlay means.
   one draw for both, the name set in the game's own title face over body-face rows so a KM hover
   reads as part of the interface rather than as text laid over it. The box opens with a heading block
   - the system name and any title lines read on from it - and the layer's own blocks follow beneath,
-  so a verdict that settles the whole system heads the box while a status or an entry sits in it. How
+  so a verdict that settles the whole system heads the box while a status or an entry sits in it. A
+  box taking part in the detail toggle ends on one more block: the key and what pressing it would do,
+  drawn the way the game draws its own key hints - the key picked out in the shade vanilla highlights
+  a shortcut with, the words about it in vanilla's grey, in vanilla's own smaller condensed face. What
+  the counterpart adds is named by the layer (`resolveExpandedDetailName`), since only the layer knows
+  what is in it; which way the offer reads is asked of nobody and follows from whether the box being
+  drawn still has a counterpart to switch to - the plain box has one and offers to show it, the
+  counterpart the dispatcher selected has none and so offers to hide itself again. Read that way the
+  hint cannot contradict the box it sits under, which reading the shared mode a second time would
+  allow. It is not content: a box with nothing to say about the system stays undrawn rather than
+  appearing as a lone offer to expand into nothing. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
   one measurement, so the gap under the heading is the same gap as every gap below it. A layer states
   only *what* each block lists, as `CellTooltipEntry` / `CellTooltipEntryLine` values - an entry being

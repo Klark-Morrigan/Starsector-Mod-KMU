@@ -31,9 +31,21 @@ import java.util.function.BooleanSupplier;
  */
 public final class HoverTooltipDetailModeInput implements CampaignInputListener {
 
+    // The key the mode is flipped with. Named once here rather than at each use, since the box that
+    // tells the player about it has to name the key that is actually claimed - a second literal is
+    // one edit away from advertising a key this listener no longer takes.
+    private static final int TOGGLE_KEY = Keyboard.KEY_F1;
+
     // Ahead of the core screen, but below the sidebar's own listener, so a sidebar tab hotkey keeps
     // the first claim on any key it is bound to and this only ever sees what the sidebar left.
     private static final int INPUT_PRIORITY = 900;
+
+    /**
+     * The toggle's key as it is printed on the player's keyboard, for a box stating what pressing it
+     * would do. Read off the key this listener claims rather than spelled beside it, so the two cannot
+     * come to name different keys.
+     */
+    public static final String TOGGLE_KEY_NAME = Keyboard.getKeyName(TOGGLE_KEY);
 
     // Whether a map is on screen at all this frame - either host, either look. Supplied rather than
     // read here for the reason the dispatcher takes it supplied: the live read walks the running
@@ -93,6 +105,6 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
     // its own event, and acting on both would flip the mode twice per press and leave it where it
     // started.
     static boolean isDetailModeToggleKey(InputEventAPI event) {
-        return event.isKeyDownEvent() && event.getEventValue() == Keyboard.KEY_F1;
+        return event.isKeyDownEvent() && event.getEventValue() == TOGGLE_KEY;
     }
 }

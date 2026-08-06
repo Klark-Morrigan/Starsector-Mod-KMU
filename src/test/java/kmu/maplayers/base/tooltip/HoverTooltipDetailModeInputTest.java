@@ -207,6 +207,22 @@ final class HoverTooltipDetailModeInputTest {
     }
 
     @Nested
+    class ToggleKeyName {
+
+        @Test
+        void toggleKeyNameNamesTheKeyThisListenerActuallyClaims() {
+            // A box tells the player which key expands it, and it is this listener that decides which
+            // key that is - so the printed name is pinned to the press the listener acts on rather
+            // than to a second spelling of it that could be left behind by a rebind.
+            assertThat(HoverTooltipDetailModeInput.TOGGLE_KEY_NAME)
+                .isEqualTo("F1");
+            assertThat(HoverTooltipDetailModeInput.isDetailModeToggleKey(
+                    mockKeyDown(Keyboard.KEY_F1)))
+                .isTrue();
+        }
+    }
+
+    @Nested
     class IsDetailModeToggleKey {
 
         @Test

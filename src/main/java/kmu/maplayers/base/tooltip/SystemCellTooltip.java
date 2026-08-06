@@ -14,8 +14,11 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
+import kmu.util.KmuStrings;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The shared shape of a map-layer cell tooltip: the hovered system's name on top, the layer's own
@@ -50,6 +53,17 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static final StarsectorFont HEADER_FONT = StarsectorFont.VANILLA_ORBITRON_20AA;
     private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
 
+    // The face the box ends its key hint in - the very one the game sets its own "Press F1 for more
+    // info" line in, so a KM box tells the player about a key the way every vanilla box does. Smaller
+    // and narrower than the body, which is what keeps a line about the box from reading as one of its
+    // findings.
+    private static final StarsectorFont FOOTNOTE_FONT = StarsectorFont.VANILLA_ORBITRON_12_CONDENSED;
+
+    // What parts the key from the words about it. A run is laid where the one before it ended, so the
+    // space is the layout's rather than part of either phrase - and stated once, since a hint whose
+    // key ran into its verb would read as a single word.
+    private static final String KEY_PHRASE_GAP = " ";
+
     // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
     // opaque black fill, so the content reads over the map without blocking it entirely.
     private static final float BORDER_WIDTH = 1f;
@@ -71,6 +85,10 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         var sections = new ArrayList<TooltipSection>();
         sections.add(buildTitleSection(system, titleRows));
         sections.addAll(bodySections);
+        // Added after the emptiness check above rather than counted by it: the hint is about the box
+        // rather than about the system, so a box with nothing to say about the system stays undrawn
+        // instead of appearing as a lone line offering to expand into nothing.
+        buildFooterSection().ifPresent(sections::add);
 
         CursorTooltipRenderer.render(sections, buildStyle());
     }
@@ -111,6 +129,47 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      */
     protected abstract List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system);
 
+    /**
+     * Names what this box's {@linkplain #resolveExpandedVariant richer counterpart} states beyond it, in
+     * the player's words - "score contributions" for a box whose counterpart accounts for the numbers it
+     * shows. Supplied by a box taking part in the detail toggle, and empty for one that does not, which
+     * is the ordinary case.
+     *
+     * <p>What it buys is the line at the foot of the box naming the key and what pressing it would do.
+     * That line has to say what the player would actually gain, and only the box knows: the framework
+     * knows a counterpart exists but not what is in it, so a hint written here would either be vague or
+     * would carry one layer's subject matter into the shape every layer shares.
+     *
+     * <p>Answered for a pair of boxes at once, by whatever they have in common: both the plain box and
+     * the counterpart it selects state the same subject, since a player switching either way is being
+     * told about the one richer account. Which direction the hint reads is not asked of a box at all -
+     * see {@link #buildFooterSection}.
+     *
+     * @return what the counterpart adds, or empty for a box that takes no part in the detail toggle
+     */
+    protected Optional<String> resolveExpandedDetailName() {
+        return Optional.empty();
+    }
+
+    // The line the box ends on, or none at all: the toggle key and what pressing it would do to this
+    // box. Its own block, so the shared parting sets it off from the content the way any two blocks are
+    // set off - a hint about the box reading as the last line of a list would be read as part of that
+    // list.
+    //
+    // Which way the toggle reads is taken from whether this box still has a counterpart to switch to:
+    // the plain box offers one and so offers to show it, and the counterpart the framework selects
+    // offers none and so offers to hide itself again. Read off the box being drawn rather than off the
+    // shared mode, which is the only way the two cannot disagree - a mode read here could say "hide"
+    // over a box that never expanded.
+    private Optional<TooltipSection> buildFooterSection() {
+        return resolveExpandedDetailName().map(detailName -> new TooltipSection(List.of(
+            buildFooterRow(KmuStrings.format(
+                resolveExpandedVariant().isPresent()
+                    ? KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_SHOW
+                    : KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_HIDE,
+                detailName)))));
+    }
+
     // The box's heading as one block: the hovered system's name, and any lines the layer heads its box
     // with read on from it. One block rather than a name plus separately-placed lines, because a block
     // is exactly what "these are read together" means - and what leaves the gap beneath them the box's
@@ -143,6 +202,25 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             .readsAs(TooltipLineStyle.HEADER);
     }
 
+    // The hint itself, in two runs and the game's own two colours for the job: the key picked out in the
+    // shade every vanilla button highlights its shortcut with, and the words about it in the grey vanilla
+    // states such hints in. Two runs rather than one because that is exactly what vanilla draws - the key
+    // is the part the eye is meant to find, and the sentence around it is deliberately quiet.
+    //
+    // Laid at the box's content edge rather than centred: it sits at the foot of the box the way the
+    // game's own does, and centring it would read as a verdict over the content above.
+    private static TooltipRow buildFooterRow(String phrase) {
+        return TooltipRow
+            .createRow(new TextSpan(
+                HoverTooltipDetailModeInput.TOGGLE_KEY_NAME,
+                StarsectorUiColour.VANILLA_BUTTON_SHORTCUT.resolve()))
+            .clearsCrestColumn()
+            .continuesWith(new TextSpan(
+                KEY_PHRASE_GAP + phrase,
+                StarsectorUiColour.VANILLA_GRAY.resolve()))
+            .readsAs(TooltipLineStyle.FOOTNOTE);
+    }
+
     // The tooltip's fixed look: the typography each kind of row draws in, the shared opacity, and the
     // frame over a black fill in the map's own player palette. Built per paint so its colours resolve
     // live rather than being baked at class load.
@@ -152,9 +230,11 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // drawn 1:1 rather than scaled.
     private static CursorTooltipStyle buildStyle() {
         return new CursorTooltipStyle(
-            TooltipStyle.createStyle(
-                TextStyle.createStyle(HEADER_FONT),
-                TextStyle.createStyle(BODY_FONT)),
+            TooltipStyle
+                .createStyle(
+                    TextStyle.createStyle(HEADER_FONT),
+                    TextStyle.createStyle(BODY_FONT))
+                .footnotedIn(TextStyle.createStyle(FOOTNOTE_FONT)),
             OPACITY,
             BORDER_WIDTH,
             StarsectorUiColour.BLACK.resolve(),

@@ -38,6 +38,17 @@ public final class CellTooltipPaletteFake {
     /** The shade a called-out value or qualifier reads in. */
     public static final Color HIGHLIGHT = new Color(255, 200, 100);
 
+    /** The quiet shade a note about the box - rather than about the system - reads in. */
+    public static final Color GRAY = new Color(140, 140, 140);
+
+    /** The shade a bound key is picked out in, wherever the game names one. */
+    public static final Color BUTTON_SHORTCUT = new Color(255, 255, 120);
+
+    // The engine's own name for the shade above, as the palette asks the settings for it. Restated here
+    // rather than read off the palette, so a key edited there has to be edited deliberately here too -
+    // read from the subject it would agree with whatever it came to ask for.
+    private static final String BUTTON_SHORTCUT_KEY = "buttonShortcut";
+
     private static MockedStatic<Misc> miscMock;
 
     private CellTooltipPaletteFake() {
@@ -48,7 +59,12 @@ public final class CellTooltipPaletteFake {
      * initialiser reads the settings, so mocking it against an uninstalled proxy fails on class load.
      */
     public static void installPalette() {
-        StarsectorSettingsFake.installSettings();
+        // Named rather than left to the proxy's default shade: a key hint is drawn in a settings colour
+        // rather than a Misc one, and every unnamed key answering alike would leave a test unable to tell
+        // the shade it asserted from the one every other lookup returns.
+        StarsectorSettingsFake.installSettings(key -> BUTTON_SHORTCUT_KEY.equals(key)
+            ? BUTTON_SHORTCUT
+            : null);
 
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock
@@ -63,6 +79,9 @@ public final class CellTooltipPaletteFake {
         miscMock
             .when(Misc::getHighlightColor)
             .thenReturn(HIGHLIGHT);
+        miscMock
+            .when(Misc::getGrayColor)
+            .thenReturn(GRAY);
     }
 
     /** Takes the palette and the settings proxy back down, so a suite leaves no statics mocked. */

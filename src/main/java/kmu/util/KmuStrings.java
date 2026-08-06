@@ -33,6 +33,8 @@ public final class KmuStrings {
     public static final String DIALOG_CLOSE = "dialog_close";
     public static final String MAP_LAYER_TAB_NO_LAYER = "map_layer_tab_no_layer";
     public static final String MAP_LAYER_CTL_COLUMNS_CAPTION = "map_layer_ctl_columns_caption";
+    public static final String MAP_LAYER_TOOLTIP_FOOTER_SHOW = "map_layer_tooltip_footer_show";
+    public static final String MAP_LAYER_TOOLTIP_FOOTER_HIDE = "map_layer_tooltip_footer_hide";
     public static final String POLITICAL_MAP_TAB_POLITICAL_MAP = "political_map_tab_political_map";
     public static final String POLITICAL_MAP_CTL_UNINHABITED = "political_map_ctl_uninhabited";
     public static final String POLITICAL_MAP_CTL_NAME_FULL = "political_map_ctl_name_full";
@@ -56,6 +58,8 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_CORE_TERRITORY = "political_map_tooltip_core_territory";
     public static final String POLITICAL_MAP_TOOLTIP_CORE_MARKER = "political_map_tooltip_core_marker";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_NONE = "political_map_tooltip_claim_none";
+    public static final String POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS =
+        "political_map_tooltip_detail_contributions";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED = "political_map_tooltip_section_contested";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL =

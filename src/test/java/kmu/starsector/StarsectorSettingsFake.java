@@ -1,5 +1,6 @@
 package kmu.starsector;
 
+import kmlib.starsector.testing.StarsectorSettingsFake.SettingsColourSource;
 import kmlib.starsector.testing.StarsectorSettingsFake.SettingsStringSource;
 
 import kmu.util.KmuStrings;
@@ -22,6 +23,18 @@ public final class StarsectorSettingsFake {
 
     public static void installSettings() {
         kmlib.starsector.testing.StarsectorSettingsFake.installSettings(KMU_STRINGS);
+    }
+
+    /**
+     * Installs the proxy with KMU's strings and a caller-named palette, for a
+     * subject that reads a named engine colour rather than a {@code Misc}
+     * shade. Every unnamed key still answers with the default, so a caller
+     * names only the keys its assertions turn on.
+     *
+     * @param colourSource the shades the named engine colour keys answer with
+     */
+    public static void installSettings(SettingsColourSource colourSource) {
+        kmlib.starsector.testing.StarsectorSettingsFake.installSettings(KMU_STRINGS, colourSource);
     }
 
     public static void clearSettings() {
@@ -59,6 +72,9 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE, "Hidden");
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
         stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
+        stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_SHOW, "show %s");
+        stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_HIDE, "hide %s");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS, "score contributions");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED, "Decivilised");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED, "Unpopulated");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY, "core territory");

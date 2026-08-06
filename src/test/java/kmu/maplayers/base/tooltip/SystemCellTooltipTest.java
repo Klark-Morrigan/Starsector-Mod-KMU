@@ -18,13 +18,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.awt.Color;
 import java.util.List;
+import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.BUTTON_SHORTCUT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailModeInput.TOGGLE_KEY_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -44,16 +47,31 @@ final class SystemCellTooltipTest {
 
     private static final String SYSTEM_NAME = "Corvus";
 
-    // The sizes the two atlases were rasterised at, restated here rather than read off the enum: taking
-    // the native size is the decision under test, and an expectation reading it from the same value the
+    // What a box taking part in the detail toggle offers the player, in that box's own words. Stated as
+    // something no layer says, since what a counterpart holds is the layer's to name and the shape under
+    // test only puts it in a sentence.
+    private static final String DETAIL_NAME = "the full breakdown";
+
+    // The sizes the atlases were rasterised at, restated here rather than read off the enum: taking the
+    // native size is the decision under test, and an expectation reading it from the same value the
     // style resolved it from would hold whatever size the box ended up drawing at.
     private static final double HEADER_FONT_SIZE = 20d;
     private static final double BODY_FONT_SIZE = 15d;
+    private static final double FOOTNOTE_FONT_SIZE = 12d;
 
-    // The blocks the box lays out, in draw order: the heading it is titled with, then the layer's own.
+    // The blocks the box lays out, in draw order: the heading it is titled with, then the layer's own,
+    // then the hint at the foot where the box offers one.
     private static final int TITLE_SECTION = 0;
     private static final int FIRST_BODY_SECTION = 1;
     private static final int SECOND_BODY_SECTION = 2;
+    private static final int FOOTER_SECTION = 2;
+
+    // The hint stands alone in its block, so it is both that block's only line and its first.
+    private static final int FOOTER_ROW = 0;
+    private static final int LONE_FOOTER_ROW_COUNT = 1;
+
+    // What a box with one body block and no hint comes to: its heading and that block.
+    private static final int BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT = 2;
 
     // Where the lines sit inside the heading block: the system name, then any line the layer heads its
     // box with read on from it.
@@ -180,13 +198,97 @@ final class SystemCellTooltipTest {
         }
 
         @Test
+        void renderForEndsABoxOfferingDetailWithTheKeyThatShowsIt() {
+            // What the hint has to say to be worth a line: which key, and what the player would gain -
+            // the key picked out and the words about it quiet, which is how the game states its own.
+            var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
+                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+
+            var sections = captureDrawnBox(tooltipFake).sections();
+
+            assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
+                .containsExactly(
+                    new TextSpan(TOGGLE_KEY_NAME, BUTTON_SHORTCUT),
+                    new TextSpan(" show the full breakdown", GRAY));
+        }
+
+        @Test
+        void renderForEndsTheDetailedBoxWithTheKeyThatHidesItAgain() {
+            // The counterpart the framework draws in the plain box's place has no counterpart of its
+            // own, which is exactly what tells it it is the detailed one - so the offer reverses without
+            // either box being told which mode is in force.
+            var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
+                .offering(DETAIL_NAME, null);
+
+            var sections = captureDrawnBox(tooltipFake).sections();
+
+            assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
+                .containsExactly(
+                    new TextSpan(TOGGLE_KEY_NAME, BUTTON_SHORTCUT),
+                    new TextSpan(" hide the full breakdown", GRAY));
+        }
+
+        @Test
+        void renderForGivesTheHintABlockOfItsOwnReadingAsAFootnote() {
+            // A line about the box rather than about the system: set off by the box's own parting so it
+            // is not read as the last entry of the block above, and marked as the kind of line it is so
+            // the typography can set it apart from the content.
+            var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
+                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+
+            var sections = captureDrawnBox(tooltipFake).sections();
+
+            assertThat(sections.get(FOOTER_SECTION).rows())
+                .hasSize(LONE_FOOTER_ROW_COUNT);
+            assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).lineStyle())
+                .isEqualTo(TooltipLineStyle.FOOTNOTE);
+        }
+
+        @Test
+        void renderForDrawsFootnotesInTheGamesOwnKeyHintFace() {
+            // The face vanilla ends its own boxes in - smaller and narrower than the body, which is what
+            // keeps a line about the box from carrying the weight of a finding.
+            var typography = captureDrawnBox(buildTooltipSayingSomething())
+                .style()
+                .typography();
+
+            assertThat(typography.footnoteStyle().face())
+                .isEqualTo(new TextFace(
+                    StarsectorFont.VANILLA_ORBITRON_12_CONDENSED,
+                    FOOTNOTE_FONT_SIZE));
+        }
+
+        @Test
+        void renderForEndsABoxOfferingNoDetailWithItsContent() {
+            // The ordinary box takes no part in the toggle, so it ends where its content does rather
+            // than on a line offering a counterpart that does not exist.
+            var sections = captureDrawnBox(buildTooltipSayingSomething()).sections();
+
+            assertThat(sections)
+                .hasSize(BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT);
+        }
+
+        @Test
+        void renderForDrawsNothingForABoxOfferingDetailAndNothingToSay() {
+            // The hint is about the box rather than about the system, so it cannot be the thing that
+            // makes a box worth drawing - a lone offer to expand into nothing says less than no box.
+            var tooltipFake = new SystemCellTooltipFake(List.of())
+                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+
+            try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
+
+                tooltipFake.renderFor(buildSectorWithEconomy(), buildNamedSystem());
+                rendererMock.verifyNoInteractions();
+            }
+        }
+
+        @Test
         void renderForDrawsNothingForABodyWithNothingToSay() {
             // A lone system name only repeats what the cursor already sits on, so an empty body is no
             // box rather than a titled empty one.
             var tooltipFake = new SystemCellTooltipFake(List.of());
 
-            try (MockedStatic<CursorTooltipRenderer> rendererMock =
-                    Mockito.mockStatic(CursorTooltipRenderer.class)) {
+            try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
                 tooltipFake.renderFor(buildSectorWithEconomy(), buildNamedSystem());
                 rendererMock.verifyNoInteractions();
@@ -199,8 +301,7 @@ final class SystemCellTooltipTest {
             // not asked for a body at all.
             var tooltipFake = buildTooltipSayingSomething();
 
-            try (MockedStatic<CursorTooltipRenderer> rendererMock =
-                    Mockito.mockStatic(CursorTooltipRenderer.class)) {
+            try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
                 tooltipFake.renderFor(mock(SectorAPI.class), buildNamedSystem());
                 rendererMock.verifyNoInteractions();
@@ -218,8 +319,7 @@ final class SystemCellTooltipTest {
         ArgumentCaptor<List<TooltipSection>> sectionsCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<CursorTooltipStyle> styleCaptor = ArgumentCaptor.captor();
 
-        try (MockedStatic<CursorTooltipRenderer> rendererMock =
-                Mockito.mockStatic(CursorTooltipRenderer.class)) {
+        try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
             tooltip.renderFor(buildSectorWithEconomy(), buildNamedSystem());
 
@@ -299,6 +399,12 @@ final class SystemCellTooltipTest {
         private final List<TooltipSection> bodySections;
         private boolean hasBuiltBodySections;
 
+        // What this box offers the player beyond itself, if anything: the words for it, and the
+        // counterpart holding it - which a box that IS the counterpart names without holding one, since
+        // that is precisely the state the shape under test reads the direction of the offer from.
+        private String detailName;
+        private MapHoverTooltip expandedVariant;
+
         // A layer heading its box with nothing, which is the ordinary case and the one most cases here
         // are about - so only a case actually about the heading block names one.
         private SystemCellTooltipFake(List<TooltipSection> bodySections) {
@@ -322,6 +428,24 @@ final class SystemCellTooltipTest {
         protected List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
             hasBuiltBodySections = true;
             return bodySections;
+        }
+
+        @Override
+        protected Optional<String> resolveExpandedDetailName() {
+            return Optional.ofNullable(detailName);
+        }
+
+        @Override
+        public Optional<MapHoverTooltip> resolveExpandedVariant() {
+            return Optional.ofNullable(expandedVariant);
+        }
+
+        // Puts this box in the detail toggle: what it offers, and the counterpart holding it - null for
+        // the box that is itself the counterpart, which has nothing further to offer.
+        private SystemCellTooltipFake offering(String detailName, MapHoverTooltip expandedVariant) {
+            this.detailName = detailName;
+            this.expandedVariant = expandedVariant;
+            return this;
         }
     }
 }

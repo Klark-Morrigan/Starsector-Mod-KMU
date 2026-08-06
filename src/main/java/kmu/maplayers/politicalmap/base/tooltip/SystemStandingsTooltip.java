@@ -16,6 +16,7 @@ import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The shape every box built on a hovered system's standings takes: what the system is, then who
@@ -82,6 +83,15 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             resolveGroupEntries(sector, system, listGroups(sector, standings, pass), pass));
 
         return sections;
+    }
+
+    @Override
+    protected final Optional<String> resolveExpandedDetailName() {
+        // Answered for the pair at once rather than by each box, because it is the one thing they
+        // agree on: the counterpart accounts for the very scores the ordinary box ranks by, so a
+        // player switching either way is being offered the same account. Which direction the hint
+        // reads follows from which of the two is being drawn, and is none of this class's business.
+        return Optional.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS));
     }
 
     /**

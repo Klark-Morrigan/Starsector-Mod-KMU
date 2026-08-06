@@ -102,6 +102,19 @@ final class SystemStandingsTooltipTest {
     }
 
     @Nested
+    class ResolveExpandedDetailName {
+
+        @Test
+        void resolveExpandedDetailNameOffersTheAccountBehindTheScoresRanked() {
+            // What the key at the foot of the box offers the player, in their words. Answered for the
+            // pair at once because it is the one thing they agree on - the counterpart accounts for the
+            // very scores the ordinary box ranks by, so switching either way offers the same account.
+            assertThat(tooltip.resolveExpandedDetailName())
+                .contains("score contributions");
+        }
+    }
+
+    @Nested
     class BuildBodySections {
 
         @Test
