@@ -3,9 +3,11 @@ package kmu;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.SectorEntityToken;
 
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
+import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
 import kmu.maplayers.MapLayers;
@@ -220,11 +222,18 @@ public class KMU_ModPlugin extends BaseModPlugin {
         if (sector == null) {
             return;
         }
+        // Named once and used twice: the placement read has to be asked about the same entity the
+        // move is aimed at, and two copies of the lookup would be two chances for one of them to be
+        // repointed at the other surface.
+        Supplier<SectorEntityToken> findAboveNebulaeTerrain =
+            () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(Global.getSector());
+
         // A fresh script per load, so the previous save's spent lift attempts cannot carry into this
         // one and stand the move down over a sector it never tried.
         sector.addTransientScript(new MapIconReseater(
             new MapPresence()::isStarscapeMapShowing,
-            () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(Global.getSector())));
+            findAboveNebulaeTerrain,
+            () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get())));
     }
 
     // Registers the per-frame watcher that refreshes the political map when a

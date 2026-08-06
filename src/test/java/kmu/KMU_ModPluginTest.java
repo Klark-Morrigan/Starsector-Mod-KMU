@@ -1,10 +1,14 @@
 package kmu;
 
 import com.fs.starfarer.api.BaseModPlugin;
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
 import kmlib.starsector.ui.map.icons.MapIconReseater;
+import kmlib.starsector.ui.map.presence.CampaignMapView;
+import kmlib.starsector.ui.map.presence.SectorMapState;
+import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -34,6 +38,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 class KMU_ModPluginTest {
+
+    // Advancing an EveryFrameScript from a test says nothing about elapsed time - the reseat reads
+    // no clock - so the value only has to be one the engine could plausibly pass.
+    private static final float ONE_FRAME = 0.016f;
 
     @Nested
     class ModIdentity {
@@ -242,6 +250,48 @@ class KMU_ModPluginTest {
 
             assertThat(secondReseater.getValue())
                 .isNotSameAs(firstReseater.getValue());
+        }
+
+        @Test
+        void wiresTheReseatersPlacementReadToTheLiveWidgetProbe() {
+            // The reseat decides from where the icon actually sits, and this is the only place that
+            // read is bound to something that can answer it. Nothing downstream would notice a
+            // binding that never reached the widget - a script handed an unreadable placement simply
+            // stands down, which is also what it does on every ordinary frame.
+            var sectorMock = mock(SectorAPI.class);
+
+            // Loaded before Global is stood in for, and this is not optional: the installer holds a
+            // logger in a static field initialised from Global, so a class first loaded inside a
+            // mockStatic scope keeps a null logger for the rest of the JVM and faults every later
+            // test that logs. Answering null for a null sector is its own contract, covered next door.
+            MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
+
+            try (var mapViewMock = mockStatic(CampaignMapView.class);
+                    var globalMock = mockStatic(Global.class);
+                    var layeringProbeMock = mockStatic(MapIconLayeringProbe.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                // The reseat is scoped to a Starscape map, so the placement is only read while one
+                // is up - which makes this the state the wiring can be observed in at all.
+                mapViewMock
+                    .when(CampaignMapView::resolveSectorMapState)
+                    .thenReturn(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
+
+                KMU_ModPlugin.installStarscapeTerrainReseater(sectorMock);
+
+                var reseater = ArgumentCaptor.forClass(MapIconReseater.class);
+                
+                verify(sectorMock)
+                    .addTransientScript(reseater.capture());
+
+                reseater.getValue().advance(ONE_FRAME);
+
+                layeringProbeMock
+                    .verify(() -> MapIconLayeringProbe.readLayeringOf(any()));
+            }
         }
 
         @Test
