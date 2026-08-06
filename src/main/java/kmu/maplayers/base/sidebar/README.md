@@ -113,7 +113,7 @@ placement, steps the panel's input motions against it, and hands off to KMLib's 
 
 The animations run either side of the layout, which is why the frame's elapsed time is read once and
 spent on both sides: the fold has to advance *before* the placement, since it sizes it, and the input
-motions - the hover fades, the tabs' click pulses, and their hotkey blinks - *after* it, since what
+motions - the hover fades, the tabs' press lifts, and their hotkey blinks - *after* it, since what
 the pointer is on (a tab, or the collapse handle) is resolved against the very placement being drawn
 rather than latched from the last pointer event. A latched hover goes stale whenever the panel moves
 under a still cursor, which the handle feels most: the panel folds out from under a still pointer and
@@ -146,10 +146,11 @@ row stands outside the box, so an event over it is swallowed there rather than f
 map - which is the whole of what a bodyless tab blocks.
 
 `BaseSidebarHost.handleKeyPress` matches the press to a layer through `TabPanelHotkeys`, selects it,
-and blinks that layer's tab. The blink is what tells the player the key landed: a tab press has the
-pointer on the tab to explain the switch, a keypress has nothing on screen at all. It therefore
-follows the press rather than the switch - a key pressed for the layer already shown still blinks -
-which is the opposite of the click pulse, whose inert tab explains itself. A layer's tab sits at its
+and blinks that layer's tab. The blink is what tells the player the key landed: a keypress puts
+nothing on screen at all, so an unblinked tab would read as a key the panel ignored. Both it and a
+tab's press lift follow the press rather than the switch, so a shortcut for the layer already shown
+still blinks and a press on the lit tab still lifts - an act the player made that answered with
+nothing at all would read as a panel that missed it. A layer's tab sits at its
 registry index, the tabs row being built from the same registry in the same order, so the index the
 binder matched is the index blinked.
 
@@ -281,15 +282,29 @@ tab under the pointer at the full `POINTED_GLOW`. That the pointer's is the brig
 amounts is load-bearing: nothing else marks the shown tab, no bar capping it, so a pointed-at tab has
 to outshine it rather than match it. Hovering is a look rather than a lift because a tab lands on one
 shade whatever it was showing before, which no fraction applied to each tab's own fill could produce.
-A tab travels onto that shade rather than switching to it, and a click rides the `clicked` wash out
-and back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATIONS`.
+A tab travels onto that shade rather than switching to it, paced by `HoverFade.DEFAULT_DURATIONS`.
 
-That default is a pair rather than one value, and the two halves are not equal: a tab arrives at the
-shade it is heading for in half the time it takes to let go of one. A rise answers something the
-player just did and has to land under the gesture that asked for it, while a fall answers nothing and
-reads better unhurried - at equal paces the whole motion feels like the slower half. Every *travel*
-the panel makes takes that pair, so the tabs, the notch, and the click pulses cannot end up at
-different rhythms.
+A press rides the `clicked` wash up over whatever look the tab has settled on and **holds there until
+the button comes up**, the way a vanilla tab does: a press is an act the player is still making, so
+its length comes from the act rather than from a duration of ours, and only the rise and the fall are
+paced. The release is unaimed - a press begun on a tab and let go over a neighbour, over the map, or
+off the panel entirely still ends that tab's lift, because what it reported was the press. That wash
+travels along the glow (the label colour half-way to white, `VanillaTabFills.resolveGlowColour`)
+rather than toward white: the engine brightens a tab by adding its own glow, so a lift aimed at white
+would be the one shade on the strip moving in a direction none of the fills do, and most visible
+exactly when the player is looking at it.
+
+`HoverFade.DEFAULT_DURATIONS` is a pair rather than one value, and the two halves are not equal: a tab
+arrives at the shade it is heading for in half the time it takes to let go of one. A rise answers
+something the player just did and has to land under the gesture that asked for it, while a fall
+answers nothing and reads better unhurried - at equal paces the whole motion feels like the slower
+half. Every *travel* the panel makes takes that pair, so the tabs, the notch, and the two ends of a
+press lift cannot end up at different rhythms.
+
+The press is the one motion whose *length* is not ours to set. Its rise and its fall take the pair
+like everything else, but between them it waits on the button, so a press held for a second lasts a
+second. That is the point of it: the lift reports an act the player is still making, and a duration
+of ours would end it while they were still making it.
 
 A bound key's blink takes no wash of its own: it carries its tab onto that same hovered shade and
 back, so it rides the look channel with the hover and the two compose by the greater of them - which
