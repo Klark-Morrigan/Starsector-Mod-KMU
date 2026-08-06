@@ -51,11 +51,11 @@ public final class IntelSidebarHost extends BaseSidebarHost {
      */
     public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(new VanillaIntelScreenView());
 
-    // How tall this screen's tab band stands. The intel sidebar overlays the visor under the vanilla map
-    // toggles and reads tighter than the on-map one, so it crowds the preview less. Content-space: the
+    // How tall this screen's tab band stands: this sidebar overlays the visor under the vanilla map
+    // toggles and reads tighter than the on-map one, so it crowds the preview less. Content-space - the
     // panel strokes its own top border above the band, so the drawn strip stands the border width taller.
-    // Package-private so the divergence the two screens depend on is checkable without a live sector,
-    // which the style built from it needs to resolve its colours.
+    // Package-private so the departure is checkable without a live sector, which the style built from it
+    // needs to resolve its colours.
     static final float HEADER_BAND_HEIGHT = 17f;
 
     // How close the box's bottom must sit to the visor's bottom to count as flush, in pixels: the box lands
@@ -168,9 +168,6 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         return edges;
     }
 
-    // The band the layout snaps this screen's tabs into and the paint pass draws them from - one value
-    // built twice a frame rather than held, since its colours resolve live. Both callers building it the
-    // same way is what keeps a drawn tab inside the band it was measured for.
     private static TabStyle buildTabStyle() {
         return SidebarStyles.buildTabStyle(HEADER_BAND_HEIGHT);
     }

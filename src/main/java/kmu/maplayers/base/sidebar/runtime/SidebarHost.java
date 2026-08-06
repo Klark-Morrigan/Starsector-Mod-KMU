@@ -48,9 +48,10 @@ public interface SidebarHost {
 
     /**
      * @return the look this host's panel is painted in - its fills, accents, frame colour, faces, and the
-     *         tab style its band was laid out with. Resolved fresh each frame rather than held, because
-     *         every shade in it reads the running game's colours and the player's live settings; nothing
-     *         of it is persisted
+     *         tab style its band was laid out with, which a host must build the same way for both passes:
+     *         a row painted from a style the layout never snapped to draws its tabs outside their own
+     *         band. Resolved fresh each frame rather than held, because every shade in it reads the
+     *         running game's colours and the player's live settings; nothing of it is persisted
      */
     WidgetStyle resolveWidgetStyle();
 
