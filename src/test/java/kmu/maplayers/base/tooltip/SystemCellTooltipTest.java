@@ -101,6 +101,44 @@ final class SystemCellTooltipTest {
     }
 
     @Nested
+    class IsOfferingExpansionFor {
+
+        @Test
+        void isOfferingExpansionForAnswersFromTheSameReadTheHintIsDrawnFrom() {
+            // The key acts exactly where the box says it will. Two reads of "is there more to show"
+            // could drift, and the drift would be the cruel kind - a box advertising a key that does
+            // nothing - so the offer and the line offering it are asserted off one paint.
+            var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
+                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+
+            assertThat(tooltipFake.isOfferingExpansionFor(
+                    buildSectorWithEconomy(),
+                    buildNamedSystem()))
+                .isTrue();
+
+            assertThat(readRow(
+                    captureDrawnBox(tooltipFake).sections(),
+                    FOOTER_SECTION,
+                    FOOTER_ROW))
+                .isNotNull();
+        }
+
+        @Test
+        void isOfferingExpansionForIsFalseForABoxThatNamesNothingToExpandInto() {
+            // The same read answering the other way: no hint is drawn, and the key must not act.
+            var tooltipFake = buildTooltipSayingSomething();
+
+            assertThat(tooltipFake.isOfferingExpansionFor(
+                    buildSectorWithEconomy(),
+                    buildNamedSystem()))
+                .isFalse();
+                
+            assertThat(captureDrawnBox(tooltipFake).sections())
+                .hasSize(BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT);
+        }
+    }
+
+    @Nested
     class RenderFor {
 
         @Test

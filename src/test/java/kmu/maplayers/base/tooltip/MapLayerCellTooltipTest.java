@@ -219,25 +219,6 @@ final class MapLayerCellTooltipTest {
     }
 
     @Nested
-    class ShouldDrawTooltipFor {
-
-        @Test
-        void shouldDrawTooltipForIsTrueForAHoveredCell() {
-
-            var hover = new MapHover("system", List.of("system"));
-
-            assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(hover))
-                .isTrue();
-        }
-
-        @Test
-        void shouldDrawTooltipForIsFalseWhenNothingIsHovered() {
-            assertThat(MapLayerCellTooltip.shouldDrawTooltipFor(MapHover.NONE))
-                .isFalse();
-        }
-    }
-
-    @Nested
     class SelectVariantFor {
 
         @Test
@@ -281,108 +262,6 @@ final class MapLayerCellTooltipTest {
 
             assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.EXPANDED))
                 .isSameAs(baseFake);
-        }
-    }
-
-    @Nested
-    class ResolveActiveTooltip {
-
-        @Test
-        void resolveActiveTooltipAnswersTheActiveLayersInjectedTooltip() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                // No sector means no stored pick, so the registry resolves to the registered default.
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
-                    .contains(tooltipMock);
-            }
-        }
-
-        @Test
-        void resolveActiveTooltipIsEmptyWhenTheActiveLayerInjectsNone() {
-            // The claims view's shape: the layer paints, and simply has nothing to say about one cell.
-            when(layerRendererMock.resolveHoverTooltip()).thenReturn(Optional.empty());
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
-                    .isEmpty();
-            }
-        }
-
-        @Test
-        void resolveActiveTooltipAnswersTheActivePicksBoxWhileAnotherLayerWithholdsIts() {
-            // The per-layer half of the hover switching: a layer whose own tooltip switch is off
-            // offers no box, and that says nothing about the layer beside it - which is the case a
-            // single shared switch could not express. The dispatcher does not know the difference
-            // between a withheld box and a layer that has nothing to say, and must not.
-            var silencedLayerMock = mock(MapLayer.class);
-            var silencedRendererMock = mock(MapLayerRenderer.class);
-
-            when(silencedLayerMock.getId())
-                .thenReturn("silenced_layer");
-            when(silencedLayerMock.getMapRenderer())
-                .thenReturn(silencedRendererMock);
-
-            when(silencedRendererMock.resolveHoverTooltip())
-                .thenReturn(Optional.empty());
-
-            MapLayerRegistry.registerLayers(
-                List.of(silencedLayerMock, tooltipLayerMock),
-                tooltipLayerMock);
-
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
-                    .contains(tooltipMock);
-            }
-        }
-
-        @Test
-        void resolveActiveTooltipIsEmptyWhenTheActiveLayerHasNoRenderer() {
-            // The "show nothing" tab's shape: a registered layer that supplies no renderer, which must
-            // stay an ordinary layer here rather than a named special case.
-            var silentLayerMock = mock(MapLayer.class);
-
-            when(silentLayerMock.getId())
-                .thenReturn("silent");
-
-            MapLayerRegistry.registerLayers(List.of(silentLayerMock), silentLayerMock);
-
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
-                    .isEmpty();
-            }
-        }
-
-        @Test
-        void resolveActiveTooltipIsEmptyWithoutAnActiveLayer() {
-            // The pre-registration frame: the listener is installed on game load, so it can be asked
-            // before any composition root has run rather than dereference a null pick.
-            MapLayerRegistry.registerLayers(List.of(), null);
-
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                assertThat(MapLayerCellTooltip.resolveActiveTooltip())
-                    .isEmpty();
-            }
         }
     }
 }

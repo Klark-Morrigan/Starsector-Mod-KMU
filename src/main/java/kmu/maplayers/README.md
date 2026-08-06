@@ -181,7 +181,7 @@ about what the overlay means.
   stays up, and one row still silences them all.
 - **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
   `MapLayerCellTooltip` owns the gates every hover box shares (the settings tiers above any layer, a
-  map on screen, a hovered cell, stepping aside for the vanilla star
+  map on screen, stepping aside for the vanilla star
   tooltip) and draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer
   with none, a layer whose own tooltip switch is off, and a switch-only tab with no renderer at all
   show nothing for the same reason. How much detail the drawn box states is one shared fact rather
@@ -193,9 +193,17 @@ about what the overlay means.
   handed no events and so can consume none, which is why reading the toggle and drawing its result
   are two passes agreeing through the holder. Both read one gate seam, `HoverTooltipGates` - the
   settings tiers above any layer, and a map on screen - rather than a copy each, so the key is
-  claimed when and only when a box could be drawn and a condition added later reaches both passes;
-  vanilla keeps F1 everywhere else, and the listener runs below the sidebar's so a tab hotkey keeps
-  the first claim on any key it is bound to. That
+  claimed when and only when a box could be drawn and a condition added later reaches both passes.
+  Behind that seam the press is claimed only where it would do something the player can see: the box
+  under the cursor answers `MapHoverTooltip.isOfferingExpansionFor` for the hovered system, and a
+  system with nothing more to state leaves the key alone. Asked per system rather than per box
+  because that is where the answer lives - an unpopulated system has no colonies for a counterpart
+  to account for. Left unclaimed rather than flipped invisibly because the mode is one shared fact:
+  a press swallowed over a system with nothing to expand would silently decide how the next system
+  that *does* differ opens. What the cursor is over is resolved once, by `HoveredBox`, and read by
+  both passes - a chain spelled out twice is one edit away from the key acting on a frame the box
+  does not draw. Vanilla keeps F1 everywhere else, and the listener runs below the sidebar's so a
+  tab hotkey keeps the first claim on any key it is bound to. That
   map gate is host-blind and
   look-blind (KMLib's
   `MapPresence.isAnyMapShowing`), so the box draws wherever the layer paints: the sector map and the intel

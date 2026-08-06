@@ -6,7 +6,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.StarSystems;
 
+import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 
 import java.util.Optional;
 
@@ -47,10 +49,10 @@ record HoveredBox(
     static Optional<HoveredBox> resolveHoveredBox() {
 
         var hover = MapHoverState.getInstance().getHover();
-        if (!MapLayerCellTooltip.shouldDrawTooltipFor(hover)) {
+        if (!shouldDrawTooltipFor(hover)) {
             return Optional.empty();
         }
-        var tooltip = MapLayerCellTooltip.resolveActiveTooltip();
+        var tooltip = resolveActiveTooltip();
         if (tooltip.isEmpty()) {
             return Optional.empty();
         }
@@ -76,5 +78,32 @@ record HoveredBox(
      */
     boolean isOfferingExpansion() {
         return tooltip.isOfferingExpansionFor(sector, system);
+    }
+
+    /**
+     * The tooltip the frame would draw, asked of whatever draws for the showing screen - the same read
+     * the map surface paints through. Nothing drawing at all resolves the same as an injected empty:
+     * nothing to show, so a switch-only tab and a pre-registration frame need no case of their own.
+     *
+     * @return the active layer's injected box, or empty when it injects none
+     */
+    static Optional<MapHoverTooltip> resolveActiveTooltip() {
+        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer();
+        if (layerRenderer == null) {
+            return Optional.empty();
+        }
+        return layerRenderer.resolveHoverTooltip();
+    }
+
+    /**
+     * Whether a tooltip would draw for this hover - the pure part of the gate: a cell must be hovered.
+     * Stepping aside for the vanilla star tooltip is not among it, being a live read of the map's UI
+     * tree that only the drawing pass holds the probe for.
+     *
+     * @param hover what the cursor is over, as the hover state last published it
+     * @return true when something is hovered for a box to draw about
+     */
+    static boolean shouldDrawTooltipFor(MapHover hover) {
+        return hover.isHovering();
     }
 }

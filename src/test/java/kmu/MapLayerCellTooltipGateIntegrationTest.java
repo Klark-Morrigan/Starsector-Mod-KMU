@@ -40,6 +40,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -178,6 +179,24 @@ class MapLayerCellTooltipGateIntegrationTest {
                 .isEqualTo(HoverTooltipDetailMode.EXPANDED);
 
             verify(eventMock)
+                .consume();
+        }
+
+        @Test
+        void leavesTheTogglePressAloneOverABoxWithNothingToExpand() {
+            // Past every gate, on the map, over a hovered cell whose box has no second amount of
+            // detail to state. The mode is shared and holds across hovers, so swallowing the press
+            // here would decide how the next system that does differ opens - which is why the offer
+            // is asked of the box rather than assumed from the map being up.
+            when(tooltipMock.isOfferingExpansionFor(any(), any()))
+                .thenReturn(false);
+
+            var eventMock = pressToggleOnInstalledInput(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
+
+            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
+                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+
+            verify(eventMock, never())
                 .consume();
         }
 

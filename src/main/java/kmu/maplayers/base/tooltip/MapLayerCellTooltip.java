@@ -5,10 +5,6 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 
-import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.layer.MapLayerRegistry;
-
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -106,17 +102,6 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
             .renderFor(hoveredBox.get().sector(), hoveredBox.get().system());
     }
 
-    // The tooltip the frame draws, asked of whatever draws for the showing screen - the same read the
-    // map surface paints through. Nothing drawing at all resolves the same as an injected empty:
-    // nothing to show, so a switch-only tab and a pre-registration frame need no case of their own.
-    static Optional<MapHoverTooltip> resolveActiveTooltip() {
-        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer();
-        if (layerRenderer == null) {
-            return Optional.empty();
-        }
-        return layerRenderer.resolveHoverTooltip();
-    }
-
     // The box the current detail mode calls for: the tooltip's richer counterpart while the mode asks
     // for one and the tooltip defines one, and the tooltip itself in every other case - so a tooltip
     // that defines no counterpart draws the same box under either mode rather than nothing at all.
@@ -129,10 +114,4 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         return base.resolveExpandedVariant().orElse(base);
     }
 
-    // Whether a tooltip should draw for this hover - the pure part of the gate: a cell must be
-    // hovered. Stepping aside for the vanilla star tooltip is the separate, live VanillaMapTooltip
-    // check in the render pass, since it reads the map's UI tree rather than the hover value.
-    static boolean shouldDrawTooltipFor(MapHover hover) {
-        return hover.isHovering();
-    }
 }
