@@ -3,13 +3,15 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
+
 import java.util.List;
 
 /**
  * Feeds pointer and key input to one {@link SidebarHost}'s sidebar panel as a campaign input listener: it
  * gates on the host, resolves the placement the renderer drew, and routes each event - a key press to the
- * host (which jumps to the layer it is bound to, if any) only while the panel is fully expanded, so a
- * docked or animating panel is not offering its tabs and its hotkeys stay inert, and a pointer event to the
+ * host (which jumps to the layer it is bound to, if any) only while the panel is presenting the tabs that
+ * key would switch between, so a docked or animating panel's hotkeys stay inert, and a pointer event to the
  * host's reusable KMLib {@link kmlib.starsector.ui.input.TabPanelController}, which routes a header tab
  * press, the notch toggle, the thumb drag, the wheel scroll, and body control hits. One instance per host,
  * so the sector map and the intel screen each route to their own panel.
@@ -55,10 +57,7 @@ public final class SidebarInput implements CampaignInputListener {
                 continue;
             }
             if (event.isKeyDownEvent()) {
-                // A tab hotkey switches layers, so it only fires while the panel is fully expanded. Docked,
-                // docking, or undocking, the panel is not presenting its tabs, so its hotkeys stay inert and
-                // the key falls through unconsumed to whatever else claims it.
-                if (host.getController().isFullyExpanded()) {
+                if (arePanelTabsLive(placement)) {
                     host.handleKeyPress(event);
                 }
             } else if (event.isMouseEvent() && placement != null) {
@@ -75,5 +74,18 @@ public final class SidebarInput implements CampaignInputListener {
     @Override
     public void processCampaignInputPostCore(List<InputEventAPI> events) {
         // Nothing runs after the core screen for the sidebar; all its input is claimed pre-core.
+    }
+
+    // Whether the panel is offering the tabs a bound key would switch between. Asked of the panel about the
+    // placement it drew, so a tab with no body - which has no fold, and no handle to undo one with - keeps
+    // its keys whatever fold the controller is carrying from some other tab.
+    //
+    // With nothing drawn at all there is no placement to ask about, and the fold is all that is left. A key
+    // press needs no placement anyway: jumping to a layer does not depend on where the box landed, so a
+    // frame that drew nothing still answers its hotkeys.
+    private boolean arePanelTabsLive(TabPanelPlacement placement) {
+        return placement == null
+            ? host.getController().isFullyExpanded()
+            : host.getController().isPresentingTabsOf(placement);
     }
 }

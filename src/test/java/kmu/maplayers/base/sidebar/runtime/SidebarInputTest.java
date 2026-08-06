@@ -22,10 +22,12 @@ import static org.mockito.Mockito.when;
 /**
  * Pins which events the sidebar claims and which it lets past. Two gates decide that: the host's own
  * "is the sidebar live" answer, off which nothing routes at all and a drag left dangling by the overlay
- * closing mid-drag is cancelled; and the panel's fold, since a docked or animating panel is not presenting
- * its tabs and so must let a hotkey through to the screen underneath. A pointer needs a drawn box to hit,
- * so it routes only against a resolved placement - but a key press needs none, because jumping to a layer
- * does not depend on where the panel landed.
+ * closing mid-drag is cancelled; and whether the panel is presenting the tabs a bound key would switch
+ * between, since a panel that is not must let that key through to the screen underneath. That second gate
+ * is the panel's own answer about the placement drawn, not a reading of its fold - the two part on a tab
+ * with no body, which has no fold and no handle to undo one with. A pointer needs a drawn box to hit, so it
+ * routes only against a resolved placement; a key press needs none, because jumping to a layer does not
+ * depend on where the panel landed, and with nothing drawn the fold is all that is left to ask.
  */
 final class SidebarInputTest {
     // Ahead of the core screen and of other mods' listeners, pinned so a tab click or notch press is
@@ -58,8 +60,8 @@ final class SidebarInputTest {
     class ProcessCampaignInputPreCore {
 
         @Test
-        void processCampaignInputPreCoreRoutesAKeyPressWhileThePanelIsFullyExpanded() {
-            when(controllerMock.isFullyExpanded()).thenReturn(true);
+        void processCampaignInputPreCoreRoutesAKeyPressWhileThePanelPresentsItsTabs() {
+            when(controllerMock.isPresentingTabsOf(placementMock)).thenReturn(true);
             var eventMock = mockKeyPress();
 
             input.processCampaignInputPreCore(List.of(eventMock));
@@ -68,10 +70,10 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreLeavesAKeyPressAloneWhileThePanelIsDocked() {
+        void processCampaignInputPreCoreLeavesAKeyPressAloneWhileThePanelPresentsNoTabs() {
             // Docked, docking, or undocking, the panel is not offering its tabs, so its hotkeys stay inert
             // and the key falls through unconsumed to whatever else claims it.
-            when(controllerMock.isFullyExpanded()).thenReturn(false);
+            when(controllerMock.isPresentingTabsOf(placementMock)).thenReturn(false);
             var eventMock = mockKeyPress();
 
             input.processCampaignInputPreCore(List.of(eventMock));
@@ -81,9 +83,25 @@ final class SidebarInputTest {
         }
 
         @Test
+        void processCampaignInputPreCoreAsksThePanelAboutThePlacementRatherThanItsFold() {
+            // The two answers part on a tab with no body: the fold left standing from another tab says the
+            // panel is docked, while the placement drawn says its row is there in full. Reading the fold
+            // would leave that tab's keys dead for the rest of the session, with no handle to expand a body
+            // it does not have.
+            when(controllerMock.isFullyExpanded()).thenReturn(false);
+            when(controllerMock.isPresentingTabsOf(placementMock)).thenReturn(true);
+            var eventMock = mockKeyPress();
+
+            input.processCampaignInputPreCore(List.of(eventMock));
+
+            verify(hostMock).handleKeyPress(eventMock);
+        }
+
+        @Test
         void processCampaignInputPreCoreRoutesAKeyPressWithNothingDrawnToHit() {
             // A key press needs no placement: jumping to a layer does not depend on where the box landed,
-            // so a frame that drew nothing still answers its hotkeys.
+            // so a frame that drew nothing still answers its hotkeys - and with no placement to ask about,
+            // the fold is the only thing left to gate on.
             when(hostMock.resolvePlacement()).thenReturn(null);
             when(controllerMock.isFullyExpanded()).thenReturn(true);
             var eventMock = mockKeyPress();
@@ -146,7 +164,7 @@ final class SidebarInputTest {
         @Test
         void processCampaignInputPreCoreRoutesEveryUnclaimedEventInTheFrame() {
             // Events arrive as a frame's worth at once, so one claimed event must not end the pass.
-            when(controllerMock.isFullyExpanded()).thenReturn(true);
+            when(controllerMock.isPresentingTabsOf(placementMock)).thenReturn(true);
             var keyEventMock = mockKeyPress();
             var pointerEventMock = mockPointerEvent();
 
