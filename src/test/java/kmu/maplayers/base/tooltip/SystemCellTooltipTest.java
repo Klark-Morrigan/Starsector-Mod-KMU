@@ -58,7 +58,12 @@ final class SystemCellTooltipTest {
     // style resolved it from would hold whatever size the box ended up drawing at.
     private static final double HEADER_FONT_SIZE = 20d;
     private static final double BODY_FONT_SIZE = 15d;
-    private static final double FOOTNOTE_FONT_SIZE = 12d;
+
+    // The note at the foot is the one line drawn off its atlas's own size: its 12pt rasterisation reads
+    // as fine print beside 15pt content, so it takes the body's size and keeps only the narrowness that
+    // sets it apart. Stated as its own literal rather than as the body's constant, so a box that stopped
+    // matching the body would fail here rather than agree with itself.
+    private static final double FOOTNOTE_FONT_SIZE = 15d;
 
     // The blocks the box lays out, in draw order: the heading it is titled with, then the layer's own,
     // then the hint at the foot where the box offers one.
@@ -265,8 +270,9 @@ final class SystemCellTooltipTest {
 
         @Test
         void renderForDrawsFootnotesInTheGamesOwnKeyHintFace() {
-            // The face vanilla ends its own boxes in - smaller and narrower than the body, which is what
-            // keeps a line about the box from carrying the weight of a finding.
+            // The face vanilla ends its own boxes in, at the body's size rather than its atlas's own:
+            // the narrowness is what sets a line about the box apart from the box's findings, and drawn
+            // at 12 beside 15pt content it read as fine print instead.
             var typography = captureDrawnBox(buildTooltipSayingSomething())
                 .style()
                 .typography();

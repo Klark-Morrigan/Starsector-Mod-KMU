@@ -54,9 +54,9 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
 
     // The face the box ends its key hint in - the very one the game sets its own "Press F1 for more
-    // info" line in, so a KM box tells the player about a key the way every vanilla box does. Smaller
-    // and narrower than the body, which is what keeps a line about the box from reading as one of its
-    // findings.
+    // info" line in, so a KM box tells the player about a key the way every vanilla box does. Its
+    // narrowness is what sets the line apart from the body; the size is not, so it is drawn at the
+    // body's rather than at the atlas's own 12, which reads as fine print beside 15pt content.
     private static final StarsectorFont FOOTNOTE_FONT = StarsectorFont.VANILLA_ORBITRON_12_CONDENSED;
 
     // What parts the key from the words about it. A run is laid where the one before it ended, so the
@@ -231,16 +231,23 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // frame over a black fill in the map's own player palette. Built per paint so its colours resolve
     // live rather than being baked at class load.
     //
-    // Neither style names a size: each face is a bitmap atlas crisp at exactly one size, and the box has
-    // no fit of its own to squeeze text into, so taking the native size is what keeps both kinds of line
-    // drawn 1:1 rather than scaled.
+    // The heading and the body name no size: each face is a bitmap atlas crisp at exactly one size, and
+    // the box has no fit of its own to squeeze text into, so taking the native size keeps both kinds of
+    // line drawn 1:1 rather than scaled.
+    //
+    // The note at the foot is the one exception, and knowingly: its atlas is rasterised at 12, which
+    // beside 15pt content reads as fine print rather than as a quieter line of the same box. It is drawn
+    // at the body's size instead, scaled off its atlas - what sets it apart from the content is its
+    // narrowness and its colours, neither of which costs it a size of its own.
     private static CursorTooltipStyle buildStyle() {
         return new CursorTooltipStyle(
             TooltipStyle
                 .createStyle(
                     TextStyle.createStyle(HEADER_FONT),
                     TextStyle.createStyle(BODY_FONT))
-                .footnotedIn(TextStyle.createStyle(FOOTNOTE_FONT)),
+                .footnotedIn(TextStyle
+                    .createStyle(FOOTNOTE_FONT)
+                    .sizedAt(BODY_FONT.getNativeSize())),
             OPACITY,
             BORDER_WIDTH,
             StarsectorUiColour.BLACK.resolve(),
