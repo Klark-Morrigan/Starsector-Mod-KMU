@@ -269,14 +269,18 @@ and back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATI
 That default is a pair rather than one value, and the two halves are not equal: a tab arrives at the
 shade it is heading for in half the time it takes to let go of one. A rise answers something the
 player just did and has to land under the gesture that asked for it, while a fall answers nothing and
-reads better unhurried - at equal paces the whole motion feels like the slower half. Every motion the
-panel makes in answer to input takes the same pair, so the tabs, the notch, and the click pulses
-cannot end up at different rhythms.
+reads better unhurried - at equal paces the whole motion feels like the slower half. Every *travel*
+the panel makes takes that pair, so the tabs, the notch, and the click pulses cannot end up at
+different rhythms.
 
 A bound key's blink takes no wash of its own: it carries its tab onto that same hovered shade and
 back, so it rides the look channel with the hover and the two compose by the greater of them - which
 is why a key pressed for the tab already under the pointer shows nothing, the blink reaching only
-where the hover already stands. All three animations are the controller's, which holds no colour: it
+where the hover already stands. It is the one motion off that shared pair, running at
+`TabPanelController.HOTKEY_BLINK_DURATIONS`: a blink is a strike rather than a travel, confirming a
+key pressed away from the panel, so it lands and is gone however leisurely the rest of the panel
+moves. Paced with the travels it reads as one more thing moving at the speed everything else moves
+at, which is the opposite of what a keypress needs to say. All three animations are the controller's, which holds no colour: it
 reports two fractions per tab - one look, one lift - and the paint pass binds them to the palette, so
 it is handed a look already blended and a lift already scaled. The two
 screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAND_HEIGHT`), which the
