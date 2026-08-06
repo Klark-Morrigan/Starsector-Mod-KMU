@@ -280,9 +280,20 @@ the tabs above it, and the fills answer to settings and not to the player factio
 own tabs take no faction colour. A tab rests unlit, the shown tab lights at `SELECTED_GLOW`, and the
 tab under the pointer at the full `POINTED_GLOW`. That the pointer's is the brighter of the two lit
 amounts is load-bearing: nothing else marks the shown tab, no bar capping it, so a pointed-at tab has
-to outshine it rather than match it. Hovering is a look rather than a lift because a tab lands on one
-shade whatever it was showing before, which no fraction applied to each tab's own fill could produce.
-A tab travels onto that shade rather than switching to it, paced by `HoverFade.DEFAULT_DURATIONS`.
+to outshine it rather than match it.
+
+The **labels** are one colour at those same three amounts, by the same rule: the engine lights a tab
+with a single glow pass over the whole of it, so a label is never a shade a state picks but
+`buttonText` - the (170, 222, 255) light blue - lit by however brightly that state stands. That is
+why a resting tab's text reads as plain blue while a shown or pointed-at tab's whitens out, the added
+light overrunning the channel at the full glow. Giving a state its own label colour parts the text
+from the fill beneath it at exactly the amounts vanilla keeps them together, and a faction-tinted one
+would recolour the strip with the player's faction where the engine's own tabs take no faction colour
+at all.
+
+Hovering is a look rather than a lift because a tab lands on one shade whatever it was showing
+before, which no fraction applied to each tab's own fill could produce. A tab travels onto that shade
+rather than switching to it, paced by `HoverFade.DEFAULT_DURATIONS`.
 
 A press rides the `clicked` wash up over whatever look the tab has settled on and **holds there until
 the button comes up**, the way a vanilla tab does: a press is an act the player is still making, so
