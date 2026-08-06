@@ -1,1 +1,15 @@
 rootProject.name = 'KMU'
+
+// KMLib is a source dependency, not an installed artefact. KMU already cannot
+// configure without this checkout - build.gradle applies KMLib's shared
+// conventions from the same relative path - so the source sitting beside us is
+// the only KMLib guaranteed to exist, and it is the one this build should
+// compile against. Resolving a jar out of the game install instead reaches past
+// a checkout that must be present, into an install that need not carry the mod
+// at all: that is how a build machine ends up with the conventions but no jar.
+//
+// As an included build, Gradle substitutes the 'kmlib:KMLib' dependency
+// declared in build.gradle with this project and builds its jar on demand. A
+// KMLib edit is therefore picked up by the next KMU build, rather than at
+// whatever point someone remembers to reinstall the jar.
+includeBuild '../Starsector-Mod-KMLib'

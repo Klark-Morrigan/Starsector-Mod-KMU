@@ -126,10 +126,14 @@ apply from: "${rootDir}/../Common-Java/gradle/spotless-java.gradle"
 // its own extra dependencies without re-deriving the path.
 def starsectorRoot = project.ext.starsectorRoot
 def consoleCommandsJars = findModJars('lw_Console.jar')
-// KMLib hosts shared helpers (palette, localisation lookups). The shared
-// conventions locate it by jar name and expose the result, so KMU does not
-// restate which folder KMLib was installed into - see starsector-mod.gradle.
-def kmlibJars = project.ext.kmlibJars
+// KMLib hosts shared helpers (palette, localisation lookups). Named by its
+// coordinates rather than by a path: settings.gradle includes the sibling
+// checkout as a build, so Gradle substitutes this notation with that project
+// and rebuilds the jar behind it whenever its source changes. Deliberately
+// without a version - the substitution binds to whatever the included build
+// produces, so pinning one here would only be a second place to update on
+// every KMLib release.
+def kmlibDependency = 'kmlib:KMLib'
 // LazyLib is a hard dependency in mod_info.json (its LazyFont/DrawableString draw
 // the political-map faction names - there is no vanilla font API). The mod
 // classloader supplies the jar at runtime, so compiling against it is enough.
@@ -186,18 +190,18 @@ dependencies {
     // KMU drives its logging through KMLib's KmLogging, so the LunaLib
     // coupling lives in KMLib's classpath, not here - KMU keeps only its
     // runtime LunaLib dependency declared in mod_info.json.
-    compileOnly kmlibJars
+    compileOnly kmlibDependency
     compileOnly files(lazyLibJarFile)
 
     testCompileOnly consoleCommandsJars
     testCompileOnly nexJars
     testCompileOnly xstreamJars
-    testCompileOnly kmlibJars
+    testCompileOnly kmlibDependency
     testCompileOnly files(lazyLibJarFile)
     testRuntimeOnly consoleCommandsJars
     testRuntimeOnly nexJars
     testRuntimeOnly xstreamJars
-    testRuntimeOnly kmlibJars
+    testRuntimeOnly kmlibDependency
     testRuntimeOnly files(lazyLibJarFile)
 
     // The utils tooling needs the same jars at RUNTIME as well as to compile, for the same
@@ -207,11 +211,11 @@ dependencies {
     utilsCompileOnly consoleCommandsJars
     utilsCompileOnly nexJars
     utilsCompileOnly xstreamJars
-    utilsCompileOnly kmlibJars
+    utilsCompileOnly kmlibDependency
     utilsCompileOnly files(lazyLibJarFile)
     utilsRuntimeOnly consoleCommandsJars
     utilsRuntimeOnly nexJars
-    utilsRuntimeOnly kmlibJars
+    utilsRuntimeOnly kmlibDependency
     utilsRuntimeOnly files(lazyLibJarFile)
     utilsRuntimeOnly lwjglJars
 }
@@ -224,13 +228,12 @@ tasks.withType(JavaCompile).configureEach {
                     "${starsectorRoot}/mods/**/jars/lw_Console.jar. " +
                     "Install Console Commands for compiling KMU console command integration.")
         }
-        if (kmlibJars.files.isEmpty()) {
-            throw new GradleException(
-                    "Could not find KMLib jar under " +
-                    "${starsectorRoot}/mods/**/jars/KMLib.jar. " +
-                    "Build KMLib first (run `./gradlew jar` in its checkout) " +
-                    "or install its release zip under mods/.")
-        }
+        // No KMLib check sits here. The other jars are found or not found on the
+        // machine, so each needs its own "install this" message; KMLib is built
+        // from the included checkout, which Gradle fails on far earlier - at
+        // configuration, where build.gradle applies its shared conventions - so
+        // a missing KMLib can never reach this point to be reported.
+        //
         // LazyLib is a hard dependency at runtime, but its LazyFont is needed to
         // compile the political-map faction-name renderer, so the jar must be
         // present to build.

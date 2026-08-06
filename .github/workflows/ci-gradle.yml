@@ -9,16 +9,22 @@
 # Runs on the self-hosted kmu-runner: JDK 17 is installed system-wide
 # (Infrastructure-Vm-Provisioner's javaDevKit step), so setup-java is left
 # off, and the runner exports STARSECTOR_HOME, from which the build resolves
-# starfarer.api.jar, lw_Console.jar, and the deployed KMLib.jar.
+# the game and dependency-mod jars - starfarer.api.jar, lw_Console.jar,
+# LazyLib.jar, ExerelinCore.jar. KMLib is not among them: it is built from
+# the sibling checkout below as an included build, so this gate compiles KMU
+# against the KMLib on master rather than against whatever release happens to
+# be installed on the runner.
 #
 # KMU's build applies shared Gradle scripts by relative path - KMLib's
 # gradle/starsector-mod.gradle, which in turn applies Common-Java's
 # gradle/java-conventions.gradle - so both repos must sit beside KMU's
 # checkout. checkout-path puts KMU in a named subdirectory and
 # sibling-checkouts clones the two neighbours next to it so the
-# ${rootDir}/../<repo> paths resolve on a clean runner. secrets:inherit
-# forwards a sibling_checkout_token if the repos are private (the clone
-# falls back to github.token for public ones).
+# ${rootDir}/../<repo> paths resolve on a clean runner. The KMLib clone
+# carries double duty: it supplies those conventions AND is the source
+# Gradle builds KMLib.jar from. secrets:inherit forwards a
+# sibling_checkout_token if the repos are private (the clone falls back to
+# github.token for public ones).
 name: Common-Java
 
 on:
