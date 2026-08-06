@@ -120,9 +120,19 @@ never saw begin.
 
 `SidebarInput` is a `CampaignInputListener` acting in `processCampaignInputPreCore` at priority
 1000, because a render pass cannot consume events; consuming pre-core stops a click reaching the
-screen. Key events route to the host only while `isFullyExpanded()` - a docked or animating panel is
-not presenting its tabs, so its hotkeys stay inert and the key falls through. Off the gate it
-cancels any dangling drag, so a grab left over from an overlay closing mid-drag cannot persist.
+screen. Key events route to the host only while `isPresentingTabsOf(placement)` - the panel's own
+answer about the placement drawn, not a reading of its fold. The two part on a tab whose body is
+empty: it lays out no box and no handle, so a fold left standing by another tab says nothing about
+it, and gating on that fold would leave its row drawn in full but dead to every key, with no handle
+to expand a body it does not have. Where nothing is drawn at all there is no placement to ask about
+and the fold is all that is left, which costs nothing - a key press needs no placement, jumping to a
+layer not depending on where the box landed. Off the gate it cancels any dangling drag, so a grab
+left over from an overlay closing mid-drag cannot persist.
+
+The same question gates a press on a tab and a tab's hover fade, so all three answer alike. What the
+panel claims from the surface behind it is the drawn row plus the framed body plus the handle: the
+row stands outside the box, so an event over it is swallowed there rather than falling through to the
+map - which is the whole of what a bodyless tab blocks.
 
 `BaseSidebarHost.handleKeyPress` matches the press to a layer through `TabPanelHotkeys`, selects it,
 and blinks that layer's tab. The blink is what tells the player the key landed: a tab press has the
@@ -227,6 +237,12 @@ anything paints, so they move values without raising it.
 fill faded by the opacity setting, the frame colour, the player faction's base and bright accents,
 the insignia body face, and `LiveSidebarPlacement.buildMapTabStyle()` for the tabs.
 
+That fill is the body's alone. The tab row stands *on* the framed box rather than inside it, the way
+a strip of tabs sits on the panel it selects, so nothing of the body reaches behind the tabs and a tab
+whose body is empty is its row and nothing else - no frame, no handle. The row needs none: its fills
+are opaque surfaces in their own right, so it reads the same over the body, over the bare map, or over
+whatever the panel floats on.
+
 The frame colour is a field of its own on `WidgetStyle`, separate from the accent the controls wash
 and label with, so a host whose surrounding chrome is drawn in another colour can match it without
 recolouring its controls. The map passes its base player accent for both, the sidebar having no
@@ -236,12 +252,19 @@ That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `Hot
 orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
 from and a snapped tab width cannot part from the text drawn into it. The palette holds both flavours
 of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, hovered) and a relative
-`TabWash` per `TabWashState` (clicked), the pulse lifting whichever look the tab has settled
-on. Hovering is a look rather than a lift because the resting and the selected tab meet at one shade
-under the pointer - the hovered shade is derived once from the selected look, so it cannot drift from
-it - and the selected tab's underline is what still marks the selection while it is hovered. A tab
-travels onto that shade rather than switching to it, and a click rides the `clicked` wash out and
-back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATIONS`.
+`TabWash` per `TabWashState` (clicked), the pulse lifting whichever look the tab has settled on.
+
+The three looks are not three shades but one at the engine's three glow amounts, worked out by
+`VanillaTabFills` from the two settings colours a vanilla tab is painted with (`buttonBgDark` and
+`buttonText`) rather than sampled off one - so a restyled install moves this strip exactly as it moves
+the tabs above it, and the fills answer to settings and not to the player faction because vanilla's
+own tabs take no faction colour. A tab rests unlit, the shown tab lights at `SELECTED_GLOW`, and the
+tab under the pointer at the full `POINTED_GLOW`. That the pointer's is the brighter of the two lit
+amounts is load-bearing: nothing else marks the shown tab, no bar capping it, so a pointed-at tab has
+to outshine it rather than match it. Hovering is a look rather than a lift because a tab lands on one
+shade whatever it was showing before, which no fraction applied to each tab's own fill could produce.
+A tab travels onto that shade rather than switching to it, and a click rides the `clicked` wash out
+and back over two of the same traverses, both paced by `HoverFade.DEFAULT_DURATIONS`.
 
 That default is a pair rather than one value, and the two halves are not equal: a tab arrives at the
 shade it is heading for in half the time it takes to let go of one. A rise answers something the
@@ -260,10 +283,19 @@ screens differ only in band height (`MAP_HEADER_BAND_HEIGHT` / `INTEL_HEADER_BAN
 paint pass does not read. Both faces are named through KMLib's `StarsectorFont` enum rather than by
 atlas basename.
 
+Where a tab says which key it answers to is `TabShortcutText`'s call, following the engine's rule: a
+single-glyph key whose letter already stands in the label lights that letter where it is, and only a
+key with nowhere to land is spelt out after it as `Label  [K]`. It answers in runs, and both passes
+read that one answer - the layout measures the runs end to end, the paint pass walks them and colours
+each - so a tab cannot be sized for one presentation and drawn in the other. Both of this mod's tabs
+light in place (the N of "No Layer", the P of "Political Map"), so neither carries a bracketed key.
+
 Both screens take `HotkeyStyle.createUnderlined()`: the vanilla Sector/System tabs the on-map strip
-sits below draw a line under the bracketed key, so a bare key reads as a mismatch against the row
-above. The line is a quad the style places under the key's drawn box, not part of the measured
-display string, so adding it moves no tab.
+sits below mark their key wherever it falls, so a key marked by colour alone reads as a mismatch
+against the row above. The line is a quad the style places under the key's drawn box, not part of the
+measured display string, so adding it moves no tab. The gold is `buttonShortcut`, the role the
+engine's own buttons light their keys with, rather than the prose-highlight `hColor` the stock install
+happens to give the same value.
 
 `style/SidebarPalettes` maps the player's `NotchChevronColourChoice` to the chevron's resting and lit
 shades. It is kept out of the renderer so the "which colour does this choice mean" rules stay a pure
