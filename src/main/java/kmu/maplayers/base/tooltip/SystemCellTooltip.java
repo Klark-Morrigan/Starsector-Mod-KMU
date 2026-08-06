@@ -88,7 +88,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         // Added after the emptiness check above rather than counted by it: the hint is about the box
         // rather than about the system, so a box with nothing to say about the system stays undrawn
         // instead of appearing as a lone line offering to expand into nothing.
-        buildFooterSection().ifPresent(sections::add);
+        buildFooterSection(sector, system).ifPresent(sections::add);
 
         CursorTooltipRenderer.render(sections, buildStyle());
     }
@@ -145,9 +145,15 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * told about the one richer account. Which direction the hint reads is not asked of a box at all -
      * see {@link #buildFooterSection}.
      *
-     * @return what the counterpart adds, or empty for a box that takes no part in the detail toggle
+     * <p>Asked per hovered system rather than once per box, because whether there is anything to expand
+     * into is a fact about the system: a box whose counterpart would state nothing more for this one
+     * answers empty, and the hint is dropped rather than offering a key press that changes nothing.
+     *
+     * @param sector the live sector, whose economy the answer may read
+     * @param system the star system under the cursor
+     * @return what the counterpart adds for this system, or empty where it would add nothing
      */
-    protected Optional<String> resolveExpandedDetailName() {
+    protected Optional<String> resolveExpandedDetailName(SectorAPI sector, StarSystemAPI system) {
         return Optional.empty();
     }
 
@@ -161,8 +167,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // offers none and so offers to hide itself again. Read off the box being drawn rather than off the
     // shared mode, which is the only way the two cannot disagree - a mode read here could say "hide"
     // over a box that never expanded.
-    private Optional<TooltipSection> buildFooterSection() {
-        return resolveExpandedDetailName().map(detailName -> new TooltipSection(List.of(
+    private Optional<TooltipSection> buildFooterSection(SectorAPI sector, StarSystemAPI system) {
+        return resolveExpandedDetailName(sector, system).map(detailName -> new TooltipSection(List.of(
             buildFooterRow(KmuStrings.format(
                 resolveExpandedVariant().isPresent()
                     ? KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_SHOW

@@ -450,7 +450,10 @@ final class SystemCellTooltipTest {
         }
 
         @Override
-        protected Optional<String> resolveExpandedDetailName() {
+        protected Optional<String> resolveExpandedDetailName(
+                SectorAPI sector,
+                StarSystemAPI system) {
+
             return Optional.ofNullable(detailName);
         }
 

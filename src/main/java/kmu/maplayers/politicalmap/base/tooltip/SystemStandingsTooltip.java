@@ -86,7 +86,25 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     @Override
-    protected final Optional<String> resolveExpandedDetailName() {
+    protected final Optional<String> resolveExpandedDetailName(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
+        var activeView = PoliticalMapViewRegistry.getActiveView();
+        if (activeView == null) {
+            return Optional.empty();
+        }
+        // The counterpart accounts for the colonies behind a score, so a system holding none has
+        // nothing for it to account for: both boxes would state the same banner and the key would do
+        // nothing the player could see. Asked of the very line the box says that emptiness with,
+        // under the same pass, so it can never offer to expand a system it has just called
+        // unpopulated - which reading the economy a second way here would eventually allow.
+        var pass = DominancePass.readFromLunaSettings(activeView.resolveGrouping());
+        if (SystemStatusRow
+                .resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets())
+                .isPresent()) {
+            return Optional.empty();
+        }
         // Answered for the pair at once rather than by each box, because it is the one thing they
         // agree on: the counterpart accounts for the very scores the ordinary box ranks by, so a
         // player switching either way is being offered the same account. Which direction the hint

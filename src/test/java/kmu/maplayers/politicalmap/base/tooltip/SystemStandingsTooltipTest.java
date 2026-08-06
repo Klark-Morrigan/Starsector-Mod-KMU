@@ -109,8 +109,29 @@ final class SystemStandingsTooltipTest {
             // What the key at the foot of the box offers the player, in their words. Answered for the
             // pair at once because it is the one thing they agree on - the counterpart accounts for the
             // very scores the ordinary box ranks by, so switching either way offers the same account.
-            assertThat(tooltip.resolveExpandedDetailName())
+            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
                 .contains("score contributions");
+        }
+
+        @Test
+        void resolveExpandedDetailNameOffersNothingForASystemHoldingNobody() {
+            // There are no colonies to account for, so the counterpart would state the same banner the
+            // ordinary box already does - a key press the player could not see the result of. The hint
+            // goes with it rather than advertising one.
+            StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
+
+            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
+                .isEmpty();
+        }
+
+        @Test
+        void resolveExpandedDetailNameOffersNothingWhileNoViewIsPainting() {
+            // The tab is switched away, so there is no pass to judge the system under and no body being
+            // drawn for the hint to sit beneath.
+            StandingsTooltipSeamsFake.stubNoActiveView();
+
+            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
+                .isEmpty();
         }
     }
 
