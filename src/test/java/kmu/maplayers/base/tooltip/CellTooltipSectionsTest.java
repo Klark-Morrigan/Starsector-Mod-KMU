@@ -289,6 +289,27 @@ final class CellTooltipSectionsTest {
         }
 
         @Test
+        void appendSectionReservesTheGutterForAMarkFoundOnlyInsideABreakdown() {
+            // The whole listing counts towards the block's answer, not just its top level: a line
+            // carrying no mark of its own over the marked things it breaks down into would otherwise
+            // open its gutter halfway down, under lines already laid clear of it.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(createEntry("Rebel Pact")
+                    .nesting(List.of(CellTooltipEntry.createEntry(
+                        CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900"))))));
+
+            assertThat(readLabelPlacements(sections))
+                .containsExactly(
+                    TooltipLabelPlacement.AT_CONTENT_EDGE,
+                    TooltipLabelPlacement.ALIGNED_WITH_CRESTS,
+                    TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+        }
+
+        @Test
         void appendSectionHoldsAMarklessLineInTheGutterABlockDoesReserve() {
             // The other half of the same rule: the gutter is answered for the block rather than per
             // line, so a faction the game gives no crest stays aligned with the crested lines beside it

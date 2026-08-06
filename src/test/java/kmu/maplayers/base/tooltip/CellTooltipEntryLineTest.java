@@ -54,6 +54,27 @@ final class CellTooltipEntryLineTest {
     }
 
     @Nested
+    class HasMark {
+
+        @Test
+        void hasMarkReturnsTrueForALineLeadingWithOne() {
+
+            assertThat(CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200").hasMark())
+                .isTrue();
+        }
+
+        @Test
+        void hasMarkReturnsFalseForALineCarryingNone() {
+            // The judgement whatever reads a listing for its marks and whatever lays it out afterwards
+            // both go through, so neither can reserve a column for a mark the other cannot show.
+            assertThat(CellTooltipEntryLine
+                    .createLine(null, "None", CellTooltipRows.NO_SCORE)
+                    .hasMark())
+                .isFalse();
+        }
+    }
+
+    @Nested
     class QualifiedWith {
 
         @Test
