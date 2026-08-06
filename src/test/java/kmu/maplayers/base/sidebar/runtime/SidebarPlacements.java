@@ -9,7 +9,7 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import java.util.List;
 
 /**
- * Test-only builders for a laid-out sidebar. A {@link TabPanelPlacement} is four nested values of
+ * Test-only builders for a laid-out sidebar. A {@link TabPanelPlacement} is five nested values of
  * which each test reads one or two, so a test writing its own assembles three it does not care
  * about - and the ones it does not care about are where two fixtures quietly disagree about what a
  * drawn panel looks like.
@@ -61,7 +61,9 @@ final class SidebarPlacements {
     }
 
     // The one assembly every shape above is a named case of, so the parts no case reads cannot
-    // drift between them.
+    // drift between them. The drawn tab row is the unread box for the same reason the box itself is
+    // where a case does not read it: these shapes describe a body and a handle, so a row sized to
+    // nothing keeps the panel's own footprint out of an assertion that never arranged for it.
     private static TabPanelPlacement placeSidebar(
             Control tabsHeader,
             Rectangle bodyBox,
@@ -69,6 +71,7 @@ final class SidebarPlacements {
 
         return new TabPanelPlacement(
             tabsHeader,
+            UNREAD_BOX,
             new PanelPlacement(bodyBox, bodyBox, List.of(), bodyBox, 0f, 0f),
             new BoxBorder(BORDER_WIDTH),
             notch);
