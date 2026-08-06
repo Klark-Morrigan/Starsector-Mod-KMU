@@ -144,7 +144,11 @@ active view, the ranking, the status line, the two headings, and the lines namin
 down as a standing already paired with its line so no box can explain one bloc's score beneath
 another's name - because two boxes over one system have to be two amounts of detail about the same
 contest rather than two contests. Listing a group as that line and nothing beneath is the shared
-default, so the ordinary box overrides nothing at all. The parts come
+default, so the ordinary box overrides nothing at all. What that pair offers the player is named
+there too, once for both: "score contributions", which the framework puts at the foot of whichever
+of the two is drawn, beside the key that switches between them. Named here rather than by the
+framework because only this layer knows what its counterpart holds, and once rather than per box
+because the account is the same thing whichever way the player is switching. The parts come
 from the very arithmetic the scores were summed over (`KnownMarketFootprints.readBreakdownByFaction`),
 so the lines always add up to the number the ordinary box and the fills show;
 `MarketWeightRowResolver` decides which lines a colony breaks into and `MarketFactorText` how one

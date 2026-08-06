@@ -9,6 +9,7 @@ import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
 import kmlib.starsector.ui.text.TextSpan;
+import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
@@ -242,6 +243,24 @@ final class SystemCellTooltipTest {
                 .hasSize(LONE_FOOTER_ROW_COUNT);
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).lineStyle())
                 .isEqualTo(TooltipLineStyle.FOOTNOTE);
+        }
+
+        @Test
+        void renderForOpensTheHintAtTheBoxsContentEdge() {
+            // The crest gutter is one column measured across the whole box, and the boxes that carry
+            // this hint are full of crested lines - so a hint left aligned to that column would open
+            // behind a gutter it can never fill, reading as indented under the content it is not part
+            // of. It is a line about the box, and starts where the box does.
+            var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
+                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+
+            var footerRow = (TooltipRow.TableRow) readRow(
+                captureDrawnBox(tooltipFake).sections(),
+                FOOTER_SECTION,
+                FOOTER_ROW);
+
+            assertThat(footerRow.labelPlacement())
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
         }
 
         @Test
