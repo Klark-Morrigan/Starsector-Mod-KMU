@@ -15,6 +15,8 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.settings.KmuMapLayerSettings;
 
+import java.awt.Color;
+
 /**
  * Composes the look bundles a sidebar host wears: the tab style its band is laid out and painted from,
  * and the widget style the panel around it is painted from. Which look a screen wears is its host's
@@ -22,6 +24,12 @@ import kmu.settings.KmuMapLayerSettings;
  * composition sits here as a factory each host calls with its own dimensions - one place the sidebar's
  * shades and faces are written down, so two screens sharing a look cannot drift into two spellings of
  * it.
+ *
+ * <p>Both bundles come as a pair of named factories rather than as one taking the difference as an
+ * argument, because the differences are conventions and not free choices: a row wears the strip chrome
+ * with the underlined key or the raised-button chrome with the plain one, and a panel is framed in its own
+ * accent or in the surrounding chrome's grey. Naming the two ends is what keeps a host from composing a
+ * look vanilla has no counterpart for.
  *
  * <p>Out of the render pass for the same reason {@link SidebarPalettes} beside it is: a look is a value,
  * so building one needs no live GL context and no drawn frame - only the running game's colours.
@@ -52,10 +60,8 @@ public final class SidebarStyles {
     }
 
     /**
-     * A tab style at the given band height, over the shared paint: the sector map's own tab chrome, the
-     * vanilla map-tab palette - its per-state fills and its interaction lifts - resolved live so it tracks
-     * a restyled install, the underlined-key hotkey convention, and the orbitron face at the layout's tab
-     * size.
+     * The strip tab style at the given band height: the sector map's seamless run of abutting tabs, and
+     * the underlined-key hotkey convention that goes with it.
      *
      * <p>The underlined key is the sector map's own convention: the on-map strip sits one tab-height
      * below the vanilla Sector/System tabs, which mark their bound key wherever it falls - lit inside
@@ -68,30 +74,81 @@ public final class SidebarStyles {
      *                         of the chrome beside it
      * @return the tab style to lay the band out with and paint it from
      */
-    public static TabStyle buildTabStyle(float headerBandHeight) {
-        return new TabStyle(
-            TabChrome.STRIP,
-            headerBandHeight,
-            TabPalette.createMapTabPalette(),
-            HotkeyStyle.createUnderlined(),
-            new TextFace(TAB_FONT, TabsControlLayout.TAB_FONT_SIZE));
+    public static TabStyle buildStripTabStyle(float headerBandHeight) {
+        return composeTabStyle(TabChrome.STRIP, HotkeyStyle.createUnderlined(), headerBandHeight);
     }
 
     /**
-     * The sidebar's look in the player's own accents, built fresh from the live colours: a black body
-     * backdrop, the frame in that same accent, the base and bright player accents for the controls, the
-     * insignia body face, the given tab style, the collapse handle's chevron shades for the colour the
-     * player picked, and the vanilla button sounds its controls answer by.
+     * The raised-button tab style at the given band height: each tab a framed button standing clear of
+     * its neighbours, and the plain-key hotkey convention that goes with it.
      *
-     * <p>The frame takes the accent because a panel floating free on its screen has no neighbouring
-     * chrome to match; a host drawn against another panel's frame supplies its own colour there instead,
-     * which is why the box's shades and the controls' travel as separate values at all.
+     * <p>The pair is the intel screen's own: its row of map toggles stands as separate buttons and lights
+     * a bound key by colour alone, so a panel overlaying that screen's visor takes both together. Marking
+     * a key one way while the buttons beside it mark it another is the mismatch the styled hotkey exists
+     * to avoid, so the chrome and the convention are chosen in one place rather than wired separately.
+     *
+     * @param headerBandHeight how tall the band carrying the tabs stands - see
+     *                         {@link #buildStripTabStyle}
+     * @return the tab style to lay the band out with and paint it from
+     */
+    public static TabStyle buildRaisedButtonTabStyle(float headerBandHeight) {
+        return composeTabStyle(TabChrome.RAISED_BUTTON, HotkeyStyle.createPlain(), headerBandHeight);
+    }
+
+    /**
+     * The sidebar's look framed in its own control accent: the player's base colour rules the frame as
+     * well as the controls. What a panel floating free on its screen wants, having no neighbouring chrome
+     * to match - so the one colour it does carry is its own.
      *
      * @param tabStyle the tab style the host laid its band out with, so the row is painted from the
      *                 value it was measured against
      * @return the look to paint this sidebar's panel from
      */
-    public static WidgetStyle buildPlayerAccentedStyle(TabStyle tabStyle) {
+    public static WidgetStyle buildAccentFramedStyle(TabStyle tabStyle) {
+        return composeStyle(tabStyle, StarsectorUiColour.VANILLA_PLAYER_BASE.resolve());
+    }
+
+    /**
+     * The sidebar's look framed in the surrounding UI's own grey: the frame matches the vanilla chrome
+     * the panel is drawn among rather than the accent its controls take.
+     *
+     * <p>What a panel overlaying another screen's chrome wants. Its frame abuts that screen's frames, and
+     * two boxes sharing an edge in two colours read as one laid over the other rather than as part of the
+     * same surface; the grey is the fixed UI role those frames answer to, which no player faction moves.
+     * The controls inside keep the player accent, that being what the player picked rather than what the
+     * panel abuts - which is the whole reason the frame is its own knob.
+     *
+     * @param tabStyle the tab style the host laid its band out with, so the row is painted from the
+     *                 value it was measured against
+     * @return the look to paint this sidebar's panel from
+     */
+    public static WidgetStyle buildChromeFramedStyle(TabStyle tabStyle) {
+        return composeStyle(tabStyle, StarsectorUiColour.VANILLA_GRAY.resolve());
+    }
+
+    // A tab style over the shared paint: the vanilla map-tab palette - its per-state fills and its
+    // interaction lifts - resolved live so it tracks a restyled install, and the orbitron face at the
+    // layout's tab size. Only the chrome and the hotkey convention part the two screens' rows, and they
+    // part together, so the values every row shares are written once here.
+    private static TabStyle composeTabStyle(
+            TabChrome chrome,
+            HotkeyStyle hotkey,
+            float headerBandHeight) {
+
+        return new TabStyle(
+            chrome,
+            headerBandHeight,
+            TabPalette.createMapTabPalette(),
+            hotkey,
+            new TextFace(TAB_FONT, TabsControlLayout.TAB_FONT_SIZE));
+    }
+
+    // The sidebar's look built fresh from the live colours, framed in the given colour: a black body
+    // backdrop, the base and bright player accents for the controls, the insignia body face, the given
+    // tab style, the collapse handle's chevron shades for the colour the player picked, and the vanilla
+    // button sounds its controls answer by. Everything but the frame is shared by every screen the
+    // sidebar draws on, so a screen choosing its frame chooses nothing else by accident.
+    private static WidgetStyle composeStyle(TabStyle tabStyle, Color frameColour) {
 
         var accent = StarsectorUiColour.VANILLA_PLAYER_BASE.resolve();
         var brightAccent = StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve();
@@ -106,7 +163,7 @@ public final class SidebarStyles {
                 // also opts out of that opacity fade and paints opaque, so the tabs read solid over the
                 // faded body.
                 StarsectorUiColour.BLACK.resolve(),
-                accent),
+                frameColour),
             new AccentColours(accent, brightAccent),
             BODY_FONT,
             tabStyle,

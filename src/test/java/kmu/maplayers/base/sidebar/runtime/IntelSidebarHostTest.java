@@ -4,19 +4,27 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
+import com.fs.starfarer.api.util.Misc;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.memory.SectorMemoryAccess;
+import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.NotchChevronColourChoice;
+import kmu.starsector.StarsectorSettingsFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
+import java.awt.Color;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,8 +41,9 @@ import static org.mockito.Mockito.when;
  * The edges drop the borders shared with the visor - the left always (flush against the visor's
  * left edge) and the bottom only when the box reaches the visor's bottom - and keep the top and right,
  * which sit inside the visor. The frozen fold key is pinned as a literal, since renaming it silently
- * re-docks every existing save. Its tab band is pinned shorter than the on-map one, that being the whole
- * of how the two screens' looks differ today and the one part of a look reachable without a live sector.
+ * re-docks every existing save. Its look is pinned at the three places it departs from the on-map one:
+ * a shorter tab band, the raised-button chrome with the bare bound key belonging to it, and a frame in
+ * the surrounding chrome's grey rather than in the player's accent.
  */
 final class IntelSidebarHostTest {
 
@@ -53,6 +62,12 @@ final class IntelSidebarHostTest {
     // pinned against a registered fake rather than a concrete view's real key.
     private static final String SHORTCUT_SETTING_KEY = "kmu_testLayerKey";
     private static final int SHORTCUT_KEYCODE = 25;
+
+    // The fixed UI grey the vanilla chrome around the visor is framed in, and the shade every other live
+    // colour read answers with. Two values rather than one, so a frame that fell back to the player
+    // accent - or to any other read the look makes - fails rather than passing on a shared shade.
+    private static final Color UI_GRAY = new Color(155, 155, 155);
+    private static final Color ENGINE_UI_SHADE = new Color(100, 100, 100);
 
     private static final float FULLY_DOCKED = 1f;
     private static final float FULLY_EXPANDED = 0f;
@@ -133,6 +148,74 @@ final class IntelSidebarHostTest {
             // pinned here rather than caught on screen.
             assertThat(IntelSidebarHost.HEADER_BAND_HEIGHT)
                 .isPositive();
+        }
+    }
+
+    @Nested
+    class ResolveWidgetStyle {
+
+        // Held rather than opened per case in a try-with-resources, because every case here needs the
+        // same live colours: the look is composed from several of them at once and reads them all
+        // whichever field the case then asserts on.
+        private MockedStatic<Misc> miscMock;
+        private MockedStatic<KmuMapLayerSettings> settingsMock;
+
+        @BeforeEach
+        void mockLiveColoursAndSettings() {
+
+            StarsectorSettingsFake.installSettings(key -> ENGINE_UI_SHADE);
+
+            miscMock = mockStatic(Misc.class);
+            miscMock
+                .when(Misc::getBasePlayerColor)
+                .thenReturn(ENGINE_UI_SHADE);
+            miscMock
+                .when(Misc::getBrightPlayerColor)
+                .thenReturn(ENGINE_UI_SHADE);
+            miscMock
+                .when(Misc::getButtonTextColor)
+                .thenReturn(ENGINE_UI_SHADE);
+            miscMock
+                .when(Misc::getGrayColor)
+                .thenReturn(UI_GRAY);
+
+            settingsMock = mockStatic(KmuMapLayerSettings.class);
+            settingsMock
+                .when(KmuMapLayerSettings::getMapSidebarChevronColour)
+                .thenReturn(NotchChevronColourChoice.PANEL_ACCENT);
+        }
+
+        @AfterEach
+        void closeLiveColoursAndSettings() {
+
+            settingsMock.close();
+            miscMock.close();
+
+            StarsectorSettingsFake.clearSettings();
+        }
+
+        @Test
+        void resolveWidgetStyleWearsTheIntelScreensRaisedButtonsWithTheirKeyLeftBare() {
+            // Which look this screen wears is the host's answer, so wiring it to the map's factory would
+            // draw a seamless strip over the intel visor with every style test still green.
+            var tabStyle = new IntelSidebarHost(new IntelScreenViewFake()).resolveWidgetStyle().tabStyle();
+
+            assertThat(tabStyle.chrome())
+                .isEqualTo(TabChrome.RAISED_BUTTON);
+            assertThat(tabStyle.hotkey().isKeyUnderlined())
+                .isFalse();
+        }
+
+        @Test
+        void resolveWidgetStyleFramesThePanelInTheSurroundingChromesGrey() {
+            // The panel's frame abuts the visor's own, so it takes the fixed UI grey rather than the
+            // player accent the on-map panel frames itself in.
+            var boxColours = new IntelSidebarHost(new IntelScreenViewFake())
+                .resolveWidgetStyle()
+                .boxColours();
+
+            assertThat(boxColours.border())
+                .isEqualTo(UI_GRAY);
         }
     }
 

@@ -20,8 +20,13 @@ import java.util.Set;
  * The intel screen's binding for the map-layer sidebar: it shows while the intel screen's embedded map
  * preview (the "visor") is lit and drawing the ordinary map, and overlays the panel on that visor anchored
  * to its top-left. This is the intel-screen sibling of {@link MapSidebarHost}; the two feed the shared
- * {@link SidebarRenderer} / {@link SidebarInput} and differ only in gate, anchor, controller, and which
- * frame edges they stroke.
+ * {@link SidebarRenderer} / {@link SidebarInput} and differ only in gate, anchor, controller, look, and
+ * which frame edges they stroke.
+ *
+ * <p>Its look is the intel screen's rather than the map's: a row of raised buttons for tabs, a bound key
+ * left bare, and a frame in the fixed UI grey - which is to say, what the vanilla chrome standing around
+ * this panel wears, since a panel overlaying another screen's furniture reads as part of it or as a box
+ * dropped on top of it, and nothing in between.
  *
  * <p>Its panel opens at the fold this save was left at, and a save holding no choice yet opens docked, so
  * the rail never covers the visor uninvited - the player expands it by the collapse handle when they want
@@ -110,9 +115,11 @@ public final class IntelSidebarHost extends BaseSidebarHost {
 
     @Override
     public WidgetStyle resolveWidgetStyle() {
-        // The map's look for now, band height apart: this host owning it is what makes the intel screen's
-        // own frame colour and chrome a change here rather than a branch in the shared render pass.
-        return SidebarStyles.buildPlayerAccentedStyle(buildTabStyle());
+        // The intel screen's look: framed in the fixed UI grey its own chrome is drawn in rather than in
+        // the player accent, since this panel sits inside that chrome and its frame abuts the visor's.
+        // The controls inside keep the player accent, which the frame colour being its own knob is what
+        // allows.
+        return SidebarStyles.buildChromeFramedStyle(buildTabStyle());
     }
 
     @Override
@@ -168,7 +175,9 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         return edges;
     }
 
+    // Raised buttons, matching the row of vanilla map toggles standing above this panel on the same
+    // screen - and with them the plain bound key those buttons present.
     private static TabStyle buildTabStyle() {
-        return SidebarStyles.buildTabStyle(HEADER_BAND_HEIGHT);
+        return SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT);
     }
 }

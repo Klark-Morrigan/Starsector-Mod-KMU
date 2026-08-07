@@ -16,8 +16,12 @@ import java.util.Set;
 /**
  * The sector map's binding for the map-layer sidebar: it shows while the sector map is up in either of
  * its looks, and hangs the panel from the screen top-left. This is the on-map sibling of
- * {@link IntelSidebarHost}; the two differ only in gate, anchor, controller, and which frame edges they
- * stroke, and both feed the shared {@link SidebarRenderer} / {@link SidebarInput}.
+ * {@link IntelSidebarHost}; the two differ only in gate, anchor, controller, look, and which frame edges
+ * they stroke, and both feed the shared {@link SidebarRenderer} / {@link SidebarInput}.
+ *
+ * <p>Its look is the sector map's: a seamless tab strip with its bound key underlined, matching the
+ * vanilla Sector/System tabs one tab-height above it, and a frame in the panel's own accent, this one
+ * floating free with no neighbouring chrome to match.
  *
  * <p>The Starscape filter is not part of the gate. The layers paint through several terrain surfaces,
  * of which two draw in Starscape mode, so there is an overlay under these controls whichever look the
@@ -69,10 +73,9 @@ public final class MapSidebarHost extends BaseSidebarHost {
 
     @Override
     public WidgetStyle resolveWidgetStyle() {
-        // The map's own look, unchanged from what the sidebar has always drawn in: the player's accents
-        // over a black body, with the frame taking that same accent since this panel floats free and has
-        // no neighbouring chrome to match.
-        return SidebarStyles.buildPlayerAccentedStyle(buildTabStyle());
+        // The map's own look: the player's accents over a black body, with the frame taking that same
+        // accent since this panel floats free and has no neighbouring chrome to match.
+        return SidebarStyles.buildAccentFramedStyle(buildTabStyle());
     }
 
     @Override
@@ -87,7 +90,8 @@ public final class MapSidebarHost extends BaseSidebarHost {
         return CampaignMapView.describeViewState();
     }
 
+    // The seamless strip, matching the vanilla Sector/System tabs this row hangs beneath.
     private static TabStyle buildTabStyle() {
-        return SidebarStyles.buildTabStyle(HEADER_BAND_HEIGHT);
+        return SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT);
     }
 }
