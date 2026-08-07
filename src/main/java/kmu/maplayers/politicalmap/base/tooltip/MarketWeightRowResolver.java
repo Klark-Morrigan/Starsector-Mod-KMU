@@ -22,8 +22,8 @@ import java.util.List;
  * <p>What turns the numbers the map painted by into an account a player can follow. The score a
  * faction holds a system with is a sum of sums, and the only useful way to read a sum is to see it
  * broken apart - so a colony is listed under the faction holding it, a factor under the colony it
- * moved, and a patrol tier under the garrison it is part of, each level being one step of the same
- * arithmetic.
+ * moved, and a patrol tier under the patrol factor it is part of, each level being one step of the
+ * same arithmetic.
  *
  * <p>Depth is the subject matter's here rather than the entry model's, which is the point of the
  * model nesting at all: the walk that lays these out reads the tier off how deep it went, so this
@@ -53,7 +53,7 @@ public final class MarketWeightRowResolver {
     // the crest, and repeating it down every line below would read as a second holder each time.
     private static final String NO_CREST = null;
 
-    // A tier nobody fields is not listed. Its line would state a garrison the colony does not have,
+    // A tier nobody fields is not listed. Its line would state patrols the colony does not have,
     // and the reader is looking for what the weight is made of, not what it is not.
     private static final int NO_PATROLS = 0;
 
@@ -159,8 +159,8 @@ public final class MarketWeightRowResolver {
             && rules.baseSize().hiddenMarketScaling() == HiddenMarketScalingChoice.FIXED;
     }
 
-    // The garrison as a line over the tiers making it up: one heading number the reader can check
-    // against the map, then what each kind of patrol in it counted for.
+    // The patrol factor as a line over the tiers making it up: one heading number the reader can
+    // check against the map, then what each kind of patrol in it counted for.
     private static CellTooltipEntry resolvePatrolEntry(PatrolFactor patrols) {
         return CellTooltipEntry
             .createEntry(CellTooltipEntryLine.createLine(
@@ -170,8 +170,8 @@ public final class MarketWeightRowResolver {
             .nesting(resolveTierEntries(patrols));
     }
 
-    // The garrison's tiers heaviest last, as the settings list them, so a reader comparing two
-    // colonies' garrisons reads them in one order.
+    // The patrol tiers heaviest last, as the settings list them, so a reader comparing two
+    // colonies' patrols reads them in one order.
     private static List<CellTooltipEntry> resolveTierEntries(PatrolFactor patrols) {
         
         var entries = new ArrayList<CellTooltipEntry>();
@@ -209,7 +209,7 @@ public final class MarketWeightRowResolver {
         entries.add(CellTooltipEntry.createEntry(line));
     }
 
-    // A factor line that breaks down no further, which is every one of them bar the garrison.
+    // A factor line that breaks down no further, which is every one of them bar the patrols.
     private static CellTooltipEntry createFactorEntry(String labelText, String valueText) {
         return CellTooltipEntry.createEntry(createFactorLine(labelText, valueText));
     }

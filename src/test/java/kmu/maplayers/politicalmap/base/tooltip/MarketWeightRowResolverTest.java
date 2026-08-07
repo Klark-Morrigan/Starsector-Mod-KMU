@@ -28,8 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins which lines a colony breaks down into and what hangs beneath what: the colonies ranked under
- * the faction holding them, the factors under the colony they moved, and the tiers under the garrison
- * they are part of.
+ * the faction holding them, the factors under the colony they moved, and the tiers under the patrol
+ * factor they are part of.
  *
  * <p>What a factor that did not run looks like is most of what is asserted here, because it is the
  * difference between an account and a form: a switched-off factor has no line at all, rather than a
@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class MarketWeightRowResolverTest {
 
-    // A plain colony's parts: size four at full worth, no station, no garrison. The baseline the
+    // A plain colony's parts: size four at full worth, no station, no patrols. The baseline the
     // cases below add one factor at a time to.
     private static final BaseSizeFactor PLAIN_SIZE = new BaseSizeFactor(4, 4.0, 4.0, 0.0);
 
@@ -190,11 +190,11 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsAGarrisonsFieldedTiersBeneathIt() {
-            // A garrison of one heavy patrol and one of four light ones can be worth the same and are
-            // not the same garrison, so the tiers are what make the total explicable.
+        void resolveMarketRowsListsAColonysFieldedTiersBeneathThePatrolLine() {
+            // One heavy patrol and four light ones can be worth the same and are not the same force
+            // fielded, so the tiers are what make the total explicable.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildGarrisonedBreakdown(2, 1, 0)),
+                List.of(buildPatrollingBreakdown(2, 1, 0)),
                 buildRules());
 
             var patrolEntry = rows.get(0).children().get(2);
@@ -210,7 +210,7 @@ final class MarketWeightRowResolverTest {
             // The two halves reach the box separately so it can draw the rate quieter than the total
             // it explains; run together they would read as one number with a stray separator in it.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildGarrisonedBreakdown(2, 0, 0)),
+                List.of(buildPatrollingBreakdown(2, 0, 0)),
                 buildRules());
 
             var tierLine = rows.get(0).children().get(2).children().get(0).line();
@@ -222,28 +222,28 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesTheGarrisonsOwnValueWhole() {
-            // Only the tiers split. The garrison's line is the weight alone - there is no working
+        void resolveMarketRowsStatesThePatrolFactorsOwnValueWhole() {
+            // Only the tiers split. The patrol line is the weight alone - there is no working
             // behind it worth drawing quieter, since a headcount summed over tiers that count for
             // different amounts explains nothing about the number beside it.
-            var garrisonLine = MarketWeightRowResolver
-                .resolveMarketRows(List.of(buildGarrisonedBreakdown(2, 0, 0)), buildRules())
+            var patrolLine = MarketWeightRowResolver
+                .resolveMarketRows(List.of(buildPatrollingBreakdown(2, 0, 0)), buildRules())
                 .get(0)
                 .children()
                 .get(2)
                 .line();
 
-            assertThat(garrisonLine.valueWorkingText())
+            assertThat(patrolLine.valueWorkingText())
                 .isNull();
-            assertThat(garrisonLine.valueText())
+            assertThat(patrolLine.valueText())
                 .isEqualTo("500");
         }
 
         @Test
         void resolveMarketRowsListsNoTierTheColonyFieldsNoneOf() {
-            // A tier line for patrols that do not exist states a garrison the colony does not have.
+            // A tier line for patrols that do not exist states a force the colony does not field.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildGarrisonedBreakdown(0, 0, 3)),
+                List.of(buildPatrollingBreakdown(0, 0, 3)),
                 buildRules());
 
             assertThat(readLabelTexts(rows.get(0).children().get(2).children()))
@@ -274,7 +274,7 @@ final class MarketWeightRowResolverTest {
         return rows.get(0).children().get(1).line();
     }
 
-    // A plain colony's parts - no station, no garrison - at full stability.
+    // A plain colony's parts - no station, no patrols - at full stability.
     private static MarketWeightBreakdown buildBreakdown(String marketName, BaseSizeFactor baseSize) {
         return new MarketWeightBreakdown(
             marketName,
@@ -317,7 +317,7 @@ final class MarketWeightRowResolverTest {
 
     // A colony whose patrol factor ran, fielding the given tiers. The tier weights are the settings'
     // own defaults, so a case reads the counts it set rather than arithmetic of its own.
-    private static MarketWeightBreakdown buildGarrisonedBreakdown(int small, int medium, int large) {
+    private static MarketWeightBreakdown buildPatrollingBreakdown(int small, int medium, int large) {
         return new MarketWeightBreakdown(
             "Jangala",
             false,

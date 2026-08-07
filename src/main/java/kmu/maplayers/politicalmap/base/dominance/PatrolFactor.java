@@ -7,7 +7,7 @@ package kmu.maplayers.politicalmap.base.dominance;
  *
  * <p>Only present when the patrol rule actually ran for the market - the player has the
  * factor on and a functional patrol HQ garrisons the colony - so its presence is itself the
- * answer to "did a garrison move this number".
+ * answer to "did fielded patrols move this number".
  *
  * <p>The total is summed from the tiers rather than stored beside them, so a reader adding
  * the tier lines up always lands on the total the same value reports. Only the weighted
@@ -17,7 +17,7 @@ package kmu.maplayers.politicalmap.base.dominance;
  * @param small                    the light-patrol tier
  * @param medium                   the medium-patrol tier
  * @param large                    the heavy-patrol tier
- * @param stabilityPenaltyFraction the share of the garrison's worth low stability removed,
+ * @param stabilityPenaltyFraction the share of the patrol worth low stability removed,
  *                                 0..1; zero while the master stability weighting is off
  */
 public record PatrolFactor(
@@ -27,7 +27,7 @@ public record PatrolFactor(
     double stabilityPenaltyFraction) {
 
     /**
-     * The garrison's share of the market's weight: what its three tiers folded in at
+     * The fielded patrols' share of the market's weight: what the three tiers folded in at
      * together, in size points, after the stability cut.
      *
      * @return the summed tier contributions

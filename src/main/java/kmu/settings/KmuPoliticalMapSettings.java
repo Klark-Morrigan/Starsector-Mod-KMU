@@ -37,8 +37,7 @@ package kmu.settings;
  * colony fields lift it too, weighted by patrol size. Stability weighting is a master
  * toggle over three per-factor low-stability penalties (colony size, station, patrols) that
  * each set how deeply their factor collapses at zero stability. The tab groups the fields
- * under Colony size, Hidden markets, Stability, Orbital stations, and Garrison patrols
- * headers.
+ * under Colony size, Hidden markets, Stability, Orbital stations, and Patrols headers.
  *
  * <p>The rest sit under the two dev tabs, which are tuning surfaces rather than player-facing
  * appearance. Most land on "Map - Dev", because a tab answers to whose map a knob shapes and
@@ -429,8 +428,8 @@ public final class KmuPoliticalMapSettings {
     private static final double DEFAULT_PATROL_MEDIUM_WEIGHT = 0.5;
     private static final double DEFAULT_PATROL_LARGE_WEIGHT = 1.0;
 
-    // Half collapse by default, like the station bonus: a garrison keeps half its
-    // weight at zero stability rather than vanishing with the colony's economy.
+    // Half collapse by default, like the station bonus: a colony's patrols keep half
+    // their weight at zero stability rather than vanishing with its economy.
     private static final double DEFAULT_PATROL_LOW_STABILITY_PENALTY = 0.5;
 
     // Mirrors both the CSV defaultValue and VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,

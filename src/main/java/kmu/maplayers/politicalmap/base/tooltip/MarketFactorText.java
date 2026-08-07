@@ -18,7 +18,7 @@ import kmu.util.KmuStrings;
  * weight it became, then the cuts, in the order the weight read applied them. A reader who has
  * worked out one factor's line has worked out them all.
  *
- * <p>A factor states no rating where none would mean anything. A garrison's is the one case: its
+ * <p>A factor states no rating where none would mean anything. The patrols' is the one case: their
  * three tiers count for different amounts, so the headcount across them explains nothing about the
  * weight beside it, and the tiers state their own counts on their own lines where the rate beside
  * each makes the count mean something.
@@ -115,8 +115,8 @@ public final class MarketFactorText {
     }
 
     /**
-     * Words the patrol factor as a whole: what the garrison came to, and what low stability took off
-     * it.
+     * Words the patrol factor as a whole: what the fielded patrols came to, and what low stability
+     * took off it.
      *
      * <p>No headcount heads it. The three tiers are weighted differently, so a summed count is a
      * number that explains nothing - two colonies fielding six patrols each can be worth wildly

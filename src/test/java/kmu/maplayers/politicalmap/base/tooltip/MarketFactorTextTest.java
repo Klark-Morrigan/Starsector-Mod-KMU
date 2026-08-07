@@ -127,7 +127,7 @@ final class MarketFactorTextTest {
     class FormatPatrols {
 
         @Test
-        void formatPatrolsStatesWhatTheGarrisonCameToAndTheCutItTook() {
+        void formatPatrolsStatesWhatThePatrolsCameToAndTheCutTheyTook() {
             assertThat(MarketFactorText.formatPatrols(new PatrolFactor(
                     new PatrolTierFactor(2, 0.25, 0.45),
                     new PatrolTierFactor(1, 0.5, 0.45),
@@ -168,7 +168,7 @@ final class MarketFactorTextTest {
 
         @Test
         void formatPatrolTierTotalStatesWhatTheTierBecameOnTheGrid() {
-            // The tier restates no cut: all three took the one the garrison's line above states, and
+            // The tier restates no cut: all three took the one the patrol line above states, and
             // repeating it per tier would read as three separate deductions.
             assertThat(MarketFactorText.formatPatrolTierTotal(new PatrolTierFactor(2, 0.25, 0.45)))
                 .isEqualTo("450");

@@ -42,7 +42,7 @@ class MarketWeightBreakdownTest {
 
         @Test
         void countsAFactorThatNeverRanAsNothing() {
-            // A market with neither a station nor a garrison is worth its base size alone,
+            // A market with neither a station nor patrols is worth its base size alone,
             // rather than the two absent factors reading as a zero the sum has to carry.
             var breakdown = buildBaseSizeOnlyBreakdown(2.0);
 
@@ -104,7 +104,7 @@ class MarketWeightBreakdownTest {
         }
     }
 
-    // A breakdown of a plain colony - no station, no garrison - worth the given size points,
+    // A breakdown of a plain colony - no station, no patrols - worth the given size points,
     // for the sums that turn on the base-size factor alone.
     private static MarketWeightBreakdown buildBaseSizeOnlyBreakdown(double contribution) {
         return new MarketWeightBreakdown(

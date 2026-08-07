@@ -385,7 +385,7 @@ public final class KnownMarketFootprints {
     }
 
     // The patrol factor as the breakdown states it: each tier scaled on its own, so the
-    // tiers add up to the garrison's worth rather than being derived back out of it.
+    // tiers add up to the patrol factor's worth rather than being derived back out of it.
     private static PatrolFactor buildPatrolFactor(
             PatrolCounts patrols,
             PatrolWeighting rules,
@@ -401,7 +401,7 @@ public final class KnownMarketFootprints {
 
     // One patrol tier of that factor: its headcount, what one patrol of the tier is worth,
     // and what the tier folded in at. The only place a headcount meets a tier weight, so the
-    // garrison's worth and the tier lines that explain it cannot state the rule differently.
+    // patrol worth and the tier lines that explain it cannot state the rule differently.
     private static PatrolTierFactor buildPatrolTierFactor(
             int count,
             double tierWeight,

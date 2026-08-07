@@ -59,7 +59,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>Both halves of that read are covered here, over one economy: the weights the map
  * paints by, and the {@link MarketWeightBreakdown} they are summed over - each factor's
- * rating, cut and contribution, the station it names, the tiers of the garrison behind it,
+ * rating, cut and contribution, the station it names, the patrol tiers behind it,
  * and the absences that say a factor never ran. The two are asserted against the same
  * figures where they meet, since a total that disagreed with its own parts is the failure
  * the one-arithmetic read exists to make impossible. The arithmetic the economy cannot
@@ -659,7 +659,7 @@ class KnownMarketFootprintsIntegrationTest {
             // tier weight: 2 small * 0.25 + 1 medium * 0.5 -> 1 size point on top of the
             // size-3 colony -> 4 grid units at full stability.
             var sector = buildSectorWith(
-                "garrison-system",
+                "patrol-system",
                 buildPatrolMarket(buildFaction("hegemony"), 3, 2, 1, 0));
 
             var footprints = KnownMarketFootprints.readByFaction(
@@ -676,7 +676,7 @@ class KnownMarketFootprintsIntegrationTest {
             // Isolating the patrol factor (colony weight zeroed, master off), two large
             // patrols at the default large weight of 1 -> 2 size points.
             var sector = buildSectorWith(
-                "heavy-garrison-system",
+                "heavy-patrol-system",
                 buildPatrolMarket(buildFaction("hegemony"), 5, 0, 0, 2));
 
             var footprints = KnownMarketFootprints.readByFaction(
@@ -698,7 +698,7 @@ class KnownMarketFootprintsIntegrationTest {
             // half its worth under the default half patrol penalty: 2 * 0.5 * 0.5 -> half
             // a grid unit.
             var sector = buildSectorWith(
-                "shaky-garrison-system",
+                "shaky-patrol-system",
                 buildPatrolMarketAtStability(buildFaction("hegemony"), 5, 0, 2, 0, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
@@ -712,10 +712,10 @@ class KnownMarketFootprintsIntegrationTest {
 
         @Test
         void readByFactionKeepsPatrolStrengthFullWhenTheStabilityMasterIsOff() {
-            // The same garrison with the master toggle off keeps its full patrol worth at
+            // The same colony with the master toggle off keeps its full patrol worth at
             // 0 stability: 2 * 0.5 -> 1 grid unit.
             var sector = buildSectorWith(
-                "shaky-garrison-system",
+                "shaky-patrol-system",
                 buildPatrolMarketAtStability(buildFaction("hegemony"), 5, 0, 2, 0, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
@@ -752,10 +752,10 @@ class KnownMarketFootprintsIntegrationTest {
         @Test
         void readByFactionSkipsPatrolStrengthForAMarketWithoutThePatrolFlag() {
             // The patrol-count stats are also written by hidden raider and pather bases
-            // that set no $patrol flag; without a functional patrol HQ the garrison
-            // contributes no dominance, so a size-3 colony folds in at its size alone.
+            // that set no $patrol flag; without a functional patrol HQ the patrols
+            // contribute no dominance, so a size-3 colony folds in at its size alone.
             var sector = buildSectorWith(
-                "stat-only-garrison-system",
+                "stat-only-patrol-system",
                 buildPatrolStatOnlyMarket(buildFaction("hegemony"), 3, 2, 1, 0));
 
             var footprints = KnownMarketFootprints.readByFaction(
@@ -808,8 +808,8 @@ class KnownMarketFootprintsIntegrationTest {
         void readBreakdownByFactionSumsAMarketsPartsIntoTheWeightTheFootprintFolds() {
             // The scalar weight is the sum over the breakdown, so the parts the tooltip
             // explains and the total the map paints by are one arithmetic, not two.
-            var sector = buildFortifiedGarrisonSector();
-            var rules = buildFortifiedGarrisonRules();
+            var sector = buildFortifiedColonySector();
+            var rules = buildFortifiedColonyRules();
 
             var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
                 sector,
@@ -836,8 +836,8 @@ class KnownMarketFootprintsIntegrationTest {
         void readBreakdownByFactionNamesTheMarketEachSetOfPartsBelongsTo() {
             // The tooltip lists a bloc's markets by name, so the breakdown carries the
             // colony's own name rather than leaving the caller to re-read the economy.
-            var sector = buildFortifiedGarrisonSector();
-            var breakdown = readOnlyBreakdown(sector, buildFortifiedGarrisonRules());
+            var sector = buildFortifiedColonySector();
+            var breakdown = readOnlyBreakdown(sector, buildFortifiedColonyRules());
 
             assertThat(breakdown.marketName())
                 .isEqualTo("Chicomoztoc");
@@ -849,8 +849,8 @@ class KnownMarketFootprintsIntegrationTest {
         void readBreakdownByFactionCarriesTheBaseSizePartOfAMarket() {
             // The base-size part states the rating that entered the weight, what it was
             // worth after the stability cut, and how much of it that cut took.
-            var sector = buildFortifiedGarrisonSector();
-            var baseSize = readOnlyBreakdown(sector, buildFortifiedGarrisonRules()).baseSize();
+            var sector = buildFortifiedColonySector();
+            var baseSize = readOnlyBreakdown(sector, buildFortifiedColonyRules()).baseSize();
 
             assertThat(baseSize.rawMarketSize())
                 .isEqualTo(4);
@@ -866,8 +866,8 @@ class KnownMarketFootprintsIntegrationTest {
         void readBreakdownByFactionCarriesTheStationPartOfAMarket() {
             // The station part names the station that earned it, so the line the tooltip
             // draws points at something the player can find on the map.
-            var sector = buildFortifiedGarrisonSector();
-            var station = readOnlyBreakdown(sector, buildFortifiedGarrisonRules()).station();
+            var sector = buildFortifiedColonySector();
+            var station = readOnlyBreakdown(sector, buildFortifiedColonyRules()).station();
 
             assertThat(station)
                 .isPresent();
@@ -886,10 +886,10 @@ class KnownMarketFootprintsIntegrationTest {
         @Test
         void readBreakdownByFactionCarriesEachPatrolTierOfAMarket() {
             // Every tier is stated on its own - its headcount, what one patrol of it is
-            // worth, and what it folded in at - so the garrison's worth is explicable
+            // worth, and what it folded in at - so the patrol worth is explicable
             // rather than a single opaque number.
-            var sector = buildFortifiedGarrisonSector();
-            var patrols = readOnlyBreakdown(sector, buildFortifiedGarrisonRules()).patrols();
+            var sector = buildFortifiedColonySector();
+            var patrols = readOnlyBreakdown(sector, buildFortifiedColonyRules()).patrols();
 
             assertThat(patrols)
                 .isPresent();
@@ -995,7 +995,7 @@ class KnownMarketFootprintsIntegrationTest {
             // A raider base writes the patrol-tier stats without a functional patrol HQ, so
             // the factor never runs for it and the breakdown says so.
             var sector = buildSectorWith(
-                "stat-only-garrison-system",
+                "stat-only-patrol-system",
                 withName(
                     buildPatrolStatOnlyMarket(buildFaction("hegemony"), 3, 2, 1, 0),
                     "Kanta's Den"));
@@ -1138,16 +1138,16 @@ class KnownMarketFootprintsIntegrationTest {
 
         // The rule the fortress assertions read under: the suite's defaults with both the
         // station and the patrol factor switched on, so all three factors run at once.
-        private DominanceRules buildFortifiedGarrisonRules() {
+        private DominanceRules buildFortifiedColonyRules() {
             return buildRules().withStationWeighting().withPatrolWeighting().build();
         }
 
         // A one-system sector holding nothing but the fortress the assertions read.
-        private SectorAPI buildFortifiedGarrisonSector() {
+        private SectorAPI buildFortifiedColonySector() {
             return buildSectorWith(
                 "fortress-system",
                 withName(
-                    buildFortifiedGarrisonAtStability(
+                    buildFortifiedColonyAtStability(
                         buildFaction("hegemony"),
                         4,
                         2,
@@ -1171,10 +1171,10 @@ class KnownMarketFootprintsIntegrationTest {
         }
     }
 
-    // A visible garrisoned fortress at the given stability: one colony that owns a station
+    // A visible fortress colony at the given stability: one colony that owns a station
     // and fields patrols at once, so a single read exercises all three weight factors and
     // the stability cut each takes.
-    private static MarketAPI buildFortifiedGarrisonAtStability(
+    private static MarketAPI buildFortifiedColonyAtStability(
             FactionAPI faction,
             int size,
             int small,
@@ -1286,7 +1286,7 @@ class KnownMarketFootprintsIntegrationTest {
         return market;
     }
 
-    // A garrisoned market: the patrol-tier stats a patrol HQ writes plus the $patrol flag
+    // A market a patrol HQ garrisons: the patrol-tier stats it writes plus the $patrol flag
     // it sets, the pair the gated patrol contribution now requires together.
     private static MarketAPI withPatrols(MarketAPI market, int small, int medium, int large) {
         return withPatrolFlag(withPatrolStats(market, small, medium, large));

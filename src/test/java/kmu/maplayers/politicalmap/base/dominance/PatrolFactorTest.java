@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the two totals {@link PatrolFactor} sums out of its tiers rather than storing beside
- * them: the garrison's contribution and its plain headcount. Summing rather than storing is
+ * them: the patrol contribution and the plain headcount. Summing rather than storing is
  * what makes a reader adding the tier lines up land on the total the same value reports, so
  * these pin that the sums are over every tier and count an unfielded one as nothing.
  */
