@@ -274,7 +274,7 @@ final class MarketWeightRowResolverTest {
             // has no use for one: dominance is settled by weight and distance, with no tie rule a
             // listing order could explain. A place stated here would be a number meaning nothing.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildGarrisonedBreakdown(2, 1, 0)),
+                List.of(buildPatrollingBreakdown(2, 1, 0)),
                 buildRules());
 
             assertThat(rows.get(0).line().indexText())
