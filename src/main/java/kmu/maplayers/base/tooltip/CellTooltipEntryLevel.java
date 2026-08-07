@@ -45,6 +45,18 @@ record CellTooltipEntryLevel(
         new CellTooltipEntryLevel(LISTED_INDENT_DEPTH, NO_SUBORDINATION);
 
     /**
+     * Floors both counts at what a block's own line stands at. Neither can be reached from below by
+     * walking a listing, so this holds the only way past it - a level built directly - to the same
+     * range: a negative depth would draw a line further left than the box's content edge, and a
+     * negative demotion would have the host resolve a size larger than the body's for a line meant to
+     * be quieter than it.
+     */
+    CellTooltipEntryLevel {
+        indentDepth = Math.max(LISTED_INDENT_DEPTH, indentDepth);
+        subordinationLevel = Math.max(NO_SUBORDINATION, subordinationLevel);
+    }
+
+    /**
      * The level of a line gathered under this one as a peer - set in beneath it while still speaking at
      * the same remove from the box's voice. An alliance's member factions are the case: naming the
      * alliance and naming the factions in it are one answer stated at two granularities, so nothing has
