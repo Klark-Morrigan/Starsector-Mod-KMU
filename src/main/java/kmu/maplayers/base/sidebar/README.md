@@ -308,14 +308,23 @@ tab under the pointer at the full `POINTED_GLOW`. That the pointer's is the brig
 amounts is load-bearing: nothing else marks the shown tab, no bar capping it, so a pointed-at tab has
 to outshine it rather than match it.
 
-The **labels** are one colour at those same three amounts, by the same rule: the engine lights a tab
-with a single glow pass over the whole of it, so a label is never a shade a state picks but
-`buttonText` - the (170, 222, 255) light blue - lit by however brightly that state stands. That is
-why a resting tab's text reads as plain blue while a shown or pointed-at tab's whitens out, the added
-light overrunning the channel at the full glow. Giving a state its own label colour parts the text
-from the fill beneath it at exactly the amounts vanilla keeps them together, and a faction-tinted one
-would recolour the strip with the player's faction where the engine's own tabs take no faction colour
-at all.
+The **labels** are not lit at all. The engine parts a resting tab's text from a lit tab's by *colour*,
+switching between two of its own roles rather than brightening one: `buttonText` (170, 222, 255), the
+blue every button's text is, while the tab is untouched, and `standardTextColor` (220, 220, 220), the
+grey the rest of the interface reads in, once the tab is shown or pointed at. Both lit states take the
+grey; their fills already stand at different glows, so that is what tells them apart.
+
+That was arrived at by measurement rather than by reasoning, after two rules derived from the fill's
+glow both came out wrong on screen. A lit vanilla tab's label samples at `#a0b1bc`, and solving for
+the glyph's coverage over the fill beneath gives three irreconcilable answers against `buttonText`
+(0.91 / 0.59 / 0.47) and one consistent answer against `standardTextColor` (0.62 / 0.60 / 0.65). A
+computed label was the error both times: brightening a colour that already sits at 255 blue can only
+push it sideways into cyan, and no amount tuned into that rule would have escaped it. Only the shown
+tab's label is measured; the pointed-at one taking the same grey is the smaller claim, pinned equal in
+KMLib so a divergence has to be deliberate.
+
+A faction-tinted label, which is what this replaced first, would additionally have recoloured the
+strip with the player's faction where the engine's own tabs take no faction colour at all.
 
 Hovering is a look rather than a lift because a tab lands on one shade whatever it was showing
 before, which no fraction applied to each tab's own fill could produce. A tab travels onto that shade
