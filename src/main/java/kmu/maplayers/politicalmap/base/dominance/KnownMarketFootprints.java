@@ -252,9 +252,16 @@ public final class KnownMarketFootprints {
         return (int) Math.round(contribution * DOMINANCE_WEIGHT_SCALE);
     }
 
-    // The system's markets that count, in the economy's own order. One definition of
-    // "which markets are in play here" for both reads above, so the totals and the parts
-    // can never be folded from different sets of markets.
+    // The system's markets that count, in the economy's own order, one per place and owner.
+    // One definition of "which markets are in play here" for both reads above, so the totals
+    // and the parts can never be folded from different sets of markets.
+    //
+    // The per-place resolution is what stops a colony being banked twice. A mod that
+    // supersedes a market by adding its own beside vanilla's rather than replacing it leaves
+    // two markets on one station entity, and a weight summed over both reads their owner as
+    // holding twice what it holds. Vanilla's own inhabited-systems filter never trips on this
+    // because it ORs presence rather than summing weight, so the duplicate has to be resolved
+    // here instead of being inherited from the economy walk.
     private static List<MarketAPI> readCountedColonies(
             SectorAPI sector,
             StarSystemAPI system,
@@ -266,7 +273,7 @@ public final class KnownMarketFootprints {
                 colonies.add(market);
             }
         }
-        return colonies;
+        return Markets.readLargestMarketsPerFaction(colonies);
     }
 
     // A market's worth to the dominance rule, factor by factor: its weighted base size,

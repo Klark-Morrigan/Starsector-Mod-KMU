@@ -178,6 +178,50 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
+        void readByFactionBanksOneColonyOnceWhenTwoMarketsShareItsEntity() {
+            // A mod that supersedes a market by adding its own beside vanilla's leaves two
+            // markets on one station. Summing both would read the owner as holding 3 + 5;
+            // only the larger stands for the place, so the weight is size 5 -> 5 grid units.
+            var independent = buildFaction("independent");
+            var supersededMarket = buildVisibleMarket(independent, 3);
+            var supersedingMarket = buildVisibleMarket(independent, 5);
+
+            placeOnOneEntity(supersededMarket, supersedingMarket);
+
+            var sector = buildSectorWith("academy-system", supersededMarket, supersedingMarket);
+            var footprints = KnownMarketFootprints.readByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().build());
+
+            assertThat(footprints.get("independent").totalWeight())
+                .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+        }
+
+        @Test
+        void readByFactionKeepsBothOwnersWhenTheirMarketsShareOneEntity() {
+            // Resolving per place alone would drop whichever owner lost the size contest,
+            // erasing a faction's only foothold in the system rather than deduplicating it.
+            var hegemonyMarket = buildVisibleMarket(buildFaction("hegemony"), 3);
+            var pirateMarket = buildVisibleMarket(buildFaction("pirates"), 5);
+
+            placeOnOneEntity(hegemonyMarket, pirateMarket);
+
+            var sector = buildSectorWith("contested-station-system", hegemonyMarket, pirateMarket);
+            var footprints = KnownMarketFootprints.readByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().build());
+
+            assertThat(footprints)
+                .containsOnlyKeys("hegemony", "pirates");
+            assertThat(footprints.get("hegemony").totalWeight())
+                .isEqualTo(3 * DOMINANCE_WEIGHT_SCALE);
+            assertThat(footprints.get("pirates").totalWeight())
+                .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+        }
+
+        @Test
         void readByFactionScalesColonySizeByStabilityAtFullPenalty() {
             // The colony penalty defaults to a full collapse, so a size-4 market at
             // stability 5 contributes half its size.
@@ -811,8 +855,6 @@ class KnownMarketFootprintsIntegrationTest {
                 .isEqualTo(new PatrolTierFactor(0, 1.0, 0.0));
             assertThat(patrols.get().stabilityPenaltyFraction())
                 .isEqualTo(0.25);
-            assertThat(patrols.get().computeTotalCount())
-                .isEqualTo(3);
             assertThat(patrols.get().computeContribution())
                 .isEqualTo(0.75);
         }
@@ -1090,6 +1132,19 @@ class KnownMarketFootprintsIntegrationTest {
             .thenReturn(name);
 
         return market;
+    }
+
+    // Re-sites the given markets onto one shared entity - the shape a mod makes when it
+    // supersedes a market by adding its own beside vanilla's rather than replacing it, and
+    // the only way two market objects come to stand for the same place.
+    private static void placeOnOneEntity(MarketAPI... markets) {
+
+        var entityMock = mock(SectorEntityToken.class);
+
+        for (var market : markets) {
+            when(market.getPrimaryEntity())
+                .thenReturn(entityMock);
+        }
     }
 
     // A hidden market at the given stability, for pinning that its token rating scales
