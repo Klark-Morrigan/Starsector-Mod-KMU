@@ -6,6 +6,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 
 import java.util.List;
 
@@ -39,11 +40,22 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
             SystemClaimBreakdown breakdown,
             FactionClaimScore standing) {
 
-        // A decree settles the system before a single market is weighed, so over one the account is
-        // the arithmetic that would have decided it rather than the arithmetic that did - and the
-        // strongest market goes uncalled-out, since nothing it scored took the system.
+        // Which faction the contest handed the system to, and so whose strongest market is the one
+        // that took it. A decree settles the system before a single market is weighed, so under one
+        // no market is the holder however the scores fell - the account then reads as the arithmetic
+        // that would have decided it rather than the arithmetic that did.
+        var isHoldingTheClaim = !KmlibStrings.hasText(breakdown.overrideFactionId())
+            && standing.factionId().equals(breakdown.claimantFactionId());
+
+        // The mechanic settles a claim over colonies nobody has found, and the box declines to
+        // repeat what it learned there. Read live off the same toggle the status line and the
+        // faction layer's pass sample, so the three cannot disagree about what the player knows.
+        var isListingUnfoundMarkets =
+            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions();
+
         return ClaimScoreRowResolver.resolveMarketRows(
             standing,
-            !KmlibStrings.hasText(breakdown.overrideFactionId()));
+            isHoldingTheClaim,
+            isListingUnfoundMarkets);
     }
 }

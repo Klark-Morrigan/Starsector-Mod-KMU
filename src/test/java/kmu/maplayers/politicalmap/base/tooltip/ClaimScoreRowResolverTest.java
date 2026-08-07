@@ -4,6 +4,7 @@ import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +41,7 @@ final class ClaimScoreRowResolverTest {
     private static final int STRONGEST_MARKET_SIZE = 7;
 
     // What the presence line calls the term, spelled out so a case reads as the words a player sees.
-    private static final String PRESENCE_LINE = "Other same-faction markets";
+    private static final String PRESENCE_LINE = "Same-faction market bonus";
 
     // Vanilla's flat garrison bonus. Stated as a literal rather than read from the mechanic, so a case
     // asserting the line shows it cannot pass by restating whatever the reader happened to hand over.
@@ -61,10 +62,19 @@ final class ClaimScoreRowResolverTest {
 
     private static final boolean IS_TERRITORIAL = true;
 
-    // Whether the contest is what settled the system, or a decree was imposed over it - the one thing
-    // that decides whether the strongest market is called out at all.
-    private static final boolean CONTEST_SETTLED_THE_SYSTEM = true;
-    private static final boolean DECREE_SETTLED_THE_SYSTEM = false;
+    // Whether this faction is the one the contest handed the system to - the only faction whose own
+    // strongest market is called out, and the answer for none of them where a decree settled it.
+    private static final boolean IS_HOLDING_THE_CLAIM = true;
+    private static final boolean IS_NOT_HOLDING_THE_CLAIM = false;
+
+    // Whether a market the player has not found may be listed: withheld in play, stated in full under
+    // the dev reveal.
+    private static final boolean WITHHOLDING_UNFOUND_MARKETS = false;
+    private static final boolean LISTING_UNFOUND_MARKETS = true;
+
+    // Whether the player has found a market at all - the flag the withholding reads.
+    private static final boolean IS_KNOWN_TO_PLAYER = true;
+    private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
     @BeforeEach
     void installStrings() {
@@ -80,7 +90,7 @@ final class ClaimScoreRowResolverTest {
     class ResolveMarketRows {
 
         @Test
-        void resolveMarketRowsLeadsWithTheFactionsStrongestMarketAndCallsItOut() {
+        void resolveMarketRowsLeadsWithTheFactionsStrongestMarketAndCallsTheHolderOut() {
             // The faction's number above is this one market's score, so the reader following it
             // downward has to be told which of the markets listed here it came out of - and kept from
             // reading the number as the total of the list.
@@ -91,7 +101,7 @@ final class ClaimScoreRowResolverTest {
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
             assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("strongest");
+                .isEqualTo("claim holder");
         }
 
         @Test
@@ -102,12 +112,78 @@ final class ClaimScoreRowResolverTest {
                 buildStanding(
                     buildStrongestMarket(ONE_SIBLING_MARKET),
                     List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))),
-                CONTEST_SETTLED_THE_SYSTEM);
+                IS_HOLDING_THE_CLAIM,
+                WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().indexText())
                 .isEqualTo("[1]");
             assertThat(rows.get(1).line().indexText())
                 .isEqualTo("[2]");
+        }
+
+        @Test
+        void resolveMarketRowsMarksTheTieBreakerAsWonAndTheMarketsItBeatAsLost() {
+            // The moment the place stops being a label: two markets equal on everything else are
+            // parted by it alone, so the earlier-listed one reads as having won the tie and the rest
+            // as having lost it, rather than leaving the reader to work out that the smaller wins.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(TWO_SIBLING_MARKETS),
+                List.of(
+                    buildMarket("Culann", STRONGEST_MARKET_SIZE, TWO_SIBLING_MARKETS, THIRD_LISTED),
+                    buildMarket("Eventide", STRONGEST_MARKET_SIZE, TWO_SIBLING_MARKETS,
+                        SECOND_LISTED))));
+
+            assertThat(rows.get(0).line().indexOutcome())
+                .isEqualTo(CellTooltipIndexOutcome.WON);
+            assertThat(rows.get(1).line().indexOutcome())
+                .isEqualTo(CellTooltipIndexOutcome.LOST);
+            assertThat(rows.get(2).line().indexOutcome())
+                .isEqualTo(CellTooltipIndexOutcome.LOST);
+        }
+
+        @Test
+        void resolveMarketRowsLeavesAPlaceThatDecidedNothingUnmarked() {
+            // Markets on different scores are told apart by the scores, so their places settled
+            // nothing and a marked one would claim an outcome the numbers already gave.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))));
+
+            assertThat(rows)
+                .allSatisfy(entry -> assertThat(entry.line().indexOutcome())
+                    .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED));
+        }
+
+        @Test
+        void resolveMarketRowsJudgesATieOverTheMarketsItActuallyDrew() {
+            // The marking answers a question the drawn list raises - why does that one sit above this
+            // one, when the numbers match - so a tie with a market the player cannot see is not that
+            // question, and marking it would point at nothing on screen.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(buildMarket("Kanta's Den", STRONGEST_MARKET_SIZE, ONE_SIBLING_MARKET,
+                    SECOND_LISTED, IS_UNFOUND_BY_PLAYER))));
+
+            assertThat(rows.get(0).line().indexOutcome())
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+        }
+
+        @Test
+        void resolveMarketRowsStatesTheSiblingBonusAsWorkingOverThePointsItCameTo() {
+            // The line is not one of the faction's holdings but the arithmetic of a term all of them
+            // share, so it reads as quietly as any other working and only the points stay a finding.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(TWO_SIBLING_MARKETS),
+                List.of()));
+
+            var bonusLine = rows.get(1).line();
+
+            assertThat(bonusLine.isWorkingOnly())
+                .isTrue();
+            assertThat(bonusLine.valueWorkingText())
+                .isEqualTo("(3 markets) - 1 =");
+            assertThat(bonusLine.valueText())
+                .isEqualTo("+2");
         }
 
         @Test
@@ -126,9 +202,54 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsLeavesAMarketThePlayerHasNotFoundOffTheList() {
+            // Vanilla settles a claim over colonies nobody has found; repeating what it learned
+            // there would tell the player a system holds something they have no way of knowing.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(TWO_SIBLING_MARKETS),
+                List.of(
+                    buildMarket("Culann", 3, TWO_SIBLING_MARKETS, SECOND_LISTED),
+                    buildMarket("Kanta's Den", 3, TWO_SIBLING_MARKETS, THIRD_LISTED,
+                        IS_UNFOUND_BY_PLAYER))));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(STRONGEST_MARKET, "Culann");
+        }
+
+        @Test
+        void resolveMarketRowsWithholdsThePresenceTermOverAListSomethingWasKeptFrom() {
+            // The term's whole claim on the reader is that its count can be checked against the
+            // markets above it. Printed over a shortened list it would either contradict what is on
+            // screen or state the very number the withholding exists to keep back.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(buildMarket("Kanta's Den", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
+                    IS_UNFOUND_BY_PLAYER))));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(STRONGEST_MARKET);
+        }
+
+        @Test
+        void resolveMarketRowsListsEveryMarketUnderTheDevReveal() {
+            // The reveal is the state a player has asked to be shown everything in, so the account is
+            // stated in full - the withholding is about what they have found, not about the box.
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildStanding(
+                    buildStrongestMarket(ONE_SIBLING_MARKET),
+                    List.of(buildMarket("Kanta's Den", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
+                        IS_UNFOUND_BY_PLAYER))),
+                IS_HOLDING_THE_CLAIM,
+                LISTING_UNFOUND_MARKETS);
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(STRONGEST_MARKET, "Kanta's Den", PRESENCE_LINE);
+        }
+
+        @Test
         void resolveMarketRowsCallsOutNoMarketBesidesTheFactionsStrongest() {
-            // A second marked line would say the faction is represented by two markets at once, which
-            // is exactly what the mechanic does not do.
+            // A second marked line would say one system has two holders, which is exactly what a
+            // contest cannot produce.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
                 List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))));
@@ -138,29 +259,31 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutNoMarketAtAllOverASystemHeldByDecree() {
-            // A decree settles the system before a market is weighed, so nothing the strongest one
-            // scored took it - called out anyway, the line would credit that market with an outcome
-            // the contest never produced.
+        void resolveMarketRowsCallsOutNoMarketOfAFactionThatTookNothing() {
+            // Every faction is represented by its strongest market, but only one of those won
+            // anything. A rival's - or any faction's under a decree - is called out nowhere, since
+            // the line would credit it with an outcome it did not produce.
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildStanding(
                     buildStrongestMarket(ONE_SIBLING_MARKET),
                     List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))),
-                DECREE_SETTLED_THE_SYSTEM);
+                IS_NOT_HOLDING_THE_CLAIM,
+                WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
                 .isNull();
         }
 
         @Test
-        void resolveMarketRowsStillLeadsWithTheStrongestMarketOverASystemHeldByDecree() {
+        void resolveMarketRowsStillLeadsWithTheStrongestMarketOfAFactionThatTookNothing() {
             // Only the call-out goes. The markets are still read strongest first, since that is the
-            // order a contest is read in whether or not it settled anything.
+            // order a contest is read in whether or not this faction won it.
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildStanding(
                     buildStrongestMarket(ONE_SIBLING_MARKET),
                     List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))),
-                DECREE_SETTLED_THE_SYSTEM);
+                IS_NOT_HOLDING_THE_CLAIM,
+                WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
@@ -181,9 +304,10 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBreaksATieByNameSoTheOrderNeverDependsOnTheEconomyWalk() {
-            // Two markets of a faction can score exactly the same, and left to the order the economy
-            // handed them over the box would list them one way on one hover and the other on the next.
+        void resolveMarketRowsBreaksATieOnTheOrderTheMechanicItselfSettlesIt() {
+            // Two markets of a faction can score exactly the same, and the contest parts them by the
+            // earlier place in the economy's listing - so the list reads in the order the mechanic
+            // would settle it rather than in one the box invented.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(TWO_SIBLING_MARKETS),
                 List.of(
@@ -191,7 +315,7 @@ final class ClaimScoreRowResolverTest {
                     buildMarket("Culann", 4, TWO_SIBLING_MARKETS, THIRD_LISTED))));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly(STRONGEST_MARKET, "Culann", "Eventide", PRESENCE_LINE);
+                .containsExactly(STRONGEST_MARKET, "Eventide", "Culann", PRESENCE_LINE);
         }
 
         @Test
@@ -235,19 +359,6 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsWorksThePresenceTermOutFromWhatTheFactionHolds() {
-            // The count of markets is checkable against the list above the line while the points they
-            // earned are not, so the line opens on the count and subtracts the market being scored -
-            // which is a market rather than a point, and the one thing not its own sibling.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(TWO_SIBLING_MARKETS),
-                List.of()));
-
-            assertThat(rows.get(1).line().valueText())
-                .isEqualTo("(3 markets) - 1 = +2");
-        }
-
-        @Test
         void resolveMarketRowsKeepsThePresenceTermOffEachMarketsOwnAccount() {
             // Repeated under every market the one term would read as several separate findings, and
             // there would be nothing beside any of them to check the count against.
@@ -280,6 +391,7 @@ final class ClaimScoreRowResolverTest {
                 new MarketClaimBreakdown(
                     STRONGEST_MARKET,
                     FIRST_LISTED,
+                    IS_KNOWN_TO_PLAYER,
                     STRONGEST_MARKET_SIZE,
                     NO_SIBLING_MARKETS,
                     OptionalInt.of(MILITARY_BONUS)),
@@ -311,11 +423,14 @@ final class ClaimScoreRowResolverTest {
         }
     }
 
-    // The account over a system the contest itself settled, which is what every case but the decreed
-    // one is posed over - the ordinary state, and the one in which the strongest market decided
-    // something and is called out for it.
+    // The account over a system the contest itself settled and whose markets the player has all
+    // found - the ordinary state, and what every case but the decreed and withheld ones is posed
+    // over.
     private static List<CellTooltipEntry> resolveContestedRows(FactionClaimScore standing) {
-        return ClaimScoreRowResolver.resolveMarketRows(standing, CONTEST_SETTLED_THE_SYSTEM);
+        return ClaimScoreRowResolver.resolveMarketRows(
+            standing,
+            IS_HOLDING_THE_CLAIM,
+            WITHHOLDING_UNFOUND_MARKETS);
     }
 
     // A faction standing on the given market and holding the given others in the system. Territorial
@@ -331,9 +446,19 @@ final class ClaimScoreRowResolverTest {
     // The market a faction's standing rests on, holding the stated number of others in the system and
     // no garrison - the baseline the cases above add one term at a time to.
     private static MarketClaimBreakdown buildStrongestMarket(int siblingMarketCount) {
+        return buildStrongestMarket(siblingMarketCount, IS_KNOWN_TO_PLAYER);
+    }
+
+    // The same market, stated as one the player has or has not found - the two cases the withholding
+    // turns on.
+    private static MarketClaimBreakdown buildStrongestMarket(
+            int siblingMarketCount,
+            boolean isKnownToPlayer) {
+
         return new MarketClaimBreakdown(
             STRONGEST_MARKET,
             FIRST_LISTED,
+            isKnownToPlayer,
             STRONGEST_MARKET_SIZE,
             siblingMarketCount,
             OptionalInt.empty());
@@ -345,22 +470,40 @@ final class ClaimScoreRowResolverTest {
         return new MarketClaimBreakdown(
             STRONGEST_MARKET,
             FIRST_LISTED,
+            IS_KNOWN_TO_PLAYER,
             STRONGEST_MARKET_SIZE,
             TWO_SIBLING_MARKETS,
             OptionalInt.of(MILITARY_BONUS));
     }
 
-    // One of the faction's other markets. It carries the same sibling count its standing does, since
-    // the mechanic gives every market of a faction a point for each of the faction's others.
+    // One of the faction's other markets, one the player has found. It carries the same sibling count
+    // its standing does, since the mechanic gives every market of a faction a point for each other.
     private static MarketClaimBreakdown buildMarket(
             String marketName,
             int marketSize,
             int siblingMarketCount,
             int listingPosition) {
 
+        return buildMarket(
+            marketName,
+            marketSize,
+            siblingMarketCount,
+            listingPosition,
+            IS_KNOWN_TO_PLAYER);
+    }
+
+    // The same market, stated as one the player has or has not found.
+    private static MarketClaimBreakdown buildMarket(
+            String marketName,
+            int marketSize,
+            int siblingMarketCount,
+            int listingPosition,
+            boolean isKnownToPlayer) {
+
         return new MarketClaimBreakdown(
             marketName,
             listingPosition,
+            isKnownToPlayer,
             marketSize,
             siblingMarketCount,
             OptionalInt.empty());

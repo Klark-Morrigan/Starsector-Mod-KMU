@@ -20,24 +20,37 @@ import java.util.Objects;
  * @param labelText        what the line is called
  * @param indexText        the line's place in the ordering it belongs to, run on after its name in
  *                         the quiet shade, or null where the line has no place worth stating
+ * @param indexOutcome     what that place did for the line - nothing, or the winning or losing of
+ *                         what the ordering settles; {@link CellTooltipIndexOutcome#UNCONTESTED} for
+ *                         a place that decided nothing, and for a line stating none at all
  * @param qualifierText    the status called out at the end of the line, or null when it states none
  * @param valueText        what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
  *                         line carrying no number
  * @param valueWorkingText the arithmetic the number came out of, stated before it, or null where the
  *                         line shows its number alone
+ * @param isWorkingOnly    whether the line is working throughout rather than one of the things the
+ *                         block lists - an aside stating how a number above it was arrived at. Such a
+ *                         line reads in the quiet shade its name and all, and only the number it
+ *                         arrives at stays a finding
  */
 public record CellTooltipEntryLine(
     String iconSpritePath,
     String labelText,
     String indexText,
+    CellTooltipIndexOutcome indexOutcome,
     String qualifierText,
     String valueText,
-    String valueWorkingText) {
+    String valueWorkingText,
+    boolean isWorkingOnly) {
 
     // What a line with no place to state carries in the index slot, for the same reason the two
     // absences below are named: the factory says what the plainest line has rather than passing
     // three unexplained nulls a reader has to count off against the components.
     private static final String NO_INDEX = null;
+
+    // What a line the block lists in its own right carries: it is a finding rather than the working
+    // behind one, which is the ordinary case and what every factory below builds.
+    private static final boolean IS_A_FINDING = false;
 
     // What a line states nothing beside its name and its number carries in the qualifier slot. Named
     // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
@@ -59,6 +72,10 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine {
         Objects.requireNonNull(labelText, "labelText");
         Objects.requireNonNull(valueText, "valueText");
+
+        // An outcome handed over as null reads as one nothing turned on, so a hand-built line cannot
+        // fail inside a draw over a part it never meant to state.
+        indexOutcome = indexOutcome == null ? CellTooltipIndexOutcome.UNCONTESTED : indexOutcome;
     }
 
     /**
@@ -81,9 +98,11 @@ public record CellTooltipEntryLine(
             iconSpritePath,
             labelText,
             NO_INDEX,
+            CellTooltipIndexOutcome.UNCONTESTED,
             NO_QUALIFIER,
             valueText,
-            NO_WORKING);
+            NO_WORKING,
+            IS_A_FINDING);
     }
 
     /**
@@ -112,9 +131,11 @@ public record CellTooltipEntryLine(
             iconSpritePath,
             labelText,
             indexText,
+            indexOutcome,
             qualifierText,
             valueText,
-            valueWorkingText);
+            valueWorkingText,
+            isWorkingOnly);
     }
 
     /**
@@ -127,18 +148,49 @@ public record CellTooltipEntryLine(
      * of the name and not as a second finding. Its own part rather than run into the label, so the
      * block can draw it in that quieter shade at all.
      *
-     * @param indexText the line's place in its ordering, unspaced - the line parts it from the name
-     *                  when it is laid out
+     * @param indexText     the line's place in its ordering, unspaced - the line parts it from the
+     *                      name when it is laid out
+     * @param indexOutcome  what that place did for the line, which is what decides whether it reads
+     *                      as a bare identifier or as the reason this line beat another
      * @return an otherwise-identical line stating that place
      */
-    public CellTooltipEntryLine indexedAt(String indexText) {
+    public CellTooltipEntryLine indexedAt(
+            String indexText,
+            CellTooltipIndexOutcome indexOutcome) {
+
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
             indexText,
+            indexOutcome,
             qualifierText,
             valueText,
-            valueWorkingText);
+            valueWorkingText,
+            isWorkingOnly);
+    }
+
+    /**
+     * Returns a copy of this line read as working throughout - an aside stating how a number above it
+     * was arrived at, rather than one of the things the block lists.
+     *
+     * <p>The box already parts a finding from the working behind it inside a value, in the shade each
+     * is drawn in. A line that is <em>all</em> working - the arithmetic of a term the list above it
+     * shares - says the same thing about itself, so it takes the same quiet shade for its name as its
+     * working does, and only the number it arrives at stays bright. Left as a fact about the line
+     * rather than a colour, so which shade means "working" is settled in one place for both.
+     *
+     * @return an otherwise-identical line read as the working behind a number rather than as a finding
+     */
+    public CellTooltipEntryLine readsAsWorking() {
+        return new CellTooltipEntryLine(
+            iconSpritePath,
+            labelText,
+            indexText,
+            indexOutcome,
+            qualifierText,
+            valueText,
+            valueWorkingText,
+            true);
     }
 
     /**
@@ -160,8 +212,10 @@ public record CellTooltipEntryLine(
             iconSpritePath,
             labelText,
             indexText,
+            indexOutcome,
             qualifierText,
             valueText,
-            valueWorkingText);
+            valueWorkingText,
+            isWorkingOnly);
     }
 }

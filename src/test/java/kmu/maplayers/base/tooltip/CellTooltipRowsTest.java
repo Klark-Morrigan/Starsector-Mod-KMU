@@ -15,6 +15,8 @@ import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT_GREEN;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT_RED;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
@@ -336,7 +338,7 @@ final class CellTooltipRowsTest {
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
                     .createLine(null, "Chicomoztoc", "19")
-                    .indexedAt("[2]"),
+                    .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED),
                 MEMBER_LEVEL,
                 NOT_RESERVING_CREST_COLUMN);
 
@@ -351,7 +353,7 @@ final class CellTooltipRowsTest {
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
                     .createLine(null, "Chicomoztoc", "19")
-                    .indexedAt("[2]")
+                    .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
                     .qualifiedWith("strongest"),
                 MEMBER_LEVEL,
                 NOT_RESERVING_CREST_COLUMN);
@@ -360,6 +362,53 @@ final class CellTooltipRowsTest {
                 .isEqualTo(new TextSpan(" [2]", GRAY));
             assertThat(readLabelTextRun(row, INDEXED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan(" strongest", HIGHLIGHT));
+        }
+
+        @Test
+        void buildListedRowPicksAPlaceOutOnceItDecidedSomething() {
+            // The moment the number stops being a label: two lines equal on everything else are
+            // parted by it alone, so it reads in vanilla's own positive or negative shade rather than
+            // leaving the reader to work out that the smaller number wins.
+            var wonRow = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Eventide", "6")
+                    .indexedAt("[2]", CellTooltipIndexOutcome.WON),
+                MEMBER_LEVEL,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(readLabelTextRun(wonRow, INDEX_RUN))
+                .isEqualTo(new TextSpan(" [2]", HIGHLIGHT_GREEN));
+
+            var lostRow = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Culann", "6")
+                    .indexedAt("[5]", CellTooltipIndexOutcome.LOST),
+                MEMBER_LEVEL,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(readLabelTextRun(lostRow, INDEX_RUN))
+                .isEqualTo(new TextSpan(" [5]", HIGHLIGHT_RED));
+        }
+
+        @Test
+        void buildListedRowQuietensTheNameOfALineThatIsWorkingThroughout() {
+            // An aside stating how a number above it was arrived at is not one of the things the block
+            // lists, so it reads in the shade a value's working does - name and all - and only the
+            // number it arrives at stays a finding.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Same-faction market bonus", "+2")
+                    .derivesValueFrom("(3 markets) - 1 =")
+                    .readsAsWorking(),
+                MEMBER_LEVEL,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(readLabelTextRun(row, LABEL_RUN))
+                .isEqualTo(new TextSpan("Same-faction market bonus", GRAY));
+            assertThat(row.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.TextRuns(List.of(
+                    new TextSpan("(3 markets) - 1 =", GRAY),
+                    new TextSpan("+2", TEXT))));
         }
 
         @Test

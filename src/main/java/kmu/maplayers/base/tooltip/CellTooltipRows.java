@@ -177,7 +177,7 @@ public final class CellTooltipRows {
         var row = TooltipRow
             .createRow(new TextSpan(
                 line.labelText(),
-                StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve()))
+                resolveLabelColour(line, StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve())))
             .carriesCrest(line.iconSpritePath());
 
         return appendQualifier(
@@ -213,7 +213,7 @@ public final class CellTooltipRows {
 
         var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
         var row = TooltipRow
-            .createRow(new TextSpan(line.labelText(), textColour))
+            .createRow(new TextSpan(line.labelText(), resolveLabelColour(line, textColour)))
             .carriesCrest(line.iconSpritePath())
             .indentsBy(level.indentDepth() * MEMBER_INDENT);
 
@@ -276,10 +276,23 @@ public final class CellTooltipRows {
             : subordinatedRow.clearsCrestColumn();
     }
 
-    // Runs a line on into where the thing on it falls in its ordering. Drawn in the quiet shade and
-    // laid before any qualifier, because it identifies the line rather than saying something about
-    // it: the eye scanning names meets it as part of the name, and the gold run after it stays the
-    // one thing on the line that reads as a finding.
+    // What a line's own name reads in: the tier's colour, or the quiet shade for a line that is
+    // working throughout. One rule for both tiers, so an aside beneath a listed thing and one beneath
+    // a member read alike, and the shade a working reads in is the same one a value's working takes.
+    private static Color resolveLabelColour(CellTooltipEntryLine line, Color tierColour) {
+        return line.isWorkingOnly()
+            ? StarsectorUiColour.VANILLA_GRAY.resolve()
+            : tierColour;
+    }
+
+    // Runs a line on into where the thing on it falls in its ordering. Laid before any qualifier,
+    // because it identifies the line rather than saying something about it: the eye scanning names
+    // meets it as part of the name, and the gold run after it stays what the line calls out.
+    //
+    // Quiet while the place settled nothing, and in vanilla's own positive or negative shade once it
+    // did. That is the moment the number stops being a label: two lines equal on everything else are
+    // parted by it alone, so the reader looking for why one beat the other should find the answer
+    // rather than work out that the smaller number wins.
     //
     // A capability of the vocabulary rather than a decision it makes - a line states a place only
     // where the thing on it belongs to an ordering a reader has some use for, which is the resolver's
@@ -293,7 +306,17 @@ public final class CellTooltipRows {
         }
         return row.continuesWith(new TextSpan(
             CONTINUATION_GAP + line.indexText(),
-            StarsectorUiColour.VANILLA_GRAY.resolve()));
+            resolveIndexColour(line.indexOutcome())));
+    }
+
+    // The shade a place reads in, by what it decided. Settled here rather than at whatever resolved
+    // the outcome, so two layers marking a decided ordering cannot mark it in two different greens.
+    private static Color resolveIndexColour(CellTooltipIndexOutcome outcome) {
+        return switch (outcome) {
+            case WON -> StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
+            case LOST -> StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve();
+            case UNCONTESTED -> StarsectorUiColour.VANILLA_GRAY.resolve();
+        };
     }
 
     // Runs a line on into whatever it calls out. Applied at every tier through one helper, so a status

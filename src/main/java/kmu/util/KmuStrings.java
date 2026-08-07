@@ -58,14 +58,13 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_CORE_TERRITORY = "political_map_tooltip_core_territory";
     public static final String POLITICAL_MAP_TOOLTIP_CORE_MARKER = "political_map_tooltip_core_marker";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_NONE = "political_map_tooltip_claim_none";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_STRONGEST =
-        "political_map_tooltip_claim_strongest";
+    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER = "political_map_tooltip_claim_holder";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION =
         "political_map_tooltip_claim_listing_position";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_OTHER_MARKETS =
-        "political_map_tooltip_claim_other_markets";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_OTHER_MARKETS_TOTAL =
-        "political_map_tooltip_claim_other_markets_total";
+    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_BONUS =
+        "political_map_tooltip_claim_sibling_bonus";
+    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_WORKING =
+        "political_map_tooltip_claim_sibling_working";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY = "political_map_tooltip_claim_military";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_BONUS = "political_map_tooltip_claim_bonus";
     public static final String POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS =

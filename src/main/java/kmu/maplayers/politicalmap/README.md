@@ -162,21 +162,33 @@ opens every faction the contest names into the markets it holds the system with 
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
 which settles the one read behind them, the claimant, the decree marker, and the three blocks, and
 leaves open only what hangs beneath a faction (`resolveAccountEntries`, hanging nothing by
-default). `ClaimScoreRowResolver` decides those lines: the faction's strongest market first - called
-out as `strongest`, because the number on the faction's line above is that one market's score and
-not the total of the list, which is what a reader will otherwise take it for - then the rest in
-descending order, each over its own size and its garrison bonus where it earned one. The call-out is
-dropped over a system held by decree, where nothing any market scored settled anything. Every market
-also states where the economy lists it, as a quiet `[n]` run after its name
+default). `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the
+mechanic itself would settle them - strongest first, a tie falling to the earlier place in the
+economy's listing - so the one representing the faction comes out on top by that order rather than
+by being put there. Exactly one market in the whole box is called out, as the `claim holder`: the
+one that actually took the system. Every faction is represented by its strongest, but only one of
+those won anything, and a marker on each would read as several holders of a system that can only
+have one; over a decree it goes unsaid entirely, since nothing any market scored settled the matter.
+Every market also states where the economy lists it, as a quiet `[n]` run after its name
 (`MarketClaimBreakdown.listingPosition`, numbered across the system's owned markets rather than
 within one faction's): the contest is settled on a strictly greater score, so a tie - between two of
 one faction's markets or between two factions' best - falls to whichever the economy reached first,
-and nothing else in the box says which that was. Closing the
-list is the presence term, which is the faction's rather than any one market's, since the mechanic
-gives every market of a faction the same point per other market it holds there: stated once beneath
-the very markets its count can be checked against, and worked out from that count
-(`(3 markets) - 1 = +2`, the subtraction being the market being scored, which is not its own
-sibling) rather than as a bare result nobody can check. Note that a market's own line carries the
+and nothing else in the box says which that was. Where a tie is actually drawn the place stops being
+a bare identifier and reads in vanilla's positive or negative shade, the market reached first having
+won it and the rest having lost. A market the player has not found is left off the list, since
+vanilla settles a claim over colonies nobody has found and repeating what it learned there would
+name something the player has no way of knowing about; the rule is
+`MarketClaimBreakdown.isKnownToPlayer`, the same one the faction and alliance tabs fog by, so all
+three agree on what the player knows, and the dev reveal states everything in full.
+Closing the list is the presence term, which is the faction's rather than any one market's, since
+the mechanic gives every market of a faction the same point per other market it holds there: stated
+once beneath the very markets its count can be checked against, and worked out from that count
+(`Same-faction market bonus   (3 markets) - 1 = +2`, the subtraction being the market being scored,
+which is not its own sibling) rather than as a bare result nobody can check. That line is working
+throughout bar the points it arrives at, so it reads in the quiet shade name and all, and it is
+withheld entirely where something was kept off the list above it, since a count that cannot be
+checked against what is on screen either contradicts it or states the very number the withholding
+exists to keep back. Note that a market's own line carries the
 whole score the contest weighed it at, presence included, so its listed terms are what it adds that
 its siblings' do not. The resolver shares the entry model and the block
 vocabulary with the domination pair but not their number grammar - a claim score is a small whole

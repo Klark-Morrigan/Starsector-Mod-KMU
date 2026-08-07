@@ -16,6 +16,10 @@ final class CellTooltipEntryLineTest {
 
     private static final String CREST = "graphics/hegemony_crest.png";
 
+    // What every line built through the factory is: one of the things a block lists, rather than the
+    // working behind a number above it.
+    private static final boolean IS_A_FINDING = false;
+
     @Nested
     class CreateLine {
 
@@ -26,7 +30,15 @@ final class CellTooltipEntryLineTest {
 
             assertThat(line)
                 .isEqualTo(
-                    new CellTooltipEntryLine(CREST, "The Hegemony", null, null, "1,200", null));
+                    new CellTooltipEntryLine(
+                        CREST,
+                        "The Hegemony",
+                        null,
+                        CellTooltipIndexOutcome.UNCONTESTED,
+                        null,
+                        "1,200",
+                        null,
+                        IS_A_FINDING));
         }
 
         @Test
@@ -87,7 +99,15 @@ final class CellTooltipEntryLineTest {
 
             assertThat(line)
                 .isEqualTo(
-                    new CellTooltipEntryLine(CREST, "The Hegemony", null, "(core)", "1,200", null));
+                    new CellTooltipEntryLine(
+                        CREST,
+                        "The Hegemony",
+                        null,
+                        CellTooltipIndexOutcome.UNCONTESTED,
+                        "(core)",
+                        "1,200",
+                        null,
+                        IS_A_FINDING));
         }
 
         @Test
@@ -110,11 +130,19 @@ final class CellTooltipEntryLineTest {
 
             var line = CellTooltipEntryLine
                 .createLine(CREST, "The Hegemony", "1,200")
-                .indexedAt("[2]");
+                .indexedAt("[2]", CellTooltipIndexOutcome.WON);
 
             assertThat(line)
                 .isEqualTo(
-                    new CellTooltipEntryLine(CREST, "The Hegemony", "[2]", null, "1,200", null));
+                    new CellTooltipEntryLine(
+                        CREST,
+                        "The Hegemony",
+                        "[2]",
+                        CellTooltipIndexOutcome.WON,
+                        null,
+                        "1,200",
+                        null,
+                        IS_A_FINDING));
         }
 
         @Test
@@ -124,7 +152,7 @@ final class CellTooltipEntryLineTest {
             var line = CellTooltipEntryLine
                 .createLine(CREST, "The Hegemony", "1,200")
                 .qualifiedWith("(core)")
-                .indexedAt("[2]");
+                .indexedAt("[2]", CellTooltipIndexOutcome.WON);
 
             assertThat(line.qualifierText())
                 .isEqualTo("(core)");
@@ -137,10 +165,54 @@ final class CellTooltipEntryLineTest {
             // A refinement returns a new value, so a caller numbering one line of a resolved list
             // cannot reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200");
-            plainLine.indexedAt("[2]");
+            plainLine.indexedAt("[2]", CellTooltipIndexOutcome.WON);
 
             assertThat(plainLine.indexText())
                 .isNull();
+        }
+    }
+
+    @Nested
+    class ReadsAsWorking {
+
+        @Test
+        void readsAsWorkingMarksTheLineAsTheArithmeticBehindANumberRatherThanAFinding() {
+
+            var line = CellTooltipEntryLine
+                .createLine(null, "Same-faction market bonus", "+2")
+                .readsAsWorking();
+
+            assertThat(line.isWorkingOnly())
+                .isTrue();
+        }
+
+        @Test
+        void readsAsWorkingLeavesEveryOtherPartOfTheLineAsItWas() {
+            // The refinement says how the line reads, not what it states, so a line that already
+            // carries a working and a place keeps both.
+            var line = CellTooltipEntryLine
+                .createLine(null, "Same-faction market bonus", "+2")
+                .derivesValueFrom("(3 markets) - 1 =")
+                .indexedAt("[2]", CellTooltipIndexOutcome.WON)
+                .readsAsWorking();
+
+            assertThat(line.valueWorkingText())
+                .isEqualTo("(3 markets) - 1 =");
+            assertThat(line.valueText())
+                .isEqualTo("+2");
+            assertThat(line.indexText())
+                .isEqualTo("[2]");
+        }
+
+        @Test
+        void readsAsWorkingLeavesTheLineItWasBuiltFromAFinding() {
+            // A refinement returns a new value, so a caller quietening one line of a resolved list
+            // cannot reach into the line another caller is still holding.
+            var plainLine = CellTooltipEntryLine.createLine(null, "Culann", "6");
+            plainLine.readsAsWorking();
+
+            assertThat(plainLine.isWorkingOnly())
+                .isFalse();
         }
     }
 
@@ -156,7 +228,15 @@ final class CellTooltipEntryLineTest {
 
             assertThat(line)
                 .isEqualTo(
-                    new CellTooltipEntryLine(null, "Small: 2", null, null, "500", "0.25 /"));
+                    new CellTooltipEntryLine(
+                        null,
+                        "Small: 2",
+                        null,
+                        CellTooltipIndexOutcome.UNCONTESTED,
+                        null,
+                        "500",
+                        "0.25 /",
+                        IS_A_FINDING));
         }
 
         @Test

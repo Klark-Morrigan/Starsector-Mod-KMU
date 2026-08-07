@@ -79,6 +79,11 @@ final class ExpandedSystemClaimTooltipTest {
     // market posed takes the head of the listing.
     private static final int FIRST_LISTED = 1;
 
+    // Every market posed here is one the player has found. What the box withholds of one they have
+    // not is the resolver's, and pinned there; the cases below are about which faction gets an
+    // account at all.
+    private static final boolean IS_KNOWN_TO_PLAYER = true;
+
     private static final boolean IS_TERRITORIAL = true;
 
     // A system the contest itself settled - no decree over it - which is the state an account is
@@ -163,21 +168,33 @@ final class ExpandedSystemClaimTooltipTest {
         }
 
         @Test
-        void resolveAccountEntriesCallsOutTheStrongestMarketOfAContestedSystem() {
-            // The box's half of the rule: it reads how the system was settled off the very contest it
-            // is drawing, so the call-out appears exactly where the contest decided something.
+        void resolveAccountEntriesCallsOutTheMarketTheClaimantTookTheSystemWith() {
+            // The box's half of the rule: it reads who took the system off the very contest it is
+            // drawing, so the call-out lands on the one market in the whole box that won anything.
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL));
 
             assertThat(entries.get(0).line().qualifierText())
-                .isEqualTo("strongest");
+                .isEqualTo("claim holder");
+        }
+
+        @Test
+        void resolveAccountEntriesCallsOutNoMarketOfAFactionThatTookNothing() {
+            // A rival is represented by its own strongest market too, but that market took nothing -
+            // called out, it would read as a second holder of a system that can only have one.
+            var entries = tooltip.resolveAccountEntries(
+                CONTESTED_SYSTEM,
+                buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL));
+
+            assertThat(entries.get(0).line().qualifierText())
+                .isNull();
         }
 
         @Test
         void resolveAccountEntriesCallsOutNoMarketOfASystemHeldByDecree() {
-            // The other half: a decree took the system before any market was weighed, so no market's
-            // score decided anything and none is called out for it.
+            // A decree took the system before any market was weighed, so no market's score decided
+            // anything and none is called out for it - the claimant's least of all.
             var entries = tooltip.resolveAccountEntries(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL));
@@ -302,6 +319,7 @@ final class ExpandedSystemClaimTooltipTest {
         return new MarketClaimBreakdown(
             marketName,
             FIRST_LISTED,
+            IS_KNOWN_TO_PLAYER,
             marketSize,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());

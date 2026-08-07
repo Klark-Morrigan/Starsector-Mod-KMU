@@ -41,6 +41,12 @@ public final class CellTooltipPaletteFake {
     /** The quiet shade a note about the box - rather than about the system - reads in. */
     public static final Color GRAY = new Color(140, 140, 140);
 
+    /** The shade something that went a line's way reads in. */
+    public static final Color HIGHLIGHT_GREEN = new Color(120, 220, 120);
+
+    /** The shade something that went against a line reads in. */
+    public static final Color HIGHLIGHT_RED = new Color(220, 120, 120);
+
     /** The shade a bound key is picked out in, wherever the game names one. */
     public static final Color BUTTON_SHORTCUT = new Color(255, 255, 120);
 
@@ -82,6 +88,12 @@ public final class CellTooltipPaletteFake {
         miscMock
             .when(Misc::getGrayColor)
             .thenReturn(GRAY);
+        miscMock
+            .when(Misc::getPositiveHighlightColor)
+            .thenReturn(HIGHLIGHT_GREEN);
+        miscMock
+            .when(Misc::getNegativeHighlightColor)
+            .thenReturn(HIGHLIGHT_RED);
     }
 
     /** Takes the palette and the settings proxy back down, so a suite leaves no statics mocked. */
