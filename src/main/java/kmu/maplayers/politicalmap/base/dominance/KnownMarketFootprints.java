@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.markets.MarketPatrols;
 import kmlib.starsector.markets.Markets;
 import kmlib.starsector.markets.PatrolCounts;
 
@@ -433,7 +434,7 @@ public final class KnownMarketFootprints {
 
     // The market's patrol-tier counts, when the patrol factor can earn anything for them:
     // nothing while the factor is toggled off or no functional patrol HQ fields patrols
-    // here. The $patrol gate (Markets.fieldsPatrols) confines the bonus to a colony a
+    // here. The $patrol gate (MarketPatrols.fieldsPatrols) confines the bonus to a colony a
     // patrol HQ actually garrisons: the raw patrol-count stats are also written by hidden
     // pirate and Luddic Path bases that set no flag, so reading the counts alone would
     // credit patrol strength vanilla would never spawn. The economy read is skipped while
@@ -442,10 +443,10 @@ public final class KnownMarketFootprints {
             MarketAPI market,
             PatrolWeighting rules) {
 
-        if (!rules.isWeighted() || !Markets.fieldsPatrols(market)) {
+        if (!rules.isWeighted() || !MarketPatrols.fieldsPatrols(market)) {
             return Optional.empty();
         }
-        return Optional.of(Markets.readPatrolCounts(market));
+        return Optional.of(MarketPatrols.readPatrolCounts(market));
     }
 
     /**
