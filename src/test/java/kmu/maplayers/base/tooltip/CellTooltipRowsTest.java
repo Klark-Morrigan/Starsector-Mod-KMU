@@ -328,13 +328,13 @@ final class CellTooltipRowsTest {
         void buildQualifierSpanReadsGold() {
             // The one decision the run exists for: a line that continues into it reads in two colours,
             // with what is being called out picked out from what is merely named.
-            assertThat(CellTooltipRows.buildQualifierSpan("worsening"))
-                .isEqualTo(new TextSpan(" worsening", HIGHLIGHT));
+            assertThat(CellTooltipRows.buildQualifierSpan("worsening").colour())
+                .isEqualTo(HIGHLIGHT);
         }
 
         @Test
         void buildQualifierSpanPartsItselfFromTheWordsItFollows() {
-            // Runs are laid down touching, so the run carries the space itself - otherwise a label and
+            // Runs are laid down touching, so the run opens with the gap itself - otherwise a label and
             // the status stated on it read as one word.
             assertThat(CellTooltipRows.buildQualifierSpan("hidden").text())
                 .isEqualTo(" hidden");

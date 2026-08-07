@@ -85,7 +85,8 @@ public record CellTooltipEntryLine(
      * line it is about rather than on a line of its own, such as why this line outranks a higher-scoring
      * one beneath it.
      *
-     * @param qualifierText the status called out at the end of the line
+     * @param qualifierText the status called out at the end of the line, unspaced - the line parts it
+     *                      from its label when it is laid out
      * @return an otherwise-identical line ending on that status
      */
     public CellTooltipEntryLine qualifiedWith(String qualifierText) {

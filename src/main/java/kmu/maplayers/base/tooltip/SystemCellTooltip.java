@@ -59,11 +59,6 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // body's rather than at the atlas's own 12, which reads as fine print beside 15pt content.
     private static final StarsectorFont FOOTNOTE_FONT = StarsectorFont.VANILLA_ORBITRON_12_CONDENSED;
 
-    // What parts the key from the words about it. A run is laid where the one before it ended, so the
-    // space is the layout's rather than part of either phrase - and stated once, since a hint whose
-    // key ran into its verb would read as a single word.
-    private static final String KEY_PHRASE_GAP = " ";
-
     // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
     // opaque black fill, so the content reads over the map without blocking it entirely.
     private static final float BORDER_WIDTH = 1f;
@@ -75,6 +70,10 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // comfortably legible and large enough to tell apart at a glance - off the body's 15 that is a holder
     // at 15, what it holds at 13, a term of that at 11 and a tier of that at 9, before the widget's own
     // floor takes over.
+    //
+    // Stated on the shape every layer's box shares rather than on the one box that first listed something
+    // deep enough to want it: how far a line stands under the box is a fact any box can carry, so two
+    // layers demoting a line by different amounts would be a difference the reader cannot account for.
     private static final float LEVEL_SHRINK = 2f;
 
     @Override
@@ -239,7 +238,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
                 StarsectorUiColour.VANILLA_BUTTON_SHORTCUT.resolve()))
             .clearsCrestColumn()
             .continuesWith(new TextSpan(
-                KEY_PHRASE_GAP + phrase,
+                CellTooltipRows.CONTINUATION_GAP + phrase,
                 StarsectorUiColour.VANILLA_GRAY.resolve()))
             .readsAs(TooltipLineStyle.FOOTNOTE);
     }
@@ -249,18 +248,14 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // live rather than being baked at class load.
     //
     // The heading and the body name no size: each face is a bitmap atlas crisp at exactly one size, and
-    // the box has no fit of its own to squeeze text into, so taking the native size keeps both kinds of
-    // line drawn 1:1 rather than scaled.
+    // the box has no fit of its own to squeeze text into, so a line speaking in the box's own voice takes
+    // the native size and is drawn 1:1 rather than scaled.
     //
-    // The note at the foot is the one exception, and knowingly: its atlas is rasterised at 12, which
-    // beside 15pt content reads as fine print rather than as a quieter line of the same box. It is drawn
-    // at the body's size instead, scaled off its atlas - what sets it apart from the content is its
-    // narrowness and its colours, neither of which costs it a size of its own.
-    //
-    // The per-level step is asked for here, on the shape every layer's box shares, rather than on the one
-    // box that first listed something deep enough to want it: how far a line stands under the box is a
-    // fact any box can carry, so two layers demoting a line by different amounts would be a difference
-    // the reader has no way to account for.
+    // Two kinds of line are scaled off their atlas anyway, both knowingly. The note at the foot, because
+    // its atlas is rasterised at 12, which beside 15pt content reads as fine print rather than as a
+    // quieter line of the same box - it takes the body's size instead, and what sets it apart is its
+    // narrowness and its colours, neither of which costs it a size of its own. And any line standing
+    // under that voice, by LEVEL_SHRINK per step, which is the whole point of asking for the step.
     private static CursorTooltipStyle buildStyle() {
         return new CursorTooltipStyle(
             TooltipStyle

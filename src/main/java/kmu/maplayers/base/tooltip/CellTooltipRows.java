@@ -42,17 +42,19 @@ public final class CellTooltipRows {
      */
     public static final String NO_SCORE = "";
 
+    /**
+     * What a run continuing a line opens with. A run is laid down where the one before it ended, so
+     * two runs that do not part read as one word - "Sizehidden", "F1hide score contributions". Owned
+     * by the line vocabulary rather than by each phrase, so the gap is the layout's fact and no author
+     * has to remember it or write it into a string.
+     */
+    public static final String CONTINUATION_GAP = " ";
+
     // The inset one level down adds, so a line reads as belonging to the line above it; a line the block
     // lists in its own right sits flush at zero. Applied per level rather than per tier, so a breakdown
     // three deep steps in evenly instead of collapsing everything below the first level onto one indent
     // no reader could tell apart.
     private static final float MEMBER_INDENT = 14f;
-
-    // What parts a qualifier from the words it continues. A run is laid down straight after the run
-    // before it, so without this the two words touch - "Sizehidden". Carried by the run rather than
-    // written into each string, so no author can ship a qualifier that runs into its line and none
-    // has to remember the space that keeps it apart.
-    private static final String QUALIFIER_SEPARATOR = " ";
 
     private CellTooltipRows() {
     }
@@ -70,7 +72,7 @@ public final class CellTooltipRows {
      */
     public static TextSpan buildQualifierSpan(String text) {
         return new TextSpan(
-            QUALIFIER_SEPARATOR + text,
+            CONTINUATION_GAP + text,
             StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 
