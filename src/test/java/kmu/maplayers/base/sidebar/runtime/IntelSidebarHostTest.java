@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
  * which sit inside the visor. The frozen fold key is pinned as a literal, since renaming it silently
  * re-docks every existing save. Its look is pinned at the three places it departs from the on-map one:
  * a shorter tab band, the raised-button chrome with the bare bound key belonging to it, and a frame in
- * the surrounding chrome's grey rather than in the player's accent.
+ * the accent's dark step - what the surrounding chrome is framed in - rather than in its base.
  */
 final class IntelSidebarHostTest {
 
@@ -179,15 +179,16 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void resolveWidgetStyleFramesThePanelInTheSurroundingChromesGrey() {
-            // The panel's frame abuts the visor's own, so it takes the fixed UI grey rather than the
-            // player accent the on-map panel frames itself in.
+        void resolveWidgetStyleFramesThePanelInTheSchemesDarkStep() {
+            // The panel's frame abuts the visor's own, and the chrome around it is framed in the dark
+            // member of the set it is built from - so this panel frames itself at that step rather than
+            // at the base the on-map panel takes.
             var boxColours = new IntelSidebarHost(new IntelScreenViewFake())
                 .resolveWidgetStyle()
                 .boxColours();
 
             assertThat(boxColours.border())
-                .isEqualTo(StarsectorUiColoursMock.UI_GRAY);
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_BG_DARK);
         }
 
         @Test

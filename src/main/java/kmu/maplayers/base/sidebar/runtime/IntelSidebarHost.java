@@ -24,9 +24,10 @@ import java.util.Set;
  * which frame edges they stroke.
  *
  * <p>Its look is the intel screen's rather than the map's: a row of raised buttons for tabs, a bound key
- * left bare, and a frame in the fixed UI grey - which is to say, what the vanilla chrome standing around
- * this panel wears, since a panel overlaying another screen's furniture reads as part of it or as a box
- * dropped on top of it, and nothing in between.
+ * left bare, and a frame in the accent's dark step - which is to say, what the vanilla chrome standing
+ * around this panel wears, that chrome being built from a three-colour set and framed in the dark member
+ * of it, since a panel overlaying another screen's furniture reads as part of it or as a box dropped on
+ * top of it, and nothing in between.
  *
  * <p>Its panel opens at the fold this save was left at, and a save holding no choice yet opens docked, so
  * the rail never covers the visor uninvited - the player expands it by the collapse handle when they want
@@ -115,10 +116,10 @@ public final class IntelSidebarHost extends BaseSidebarHost {
 
     @Override
     public WidgetStyle resolveWidgetStyle() {
-        // The intel screen's look: framed in the fixed UI grey its own chrome is drawn in rather than in
-        // the panel's accent, since this panel sits inside that chrome and its frame abuts the visor's.
-        // The controls inside keep the chosen colour scheme's accent, which the frame colour being its
-        // own knob is what allows.
+        // The intel screen's look: framed in the accent's dark step, the one the surrounding chrome's own
+        // frames are drawn in, rather than in the base its controls are ruled in - this panel sits inside
+        // that chrome and its frame abuts the visor's. The controls inside keep the base whichever way
+        // the frame goes, which the frame colour being its own knob is what allows.
         return SidebarStyles.buildChromeFramedStyle(buildTabStyle());
     }
 

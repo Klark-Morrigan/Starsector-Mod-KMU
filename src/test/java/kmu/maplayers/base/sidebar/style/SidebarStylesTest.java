@@ -21,10 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins {@link SidebarStyles}: which live values each part of the sidebar's look is composed from. The
  * look is built fresh every frame from the running game's colours, so what is worth pinning is not a
- * shade but a wiring - that the box takes the black backdrop, that a frame answers to what the panel
- * abuts while the controls stay on the chosen scheme's pair whichever framing is chosen, that the row's
- * chrome rule follows that same scheme, that each tab chrome carries the hotkey convention belonging to
- * it, and that the panel's sound scheme is the engine's own.
+ * shade but a wiring - that the box takes the black backdrop, that a frame takes the step of the chosen
+ * scheme its framing names while the controls stay on that scheme's base whichever framing is chosen,
+ * that the row's chrome rule follows that same scheme, that each tab chrome carries the hotkey
+ * convention belonging to it, and that the panel's sound scheme is the engine's own.
  *
  * <p>The sound scheme is here rather than only in KMLib because this is where the sidebar's two halves
  * meet: the widget style carries the scheme to the paint side and the host hands the same constant to
@@ -113,11 +113,12 @@ final class SidebarStylesTest {
     class BuildChromeFramedStyle {
 
         @Test
-        void buildChromeFramedStyleFramesTheBoxInTheSurroundingChromesGrey() {
-            // The frame abuts another screen's own frames, so it takes the fixed UI role those answer to
-            // rather than the player's accent - the whole visible point of the frame being its own knob.
+        void buildChromeFramedStyleFramesTheBoxInTheSchemesDarkStep() {
+            // The frame abuts another screen's own frames, and those are drawn in the dark member of the
+            // three-colour set the engine builds a control from - so this framing takes the dark step
+            // where the other takes the base. The whole visible point of the frame being its own knob.
             assertThat(buildChromeFramedStyle().boxColours().border())
-                .isEqualTo(StarsectorUiColoursMock.UI_GRAY);
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_BG_DARK);
         }
 
         @Test
@@ -134,18 +135,18 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildChromeFramedStyleHoldsItsFrameGreyWhileTheSchemeMovesItsControls() {
+        void buildChromeFramedStyleMovesItsFrameWithTheSchemeOneStepBelowItsControls() {
             // The mirror of the accent-framed case, and the one that makes the frame worth being its own
-            // knob: this framing answers what the panel abuts rather than what the player picked, so a
-            // scheme change has to move the controls and leave the border where it is. Wiring the frame
-            // to the accent - the obvious tidy, the two being one colour under the other framing - would
-            // pass every other case in this file.
+            // knob: the two framings part by which step of the scheme they take, never by which palette,
+            // so a scheme change moves the frame and the controls together and leaves them one step
+            // apart. Wiring the frame to the accent - the obvious tidy, the two being one colour under
+            // the other framing - would pass every other case in this file.
             sidebarSettingsMock.selectColourScheme(SidebarColourSchemeChoice.PLAYER_FACTION);
 
             var style = buildChromeFramedStyle();
 
             assertThat(style.boxColours().border())
-                .isEqualTo(StarsectorUiColoursMock.UI_GRAY);
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_DARK);
             assertThat(style.accentColours().base())
                 .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
         }
@@ -230,7 +231,7 @@ final class SidebarStylesTest {
         return SidebarStyles.buildAccentFramedStyle(null);
     }
 
-    // The look framed in the surrounding chrome's grey; the tab style is null for the same reason.
+    // The look framed in the scheme's dark step; the tab style is null for the same reason.
     private static WidgetStyle buildChromeFramedStyle() {
         return SidebarStyles.buildChromeFramedStyle(null);
     }

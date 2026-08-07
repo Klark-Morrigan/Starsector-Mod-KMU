@@ -33,8 +33,8 @@ import java.awt.Color;
  * <p>Both bundles come as a pair of named factories rather than as one taking the difference as an
  * argument, because the differences are conventions and not free choices: a row wears the strip chrome
  * with the underlined key or the raised-button chrome with the plain one, and a panel is framed in its own
- * accent or in the surrounding chrome's grey. Naming the two ends is what keeps a host from composing a
- * look vanilla has no counterpart for.
+ * accent or in the dark step the chrome around it is framed in. Naming the two ends is what keeps a host
+ * from composing a look vanilla has no counterpart for.
  *
  * <p>Out of the render pass for the same reason {@link SidebarPalettes} beside it is: a look is a value,
  * so building one needs no live GL context and no drawn frame - only the running game's colours.
@@ -114,21 +114,22 @@ public final class SidebarStyles {
     }
 
     /**
-     * The sidebar's look framed in the surrounding UI's own grey: the frame matches the vanilla chrome
-     * the panel is drawn among rather than the accent its controls take.
+     * The sidebar's look framed in the scheme's dark step: the frame matches the vanilla chrome the panel
+     * is drawn among rather than the accent its controls take.
      *
      * <p>What a panel overlaying another screen's chrome wants. Its frame abuts that screen's frames, and
      * two boxes sharing an edge in two colours read as one laid over the other rather than as part of the
-     * same surface; the grey is the fixed UI role those frames answer to, which no player faction moves.
-     * The controls inside keep the panel's own accent, that being what the player chose rather than what
-     * the panel abuts - which is the whole reason the frame is its own knob.
+     * same surface. The dark step is what those frames are drawn in: the engine builds a control from a
+     * three-colour set and frames it in the dark member, so a panel matching that chrome matches it at
+     * that step and not at the base its labels are written in. The controls inside keep the base, that
+     * being what a control is ruled in either way - which is the whole reason the frame is its own knob.
      *
      * @param tabStyle the tab style the host laid its band out with, so the row is painted from the
      *                 value it was measured against
      * @return the look to paint this sidebar's panel from
      */
     public static WidgetStyle buildChromeFramedStyle(TabStyle tabStyle) {
-        return composeStyle(tabStyle, SidebarFraming.CHROME_GREY);
+        return composeStyle(tabStyle, SidebarFraming.CHROME_DARK);
     }
 
     // The accent pair the panel is ruled in, under whichever palette the player pointed it at. One place
@@ -141,13 +142,14 @@ public final class SidebarStyles {
         return SidebarPalettes.resolveAccentColours(KmuMapLayerSettings.getMapSidebarColourScheme());
     }
 
-    // Which colour a framing convention paints the panel's border in. The accent it takes is the one the
-    // controls are already ruled in rather than a second resolve, which is what makes a panel framed in
-    // one palette and ruled in another unrepresentable rather than merely avoided.
+    // Which step of the panel's accent a framing convention paints the border in. Both conventions read
+    // the same resolved set rather than one of them resolving a colour of its own, which is what makes a
+    // panel framed in one palette and ruled in another unrepresentable rather than merely avoided: the
+    // two framings differ by which step they take, never by which palette.
     private static Color resolveFrameColour(SidebarFraming framing, AccentColours accentColours) {
         return switch (framing) {
             case OWN_ACCENT -> accentColours.base();
-            case CHROME_GREY -> StarsectorUiColour.VANILLA_GRAY.resolve();
+            case CHROME_DARK -> accentColours.dark();
         };
     }
 
@@ -210,8 +212,8 @@ public final class SidebarStyles {
 
     /**
      * Which of the two framing conventions a look is composed with. A convention rather than a colour,
-     * because the accent-framed one is not free to name its shade: it takes whatever the panel's controls
-     * are ruled in, and a caller allowed to pass a colour instead could hand over one from another
+     * because neither one is free to name its shade: each names a step of the accent the panel's controls
+     * are already ruled in, and a caller allowed to pass a colour instead could hand over one from another
      * palette entirely.
      *
      * <p>Private, and so not a third thing a host chooses. The two public factories are the surface a
@@ -223,7 +225,10 @@ public final class SidebarStyles {
         /** Framed in the panel's own control accent - what a panel with no neighbouring chrome takes. */
         OWN_ACCENT,
 
-        /** Framed in the fixed UI grey - what a panel abutting another screen's frames takes. */
-        CHROME_GREY
+        /**
+         * Framed in the accent's dark step - what a panel abutting another screen's frames takes, that
+         * being the step the engine frames its own controls in.
+         */
+        CHROME_DARK
     }
 }

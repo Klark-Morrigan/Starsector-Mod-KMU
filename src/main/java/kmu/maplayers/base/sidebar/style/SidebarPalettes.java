@@ -1,5 +1,6 @@
 package kmu.maplayers.base.sidebar.style;
 
+import kmlib.colour.Colours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.render.gl.style.AccentColours;
 import kmlib.starsector.ui.render.gl.style.NotchColours;
@@ -16,34 +17,50 @@ import java.awt.Color;
  */
 public final class SidebarPalettes {
 
+    // How much of its base each channel of the neutral scheme's dark step keeps. That scheme is the one
+    // with no engine shade to take: the fixed palette's dark role is the button teal, and a scheme whose
+    // point is dropping the accent hue cannot take a tinted shade, so it steps its own grey down instead.
+    // The depth is roughly where the two tinted schemes' darks sit below their bases, so the three
+    // schemes recede by the same amount; the grey's own translucency rides along untouched, a dark step
+    // in this family being a shade drawn over live content rather than a surface of its own.
+    private static final float GREY_DARK_SCALE = 0.3f;
+
     // Resolves only; never instantiated.
     private SidebarPalettes() {
     }
 
     /**
-     * The accent pair the panel's controls are drawn in - the wash-and-label shade and the brighter step
-     * a tick has to read against - for the player's colour scheme choice.
+     * The accent steps the panel's controls and its frame are drawn in - the recessive shade a frame and
+     * a button interior take, the wash-and-label shade, and the brighter step a tick has to read against
+     * - for the player's colour scheme choice.
      *
-     * <p>Each scheme is two steps of one palette rather than two colours chosen apart, because the pair
-     * has to stay a pair: a bright step that did not sit above its base would leave a checkbox's tick
-     * indistinguishable from the chrome it is drawn on. The UI palette's pair is the engine's own button
-     * roles, and the stock install gives them the same values a default player faction gives its base and
-     * bright - so that scheme is not a new look on an unmodded game, only one that stops moving when a
-     * faction's colours do.
+     * <p>Each scheme is three steps of one palette rather than three colours chosen apart, because the
+     * set has to stay a set: a bright step that did not sit above its base would leave a checkbox's tick
+     * indistinguishable from the chrome it is drawn on, and a dark step that did not sit below it would
+     * stop a frame receding behind what it encloses. The UI palette's steps are the engine's own button
+     * roles, which is what the engine builds its own controls from, and the stock install gives them the
+     * same values a default player faction gives its own three - so that scheme is not a new look on an
+     * unmodded game, only one that stops moving when a faction's colours do.
      *
      * @param choice which palette the player pointed the panel at
-     * @return the base and bright accents the panel's controls take
+     * @return the dark, base, and bright accents the panel takes
      */
     public static AccentColours resolveAccentColours(SidebarColourSchemeChoice choice) {
 
         return switch (choice) {
             case UI_PALETTE -> new AccentColours(
+                StarsectorUiColour.VANILLA_BUTTON_BG_DARK.resolve(),
                 StarsectorUiColour.VANILLA_BUTTON_TEXT.resolve(),
                 StarsectorUiColour.VANILLA_LIGHT_HIGHLIGHT.resolve());
-            case CHROME_GREY -> new AccentColours(
-                StarsectorUiColour.VANILLA_GRAY.resolve(),
-                StarsectorUiColour.VANILLA_TEXT.resolve());
+            case CHROME_GREY -> {
+                var grey = StarsectorUiColour.VANILLA_GRAY.resolve();
+                yield new AccentColours(
+                    Colours.darken(grey, GREY_DARK_SCALE),
+                    grey,
+                    StarsectorUiColour.VANILLA_TEXT.resolve());
+            }
             case PLAYER_FACTION -> new AccentColours(
+                StarsectorUiColour.VANILLA_PLAYER_DARK.resolve(),
                 StarsectorUiColour.VANILLA_PLAYER_BASE.resolve(),
                 StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve());
         };

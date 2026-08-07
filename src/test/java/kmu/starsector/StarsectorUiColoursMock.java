@@ -5,6 +5,7 @@ import com.fs.starfarer.api.util.Misc;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.Map;
 
 import static org.mockito.Mockito.mockStatic;
 
@@ -32,6 +33,9 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
     /** Its brighter step, taken by a lit label or a ticked box. */
     public static final Color PLAYER_BRIGHT = new Color(200, 240, 255);
 
+    /** Its dark step, the recessive shade its frames and its button interiors are drawn in. */
+    public static final Color PLAYER_DARK = new Color(31, 94, 112, 175);
+
     /** The fixed UI grey the engine frames its own panels in, which no player faction moves. */
     public static final Color UI_GRAY = new Color(155, 155, 155);
 
@@ -48,21 +52,28 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
      */
     public static final Color LIGHT_HIGHLIGHT = new Color(203, 245, 255);
 
+    /**
+     * The dark teal a resting vanilla button fills and frames with - the fixed palette's own dark step,
+     * one below {@link #BUTTON_TEXT}.
+     */
+    public static final Color BUTTON_BG_DARK = new Color(31, 60, 75, 175);
+
     /** The gold an emphasised word reads in. */
     public static final Color HIGHLIGHT_GOLD = new Color(255, 255, 175);
 
     /**
-     * What every other named engine colour key answers with - {@code buttonBgDark},
-     * {@code buttonShortcut}, and the rest. One shade for all of them because a case pinning a
-     * particular key names it itself; this is the floor that keeps an unnamed key from resolving null
-     * and failing the whole look.
+     * What every other named engine colour key answers with - {@code buttonShortcut} and the rest. One
+     * shade for all of them because a case pinning a particular key names it itself; this is the floor
+     * that keeps an unnamed key from resolving null and failing the whole look.
      */
     public static final Color ENGINE_UI_SHADE = new Color(100, 100, 100);
 
-    // The engine key the light highlight is stored under, so the proxy can answer that one apart from
-    // the floor above. Spelt here rather than reached for through the palette enum: this fake stands in
-    // for the engine, so it answers keys the way the engine stores them.
-    private static final String LIGHT_HIGHLIGHT_KEY = "tooltipTitleAndLightHighlightColor";
+    // The engine keys the named shades above are stored under, so the proxy can answer those apart from
+    // the floor. Spelt here rather than reached for through the palette enum: this fake stands in for
+    // the engine, so it answers keys the way the engine stores them.
+    private static final Map<String, Color> NAMED_ENGINE_SHADES = Map.of(
+        "tooltipTitleAndLightHighlightColor", LIGHT_HIGHLIGHT,
+        "buttonBgDark", BUTTON_BG_DARK);
 
     private final MockedStatic<Misc> miscMock;
 
@@ -79,9 +90,8 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
      */
     public static StarsectorUiColoursMock install() {
 
-        StarsectorSettingsFake.installSettings(key -> LIGHT_HIGHLIGHT_KEY.equals(key)
-            ? LIGHT_HIGHLIGHT
-            : ENGINE_UI_SHADE);
+        StarsectorSettingsFake.installSettings(
+            key -> NAMED_ENGINE_SHADES.getOrDefault(key, ENGINE_UI_SHADE));
 
         var miscMock = mockStatic(Misc.class);
 
@@ -91,6 +101,9 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
         miscMock
             .when(Misc::getBrightPlayerColor)
             .thenReturn(PLAYER_BRIGHT);
+        miscMock
+            .when(Misc::getDarkPlayerColor)
+            .thenReturn(PLAYER_DARK);
         miscMock
             .when(Misc::getGrayColor)
             .thenReturn(UI_GRAY);

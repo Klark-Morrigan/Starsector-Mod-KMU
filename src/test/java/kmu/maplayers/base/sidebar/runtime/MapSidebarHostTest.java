@@ -148,8 +148,9 @@ final class MapSidebarHostTest {
 
         @Test
         void resolveWidgetStyleFramesThePanelInItsOwnAccent() {
-            // This panel floats free with no chrome to match, so its frame is the one colour it carries
-            // rather than the surrounding UI's grey - the accent of whichever scheme the player picked.
+            // This panel floats free with no chrome to match, so its frame takes the same step its
+            // controls do - the base accent of whichever scheme the player picked - rather than the
+            // recessive dark a panel abutting another screen's frames drops to.
             assertThat(MapSidebarHost.INSTANCE.resolveWidgetStyle().boxColours().border())
                 .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
         }
