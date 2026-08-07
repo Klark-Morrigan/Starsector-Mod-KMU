@@ -132,7 +132,8 @@ public final class SidebarStyles {
         return composeStyle(tabStyle, SidebarFraming.CHROME_DARK);
     }
 
-    // The accent pair the panel is ruled in, under whichever palette the player pointed it at. One place
+    // The accent steps the panel is ruled and framed in, under whichever palette the player pointed it
+    // at. One place
     // the choice is turned into shades, so the widget style and the tab row cannot come to read it
     // differently - but two call sites, since a tab style is also built for the layout pass, where no
     // panel style exists to hand one down from. Both land in the same frame on a live read of one stored
@@ -176,13 +177,13 @@ public final class SidebarStyles {
     }
 
     // The sidebar's look built fresh from the live colours, framed by the given convention: a black body
-    // backdrop, the colour scheme's accent pair for the controls, the insignia body face, the given tab
+    // backdrop, the colour scheme's accent steps for the controls, the insignia body face, the given tab
     // style, the collapse handle's chevron shades for the colour the player picked, and the vanilla
     // button sounds its controls answer by. Everything but the framing is shared by every screen the
     // sidebar draws on, so a screen choosing its frame chooses nothing else by accident.
     //
-    // The pair is resolved here and spent on both the controls and the frame, so the one scheme reaches
-    // every part of the panel. A frame colour taken as an argument beside the pair would let the two
+    // The set is resolved here and spent on both the controls and the frame, so the one scheme reaches
+    // every part of the panel. A frame colour taken as an argument beside the set would let the two
     // arrive from different schemes - the mismatch the scheme exists to remove - so the caller names its
     // convention and nothing else.
     private static WidgetStyle composeStyle(TabStyle tabStyle, SidebarFraming framing) {

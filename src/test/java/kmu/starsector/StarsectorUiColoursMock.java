@@ -36,8 +36,13 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
     /** Its dark step, the recessive shade its frames and its button interiors are drawn in. */
     public static final Color PLAYER_DARK = new Color(31, 94, 112, 175);
 
-    /** The fixed UI grey the engine frames its own panels in, which no player faction moves. */
-    public static final Color UI_GRAY = new Color(155, 155, 155);
+    /**
+     * The fixed UI grey the engine frames its own panels in, which no player faction moves. Translucent
+     * as the engine's own is ({@code textGrayColor} carries an alpha under 255): a shade sunk from this
+     * one is expected to carry that translucency through, so a fixture that handed the subject an opaque
+     * grey would let a step that flattened it pass.
+     */
+    public static final Color UI_GRAY = new Color(155, 155, 155, 180);
 
     /** The lighter grey the engine writes its plain body text in, a step above {@link #UI_GRAY}. */
     public static final Color UI_TEXT = new Color(220, 220, 220);
@@ -47,8 +52,8 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
 
     /**
      * The near-white the engine titles its tooltips in - the fixed palette's bright step above
-     * {@link #BUTTON_TEXT}. Named rather than left to {@link #ENGINE_UI_SHADE} because it is one half of
-     * an accent pair, and a case pinning which half went where needs the two to differ.
+     * {@link #BUTTON_TEXT}. Named rather than left to {@link #ENGINE_UI_SHADE} because it is one step of
+     * an accent, and a case pinning which step went where needs them to differ.
      */
     public static final Color LIGHT_HIGHLIGHT = new Color(203, 245, 255);
 

@@ -68,11 +68,13 @@ final class SidebarPalettesTest {
             // this being the one scheme with no engine shade to take - the fixed palette's dark role is
             // the button teal, and a tint is what this choice exists to drop. Spelt as the channel
             // values the step lands on rather than as the rule that produced them, so re-dialling the
-            // depth is a decision this case makes visible instead of one it agrees with.
+            // depth is a decision this case makes visible instead of one it agrees with. The alpha is
+            // half of what it pins: a dark step here is drawn over a live visor, so sinking the grey
+            // must leave its translucency where it stood rather than returning a solid bar.
             var accents = SidebarPalettes.resolveAccentColours(SidebarColourSchemeChoice.CHROME_GREY);
 
             assertThat(accents.dark())
-                .isEqualTo(new Color(47, 47, 47));
+                .isEqualTo(new Color(47, 47, 47, 180));
             assertThat(accents.base())
                 .isEqualTo(StarsectorUiColoursMock.UI_GRAY);
             assertThat(accents.bright())

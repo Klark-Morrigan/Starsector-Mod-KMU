@@ -388,7 +388,7 @@ drawn box, not part of the measured display string, so drawing it or not moves n
 the prose-highlight `hColor` the stock install happens to give the same value.
 
 `style/SidebarPalettes` maps both of the player's colour choices to shades: the
-`SidebarColourSchemeChoice` to the panel's accent pair, and the `NotchChevronColourChoice` to the
+`SidebarColourSchemeChoice` to the panel's three accent steps, and the `NotchChevronColourChoice` to the
 chevron's resting and lit shades. It is kept out of the renderer so the "which colour does this
 choice mean" rules stay a pure lookup a test can pin, with no live GL or screen needed. The handle
 travels between those shades on the same fade the tabs use, so the gold choice - one colour passed

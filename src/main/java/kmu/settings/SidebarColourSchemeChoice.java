@@ -13,7 +13,7 @@ import kmlib.settings.LabeledChoice;
  * faction one is kept as a taste, rather than the other way round.
  *
  * <p>One choice rather than one knob per colour because the panel's three colour reads - the frame, the
- * controls' accent pair, and the tab row's chrome rule - have to move together: a panel framed in one
+ * controls' accent steps, and the tab row's chrome rule - have to move together: a panel framed in one
  * palette and ruled in another reads worse than either of the two looks it is made of. Per-colour knobs
  * would offer exactly that as a combination.
  *
@@ -24,23 +24,27 @@ import kmlib.settings.LabeledChoice;
 public enum SidebarColourSchemeChoice implements LabeledChoice {
 
     /**
-     * The engine's own button roles: {@code buttonText} for the chrome and the near-white tooltip-title
-     * shade above it. The stock install gives these two the same values the player faction's base and
-     * bright shades default to, so on an unmodded game this is the look the panel has always had - what
-     * it stops doing is following a faction that recolours those.
+     * The engine's own button roles: {@code buttonBgDark} for the frames and surfaces that recede,
+     * {@code buttonText} for the chrome, and the near-white tooltip-title shade above it. The stock
+     * install gives these three the same values the player faction's own three default to, so on an
+     * unmodded game this is the look the panel has always had - what it stops doing is following a
+     * faction that recolours those.
      */
     UI_PALETTE("UI palette"),
 
     /**
-     * The neutral greys the engine writes its plain text in. The strongest reading of the panel as part
-     * of the game's UI: no accent hue at all, so the sidebar recedes into the chrome around it.
+     * The neutral greys the engine writes its plain text in, over a dark step sunk from the first of
+     * them - this being the one scheme with no engine dark to take, the fixed palette's own being the
+     * button teal and a tint being what this choice exists to drop. The strongest reading of the panel
+     * as part of the game's UI: no accent hue at all, so the sidebar recedes into the chrome around it.
      */
     CHROME_GREY("Chrome grey"),
 
     /**
-     * The player faction's own base and bright shades, which is what the panel wore before the scheme
-     * was a choice. Kept because a player flying a faction whose colours they picked may well want the
-     * panel to carry them.
+     * The player faction's own dark, base, and bright shades, which is what the panel wore before the
+     * scheme was a choice. Kept because a player flying a faction whose colours they picked may well
+     * want the panel to carry them - and it is the one scheme whose three steps arrive together from a
+     * single source, a faction declaring all three.
      */
     PLAYER_FACTION("Player faction");
 
