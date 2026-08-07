@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar.style;
 
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.ui.render.gl.WidgetStyle;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 
@@ -126,7 +127,7 @@ final class SidebarStylesTest {
         // The look under test. The tab style is passed as null deliberately: this factory carries it
         // through without reading it, so building a real one would drag the tab palette's own live reads
         // into cases about the panel around it.
-        private static kmlib.starsector.ui.render.gl.WidgetStyle buildStyle() {
+        private static WidgetStyle buildStyle() {
             return SidebarStyles.buildPlayerAccentedStyle(null);
         }
     }

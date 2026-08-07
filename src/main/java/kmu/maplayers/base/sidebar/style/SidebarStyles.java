@@ -9,6 +9,7 @@ import kmlib.starsector.ui.render.gl.BoxColours;
 import kmlib.starsector.ui.render.gl.WidgetStyle;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.HotkeyStyle;
+import kmlib.starsector.ui.widgets.tabs.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.TabPalette;
 import kmlib.starsector.ui.widgets.tabs.TabStyle;
 
@@ -51,9 +52,10 @@ public final class SidebarStyles {
     }
 
     /**
-     * A tab style at the given band height, over the shared paint: the vanilla map-tab palette - its
-     * per-state fills and its interaction lifts - resolved live so it tracks a restyled install, the
-     * underlined-key hotkey convention, and the orbitron face at the layout's tab size.
+     * A tab style at the given band height, over the shared paint: the sector map's own tab chrome, the
+     * vanilla map-tab palette - its per-state fills and its interaction lifts - resolved live so it tracks
+     * a restyled install, the underlined-key hotkey convention, and the orbitron face at the layout's tab
+     * size.
      *
      * <p>The underlined key is the sector map's own convention: the on-map strip sits one tab-height
      * below the vanilla Sector/System tabs, which mark their bound key wherever it falls - lit inside
@@ -68,6 +70,7 @@ public final class SidebarStyles {
      */
     public static TabStyle buildTabStyle(float headerBandHeight) {
         return new TabStyle(
+            TabChrome.STRIP,
             headerBandHeight,
             TabPalette.createMapTabPalette(),
             HotkeyStyle.createUnderlined(),
