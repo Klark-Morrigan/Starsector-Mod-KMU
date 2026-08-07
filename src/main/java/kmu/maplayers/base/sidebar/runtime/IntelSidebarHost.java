@@ -116,9 +116,9 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     @Override
     public WidgetStyle resolveWidgetStyle() {
         // The intel screen's look: framed in the fixed UI grey its own chrome is drawn in rather than in
-        // the player accent, since this panel sits inside that chrome and its frame abuts the visor's.
-        // The controls inside keep the player accent, which the frame colour being its own knob is what
-        // allows.
+        // the panel's accent, since this panel sits inside that chrome and its frame abuts the visor's.
+        // The controls inside keep the chosen colour scheme's accent, which the frame colour being its
+        // own knob is what allows.
         return SidebarStyles.buildChromeFramedStyle(buildTabStyle());
     }
 

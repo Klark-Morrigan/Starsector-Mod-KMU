@@ -311,6 +311,7 @@ final class LunaSettingsCsvIntegrationTest {
     // in this table fails loudly (no such row) rather than quietly skipping a field.
     private static Stream<Arguments> provideChoiceBackedRadioFields() {
         return Stream.of(
+            Arguments.of("kmu_politicalMapSidebarColourScheme", SidebarColourSchemeChoice.values()),
             Arguments.of("kmu_politicalMapSidebarChevronColor", NotchChevronColourChoice.values()),
             Arguments.of("kmu_politicalMapHiddenMarketScaling", HiddenMarketScalingChoice.values()),
             Arguments.of("kmu_politicalMapFactionOuterBorderColor", FactionPaletteChoice.values()),

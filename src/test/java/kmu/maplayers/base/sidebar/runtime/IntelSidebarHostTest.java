@@ -16,6 +16,7 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.NotchChevronColourChoice;
+import kmu.settings.SidebarColourSchemeChoice;
 import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
@@ -158,12 +159,16 @@ final class IntelSidebarHostTest {
 
             uiColoursMock = StarsectorUiColoursMock.install();
 
-            // The chevron choice is the player's rather than the engine's, so it is named here: without
-            // it the notch shades cannot resolve and no case in this class reaches its own assertion.
+            // The chevron and the colour scheme are the player's rather than the engine's, so both are
+            // named here: without them the notch shades and the accent pair cannot resolve and no case
+            // in this class reaches its own assertion.
             settingsMock = mockStatic(KmuMapLayerSettings.class);
             settingsMock
                 .when(KmuMapLayerSettings::getMapSidebarChevronColour)
                 .thenReturn(NotchChevronColourChoice.PANEL_ACCENT);
+            settingsMock
+                .when(KmuMapLayerSettings::getMapSidebarColourScheme)
+                .thenReturn(SidebarColourSchemeChoice.UI_PALETTE);
         }
 
         @AfterEach

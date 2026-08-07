@@ -73,8 +73,8 @@ public final class MapSidebarHost extends BaseSidebarHost {
 
     @Override
     public WidgetStyle resolveWidgetStyle() {
-        // The map's own look: the player's accents over a black body, with the frame taking that same
-        // accent since this panel floats free and has no neighbouring chrome to match.
+        // The map's own look: the chosen colour scheme's accents over a black body, with the frame
+        // taking that same accent since this panel floats free and has no neighbouring chrome to match.
         return SidebarStyles.buildAccentFramedStyle(buildTabStyle());
     }
 

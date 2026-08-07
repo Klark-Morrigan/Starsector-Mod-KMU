@@ -1,9 +1,11 @@
 package kmu.maplayers.base.sidebar.style;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
+import kmlib.starsector.ui.render.gl.style.AccentColours;
 import kmlib.starsector.ui.render.gl.style.NotchColours;
 
 import kmu.settings.NotchChevronColourChoice;
+import kmu.settings.SidebarColourSchemeChoice;
 
 import java.awt.Color;
 
@@ -16,6 +18,35 @@ public final class SidebarPalettes {
 
     // Resolves only; never instantiated.
     private SidebarPalettes() {
+    }
+
+    /**
+     * The accent pair the panel's controls are drawn in - the wash-and-label shade and the brighter step
+     * a tick has to read against - for the player's colour scheme choice.
+     *
+     * <p>Each scheme is two steps of one palette rather than two colours chosen apart, because the pair
+     * has to stay a pair: a bright step that did not sit above its base would leave a checkbox's tick
+     * indistinguishable from the chrome it is drawn on. The UI palette's pair is the engine's own button
+     * roles, and the stock install gives them the same values a default player faction gives its base and
+     * bright - so that scheme is not a new look on an unmodded game, only one that stops moving when a
+     * faction's colours do.
+     *
+     * @param choice which palette the player pointed the panel at
+     * @return the base and bright accents the panel's controls take
+     */
+    public static AccentColours resolveAccentColours(SidebarColourSchemeChoice choice) {
+
+        return switch (choice) {
+            case UI_PALETTE -> new AccentColours(
+                StarsectorUiColour.VANILLA_BUTTON_TEXT.resolve(),
+                StarsectorUiColour.VANILLA_LIGHT_HIGHLIGHT.resolve());
+            case CHROME_GREY -> new AccentColours(
+                StarsectorUiColour.VANILLA_GRAY.resolve(),
+                StarsectorUiColour.VANILLA_TEXT.resolve());
+            case PLAYER_FACTION -> new AccentColours(
+                StarsectorUiColour.VANILLA_PLAYER_BASE.resolve(),
+                StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve());
+        };
     }
 
     /**

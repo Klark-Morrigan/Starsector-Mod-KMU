@@ -48,10 +48,13 @@ public final class KmuMapLayerSettings {
     private static final String SIDEBAR_COLLAPSE_SECONDS_FIELD =
         "kmu_politicalMapSidebarCollapseSeconds";
 
-    // Which colour the collapse handle's chevron draws in: the vanilla highlight gold, so the
-    // cue stands off the frame it sits on, or the panel's own accents so the handle reads as
-    // chrome. Appearance only, so it sits with the box's other looks in the Overlay sidebar
-    // section.
+    // Overlay sidebar colour fields (Map - Visuals tab), their own section below the box's
+    // dimensions: which palette the panel is coloured from, and which colour the collapse
+    // handle's chevron draws in. The two sit together because the chevron's "Panel accent"
+    // option resolves through whichever scheme is chosen, so a player changing one is very
+    // likely looking for the other.
+    private static final String SIDEBAR_COLOUR_SCHEME_FIELD =
+        "kmu_politicalMapSidebarColourScheme";
     private static final String SIDEBAR_CHEVRON_COLOR_FIELD =
         "kmu_politicalMapSidebarChevronColor";
 
@@ -183,6 +186,14 @@ public final class KmuMapLayerSettings {
     // TabPanelCollapse.DEFAULT_DURATION_SECONDS - the KMLib holder's own default pace - like the
     // other fallbacks, so this class stays decoupled from the widget library.
     private static final float DEFAULT_SIDEBAR_COLLAPSE_SECONDS = 0.25f;
+
+    // The fixed UI palette by default: the sidebar is drawn among vanilla chrome, all of which
+    // answers to that palette whatever faction the player flies, so a panel following the faction
+    // is the one thing on the screen that moves when the others do not. On a stock install the two
+    // schemes resolve to the same shades, so this default only shows itself on a recoloured player
+    // faction - which is the case it exists for. Mirrors the CSV row's defaultValue.
+    private static final SidebarColourSchemeChoice DEFAULT_SIDEBAR_COLOUR_SCHEME =
+        SidebarColourSchemeChoice.UI_PALETTE;
 
     // The highlight gold by default: the collapse handle hangs off the frame over the map, so its
     // chevron reads clearest pitched against the panel's accents rather than painted in them.
@@ -544,9 +555,21 @@ public final class KmuMapLayerSettings {
     }
 
     /**
+     * @return which palette the overlay sidebar's frame, control accents, and tab-row chrome are
+     *         coloured from: the fixed UI palette, the neutral chrome greys, or the player
+     *         faction's own accents; the UI palette by default. One answer for all three reads,
+     *         since a panel framed in one palette and ruled in another reads worse than either
+     */
+    public static SidebarColourSchemeChoice getMapSidebarColourScheme() {
+        return KmuLunaSettings.readChoice(
+            SIDEBAR_COLOUR_SCHEME_FIELD,
+            DEFAULT_SIDEBAR_COLOUR_SCHEME);
+    }
+
+    /**
      * @return which colour the overlay sidebar's collapse-handle chevron draws in: the vanilla
-     *         highlight gold, or the panel's own player-faction accents (brightening under the
-     *         pointer); the gold by default
+     *         highlight gold, or the panel's own accents under the chosen colour scheme
+     *         (brightening under the pointer); the gold by default
      */
     public static NotchChevronColourChoice getMapSidebarChevronColour() {
         return KmuLunaSettings.readChoice(

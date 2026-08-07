@@ -35,18 +35,34 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
     /** The fixed UI grey the engine frames its own panels in, which no player faction moves. */
     public static final Color UI_GRAY = new Color(155, 155, 155);
 
+    /** The lighter grey the engine writes its plain body text in, a step above {@link #UI_GRAY}. */
+    public static final Color UI_TEXT = new Color(220, 220, 220);
+
     /** The blue the engine writes its button and tab labels in. */
     public static final Color BUTTON_TEXT = new Color(130, 200, 230);
+
+    /**
+     * The near-white the engine titles its tooltips in - the fixed palette's bright step above
+     * {@link #BUTTON_TEXT}. Named rather than left to {@link #ENGINE_UI_SHADE} because it is one half of
+     * an accent pair, and a case pinning which half went where needs the two to differ.
+     */
+    public static final Color LIGHT_HIGHLIGHT = new Color(203, 245, 255);
 
     /** The gold an emphasised word reads in. */
     public static final Color HIGHLIGHT_GOLD = new Color(255, 255, 175);
 
     /**
-     * What every named engine colour key answers with - {@code buttonBgDark}, {@code buttonShortcut},
-     * and the rest. One shade for all of them because a case pinning a particular key names it itself;
-     * this is the floor that keeps an unnamed key from resolving null and failing the whole look.
+     * What every other named engine colour key answers with - {@code buttonBgDark},
+     * {@code buttonShortcut}, and the rest. One shade for all of them because a case pinning a
+     * particular key names it itself; this is the floor that keeps an unnamed key from resolving null
+     * and failing the whole look.
      */
     public static final Color ENGINE_UI_SHADE = new Color(100, 100, 100);
+
+    // The engine key the light highlight is stored under, so the proxy can answer that one apart from
+    // the floor above. Spelt here rather than reached for through the palette enum: this fake stands in
+    // for the engine, so it answers keys the way the engine stores them.
+    private static final String LIGHT_HIGHLIGHT_KEY = "tooltipTitleAndLightHighlightColor";
 
     private final MockedStatic<Misc> miscMock;
 
@@ -63,7 +79,9 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
      */
     public static StarsectorUiColoursMock install() {
 
-        StarsectorSettingsFake.installSettings(key -> ENGINE_UI_SHADE);
+        StarsectorSettingsFake.installSettings(key -> LIGHT_HIGHLIGHT_KEY.equals(key)
+            ? LIGHT_HIGHLIGHT
+            : ENGINE_UI_SHADE);
 
         var miscMock = mockStatic(Misc.class);
 
@@ -76,6 +94,9 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
         miscMock
             .when(Misc::getGrayColor)
             .thenReturn(UI_GRAY);
+        miscMock
+            .when(Misc::getTextColor)
+            .thenReturn(UI_TEXT);
         miscMock
             .when(Misc::getButtonTextColor)
             .thenReturn(BUTTON_TEXT);

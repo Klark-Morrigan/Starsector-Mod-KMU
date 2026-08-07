@@ -20,10 +20,15 @@ import java.awt.Color;
 /**
  * Composes the look bundles a sidebar host wears: the tab style its band is laid out and painted from,
  * and the widget style the panel around it is painted from. Which look a screen wears is its host's
- * answer, but a look built from live player colours cannot be a constant a host holds, so the
- * composition sits here as a factory each host calls with its own dimensions - one place the sidebar's
- * shades and faces are written down, so two screens sharing a look cannot drift into two spellings of
- * it.
+ * answer, but a look built from the running game's colours and the player's live scheme choice cannot be
+ * a constant a host holds, so the composition sits here as a factory each host calls with its own
+ * dimensions - one place the sidebar's shades and faces are written down, so two screens sharing a look
+ * cannot drift into two spellings of it.
+ *
+ * <p>Which palette those shades come from is the player's, not a host's: the frame, the control accents,
+ * the notch, and the tab row's chrome rule all resolve from one scheme choice, so the panel cannot end
+ * up framed in one palette and ruled in another. That is also why the choice is read here rather than
+ * per part - the parts have no business each asking.
  *
  * <p>Both bundles come as a pair of named factories rather than as one taking the difference as an
  * argument, because the differences are conventions and not free choices: a row wears the strip chrome
@@ -96,16 +101,21 @@ public final class SidebarStyles {
     }
 
     /**
-     * The sidebar's look framed in its own control accent: the player's base colour rules the frame as
-     * well as the controls. What a panel floating free on its screen wants, having no neighbouring chrome
-     * to match - so the one colour it does carry is its own.
+     * The sidebar's look framed in its own control accent: whichever base shade the player's colour
+     * scheme rules the controls in rules the frame too. What a panel floating free on its screen wants,
+     * having no neighbouring chrome to match - so the one colour it does carry is its own.
      *
      * @param tabStyle the tab style the host laid its band out with, so the row is painted from the
      *                 value it was measured against
      * @return the look to paint this sidebar's panel from
      */
     public static WidgetStyle buildAccentFramedStyle(TabStyle tabStyle) {
-        return composeStyle(tabStyle, StarsectorUiColour.VANILLA_PLAYER_BASE.resolve());
+
+        // Resolved once and spent twice, so the frame is demonstrably the same shade as the controls
+        // rather than a second read that a scheme change could catch part-way.
+        var accents = resolveAccentColours();
+
+        return composeStyle(tabStyle, accents, accents.base());
     }
 
     /**
@@ -115,21 +125,36 @@ public final class SidebarStyles {
      * <p>What a panel overlaying another screen's chrome wants. Its frame abuts that screen's frames, and
      * two boxes sharing an edge in two colours read as one laid over the other rather than as part of the
      * same surface; the grey is the fixed UI role those frames answer to, which no player faction moves.
-     * The controls inside keep the player accent, that being what the player picked rather than what the
-     * panel abuts - which is the whole reason the frame is its own knob.
+     * The controls inside keep the panel's own accent, that being what the player chose rather than what
+     * the panel abuts - which is the whole reason the frame is its own knob.
      *
      * @param tabStyle the tab style the host laid its band out with, so the row is painted from the
      *                 value it was measured against
      * @return the look to paint this sidebar's panel from
      */
     public static WidgetStyle buildChromeFramedStyle(TabStyle tabStyle) {
-        return composeStyle(tabStyle, StarsectorUiColour.VANILLA_GRAY.resolve());
+        return composeStyle(
+            tabStyle,
+            resolveAccentColours(),
+            StarsectorUiColour.VANILLA_GRAY.resolve());
+    }
+
+    // The accent pair the whole panel is ruled in, under whichever palette the player pointed it at.
+    // Read here rather than at each use so the frame, the controls, the notch, and the tab row cannot
+    // end up describing themselves from different halves of one scheme change.
+    private static AccentColours resolveAccentColours() {
+        return SidebarPalettes.resolveAccentColours(KmuMapLayerSettings.getMapSidebarColourScheme());
     }
 
     // A tab style over the shared paint: the vanilla map-tab palette - its per-state fills and its
     // interaction lifts - resolved live so it tracks a restyled install, and the orbitron face at the
     // layout's tab size. Only the chrome and the hotkey convention part the two screens' rows, and they
     // part together, so the values every row shares are written once here.
+    //
+    // The row's chrome rule is the panel's accent rather than the palette's own pick: KMLib works a tab's
+    // fills out from the engine's tab colours but has no vanilla counterpart to copy for the rule around
+    // them, so the shade a strip is ruled in travels down from the panel it belongs to and follows the
+    // same scheme its frame and controls do.
     private static TabStyle composeTabStyle(
             TabChrome chrome,
             HotkeyStyle hotkey,
@@ -138,20 +163,20 @@ public final class SidebarStyles {
         return new TabStyle(
             chrome,
             headerBandHeight,
-            TabPalette.createMapTabPalette(),
+            TabPalette.createMapTabPalette(resolveAccentColours().base()),
             hotkey,
             new TextFace(TAB_FONT, TabsControlLayout.TAB_FONT_SIZE));
     }
 
     // The sidebar's look built fresh from the live colours, framed in the given colour: a black body
-    // backdrop, the base and bright player accents for the controls, the insignia body face, the given
-    // tab style, the collapse handle's chevron shades for the colour the player picked, and the vanilla
-    // button sounds its controls answer by. Everything but the frame is shared by every screen the
-    // sidebar draws on, so a screen choosing its frame chooses nothing else by accident.
-    private static WidgetStyle composeStyle(TabStyle tabStyle, Color frameColour) {
-
-        var accent = StarsectorUiColour.VANILLA_PLAYER_BASE.resolve();
-        var brightAccent = StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve();
+    // backdrop, the given accent pair for the controls, the insignia body face, the given tab style, the
+    // collapse handle's chevron shades for the colour the player picked, and the vanilla button sounds
+    // its controls answer by. Everything but the frame is shared by every screen the sidebar draws on,
+    // so a screen choosing its frame chooses nothing else by accident.
+    private static WidgetStyle composeStyle(
+            TabStyle tabStyle,
+            AccentColours accentColours,
+            Color frameColour) {
 
         return new WidgetStyle(
             new BoxColours(
@@ -164,13 +189,13 @@ public final class SidebarStyles {
                 // faded body.
                 StarsectorUiColour.BLACK.resolve(),
                 frameColour),
-            new AccentColours(accent, brightAccent),
+            accentColours,
             BODY_FONT,
             tabStyle,
             SidebarPalettes.resolveNotchColours(
                 KmuMapLayerSettings.getMapSidebarChevronColour(),
-                accent,
-                brightAccent),
+                accentColours.base(),
+                accentColours.bright()),
             SIDEBAR_SOUND_SCHEME);
     }
 }

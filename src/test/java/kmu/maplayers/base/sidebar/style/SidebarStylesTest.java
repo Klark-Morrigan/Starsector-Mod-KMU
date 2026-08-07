@@ -7,6 +7,7 @@ import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.NotchChevronColourChoice;
+import kmu.settings.SidebarColourSchemeChoice;
 import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
@@ -24,8 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins {@link SidebarStyles}: which live values each part of the sidebar's look is composed from. The
  * look is built fresh every frame from the running game's colours, so what is worth pinning is not a
  * shade but a wiring - that the box takes the black backdrop, that a frame answers to what the panel
- * abuts while the controls stay the player's pick whichever framing is chosen, that each tab chrome
- * carries the hotkey convention belonging to it, and that the panel's sound scheme is the engine's own.
+ * abuts while the controls stay on the chosen scheme's pair whichever framing is chosen, that the row's
+ * chrome rule follows that same scheme, that each tab chrome carries the hotkey convention belonging to
+ * it, and that the panel's sound scheme is the engine's own.
  *
  * <p>The sound scheme is here rather than only in KMLib because this is where the sidebar's two halves
  * meet: the widget style carries the scheme to the paint side and the host hands the same constant to
@@ -46,12 +48,17 @@ final class SidebarStylesTest {
 
         uiColoursMock = StarsectorUiColoursMock.install();
 
-        // The chevron choice is the player's rather than the engine's, so it is named here: without it
-        // the notch shades cannot resolve and no case in this class reaches its own assertion.
+        // The two colour choices are the player's rather than the engine's, so both are named here:
+        // without them the notch shades and the accent pair cannot resolve and no case in this class
+        // reaches its own assertion. The scheme is stubbed to the one the file ships with, so the cases
+        // below describe the look a fresh player is given; the case that varies it says so itself.
         settingsMock = Mockito.mockStatic(KmuMapLayerSettings.class);
         settingsMock
             .when(KmuMapLayerSettings::getMapSidebarChevronColour)
             .thenReturn(NotchChevronColourChoice.PANEL_ACCENT);
+        settingsMock
+            .when(KmuMapLayerSettings::getMapSidebarColourScheme)
+            .thenReturn(SidebarColourSchemeChoice.UI_PALETTE);
     }
 
     @AfterEach
@@ -65,7 +72,7 @@ final class SidebarStylesTest {
     class BuildAccentFramedStyle {
 
         @Test
-        void buildAccentFramedStyleFillsTheBoxBlackAndFramesItInThePlayerAccent() {
+        void buildAccentFramedStyleFillsTheBoxBlackAndFramesItInItsOwnAccent() {
             // The body stays neutral so only the header, the accents, and the notch carry colour; the
             // frame takes the accent because a panel floating free on the map has no chrome to match.
             var boxColours = buildAccentFramedStyle().boxColours();
@@ -73,18 +80,37 @@ final class SidebarStylesTest {
             assertThat(boxColours.fill())
                 .isEqualTo(Color.BLACK);
             assertThat(boxColours.border())
-                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
         }
 
         @Test
-        void buildAccentFramedStyleTakesThePlayerPairForItsControls() {
+        void buildAccentFramedStyleTakesTheChosenSchemesPairForItsControls() {
             // Both steps of the one accent, and in that order - the brighter shade is what a tick has to
             // read against, so a pair handed over crossed would tick in the colour it sits on.
             var accentColours = buildAccentFramedStyle().accentColours();
 
             assertThat(accentColours.base())
-                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
             assertThat(accentColours.bright())
+                .isEqualTo(StarsectorUiColoursMock.LIGHT_HIGHLIGHT);
+        }
+
+        @Test
+        void buildAccentFramedStyleMovesItsFrameAndItsControlsTogetherWhenTheSchemeChanges() {
+            // The frame is a separate knob from the controls, which is exactly how the two could come to
+            // answer different palettes: this pins that the accent-framed look spends one resolved pair
+            // on both, so a scheme change cannot leave a panel ruled in one palette and framed in another.
+            settingsMock
+                .when(KmuMapLayerSettings::getMapSidebarColourScheme)
+                .thenReturn(SidebarColourSchemeChoice.PLAYER_FACTION);
+
+            var style = buildAccentFramedStyle();
+
+            assertThat(style.boxColours().border())
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
+            assertThat(style.accentColours().base())
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
+            assertThat(style.accentColours().bright())
                 .isEqualTo(StarsectorUiColoursMock.PLAYER_BRIGHT);
         }
 
@@ -111,15 +137,16 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildChromeFramedStyleStillTakesThePlayerPairForItsControls() {
-            // Only the frame answers to what the panel abuts. The controls are the player's pick wherever
-            // the panel is drawn, so a screen choosing its frame must not quietly repaint its checkboxes.
+        void buildChromeFramedStyleStillTakesTheChosenSchemesPairForItsControls() {
+            // Only the frame answers to what the panel abuts. The controls take the scheme's pair
+            // wherever the panel is drawn, so a screen choosing its frame must not quietly repaint its
+            // checkboxes.
             var accentColours = buildChromeFramedStyle().accentColours();
 
             assertThat(accentColours.base())
-                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
             assertThat(accentColours.bright())
-                .isEqualTo(StarsectorUiColoursMock.PLAYER_BRIGHT);
+                .isEqualTo(StarsectorUiColoursMock.LIGHT_HIGHLIGHT);
         }
 
         @Test
@@ -152,6 +179,15 @@ final class SidebarStylesTest {
                 .isEqualTo(TabChrome.STRIP);
             assertThat(tabStyle.hotkey().isKeyUnderlined())
                 .isTrue();
+        }
+
+        @Test
+        void buildStripTabStyleRulesTheRowInTheChosenSchemesAccent() {
+            // The third of the panel's colour reads, and the one furthest from the other two - it rides
+            // in the tab style rather than the widget style - so it is the one that could quietly keep
+            // answering a palette of its own while the frame and the controls moved.
+            assertThat(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).palette().chromeAccent())
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
         }
     }
 

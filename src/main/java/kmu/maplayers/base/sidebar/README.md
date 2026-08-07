@@ -32,7 +32,7 @@ the shortcut jump), leaving each concrete host only the genuine differences.
 | Framed edges | `BoxEdge.ALL` | `TOP`, `RIGHT`, and `BOTTOM` until the box reaches the visor bottom |
 | Tab band | `HEADER_BAND_HEIGHT` 19 | `HEADER_BAND_HEIGHT` 17 |
 | Tab chrome | `STRIP`, key underlined | `RAISED_BUTTON`, key bare |
-| Frame colour | its own player accent | the UI grey the intel chrome takes |
+| Frame colour | its own control accent | the UI grey the intel chrome takes |
 | Fold default | expanded | docked |
 
 The look is in that table because it is the host's: `resolveWidgetStyle()` answers what the panel is
@@ -40,9 +40,9 @@ painted in and `HEADER_BAND_HEIGHT` how tall its tab row stands, and the same ta
 the layout and the paint pass. The two screens sit in different company - one floating free on the
 map, the other overlaid on the intel visor amid that screen's own chrome - so each should read as
 part of what surrounds it, which a shared renderer could only do by naming the screens. What lets
-them diverge as far as they do - one a strip in the player's accent, the other a row of buttons framed
-in the UI grey - is that neither `SidebarRenderer` nor `LiveSidebarPlacement` holds a screen test
-about it: a third screen would be a third host and no renderer change.
+them diverge as far as they do - one a strip framed in its own accent, the other a row of buttons
+framed in the UI grey - is that neither `SidebarRenderer` nor `LiveSidebarPlacement` holds a screen
+test about it: a third screen would be a third host and no renderer change.
 
 Keys are not in that table because the panel offers the same tabs wherever it draws, so
 `BaseSidebarHost.handleKeyPress` serves both: a bound key jumps that host's own pick to its layer
@@ -250,9 +250,20 @@ anything paints, so they move values without raising it.
 
 A host's `resolveWidgetStyle()` answers with the look each frame, built through
 `style/SidebarStyles` from live values: a black body fill faded by the opacity setting, the frame
-colour, the player faction's base and bright accents, the insignia body face, and the host's own tab
-style. Nothing of it is held between frames - every shade reads the running game's colours and the
-player's live settings - and nothing of it is persisted.
+colour, the base and bright accents of the player's colour scheme, the insignia body face, and the
+host's own tab style. Nothing of it is held between frames - every shade reads the running game's
+colours and the player's live settings - and nothing of it is persisted.
+
+Which palette those accents come from is the player's `SidebarColourSchemeChoice`, and it is one
+choice for all three of the panel's colour reads - the frame, the control pair, and the tab row's
+chrome rule. They move together because a panel framed in one palette and ruled in another reads
+worse than either of the looks it is made of, which is what per-colour knobs would offer as a
+combination. The default scheme is the fixed UI palette (`buttonText` and the near-white tooltip
+title above it) rather than the player faction's pair: the sidebar is drawn among vanilla chrome,
+every scrap of which answers to that palette whatever faction the player flies, so a faction-coloured
+panel is the one thing on the screen that moves when nothing around it does. On a stock install the
+two resolve to the same shades and the choice shows itself only once a faction recolours - which is
+the case it exists for. `Chrome grey` is the third, dropping the accent hue entirely.
 
 The look also says how the panel *sounds*, and the sidebar takes the engine's own scheme through
 `SidebarStyles.SIDEBAR_SOUND_SCHEME`. It is the one part of the look the panel's controller is
@@ -276,11 +287,11 @@ whatever the panel floats on.
 
 The frame colour rides in `WidgetStyle`'s `BoxColours` beside the body fill, apart from the
 `AccentColours` the controls wash and label with, so a host whose surrounding chrome is drawn in
-another colour can match it without recolouring its controls. The map passes its base player accent
+another colour can match it without recolouring its controls. The map passes its scheme's base accent
 for both, floating free with no neighbouring chrome to match; the intel panel frames itself in the
 fixed UI grey (`Misc.getGrayColor`) its host screen's own frames answer to, since its border abuts the
 visor's and two boxes sharing an edge in two colours read as one dropped on the other. Its controls
-stay on the player accent either way - which is the whole point of the frame being its own knob.
+stay on the scheme's accent either way - which is the whole point of the frame being its own knob.
 
 That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `HotkeyStyle`, and the
 orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
@@ -363,14 +374,18 @@ drawn box, not part of the measured display string, so drawing it or not moves n
 `buttonShortcut` under either, the role the engine's own buttons light their keys with, rather than
 the prose-highlight `hColor` the stock install happens to give the same value.
 
-`style/SidebarPalettes` maps the player's `NotchChevronColourChoice` to the chevron's resting and lit
-shades. It is kept out of the renderer so the "which colour does this choice mean" rules stay a pure
-lookup a test can pin, with no live GL or screen needed. The handle travels between those shades on
-the same fade the tabs use, so the gold choice - one colour passed twice - answers a hover by its
-accent wash alone while the panel-accent choice brightens the glyph with it.
+`style/SidebarPalettes` maps both of the player's colour choices to shades: the
+`SidebarColourSchemeChoice` to the panel's accent pair, and the `NotchChevronColourChoice` to the
+chevron's resting and lit shades. It is kept out of the renderer so the "which colour does this
+choice mean" rules stay a pure lookup a test can pin, with no live GL or screen needed. The handle
+travels between those shades on the same fade the tabs use, so the gold choice - one colour passed
+twice - answers a hover by its accent wash alone while the panel-accent choice brightens the glyph
+with it; that choice resolves through whichever scheme is set, which is why the two rows sit together
+on the settings screen.
 
-The border width, opacity, chevron colour, collapse seconds, and both anchors' paddings are LunaLib
-fields read through `kmu.settings.KmuMapLayerSettings`.
+The border width, opacity, collapse seconds, and both anchors' paddings are LunaLib fields read
+through `kmu.settings.KmuMapLayerSettings`, as are the colour scheme and the chevron colour - those
+two in their own "Overlay sidebar - colours" section below the box's dimensions.
 
 ## What is not here
 
