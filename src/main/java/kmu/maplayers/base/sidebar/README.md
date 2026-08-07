@@ -31,15 +31,18 @@ the shortcut jump), leaving each concrete host only the genuine differences.
 | Height cap | bottom padding setting | the visor's bottom edge |
 | Framed edges | `BoxEdge.ALL` | `TOP`, `RIGHT`, and `BOTTOM` until the box reaches the visor bottom |
 | Tab band | `HEADER_BAND_HEIGHT` 19 | `HEADER_BAND_HEIGHT` 17 |
+| Tab chrome | `STRIP`, key underlined | `RAISED_BUTTON`, key bare |
+| Frame colour | its own player accent | the UI grey the intel chrome takes |
 | Fold default | expanded | docked |
 
 The look is in that table because it is the host's: `resolveWidgetStyle()` answers what the panel is
 painted in and `HEADER_BAND_HEIGHT` how tall its tab row stands, and the same tab style feeds both
 the layout and the paint pass. The two screens sit in different company - one floating free on the
 map, the other overlaid on the intel visor amid that screen's own chrome - so each should read as
-part of what surrounds it, which a shared renderer could only do by naming the screens. Both look
-alike today apart from the band; what makes them able to diverge is that neither `SidebarRenderer`
-nor `LiveSidebarPlacement` holds a screen test about it.
+part of what surrounds it, which a shared renderer could only do by naming the screens. What lets
+them diverge as far as they do - one a strip in the player's accent, the other a row of buttons framed
+in the UI grey - is that neither `SidebarRenderer` nor `LiveSidebarPlacement` holds a screen test
+about it: a third screen would be a third host and no renderer change.
 
 Keys are not in that table because the panel offers the same tabs wherever it draws, so
 `BaseSidebarHost.handleKeyPress` serves both: a bound key jumps that host's own pick to its layer
@@ -256,10 +259,14 @@ The look also says how the panel *sounds*, and the sidebar takes the engine's ow
 handed directly rather than rebuilt each frame - the moments it answers are pointer events, not paint
 passes - so both sides read that one constant.
 
-Both hosts build through the one factory rather than each spelling the look out, so two screens
-meant to look alike cannot drift into two spellings of it; a host that wants to differ passes
-different arguments or composes its own. The factory sits beside `SidebarPalettes` and out of the
-render pass for the same reason: a look is a value, so building one needs no live GL context.
+Both hosts build through that one file rather than each spelling its look out, so the parts the two
+screens share cannot drift into two spellings of them. Where they do differ, they choose between
+named factories rather than passing the difference as an argument: `buildStripTabStyle` /
+`buildRaisedButtonTabStyle` for the tab row, `buildAccentFramedStyle` / `buildChromeFramedStyle` for
+the panel around it. The differences are vanilla conventions and not free choices - a strip's key is
+underlined and a button's is bare - so naming the two ends is what keeps a host from composing a look
+vanilla has no counterpart for. The file sits beside `SidebarPalettes` and out of the render pass for
+the same reason: a look is a value, so building one needs no live GL context.
 
 That fill is the body's alone. The tab row stands *on* the framed box rather than inside it, the way
 a strip of tabs sits on the panel it selects, so nothing of the body reaches behind the tabs and a tab
@@ -270,7 +277,10 @@ whatever the panel floats on.
 The frame colour rides in `WidgetStyle`'s `BoxColours` beside the body fill, apart from the
 `AccentColours` the controls wash and label with, so a host whose surrounding chrome is drawn in
 another colour can match it without recolouring its controls. The map passes its base player accent
-for both, the sidebar having no neighbouring chrome to match.
+for both, floating free with no neighbouring chrome to match; the intel panel frames itself in the
+fixed UI grey (`Misc.getGrayColor`) its host screen's own frames answer to, since its border abuts the
+visor's and two boxes sharing an edge in two colours read as one dropped on the other. Its controls
+stay on the player accent either way - which is the whole point of the frame being its own knob.
 
 That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `HotkeyStyle`, and the
 orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
@@ -331,9 +341,11 @@ key pressed away from the panel, so it lands and is gone however leisurely the r
 moves. Paced with the travels it reads as one more thing moving at the speed everything else moves
 at, which is the opposite of what a keypress needs to say. All three animations are the controller's, which holds no colour: it
 reports two fractions per tab - one look, one lift - and the paint pass binds them to the palette, so
-it is handed a look already blended and a lift already scaled. The two
-screens differ only in the band height each host holds, which the paint pass does not read. Both
-faces are named through KMLib's `StarsectorFont` enum rather than by atlas basename.
+it is handed a look already blended and a lift already scaled - so both tab chromes animate alike,
+neither of them having any timing to compute. What the two screens set apart is the band height, the
+chrome its shades are painted onto, and the hotkey convention that comes with that chrome; every
+other value in the tab style is shared. Both faces are named through KMLib's `StarsectorFont` enum
+rather than by atlas basename.
 
 Where a tab says which key it answers to is `TabShortcutText`'s call, following the engine's rule: a
 single-glyph key whose letter already stands in the label lights that letter where it is, and only a
@@ -342,12 +354,14 @@ read that one answer - the layout measures the runs end to end, the paint pass w
 each - so a tab cannot be sized for one presentation and drawn in the other. Both of this mod's tabs
 light in place (the N of "No Layer", the P of "Political Map"), so neither carries a bracketed key.
 
-Both screens take `HotkeyStyle.createUnderlined()`: the vanilla Sector/System tabs the on-map strip
-sits below mark their key wherever it falls, so a key marked by colour alone reads as a mismatch
-against the row above. The line is a quad the style places under the key's drawn box, not part of the
-measured display string, so adding it moves no tab. The gold is `buttonShortcut`, the role the
-engine's own buttons light their keys with, rather than the prose-highlight `hColor` the stock install
-happens to give the same value.
+Each screen takes the `HotkeyStyle` its chrome's vanilla counterpart uses, which is why each tab
+factory hands out the pair rather than taking the convention as an argument. The map's strip takes `createUnderlined()`: the vanilla Sector/System
+tabs it sits below mark their key wherever it falls, so a key marked by colour alone reads as a
+mismatch against the row above. The intel screen's buttons take `createPlain()`, its own map toggles
+lighting their key by colour and nothing else. The line is a quad the style places under the key's
+drawn box, not part of the measured display string, so drawing it or not moves no tab. The gold is
+`buttonShortcut` under either, the role the engine's own buttons light their keys with, rather than
+the prose-highlight `hColor` the stock install happens to give the same value.
 
 `style/SidebarPalettes` maps the player's `NotchChevronColourChoice` to the chevron's resting and lit
 shades. It is kept out of the renderer so the "which colour does this choice mean" rules stay a pure

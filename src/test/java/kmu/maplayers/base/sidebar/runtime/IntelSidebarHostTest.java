@@ -4,19 +4,19 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
-import com.fs.starfarer.api.util.Misc;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
+import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.NotchChevronColourChoice;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.awt.Color;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,12 +61,6 @@ final class IntelSidebarHostTest {
     // pinned against a registered fake rather than a concrete view's real key.
     private static final String SHORTCUT_SETTING_KEY = "kmu_testLayerKey";
     private static final int SHORTCUT_KEYCODE = 25;
-
-    // The fixed UI grey the vanilla chrome around the visor is framed in, and the shade every other live
-    // colour read answers with. Two values rather than one, so a frame that fell back to the player
-    // accent - or to any other read the look makes - fails rather than passing on a shared shade.
-    private static final Color UI_GRAY = new Color(155, 155, 155);
-    private static final Color ENGINE_UI_SHADE = new Color(100, 100, 100);
 
     private static final float FULLY_DOCKED = 1f;
     private static final float FULLY_EXPANDED = 0f;
@@ -157,28 +150,16 @@ final class IntelSidebarHostTest {
         // Held rather than opened per case in a try-with-resources, because every case here needs the
         // same live colours: the look is composed from several of them at once and reads them all
         // whichever field the case then asserts on.
-        private MockedStatic<Misc> miscMock;
+        private StarsectorUiColoursMock uiColoursMock;
         private MockedStatic<KmuMapLayerSettings> settingsMock;
 
         @BeforeEach
         void mockLiveColoursAndSettings() {
 
-            StarsectorSettingsFake.installSettings(key -> ENGINE_UI_SHADE);
+            uiColoursMock = StarsectorUiColoursMock.install();
 
-            miscMock = mockStatic(Misc.class);
-            miscMock
-                .when(Misc::getBasePlayerColor)
-                .thenReturn(ENGINE_UI_SHADE);
-            miscMock
-                .when(Misc::getBrightPlayerColor)
-                .thenReturn(ENGINE_UI_SHADE);
-            miscMock
-                .when(Misc::getButtonTextColor)
-                .thenReturn(ENGINE_UI_SHADE);
-            miscMock
-                .when(Misc::getGrayColor)
-                .thenReturn(UI_GRAY);
-
+            // The chevron choice is the player's rather than the engine's, so it is named here: without
+            // it the notch shades cannot resolve and no case in this class reaches its own assertion.
             settingsMock = mockStatic(KmuMapLayerSettings.class);
             settingsMock
                 .when(KmuMapLayerSettings::getMapSidebarChevronColour)
@@ -189,16 +170,14 @@ final class IntelSidebarHostTest {
         void closeLiveColoursAndSettings() {
 
             settingsMock.close();
-            miscMock.close();
-
-            StarsectorSettingsFake.clearSettings();
+            uiColoursMock.close();
         }
 
         @Test
         void resolveWidgetStyleWearsTheIntelScreensRaisedButtonsWithTheirKeyLeftBare() {
             // Which look this screen wears is the host's answer, so wiring it to the map's factory would
             // draw a seamless strip over the intel visor with every style test still green.
-            var tabStyle = new IntelSidebarHost(new IntelScreenViewFake()).resolveWidgetStyle().tabStyle();
+            var tabStyle = buildTabStyle();
 
             assertThat(tabStyle.chrome())
                 .isEqualTo(TabChrome.RAISED_BUTTON);
@@ -215,7 +194,23 @@ final class IntelSidebarHostTest {
                 .boxColours();
 
             assertThat(boxColours.border())
-                .isEqualTo(UI_GRAY);
+                .isEqualTo(StarsectorUiColoursMock.UI_GRAY);
+        }
+
+        @Test
+        void resolveWidgetStyleStandsTheBandAtThisScreensOwnHeight() {
+            // The height is this host's to hold, and the style it hands the paint pass has to be the one
+            // its band was laid out against: a host composing its look at the widget default would stand
+            // its tabs outside their own band with the case above still green. Pinned against the
+            // constant rather than a number, the number itself being dialled against the live screen.
+            assertThat(buildTabStyle().headerBandHeight())
+                .isEqualTo(IntelSidebarHost.HEADER_BAND_HEIGHT);
+        }
+
+        // The tab style this screen's look carries, which is the value both its layout and its paint
+        // pass read.
+        private static TabStyle buildTabStyle() {
+            return new IntelSidebarHost(new IntelScreenViewFake()).resolveWidgetStyle().tabStyle();
         }
     }
 

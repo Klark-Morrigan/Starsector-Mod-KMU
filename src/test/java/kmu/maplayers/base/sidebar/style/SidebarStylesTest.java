@@ -1,7 +1,5 @@
 package kmu.maplayers.base.sidebar.style;
 
-import com.fs.starfarer.api.util.Misc;
-
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundScheme;
@@ -9,7 +7,7 @@ import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.NotchChevronColourChoice;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,52 +34,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class SidebarStylesTest {
 
-    private static final Color PLAYER_BASE = new Color(170, 222, 255);
-    private static final Color PLAYER_BRIGHT = new Color(255, 255, 255);
-    private static final Color HIGHLIGHT_GOLD = new Color(255, 255, 175);
-
-    // The fixed UI grey the vanilla chrome around an overlaid panel is framed in. Its own shade rather
-    // than the shared engine one below, so a frame that fell back to the player accent - or to any other
-    // live read - is caught rather than passing on a coincidence of the test's setup.
-    private static final Color UI_GRAY = new Color(155, 155, 155);
-
-    // What every named engine colour key answers with. The tab palette reads several of them by name and
-    // none of the assertions here turn on which - one shade for all of them keeps the setup to the fact
-    // these cases actually need, that the install has a palette at all.
-    private static final Color ENGINE_UI_SHADE = new Color(100, 100, 100);
-
     // The band height the look is composed at. Any positive height does - this factory reads none of the
     // tab style it is handed - so it is named rather than repeated.
     private static final float HEADER_BAND_HEIGHT = 19f;
 
-    private MockedStatic<Misc> miscMock;
+    private StarsectorUiColoursMock uiColoursMock;
     private MockedStatic<KmuMapLayerSettings> settingsMock;
 
     @BeforeEach
     void mockLiveColoursAndSettings() {
 
-        StarsectorSettingsFake.installSettings(key -> ENGINE_UI_SHADE);
+        uiColoursMock = StarsectorUiColoursMock.install();
 
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getBasePlayerColor)
-            .thenReturn(PLAYER_BASE);
-        miscMock
-            .when(Misc::getBrightPlayerColor)
-            .thenReturn(PLAYER_BRIGHT);
-        miscMock
-            .when(Misc::getHighlightColor)
-            .thenReturn(HIGHLIGHT_GOLD);
-        miscMock
-            .when(Misc::getGrayColor)
-            .thenReturn(UI_GRAY);
-
-        // The vanilla tab palette reads the button label shade through Misc, so the tab-style case needs
-        // it named or the mock answers null and the palette refuses to resolve.
-        miscMock
-            .when(Misc::getButtonTextColor)
-            .thenReturn(ENGINE_UI_SHADE);
-
+        // The chevron choice is the player's rather than the engine's, so it is named here: without it
+        // the notch shades cannot resolve and no case in this class reaches its own assertion.
         settingsMock = Mockito.mockStatic(KmuMapLayerSettings.class);
         settingsMock
             .when(KmuMapLayerSettings::getMapSidebarChevronColour)
@@ -92,9 +58,7 @@ final class SidebarStylesTest {
     void closeLiveColoursAndSettings() {
 
         settingsMock.close();
-        miscMock.close();
-        
-        StarsectorSettingsFake.clearSettings();
+        uiColoursMock.close();
     }
 
     @Nested
@@ -109,7 +73,7 @@ final class SidebarStylesTest {
             assertThat(boxColours.fill())
                 .isEqualTo(Color.BLACK);
             assertThat(boxColours.border())
-                .isEqualTo(PLAYER_BASE);
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
         }
 
         @Test
@@ -119,9 +83,9 @@ final class SidebarStylesTest {
             var accentColours = buildAccentFramedStyle().accentColours();
 
             assertThat(accentColours.base())
-                .isEqualTo(PLAYER_BASE);
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
             assertThat(accentColours.bright())
-                .isEqualTo(PLAYER_BRIGHT);
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BRIGHT);
         }
 
         @Test
@@ -143,7 +107,7 @@ final class SidebarStylesTest {
             // The frame abuts another screen's own frames, so it takes the fixed UI role those answer to
             // rather than the player's accent - the whole visible point of the frame being its own knob.
             assertThat(buildChromeFramedStyle().boxColours().border())
-                .isEqualTo(UI_GRAY);
+                .isEqualTo(StarsectorUiColoursMock.UI_GRAY);
         }
 
         @Test
@@ -153,9 +117,9 @@ final class SidebarStylesTest {
             var accentColours = buildChromeFramedStyle().accentColours();
 
             assertThat(accentColours.base())
-                .isEqualTo(PLAYER_BASE);
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
             assertThat(accentColours.bright())
-                .isEqualTo(PLAYER_BRIGHT);
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BRIGHT);
         }
 
         @Test
